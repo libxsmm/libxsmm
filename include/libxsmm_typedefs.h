@@ -75,14 +75,42 @@
   (LIBXSMM_DATATYPE_BF8  == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_HF8  == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I64  == ((int)(ENUM))) ? 8 : ( \
+  (LIBXSMM_DATATYPE_U64  == ((int)(ENUM))) ? 8 : ( \
   (LIBXSMM_DATATYPE_I32  == ((int)(ENUM))) ? 4 : ( \
+  (LIBXSMM_DATATYPE_U32  == ((int)(ENUM))) ? 4 : ( \
   (LIBXSMM_DATATYPE_I16  == ((int)(ENUM))) ? 2 : ( \
+  (LIBXSMM_DATATYPE_U16  == ((int)(ENUM))) ? 2 : ( \
   (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_U8   == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))
+    0/*invalid*/))))))))))))))))
 
-/* Get input or output precision */
-#define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
+/* Get input precision datatype (preserves unsigned datatype) */
+#define LIBXSMM_GETENUM_UNP(SRC) ((SRC) & 0x0F)
+/* Get signed precision datatype regardless of signed or unsigned input */
+#define LIBXSMM_GETENUM_INP(SRC) ( \
+  (LIBXSMM_DATATYPE_F64         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_F64 : ( \
+  (LIBXSMM_DATATYPE_F32         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_F32 : ( \
+  (LIBXSMM_DATATYPE_BF16        == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_BF16 : ( \
+  (LIBXSMM_DATATYPE_F16         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_F16 : ( \
+  (LIBXSMM_DATATYPE_BF8         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_BF8 : ( \
+  (LIBXSMM_DATATYPE_HF8         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_HF8 : ( \
+  (LIBXSMM_DATATYPE_I64         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I64 : ( \
+  (LIBXSMM_DATATYPE_U64         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I64 : ( \
+  (LIBXSMM_DATATYPE_I32         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I32 : ( \
+  (LIBXSMM_DATATYPE_U32         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I32 : ( \
+  (LIBXSMM_DATATYPE_I16         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I16 : ( \
+  (LIBXSMM_DATATYPE_U16         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I16 : ( \
+  (LIBXSMM_DATATYPE_I8          == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I8 : ( \
+  (LIBXSMM_DATATYPE_U8          == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I8 : ( \
+  (LIBXSMM_DATATYPE_IMPLICIT    == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_IMPLICIT : ( \
+  (LIBXSMM_DATATYPE_UNSUPPORTED == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_UNSUPPORTED : ( \
+  (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
+    0/*invalid*/))))))))))))))))))
+
+/* Get output precision datatype (preserves unsigned datatype) */
+#define LIBXSMM_GETENUM_UOT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_UNP(SRC) : ((SRC) >> 4))
+/* Get signed precision datatype regardless of signed or unsigned output */
 #define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
 /* Get/Set input and output precision */
 #define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) \
@@ -173,9 +201,14 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DATATYPE_HF8,
   LIBXSMM_DATATYPE_I64,
+  LIBXSMM_DATATYPE_U64,
   LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DATATYPE_U32,
   LIBXSMM_DATATYPE_I16,
+  LIBXSMM_DATATYPE_U16,
   LIBXSMM_DATATYPE_I8,
+  LIBXSMM_DATATYPE_U8,
+  LIBXSMM_DATATYPE_IMPLICIT,
   LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
 
@@ -299,7 +332,11 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4         = 60,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM      = 61,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2     = 62,
-  LIBXSMM_MELTW_TYPE_UNARY_DUMP                         = 63
+  LIBXSMM_MELTW_TYPE_UNARY_DUMP                         = 63,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2        = 64,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3        = 65,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM     = 66,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM     = 67
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {

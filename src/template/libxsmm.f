@@ -43,12 +43,12 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = 1
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ROW_MAJOR = 0
 
-        !> LIBXSMM_BLASINT_KIND impacts BLAS interface (LP64: 32-bit, ILP64: 64-bit).
+        !> LIBXSMM_BLASINT_KIND (LP64: 32-bit, ILP64: 64-bit).
         INTEGER(C_INT), PARAMETER :: LIBXSMM_BLASINT_KIND = $BLASINT_KIND
         !> Integer kind used by timer interface.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_TICKINT_KIND = C_LONG_LONG
 
-        !> Parameters representing the GEMM performed by the simplified interface.
+        !> Parameters for simplified GEMM interface.
         REAL(C_DOUBLE), PARAMETER :: LIBXSMM_ALPHA = REAL($ALPHA, C_DOUBLE)
         REAL(C_DOUBLE), PARAMETER :: LIBXSMM_BETA = REAL($BETA, C_DOUBLE)
 
@@ -84,7 +84,7 @@
      &    LIBXSMM_DATATYPE_UNSIGNED     = 10,                           &
      &    LIBXSMM_DATATYPE_UNSUPPORTED  = 11
 
-        !> Enumeration of the available prefetch strategies which can be IORed.
+        !> Enumeration of prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Automatically select strategy (frontend).
      &    LIBXSMM_PREFETCH_AUTO                     = -1,               &
@@ -175,27 +175,31 @@
           REAL(C_DOUBLE) norm1_abs, norm1_rel !! One-norm
           REAL(C_DOUBLE) normi_abs, normi_rel !! Infinity-norm
           REAL(C_DOUBLE) normf_rel            !! Froebenius-norm
-          !> Maximum difference, L2-norm (absolute and relative), and R-squared.
+          !> Maximum difference, L2-norm (absolute and relative),
+          !> and R-squared.
           REAL(C_DOUBLE) linf_abs, linf_rel, l2_abs, l2_rel, rsq
-          !> Statistics: sum/l1, min., max., arith. avg., and variance.
+          !> Statistics (reference): sum/l1, minimum, maximum,
+          !> arithmetic average, and variance.
           REAL(C_DOUBLE) l1_ref, min_ref, max_ref, avg_ref, var_ref
-          !> Statistics: sum/l1, min., max., arith. avg., and variance.
+          !> Statistics (test): sum/l1, minimum, maximum,
+          !> arithmetic average, and variance.
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
-          !> Values(v_ref, v_tst) and location(m, n) of largest linf_abs.
+          !> Values(v_ref, v_tst) and location(m, n)
+          !> of largest linf_abs.
           REAL(C_DOUBLE) v_ref, v_tst
-          !> If r is non-zero (i is not negative), values (v_ref, v_tst),
-          !> and the location (m, n) stem from the i-th reduction
-          !> (r calls of libxsmm_matdiff_reduce) of the largest
-          !> difference (libxsmm_matdiff_epsilon).
+          !> If r is non-zero (i is not negative), values (v_ref,
+          !> v_tst), and location (m, n) stem from the i-th
+          !> reduction (r calls of libxsmm_matdiff_reduce)
+          !> of the largest difference (libxsmm_matdiff_epsilon).
           INTEGER(LIBXSMM_BLASINT_KIND) m, n, i, r
         END TYPE
 
         INTERFACE
-          !> Initialize the library; pay for setup cost at a specific point.
+          !> Initialize the library.
           SUBROUTINE libxsmm_init() BIND(C)
           END SUBROUTINE
 
-          !> De-initialize the library and free internal memory (optional).
+          !> De-initialize the library.
           SUBROUTINE libxsmm_finalize() BIND(C)
           END SUBROUTINE
 
@@ -211,24 +215,27 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: strategy
           END SUBROUTINE
 
-          !> Returns the architecture and instruction set extension as determined
-          !> by the CPUID flags, as set by the libxsmm_get_target_arch* functions,
-          !> or as set by the LIBXSMM_TARGET environment variable.
+          !> Returns the architecture and instruction set extension
+          !> as determined by the CPUID flags, as set by the
+          !> libxsmm_get_target_arch* functions, or as set by
+          !> the LIBXSMM_TARGET environment variable.
           PURE FUNCTION libxsmm_get_target_archid() BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT) :: libxsmm_get_target_archid
           END FUNCTION
 
-          !> Set target architecture (archid: see PARAMETER enumeration)
-          !> for subsequent code generation (JIT).
+          !> Set target architecture (archid: see PARAMETER
+          !> enumeration) for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_archid(archid) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: archid
           END SUBROUTINE
 
-          !> Set target architecture for subsequent code generation (JIT).
-          !> arch="0"|"sse"|"snb"|"hsw"|"knl"|"knm"|"skx"|"clx"|"cpx",
-          !> or "0" to rely on the CPUID (default).
+          !> Set target architecture for subsequent code
+          !> generation (JIT); arch argument can be
+          !> "sse", "snb", "hsw", "knl", "knm", "skx",
+          !> "clx", "cpx", "spr", or "0" to rely on
+          !> the CPUID (default).
           !> There are some alternative target names as well:
           !> "sse", "avx", "avx2", "avx3" (incomplete list).
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
@@ -242,23 +249,26 @@
             INTEGER(C_INT) :: libxsmm_get_verbosity
           END FUNCTION
 
-          !> Set the level of verbosity (0: off, positive value: verbosity level,
-          !> negative value: maximum verbosity, which also dumps JIT-code).
+          !> Set the level of verbosity (0: off, positive value:
+          !> verbosity level, negative value: maximum verbosity,
+          !> which also dumps JIT-code).
           SUBROUTINE libxsmm_set_verbosity(level) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: level
           END SUBROUTINE
 
-          !> Impure function which returns the current clock tick of a
-          !> monotonic timer source; uses a platform-specific resolution.
+          !> Impure function which returns the current clock tick
+          !> of a monotonic timer source; uses a platform-specific
+          !> resolution.
           !> Implicit FORTRAN 77 interface: not available.
           INTEGER(LIBXSMM_TICKINT_KIND)                                 &
      &    FUNCTION libxsmm_timer_tick() BIND(C)
             IMPORT :: LIBXSMM_TICKINT_KIND
           END FUNCTION
 
-          !> Impure function (timer freq. may vary) which returns the duration
-          !> (in seconds) between two values received by libxsmm_timer_tick.
+          !> Impure function (timer freq. may vary) which returns
+          !> the duration (in seconds) between two values received
+          !> by libxsmm_timer_tick.
           !> Implicit FORTRAN 77 interface: not available.
           FUNCTION libxsmm_timer_duration(tick0, tick1) BIND(C)
             IMPORT :: LIBXSMM_TICKINT_KIND, C_DOUBLE
@@ -277,7 +287,7 @@
             TYPE(C_FUNPTR), INTENT(IN) :: kernel
           END SUBROUTINE
 
-          !> Type-generic (unsafe) code dispatch (trylock: impure routine).
+          !> Type-generic (unsafe) code dispatch.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: gemm_precision, flags, prefetch
           !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
@@ -295,7 +305,7 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: flags, prefetch
           END SUBROUTINE
 
-          !> Type-generic (unsafe) code dispatch (trylock: impure routine).
+          !> Type-generic (unsafe) code dispatch.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec, flags, prefetch
           !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
@@ -336,7 +346,7 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
           END SUBROUTINE
 
-          !> Fill destination with zeros; treats dst in raw/binary fashion.
+          !> Fill destination with zeros; dst is a raw/binary buffer.
           SUBROUTINE libxsmm_xclear(dst, nbytes)                        &
      &    BIND(C, NAME="libxsmm_xclear_")
             IMPORT :: C_PTR, C_INT
@@ -344,7 +354,7 @@
             INTEGER(C_INT), INTENT(IN) :: nbytes
           END SUBROUTINE
 
-          !> Remove key-value pair from code registry and release memory.
+          !> Remove key-value from code registry and release memory.
           SUBROUTINE libxsmm_xrelease(key, keysize)                     &
      &    BIND(C, NAME="libxsmm_xrelease_")
             IMPORT :: C_PTR, C_INT
@@ -404,7 +414,7 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> Matrix transposition; MT via libxsmmext (out-of-place form).
+          !> Matrix transpose; MT via libxsmmext (out-of-place form).
           !> Implicit FORTRAN 77 interface:
           !> ARRAY        :: output, input
           !> INTEGER(4|8) :: m, n, ldi, ldo
@@ -417,8 +427,9 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
-          !> The kind of matrix operands (a, b, c) depend on index_stride:
+          !> Process a series of SMMs (batch).
+          !> See also libxsmm_gemm_batch/omp.
+          !> The kind of matrices (a, b, c) depend on index_stride:
           !> index_stride==0: stride_* are each scalar strides used
           !>                  to walk the corresponding a, b, or c
           !>                  with each being an array of pointers
@@ -428,12 +439,12 @@
           !>                  with each being a pointer to the
           !>                  respective matrix-data.
           !>                  The index_stride is not used otherwise.
-          !> index_stride is non-zero but smaller than libxsmm_blasint:
-          !>                 stride_* are indexes determining the start
+          !> index_stride is non-zero (smaller than libxsmm_blasint):
+          !>                 stride_* indexes determining the start
           !>                 of the corresponding a, b, or c
           !>                 with each being a pointer to the
           !>                 respective matrix-data.
-          !>                 The index_stride is used to walk stride_*.
+          !>                 The index_stride to walk stride_*.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> CHAR         :: transa, transb
@@ -455,7 +466,7 @@
             !> Stride (measured in Bytes) used to walk stride_*.
             !> In Fortran (usually): index_stride!=0.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            !> Number of SMMs. If the size is given as a negative value,
+            !> Number of SMMs. If the size is given as a neg. value,
             !> then internal synchronization is omitted.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -534,9 +545,9 @@
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec, batchcheck
           END SUBROUTINE
 
-          !> Reduces input into output such that the difference is maintained
-          !> or increased (max function). The very first (initial) output
-          !> should be zeroed (libxsmm_matdiff_clear).
+          !> Reduces input into output such that the difference is
+          !> maintained or increased (max function). The very first
+          !> (initial) output should be zeroed (libxsmm_matdiff_clear).
           !> Implicit FORTRAN 77 interface: available.
           PURE SUBROUTINE libxsmm_matdiff_reduce(output, input) BIND(C)
             IMPORT :: LIBXSMM_MATDIFF_INFO
@@ -571,8 +582,8 @@
             INTEGER(C_LONG_LONG), INTENT(IN) :: nbytes
             LOGICAL(C_BOOL), INTENT(OUT)     :: diff
           END SUBROUTINE
-        END INTERFACE$MNK_INTERFACE_LIST
-
+        END INTERFACE
+        $MNK_INTERFACE_LIST
         INTERFACE libxsmm_ptr0
           MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
           MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
@@ -625,7 +636,8 @@
           MODULE PROCEDURE libxsmm_ptr_smm
         END INTERFACE
 
-        !> Deallocates JIT'ted code, or unregisters/releases code from registry.
+        !> Deallocates JIT'ted code, or unregisters and
+        !> releases code from registry.
         INTERFACE libxsmm_release_mmkernel
           MODULE PROCEDURE libxsmm_release_dmmkernel
           MODULE PROCEDURE libxsmm_release_smmkernel
@@ -742,8 +754,9 @@
           MODULE PROCEDURE libxsmm_hash_i64
         END INTERFACE
 
-        !> Calculate whether there is a difference between two series of items.
-        !> Conceptually pure, but C_LOC may be (incorrectly) impure.
+        !> Calculate whether there is a difference between two series
+        !> of items. Conceptually pure, but C_LOC may be
+        !> (incorrectly) impure.
         INTERFACE libxsmm_diff
           MODULE PROCEDURE libxsmm_diff_char
           MODULE PROCEDURE libxsmm_diff_i8
@@ -752,9 +765,10 @@
         END INTERFACE
 
       CONTAINS
-        !> Returns the name of the target architecture as determined by
-        !> the CPUID flags, as set by the libxsmm_get_target_arch* functions,
-        !> or as set by the LIBXSMM_TARGET environment variable.
+        !> Returns the name of the target architecture as determined
+        !> by the CPUID flags, as set by the libxsmm_get_target_arch*
+        !> functions, or as set by the LIBXSMM_TARGET environment
+        !> variable.
         FUNCTION libxsmm_get_target_arch()
           !CHARACTER(LEN=:), POINTER :: libxsmm_get_target_arch
           CHARACTER, POINTER :: libxsmm_get_target_arch(:)
@@ -943,15 +957,17 @@
           p => a(LBOUND(a,1)); libxsmm_ptr_smm = C_LOC(p%handle)
         END FUNCTION
 
-        !> Deallocate JIT'ted code created by libxsmm_create routines. To
-        !> unregister code generated with libxsmm_dispatch is unnecessary.
+        !> Deallocate JIT'ted code created by libxsmm_create routines.
+        !> To unregister code generated with libxsmm_dispatch
+        !> is unnecessary.
         SUBROUTINE libxsmm_release_dmmkernel(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
         END SUBROUTINE
 
-        !> Deallocate JIT'ted code created by libxsmm_create routines. To
-        !> unregister code generated with libxsmm_dispatch is unnecessary.
+        !> Deallocate JIT'ted code created by libxsmm_create routines.
+        !> To unregister code generated with libxsmm_dispatch
+        !> is unnecessary.
         SUBROUTINE libxsmm_release_smmkernel(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
@@ -989,17 +1005,19 @@
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
-        !> Checks if the given kernel was generated. JIT code is guaranteed
-        !> to be generated if JIT support was enabled at build-time of the
-        !> library (default). This overload belongs to libxsmm_(mm)available.
+        !> Checks if the given kernel was generated. JIT code is
+        !> guaranteed to be generated if JIT support was enabled
+        !> at build-time of the library (default).
+        !> This overload belongs to libxsmm_(mm)available.
         LOGICAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_dmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
-        !> Checks if the given kernel was generated. JIT code is guaranteed
-        !> to be generated if JIT support was enabled at build-time of the
-        !> library (default). This overload belongs to libxsmm_(mm)available.
+        !> Checks if the given kernel was generated. JIT code is
+        !> guaranteed to be generated if JIT support was enabled
+        !> at build-time of the library (default).
+        !> This overload belongs to libxsmm_(mm)available.
         LOGICAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_smmavailable = C_ASSOCIATED(kernel%handle)
@@ -1111,14 +1129,18 @@
           END IF
         END SUBROUTINE
 
-        !> Register user-defined key-value; value can be queried (libxsmm_xdispatch).
-        !> Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
-        !> i.e., a structured type (can be padded) must be initialized like a binary blob
-        !> (libxsmm_xclear) followed by an element-wise initialization. The size of the
-        !> key is limited (see documentation). The given value is copied by LIBXSMM and
-        !> can be initialized prior to registration or whenever queried. Registered data
-        !> is released when the program terminates but can be also released if needed
-        !> (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
+        !> Register user-defined key-value; value can be queried
+        !> (libxsmm_xdispatch). Since the key-type is unknown to
+        !> LIBXSMM, the key must be binary reproducible, i.e.,
+        !> a structured type (can be padded) must be initialized
+        !> like a binary blob (libxsmm_xclear) followed by an
+        !> element-wise initialization. The size of the key is
+        !> limited (see documentation). The given value is copied
+        !> by LIBXSMM and can be initialized prior to registration
+        !> or whenever queried. Registered data is released when
+        !> the program terminates but can be also released if needed
+        !> (libxsmm_xrelease), .e.g., in case of a larger value
+        !> reusing the same key.
         FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR),    INTENT(IN), VALUE     :: key
           INTEGER(C_INT), INTENT(IN)            :: keysize, valsize
@@ -1327,8 +1349,9 @@
           END IF
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(d)gemm. This overload belongs to
+        !> libxsmm_blas_(d)gemm.
         PURE SUBROUTINE libxsmm_blas_dgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1358,8 +1381,9 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(d)gemm. This overload belongs to
+        !> libxsmm_blas_(d)gemm.
         PURE SUBROUTINE libxsmm_blas_dgemm1(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1378,8 +1402,9 @@
           END IF
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(d)gemm. This overload belongs to
+        !> libxsmm_blas_(d)gemm.
         PURE SUBROUTINE libxsmm_blas_dgemm2(transa, transb, m, n, k,    &
      &  a, b, c, alpha, beta)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1395,8 +1420,9 @@
           END IF
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(d)gemm. This overload belongs to
+        !> libxsmm_blas_(d)gemm.
         PURE SUBROUTINE libxsmm_blas_dgemm3(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1413,8 +1439,9 @@
           END IF
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(s)gemm. This overload belongs to
+        !> libxsmm_blas_(s)gemm.
         PURE SUBROUTINE libxsmm_blas_sgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1444,8 +1471,9 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(s)gemm. This overload belongs to
+        !> libxsmm_blas_(s)gemm.
         PURE SUBROUTINE libxsmm_blas_sgemm1(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1464,8 +1492,9 @@
           END IF
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(s)gemm. This overload belongs to
+        !> libxsmm_blas_(s)gemm.
         PURE SUBROUTINE libxsmm_blas_sgemm2(transa, transb, m, n, k,    &
      &  a, b, c, alpha, beta)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1481,8 +1510,9 @@
           END IF
         END SUBROUTINE
 
-        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
-        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
+        !> Re-exposes BLAS based GEMM routine with an interfaces
+        !> similar to libxsmm_(s)gemm. This overload belongs to
+        !> libxsmm_blas_(s)gemm.
         PURE SUBROUTINE libxsmm_blas_sgemm3(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1499,8 +1529,9 @@
           END IF
         END SUBROUTINE
 
-        !> Matrix-copy (2-dimensional copy) routine. If the input (optional)
-        !> is not present, the routine is used to zero-fill the out-matrix.
+        !> Matrix-copy (2-dimensional copy) routine. If the input
+        !> (optional) is not present, the routine is used to zero-fill
+        !> the out-matrix.
         PURE SUBROUTINE libxsmm_matcopy_p0(output, input, typesize,     &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
@@ -1745,11 +1776,12 @@
      &      libxsmm_timer_ncycles, tick0, tick1)
           END FUNCTION
 
-        !> Utility function to calculate a collection of scalar differences
-        !> between two matrices (libxsmm_matdiff_info). The location (m, n)
-        !> of the largest difference (linf_abs) is recorded (also if NaN).
-        !> In case of NaN, differences are set to infinity. If no difference
-        !> is discovered, the location (m, n) is negative (OOB).
+        !> Utility function to calculate a collection of scalar
+        !> differences between two matrices (libxsmm_matdiff_info).
+        !> The location (m, n) of the largest difference (linf_abs)
+        !> is recorded (also if NaN). In case of NaN, differences
+        !> are set to infinity. If no difference is discovered,
+        !> the location (m, n) is negative (OOB).
         !> Implicit FORTRAN 77 interface:
         !> TYPE         :: info
         !> INTEGER(4)   :: datatype
@@ -1779,7 +1811,8 @@
      &      ref, tst, ldref, ldtst)
         END SUBROUTINE
 
-        !> Calculate co-prime number <= n/2 (except: libxsmm_coprime2(0|1) == 0).
+        !> Calculate co-prime number <= n/2 (except:
+        !> libxsmm_coprime2(0|1) == 0).
         !> Implicit FORTRAN 77 interface:
         !> INTEGER(8) :: coprime (OUT), n (IN)
         ELEMENTAL FUNCTION libxsmm_coprime2(n)
@@ -1793,7 +1826,7 @@
               INTEGER(C_LONG_LONG), INTENT(IN) :: n
             END SUBROUTINE
           END INTERFACE
-          libxsmm_coprime2 = INT(0, KIND=C_LONG_LONG) ! avoid warning (older CRAY)
+          libxsmm_coprime2 = INT(0, KIND=C_LONG_LONG)
           CALL internal_coprime2(libxsmm_coprime2, n)
         END FUNCTION
 
@@ -1901,9 +1934,10 @@
           END IF
         END FUNCTION
 
-        !> Check if location is SIMD-aligned and optionally consider the next
-        !> access as if reached by incrementing the location (in Bytes).
-        !> Optionally calculates the alignment of the given location in Bytes.
+        !> Check if location is SIMD-aligned and optionally consider
+        !> the next access as if reached by incrementing the location
+        !> (in Bytes). Optionally calculates the alignment of the
+        !> given location in Bytes.
         FUNCTION libxsmm_aligned(location, increment, alignment)
           TYPE(C_PTR), INTENT(IN), VALUE :: location
           INTEGER(C_INT),  INTENT(IN), OPTIONAL :: increment

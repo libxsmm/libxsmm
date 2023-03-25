@@ -178,7 +178,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
   libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR, tmp_reg);
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, tmp_reg, i_gp_reg_mapping->gp_reg_a, 0, 0 );
 
-  /* In this case we have to copy over also B in strided BRGEMM format  */
+  /* In this case we have to copy over also B in strided BRGEMM format */
   if ( (is_offset_brgemm > 0) || (is_address_brgemm > 0) ) {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_aarch64( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2, tmp_reg3,
@@ -241,7 +241,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack_aarch64
   libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg);
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, tmp_reg, i_gp_reg_mapping->gp_reg_b, 0, 0 );
 
-  /* In this case we have to copy over also A in strided BRGEMM format  */
+  /* In this case we have to copy over also A in strided BRGEMM format */
   if ( (is_offset_brgemm > 0) || (is_address_brgemm > 0) ) {
     unsigned int a_vnni_factor  = 1;
     int l_use_bfdot = libxsmm_cpuid_arm_use_bfdot();
@@ -417,7 +417,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
     l_vec_reg_acc_start = l_vr_c[0];
   }
 
-  /* Save the accumulators to scratch  */
+  /* Save the accumulators to scratch */
   if (l_vec_reg_acc_start < n_reserved_vregs) {
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
     for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
@@ -438,7 +438,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
         } else {
           l_cur_vreg = l_vr_c[8*l_n + 2*l_m + l_mmla_iter];
         }
-        /* Have to restore accumulator  */
+        /* Have to restore accumulator */
         if (l_vec_reg_acc_start < n_reserved_vregs) {
           if (l_cur_vreg <= n_reserved_vregs) {
             l_vec_x = n_reserved_vregs;
@@ -464,7 +464,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   }
 
   if (l_vec_reg_acc_start < n_reserved_vregs) {
-    /* Restore the accumulators from scratch  */
+    /* Restore the accumulators from scratch */
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
     for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
       libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_n, LIBXSMM_AARCH64_SVE_REG_UNDEF );
@@ -508,7 +508,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libx
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
 
-  /* Save the accumulators to scratch  */
+  /* Save the accumulators to scratch */
   if (l_vec_reg_acc_start < n_reserved_vregs) {
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
     for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
@@ -523,7 +523,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libx
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
       l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
-      /* Have to restore accumulator  */
+      /* Have to restore accumulator */
       if (l_vec_reg_acc_start < n_reserved_vregs) {
         if (l_cur_vreg <= n_reserved_vregs) {
           l_vec_x = n_reserved_vregs;
@@ -548,7 +548,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libx
   }
 
   if (l_vec_reg_acc_start < n_reserved_vregs) {
-    /* Restore the accumulators from scratch  */
+    /* Restore the accumulators from scratch */
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
     for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_n, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
@@ -664,14 +664,14 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
   tmp_vreg0 = 0;
 
   if (io_micro_kernel_config->fused_relu_nobitmask == 0) {
-    /* We need 5 tmp vregs... If we don't have that many, store some in the stack and restore for processing  */
+    /* We need 5 tmp vregs... If we don't have that many, store some in the stack and restore for processing */
     tmp_vreg1 = 1;
     tmp_vreg2 = 2;
     mask_helper0_vreg = 3;
     mask_helper1_vreg = 4;
 
     if (l_vec_reg_acc_start <= 4) {
-      /* Save the accumulators to scratch  */
+      /* Save the accumulators to scratch */
       libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
       for (l_n = l_vec_reg_acc_start; l_n <= 4; l_n++) {
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, (l_n-l_vec_reg_acc_start)*64, l_n, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
@@ -714,7 +714,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
       for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
         l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
 
-        /* Have to restore accumulator  */
+        /* Have to restore accumulator */
         if (l_vec_reg_acc_start <= 4) {
           if (l_cur_vreg <= 4) {
             libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
@@ -764,7 +764,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
     }
 
     if (l_vec_reg_acc_start <= 4) {
-      /* Restore the accumulators from scratch  */
+      /* Restore the accumulators from scratch */
       libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
       for (l_n = l_vec_reg_acc_start; l_n <= 4; l_n++) {
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, (l_n-l_vec_reg_acc_start)*64, l_n, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
@@ -1356,7 +1356,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_aarch64( libxsmm_
   unsigned int temp_reg = i_gp_reg_mapping->gp_reg_help_1;
   unsigned int temp_reg2 = i_gp_reg_mapping->gp_reg_help_0;
 
-  /* Allocate scratch for stashing 32 zmms  */
+  /* Allocate scratch for stashing 32 zmms */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     gemm_scratch_size = 32 * 64;
   }
@@ -1512,7 +1512,7 @@ void libxsmm_generator_gemm_setup_stack_frame_aarch64( libxsmm_generated_code*  
     }
   }
 
-  /* Now align RSP to 64 byte boundary  */
+  /* Now align RSP to 64 byte boundary */
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, temp_reg2, 0, 0 );
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR, temp_reg2, temp_reg, temp_reg2, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );

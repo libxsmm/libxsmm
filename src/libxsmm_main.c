@@ -3117,11 +3117,15 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
     if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
       desc->c1 = (long long)brgemm_config.br_stride_a_hint;
       desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+    } else {
+      desc->c1 = 0;
+      desc->c2 = 0;
     }
-    if (brgemm_config.br_unroll_hint != 0)
+    if (brgemm_config.br_unroll_hint != 0) {
       desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
-    else
+    } else {
       desc->c3 = 0;
+    }
   }
 
   /* JIT! */
@@ -3170,11 +3174,15 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
     if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
       desc->c1 = (long long)brgemm_config.br_stride_a_hint;
       desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+    } else {
+      desc->c1 = 0;
+      desc->c2 = 0;
     }
-    if (brgemm_config.br_unroll_hint != 0)
+    if (brgemm_config.br_unroll_hint != 0) {
       desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
-    else
+    } else {
       desc->c3 = 0;
+    }
   }
 
   /* setting binary post-op eltwise fields */

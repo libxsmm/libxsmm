@@ -59,7 +59,7 @@
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
  * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
  * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX, in REX only -> force REX prefix
- * 24 used for pure/base REX/IA32 encodings to signal that the insturctions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
+ * 24 used for pure/base REX/IA32 encodings to signal that the instructions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
  * 3rd byte:
  * ---------
  * 23 W bit (single inputs=0 or double inputs=1)
@@ -142,11 +142,11 @@
 #define LIBXSMM_X86_INSTR_VMOVDQU32_LD     0xe006166f
 #define LIBXSMM_X86_INSTR_VMOVDQU64_LD     0xe086166f
 #define LIBXSMM_X86_INSTR_VBROADCASTI128   0x6005205a
-#define LIBXSMM_X86_INSTR_VBROADCASTI32X2  0xe0052359
-#define LIBXSMM_X86_INSTR_VBROADCASTI32X4  0xe005245a
-#define LIBXSMM_X86_INSTR_VBROADCASTI64X2  0xe085245a
-#define LIBXSMM_X86_INSTR_VBROADCASTI32X8  0xe005255b
-#define LIBXSMM_X86_INSTR_VBROADCASTI64X4  0xe085255b
+#define LIBXSMM_X86_INSTR_VBROADCASTI32X2  0xe0052b59
+#define LIBXSMM_X86_INSTR_VBROADCASTI32X4  0xe0052c5a
+#define LIBXSMM_X86_INSTR_VBROADCASTI64X2  0xe0852c5a
+#define LIBXSMM_X86_INSTR_VBROADCASTI32X8  0xe0052d5b
+#define LIBXSMM_X86_INSTR_VBROADCASTI64X4  0xe0852d5b
 #define LIBXSMM_X86_INSTR_VMOVD_LD         0x20051a6e
 #define LIBXSMM_X86_INSTR_VMOVQ_LD         0x20851b6e
 /* Store instructions - AVX,AVX2,AVX512 */
@@ -572,7 +572,7 @@
 #define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
 #define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
 
-/* AVX512 Mask compute instructions  */
+/* AVX512 Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
 #define LIBXSMM_X86_INSTR_KADDW            0xb004134a
 #define LIBXSMM_X86_INSTR_KADDD            0xb085134a
@@ -1367,7 +1367,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int alu_mov_instruction;
   char vector_name;
 
-  /* Auxiliary variables for GEMM fusion info  */
+  /* Auxiliary variables for GEMM fusion info */
   unsigned int fused_eltwise;
   unsigned int m_loop_exists;
   unsigned int n_loop_exists;
@@ -1387,7 +1387,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int norm_to_normT_B_ext_buf;
   unsigned int has_colbias_act_fused;
 
-  /* Register names/logistics for fusion boo-keeping  */
+  /* Register names/logistics for fusion boo-keeping */
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int vnni_perm_reg;
@@ -1490,7 +1490,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
-/* Auxiliary regs for sparsity in A support  */
+/* Auxiliary regs for sparsity in A support */
   unsigned int gp_reg_bitmap_a;
   unsigned int gp_reg_decompressed_a;
 } libxsmm_gp_reg_mapping;
@@ -1537,6 +1537,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_relumask;
   unsigned int gp_reg_fam_lualpha;
   unsigned int gp_reg_offset;
+  unsigned int gp_reg_offset_2;
   unsigned int gp_reg_dropoutmask;
   unsigned int gp_reg_dropoutprob;
   unsigned int gp_reg_prngstate;
@@ -1586,7 +1587,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int ldi_mask;
   unsigned int ldo_mask;
 
-  /* Auxiliary varialiables for vreg management  */
+  /* Auxiliary varialiables for vreg management */
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int use_fp32bf16_cvt_replacement;
@@ -1629,7 +1630,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int mask_hi;
   unsigned int mask_lo;
 
-  /* Additional aux variables for exp  */
+  /* Additional aux variables for exp */
   unsigned int vec_log2e;
   unsigned int vec_y;
   unsigned int vec_z;
@@ -1695,10 +1696,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   /* aux variable for quantization */
   unsigned int quant_vreg_scf;
 
-  /* Misc aux variables  */
+  /* Misc aux variables */
   unsigned int neg_signs_vreg;
 
-  /* Aux variables for kernel config  */
+  /* Aux variables for kernel config */
   unsigned int vlen_in;
   unsigned int vlen_in1;
   unsigned int vlen_in2;

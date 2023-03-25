@@ -13,6 +13,7 @@ from string import Template
 import libxsmm_utilities
 import fnmatch
 import sys
+import re
 
 
 if __name__ == "__main__":
@@ -38,7 +39,7 @@ if __name__ == "__main__":
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[4:], 0))
 
         template = Template(open(filename, "r").read())
-        if fnmatch.fnmatch(filename, "*.h*"):
+        if fnmatch.fnmatch(filename, "*.h"):
             optional = [", ...", ""][0 <= prefetch]
             substitute = {"MNK_INTERFACE_LIST": ""}
             for mnk in mnklist:
@@ -75,8 +76,6 @@ if __name__ == "__main__":
                     substitute["MNK_INTERFACE_LIST"] += "\n"
             if mnklist and 0 != precision:
                 substitute["MNK_INTERFACE_LIST"] += "\n"
-            # print without trailing newline
-            sys.stdout.write(template.safe_substitute(substitute))
         else:  # Fortran interface
             if 1 > ifversion and 0 != ifversion:
                 raise ValueError("Fortran interface level is inconsistent!")
@@ -99,7 +98,7 @@ if __name__ == "__main__":
                 "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion],
             }
             if mnklist:
-                substitute["MNK_INTERFACE_LIST"] += "\n\n        INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
                 optional = [", OPTIONAL", ""][0 < prefetch]
                 bindc = ["", "BIND(C)"][0 < prefetch]
                 for mnk in mnklist:
@@ -166,9 +165,11 @@ if __name__ == "__main__":
                             + pfsigb
                             + "          END SUBROUTINE"
                         )
-                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
-            # print without trailing newline
-            sys.stdout.write(template.safe_substitute(substitute))
+                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE\n"
+        txt = template.safe_substitute(substitute)
+        sys.stdout.write(  # print without trailing newline
+            re.sub(r"[ \t]+\r*\n", r"\n", txt)
+        )
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

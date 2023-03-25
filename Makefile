@@ -181,7 +181,7 @@ TIMEOUT := 30
 EXCLUDE_STATE := \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
   PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PSHRDIR PDOCDIR SCRDIR \
-  SPLDIR UTLDIR SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT
+  SPLDIR UTLDIR SRCDIR TEST VERSION_STRING ALIAS_% BLAS %_TARGET %ROOT
 
 # fixed .state file directory (included by source)
 DIRSTATE := $(OUTDIR)/..
@@ -200,6 +200,17 @@ WCHECK := 1
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
+
+# 0: static, 1: shared, 2: static and shared
+ifneq (,$(filter-out file,$(origin STATIC)))
+  ifneq (0,$(STATIC))
+    BUILD := 0
+  else # shared
+    BUILD := 1
+  endif
+else # default
+  BUILD := 2
+endif
 
 # TRACE facility
 INSTRUMENT ?= $(TRACE)
@@ -316,7 +327,7 @@ INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRE
 NINDICES := $(words $(INDICES))
 
 SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-KRNOBJS_HST := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 
 HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
           $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
@@ -344,15 +355,15 @@ SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(RO
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
-OBJFILES_HST := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
-EXTOBJS_HST  := $(BLDDIR)/intel64/libxsmm_ext.o \
-               $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
-               $(BLDDIR)/intel64/libxsmm_ext_gemm.o
-NOBLAS_HST   := $(BLDDIR)/intel64/libxsmm_noblas.o
+OBJFILES_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
+OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext.o \
+                $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
+                $(BLDDIR)/intel64/libxsmm_ext_gemm.o
+NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) \
-          $(KRNOBJS_HST) $(EXTOBJS_HST) $(NOBLAS_HST)
+OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_LIB) \
+          $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o
 endif
@@ -432,7 +443,7 @@ libxsmm: lib
 endif
 	$(information)
 ifneq (,$(filter _0_,_$(LNKSOFT)_))
-ifeq (0,$(DEPSTATIC))
+ifeq (0,$(STATIC))
 	$(info Building a shared library requires to link against BLAS)
 	$(info since a deferred choice is not implemented for this OS.)
 	$(info --------------------------------------------------------------------------------)
@@ -469,11 +480,11 @@ endif
 	$(info --------------------------------------------------------------------------------)
 endif
 
-.PHONY: lib
-lib: headers lib_hst
-
 .PHONY: libs
-libs: lib
+libs: clib flib elib noblas
+
+.PHONY: lib
+lib: libs
 
 .PHONY: all
 all: libxsmm
@@ -495,9 +506,6 @@ interface: headers module
 
 .PHONY: winterface
 winterface: headers sources
-
-.PHONY: lib_hst
-lib_hst: clib_hst flib_hst ext_hst noblas_hst
 
 PREFETCH_UID := 0
 PREFETCH_TYPE := 0
@@ -617,8 +625,8 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
-		$(shell echo "$$(($(PRECISION)+($(call qnum,$(FORTRAN),2)<<2)))") $(PREFETCH_TYPE) $(INDICES) | \
-	$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
+		$(shell echo "$$(($(PRECISION)+($(call qnum,$(FORTRAN),2)<<2)))") $(PREFETCH_TYPE) $(INDICES) \
+	| $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) >$@
@@ -696,7 +704,7 @@ endif
 
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
-#	@-rm -f $(1)
+# @-rm -f $(1)
 	-$(CC) $(if $(filter 0,$(WERROR)),$(4),$(filter-out $(WERROR_CFLAG),$(4)) $(WERROR_CFLAG)) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		if [ "2" = "$(INTRINSICS)" ]; then \
@@ -716,15 +724,15 @@ else
 endif
 
 # build rules that include target flags
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_OBJ),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
   $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 ifeq (0,$(CRAY))
-$(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(OBJFILES_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(DFLAGS) $(IFLAGS) $(call applyif,1,libxsmm_main,$(OBJ),-I$(BLDDIR)) $(CTARGET) $(CFLAGS))))
 else
-$(foreach OBJ,$(filter-out $(BLDDIR)/intel64/libxsmm_mhd.o,$(OBJFILES_HST)),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(filter-out $(BLDDIR)/intel64/libxsmm_mhd.o,$(OBJFILES_LIB)),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(DFLAGS) $(IFLAGS) $(call applyif,1,libxsmm_main,$(OBJ),-I$(BLDDIR)) $(CTARGET) $(CFLAGS))))
@@ -733,11 +741,11 @@ $(foreach OBJ,$(BLDDIR)/intel64/libxsmm_mhd.o,$(eval $(call DEFINE_COMPILE_RULE,
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(patsubst $(OPTFLAGS),$(OPTFLAG1),$(CFLAGS)))))
 endif
-$(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(KRNOBJS),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
-$(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(OBJFILES_EXT),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(EXTCFLAGS) $(CFLAGS))))
@@ -755,11 +763,12 @@ $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
 
-.PHONY: module_hst
+.PHONY: module
 ifneq (,$(strip $(FC)))
-module_hst: $(INCDIR)/libxsmm.mod
+module: $(INCDIR)/libxsmm.mod
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
-	$(FC) $(DFLAGS) $(IFLAGS) $(FCMTFLAGS) $(FCFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
+	$(FC) $(DFLAGS) $(IFLAGS) $(FCMTFLAGS) $(filter-out $(FFORM_FLAG),$(FCFLAGS)) $(FTARGET) \
+		-c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
 $(INCDIR)/libxsmm.mod: $(BLDDIR)/intel64/libxsmm-mod.o
 	@if [ -e $(BLDDIR)/intel64/LIBXSMM.mod ]; then $(CP) $(BLDDIR)/intel64/LIBXSMM.mod $(INCDIR); fi
 	@if [ -e $(BLDDIR)/intel64/libxsmm.mod ]; then $(CP) $(BLDDIR)/intel64/libxsmm.mod $(INCDIR); fi
@@ -771,14 +780,16 @@ else
 .PHONY: $(INCDIR)/libxsmm.mod
 endif
 
-.PHONY: module
-module: module_hst
-
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(SLIBEXT) $(OUTDIR)/libxsmmgen.$(DLIBEXT)
-$(OUTDIR)/libxsmmgen.$(SLIBEXT) $(OUTDIR)/libxsmmgen.$(DLIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
+ifeq (,$(filter-out 0 2,$(BUILD)))
+$(OUTDIR)/libxsmmgen.$(SLIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
 	$(MAKE_AR) $(OUTDIR)/libxsmmgen.$(SLIBEXT) $(OBJFILES_GEN_LIB)
-ifeq (0,$(ANALYZE))
+else
+.PHONY: $(OUTDIR)/libxsmmgen.$(SLIBEXT)
+endif
+ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
+$(OUTDIR)/libxsmmgen.$(DLIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
 	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmgen.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 else
@@ -797,23 +808,33 @@ $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
 endif
 
-.PHONY: clib_hst
-clib_hst: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm.pc
-$(OUTDIR)/libxsmm.$(SLIBEXT) $(OUTDIR)/libxsmm.$(DLIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
+.PHONY: clib
+clib: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm-shared.pc
+ifeq (,$(filter-out 0 2,$(BUILD)))
+$(OUTDIR)/libxsmm.$(SLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
 	$(MAKE_AR) $(OUTDIR)/libxsmm.$(SLIBEXT) $(call tailwords,$^)
-ifeq (0,$(ANALYZE))
+else
+.PHONY: $(OUTDIR)/libxsmm.$(SLIBEXT)
+endif
+ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
+$(OUTDIR)/libxsmm.$(DLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
 	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmm.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(call tailwords,$^) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmm.$(DLIBEXT)
 endif
 
-.PHONY: flib_hst
+.PHONY: flib
 ifneq (,$(strip $(FC)))
-flib_hst: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf.pc
-$(OUTDIR)/libxsmmf.$(SLIBEXT) $(OUTDIR)/libxsmmf.$(DLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/libxsmmext.$(DLIBEXT)
+flib: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf-shared.pc
+ifeq (,$(filter-out 0 2,$(BUILD)))
+$(OUTDIR)/libxsmmf.$(SLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/libxsmmext.$(DLIBEXT)
 	$(MAKE_AR) $(OUTDIR)/libxsmmf.$(SLIBEXT) $(BLDDIR)/intel64/libxsmm-mod.o
-ifeq (0,$(ANALYZE))
+else
+.PHONY: $(OUTDIR)/libxsmmf.$(SLIBEXT)
+endif
+ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
+$(OUTDIR)/libxsmmf.$(DLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/libxsmmext.$(DLIBEXT)
 ifneq (Darwin,$(UNAME))
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
@@ -834,24 +855,34 @@ else
 .PHONY: $(OUTDIR)/libxsmmf.$(SLIBEXT) $(OUTDIR)/libxsmmf.$(DLIBEXT)
 endif
 
-.PHONY: ext_hst
-ext_hst: $(OUTDIR)/libxsmmext-static.pc $(OUTDIR)/libxsmmext.pc
-$(OUTDIR)/libxsmmext.$(SLIBEXT) $(OUTDIR)/libxsmmext.$(DLIBEXT): $(OUTDIR)/libxsmm.$(DLIBEXT) $(EXTOBJS_HST)
-	$(MAKE_AR) $(OUTDIR)/libxsmmext.$(SLIBEXT) $(EXTOBJS_HST)
-ifeq (0,$(ANALYZE))
+.PHONY: elib
+elib: $(OUTDIR)/libxsmmext-static.pc $(OUTDIR)/libxsmmext-shared.pc
+ifeq (,$(filter-out 0 2,$(BUILD)))
+$(OUTDIR)/libxsmmext.$(SLIBEXT): $(OUTDIR)/libxsmm.$(DLIBEXT) $(OBJFILES_EXT)
+	$(MAKE_AR) $(OUTDIR)/libxsmmext.$(SLIBEXT) $(OBJFILES_EXT)
+else
+.PHONY: $(OUTDIR)/libxsmmext.$(SLIBEXT)
+endif
+ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
+$(OUTDIR)/libxsmmext.$(DLIBEXT): $(OUTDIR)/libxsmm.$(DLIBEXT) $(OBJFILES_EXT)
 	$(LIB_SOLD) $(EXTLDFLAGS) $(call solink,$(OUTDIR)/libxsmmext.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
+		$(OBJFILES_EXT) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmmext.$(DLIBEXT)
 endif
 
-.PHONY: noblas_hst
-noblas_hst: $(OUTDIR)/libxsmmnoblas-static.pc $(OUTDIR)/libxsmmnoblas.pc
-$(OUTDIR)/libxsmmnoblas.$(SLIBEXT) $(OUTDIR)/libxsmmnoblas.$(DLIBEXT): $(NOBLAS_HST)
-	$(MAKE_AR) $(OUTDIR)/libxsmmnoblas.$(SLIBEXT) $(NOBLAS_HST)
-ifeq (0,$(ANALYZE))
+.PHONY: noblas
+noblas: $(OUTDIR)/libxsmmnoblas-static.pc $(OUTDIR)/libxsmmnoblas-shared.pc
+ifeq (,$(filter-out 0 2,$(BUILD)))
+$(OUTDIR)/libxsmmnoblas.$(SLIBEXT): $(NOBLAS_OBJ)
+	$(MAKE_AR) $(OUTDIR)/libxsmmnoblas.$(SLIBEXT) $(NOBLAS_OBJ)
+else
+.PHONY: $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)
+endif
+ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
+$(OUTDIR)/libxsmmnoblas.$(DLIBEXT): $(NOBLAS_OBJ)
 	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmnoblas.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
+		$(NOBLAS_OBJ) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)
 endif
@@ -865,23 +896,23 @@ DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 
 .PHONY: samples $(DIRS_SAMPLES)
 samples: $(DIRS_SAMPLES)
-$(DIRS_SAMPLES): lib_hst
+$(DIRS_SAMPLES): libs
 	@$(FLOCK) $@ "$(MAKE)"
 
 .PHONY: cp2k
-cp2k: lib_hst
+cp2k: libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory"
 
 .PHONY: nek
-nek: lib_hst
+nek: libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory"
 
 .PHONY: smm
-smm: lib_hst
+smm: libs
 	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory"
 
 .PHONY: specfem
-specfem: lib_hst
+specfem: libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory"
 
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
@@ -1099,22 +1130,22 @@ test: tests
 drytest: build-tests
 
 .PHONY: build-tests
-build-tests: lib_hst
+build-tests: libs
 	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory"
 
 .PHONY: tests
-tests: lib_hst
+tests: libs
 	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory test"
 
 .PHONY: test-cp2k
 test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
-$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
+$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh libs cp2k
 	@$(FLOCK) $(call qdir,$@) "./cp2k-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*128)))"
 
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
 test-smm: $(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt
-$(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt: $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh lib_hst smm
+$(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt: $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh libs smm
 	@$(FLOCK) $(call qdir,$@) "./smmf-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 endif
 
@@ -1124,19 +1155,27 @@ test-nek: \
 	$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt \
 	$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt \
 	$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
-$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh lib_hst
+$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory axhm"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
-$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh lib_hst
+$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory grad"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
-$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh lib_hst
+$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory rstr"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 endif
 
 $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 	@$(SED) $(ROOTDIR)/README.md \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e "s/](${DOCDIR}\//](/g" \
+		-e 'N;/^\n$$/d;P;D' \
+		>$@
+
+$(DOCDIR)/libxsmm_scripts.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/$(SCRDIR)/README.md
+	@$(SED) $(ROOTDIR)/$(SCRDIR)/README.md \
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/\[\[..*\](..*)\]//g' \
 		-e "s/](${DOCDIR}\//](/g" \
@@ -1157,7 +1196,7 @@ $(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version
 
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/$(DOCDIR)/index.md \
 $(ROOTDIR)/$(DOCDIR)/libxsmm_mm.md $(ROOTDIR)/$(DOCDIR)/libxsmm_aux.md $(ROOTDIR)/$(DOCDIR)/libxsmm_prof.md \
-$(ROOTDIR)/$(DOCDIR)/libxsmm_tune.md $(ROOTDIR)/$(DOCDIR)/libxsmm_be.md $(ROOTDIR)/$(SCRDIR)/README.md \
+$(ROOTDIR)/$(DOCDIR)/libxsmm_tune.md $(ROOTDIR)/$(DOCDIR)/libxsmm_be.md $(ROOTDIR)/$(DOCDIR)/libxsmm_scripts.md \
 $(ROOTDIR)/$(DOCDIR)/libxsmm_compat.md $(ROOTDIR)/$(DOCDIR)/libxsmm_valid.md $(ROOTDIR)/$(DOCDIR)/libxsmm_qna.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/$(DOCDIR)/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
@@ -1175,12 +1214,9 @@ $(ROOTDIR)/$(DOCDIR)/libxsmm_compat.md $(ROOTDIR)/$(DOCDIR)/libxsmm_valid.md $(R
 		iconv -t utf-8 libxsmm_tune.md && echo && \
 		iconv -t utf-8 libxsmm_be.md && echo && \
 		echo "# Appendix" && \
-		echo "## Compatibility" && \
 		$(SED) "s/^\(##*\) /#\1 /" libxsmm_compat.md | iconv -t utf-8 && \
-		echo "## Validation" && \
 		$(SED) "s/^\(##*\) /#\1 /" libxsmm_valid.md | iconv -t utf-8 && \
-		iconv -t utf-8 ../$(SCRDIR)/README.md && \
-		echo "## Q&A" && \
+		$(SED) "s/^\(##*\) /#\1 /" libxsmm_scripts.md | iconv -t utf-8 && \
 		$(SED) "s/^\(##*\) /#\1 /" libxsmm_qna.md | iconv -t utf-8; ) \
 	| $(SED) \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1442,9 +1478,10 @@ ifneq (Darwin,$(UNAME))
   ALIAS_PRIVLIBS_EXT := -fopenmp
 endif
 
-ALIAS_INCLUDEDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+ALIAS_INCDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
 ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
+ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT)
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
@@ -1452,20 +1489,27 @@ $(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT)
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
-ifneq (,$(ALIAS_PRIVLIBS))
-ifneq (Windows_NT,$(UNAME))
+  ifneq (,$(ALIAS_PRIVLIBS))
+  ifneq (Windows_NT,$(UNAME))
 	@echo "Libs: -L\$${libdir} -l:libxsmm.$(SLIBEXT) $(ALIAS_PRIVLIBS)" >>$@
-else
+  else
 	@echo "Libs: -L\$${libdir} -lxsmm $(ALIAS_PRIVLIBS)" >>$@
-endif
-else # no private libraries
+  endif
+  else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
+  endif
+  ifeq (,$(filter-out 0 2,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmm.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmm-static.pc
 endif
 
+ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT)
 	@echo "Name: libxsmm/f" >$@
 	@echo "Description: LIBXSMM for Fortran" >>$@
@@ -1473,17 +1517,24 @@ $(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT)
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmmext-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
-ifneq (Windows_NT,$(UNAME))
+  ifneq (Windows_NT,$(UNAME))
 	@echo "Libs: -L\$${libdir} -l:libxsmmf.$(SLIBEXT)" >>$@
-else
+  else
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
+  endif
+  ifeq (,$(filter-out 0 2,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmf.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmmf-static.pc
 endif
 
+ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmmext-static.pc: $(OUTDIR)/libxsmmext.$(SLIBEXT)
 	@echo "Name: libxsmm/ext" >$@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >>$@
@@ -1491,21 +1542,28 @@ $(OUTDIR)/libxsmmext-static.pc: $(OUTDIR)/libxsmmext.$(SLIBEXT)
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmm-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
-ifneq (,$(ALIAS_PRIVLIBS_EXT))
-ifneq (Windows_NT,$(UNAME))
+  ifneq (,$(ALIAS_PRIVLIBS_EXT))
+  ifneq (Windows_NT,$(UNAME))
 	@echo "Libs: -L\$${libdir} -l:libxsmmext.$(SLIBEXT) $(ALIAS_PRIVLIBS_EXT)" >>$@
-else
+  else
 	@echo "Libs: -L\$${libdir} -lxsmmext $(ALIAS_PRIVLIBS_EXT)" >>$@
-endif
-else # no private libraries
+  endif
+  else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >>$@
+  endif
+  ifeq (,$(filter-out 0 2,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmext.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmmext-static.pc
 endif
 
+ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmmnoblas-static.pc: $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)
 	@echo "Name: libxsmm/noblas" >$@
 	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >>$@
@@ -1513,81 +1571,115 @@ $(OUTDIR)/libxsmmnoblas-static.pc: $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmm-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
-ifneq (Windows_NT,$(UNAME))
+  ifneq (Windows_NT,$(UNAME))
 	@echo "Libs: -L\$${libdir} -l:libxsmmnoblas.$(SLIBEXT)" >>$@
-else
+  else
 	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >>$@
+  endif
+  ifeq (,$(filter-out 0 2,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmnoblas.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmmnoblas-static.pc
 endif
 
-$(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(DLIBEXT)
+ifeq (,$(filter-out 1 2,$(BUILD)))
+$(OUTDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
-ifneq (,$(ALIAS_PRIVLIBS))
+  ifneq (,$(ALIAS_PRIVLIBS))
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
 	@echo "Libs.private: $(ALIAS_PRIVLIBS)" >>$@
-else # no private libraries
+  else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
+  endif
+  ifeq (,$(filter-out 1,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmm.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmm-shared.pc
 endif
 
-$(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT)
+ifeq (,$(filter-out 1 2,$(BUILD)))
+$(OUTDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT)
 	@echo "Name: libxsmm/f" >$@
 	@echo "Description: LIBXSMM for Fortran" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmmext" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
+  ifeq (,$(filter-out 1,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmf.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmmf-shared.pc
+endif
 
-$(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(DLIBEXT)
+ifeq (,$(filter-out 1 2,$(BUILD)))
+$(OUTDIR)/libxsmmext-shared.pc: $(OUTDIR)/libxsmmext.$(DLIBEXT)
 	@echo "Name: libxsmm/ext" >$@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmm" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
-ifneq (,$(ALIAS_PRIVLIBS_EXT))
+  ifneq (,$(ALIAS_PRIVLIBS_EXT))
 	@echo "Libs: -L\$${libdir} -lxsmmext" >>$@
 	@echo "Libs.private: $(ALIAS_PRIVLIBS_EXT)" >>$@
-else # no private libraries
+  else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >>$@
+  endif
+  ifeq (,$(filter-out 1,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmext.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmmext-shared.pc
 endif
 
-$(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)
+ifeq (,$(filter-out 1 2,$(BUILD)))
+$(OUTDIR)/libxsmmnoblas-shared.pc: $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)
 	@echo "Name: libxsmm/noblas" >$@
 	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
 	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "includedir=$(ALIAS_INCDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmm" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >>$@
+  ifeq (,$(filter-out 1,$(BUILD)))
+	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmnoblas.pc
+  endif
+else
+.PHONY: $(OUTDIR)/libxsmmnoblas-shared.pc
+endif
 
 $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" >$@

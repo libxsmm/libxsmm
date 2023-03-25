@@ -113,7 +113,7 @@ if __name__ == "__main__":
         }
 
         template = Template(open(filename, "r").read())
-        if fnmatch.fnmatch(filename, "*.h*"):
+        if fnmatch.fnmatch(filename, "*.h"):
             if mnklist:
                 first = mnklist[0]
             for mnk in mnklist:

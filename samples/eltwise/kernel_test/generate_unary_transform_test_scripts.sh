@@ -9,8 +9,11 @@ fi
 TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
+TMPFILE2=$(mktemp)
+trap 'rm ${TMPFILE2}' EXIT
+
 for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
-  for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'N' 'M' 'X' 'Y' 'Z'; do
+  for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'N' 'M' 'X' 'Y' 'Z' 'B' 'C' 'D'; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="unary_transform_"
@@ -24,7 +27,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
       fi
 
       # some transforms work only for 16bit
-      if [[ (("$TYPE" == 'R') || ("$TYPE" == 'V') || ("$TYPE" == 'Q')) && (("$PREC" == 'I8') || ("$PREC" == 'BF8') || ("$PREC" == 'HF8')) ]]; then
+      if [[ (("$TYPE" == 'R') || ("$TYPE" == 'C') || ("$TYPE" == 'D') || ("$TYPE" == 'V') || ("$TYPE" == 'B') || ("$TYPE" == 'Q')) && (("$PREC" == 'I8') || ("$PREC" == 'BF8') || ("$PREC" == 'HF8')) ]]; then
         continue
       fi
 
@@ -54,6 +57,18 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
         MSTEP=4
       elif [ "$TYPE" == 'Q' ] ; then
         TPPNAME="norm_to_vnni4T"
+        MSTART=4
+        MSTEP=4
+      elif [ "$TYPE" == 'B' ] ; then
+        TPPNAME="norm_to_vnni2T"
+        MSTART=2
+        MSTEP=2
+      elif [ "$TYPE" == 'C' ] ; then
+        TPPNAME="vnni2T_to_norm"
+        MSTART=2
+        MSTEP=2
+      elif [ "$TYPE" == 'D' ] ; then
+        TPPNAME="vnni4T_to_norm"
         MSTART=4
         MSTEP=4
       elif [ "$TYPE" == 'N' ] ; then
@@ -113,6 +128,17 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'Q' ] ; then
         sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'B' ] ; then
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'C' ] ; then
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} > ${TMPFILE2}
+        sed "s/+ str(m) + '_' +/+ str(n) + '_' +/g" ${TMPFILE2} > ${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'D' ] ; then
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} > ${TMPFILE2}
+        sed "s/+ str(m) + '_' +/+ str(n) + '_' +/g" ${TMPFILE2} > ${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'N' ] ; then
         sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}

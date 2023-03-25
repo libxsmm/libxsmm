@@ -263,6 +263,18 @@ for BINARY_POSTOP in 0 1; do
                   sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${NEWNAME}
                   chmod 755 ${NEWNAME}
                 fi
+
+                # BFDOT for BF16 wth B in VNNIT
+                if [[ ( "$PREC" == 'BF16' || "$PREC" == 'BF16F32' ) ]] ; then
+                  # create BFDOT scripts with B in VNNIT
+                  NEWNAME=bfdot_bvnni_${OUTNAME}
+                  NEWNAME="${NEWNAME/_nn_/_nt_}"
+                  cp ${OUTNAME} ${NEWNAME}
+                  sed -i "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" ${NEWNAME}
+                  sed -i 's/TRB=0/TRB=1/g' ${NEWNAME}
+                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${NEWNAME}
+                  chmod 755 ${NEWNAME}
+                fi
               done
             done
           done

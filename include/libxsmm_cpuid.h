@@ -69,20 +69,21 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
 #endif
 
 /**
- * TODO: limited lifetime API until we have a fully-fleged ARM CPU flags test.
+ * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
  */
 LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(void);
 
 /**
- * TODO: limited lifetime API until we have a fully-fleged ARM CPU flags test.
+ * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
  * Might be needed to overwrite BFMMLA with BFDOT for performance study.
  */
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
+LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
  * architecture and datatype */
-LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype);
+LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype);
 
 /**
  * Similar to libxsmm_cpuid_x86, but conceptually not arch-specific.

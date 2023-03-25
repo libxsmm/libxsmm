@@ -185,8 +185,8 @@ TESTSIZE ?= 1
 # Delay for user-interaction (sleep)
 WAIT ?= 12
 
-# Prefer static or shared dependencies
-STATIC ?= 0
+# Prefer static or shared library/dependencies
+STATIC ?= 1
 
 # PIC: PIC or pic
 PIC ?= pic
@@ -418,17 +418,6 @@ ICX ?= 0
 # linker setup
 LD := $(CC)
 XLD := $(CXX)
-
-# Secondary static
-ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
-  DEPSTATIC ?= $(STATIC)
-else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)*)) # prefer static (library exists)
-  DEPSTATIC ?= 1
-else ifneq (0,$(STATIC))
-  DEPSTATIC ?= $(STATIC)
-else
-  DEPSTATIC ?= 0
-endif
 
 LNKSOFT ?= 1
 ifeq (0,$(STATIC))
@@ -680,14 +669,15 @@ ifneq (0,$(ANALYZE))
   ifeq (1,$(ANALYZE))
     ANALYZE_FLAG := $(call ctest,$(CC),--analyze)
     ifeq (,$(ANALYZE_FLAG))
-      EFLAGS += $(call ctest,$(CC),-fanalyzer)
+      ECFLAGS += $(call ctest,$(CC),-fanalyzer)
     else
       EFLAGS += $(ANALYZE_FLAG)
+      FORCE_CXX := 1
     endif
   else
+    FORCE_CXX := 1
     PEDANTIC := 3
   endif
-  FORCE_CXX := 1
 endif
 
 ifneq (,$(filter-out 0,$(FORCE_CXX)))
@@ -737,7 +727,7 @@ endif
 MINGW ?= 0
 
 # Library extension
-ifneq (0,$(DEPSTATIC))
+ifneq (0,$(STATIC))
   LIBEXT ?= $(SLIBEXT)
   #ABSLIBS := 0
 else
@@ -752,7 +742,7 @@ else # MinGW
 endif
 
 # Separate control on how to link against the BLAS library
-BLAS_STATIC ?= $(DEPSTATIC)
+BLAS_STATIC ?= $(STATIC)
 
 # PGI: ignore env. variable (same name)
 override PGI := 0
@@ -918,7 +908,7 @@ else
 endif
 endif
 
-ifneq (0,$(DEPSTATIC))
+ifneq (0,$(STATIC))
   ifeq (0,$(COMPATIBLE))
   ifneq (Darwin,$(UNAME))
   ifneq (Windows_NT,$(UNAME))
@@ -1000,7 +990,7 @@ libpath = $(call qapath,$(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call link
   | grep "lib$3" | tr " " "\n" | $(SED) -n "/\//p" | $(SED) "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
   | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
 
-ifneq (Windows_NT1,$(UNAME)$(DEPSTATIC))
+ifneq (Windows_NT1,$(UNAME)$(STATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
     $(if $(findstring .$(ILIBEXT).,$1),-l:$(call qndir,$1), \
@@ -1015,7 +1005,7 @@ endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 LIB_SOLD := $(LD) -shared $(PICFLAG)
-ifeq (0,$(DEPSTATIC))
+ifeq (0,$(STATIC))
   LIB_XLD := $(XLD) -shared $(PICFLAG)
   LIB_LD := $(LIB_SOLD)
 else
@@ -1027,7 +1017,7 @@ ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
   FLD := $(FC) $(XLIB_END)
   LIB_SFLD := $(FLD) -shared $(PICFLAG)
-  ifeq (0,$(DEPSTATIC))
+  ifeq (0,$(STATIC))
     LIB_FLD := $(LIB_SFLD)
   else
     LIB_FLD := $(FLD)
@@ -1115,8 +1105,10 @@ endif
 
 ifneq (0,$(INTEL))
   ifeq (1,$(STATIC))
+    #SLDFLAGS += -Bstatic
     ifeq (0,$(ICX))
-      SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+      SLDFLAGS += -no-intel-extensions -static-intel
+      #SLDFLAGS += -static-libstdc++
     endif
     ifneq (Darwin,$(UNAME))
       SLDFLAGS += -static-libgcc
@@ -1129,7 +1121,7 @@ else
     ifeq (0,$(PGI))
       SLDFLAGS += -Bstatic
       ifeq (0,$(CLANG))
-        SLDFLAGS += -static-libstdc++
+        #SLDFLAGS += -static-libstdc++
         ifneq (Darwin,$(UNAME))
           SLDFLAGS += -static-libgcc
         endif
@@ -2033,7 +2025,7 @@ ifeq (0,$(COMPATIBLE))
     endif
     ifneq (ld,$(call qndir,$(LD)))
     ifneq (Windows_NT,$(UNAME))
-      ifneq (,$(filter-out 0,$(DEPSTATIC) $(DYNAMIC)))
+      ifneq (,$(filter-out 0,$(STATIC) $(DYNAMIC)))
         EXCLUDE_VALUE += $(call linkopt,--export-dynamic)
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
@@ -2416,21 +2408,21 @@ endif
 ifneq (0,$(BLAS))
 ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
   ifneq (,$(LIBGFORTRAN))
-    ifneq (0,$(DEPSTATIC))
+    ifneq (0,$(STATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) $(XLIB_END)
     else
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBGFORTRAN))
     endif
   endif
   ifneq (,$(QUADMATH))
-    ifneq (0,$(DEPSTATIC))
+    ifneq (0,$(STATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(QUADMATH) $(XLIB_END)
     else
       BLAS_LDFLAGS += $(call abslibrpath,$(QUADMATH))
     endif
   endif
   ifneq (,$(LIBM))
-    ifneq (0,$(DEPSTATIC))
+    ifneq (0,$(STATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBM) $(XLIB_END)
     else
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
@@ -2508,7 +2500,7 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR FINFO ENVBIN FSTD GINFO XDG_DATA_DIRS ONEVERSION \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
-  $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
+  $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
   $(if $(filter 0,$(MKL)),MKL_%), \
   $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))

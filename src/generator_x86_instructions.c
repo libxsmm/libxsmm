@@ -950,7 +950,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
     l_scale = 0;
   }
 
-  /* 1 B) determing if a force zero displacement is needed */
+  /* 1 B) determining if a force zero displacement is needed */
   if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
     l_forced_zdisp8 = 1;
   } else {
@@ -1007,7 +1007,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
     code[code_head++] |= (unsigned char)(((unsigned char) i_gp_reg_base)      & 0x07);
   }
 
-  /* 2 D) add displacemnt, if needed */
+  /* 2 D) add displacement, if needed */
   if ( (i_displacement != 0) || (l_forced_zdisp8 != 0) ) {
     if ( (i_displacement <= 127) && (i_displacement >=-128) ) {
       code[modrm]       |= (unsigned char)0x40;
@@ -1157,7 +1157,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
     l_scale = 0;
   }
 
-  /* 1 B) determing if a force zero displacement is needed */
+  /* 1 B) determining if a force zero displacement is needed */
   if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
     l_forced_zdisp8 = 1;
   } else {
@@ -1165,11 +1165,11 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
   }
 
   /* 2nd phase: encoding */
-  /* 2 A): writing an insturction template into the byte stream */
+  /* 2 A): writing an instruction template into the byte stream */
   /* @TODO, we right now only encode 3byte VEX */
   /* const VEX prefix */
   code[vexp ] = 0xc4;
-  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reserved to be 00 */
   code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
   /* W-bit and PP prefix */
   code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x83);
@@ -1206,11 +1206,11 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
     /* set registers in modrm */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)(((unsigned char) i_gp_reg_base           )  & 0x07);
-    /* adjust coede head*/
+    /* adjust code head*/
     code_head += 5;
   }
 
-  /* 2 D) add displacemnt, if needed */
+  /* 2 D) add displacement, if needed */
   if ( (i_displacement != 0) || (l_forced_zdisp8 != 0) ) {
     if ( (i_displacement <= 127) && (i_displacement >=-128) ) {
       code[modrm]       |= (unsigned char)0x40;
@@ -1260,10 +1260,10 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_ge
   }
 
   /* encoding */
-  /* A): writing an insturction template into the byte stream */
+  /* A): writing an instruction template into the byte stream */
   /* const VEX prefix */
   code[vexp ] = 0xc4;
-  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reserved to be 00 */
   code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
   /* W-bit and PP prefix */
   code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x83);
@@ -1374,7 +1374,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   } else {
     /* read initial VL=512 calibrated disp8div look up */
     l_disp8div_idx = (unsigned char)((i_vec_instr >> 8) & 0x07);
-    /* check we need to adjsut because of VL */
+    /* check we need to adjust because of VL */
     if ( (unsigned char)((i_vec_instr >> 8) & 0x08) == 8 ) {
       /* Bit 11 is set: do not adjust depending on VL */
       l_disp8div = tbl_disp8div[l_disp8div_idx];
@@ -1412,7 +1412,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     l_scale = 0;
   }
 
-  /* 1 C) determing if a force zero displacement is needed */
+  /* 1 C) determining if a force zero displacement is needed */
   if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
     l_forced_zdisp8 = 1;
   } else {
@@ -1420,10 +1420,10 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   }
 
   /* 2nd phase: encoding */
-  /* 2 A): writing an insturction template into the byte stream */
+  /* 2 A): writing an instruction template into the byte stream */
   /* const EVEX prefix */
   code[evexp] = 0x62;
-  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reserved to be 00 */
   code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
   /* W-bit and PP prefix */
   code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x87);
@@ -1438,7 +1438,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_dst];
   /* vvvv and V' */
   code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
-  /* incase of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
+  /* in case of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
   if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
     code[p2   ] |= (unsigned char)((l_reg_idx < 16 ) ? tbl_evex_vp[l_reg_idx] : tbl_evex_vp[0]);
   } else {
@@ -1473,11 +1473,11 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     /* set registers in modrm */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)(((unsigned char) i_gp_reg_base           )  & 0x07);
-    /* adjust coede head*/
+    /* adjust code head*/
     code_head += 6;
   }
 
-  /* 2 D) add displacemnt, if needed */
+  /* 2 D) add displacement, if needed */
   if ( (i_displacement != 0) || (l_forced_zdisp8 != 0) ) {
     l_comp_disp = i_displacement / l_disp8div;
     if ( (i_displacement % l_disp8div == 0) && (l_comp_disp <= 127) &&
@@ -1552,10 +1552,10 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
   }
 
   /* encoding */
-  /* A): writing an insturction template into the byte stream */
+  /* A): writing an instruction template into the byte stream */
   /* const EVEX prefix */
   code[evexp] = 0x62;
-  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reserved to be 00 */
   code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
   /* W-bit and PP prefix */
   code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x87);
@@ -1645,7 +1645,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
         break;
     }
 
-    /* ceck for gather */
+    /* check for gather */
     if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
       if (i_reg_idx > 15) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: SIB addressing mode is required for instruction number: 0x%08x\n", i_vmove_instr);
@@ -1953,7 +1953,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       }
     }
 
-    /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
+    /* on Knights platform, attempt to fallback to VEX for ymm and xmm VL,
      * will error out in the encoder if instruction does not have VEX encoding
      * Core will always take AVX512VL route */
     if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
@@ -2236,7 +2236,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
       }
     }
 
-    /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
+    /* on Knights platform, attempt to fallback to VEX for ymm and xmm VL,
      * will error out in the encoder if instruction does not have VEX encoding
      * Core will always take AVX512VL route */
     if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
@@ -2248,7 +2248,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     if ( l_encoder == 2 ) {
       libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
 
-      /* ceck for gather/scatter */
+      /* check for gather/scatter */
       if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
         if (i_gp_reg_idx > 32) {
           fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: SIB addressing mode is required for instruction number: 0x%08x\n", i_vec_instr);
@@ -3593,7 +3593,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
          */
         break;
       case LIBXSMM_X86_INSTR_STTILECFG:
-        /* here we alwyas it the gpr */
+        /* here we always it the gpr */
         l_third = 0x1;
         break;
       case LIBXSMM_X86_INSTR_TILERELEASE:
@@ -3927,7 +3927,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
     }
 #if 0 /* dead condition */
     else {
-      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every insturction needs to have 3 operands\n");
+      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every instruction needs to have 3 operands\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
@@ -4260,7 +4260,6 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
         buf[i+1] = 0x61;
         vecval = i_vec_reg_number - 24;
       }
-      /* AVx512VL bits chnage this Avx512VL 0x28  f ox is 08*/
       buf[i+2] = 0x7c;
       buf[i+3] = vlen_encoding;
       i += 4;

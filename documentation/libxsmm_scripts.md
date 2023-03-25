@@ -134,7 +134,7 @@ The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progr
   `scripts/tool_report.sh -p tpp-plaidml -i "" -y "conv2d_odd_med" -r "gflop"`
 * Plot "tpp-mlir" pipeline (reference benchmarks):  
   `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "ref"`
-* Plot "tpp-mlir" pipeline (MLIR benchmarks, main-branch):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "mlir" -b "main"`
+* Plot "tpp-mlir" pipeline (MLIR benchmarks):  
+  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "mlir"`
 * Plot "tpp-mlir" pipeline (MLIR benchmarks without "simple_copy"):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -q "not" -y "simple_copy" -r "mlir"`
+  `scripts/tool_report.sh -p tpp-mlir -i "" -u "not" -y "simple_copy" -r "mlir"`
