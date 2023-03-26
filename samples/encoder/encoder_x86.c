@@ -715,7 +715,7 @@ int main( /*int argc, char* argv[]*/ ) {
   /* init generated code object */
   mycode.generated_code = codebuffer;
   mycode.buffer_size = 8388608;
-  mycode.arch = LIBXSMM_X86_AVX512_SPR;
+  mycode.arch = LIBXSMM_X86_AVX512_GNR;
 
   /* testing ld/st instructions */
   test_evex_load_store( "evex_mov_VMOVAPD", &mycode, LIBXSMM_X86_INSTR_VMOVAPD, 3 );
@@ -1171,7 +1171,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_compute_3reg_general( "vex_reg_VPBROADCASTQ_VEX", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
 
   /* VEX only */
-  mycode.arch = LIBXSMM_X86_AVX2;
+  mycode.arch = LIBXSMM_X86_AVX2_SRF;
   test_vex_compute_3reg_general( "vex_reg_VMOVD_LD", &mycode, LIBXSMM_X86_INSTR_VMOVD_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
   test_vex_compute_3reg_general( "vex_reg_VMOVD_ST", &mycode, LIBXSMM_X86_INSTR_VMOVD_ST, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
   test_vex_compute_3reg_general( "vex_reg_VMOVQ_LD", &mycode, LIBXSMM_X86_INSTR_VMOVQ_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
@@ -1260,9 +1260,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_compute_mem_2reg_general( "vex_mem_VPDPBUUD", &mycode, LIBXSMM_X86_INSTR_VPDPBUUD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
   test_vex_compute_mem_2reg_general( "vex_mem_VPDPBUUDS", &mycode, LIBXSMM_X86_INSTR_VPDPBUUDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
   test_vex_compute_mem_2reg_general( "vex_mem_VCVTNEPS2BF16", &mycode, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
-  mycode.arch = LIBXSMM_X86_AVX512_SPR;
 
   /* testing compute mem-reg instructions */
+  mycode.arch = LIBXSMM_X86_AVX512_GNR;
   test_evex_compute_mem_2reg_general( "evex_mem_VSHUFPS", &mycode, LIBXSMM_X86_INSTR_VSHUFPS, 2, 0x01, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VSHUFPD", &mycode, LIBXSMM_X86_INSTR_VSHUFPD, 2, 0x01, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSHUFB", &mycode, LIBXSMM_X86_INSTR_VPSHUFB, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
@@ -1654,7 +1654,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_tile_compute( "tile_reg_TDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TDPFP16PS );
 
   /* AVX only tests */
-  mycode.arch = LIBXSMM_X86_AVX2;
+  mycode.arch = LIBXSMM_X86_AVX2_SRF;
 
   test_vex_load_store( "vex_mov_VMOVAPD", &mycode, LIBXSMM_X86_INSTR_VMOVAPD, 3 );
   test_vex_load_store( "vex_mov_VMOVAPS", &mycode, LIBXSMM_X86_INSTR_VMOVAPS, 3 );
