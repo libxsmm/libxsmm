@@ -294,9 +294,11 @@ def divup(a, b):
 
 
 def trend(values):
-    v, rd, cv, size = (values[0] if values else 0), None, None, len(values)
+    v, size = (values[0] if values else 0), len(values)
+    rd, cv, eqn = None, None, None
     if 2 < size:
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
+        eqn = numpy.poly1d((a, b))
         w = a + b  # value predicted for x=1 (a * x + b)
         if 0 != w:
             rd = (v - w) / w
@@ -304,7 +306,7 @@ def trend(values):
             if 0 != avg:
                 cv = numpy.std(values[1:]) / avg
         v = w  # predicted value
-    return (v, rd, cv)
+    return (v, rd, cv, eqn)
 
 
 def bold(s):
@@ -313,7 +315,7 @@ def bold(s):
 
 
 def label(values, base, unit, accuracy, highlight):
-    guess, rd, cv = trend(values)
+    guess, rd, cv, eqn = trend(values)
     result = f"{num2fix(values[0], accuracy)} {unit}"
     if rd:
         inum = num2fix(100 * rd)
@@ -330,7 +332,7 @@ def label(values, base, unit, accuracy, highlight):
             result = f"{base} = {result} ({sign}{inum}%)"
     else:
         result = f"{base} = {result}"
-    return result
+    return result, eqn
 
 
 def main(args, argd, dbfname):
@@ -737,15 +739,16 @@ def main(args, argd, dbfname):
 
             if 0 < xsize:  # skip empty plot
                 # perform some trend analysis
+                eqn = None
                 if isinstance(legend, list):
                     ylist, ylabel = list(zip(*yvalue)), []
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
-                        s = label(y, z, yunit, accuracy, args.highlight)
+                        s, eqn = label(y, z, yunit, accuracy, args.highlight)
                         ylabel.append(s)
                     ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
                 else:
-                    ylabel = label(
+                    ylabel, eqn = label(
                         yvalue, legend, yunit, accuracy, args.highlight
                     )
                 # plot values and legend as collected above
