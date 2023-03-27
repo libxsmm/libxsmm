@@ -769,7 +769,7 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
         unsigned int l_mask_store = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 0 : 0
                                                       : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 2 : 2;
 
-        unsigned int cur_vreg_real = i_start_vreg + in * i_m_blocking + im;
+        cur_vreg_real = i_start_vreg + in * i_m_blocking + im;
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
         /* In the XOR case we have a constant vreg  */
         if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) {
