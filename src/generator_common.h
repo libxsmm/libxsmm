@@ -1537,6 +1537,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_relumask;
   unsigned int gp_reg_fam_lualpha;
   unsigned int gp_reg_offset;
+  unsigned int gp_reg_offset_2;
   unsigned int gp_reg_dropoutmask;
   unsigned int gp_reg_dropoutprob;
   unsigned int gp_reg_prngstate;

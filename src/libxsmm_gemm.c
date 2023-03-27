@@ -701,8 +701,8 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
       NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
   {
     libxsmm_gemm_dprint2(ostream,
-      (libxsmm_datatype)LIBXSMM_GETENUM_UNP(desc->gemm.desc.datatype),
-      (libxsmm_datatype)LIBXSMM_GETENUM_UOT(desc->gemm.desc.datatype),
+      (libxsmm_datatype)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype),
+      (libxsmm_datatype)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype),
       (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->gemm.desc.flags) ? 'N' : 'T'),
       (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->gemm.desc.flags) ? 'N' : 'T'),
       (libxsmm_blasint)desc->gemm.desc.m, (libxsmm_blasint)desc->gemm.desc.n, (libxsmm_blasint)desc->gemm.desc.k,
