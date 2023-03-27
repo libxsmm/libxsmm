@@ -36,7 +36,7 @@
 # include <pthread.h>
 #endif
 
-/* used internally to reimplement certain exit-handler */
+/* used internally to re-implement certain exit-handler */
 #if !defined(LIBXSMM_EXIT_SUCCESS)
 # define LIBXSMM_EXIT_SUCCESS() exit(EXIT_SUCCESS)
 #endif
@@ -2188,7 +2188,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seemlessly to the current CPU arch */
+        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
         if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
              ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
           int emu_amx = 0;
@@ -2222,7 +2222,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MEQN: { /* matequation kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seemlessly to the current CPU arch */
+        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
         if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
              ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
           int emu_amx = 0;
