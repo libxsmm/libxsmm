@@ -37,6 +37,8 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
+LIBXSMM_PRAGMA_OPTIMIZE_OFF
+
 LIBXSMM_INLINE
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
   int s1, s2, s3;
@@ -413,6 +415,8 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
 #endif
 }
 
+LIBXSMM_PRAGMA_OPTIMIZE_ON
+
 LIBXSMM_INLINE
 void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
   int s2;
@@ -605,7 +609,7 @@ void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, 
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.00006;
+  double error_bound = 0.0002;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;

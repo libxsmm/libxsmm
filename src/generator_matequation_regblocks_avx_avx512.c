@@ -524,14 +524,15 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
 }
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype  dtype) {
-  if ( LIBXSMM_DATATYPE_F64 == dtype ) {
+unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype dtype) {
+  const int datatype = LIBXSMM_GETENUM_INP(dtype);
+  if ( LIBXSMM_DATATYPE_F64 == datatype ) {
     return  LIBXSMM_X86_INSTR_VMOVUPD;
-  } else if ( (LIBXSMM_DATATYPE_F32 == dtype) || (LIBXSMM_DATATYPE_I32 == dtype) ) {
+  } else if ( (LIBXSMM_DATATYPE_F32 == datatype) || (LIBXSMM_DATATYPE_I32 == datatype) ) {
     return LIBXSMM_X86_INSTR_VMOVUPS;
-  } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype) || (LIBXSMM_DATATYPE_F16 == dtype) ) {
+  } else if ( (LIBXSMM_DATATYPE_BF16 == datatype) || (LIBXSMM_DATATYPE_I16 == datatype) || (LIBXSMM_DATATYPE_F16 == datatype) ) {
     return LIBXSMM_X86_INSTR_VMOVDQU16;
-  } else if ( (LIBXSMM_DATATYPE_I8 == dtype) || (LIBXSMM_DATATYPE_BF8 == dtype) || (LIBXSMM_DATATYPE_HF8 == dtype) ) {
+  } else if ( (LIBXSMM_DATATYPE_I8 == datatype) || (LIBXSMM_DATATYPE_BF8 == datatype) || (LIBXSMM_DATATYPE_HF8 == datatype) ) {
     return LIBXSMM_X86_INSTR_VMOVDQU8;
   } else {
     return 0;

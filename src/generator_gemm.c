@@ -32,9 +32,18 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_emu_amx = atoi(l_env_emu_amx);
   }
 
+  /* We allow b vnniT for x86 and bf16 whenever possible */
   if ( ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ( io_generated_code->arch >= LIBXSMM_X86_GENERIC ) &&  ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
-    return;
+    if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+      if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ) {
+        /* we are fine */
+      } else {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      }
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      return;
+    }
   }
 
   /* for low precision lets make KNL/KNM an AVX2 machine */
