@@ -628,7 +628,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg);
       }
 
-      if ( (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) || (l_emu_amx > 0)) &&
+      if ( (((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) || (l_emu_amx > 0)) &&
            ( ( LIBXSMM_DATATYPE_BF16 == cur_op->le->tmp.dtype ) ||
              ( LIBXSMM_DATATYPE_I8 == cur_op->le->tmp.dtype ) ) &&
            ((desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {

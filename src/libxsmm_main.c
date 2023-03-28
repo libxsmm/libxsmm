@@ -1485,6 +1485,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_GNR:
     case LIBXSMM_X86_AVX512_SPR:
     case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
@@ -1496,6 +1497,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_VL256_CLX:
     case LIBXSMM_X86_AVX512_VL256_CPX:
     case LIBXSMM_X86_AVX2_ADL:
+    case LIBXSMM_X86_AVX2_SRF:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE42:
@@ -1574,7 +1576,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
       target_archid = LIBXSMM_X86_AVX512_VL256;
     }
-    else if (arch == libxsmm_stristr(arch, "spr") || arch == libxsmm_stristr(arch, "amx")) {
+    else if (arch == libxsmm_stristr(arch, "gnr")) {
+      target_archid = LIBXSMM_X86_AVX512_GNR;
+    }
+    else if (arch == libxsmm_stristr(arch, "spr")) {
       target_archid = LIBXSMM_X86_AVX512_SPR;
     }
     else if (arch == libxsmm_stristr(arch, "cpx")) {
@@ -1594,6 +1599,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (arch == libxsmm_stristr(arch, "knl") || arch == libxsmm_stristr(arch, "mic")) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
+    }
+    else if (arch == libxsmm_stristr(arch, "srf")) {
+      target_archid = LIBXSMM_X86_AVX2_SRF;
     }
     else if (arch == libxsmm_stristr(arch, "adl")) {
       target_archid = LIBXSMM_X86_AVX2_ADL;
