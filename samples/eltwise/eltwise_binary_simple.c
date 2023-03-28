@@ -33,7 +33,7 @@
 #define SUB_OP 3
 #define DIV_OP 4
 #define MULADD_OP 5
-#if 10
+#if 1
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 

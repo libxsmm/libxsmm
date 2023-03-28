@@ -725,10 +725,9 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
 }
 
 LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int* prng_out, const unsigned int seed_idx ) {
-  libxsmm_float_uint rng_num;
+  unsigned int rng_num = 0;
   const unsigned int state_ld = 16;
   const float one = 1.0f;
-  rng_num.u = 0;
 
   unsigned int state_0 = rng_state[seed_idx + (0 * state_ld)];
   unsigned int state_1 = rng_state[seed_idx + (1 * state_ld)];
@@ -736,8 +735,8 @@ LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int*
   unsigned int state_3 = rng_state[seed_idx + (3 * state_ld)];
 
   unsigned int tmp_0, tmp_1;
-  rng_num.u = state_3 + state_0;
-  prng_out[0] = rng_num.u;
+  rng_num = state_3 + state_0;
+  prng_out[0] = rng_num;
   tmp_0 = state_1 << 9;
   state_2 = state_2 ^ state_0;
   state_3 = state_3 ^ state_1;
@@ -751,26 +750,6 @@ LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int*
   rng_state[seed_idx + (1 * state_ld)] = state_1;
   rng_state[seed_idx + (2 * state_ld)] = state_2;
   rng_state[seed_idx + (3 * state_ld)] = state_3;
-}
-
-LIBXSMM_API_INTERN void libxsmm_lsfr_i32_intrinsic( unsigned int* rng_state, unsigned int* prng_out ) {
-  unsigned int *vs0 = &rng_state[0];
-  unsigned int *vs1 = &rng_state[16];
-  unsigned int *vs2 = &rng_state[32];
-  unsigned int *vs3 = &rng_state[48];
-
-  __m512i vrplus = _mm512_add_epi32 (_mm512_load_epi32 (vs0), _mm512_load_epi32 (vs3));
-  _mm512_storeu_epi32 (prng_out, vrplus);
-  __m512i vt = _mm512_sll_epi32 (_mm512_load_epi32 (vs1), _mm_set1_epi8 (9));
-  _mm512_store_epi32 (vs2, _mm512_xor_epi32 (_mm512_load_epi32 (vs2), _mm512_load_epi32 (vs0)));
-  _mm512_store_epi32 (vs3, _mm512_xor_epi32 (_mm512_load_epi32 (vs3), _mm512_load_epi32 (vs1)));
-  _mm512_store_epi32 (vs1, _mm512_xor_epi32 (_mm512_load_epi32 (vs1), _mm512_load_epi32 (vs2)));
-  _mm512_store_epi32 (vs0, _mm512_xor_epi32 (_mm512_load_epi32 (vs0), _mm512_load_epi32 (vs3)));
-  _mm512_store_epi32 (vs2, _mm512_xor_epi32 (_mm512_load_epi32 (vs2), vt));
-
-  __m512i vl = _mm512_sll_epi32 (_mm512_load_epi32 (vs3), _mm_set1_epi8 (11));
-  __m512i vr = _mm512_sra_epi32 (_mm512_load_epi32 (vs3), _mm_set1_epi8 (21));
-  _mm512_store_epi32 (vs3, _mm512_or_epi32 (vl, vr));
 }
 
 LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state) {

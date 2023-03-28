@@ -42,7 +42,7 @@
 #define RCP_SQRT_OP 16
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
-#if 10
+#if 1
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 

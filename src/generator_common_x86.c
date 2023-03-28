@@ -2218,16 +2218,7 @@ void libxsmm_generator_xoshiro128p_i32_avx2_avx512( libxsmm_generated_code* io_g
                                                     const unsigned int      o_vec_reg_rng ) {
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, i_vname,
                                             i_vec_reg_rng_state_3, i_vec_reg_rng_state_0, o_vec_reg_rng);
-#if 0
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, i_vname,
-                                                 o_vec_reg_rng, o_vec_reg_rng, 9);
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
-                                            o_vec_reg_rng, i_vec_reg_rng_one, o_vec_reg_rng);
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, i_vname,
-                                            i_vec_reg_rng_one, o_vec_reg_rng, o_vec_reg_rng);
-#endif
   libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, i_vname,
                                                  i_vec_reg_rng_state_1, i_vec_reg_rng_tmp_0, 9);
 
