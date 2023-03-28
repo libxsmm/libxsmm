@@ -260,6 +260,7 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
 #endif
 LIBXSMM_APIVAR_DEFINE(INTERNAL_SINGLETON_HANDLE internal_singleton_handle);
+LIBXSMM_APIVAR_DEFINE(void (*internal_libxsmm_prvabrt)(int));
 LIBXSMM_APIVAR_DEFINE(char internal_stdio_fname[64]);
 
 /* definition of corresponding variables */
@@ -824,9 +825,19 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 
 LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int /*signum*/);
 LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int signum) {
-  void (*const handler)(int) = signal(signum, SIG_DFL);
   LIBXSMM_ASSERT(SIGABRT == signum);
-  if (SIG_ERR != handler) internal_finalize();
+  if (SIG_ERR != internal_libxsmm_prvabrt) {
+    internal_finalize();
+    if (NULL != internal_libxsmm_prvabrt) {
+      internal_libxsmm_prvabrt(SIGABRT);
+    }
+    else {
+      void (*const default_handler)(int) = signal(signum, SIG_DFL);
+      if (NULL != default_handler && SIG_ERR != default_handler) {
+        default_handler(SIGABRT);
+      }
+    }
+  }
 }
 
 
@@ -1251,8 +1262,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
 #endif
       }
       { /* calibrate timer */
-        void (*result_handle_abrt)(int) = SIG_ERR;
-        int result_handle_exit = EXIT_SUCCESS;
+        int result_atexit = EXIT_SUCCESS;
         libxsmm_timer_tickint s1, t1;
         internal_init(); /* must be first to initialize verbosity, etc. */
         if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* after internal_init */
@@ -1265,8 +1275,8 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
 #endif
-        result_handle_abrt = signal(SIGABRT, internal_libxsmm_sigabrt);
-        result_handle_exit = atexit(internal_finalize);
+        internal_libxsmm_prvabrt = signal(SIGABRT, internal_libxsmm_sigabrt);
+        result_atexit = atexit(internal_finalize);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
         if (t0 < t1 && 0.0 < libxsmm_timer_scale) {
@@ -1289,7 +1299,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = 0;
         }
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          if (SIG_ERR == result_handle_abrt || EXIT_SUCCESS != result_handle_exit) {
+          if (SIG_ERR == internal_libxsmm_prvabrt || EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
           if (0 == libxsmm_timer_scale
