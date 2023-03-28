@@ -159,7 +159,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID max. leaf */
-    /* avoid redetecting features but redetect on request (info given) */
+    /* avoid re-detecting features but re-detect on request (info given) */
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == result || NULL != info) {
       int feature_cpu = LIBXSMM_X86_GENERIC, feature_os = LIBXSMM_X86_GENERIC, has_context = 0;
       unsigned int maxleaf = eax;

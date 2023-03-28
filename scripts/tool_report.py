@@ -766,8 +766,9 @@ def main(args, argd, dbfname):
         ngraphs = max(ngraphs, n)
         if 0 < n:
             axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
+            axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
             axes[i].set_title(entry.upper())
-            axes[i].legend(loc="upper left", ncol=2)  # fontsize="x-small"
+            axes[i].legend(loc="upper left", ncol=2)
         i = i + 1
     axes[-1].set_xlabel("Build Number")
     title = "Performance History"
