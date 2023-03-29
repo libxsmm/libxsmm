@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2129,SC2153,SC2207
+# shellcheck disable=SC1090,SC2028,SC2129,SC2153,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -450,13 +450,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           SLURMREM=$(readlink -f "${SLURMFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
-          printf "\${SED} \
-            -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n%s/\" \
-            -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1%s\/\2\//\" \
+          echo "\${SED} \
+            -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" \
+            -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
             -e \"s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//\" \
             -e \"/^#SBATCH/d\" -e \"/#[[:space:]]*shellcheck/d\" -e \"/^[[:space:]]*$/d\" \
-            -e \"s/^srun[[:space:]]//\" \"%s\" >>\"%s\"" \
-            "${UMASK_CMD}" "${DIRSED}" "${SLURMREM}" "${RUNREM}" >>"${TESTSCRIPT}"
+            -e \"s/^srun[[:space:]]//\" \
+            \"${SLURMREM}\" >>\"${RUNREM}\"" >>"${TESTSCRIPT}"
           if [ "${TOOL_COMMAND}" ]; then # inject TOOL_COMMAND
             CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
             echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
