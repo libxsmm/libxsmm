@@ -172,7 +172,7 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
-    if [ "${LOGRPTHLT}" ]; then # highlight
+    if [ "${LOGRPTHLT}" ]; then # highlight factor
       DBSCRT="${DBSCRT} -t ${LOGRPTHLT}"
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
@@ -185,6 +185,7 @@ if [ "${LOGDIR}" ]; then
       -q "${LOGRPTQOP}" \
       -v ${VERBOSITY});
     then
+      # output cause of error
       echo "${OUTPUT}" | sed '$d'
       OUTPUT=""
     fi
@@ -208,8 +209,14 @@ if [ "${LOGDIR}" ]; then
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
           printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
             "${FIGURE}" "${STEPNAME:-${RESULT}}"
+        else
+          >&2 echo "WARNING: encoding report (\"${FIGURE}\") failed."
         fi
+      else
+        >&2 echo "WARNING: report (\"${FIGURE}\") not ready."
       fi
+    else
+      >&2 echo "WARNING: missing prerequisites for report."
     fi
   fi
 fi
