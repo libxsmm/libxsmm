@@ -73,6 +73,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
   fi
 
+  # attempt to determine SLURMSCRIPT
+  if [ "$1" ] && [ ! "${SLURMSCRIPT}" ] && \
+    [[ ("$1" != "$(basename $1 .sh)" || "$1" != "$(basename $1 .slurm)") ]];
+  then
+    SLURMSCRIPT=1
+  fi
+
   # set the case number or (Slurm-)script (may not exist yet)
   if [ "$1" ] && [[ -e "$1" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     export TESTSETFILE=$1
@@ -441,7 +448,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           SLURMREM=$(readlink -f "${SLURMFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           echo "${SED} \
-            -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
+            -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" \
+            -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
             -e \"s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//\" \
             -e \"/^#SBATCH/d\" -e \"/#[[:space:]]*shellcheck/d\" -e \"/^[[:space:]]*$/d\" \
             -e \"s/^srun[[:space:]]//\" \
