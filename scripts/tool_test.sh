@@ -382,6 +382,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
+        echo "SED=\$(command -v gsed); SED=\${SED:-\$(command -v sed)}" >>"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
         if [ "$0" != "${SLURMFILE}" ] && \
           [[ -e "${SLURMFILE}" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]];
@@ -425,7 +426,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         fi
         echo "fi" >>"${TESTSCRIPT}"
         if [ "${CONFIGFILE}" ]; then
-          echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
+          echo "  source \"$(echo "${CONFIGFILE}" | \${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case
         if [ "${ABSDIR}" ]; then
@@ -447,7 +448,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           SLURMREM=$(readlink -f "${SLURMFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
-          echo "${SED} \
+          echo "\${SED} \
             -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" \
             -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
             -e \"s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//\" \
