@@ -75,13 +75,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
   # attempt to determine SLURMSCRIPT
   if [ "$1" ] && [ ! "${SLURMSCRIPT}" ] && \
-    [[ ("$1" != "$(basename $1 .sh)" || "$1" != "$(basename $1 .slurm)") ]];
+    [[ ("$1" != "$(basename "$1" .sh)") || ("$1" != "$(basename "$1" .slurm)") ]];
   then
     SLURMSCRIPT=1
   fi
 
   # set the case number or (Slurm-)script (may not exist yet)
-  if [ "$1" ] && [[ -e "$1" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
+  if [ "$1" ] && [[ (-e "$1") || (("${SLURMSCRIPT}") && ("0" != "${SLURMSCRIPT}")) ]]; then
     export TESTSETFILE=$1
     TESTID=$(basename "${TESTSETFILE%.*}")
     export TESTSET=${TESTID}
@@ -178,8 +178,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   if [ ! "${TESTSET}" ]; then
     TESTSET=travis
   fi
-  if [ ! "${TESTSETFILE}" ] || [[ ! -e "${TESTSETFILE}" && \
-      (! "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]];
+  if [ ! "${TESTSETFILE}" ] || [[ (! -e "${TESTSETFILE}") && \
+     ((! "${SLURMSCRIPT}") || ("0" = "${SLURMSCRIPT}")) ]];
   then
     if [ -e ".${TESTSET}.yml" ]; then
       TESTSETFILE=.${TESTSET}.yml
@@ -226,7 +226,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT} ${*:2}"
-  elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
+  elif [[ ("${LAUNCH_CMD}") || (-d "$1") || \
+         (("${SLURMSCRIPT}") && ("0" != "${SLURMSCRIPT}")) ]];
+  then
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
@@ -251,7 +253,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   chmod +r "${ENVFILE}"
   declare -px >"${ENVFILE}"
 
-  if [[ "${UMASK}" && (! "${TESTSCRIPT}" || ! -e "${TESTSCRIPT}") ]]; then
+  if [[ ("${UMASK}") && ((! "${TESTSCRIPT}") || (! -e "${TESTSCRIPT}")) ]]; then
     # TODO: derive permissions from UMASK
     trap 'rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)' EXIT
   else
@@ -272,14 +274,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       SLURMDIR=$0
     fi
     for SLURMFILE in "${SLURMDIR}"/*; do
-    if [[ (-d ${SLURMDIR}) && (! "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
+    if [[ (-d ${SLURMDIR}) && ((! "${SLURMSCRIPT}") || ("0" = "${SLURMSCRIPT}")) ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(basename "${SLURMFILE%.*}")
-    elif [[ -e "${TEST}" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
+    elif [[ (-e "${TEST}") || (("${SLURMSCRIPT}") && ("0" != "${SLURMSCRIPT}")) ]]; then
       SLURMFILE=${TEST}
     fi
     if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && \
-      [[ -e "${SLURMFILE}" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]];
+      [[ (-e "${SLURMFILE}") || (("${SLURMSCRIPT}") && ("0" != "${SLURMSCRIPT}")) ]];
     then
       PARTITION=$(${SED} -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" "${SLURMFILE}")
       if [ "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
@@ -321,7 +323,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # determine configuration files once according to pattern
-    if [[ ("none" != "${CONFIG}") && ("${HOSTNAME}" || "${HOSTPREFIX}") ]]; then
+    if [[ ("none" != "${CONFIG}") && (("${HOSTNAME}") || ("${HOSTPREFIX}")) ]]; then
       CONFIGFILES=($(ls -1 "${ROOTENV}/${HOSTNAME}"/${CONFIG}.env 2>/dev/null))
       if [[ ! "${CONFIGFILES[*]}" ]]; then
         CONFIGFILES=($(ls -1 "${ROOTENV}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
@@ -385,7 +387,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         echo "SED=\$(command -v gsed); SED=\${SED:-\$(command -v sed)}" >>"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
         if [ "$0" != "${SLURMFILE}" ] && \
-          [[ -e "${SLURMFILE}" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]];
+          [[ (-e "${SLURMFILE}") || (("${SLURMSCRIPT}") && ("0" != "${SLURMSCRIPT}")) ]];
         then
           RUNFILE=$(touch "${SLURMFILE}.run" && chmod +rx "${SLURMFILE}.run" && readlink -f "${SLURMFILE}.run")
           ABSDIR=$(dirname "${SLURMFILE}")
@@ -448,13 +450,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           SLURMREM=$(readlink -f "${SLURMFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
-          echo "\${SED} \
-            -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" \
-            -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
+          printf "\${SED} \
+            -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n%s/\" \
+            -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1%s\/\2\//\" \
             -e \"s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//\" \
             -e \"/^#SBATCH/d\" -e \"/#[[:space:]]*shellcheck/d\" -e \"/^[[:space:]]*$/d\" \
-            -e \"s/^srun[[:space:]]//\" \
-            \"${SLURMREM}\" >>\"${RUNREM}\"" >>"${TESTSCRIPT}"
+            -e \"s/^srun[[:space:]]//\" \"%s\" >>\"%s\"" \
+            "${UMASK_CMD}" "${DIRSED}" "${SLURMREM}" "${RUNREM}" >>"${TESTSCRIPT}"
           if [ "${TOOL_COMMAND}" ]; then # inject TOOL_COMMAND
             CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
             echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
