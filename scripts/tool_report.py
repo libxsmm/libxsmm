@@ -322,7 +322,7 @@ def label(values, base, unit, accuracy, highlight):
         if cv:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
-            if num2fix(100 * cv * highlight) < abs(inum):
+            if max(num2fix(bnum * highlight), 1) < abs(inum):
                 result = f"{base} = {bold(result)} ({anum}>{bnum}%*{cnum})"
             else:
                 expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
