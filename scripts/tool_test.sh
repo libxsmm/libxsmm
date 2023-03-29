@@ -376,7 +376,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
-        RUNFILE=$(touch "${TESTSCRIPT}.run" && chmod +rx "${TESTSCRIPT}.run" && readlink -f "${TESTSCRIPT}.run")
+        if [ "$0" != "${SLURMFILE}" ] && \
+          [[ -e "${SLURMFILE}" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]];
+        then
+          RUNFILE=$(touch "${SLURMFILE}.run" && chmod +rx "${SLURMFILE}.run" && readlink -f "${SLURMFILE}.run")
+          ABSDIR=$(dirname "${SLURMFILE}")
+        else
+          RUNFILE=$(touch "${TESTSCRIPT}.run" && chmod +rx "${TESTSCRIPT}.run" && readlink -f "${TESTSCRIPT}.run")
+        fi
         RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
         # exact/real name of run-file is not known yet
         EXIT_TRAP="rm -f ${REPOREMOTE}/.env.sh ${RUNREM}"
@@ -414,10 +421,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case
-        if [ "$0" != "${SLURMFILE}" ] && \
-          [[ -e "${SLURMFILE}" || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]];
-        then
-          ABSDIR=$(dirname "${SLURMFILE}")
+        if [ "${ABSDIR}" ]; then
           if [ ! -e "${ABSDIR}/Makefile" ] && [ -d "${ABSDIR}" ] && [ -e "${ABSDIR}/../Makefile" ]; then
             ABSDIR=${ABSDIR}/..
           fi
@@ -439,7 +443,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "${SED} \
             -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
             -e \"s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//\" \
-            -e \"/^#SBATCH/d\" -e \"/^[[:space:]]*$/d\" \
+            -e \"/^#SBATCH/d\" -e \"/#[[:space:]]*shellcheck/d\" -e \"/^[[:space:]]*$/d\" \
             -e \"s/^srun[[:space:]]//\" \
             \"${SLURMREM}\" >>\"${RUNREM}\"" >>"${TESTSCRIPT}"
           if [ "${TOOL_COMMAND}" ]; then # inject TOOL_COMMAND
