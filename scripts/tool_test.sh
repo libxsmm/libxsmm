@@ -426,7 +426,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         fi
         echo "fi" >>"${TESTSCRIPT}"
         if [ "${CONFIGFILE}" ]; then
-          echo "  source \"$(echo "${CONFIGFILE}" | \${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
+          echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case
         if [ "${ABSDIR}" ]; then
