@@ -735,7 +735,9 @@ LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int*
   unsigned int state_3 = rng_state[seed_idx + (3 * state_ld)];
 
   unsigned int tmp_0, tmp_1;
-  rng_num = state_3 + state_0;
+  tmp_0 = (state_0 + state_3) << 7;
+  tmp_1 = (state_0 + state_3) >> 25;
+  rng_num = (tmp_0 | tmp_1) + state_0;
   prng_out[0] = rng_num;
   tmp_0 = state_1 << 9;
   state_2 = state_2 ^ state_0;
