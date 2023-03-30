@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012
+# shellcheck disable=SC2012,SC2153
 
 # check if logfile is given
 if [ ! "${LOGFILE}" ]; then
@@ -172,18 +172,15 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
-    if [ "${LOGRPTBND}" ]; then # bounds
-      DBSCRT="${DBSCRT} -t \"${LOGRPTBND}\""
-    fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
+    if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
-      -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
+      -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
       -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" \
-      -v ${VERBOSITY});
+      -q "${LOGRPTQOP}" -v ${VERBOSITY} \
+      -t "${LOGRPTBND}");
     then
       # output cause of error
       echo "${OUTPUT}" | sed '$d'
@@ -206,10 +203,12 @@ if [ "${LOGDIR}" ]; then
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi
+        if [ "$(command -v mimetype)" ]; then MIMETYPE=$(mimetype -b "${FIGURE}"); fi
+        if [ ! "${MIMETYPE}" ]; then MIMETYPE="image/png"; fi  # default
         if [ "${OUTPUT}" ]; then
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-          printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
-            "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
+            "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
         else
           >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
         fi

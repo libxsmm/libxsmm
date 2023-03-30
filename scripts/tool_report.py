@@ -185,24 +185,24 @@ def parselog(
     return nentries + m, nerrors + n
 
 
-def fname(extlst, in_path, in_dflt, idetail=""):
+def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
     """
-    if in_path.is_dir():
-        figloc, figext = in_path, in_dflt.suffix
-        figstm = in_dflt.stem
-    elif in_path.suffix[1:] in extlst:
-        figloc, figext = in_path.parent, in_path.suffix
-        figstm = in_path.stem
-    elif "." == str(in_path.parent):
-        figloc, figstm = in_path.parent, in_dflt.stem
-        figext = (
-            f".{in_path.name}" if in_path.name in extlst else in_dflt.suffix
-        )
+    dflt, plst = pathlib.Path(in_dflt), str(in_main).strip().split()
+    path = pathlib.Path(plst[0] if plst else in_main)
+    if path.is_dir():
+        figloc, figstm = path, dflt.stem
+        figext = f".{plst[1]}" if 1 < len(plst) else dflt.suffix
+    elif path.suffix[1:] in extlst:
+        figloc, figstm = path.parent, path.stem
+        figext = path.suffix
+    elif "." == str(path.parent):
+        figloc, figstm = path.parent, dflt.stem
+        figext = f".{path.name}" if path.name in extlst else dflt.suffix
     else:
-        figloc, figext = in_path.parent, in_dflt.suffix
-        figstm = in_path.stem if in_path.stem else in_dflt.stem
+        figloc, figext = path.parent, dflt.suffix
+        figstm = path.stem if path.stem else dflt.stem
     return figloc / f"{figstm}{idetail}{figext}"
 
 
@@ -630,14 +630,22 @@ def main(args, argd, dbfname):
         axes = [axes]
 
     # parse bounds used to highlight results
-    strbounds = [i for i in re.split(r"[\s;,]", args.bounds)]
+    strbounds = re.split(
+        r"[\s;,]", (args.bounds if args.bounds else argd.bounds).strip()
+    )
     try:
         highlight = [float(i) for i in strbounds]
     except ValueError:
         highlight = [float(i) for i in re.split(r"[\s;,]", argd.bounds)]
     lowhigh = (  # meaning of negative/positive deviation
-        highlight and 0 != highlight[0] and "-" == strbounds[0][0],
-        highlight and 0 != highlight[0] and "+" == strbounds[0][0],
+        highlight
+        and 0 != highlight[0]
+        and "" != strbounds[0]
+        and "-" == strbounds[0][0],
+        highlight
+        and 0 != highlight[0]
+        and "" != strbounds[0]
+        and "+" == strbounds[0][0],
     )
     exceeded = False
 
@@ -836,8 +844,8 @@ def main(args, argd, dbfname):
         figcanvas = figure.canvas
         figout = fname(
             extlst=figcanvas.get_supported_filetypes().keys(),
-            in_path=pathlib.Path(args.figure),
-            in_dflt=pathlib.Path(argd.figure),
+            in_main=args.figure,
+            in_dflt=argd.figure,
             idetail=figqry,
         )
         # reduce file size (png) and save figure
@@ -1031,8 +1039,8 @@ if __name__ == "__main__":
     argd = argparser.parse_args([])
     dbfname = fname(  # database filename
         ["json", "pickle", "pkl", "db"],
-        in_path=pathlib.Path(args.filepath),
-        in_dflt=pathlib.Path(argd.filepath),
+        in_main=args.filepath,
+        in_dflt=argd.filepath,
     )
     if dbfname.name:
         weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
