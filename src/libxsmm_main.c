@@ -19,6 +19,7 @@
 #endif
 #include "generator_common.h"
 
+#include <signal.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -36,7 +37,7 @@
 # include <pthread.h>
 #endif
 
-/* used internally to reimplement certain exit-handler */
+/* used internally to re-implement certain exit-handler */
 #if !defined(LIBXSMM_EXIT_SUCCESS)
 # define LIBXSMM_EXIT_SUCCESS() exit(EXIT_SUCCESS)
 #endif
@@ -259,6 +260,7 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
 #endif
 LIBXSMM_APIVAR_DEFINE(INTERNAL_SINGLETON_HANDLE internal_singleton_handle);
+LIBXSMM_APIVAR_DEFINE(void (*internal_libxsmm_prvabrt)(int));
 LIBXSMM_APIVAR_DEFINE(char internal_stdio_fname[64]);
 
 /* definition of corresponding variables */
@@ -820,6 +822,25 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
 }
 
+
+LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int /*signum*/);
+LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int signum) {
+  LIBXSMM_ASSERT(SIGABRT == signum);
+  if (SIG_ERR != internal_libxsmm_prvabrt) {
+    internal_finalize();
+    if (NULL != internal_libxsmm_prvabrt) {
+      internal_libxsmm_prvabrt(SIGABRT);
+    }
+    else {
+      void (*const default_handler)(int) = signal(signum, SIG_DFL);
+      if (NULL != default_handler && SIG_ERR != default_handler) {
+        default_handler(SIGABRT);
+      }
+    }
+  }
+}
+
+
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
@@ -1241,7 +1262,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
 #endif
       }
       { /* calibrate timer */
-        int register_termination_proc;
+        int result_atexit = EXIT_SUCCESS;
         libxsmm_timer_tickint s1, t1;
         internal_init(); /* must be first to initialize verbosity, etc. */
         if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* after internal_init */
@@ -1254,7 +1275,8 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
 #endif
-        register_termination_proc = atexit(internal_finalize);
+        internal_libxsmm_prvabrt = signal(SIGABRT, internal_libxsmm_sigabrt);
+        result_atexit = atexit(internal_finalize);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
         if (t0 < t1 && 0.0 < libxsmm_timer_scale) {
@@ -1277,7 +1299,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = 0;
         }
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          if (EXIT_SUCCESS != register_termination_proc) {
+          if (SIG_ERR == internal_libxsmm_prvabrt || EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
           if (0 == libxsmm_timer_scale
@@ -1473,6 +1495,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_GNR:
     case LIBXSMM_X86_AVX512_SPR:
     case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
@@ -1484,6 +1507,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_VL256_CLX:
     case LIBXSMM_X86_AVX512_VL256_CPX:
     case LIBXSMM_X86_AVX2_ADL:
+    case LIBXSMM_X86_AVX2_SRF:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE42:
@@ -1562,7 +1586,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
       target_archid = LIBXSMM_X86_AVX512_VL256;
     }
-    else if (arch == libxsmm_stristr(arch, "spr") || arch == libxsmm_stristr(arch, "amx")) {
+    else if (arch == libxsmm_stristr(arch, "gnr")) {
+      target_archid = LIBXSMM_X86_AVX512_GNR;
+    }
+    else if (arch == libxsmm_stristr(arch, "spr")) {
       target_archid = LIBXSMM_X86_AVX512_SPR;
     }
     else if (arch == libxsmm_stristr(arch, "cpx")) {
@@ -1582,6 +1609,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (arch == libxsmm_stristr(arch, "knl") || arch == libxsmm_stristr(arch, "mic")) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
+    }
+    else if (arch == libxsmm_stristr(arch, "srf")) {
+      target_archid = LIBXSMM_X86_AVX2_SRF;
     }
     else if (arch == libxsmm_stristr(arch, "adl")) {
       target_archid = LIBXSMM_X86_AVX2_ADL;
@@ -2188,7 +2218,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seemlessly to the current CPU arch */
+        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
         if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
              ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
           int emu_amx = 0;
@@ -2222,7 +2252,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MEQN: { /* matequation kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seemlessly to the current CPU arch */
+        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
         if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
              ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
           int emu_amx = 0;

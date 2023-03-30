@@ -322,7 +322,7 @@ def label(values, base, unit, accuracy, highlight):
         if cv:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
-            if num2fix(100 * cv * highlight) < abs(inum):
+            if max(num2fix(bnum * highlight), 1) < abs(inum):
                 result = f"{base} = {bold(result)} ({anum}>{bnum}%*{cnum})"
             else:
                 expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
@@ -766,8 +766,9 @@ def main(args, argd, dbfname):
         ngraphs = max(ngraphs, n)
         if 0 < n:
             axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
+            axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
             axes[i].set_title(entry.upper())
-            axes[i].legend(loc="upper left", ncol=2)  # fontsize="x-small"
+            axes[i].legend(loc="upper left", ncol=2)
         i = i + 1
     axes[-1].set_xlabel("Build Number")
     title = "Performance History"

@@ -172,7 +172,7 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
-    if [ "${LOGRPTHLT}" ]; then # highlight
+    if [ "${LOGRPTHLT}" ]; then # highlight factor
       DBSCRT="${DBSCRT} -t ${LOGRPTHLT}"
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
@@ -185,6 +185,7 @@ if [ "${LOGDIR}" ]; then
       -q "${LOGRPTQOP}" \
       -v ${VERBOSITY});
     then
+      # output cause of error
       echo "${OUTPUT}" | sed '$d'
       OUTPUT=""
     fi
@@ -197,19 +198,24 @@ if [ "${LOGDIR}" ]; then
        [ "$(command -v cut)" ];
     then
       if [ "0" != "$((0>VERBOSITY))" ]; then
-        FIGURE=$(echo "${OUTPUT}" | sed '$!d' | cut -d' ' -f1)
-      else
-        FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+        OUTPUT=$(echo "${OUTPUT}" | sed '$!d')
       fi
+      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-        if ! FIGURE=$(base64 -w0 "${FIGURE}");
-        then FIGURE=""; fi
-        if [ "${FIGURE}" ]; then
+        if ! OUTPUT=$(base64 -w0 "${FIGURE}");
+        then OUTPUT=""; fi
+        if [ "${OUTPUT}" ]; then
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
           printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
-            "${FIGURE}" "${STEPNAME:-${RESULT}}"
+            "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+        else
+          >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
         fi
+      else
+        >&2 echo "WARNING: report not ready (\"${OUTPUT}\")."
       fi
+    else
+      >&2 echo "WARNING: missing prerequisites for report."
     fi
   fi
 fi
