@@ -284,9 +284,16 @@ def savedb(filename, database, filetime=None, retry=None):
 
 
 def num2fix(num, decimals=0):
+    """
+    Rounds a number to the given number of decimals.
+    """
     dec = pow(10, decimals)
     nom = int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5))
     return nom / dec if 1 != dec else nom
+
+
+def num2str(num):
+    return str(num).rstrip("0").rstrip(".")
 
 
 def divup(a, b):
@@ -295,28 +302,30 @@ def divup(a, b):
 
 def trend(values):
     """
-    Calculate predicted value (linear trend of history),
-    relative difference (rd), standard deviation (cv),
-    and the linear trend (equation).
+    Calculate the predicted value (linear trend of history),
+    the relative difference of lastest and previous value (rd),
+    the standard deviation (cv), and the linear trend (equation).
     """
-    v, size = (values[0] if values else 0), len(values)
-    rd, cv, eqn = None, None, None
+    rd, cv, eqn, size = None, None, None, len(values)
+    b, a = values[0:2] if values else (0, 0)
+    if 0 != a:
+        rd = (b - a) / a
     if 2 < size:
+        # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
-        w = a + b  # value predicted for x=1 (a * x + b)
-        if 0 != w:
-            rd = (v - w) / w
-            avg = numpy.mean(values[1:])
-            if 0 != avg:
-                cv = numpy.std(values[1:]) / avg
-        v = w  # predicted value
-    return (v, rd, cv, eqn)
+        avg = numpy.mean(values[1:])
+        if 0 != avg:
+            cv = numpy.std(values[1:]) / avg
+    return (b, rd, cv, eqn)
 
 
-def bold(s):
-    c, t = s.count("$"), s.replace("%", r"\%")
-    return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+def bold(s, cond=True):
+    if cond:
+        c, t = s.count("$"), s.replace("%", r"\%")
+        return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+    else:
+        return s
 
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
@@ -327,32 +336,34 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
         inum = num2fix(100 * rd)
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
-            bnum = max(num2fix(100 * cv), 1)
+            bnum = num2fix(max(100 * cv, 1))
+            cnum = num2fix(abs(bounds[0]), accuracy)
             t0 = num2fix(bnum * abs(bounds[0]))
-            t1 = abs(bounds[1]) if 1 < len(bounds) else 0
+            t1 = num2fix(abs(bounds[1])) if 1 < len(bounds) else 0
+            cond = f"min({bnum}%*{num2str(cnum)}, {t1}%)"
             if t0 < t1 or 0 >= t1:
-                cnum = num2fix(abs(bounds[0]), accuracy)
                 if t0 < abs(inum):
-                    label = f"{base} = {bold(label)} ({anum}>{bnum}%*{cnum})"
                     bad = (0 > inum and lowhigh[0]) or (
                         0 < inum and lowhigh[1]
                     )
+                    btext = bold(label, bad or not (lowhigh[0] or lowhigh[1]))
+                    label = f"{base} = {btext}  {anum}>{cond}"
                 else:
-                    expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
-                    label = f"{base} = {label} ({expr})"
+                    expr = f"{anum}" + r"$\leq$" + cond
+                    label = f"{base} = {label}  {expr}"
             else:
-                cnum = num2fix(t1, accuracy)
                 if t1 < abs(inum):
-                    label = f"{base} = {bold(label)} ({anum}>{cnum})"
                     bad = (0 > inum and lowhigh[0]) or (
                         0 < inum and lowhigh[1]
                     )
+                    btext = bold(label, bad or not (lowhigh[0] or lowhigh[1]))
+                    label = f"{base} = {btext}  {anum}>{cond}"
                 else:
-                    expr = f"{anum}" + r"$\leq$" + f"{cnum}"
-                    label = f"{base} = {label} ({expr})"
+                    expr = f"{anum}" + r"$\leq$" + cond
+                    label = f"{base} = {label}  {expr}"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
-            label = f"{base} = {label} ({sign}{inum}%)"
+            label = f"{base} = {label}  {sign}{inum}%"
     else:
         label = f"{base} = {label}"
     return label, bad, eqn
@@ -817,7 +828,7 @@ def main(args, argd, dbfname):
             axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
             axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
             axes[i].set_title(entry.upper())
-            axes[i].legend(loc="upper left", ncol=2)
+            axes[i].legend(loc="upper left")  # ncol=2
         i = i + 1
     axes[-1].set_xlabel("Build Number")
     title = "Performance History"
@@ -1005,7 +1016,7 @@ if __name__ == "__main__":
         "-t",
         "--bounds",
         type=str,
-        default="2.0 20",
+        default="2.0 10",
         help="Highlight if exceeding max(A*Stdev%,B%)",
     )
     argparser.add_argument(
