@@ -1050,4 +1050,9 @@ if __name__ == "__main__":
 
     exceeded = main(args, argd, dbfname)
     if exceeded:
+        if 2 <= abs(args.verbosity):
+            print(
+                "WARNING: deviation of latest value exceeds margin.",
+                file=sys.stderr,
+            )
         exit(1)

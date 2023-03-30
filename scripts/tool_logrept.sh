@@ -160,19 +160,18 @@ if [ "${LOGDIR}" ]; then
   fi
 
   # capture result in database and generate report
-  if [ "${FINPUT}" ]; then
+  if [ "${FINPUT}" ] && [ "$(command -v sed)" ]; then
     QUERY=${LOGRPTQRY-${STEPNAME}}
     if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
       EXACT="-e"
     fi
-    if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
-       [ "$(command -v sed)" ];
-    then
+    if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1
     else
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
+    ERROR=""
     if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
@@ -182,23 +181,24 @@ if [ "${LOGDIR}" ]; then
       -q "${LOGRPTQOP}" -v ${VERBOSITY} \
       -t "${LOGRPTBND}");
     then
-      # output cause of error
-      echo "${OUTPUT}" | sed '$d'
-      OUTPUT=""
+      ERROR=$?
     fi
+    FIGPAT="[[:space:]][[:space:]]*created\."
+    FIGURE=$(echo "${OUTPUT}" | sed -n "/${FIGPAT}/p" | sed '$!d')
+    if [ "${FIGURE}" ]; then
+      OUTPUT=$(echo "${OUTPUT}" | sed "/${FIGPAT}/d")
+    fi
+    if [ "${OUTPUT}" ] && [[ ("${ERROR}") || ("0" != "$((0>VERBOSITY))") ]]; then
+      echo "${OUTPUT}"
+    fi
+    OUTPUT=${FIGURE}
   fi
 
   # embed report into log (base64)
   if [ "${OUTPUT}" ]; then
-    if [ "0" != "$((0>VERBOSITY))" ]; then
-      echo "${OUTPUT}" | sed '$d'  # remove last line
-    fi
     if [ "$(command -v base64)" ] && \
        [ "$(command -v cut)" ];
     then
-      if [ "0" != "$((0>VERBOSITY))" ]; then
-        OUTPUT=$(echo "${OUTPUT}" | sed '$!d')  # only last line
-      fi
       FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
