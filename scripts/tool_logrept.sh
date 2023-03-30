@@ -139,10 +139,12 @@ then
   done
 fi
 
-# post-process logfile and generate report
+# process logfile and generate report
 if [ "${LOGDIR}" ]; then
   SYNC=$(command -v sync)
   ${SYNC} # optional
+
+  # extract data from log (tool_logperf.sh)
   if [ ! "${LOGRPTSUM}" ] || \
      [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
   then # "telegram" format
@@ -156,15 +158,13 @@ if [ "${LOGDIR}" ]; then
     RESULT=${LOGRPTSUM}
     SUMMARY=0
   fi
-  if [ ! "${LOGRPTQNO}" ] || [ "0" = "${LOGRPTQNO}" ]; then
-    QUERY=${LOGRPTQRY:-${STEPNAME}}
-  else
-    QUERY=${LOGRPTQRY}
-  fi
-  if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
-    EXACT="-e"
-  fi
+
+  # capture result in database and generate report
   if [ "${FINPUT}" ]; then
+    QUERY=${LOGRPTQRY-${STEPNAME}}
+    if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
+      EXACT="-e"
+    fi
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
        [ "$(command -v sed)" ];
     then
@@ -172,8 +172,8 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
-    if [ "${LOGRPTHLT}" ]; then # highlight factor
-      DBSCRT="${DBSCRT} -t ${LOGRPTHLT}"
+    if [ "${LOGRPTBND}" ]; then # bounds
+      DBSCRT="${DBSCRT} -t \"${LOGRPTBND}\""
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
     if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
@@ -190,17 +190,19 @@ if [ "${LOGDIR}" ]; then
       OUTPUT=""
     fi
   fi
+
+  # embed report into log (base64)
   if [ "${OUTPUT}" ]; then
     if [ "0" != "$((0>VERBOSITY))" ]; then
-      echo "${OUTPUT}" | sed '$d'
+      echo "${OUTPUT}" | sed '$d'  # remove last line
     fi
     if [ "$(command -v base64)" ] && \
        [ "$(command -v cut)" ];
     then
       if [ "0" != "$((0>VERBOSITY))" ]; then
-        OUTPUT=$(echo "${OUTPUT}" | sed '$!d')
+        OUTPUT=$(echo "${OUTPUT}" | sed '$!d')  # only last line
       fi
-      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi

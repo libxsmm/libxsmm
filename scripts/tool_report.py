@@ -294,6 +294,11 @@ def divup(a, b):
 
 
 def trend(values):
+    """
+    Calculate predicted value (linear trend of history),
+    relative difference (rd), standard deviation (cv),
+    and the linear trend (equation).
+    """
     v, size = (values[0] if values else 0), len(values)
     rd, cv, eqn = None, None, None
     if 2 < size:
@@ -314,25 +319,43 @@ def bold(s):
     return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
 
 
-def label(values, base, unit, accuracy, highlight):
+def conclude(values, base, unit, accuracy, bounds, lowhigh):
     guess, rd, cv, eqn = trend(values)
-    result = f"{num2fix(values[0], accuracy)} {unit}"
+    label = f"{num2fix(values[0], accuracy)} {unit}"
+    bad = False
     if rd:
         inum = num2fix(100 * rd)
-        if cv:
+        if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
-            bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
-            if max(num2fix(bnum * highlight), 1) < abs(inum):
-                result = f"{base} = {bold(result)} ({anum}>{bnum}%*{cnum})"
+            bnum = max(num2fix(100 * cv), 1)
+            t0 = num2fix(bnum * abs(bounds[0]))
+            t1 = abs(bounds[1]) if 1 < len(bounds) else 0
+            if t0 < t1 or 0 >= t1:
+                cnum = num2fix(abs(bounds[0]), accuracy)
+                if t0 < abs(inum):
+                    label = f"{base} = {bold(label)} ({anum}>{bnum}%*{cnum})"
+                    bad = (0 > inum and lowhigh[0]) or (
+                        0 < inum and lowhigh[1]
+                    )
+                else:
+                    expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
+                    label = f"{base} = {label} ({expr})"
             else:
-                expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
-                result = f"{base} = {result} ({expr})"
+                cnum = num2fix(t1, accuracy)
+                if t1 < abs(inum):
+                    label = f"{base} = {bold(label)} ({anum}>{cnum})"
+                    bad = (0 > inum and lowhigh[0]) or (
+                        0 < inum and lowhigh[1]
+                    )
+                else:
+                    expr = f"{anum}" + r"$\leq$" + f"{cnum}"
+                    label = f"{base} = {label} ({expr})"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
-            result = f"{base} = {result} ({sign}{inum}%)"
+            label = f"{base} = {label} ({sign}{inum}%)"
     else:
-        result = f"{base} = {result}"
-    return result, eqn
+        label = f"{base} = {label}"
+    return label, bad, eqn
 
 
 def main(args, argd, dbfname):
@@ -606,6 +629,18 @@ def main(args, argd, dbfname):
     if 2 > len(entries):
         axes = [axes]
 
+    # parse bounds used to highlight results
+    strbounds = [i for i in re.split(r"[\s;,]", args.bounds)]
+    try:
+        highlight = [float(i) for i in strbounds]
+    except ValueError:
+        highlight = [float(i) for i in re.split(r"[\s;,]", argd.bounds)]
+    lowhigh = (  # meaning of negative/positive deviation
+        highlight and 0 != highlight[0] and "-" == strbounds[0][0],
+        highlight and 0 != highlight[0] and "+" == strbounds[0][0],
+    )
+    exceeded = False
+
     # build figure
     query_op = args.query_op if args.query_op else argd.query_op
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
@@ -744,13 +779,19 @@ def main(args, argd, dbfname):
                     ylist, ylabel = list(zip(*yvalue)), []
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
-                        s, eqn = label(y, z, yunit, accuracy, args.highlight)
-                        ylabel.append(s)
+                        label, bad, eqn = conclude(
+                            y, z, yunit, accuracy, highlight, lowhigh
+                        )
+                        ylabel.append(label)
+                        if not exceeded and bad:
+                            exceeded = True
                     ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
                 else:
-                    ylabel, eqn = label(
-                        yvalue, legend, yunit, accuracy, args.highlight
+                    ylabel, bad, eqn = conclude(
+                        yvalue, legend, yunit, accuracy, highlight, lowhigh
                     )
+                    if not exceeded and bad:
+                        exceeded = True
                 # plot values and legend as collected above
                 if (not aunit or aunit == yunit) and (
                     yvalue and latest == xvalue[0]
@@ -811,6 +852,8 @@ def main(args, argd, dbfname):
             figure.savefig(figout)  # save graphics file
         if 1 == abs(args.verbosity):
             print(f"{figout} created.")
+
+        return exceeded
 
 
 if __name__ == "__main__":
@@ -952,10 +995,10 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-t",
-        "--highlight",
-        type=float,
-        default=3.0,
-        help="Highlight if T*Stdev is exceeded",
+        "--bounds",
+        type=str,
+        default="2.0 20",
+        help="Highlight if exceeding max(A*Stdev%,B%)",
     )
     argparser.add_argument(
         "-m",
@@ -997,4 +1040,6 @@ if __name__ == "__main__":
         args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
-    main(args, argd, dbfname)
+    exceeded = main(args, argd, dbfname)
+    if exceeded:
+        exit(1)
