@@ -715,7 +715,7 @@ int main( /*int argc, char* argv[]*/ ) {
   /* init generated code object */
   mycode.generated_code = codebuffer;
   mycode.buffer_size = 8388608;
-  mycode.arch = LIBXSMM_X86_AVX512_SPR;
+  mycode.arch = LIBXSMM_X86_AVX512_GNR;
 
   /* testing ld/st instructions */
   test_evex_load_store( "evex_mov_VMOVAPD", &mycode, LIBXSMM_X86_INSTR_VMOVAPD, 3 );
@@ -1171,7 +1171,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_compute_3reg_general( "vex_reg_VPBROADCASTQ_VEX", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
 
   /* VEX only */
-  mycode.arch = LIBXSMM_X86_AVX2;
+  mycode.arch = LIBXSMM_X86_AVX2_SRF;
   test_vex_compute_3reg_general( "vex_reg_VMOVD_LD", &mycode, LIBXSMM_X86_INSTR_VMOVD_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
   test_vex_compute_3reg_general( "vex_reg_VMOVD_ST", &mycode, LIBXSMM_X86_INSTR_VMOVD_ST, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
   test_vex_compute_3reg_general( "vex_reg_VMOVQ_LD", &mycode, LIBXSMM_X86_INSTR_VMOVQ_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
@@ -1243,9 +1243,26 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_compute_3reg_general( "vex_reg_VPADDD", &mycode, LIBXSMM_X86_INSTR_VPADDD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
   test_vex_compute_3reg_general( "vex_reg_VPMADDUBSW", &mycode, LIBXSMM_X86_INSTR_VPMADDUBSW, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
   test_vex_compute_3reg_general( "vex_reg_VPMADDWD", &mycode, LIBXSMM_X86_INSTR_VPMADDWD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
-  mycode.arch = LIBXSMM_X86_AVX512_SPR;
+  test_vex_compute_3reg_general( "vex_reg_VPDPBSUD", &mycode, LIBXSMM_X86_INSTR_VPDPBSUD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VPDPBSUDS", &mycode, LIBXSMM_X86_INSTR_VPDPBSUDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VPDPBSSD", &mycode, LIBXSMM_X86_INSTR_VPDPBSSD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VPDPBSSDS", &mycode, LIBXSMM_X86_INSTR_VPDPBSSDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VPDPBUUD", &mycode, LIBXSMM_X86_INSTR_VPDPBUUD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VPDPBUUDS", &mycode, LIBXSMM_X86_INSTR_VPDPBUUDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VCVTNEPS2BF16", &mycode, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
+
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBUSD", &mycode, LIBXSMM_X86_INSTR_VPDPBUSD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBUSDS", &mycode, LIBXSMM_X86_INSTR_VPDPBUSDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBSUD", &mycode, LIBXSMM_X86_INSTR_VPDPBSUD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBSUDS", &mycode, LIBXSMM_X86_INSTR_VPDPBSUDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBSSD", &mycode, LIBXSMM_X86_INSTR_VPDPBSSD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBSSDS", &mycode, LIBXSMM_X86_INSTR_VPDPBSSDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBUUD", &mycode, LIBXSMM_X86_INSTR_VPDPBUUD, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VPDPBUUDS", &mycode, LIBXSMM_X86_INSTR_VPDPBUUDS, 0, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_mem_2reg_general( "vex_mem_VCVTNEPS2BF16", &mycode, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
 
   /* testing compute mem-reg instructions */
+  mycode.arch = LIBXSMM_X86_AVX512_GNR;
   test_evex_compute_mem_2reg_general( "evex_mem_VSHUFPS", &mycode, LIBXSMM_X86_INSTR_VSHUFPS, 2, 0x01, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VSHUFPD", &mycode, LIBXSMM_X86_INSTR_VSHUFPD, 2, 0x01, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSHUFB", &mycode, LIBXSMM_X86_INSTR_VPSHUFB, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
@@ -1634,9 +1651,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_tile_compute( "tile_reg_TDPBUSD", &mycode, LIBXSMM_X86_INSTR_TDPBUSD );
   test_tile_compute( "tile_reg_TDPBUUD", &mycode, LIBXSMM_X86_INSTR_TDPBUUD );
   test_tile_compute( "tile_reg_TDPBF16PS", &mycode, LIBXSMM_X86_INSTR_TDPBF16PS );
+  test_tile_compute( "tile_reg_TDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TDPFP16PS );
 
   /* AVX only tests */
-  mycode.arch = LIBXSMM_X86_AVX2;
+  mycode.arch = LIBXSMM_X86_AVX2_SRF;
 
   test_vex_load_store( "vex_mov_VMOVAPD", &mycode, LIBXSMM_X86_INSTR_VMOVAPD, 3 );
   test_vex_load_store( "vex_mov_VMOVAPS", &mycode, LIBXSMM_X86_INSTR_VMOVAPS, 3 );
@@ -1653,6 +1671,12 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_load_store( "vex_mov_VBROADCASTI128", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI128, 1 );
   test_vex_load_store( "vex_mov_VMOVNTPD", &mycode, LIBXSMM_X86_INSTR_VMOVNTPD, 2 );
   test_vex_load_store( "vex_mov_VMOVNTPS", &mycode, LIBXSMM_X86_INSTR_VMOVNTPS, 2 );
+  test_vex_load_store( "vex_mov_VBCSTNEBF162PS", &mycode, LIBXSMM_X86_INSTR_VBCSTNEBF162PS, 1 );
+  test_vex_load_store( "vex_mov_VBCSTNESH2PS", &mycode, LIBXSMM_X86_INSTR_VBCSTNESH2PS, 1 );
+  test_vex_load_store( "vex_mov_VCVTNEEBF162PS", &mycode, LIBXSMM_X86_INSTR_VCVTNEEBF162PS, 1 );
+  test_vex_load_store( "vex_mov_VCVTNEEPH2PS", &mycode, LIBXSMM_X86_INSTR_VCVTNEEPH2PS, 1 );
+  test_vex_load_store( "vex_mov_VCVTNEOBF162PS", &mycode, LIBXSMM_X86_INSTR_VCVTNEOBF162PS, 1 );
+  test_vex_load_store( "vex_mov_VCVTNEOPH2PS", &mycode, LIBXSMM_X86_INSTR_VCVTNEOPH2PS, 1 );
 
   test_vex_mask_load_store( "vex_mov_VMASKMOVPD", &mycode, 0, LIBXSMM_X86_INSTR_VMASKMOVPD );
   test_vex_mask_load_store( "vex_mov_VMASKMOVPS", &mycode, 0, LIBXSMM_X86_INSTR_VMASKMOVPS );

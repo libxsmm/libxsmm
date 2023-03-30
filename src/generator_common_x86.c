@@ -144,7 +144,7 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
   } else {
     unsigned int vmove_instr = i_vmove_instr;
 
-    if (io_generated_code->arch <= LIBXSMM_X86_AVX2_ADL) {
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128) {
       if (i_use_masking > 0) {
         if (i_is_store > 0 ) {
           vmove_instr = LIBXSMM_X86_INSTR_VMASKMOVPS_ST;
@@ -163,7 +163,7 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
       }
     }
 
-    if ((io_generated_code->arch <= LIBXSMM_X86_AVX2_ADL) && (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVDQU16) && (i_use_masking > 0) ) {
+    if ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL128) && (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVDQU16) && (i_use_masking > 0) ) {
       libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
       if (i_is_store == 0) {
         libxsmm_generator_maskedload_16bit_avx2( io_generated_code, LIBXSMM_X86_GP_REG_RCX, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0, i_mask_reg_number );
