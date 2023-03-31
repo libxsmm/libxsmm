@@ -185,24 +185,24 @@ def parselog(
     return nentries + m, nerrors + n
 
 
-def fname(extlst, in_path, in_dflt, idetail=""):
+def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
     """
-    if in_path.is_dir():
-        figloc, figext = in_path, in_dflt.suffix
-        figstm = in_dflt.stem
-    elif in_path.suffix[1:] in extlst:
-        figloc, figext = in_path.parent, in_path.suffix
-        figstm = in_path.stem
-    elif "." == str(in_path.parent):
-        figloc, figstm = in_path.parent, in_dflt.stem
-        figext = (
-            f".{in_path.name}" if in_path.name in extlst else in_dflt.suffix
-        )
+    dflt, plst = pathlib.Path(in_dflt), str(in_main).strip().split()
+    path = pathlib.Path(plst[0] if plst else in_main)
+    if path.is_dir():
+        figloc, figstm = path, dflt.stem
+        figext = f".{plst[1]}" if 1 < len(plst) else dflt.suffix
+    elif path.suffix[1:] in extlst:
+        figloc, figstm = path.parent, path.stem
+        figext = path.suffix
+    elif "." == str(path.parent):
+        figloc, figstm = path.parent, dflt.stem
+        figext = f".{path.name}" if path.name in extlst else dflt.suffix
     else:
-        figloc, figext = in_path.parent, in_dflt.suffix
-        figstm = in_path.stem if in_path.stem else in_dflt.stem
+        figloc, figext = path.parent, dflt.suffix
+        figstm = path.stem if path.stem else dflt.stem
     return figloc / f"{figstm}{idetail}{figext}"
 
 
@@ -284,9 +284,16 @@ def savedb(filename, database, filetime=None, retry=None):
 
 
 def num2fix(num, decimals=0):
+    """
+    Rounds a number to the given number of decimals.
+    """
     dec = pow(10, decimals)
     nom = int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5))
     return nom / dec if 1 != dec else nom
+
+
+def num2str(num):
+    return str(num).rstrip("0").rstrip(".")
 
 
 def divup(a, b):
@@ -294,45 +301,72 @@ def divup(a, b):
 
 
 def trend(values):
-    v, size = (values[0] if values else 0), len(values)
-    rd, cv, eqn = None, None, None
+    """
+    Calculate the predicted value (linear trend of history),
+    the relative difference of lastest and previous value (rd),
+    the standard deviation (cv), and the linear trend (equation).
+    """
+    rd, cv, eqn, size = None, None, None, len(values)
+    b, a = values[0:2] if values else (0, 0)
+    if 0 != a:
+        rd = (b - a) / a
     if 2 < size:
+        # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
-        w = a + b  # value predicted for x=1 (a * x + b)
-        if 0 != w:
-            rd = (v - w) / w
-            avg = numpy.mean(values[1:])
-            if 0 != avg:
-                cv = numpy.std(values[1:]) / avg
-        v = w  # predicted value
-    return (v, rd, cv, eqn)
+        avg = numpy.mean(values[1:])
+        if 0 != avg:
+            cv = numpy.std(values[1:]) / avg
+    return (b, rd, cv, eqn)
 
 
-def bold(s):
-    c, t = s.count("$"), s.replace("%", r"\%")
-    return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+def bold(s, cond=True):
+    if cond:
+        c, t = s.count("$"), s.replace("%", r"\%")
+        return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+    else:
+        return s
 
 
-def label(values, base, unit, accuracy, highlight):
+def conclude(values, base, unit, accuracy, bounds, lowhigh):
     guess, rd, cv, eqn = trend(values)
-    result = f"{num2fix(values[0], accuracy)} {unit}"
+    label = f"{num2fix(values[0], accuracy)} {unit}"
+    bad = False
     if rd:
         inum = num2fix(100 * rd)
-        if cv:
+        if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
-            bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
-            if num2fix(100 * cv * highlight) < abs(inum):
-                result = f"{base} = {bold(result)} ({anum}>{bnum}%*{cnum})"
+            bnum = num2fix(max(100 * cv, 1))
+            cnum = num2fix(abs(bounds[0]), accuracy)
+            t0 = num2fix(bnum * abs(bounds[0]))
+            t1 = num2fix(abs(bounds[1])) if 1 < len(bounds) else 0
+            cond = f"min({bnum}%*{num2str(cnum)}, {t1}%)"
+            if t0 < t1 or 0 >= t1:
+                if t0 < abs(inum):
+                    bad = (0 > inum and lowhigh[0]) or (
+                        0 < inum and lowhigh[1]
+                    )
+                    btext = bold(label, bad or not (lowhigh[0] or lowhigh[1]))
+                    label = f"{base} = {btext}  {anum}>{cond}"
+                else:
+                    expr = f"{anum}" + r"$\leq$" + cond
+                    label = f"{base} = {label}  {expr}"
             else:
-                expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
-                result = f"{base} = {result} ({expr})"
+                if t1 < abs(inum):
+                    bad = (0 > inum and lowhigh[0]) or (
+                        0 < inum and lowhigh[1]
+                    )
+                    btext = bold(label, bad or not (lowhigh[0] or lowhigh[1]))
+                    label = f"{base} = {btext}  {anum}>{cond}"
+                else:
+                    expr = f"{anum}" + r"$\leq$" + cond
+                    label = f"{base} = {label}  {expr}"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
-            result = f"{base} = {result} ({sign}{inum}%)"
+            label = f"{base} = {label}  {sign}{inum}%"
     else:
-        result = f"{base} = {result}"
-    return result, eqn
+        label = f"{base} = {label}"
+    return label, bad, eqn
 
 
 def main(args, argd, dbfname):
@@ -606,6 +640,26 @@ def main(args, argd, dbfname):
     if 2 > len(entries):
         axes = [axes]
 
+    # parse bounds used to highlight results
+    strbounds = re.split(
+        r"[\s;,]", (args.bounds if args.bounds else argd.bounds).strip()
+    )
+    try:
+        highlight = [float(i) for i in strbounds]
+    except ValueError:
+        highlight = [float(i) for i in re.split(r"[\s;,]", argd.bounds)]
+    lowhigh = (  # meaning of negative/positive deviation
+        highlight
+        and 0 != highlight[0]
+        and "" != strbounds[0]
+        and "-" == strbounds[0][0],
+        highlight
+        and 0 != highlight[0]
+        and "" != strbounds[0]
+        and "+" == strbounds[0][0],
+    )
+    exceeded = False
+
     # build figure
     query_op = args.query_op if args.query_op else argd.query_op
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
@@ -744,13 +798,19 @@ def main(args, argd, dbfname):
                     ylist, ylabel = list(zip(*yvalue)), []
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
-                        s, eqn = label(y, z, yunit, accuracy, args.highlight)
-                        ylabel.append(s)
+                        label, bad, eqn = conclude(
+                            y, z, yunit, accuracy, highlight, lowhigh
+                        )
+                        ylabel.append(label)
+                        if not exceeded and bad:
+                            exceeded = True
                     ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
                 else:
-                    ylabel, eqn = label(
-                        yvalue, legend, yunit, accuracy, args.highlight
+                    ylabel, bad, eqn = conclude(
+                        yvalue, legend, yunit, accuracy, highlight, lowhigh
                     )
+                    if not exceeded and bad:
+                        exceeded = True
                 # plot values and legend as collected above
                 if (not aunit or aunit == yunit) and (
                     yvalue and latest == xvalue[0]
@@ -766,8 +826,9 @@ def main(args, argd, dbfname):
         ngraphs = max(ngraphs, n)
         if 0 < n:
             axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
+            axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
             axes[i].set_title(entry.upper())
-            axes[i].legend(loc="upper left", ncol=2)  # fontsize="x-small"
+            axes[i].legend(loc="upper left")  # ncol=2
         i = i + 1
     axes[-1].set_xlabel("Build Number")
     title = "Performance History"
@@ -794,8 +855,8 @@ def main(args, argd, dbfname):
         figcanvas = figure.canvas
         figout = fname(
             extlst=figcanvas.get_supported_filetypes().keys(),
-            in_path=pathlib.Path(args.figure),
-            in_dflt=pathlib.Path(argd.figure),
+            in_main=args.figure,
+            in_dflt=argd.figure,
             idetail=figqry,
         )
         # reduce file size (png) and save figure
@@ -810,6 +871,8 @@ def main(args, argd, dbfname):
             figure.savefig(figout)  # save graphics file
         if 1 == abs(args.verbosity):
             print(f"{figout} created.")
+
+        return exceeded
 
 
 if __name__ == "__main__":
@@ -951,10 +1014,10 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-t",
-        "--highlight",
-        type=float,
-        default=3.0,
-        help="Highlight if T*Stdev is exceeded",
+        "--bounds",
+        type=str,
+        default="2.0 10",
+        help="Highlight if exceeding max(A*Stdev%,B%)",
     )
     argparser.add_argument(
         "-m",
@@ -987,8 +1050,8 @@ if __name__ == "__main__":
     argd = argparser.parse_args([])
     dbfname = fname(  # database filename
         ["json", "pickle", "pkl", "db"],
-        in_path=pathlib.Path(args.filepath),
-        in_dflt=pathlib.Path(argd.filepath),
+        in_main=args.filepath,
+        in_dflt=argd.filepath,
     )
     if dbfname.name:
         weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
@@ -996,4 +1059,11 @@ if __name__ == "__main__":
         args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
-    main(args, argd, dbfname)
+    exceeded = main(args, argd, dbfname)
+    if exceeded:
+        if 2 <= abs(args.verbosity):
+            print(
+                "WARNING: deviation of latest value exceeds margin.",
+                file=sys.stderr,
+            )
+        exit(1)
