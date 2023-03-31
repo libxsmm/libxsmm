@@ -180,8 +180,8 @@ if [ "${LOGDIR}" ]; then
       -x -y "${QUERY}" -r "${RESULT}" -z \
       -q "${LOGRPTQOP}" -v ${VERBOSITY} \
       -t "${LOGRPTBND}");
-    then
-      ERROR=$?
+    then  # ERROR=$?
+      ERROR=1
     fi
     FIGPAT="[[:space:]][[:space:]]*created\."
     FIGURE=$(echo "${OUTPUT}" | sed -n "/${FIGPAT}/p" | sed '$!d')
