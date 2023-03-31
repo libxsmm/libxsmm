@@ -432,7 +432,7 @@ LIBXSMM_API void libxsmm_blas_gemm(
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 
-#if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
+#if !defined(LIBXSMM_DEFAULT_CONFIG) && (!defined(LIBXSMM_SOURCE_H) || defined(LIBXSMM_CONFIGURED))
 
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/
 
