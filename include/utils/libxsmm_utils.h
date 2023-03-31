@@ -70,9 +70,6 @@
 # define LIBXSMM_MKL_VERSION2 LIBXSMM_VERSION2(__INTEL_MKL__, __INTEL_MKL_MINOR__)
 #endif
 
-/** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
-#define LIBXSMM_PREFETCH_AUTO -1
-
 /** Append "_omp" postfix to the given symbol. */
 #define LIBXSMM_USEOMP(FUNCTION) LIBXSMM_CONCATENATE(FUNCTION, _omp)
 
