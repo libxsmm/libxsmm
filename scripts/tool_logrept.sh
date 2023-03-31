@@ -143,6 +143,7 @@ fi
 if [ "${LOGDIR}" ]; then
   SYNC=$(command -v sync)
   ${SYNC} # optional
+  ERROR=""
 
   # extract data from log (tool_logperf.sh)
   if [ ! "${LOGRPTSUM}" ] || \
@@ -171,7 +172,6 @@ if [ "${LOGDIR}" ]; then
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    ERROR=""
     if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
@@ -203,12 +203,27 @@ if [ "${LOGDIR}" ]; then
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi
-        if [ "$(command -v mimetype)" ]; then MIMETYPE=$(mimetype -b "${FIGURE}"); fi
-        if [ ! "${MIMETYPE}" ]; then MIMETYPE="image/png"; fi  # default
         if [ "${OUTPUT}" ]; then
+          if [ "$(command -v mimetype)" ]; then
+            MIMETYPE=$(mimetype -b "${FIGURE}")
+          elif [ "${LOGRPTFMT}" ]; then
+            if [ "svgz" = "${LOGRPTFMT}" ]; then
+              MIMETYPE="image/svg+xml-compressed"
+            elif [ "svg" = "${LOGRPTFMT}" ]; then
+              MIMETYPE="image/svg+xml"
+            else  # fallback
+              MIMETYPE="image/${LOGRPTFMT}"
+            fi
+          else  # fallback
+            MIMETYPE="image/${FIGURE##*.}"
+          fi
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
           printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
             "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
+            >&2 echo "WARNING: deviation of latest value exceeds margin."
+            exit "${ERROR}"
+          fi
         else
           >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
         fi
