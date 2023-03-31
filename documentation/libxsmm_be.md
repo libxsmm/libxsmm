@@ -2,7 +2,7 @@
 
 ### Code Generator (JIT)
 
-There can be situations in which it is up-front not clear which problem-sizes will be needed when running an application. To leverage LIBXSMM's high-performance kernels, the library implements a JIT (Just-In-Time) code generation backend which generates the requested kernels on the fly (in-memory). This is accomplished by emitting the corresponding byte-code directly into an executable buffer. The actual JIT code is generated per the CPUID flags, and therefore does not rely on the code path selected when building the library. In the current implementation, some limitations apply to the JIT backend specifically:
+There can be situations in which it is up-front not clear which problem-sizes will be needed when running an application. To leverage LIBXSMM's high-performance kernels, the library implements a JIT (Just-In-Time) code generation backend which generates the requested kernels on the fly (in-memory). This is accomplished by emitting the corresponding bytecode directly into an executable buffer. The actual JIT code is generated per the CPUID flags, and therefore does not rely on the code path selected when building the library. In the current implementation, some limitations apply to the JIT backend specifically:
 
 1. To stay agnostic to any threading model used, Pthread mutexes are guarding the updates of the JIT'ted code cache (link line with `-lpthread` is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
 2. There is limited support for the Windows calling convention (only kernels without prefetch signature).
@@ -13,9 +13,9 @@ One can use the afore mentioned THRESHOLD parameter to control the matrix sizes 
 
 ### Generator Driver
 
-In rare situations, it might be useful to directly incorporate generated C code (with inline assembly regions). This is accomplished by invoking a driver program (with certain command line arguments).
+In rare situations, it might be useful to directly incorporate generated C code (with inline assembly regions). This is accomplished by invoking a driver program (with certain command-line arguments).
 
-**Note**: The stand-alone generator-driver is considered legacy (deprecated). Associated functionality may be removed and future instruction set extensions may not be addressed with printed assembly code. The cost of dispatching JIT-code for every code region of an application, and for every visit of such region, can be amortized in several ways and without dispensing JIT-generated code. Dispatching [multiple kernels at once](libxsmm_aux.md#user-data-dispatch) or (most effectively) tabulating JIT'ted function pointers manually, can elleviate or remove first-time code generation and (more important) the cost of subsequently dispatching kernels (when code was already JIT-generated).
+**Note**: The stand-alone generator-driver is considered legacy (deprecated). Associated functionality may be removed and future instruction set extensions may not be addressed with printed assembly code. The cost of dispatching JIT-code for every code region of an application, and for every visit of such region, can be amortized in several ways and without dispensing JIT-generated code. Dispatching [multiple kernels at once](libxsmm_aux.md#user-data-dispatch) or (most effectively) tabulating JIT'ted function pointers manually, can alleviate or remove first-time code generation and (more important) the cost of subsequently dispatching kernels (when code was already JIT-generated).
 
 The generator driver program is usually built as part of LIBXSMM's build process, but also available as a separate build target:
 
