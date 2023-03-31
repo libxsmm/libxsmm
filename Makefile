@@ -648,46 +648,46 @@ ifneq (,$(strip $(SRCFILES_KERNELS)))
 ifeq (noarch,$(GENTARGET))
 ifneq (,$(CTARGET))
 ifneq (2,$(PRECISION))
-	@echo "#define LIBXSMM_GENTARGET_knl_sp" >>$@
-	@echo "#define LIBXSMM_GENTARGET_hsw_sp" >>$@
-	@echo "#define LIBXSMM_GENTARGET_snb_sp" >>$@
-	@echo "#define LIBXSMM_GENTARGET_wsm_sp" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_knl_sp*/" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_hsw_sp*/" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_snb_sp*/" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_wsm_sp*/" >>$@
 endif
 ifneq (1,$(PRECISION))
-	@echo "#define LIBXSMM_GENTARGET_knl_dp" >>$@
-	@echo "#define LIBXSMM_GENTARGET_hsw_dp" >>$@
-	@echo "#define LIBXSMM_GENTARGET_snb_dp" >>$@
-	@echo "#define LIBXSMM_GENTARGET_wsm_dp" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_knl_dp*/" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_hsw_dp*/" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_snb_dp*/" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_wsm_dp*/" >>$@
 endif
 	@echo >>$@
 	@echo >>$@
 ifneq (2,$(PRECISION))
-	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
-	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
-	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
-	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
+#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
+#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
+#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
+#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
-	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
-	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
-	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
+#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
+#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
+#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
+#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
 endif
 endif # target
 else # noarch
 ifneq (2,$(PRECISION))
-	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_$(GENTARGET)_sp*/" >>$@
 endif
 ifneq (1,$(PRECISION))
-	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >>$@
+	@echo "/*#define LIBXSMM_GENTARGET_$(GENTARGET)_dp*/" >>$@
 endif
 	@echo >>$@
 	@echo >>$@
 ifneq (2,$(PRECISION))
-	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
+#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
+#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 endif # noarch
 	$(eval TMPFILE = $(shell $(MKTEMP) /tmp/.libxsmm_XXXXXX.mak))
