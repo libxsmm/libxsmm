@@ -16,12 +16,6 @@
 #if !defined(LIBXSMM_DIFF_AVX512_ENABLED) && 0
 # define LIBXSMM_DIFF_AVX512_ENABLED
 #endif
-#if !defined(LIBXSMM_DIFF_AVX2_ENABLED) && 1
-# define LIBXSMM_DIFF_AVX2_ENABLED
-#endif
-#if !defined(LIBXSMM_DIFF_SSE_ENABLED) && 1
-# define LIBXSMM_DIFF_SSE_ENABLED
-#endif
 
 #define LIBXSMM_DIFF_4_DECL(A) const uint32_t */*const*/ A = NULL
 #define LIBXSMM_DIFF_4_ASSIGN(A, B) (A) = (B)
@@ -33,18 +27,11 @@
 #define LIBXSMM_DIFF_8_LOAD(A, SRC) A = (const uint64_t*)(SRC)
 #define LIBXSMM_DIFF_8(A, B, ...) ((unsigned char)(0 != (*(A) ^ (*(const uint64_t*)(B)))))
 
-#if !defined(LIBXSMM_DIFF_SSE_ENABLED)
-# define LIBXSMM_DIFF_SSE_DECL(A) __m128i A = LIBXSMM_INTRINSICS_MM_UNDEFINED_SI128()
-# define LIBXSMM_DIFF_SSE_ASSIGN(A, B) (A) = (B)
-# define LIBXSMM_DIFF_SSE_LOAD(A, SRC) A = LIBXSMM_INTRINSICS_LOADU_SI128((const __m128i*)(SRC))
-# define LIBXSMM_DIFF_SSE(A, B, ...) ((unsigned char)(0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
-    A, LIBXSMM_INTRINSICS_LOADU_SI128((const __m128i*)(B))))))
-#else
-# define LIBXSMM_DIFF_SSE_DECL LIBXSMM_DIFF_16SW_DECL
-# define LIBXSMM_DIFF_SSE_ASSIGN LIBXSMM_DIFF_16SW_ASSIGN
-# define LIBXSMM_DIFF_SSE_LOAD LIBXSMM_DIFF_16SW_LOAD
-# define LIBXSMM_DIFF_SSE LIBXSMM_DIFF_16SW
-#endif
+#define LIBXSMM_DIFF_SSE_DECL(A) __m128i A = LIBXSMM_INTRINSICS_MM_UNDEFINED_SI128()
+#define LIBXSMM_DIFF_SSE_ASSIGN(A, B) (A) = (B)
+#define LIBXSMM_DIFF_SSE_LOAD(A, SRC) A = LIBXSMM_INTRINSICS_LOADU_SI128((const __m128i*)(SRC))
+#define LIBXSMM_DIFF_SSE(A, B, ...) ((unsigned char)(0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
+  A, LIBXSMM_INTRINSICS_LOADU_SI128((const __m128i*)(B))))))
 
 #if (LIBXSMM_X86_GENERIC <= LIBXSMM_STATIC_TARGET_ARCH) /*|| defined(LIBXSMM_INTRINSICS_TARGET)*/
 # define LIBXSMM_DIFF_16_DECL LIBXSMM_DIFF_SSE_DECL
@@ -59,18 +46,11 @@
     ((A)[1] ^ ((const uint64_t*)(B))[1]))))
 #endif
 
-#if !defined(LIBXSMM_DIFF_AVX2_ENABLED)
-# define LIBXSMM_DIFF_AVX2_DECL(A) __m256i A = LIBXSMM_INTRINSICS_MM256_UNDEFINED_SI256()
-# define LIBXSMM_DIFF_AVX2_ASSIGN(A, B) (A) = (B)
-# define LIBXSMM_DIFF_AVX2_LOAD(A, SRC) A = _mm256_loadu_si256((const __m256i*)(SRC))
-# define LIBXSMM_DIFF_AVX2(A, B, ...) ((unsigned char)(-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \
-    A, _mm256_loadu_si256((const __m256i*)(B))))))
-#else
-# define LIBXSMM_DIFF_AVX2_DECL LIBXSMM_DIFF_32SW_DECL
-# define LIBXSMM_DIFF_AVX2_ASSIGN LIBXSMM_DIFF_32SW_ASSIGN
-# define LIBXSMM_DIFF_AVX2_LOAD LIBXSMM_DIFF_32SW_LOAD
-# define LIBXSMM_DIFF_AVX2 LIBXSMM_DIFF_32SW
-#endif
+#define LIBXSMM_DIFF_AVX2_DECL(A) __m256i A = LIBXSMM_INTRINSICS_MM256_UNDEFINED_SI256()
+#define LIBXSMM_DIFF_AVX2_ASSIGN(A, B) (A) = (B)
+#define LIBXSMM_DIFF_AVX2_LOAD(A, SRC) A = _mm256_loadu_si256((const __m256i*)(SRC))
+#define LIBXSMM_DIFF_AVX2(A, B, ...) ((unsigned char)(-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \
+  A, _mm256_loadu_si256((const __m256i*)(B))))))
 
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
 # define LIBXSMM_DIFF_32_DECL LIBXSMM_DIFF_AVX2_DECL
