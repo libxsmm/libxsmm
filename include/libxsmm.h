@@ -469,7 +469,9 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, static_cast<libxsmm_bitfield>(flags), PREFETCH_DEFAULT);
+    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape,
+      static_cast<libxsmm_bitfield>(flags),
+      static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT));
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch = PREFETCH_DEFAULT) {
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
