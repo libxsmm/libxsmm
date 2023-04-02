@@ -644,6 +644,7 @@ ifneq (,$(strip $(SRCFILES_KERNELS)))
 	$(eval MNVALUE := $(MVALUE))
 	$(eval NMVALUE := $(NVALUE))
 	@echo "#include <libxsmm.h>" >$@
+	@echo "#include <utils/libxsmm_utils.h>" >$@
 	@echo >>$@
 ifeq (noarch,$(GENTARGET))
 ifneq (,$(CTARGET))
