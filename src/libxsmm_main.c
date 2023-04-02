@@ -2551,7 +2551,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
             } while (i != i0);
             if (i == i0) { /* out of capacity (no registry slot available) */
               diff = 0; /* do not use break if inside of locked region */
+#if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
               build = EXIT_FAILURE;
+#endif
             }
             flux_entry.ptr = NULL; /* no result */
           }
