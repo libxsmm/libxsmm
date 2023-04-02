@@ -456,7 +456,7 @@ template<> struct libxsmm_gemm_default_output</*signed*/short>   { typedef int t
 template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16>  { typedef float type; };
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
-template<libxsmm_bitfield PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
+template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
   const libxsmm_xmmfunction& function, libxsmm_gemm_param& args)
 {
   libxsmm_mmkernel_info info;
