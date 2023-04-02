@@ -31,7 +31,7 @@
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 /** Attempt to automatically select a strategy. */
-#define LIBXSMM_PREFETCH_AUTO ((libxsmm_bitfield)-1)
+#define LIBXSMM_PREFETCH_AUTO -1
 
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
