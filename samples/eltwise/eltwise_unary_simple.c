@@ -498,13 +498,13 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
-      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
+      unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
     }
     if (use_bcast == COL_BCAST) {
-      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
+      unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     }
     if (use_bcast == SCALAR_BCAST) {
-      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
+      unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
 

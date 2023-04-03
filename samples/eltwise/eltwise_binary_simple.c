@@ -367,7 +367,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 #endif
     binary_param.op.secondary = (void*)rng_state;
   } else {
-    binary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   }
 
   /* compute out_gold */
@@ -377,25 +377,25 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   binary_param.in0.primary  = (void*)_in;
   binary_param.in1.primary  = (void*)_in2;
   binary_param.out.primary  = (void*)out;
-  //binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
+      binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
     }
     if (use_bcast == COL_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+      binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
+      binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
     }
     if (use_bcast == ROW_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
+      binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
     }
     if (use_bcast == COL_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
+      binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
+      binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
 
