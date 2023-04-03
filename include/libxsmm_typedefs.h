@@ -27,9 +27,11 @@
 # define LIBXSMM_BLASINT int
 #endif
 
-/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO (libxsmm_frontend.h) */
+/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO */
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
+/** Attempt to automatically select a strategy. */
+#define LIBXSMM_PREFETCH_AUTO -1
 
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
@@ -785,7 +787,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_unary_argops {
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_binary_postops {
   libxsmm_blasint ldd;                        /* leading dimensions of D */
   libxsmm_datatype d_in_type;                 /* datatype of D */
-  libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+  libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binary( C, D ) */
   libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 

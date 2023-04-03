@@ -2,9 +2,9 @@
 
 ## Overview
 
-This code sample aims to benchmark the performance of matrix transposes. The C/C++ and [FORTRAN sample code](https://github.com/libxsmm/libxsmm/blob/main/samples/transpose/transpose.f) differ slightly with the C/C++ code sample offering a richer set of command line options as well as build settings available inside of the [translation unit](https://github.com/libxsmm/libxsmm/blob/main/samples/transpose/transpose.c).
+This code sample aims to benchmark the performance of matrix transposes. The C/C++ and [FORTRAN sample code](https://github.com/libxsmm/libxsmm/blob/main/samples/transpose/transpose.f) differ slightly with the C/C++ code sample offering a richer set of command-line options as well as build settings available inside of the [translation unit](https://github.com/libxsmm/libxsmm/blob/main/samples/transpose/transpose.c).
 
-The available command line options of the sample code may be reviewed by looking into the source code. Generally, the idea is to support the following:
+The available command-line options of the sample code may be reviewed by looking into the source code. Generally, the idea is to support the following:
 
 > transpose  [&lt;kind&gt;  [&lt;m&gt;  [&lt;n&gt;  [&lt;ldi&gt;  [&lt;ldo&gt;]]]]]  
 transposef                [&lt;m&gt;  [&lt;n&gt;  [&lt;ldi&gt;  [&lt;ldo&gt;]]]]
@@ -36,7 +36,7 @@ In the above case one can see from the verbose output (`LIBXSMM_VERBOSE=2`) that
 
 ## OpenTuner
 
-To tune the tile sizes ("block sizes") internal to LIBXSMM's transpose routine, the [OpenTuner](http://opentuner.org/) extensible framework for program autotuning can be used. In case of issues during the tuning phase ("no value has been set for this column"), please install the latest 1.2.x revision of SQLAlchemy (`pip install sqlalchemy==1.2.19`). A tuning script (`transpose_opentuner.py`) is provided, which accepts a range of matrix sizes as command line arguments.
+To tune the tile sizes ("block sizes") internal to LIBXSMM's transpose routine, the [OpenTuner](http://opentuner.org/) extensible framework for program autotuning can be used. In case of issues during the tuning phase ("no value has been set for this column"), please install the latest 1.2.x revision of SQLAlchemy (`pip install sqlalchemy==1.2.19`). A tuning script (`transpose_opentuner.py`) is provided, which accepts a range of matrix sizes as command-line arguments.
 
 > transpose_opentuner.py &lt;begin&gt; &lt;end&gt; [*nexperiments-per-epoch*] [*tile-size-m*] [*tile-size-n*]
 
