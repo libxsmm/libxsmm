@@ -44,7 +44,7 @@
 #define REPLICATE_COL_VAR 27
 #define FP32_TO_BF16X2 64
 #define FP32_TO_BF16X3 65
-#if 0
+#if 1
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
@@ -259,7 +259,7 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
 
 LIBXSMM_INLINE
 void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const void *in, void *out,
-                   const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_unary_flags flags) {
+                   const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_unary_flags flags, void *rng_state) {
   libxsmm_blasint i, j;
 
   if ( ( ((dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_BF16)) ||
@@ -328,7 +328,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
           if ((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
-            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
+            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state);
           } else {
             libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
           }
@@ -402,6 +402,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   char *in, *_in;
   char *out, *out_gold;
   unsigned int *rng_state = NULL;
+  unsigned int *rng_state_gold = NULL;
 
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
@@ -464,10 +465,11 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if (rnd_mode == RND_STOCHASTIC) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND;
     rng_state = libxsmm_rng_create_extstate( 555 );
+    rng_state_gold = libxsmm_rng_create_extstate( 555 );
 #ifdef USE_ZERO_RNG_STATE_UNITTEST
     memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+    memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
 #endif
-    unary_param.op.secondary = (void*)rng_state;
   } else {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   }
@@ -476,13 +478,15 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if ( (op == FP32_TO_BF16X2) || (op == FP32_TO_BF16X3) ) {
     unary_op_fp32_to_bf16x2_bf16x3( M, N, ldi, ldo, op, in, out_gold );
   } else {
-    unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
+    unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags, rng_state_gold );
   }
-
   /* use jited transpose */
   memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+  if (rnd_mode == RND_STOCHASTIC) {
+    unary_param.op.secondary = (void*)rng_state;
+  }
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_param.op.primary = (void*) &_N;
   }
@@ -560,6 +564,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   if (rnd_mode == RND_STOCHASTIC) {
     libxsmm_rng_destroy_extstate( rng_state );
+    libxsmm_rng_destroy_extstate( rng_state_gold );
   }
   libxsmm_free( out_gold );
   libxsmm_free( out );

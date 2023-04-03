@@ -17,6 +17,9 @@
 
 #include "eltwise_common.h"
 
+#define RND_RNE 0
+#define RND_STOCHASTIC 1
+
 #define NO_BCAST 0
 #define ROW_BCAST_IN0 1
 #define COL_BCAST_IN0 2
@@ -30,7 +33,9 @@
 #define SUB_OP 3
 #define DIV_OP 4
 #define MULADD_OP 5
-
+#if 1
+#define USE_ZERO_RNG_STATE_UNITTEST
+#endif
 
 LIBXSMM_INLINE
 void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
@@ -169,7 +174,7 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
 LIBXSMM_INLINE
 void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi0, const libxsmm_blasint ldi1, const libxsmm_blasint ldo,
                     const void *in0, const void *in1, char *out, const unsigned int op,
-                    const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
+                    const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_binary_flags flags, void *rng_state) {
   libxsmm_blasint i,j;
   LIBXSMM_UNUSED(ldi1);
 
@@ -249,7 +254,11 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           libxsmm_rne_convert_fp32_f16(&out_value, &(f16_out[(j*ldo) + i]), 1);
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
-          libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
+          if ((flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
+            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state);
+          } else {
+            libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
+          }
         } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1);
@@ -281,9 +290,12 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
 LIBXSMM_INLINE
 int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast,
-                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
+                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in, *in2, *_in2;
   char *out, *out_gold;
+  unsigned int *rng_state = NULL;
+  unsigned int *rng_state_gold = NULL;
+
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_binary binary_kernel;
   libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
@@ -345,14 +357,27 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     }
   }
 
+  if (rnd_mode == RND_STOCHASTIC) {
+    binary_flags = LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND;
+    rng_state = libxsmm_rng_create_extstate( 555 );
+    rng_state_gold = libxsmm_rng_create_extstate( 555 );
+#ifdef USE_ZERO_RNG_STATE_UNITTEST
+    memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+    memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
+#endif
+    binary_param.op.secondary = (void*)rng_state;
+  } else {
+    binary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  }
+
   /* compute out_gold */
-  binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
+  binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp, binary_flags, rng_state_gold );
 
   /* use jited transpose */
   binary_param.in0.primary  = (void*)_in;
   binary_param.in1.primary  = (void*)_in2;
   binary_param.out.primary  = (void*)out;
-  binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  //binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
       binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
@@ -400,6 +425,11 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   benchmark_binary(binary_type, binary_shape, binary_flags, binary_param);
 
+  if (rnd_mode == RND_STOCHASTIC) {
+    libxsmm_rng_destroy_extstate( rng_state );
+    libxsmm_rng_destroy_extstate( rng_state_gold );
+  }
+
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
@@ -430,11 +460,12 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
+  unsigned int rnd_mode = RND_RNE;
   char opname[256];
   int res = EXIT_FAILURE;
 
-  if ( argc != 11 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+  if ( argc != 11 && argc != 12 ) {
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
     exit(-1);
   }
 
@@ -448,6 +479,10 @@ int main( int argc, char* argv[] ) {
   N          = atoi(argv[8]);
   ldi        = atoi(argv[9]);
   ldo        = atoi(argv[10]);
+
+  if (argc > 11 ) {
+    rnd_mode   = atoi(argv[11]);
+  }
 
   dtype_in0  = char_to_libxsmm_datatype( dt_in0 );
   dtype_in1  = char_to_libxsmm_datatype( dt_in1 );
@@ -516,7 +551,7 @@ int main( int argc, char* argv[] ) {
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
       printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
         libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
-      res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
+      res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp, rnd_mode);
     } else {
       printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
       exit(-1);
