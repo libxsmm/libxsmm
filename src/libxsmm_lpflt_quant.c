@@ -727,7 +727,6 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
 LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int* prng_out, const unsigned int seed_idx ) {
   unsigned int rng_num = 0;
   const unsigned int state_ld = 16;
-  const float one = 1.0f;
 
   unsigned int state_0 = rng_state[seed_idx + (0 * state_ld)];
   unsigned int state_1 = rng_state[seed_idx + (1 * state_ld)];
@@ -761,15 +760,15 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
   /* truncate buffer to bf8 */
   for ( i = 0; i < len; i+=16 ) {
     unsigned int do_round = 1;
-
-    for (j=0; j < 16; j++) {
-      if (i+j > len) break;
-
+    unsigned int j_length = ( i + 16 < len ) ? 16 : len - i;
+    for (j=0; j < j_length; j++) {
       unsigned short short_round = libxsmm_convert_f32_to_f16( in[i+j] );
       unsigned int vrng;
-      libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, j);
+      unsigned int rand;
 
-      unsigned short rand = (unsigned short)(vrng >> 24);
+      libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, j);
+      rand = (unsigned short)(vrng >> 24);
+
       /* we do not round NaN and inf */
       if ( (short_round & 0x7c00) == 0x7c00 ) {
         do_round = 0;
