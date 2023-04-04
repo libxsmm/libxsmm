@@ -445,6 +445,19 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 }
 
 
+LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data)
+{
+  const unsigned int hash = libxsmm_hash16(data);
+  return libxsmm_crc32_u8(hash >> 8, &hash) & 0xFF;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
+{
+  return libxsmm_crc32_u16(data >> 16, &data) & 0xFFFF;
+}
+
+
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
 {
   unsigned long long result;
