@@ -41,6 +41,20 @@ int main(int argc, char* argv[])
   if (EXIT_SUCCESS == result && NULL != libxsmm_stristr("aa", NULL)) result = EXIT_FAILURE;
   if (EXIT_SUCCESS == result && NULL != libxsmm_stristr(NULL, NULL)) result = EXIT_FAILURE;
 
+  /* check libxsmm_strimatch */
+  if (EXIT_SUCCESS == result && 2 != libxsmm_strimatch("Co Product A", "Corp Prod B")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 2 != libxsmm_strimatch("Corp Prod B", "Co Product A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Co Product A", "Corp Prod AA")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Corp Prod AA", "Co Product A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Corp Prod AA", "Co Product A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Co Product A", "Corp Prod AA")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Corp Prod A", "Co Product A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Co Product A", "Corp Prod A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("C Product A", "Cor Prod AA")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 3 != libxsmm_strimatch("Cor Prod AA", "C Product A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 1 != libxsmm_strimatch("aaaa", "A A A A")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && 1 != libxsmm_strimatch("A A A A", "aaaa")) result = EXIT_FAILURE;
+
   /* check LIBXSMM_MEMCPY127 and libxsmm_diff_n */
   if (EXIT_SUCCESS == result) {
     libxsmm_blasint i = 0;

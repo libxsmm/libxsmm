@@ -66,12 +66,12 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
  * Calculates the "difference" between "a" and "b"; "a" is taken "count" times into account.
  * Returns the first match (index) of no difference (or "n" if "a" did not match).
  * The hint determines the initial index searching for a difference, and it must
- * be in bounds [0, count), but otherwise only impacts performance.
+ * be in bounds [0, count); otherwise performance is impacted.
  */
 LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char elemsize,
   unsigned char stride, unsigned int hint, unsigned int count);
 
-/** Similar to memcmp (C standard library), but the result is conceptually only a boolean. */
+/** Similar to memcmp (C standard library) with the result conceptually boolean. */
 LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
 
 /** Calculate a hash value for the given buffer and seed; accepts NULL-buffer. */
@@ -83,16 +83,24 @@ LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data);
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[]);
 
 /** Return the pointer to the 1st match of "b" in "a", or NULL (no match). */
+LIBXSMM_API const char* libxsmm_stristrn(const char a[], const char b[], size_t maxlen);
 LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
+
+/**
+ * Count the number of words in A (or B) with match in B (or A) respectively (case-insensitive).
+ * Can be used to score the equality of A and B on a word-basis. The result is independent of
+ * A-B or B-A order (symmetry). The score cannot exceed the number of words in A or B.
+ */
+LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[]);
 
 /** Determines the number of calls to restore the original data (libxsmm_shuffle). */
 LIBXSMM_API size_t libxsmm_unshuffle(size_t count,
-  /* Shall be coprime to count (libxsmm_coprime2(count) if NULL). */
+  /* Shall be co-prime to count (libxsmm_coprime2(count) if NULL). */
   const size_t* shuffle);
 
 /** Out-of-place shuffling of data given by elemsize and count. */
 LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count,
-  /* Shall be coprime to count (libxsmm_coprime2(count) if NULL). */
+  /* Shall be co-prime to count (libxsmm_coprime2(count) if NULL). */
   const size_t* shuffle,
   /* If NULL, the default value is one. */
   const size_t* nrepeat);
