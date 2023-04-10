@@ -51,7 +51,8 @@
 #define LIBXSMM_AARCH64_NEOV1         2302 /* Neoverse V1, Graviton 3 */
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
-#define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_RISCV                 3001 /* RISCV All */
+#define LIBXSMM_AARCH64_ALLFEAT       3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
