@@ -518,34 +518,42 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
 }
 
 
-LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[])
+LIBXSMM_API_INLINE int internal_isbreak(char c, const char delims[])
+{
+  char s[2] = { '\0' }; s[0] = c;
+  return NULL != strpbrk(s, delims);
+}
+
+
+LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char delims[])
 {
   int result = 0;
   if (NULL != a && NULL != b && '\0' != *a && '\0' != *b) {
+    const char *const sep = ((NULL == delims || '\0' == *delims) ? " \t;,:-" : delims);
     const char *c, *tmp;
     int nwords = 0;
     size_t m, n;
     do {
-      while (isspace(*b)) ++b; /* left-trim */
+      while (internal_isbreak(*b, sep)) ++b; /* left-trim */
       tmp = b;
-      while ('\0' != *tmp && !isspace(*tmp)) ++tmp;
+      while ('\0' != *tmp && !internal_isbreak(*tmp, sep)) ++tmp;
       m = tmp - b;
       c = libxsmm_stristrn(a, b, LIBXSMM_MIN(1, m));
       if (NULL != c) {
         const char *d = c;
-        while ('\0' != *d && !isspace(*d)) ++d;
+        while ('\0' != *d && !internal_isbreak(*d, sep)) ++d;
         n = d - c;
         if (1 >= n || NULL != libxsmm_stristrn(c, b, LIBXSMM_MIN(m, n))) ++result;
       }
       b = tmp;
     } while ('\0' != *b);
     do { /* count number of words */
-      while (isspace(*a)) ++a; /* left-trim */
+      while (internal_isbreak(*a, sep)) ++a; /* left-trim */
       if ('\0' != *a) ++nwords;
-      while ('\0' != *a && !isspace(*a)) ++a;
+      while ('\0' != *a && !internal_isbreak(*a, sep)) ++a;
     } while ('\0' != *a);
     if (nwords < result) result = nwords;
-  }
+  } else result = -1;
   return result;
 }
 
