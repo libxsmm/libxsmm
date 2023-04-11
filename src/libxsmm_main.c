@@ -3751,7 +3751,7 @@ LIBXSMM_EXTERN int* _NSGetArgc(void);
 #endif
 
 
-LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
+LIBXSMM_API_INTERN int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
 {
   int result = 0;
 #if defined(__linux__)

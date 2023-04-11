@@ -437,58 +437,6 @@
   } \
 } while(0)
 
-/** Helper macro to setup a matrix with some initial values. */
-#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \
-  /*const*/ libxsmm_blasint libxsmm_matinit_seed_ = SEED; /* avoid constant conditional */ \
-  const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
-  const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)NROWS; \
-  const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
-  libxsmm_blasint libxsmm_matinit_i_ = 0, libxsmm_matinit_j_ = 0; \
-  LIBXSMM_OMP_VAR(libxsmm_matinit_i_); LIBXSMM_OMP_VAR(libxsmm_matinit_j_); \
-  if (0 != libxsmm_matinit_seed_) { \
-    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
-    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
-      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_nrows_; ++libxsmm_matinit_j_) { \
-        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
-        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_scale_ * (1.0 + \
-          (double)libxsmm_matinit_i_ * libxsmm_matinit_nrows_ + libxsmm_matinit_j_)); \
-      } \
-      for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
-        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
-        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)libxsmm_matinit_seed_; \
-      } \
-    } \
-  } \
-  else { /* shuffle based initialization */ \
-    const unsigned int libxsmm_matinit_maxval_ = ((unsigned int)NCOLS) * ((unsigned int)libxsmm_matinit_ld_); \
-    const TYPE libxsmm_matinit_maxval2_ = (TYPE)((unsigned int)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2)); /* non-zero */ \
-    const TYPE libxsmm_matinit_inv_ = ((TYPE)(SCALE)) / libxsmm_matinit_maxval2_; \
-    const size_t libxsmm_matinit_shuffle_ = libxsmm_coprime2(libxsmm_matinit_maxval_); \
-    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
-    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
-      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
-        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
-        ((TYPE*)(DST))[libxsmm_matinit_k_] = libxsmm_matinit_inv_ * /* normalize values to an interval of [-1, +1] */ \
-          ((TYPE)(libxsmm_matinit_shuffle_ * libxsmm_matinit_k_ % libxsmm_matinit_maxval_) - libxsmm_matinit_maxval2_); \
-      } \
-    } \
-  } \
-} while(0)
-
-#define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
-  LIBXSMM_MATINIT_AUX(LIBXSMM_ELIDE, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
-#define LIBXSMM_MATINIT_SEQ(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
-  LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
-#define LIBXSMM_MATINIT_OMP(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
-  LIBXSMM_MATINIT_AUX(LIBXSMM_PRAGMA_OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
-
-/**
- * Print the command line arguments of the current process, and get the number of written
- * characters including the prefix, the postfix, but not the terminating NULL character.
- * If zero is returned, nothing was printed (no prefix, no postfix).
- */
-LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
-
 /** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
 #define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
   LIBXSMM_GEMM_PRINT2(OSTREAM, PRECISION, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
@@ -632,4 +580,33 @@ inline void libxsmm_blas_gemm(const char* transa, const char* transb,
 }
 
 #endif /*__cplusplus*/
+
+/** Inlineable fast tanh, such that a the compiler can potentially vectorize. */
+LIBXSMM_API_INLINE float libxsmm_stanh_pade78(float i_x) {
+  const float l_c0 = 2027025.0f;
+  const float l_c1 = 270270.0f;
+  const float l_c2 = 6930.0f;
+  const float l_c3 = 36.0f;
+  const float l_c1_d = 945945.0f;
+  const float l_c2_d = 51975.0f;
+  const float l_c3_d = 630.0f;
+  const float l_hi_bound = 4.97f;
+  const float l_lo_bound = -4.97f;
+  const float l_ones = 1.0f;
+  const float l_neg_ones = -1.0f;
+  const float x2 = i_x * i_x;
+  const float t1_nom = (l_c3 * x2) + l_c2;
+  const float t2_nom = (t1_nom * x2) + l_c1;
+  const float t3_nom = (t2_nom * x2) + l_c0;
+  const float nom = t3_nom * i_x;
+  const float t1_denom = x2 + l_c3_d;
+  const float t2_denom = (t1_denom * x2) + l_c2_d;
+  const float t3_denom = (t2_denom * x2) + l_c1_d;
+  const float denom = (t3_denom * x2) + l_c0;
+  float result = nom / denom;
+  result = (result > l_hi_bound) ? l_ones : result;
+  result = (result < l_lo_bound) ? l_neg_ones : result;
+  return result;
+}
+
 #endif /*LIBXSMM_UTILS_H*/

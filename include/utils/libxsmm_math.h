@@ -13,6 +13,51 @@
 
 #include "../libxsmm_typedefs.h"
 
+/** Helper macro to setup a matrix with some initial values. */
+#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \
+  /*const*/ libxsmm_blasint libxsmm_matinit_seed_ = SEED; /* avoid constant conditional */ \
+  const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
+  const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)NROWS; \
+  const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
+  libxsmm_blasint libxsmm_matinit_i_ = 0, libxsmm_matinit_j_ = 0; \
+  LIBXSMM_OMP_VAR(libxsmm_matinit_i_); LIBXSMM_OMP_VAR(libxsmm_matinit_j_); \
+  if (0 != libxsmm_matinit_seed_) { \
+    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
+    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
+      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_nrows_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_scale_ * (1.0 + \
+          (double)libxsmm_matinit_i_ * libxsmm_matinit_nrows_ + libxsmm_matinit_j_)); \
+      } \
+      for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)libxsmm_matinit_seed_; \
+      } \
+    } \
+  } \
+  else { /* shuffle based initialization */ \
+    const unsigned int libxsmm_matinit_maxval_ = ((unsigned int)NCOLS) * ((unsigned int)libxsmm_matinit_ld_); \
+    const TYPE libxsmm_matinit_maxval2_ = (TYPE)((unsigned int)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2)); /* non-zero */ \
+    const TYPE libxsmm_matinit_inv_ = ((TYPE)(SCALE)) / libxsmm_matinit_maxval2_; \
+    const size_t libxsmm_matinit_shuffle_ = libxsmm_coprime2(libxsmm_matinit_maxval_); \
+    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
+    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
+      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = libxsmm_matinit_inv_ * /* normalize values to an interval of [-1, +1] */ \
+          ((TYPE)(libxsmm_matinit_shuffle_ * libxsmm_matinit_k_ % libxsmm_matinit_maxval_) - libxsmm_matinit_maxval2_); \
+      } \
+    } \
+  } \
+} while(0)
+
+#define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT_AUX(LIBXSMM_ELIDE, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+#define LIBXSMM_MATINIT_SEQ(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+#define LIBXSMM_MATINIT_OMP(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT_AUX(LIBXSMM_PRAGMA_OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+
 
 /**
  * Structure of differences with matrix norms according
@@ -96,6 +141,17 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
 /* Kahan's summation returns accumulator += value and updates compensation. */
 LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* compensation);
 
+/* Convert BF8 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in);
+/* Convert BF16 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in);
+/* Convert FP16 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in);
+/* Convert FP16 to HF8 (scalar). */
+LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_hf8_rne(libxsmm_float16 in);
+/* Convert FP32 to FP16 (scalar). */
+LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in);
+
 /** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
 /** SQRT with Newton's method using integer arithmetic. */
@@ -129,33 +185,5 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 
 /** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */
 LIBXSMM_API float libxsmm_sexp2_i8i(int x);
-
-/** Inlineable fast tanh, such that a the compiler can potentially vectorize. */
-LIBXSMM_API_INLINE float libxsmm_stanh_pade78(float i_x) {
-  const float l_c0       = 2027025.0f;
-  const float l_c1       = 270270.0f;
-  const float l_c2       = 6930.0f;
-  const float l_c3       = 36.0f;
-  const float l_c1_d     = 945945.0f;
-  const float l_c2_d     = 51975.0f;
-  const float l_c3_d     = 630.0f;
-  const float l_hi_bound = 4.97f;
-  const float l_lo_bound = -4.97f;
-  const float l_ones     = 1.0f;
-  const float l_neg_ones = -1.0f;
-  const float x2         = i_x * i_x;
-  const float t1_nom     = (l_c3 * x2) + l_c2;
-  const float t2_nom     = (t1_nom * x2) + l_c1;
-  const float t3_nom     = (t2_nom * x2) + l_c0;
-  const float nom        = t3_nom * i_x;
-  const float t1_denom   = x2 + l_c3_d;
-  const float t2_denom   = (t1_denom * x2) + l_c2_d;
-  const float t3_denom   = (t2_denom * x2) + l_c1_d;
-  const float denom      = (t3_denom * x2) + l_c0;
-  float result           = nom/denom ;
-  result = (result > l_hi_bound) ? l_ones : result;
-  result = (result < l_lo_bound) ? l_neg_ones : result;
-  return result;
-}
 
 #endif /*LIBXSMM_MATH_H*/
