@@ -68,6 +68,24 @@ void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_prefetch_tile_in_L1(libxsmm_generated_code*     io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int tile_cols,
+    unsigned int LD,
+    unsigned int base_reg,
+    long long    offset) {
+  unsigned int i;
+  LIBXSMM_UNUSED( i_micro_kernel_config );
+  for (i=0; i<tile_cols; i++) {
+    /* TODO: cacht overflow in offset */
+    libxsmm_x86_instruction_prefetch(io_generated_code,
+        LIBXSMM_X86_INSTR_PREFETCHT0,
+        base_reg,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        ((int)offset + i * LD * 2 /*(i_micro_kernel_config->datatype_size/2)*/) );
+  }
+}
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_prefetch_output( libxsmm_generated_code*            io_generated_code,
     unsigned int                       gpr_base,
     unsigned int                       ldc,
@@ -1053,6 +1071,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int n_tiles = n_blocking_info->tiles;
   int i, im, in;
   int pf_dist = i_xgemm_desc->c3;
+  int pf_dist_l1 = i_xgemm_desc->c3;
   int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1)) ? 1 : 0;
   unsigned int l_enforce_Mx1_amx_tile_blocking = libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking();
   int use_paired_tilestores = ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0) && (l_enforce_Mx1_amx_tile_blocking == 0)) ? 1 : 0;
@@ -1112,9 +1131,15 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int _in_offset_prefix_sums[4] = { 0 };
 
   const char *const env_pf_dist = getenv("PF_DIST");
+  const char *const env_pf_dist_l1 = getenv("PF_DIST_L1");
+
   if ( 0 == env_pf_dist ) {
   } else {
     pf_dist = atoi(env_pf_dist);
+  }
+  if ( 0 == env_pf_dist_l1 ) {
+  } else {
+    pf_dist_l1 = atoi(env_pf_dist_l1);
   }
 
   /* Disable prefetched if not strided BRGEMM... */
@@ -1386,6 +1411,17 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             i_gp_reg_mapping->gp_reg_a,
             _A_offsets[i] + pf_dist * i_xgemm_desc->c1 );
       }
+      if (i_brgemm_loop + pf_dist_l1 < i_xgemm_desc->c3) {
+        unsigned int n_tile_rows, n_tile_cols;
+        libxsmm_get_tileinfo( _A_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
+        n_CL_to_pf = n_tile_cols;
+        libxsmm_generator_gemm_amx_prefetch_tile_in_L1(  io_generated_code,
+            i_micro_kernel_config,
+            n_CL_to_pf,
+            i_xgemm_desc->lda * 2,
+            i_gp_reg_mapping->gp_reg_a,
+            _A_offsets[i] + pf_dist_l1 * i_xgemm_desc->c1 );
+      }
     }
 
     if (_B_tile_id_load[i] > 0) {
@@ -1414,6 +1450,17 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             i_xgemm_desc->ldb,
             i_gp_reg_mapping->gp_reg_b,
             _B_offsets[i] + pf_dist * i_xgemm_desc->c2 );
+      }
+      if (i_brgemm_loop + pf_dist_l1 < i_xgemm_desc->c3) {
+        unsigned int n_tile_rows, n_tile_cols;
+        libxsmm_get_tileinfo( _B_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
+        n_CL_to_pf = n_tile_cols;
+        libxsmm_generator_gemm_amx_prefetch_tile_in_L1(  io_generated_code,
+            i_micro_kernel_config,
+            n_CL_to_pf,
+            i_xgemm_desc->ldb,
+            i_gp_reg_mapping->gp_reg_b,
+            _B_offsets[i] + pf_dist_l1 * i_xgemm_desc->c2 );
       }
     }
 
