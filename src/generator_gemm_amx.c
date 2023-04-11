@@ -2271,16 +2271,16 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int peeled_iters = 0;
   int pf_dist = 0;
   const char *const env_pf_dist = getenv("PF_DIST");
-  if ( 0 == env_pf_dist ) {
-  } else {
-    pf_dist = atoi(env_pf_dist);
-  }
 #if defined(LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker *const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
 #else
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_jump_label_tracker *const p_jump_label_tracker = &l_jump_label_tracker;
 #endif
+  if ( 0 == env_pf_dist ) {
+  } else {
+    pf_dist = atoi(env_pf_dist);
+  }
   libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
   l_generator_kloop = libxsmm_generator_gemm_amx_kernel_kloop;
   i_micro_kernel_config->B_offs_trans = 0;
@@ -2312,8 +2312,21 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       unroll_factor = i_xgemm_desc->c3;
       /* Restrict unrolling only if prefetching is enabled */
       if ((unroll_factor > 16) && (pf_dist > 0) && (i_micro_kernel_config->decompress_A == 0)) {
-        unroll_factor = 16;
-        peeled_iters = (i_xgemm_desc->c3 % unroll_factor == 0) ? unroll_factor : i_xgemm_desc->c3 - (i_xgemm_desc->c3/unroll_factor) * unroll_factor;
+        unsigned int unrolling_iters = 0;
+        const char *const env_unroll_factor = getenv("UNROLL_FACTOR");
+        if ( 0 == env_unroll_factor ) {
+          unroll_factor = 16;
+        } else {
+          unroll_factor = atoi(env_unroll_factor);
+        }
+        if (pf_dist > i_xgemm_desc->c3 ) {
+          pf_dist = 1;
+        }
+        peeled_iters = pf_dist;
+        unrolling_iters = i_xgemm_desc->c3 - peeled_iters;
+        while (unrolling_iters % unroll_factor != 0) {
+          unroll_factor--;
+        }
         brgemm_assm_loop_iters = (i_xgemm_desc->c3 - peeled_iters) / unroll_factor;
       }
 
