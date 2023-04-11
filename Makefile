@@ -13,7 +13,7 @@ DOCDIR := documentation
 
 # subdirectories (relative) to PREFIX (install targets)
 PINCDIR ?= $(INCDIR)
-PSRCDIR ?= $(PINCDIR)/libxsmm
+PSRCDIR ?= libxsmm
 POUTDIR ?= $(OUTDIR)
 PPKGDIR ?= $(OUTDIR)
 PMODDIR ?= $(OUTDIR)
@@ -1389,8 +1389,10 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
-	@$(MKDIR) -p $(PREFIX)/$(PSRCDIR)
-	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
+	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/$(PSRCDIR)
+	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PINCDIR)/$(PSRCDIR) >/dev/null 2>/dev/null || true
+# regenerate libxsmm_source.h
+	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(PSRCDIR) >$(PREFIX)/$(PINCDIR)/libxsmm_source.h
 endif
 
 .PHONY: install
