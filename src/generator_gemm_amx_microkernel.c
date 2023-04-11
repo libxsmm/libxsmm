@@ -9,6 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_gemm_amx_microkernel.h"
+#include "generator_gemm_amx.h"
 #include "generator_mateltwise_transform_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common_x86.h"
@@ -54,12 +55,12 @@ void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     
     unsigned int base_reg,
     long long    offset) {
   unsigned int i;
+  const char *const l_env_AB_prefetch_type = getenv("AB_PREFETCH_TYPE");
   LIBXSMM_UNUSED( i_micro_kernel_config );
-
   for (i=0; i<tile_cols; i++) {
     /* TODO: cacht overflow in offset */
     libxsmm_x86_instruction_prefetch(io_generated_code,
-        LIBXSMM_X86_INSTR_PREFETCHT1,
+        (l_env_AB_prefetch_type == 0) ? LIBXSMM_X86_INSTR_PREFETCHT1 : ( atoi(l_env_AB_prefetch_type) > 0 ? LIBXSMM_X86_INSTR_PREFETCHT1 : LIBXSMM_X86_INSTR_PREFETCHT0 ),
         base_reg,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         ((int)offset + i * LD * 2 /*(i_micro_kernel_config->datatype_size/2)*/) );
@@ -1060,9 +1061,11 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   unsigned int gp_reg_a;
   const char *const l_env_pf_c_scratch_dist = getenv("C_SCR_PF_DIST");
   const char *const l_env_pf_c_matrix_dist  = getenv("C_MAT_PF_DIST");
-  unsigned int prefetch_C_scratch       = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C_SCRATCH) > 0) ? 1 : 0;
+  /*unsigned int prefetch_C_scratch       = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C_SCRATCH) > 0) ? 1 : 0;*/
+  unsigned int prefetch_C_scratch       = (l_env_pf_c_scratch_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_scratch_dist  = (l_env_pf_c_scratch_dist == 0) ? 4 : atoi(l_env_pf_c_scratch_dist);
-  unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;
+  /*unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;*/
+  unsigned int prefetch_C_matrix        = (l_env_pf_c_matrix_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_matrix_dist   = (l_env_pf_c_matrix_dist == 0) ? 3 : atoi(l_env_pf_c_matrix_dist);
 
 
@@ -1373,7 +1376,9 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
           _A_tile_id_load[i]);
 
       if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
-        n_CL_to_pf = 16;
+        unsigned int n_tile_rows, n_tile_cols;
+        libxsmm_get_tileinfo( _A_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
+        n_CL_to_pf = n_tile_cols;
         libxsmm_generator_gemm_amx_prefetch_tile_in_L2(  io_generated_code,
             i_micro_kernel_config,
             n_CL_to_pf,
@@ -1400,7 +1405,9 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       }
 
       if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
-        n_CL_to_pf = 16;
+        unsigned int n_tile_rows, n_tile_cols;
+        libxsmm_get_tileinfo( _B_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
+        n_CL_to_pf = n_tile_cols;
         libxsmm_generator_gemm_amx_prefetch_tile_in_L2(  io_generated_code,
             i_micro_kernel_config,
             n_CL_to_pf,
@@ -1480,7 +1487,6 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     }
   }
 }
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*            io_generated_code,

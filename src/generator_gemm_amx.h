@@ -14,6 +14,9 @@
 
 #include "generator_common.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned int *n_cols, libxsmm_tile_config *tc);
+
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(  libxsmm_generated_code*        io_generated_code,
                                                                                         libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                         libxsmm_gp_reg_mapping*        i_gp_reg_mapping,

@@ -50,46 +50,6 @@ void libxsmm_generator_gemm_footer_generic_loop( libxsmm_generated_code*        
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned int *n_cols, libxsmm_tile_config *tc) {
-  switch (tile_id) {
-    case 0:
-      (*n_rows) = (int) tc->tile0rowsb/4;
-      (*n_cols) = (int) tc->tile0cols;
-      break;
-    case 1:
-      (*n_rows) = (int) tc->tile1rowsb/4;
-      (*n_cols) = (int) tc->tile1cols;
-      break;
-    case 2:
-      (*n_rows) = (int) tc->tile2rowsb/4;
-      (*n_cols) = (int) tc->tile2cols;
-      break;
-    case 3:
-      (*n_rows) = (int) tc->tile3rowsb/4;
-      (*n_cols) = (int) tc->tile3cols;
-      break;
-    case 4:
-      (*n_rows) = (int) tc->tile4rowsb/4;
-      (*n_cols) = (int) tc->tile4cols;
-      break;
-    case 5:
-      (*n_rows) = (int) tc->tile5rowsb/4;
-      (*n_cols) = (int) tc->tile5cols;
-      break;
-    case 6:
-      (*n_rows) = (int) tc->tile6rowsb/4;
-      (*n_cols) = (int) tc->tile6cols;
-      break;
-    case 7:
-      (*n_rows) = (int) tc->tile7rowsb/4;
-      (*n_cols) = (int) tc->tile7cols;
-      break;
-    default:
-      LIBXSMM_ASSERT_MSG(0, "valid tile id");
-  }
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      i_vec_instr,
                                                       const char              i_vector_name,

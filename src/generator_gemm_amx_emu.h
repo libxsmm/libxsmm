@@ -15,9 +15,6 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned int *n_cols, libxsmm_tile_config *tc);
-
-LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_generated_code,
                                            const unsigned int      i_instruction_set,
                                            const unsigned int      i_tcompute_instr,
