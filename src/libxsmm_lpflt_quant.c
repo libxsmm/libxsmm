@@ -355,72 +355,6 @@ LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, 
   }
 }
 
-#if 0
-LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int length) {
-  unsigned int i = 0;
-  for ( i = 0; i < length; ++i ) {
-    libxsmm_float_uint hybrid_in = { 0 };
-    libxsmm_hfloat8 res = 0;
-    unsigned int s, e, m, e_f32, m_f32;
-    unsigned int fixup;
-    unsigned int f32_bias = 127;
-    unsigned int f8_bias = 7;
-
-    hybrid_in.f = in[i];
-    /* DAZ */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : ( hybrid_in.u & 0xffffffff );
-    s = ( hybrid_in.u & 0x80000000 ) >> 24;
-    e_f32 = ( hybrid_in.u & 0x7f800000 ) >> 23;
-    m_f32 = ( hybrid_in.u & 0x007fffff );
-    /* special value --> make it NaN */
-    if ( e_f32 == 0xff ) {
-      e = 0xf;
-      m = 0x7;
-    /* overflow --> make it NaN */
-    } else if ( (e_f32 > (f32_bias - f8_bias + 15)) ||
-                ((e_f32 == (f32_bias - f8_bias + 15)) && ( m_f32 > 0x600000))) {
-      e = 0xf;
-      m = 0x7;
-    /* smaller than denormal f8 + eps */
-    } else if ( e_f32 < f32_bias - f8_bias - 3 ) {
-      e = 0x0;
-      m = 0x0;
-    /* denormal */
-    } else if ( e_f32 <= f32_bias - f8_bias ) {
-      /* RNE */
-      /* denormalized mantissa */
-      m = m_f32 | 0x00800000;
-      /* additionally subnormal shift */
-      m = m >> ((f32_bias - f8_bias) + 1 - e_f32);
-      /* preserve sticky bit (some sticky bits are lost when denormalizing) */
-      m |= (((m_f32 & 0x000fffff) + 0x000fffff) >> 20);
-      /* RNE Round */
-      fixup = (m >> 20) & 0x1;
-      m = m + 0x0007ffff + fixup;
-      m = m >> 20;
-      e = 0x0;
-    /* normal */
-    } else {
-      /* RNE round */
-      fixup = (m_f32 >> 20) & 0x1;
-      hybrid_in.u = hybrid_in.u + 0x0007ffff + fixup;
-      e = ( hybrid_in.u & 0x7f800000 ) >> 23;
-      m = ( hybrid_in.u & 0x007fffff );
-      LIBXSMM_ASSERT(e >= (f32_bias - f8_bias));
-      e -= (f32_bias - f8_bias);
-      m = m >> 20;
-    }
-    /* set result to 0 */
-    res = 0x0;
-    /* set exponent and mantissa */
-    res |= e << 3;
-    res |= m;
-    /* sign it */
-    res |= s;
-    out[i] = res;
-  }
-}
-#else
 LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int length) {
   unsigned int i = 0;
   for ( i = 0; i < length; ++i ) {
@@ -428,7 +362,6 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
     out[i] = libxsmm_convert_f16_hf8_rne(itm);
   }
 }
-#endif
 
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length) {
   unsigned int i = 0;
