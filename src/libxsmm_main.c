@@ -3067,14 +3067,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
       wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
     }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
-#if defined(_DEBUG)
-    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && NULL != result.xmm) {
-      LIBXSMM_STDIO_ACQUIRE();
-      fprintf(stderr, "\nLIBXSMM: ");
-      libxsmm_gemm_xprint(stderr, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
-      LIBXSMM_STDIO_RELEASE();
-    }
-#endif
   }
 #if !defined(NDEBUG)
   else { /* quietly accept NULL-descriptor */

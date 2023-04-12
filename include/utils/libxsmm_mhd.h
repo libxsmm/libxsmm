@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_MHD_H
-#define LIBXSMM_MHD_H
+#ifndef LIBXSMM_UTILS_MHD_H
+#define LIBXSMM_UTILS_MHD_H
 
 #include "../libxsmm_typedefs.h"
 
@@ -165,4 +165,4 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   /* Extension data size; can be NULL. */
   size_t extension_size);
 
-#endif /*LIBXSMM_MHD_H*/
+#endif /*LIBXSMM_UTILS_MHD_H*/

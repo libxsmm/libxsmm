@@ -8,9 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include <utils/libxsmm_utils.h>
-#include <utils/libxsmm_rng.h>
+#include <libxsmm.h>
 
 
 int main(int argc, char* argv[]) {

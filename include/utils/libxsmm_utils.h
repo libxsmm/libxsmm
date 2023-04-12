@@ -18,6 +18,7 @@
 #include "libxsmm_lpflt_quant.h"
 #include "libxsmm_barrier.h"
 #include "libxsmm_timer.h"
+#include "libxsmm_math.h"
 #include "libxsmm_mhd.h"
 
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
@@ -472,8 +473,6 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
   double dbeta, void* c, libxsmm_blasint ldc);
-LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
-  libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
 /** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
@@ -575,33 +574,4 @@ inline void libxsmm_blas_gemm(const char* transa, const char* transb,
 }
 
 #endif /*__cplusplus*/
-
-/** Inlineable fast tanh, such that a the compiler can potentially vectorize. */
-LIBXSMM_API_INLINE float libxsmm_stanh_pade78(float i_x) {
-  const float l_c0 = 2027025.0f;
-  const float l_c1 = 270270.0f;
-  const float l_c2 = 6930.0f;
-  const float l_c3 = 36.0f;
-  const float l_c1_d = 945945.0f;
-  const float l_c2_d = 51975.0f;
-  const float l_c3_d = 630.0f;
-  const float l_hi_bound = 4.97f;
-  const float l_lo_bound = -4.97f;
-  const float l_ones = 1.0f;
-  const float l_neg_ones = -1.0f;
-  const float x2 = i_x * i_x;
-  const float t1_nom = (l_c3 * x2) + l_c2;
-  const float t2_nom = (t1_nom * x2) + l_c1;
-  const float t3_nom = (t2_nom * x2) + l_c0;
-  const float nom = t3_nom * i_x;
-  const float t1_denom = x2 + l_c3_d;
-  const float t2_denom = (t1_denom * x2) + l_c2_d;
-  const float t3_denom = (t2_denom * x2) + l_c1_d;
-  const float denom = (t3_denom * x2) + l_c0;
-  float result = nom / denom;
-  result = (result > l_hi_bound) ? l_ones : result;
-  result = (result < l_lo_bound) ? l_neg_ones : result;
-  return result;
-}
-
 #endif /*LIBXSMM_UTILS_H*/

@@ -9,251 +9,238 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <utils/libxsmm_utils.h>
-#include "libxsmm_main.h"
+#include <libxsmm.h>
 
 
-LIBXSMM_EXTERN_C typedef struct internal_sync_core_tag { /* per-core */
-  uint8_t id;
-  volatile uint8_t core_sense;
-  volatile uint8_t* thread_senses;
-  volatile uint8_t* my_flags[2];
-  uint8_t** partner_flags[2];
-  uint8_t parity;
-  uint8_t sense;
-} internal_sync_core_tag;
-
-LIBXSMM_EXTERN_C typedef struct internal_sync_thread_tag { /* per-thread */
-  int core_tid;
-  internal_sync_core_tag *core;
-} internal_sync_thread_tag;
-
-struct libxsmm_barrier {
-  internal_sync_core_tag** cores;
-  internal_sync_thread_tag** threads;
-  int ncores, nthreads_per_core;
-  int nthreads, ncores_nbits; /* nbits(ncores) != log2(ncores) */
-  /* internal counter type which is guaranteed to be atomic when using certain methods */
-  volatile int threads_waiting;
-  /* thread-safety during initialization */
-  volatile uint8_t init_done;
-};
-
-
-LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core)
+LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 {
-  libxsmm_barrier *const barrier = (libxsmm_barrier*)malloc(sizeof(libxsmm_barrier));
-#if (0 == LIBXSMM_SYNC)
-  LIBXSMM_UNUSED(ncores); LIBXSMM_UNUSED(nthreads_per_core);
+  unsigned int result;
+  if (1 < n) {
+#if defined(LIBXSMM_RNG_DRAND48)
+    const unsigned int rmax = (1U << 31);
+    unsigned int r = (unsigned int)lrand48();
 #else
-  if (NULL != barrier && 1 < ncores && 1 <= nthreads_per_core) {
-    barrier->ncores = ncores;
-    barrier->ncores_nbits = (int)LIBXSMM_NBITS(ncores);
-    barrier->nthreads_per_core = nthreads_per_core;
-    barrier->nthreads = ncores * nthreads_per_core;
-    barrier->threads = (internal_sync_thread_tag**)libxsmm_aligned_malloc(
-      barrier->nthreads * sizeof(internal_sync_thread_tag*), LIBXSMM_CACHELINE);
-    barrier->cores = (internal_sync_core_tag**)libxsmm_aligned_malloc(
-      barrier->ncores * sizeof(internal_sync_core_tag*), LIBXSMM_CACHELINE);
-    barrier->threads_waiting = barrier->nthreads; /* atomic */
-    barrier->init_done = 0; /* false */
-  }
-  else
+    const unsigned int rmax = (unsigned int)(RAND_MAX + 1U);
+    unsigned int r = (unsigned int)rand();
 #endif
-  if (NULL != barrier) {
-    barrier->nthreads = 1;
+    const unsigned int nmax = LIBXSMM_MIN(n, rmax);
+    const unsigned int q = (rmax / nmax) * nmax;
+#if defined(LIBXSMM_RNG_DRAND48)
+    /* coverity[dont_call] */
+    while (q <= r) r = (unsigned int)lrand48();
+#else
+    while (q <= r) r = (unsigned int)rand();
+#endif
+    if (n <= nmax) result = r % nmax;
+    else { /* input range exhausts RNG-state (precision) */
+      const double s = ((double)n / nmax) * r + 0.5;
+      result = (unsigned int)s;
+    }
   }
-  return barrier;
+  else result = 0;
+  return result;
 }
 
 
-LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
+LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint nbytes)
 {
-#if (0 == LIBXSMM_SYNC)
-  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
+  unsigned char* dst = (unsigned char*)data;
+  unsigned char* end = dst + (nbytes & 0xFFFFFFFFFFFFFFFC);
+  unsigned int r;
+  for (; dst < end; dst += 4) {
+#if defined(LIBXSMM_RNG_DRAND48)
+    /* coverity[dont_call] */
+    r = (unsigned int)lrand48();
 #else
-  if (NULL != barrier && 1 < barrier->nthreads) {
-    const int cid = tid / barrier->nthreads_per_core; /* this thread's core ID */
-    internal_sync_core_tag* core = 0;
-    int i;
-    internal_sync_thread_tag* thread;
+    r = (unsigned int)rand();
+#endif
+    LIBXSMM_MEMCPY127(dst, &r, 4);
+  }
+  end = (unsigned char*)data + nbytes;
+  if (dst < end) {
+#if defined(LIBXSMM_RNG_DRAND48)
+    r = (unsigned int)lrand48();
+#else
+    r = (unsigned int)rand();
+#endif
+    LIBXSMM_MEMCPY127(dst, &r, end - dst);
+  }
+}
 
-    /* we only initialize the barrier once */
-    if (barrier->init_done == 2) {
-      return;
-    }
 
-    /* allocate per-thread structure */
-    thread = (internal_sync_thread_tag*)libxsmm_aligned_malloc(
-      sizeof(internal_sync_thread_tag), LIBXSMM_CACHELINE);
-    barrier->threads[tid] = thread;
-    thread->core_tid = tid - (barrier->nthreads_per_core * cid); /* mod */
+LIBXSMM_API double libxsmm_rng_f64(void)
+{
+#if defined(LIBXSMM_RNG_DRAND48)
+  /* coverity[dont_call] */
+  return drand48();
+#else
+  static const double scale = 1.0 / (RAND_MAX);
+  return scale * (double)rand();
+#endif
+}
 
-    /* each core's thread 0 does all the allocations */
-    if (0 == thread->core_tid) {
-      core = (internal_sync_core_tag*)libxsmm_aligned_malloc(
-        sizeof(internal_sync_core_tag), LIBXSMM_CACHELINE);
-      core->id = (uint8_t)cid;
-      core->core_sense = 1;
 
-      core->thread_senses = (uint8_t*)libxsmm_aligned_malloc(
-        barrier->nthreads_per_core * sizeof(uint8_t), LIBXSMM_CACHELINE);
-      for (i = 0; i < barrier->nthreads_per_core; ++i) core->thread_senses[i] = 1;
+LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x)
+{
+  unsigned long long b; unsigned int y = 0; int s;
+  for (s = 63; 0 <= s; s -= 3) {
+    y += y; b = ((unsigned long long)y + 1) * 3 * y + 1ULL;
+    if (b <= (x >> s)) { x -= b << s; ++y; }
+  }
+  return y;
+}
 
-      for (i = 0; i < 2; ++i) {
-        core->my_flags[i] = (uint8_t*)libxsmm_aligned_malloc(
-          barrier->ncores_nbits * sizeof(uint8_t) * LIBXSMM_CACHELINE,
-          LIBXSMM_CACHELINE);
-        core->partner_flags[i] = (uint8_t**)libxsmm_aligned_malloc(
-          barrier->ncores_nbits * sizeof(uint8_t*),
-          LIBXSMM_CACHELINE);
+
+LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
+{
+  unsigned int b; unsigned int y = 0; int s;
+  for (s = 30; 0 <= s; s -= 3) {
+    y += y; b = 3 * y * (y + 1) + 1;
+    if (b <= (x >> s)) { x -= b << s; ++y; }
+  }
+  return y;
+}
+
+
+#if defined(LIBXSMM_NO_LIBM)
+/* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
+ * Exponential function, which exposes the number of iterations taken in the main case (1...22).
+ */
+LIBXSMM_API_INLINE float internal_math_sexp2(float x, int maxiter)
+{
+  static const float lut[] = { /* tabulated powf(2.f, powf(2.f, -index)) */
+    2.00000000f, 1.41421354f, 1.18920708f, 1.09050775f, 1.04427373f, 1.02189720f, 1.01088929f, 1.00542986f,
+    1.00271130f, 1.00135469f, 1.00067711f, 1.00033855f, 1.00016928f, 1.00008464f, 1.00004232f, 1.00002110f,
+    1.00001061f, 1.00000525f, 1.00000262f, 1.00000131f, 1.00000072f, 1.00000036f, 1.00000012f
+  };
+  const int lut_size = sizeof(lut) / sizeof(*lut), lut_size1 = lut_size - 1;
+  int sign, temp, unbiased, exponent, mantissa;
+  union { int i; float s; } result;
+
+  result.s = x;
+  sign = (0 == (result.i & 0x80000000) ? 0 : 1);
+  temp = result.i & 0x7FFFFFFF; /* clear sign */
+  unbiased = (temp >> 23) - 127; /* exponent */
+  exponent = -unbiased;
+  mantissa = (temp << 8) | 0x80000000;
+
+  if (lut_size1 >= exponent) {
+    if (lut_size1 != exponent) { /* multiple lookups needed */
+      if (7 >= unbiased) { /* not a degenerated case */
+        const int n = (0 >= maxiter || lut_size1 <= maxiter) ? lut_size1 : maxiter;
+        int i = 1;
+        if (0 > unbiased) { /* regular/main case */
+          LIBXSMM_ASSERT(0 <= exponent && exponent < lut_size);
+          result.s = lut[exponent]; /* initial value */
+          i = exponent + 1; /* next LUT offset */
+        }
+        else {
+          result.s = 2.f; /* lut[0] */
+          i = 1; /* next LUT offset */
+        }
+        for (; i <= n && 0 != mantissa; ++i) {
+          mantissa <<= 1;
+          if (0 != (mantissa & 0x80000000)) { /* check MSB */
+            LIBXSMM_ASSERT(0 <= i && i < lut_size);
+            result.s *= lut[i]; /* TODO: normalized multiply */
+          }
+        }
+        for (i = 0; i < unbiased; ++i) { /* compute squares */
+          result.s *= result.s;
+        }
+        if (0 != sign) { /* negative value, so reciprocal */
+          result.s = 1.f / result.s;
+        }
       }
-
-      core->parity = 0;
-      core->sense = 1;
-      barrier->cores[cid] = core;
+      else { /* out of range */
+#if defined(INFINITY) && /*overflow warning*/!defined(_CRAYC)
+        result.s = (0 == sign ? ((float)(INFINITY)) : 0.f);
+#else
+        result.i = (0 == sign ? 0x7F800000 : 0);
+#endif
+      }
     }
+    else if (0 == sign) {
+      result.s = lut[lut_size1];
+    }
+    else { /* reciprocal */
+      result.s = 1.f / lut[lut_size1];
+    }
+  }
+  else {
+    result.s = 1.f; /* case 2^0 */
+  }
+  return result.s;
+}
+#endif
 
-    /* barrier to let all the allocations complete */
-    if (0 == LIBXSMM_ATOMIC_SUB_FETCH(&barrier->threads_waiting, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      barrier->threads_waiting = barrier->nthreads; /* atomic */
-      barrier->init_done = 1; /* true */
+
+LIBXSMM_API float libxsmm_sexp2(float x)
+{
+#if !defined(LIBXSMM_NO_LIBM)
+  return LIBXSMM_EXP2F(x);
+#else /* fallback */
+  return internal_math_sexp2(x, 20/*compromise*/);
+#endif
+}
+
+
+LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x)
+{
+  union { int i; float s; } result = { 0 };
+  if (128 > x) {
+    if (31 < x) {
+      static const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
+      const float r33 = r32 * r32, r34 = (float)(1U << LIBXSMM_MOD2(x, 32));
+      result.s = r32 * r34;
+      if (95 < x) result.s *= r33;
+      else if (63 < x) result.s *= r32;
     }
     else {
-      while (0/*false*/ == barrier->init_done) {} /* empty block instead of semicolon */
+      result.s = (float)(1U << x);
     }
+  }
+  else {
+#if defined(INFINITY) && /*overflow warning*/!defined(_CRAYC)
+    result.s = (float)(INFINITY);
+#else
+    result.i = 0x7F800000;
+#endif
+  }
+  return result.s;
+}
 
-    /* set required per-thread information */
-    thread->core = barrier->cores[cid];
 
-    /* each core's thread 0 completes setup */
-    if (0 == thread->core_tid) {
-      int di;
-      for (i = di = 0; i < barrier->ncores_nbits; ++i, di += LIBXSMM_CACHELINE) {
-        /* find dissemination partner and link to it */
-        const int dissem_cid = (cid + (1 << i)) % barrier->ncores;
-        assert(0 != core); /* initialized under the same condition; see above */
-        core->my_flags[0][di] = core->my_flags[1][di] = 0;
-        core->partner_flags[0][i] = (uint8_t*)&barrier->cores[dissem_cid]->my_flags[0][di];
-        core->partner_flags[1][i] = (uint8_t*)&barrier->cores[dissem_cid]->my_flags[1][di];
-      }
-    }
-
-    /* barrier to let initialization complete */
-    if (0 == LIBXSMM_ATOMIC_SUB_FETCH(&barrier->threads_waiting, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      barrier->threads_waiting = barrier->nthreads; /* atomic */
-      barrier->init_done = 2;
+LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
+{
+  union { int i; float s; } result = { 0 };
+  if (-128 != x) {
+    const signed char ux = (signed char)LIBXSMM_ABS(x);
+    if (31 < ux) {
+      static const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
+      signed char n = ux >> 5, r = ux - (signed char)(n << 5), i;
+      result.s = r32;
+      for (i = 1; i < n; ++i) result.s *= r32;
+      result.s *= (float)(1U << r);
     }
     else {
-      while (2 != barrier->init_done) {} /* empty block instead of semicolon */
+      result.s = (float)(1U << ux);
+    }
+    if (ux != x) { /* signed */
+      result.s = 1.f / result.s;
     }
   }
-#endif
+  else {
+    result.i = 0x200000;
+  }
+  return result.s;
 }
 
 
-LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
-void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
+LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 {
-#if (0 == LIBXSMM_SYNC)
-  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
-#else
-  if (NULL != barrier && 1 < barrier->nthreads) {
-    internal_sync_thread_tag *const thread = barrier->threads[tid];
-    internal_sync_core_tag *const core = thread->core;
-
-    /* first let's execute a memory fence */
-    LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
-
-    /* first signal this thread's arrival */
-    core->thread_senses[thread->core_tid] = (uint8_t)(0 == core->thread_senses[thread->core_tid] ? 1 : 0);
-
-    /* each core's thread 0 syncs across cores */
-    if (0 == thread->core_tid) {
-      int i;
-      /* wait for the core's remaining threads */
-      for (i = 1; i < barrier->nthreads_per_core; ++i) {
-        uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[i];
-        while (core_sense == thread_sense) { /* avoid evaluation in unspecified order */
-          LIBXSMM_SYNC_PAUSE;
-          core_sense = core->core_sense;
-          thread_sense = core->thread_senses[i];
-        }
-      }
-
-      if (1 < barrier->ncores) {
-        int di;
-# if defined(__MIC__)
-        /* cannot use LIBXSMM_ALIGNED since attribute may not apply to local non-static arrays */
-        uint8_t sendbuffer[LIBXSMM_CACHELINE+LIBXSMM_CACHELINE-1];
-        uint8_t *const sendbuf = LIBXSMM_ALIGN(sendbuffer, LIBXSMM_CACHELINE);
-        __m512d m512d;
-        _mm_prefetch((const char*)core->partner_flags[core->parity][0], _MM_HINT_ET1);
-        sendbuf[0] = core->sense;
-        m512d = LIBXSMM_INTRINSICS_MM512_LOAD_PD(sendbuf);
-# endif
-
-        for (i = di = 0; i < barrier->ncores_nbits - 1; ++i, di += LIBXSMM_CACHELINE) {
-# if defined(__MIC__)
-          _mm_prefetch((const char*)core->partner_flags[core->parity][i+1], _MM_HINT_ET1);
-          _mm512_storenrngo_pd(core->partner_flags[core->parity][i], m512d);
-# else
-          *core->partner_flags[core->parity][i] = core->sense;
-# endif
-          while (core->my_flags[core->parity][di] != core->sense) LIBXSMM_SYNC_PAUSE;
-        }
-
-# if defined(__MIC__)
-        _mm512_storenrngo_pd(core->partner_flags[core->parity][i], m512d);
-# else
-        *core->partner_flags[core->parity][i] = core->sense;
-# endif
-        while (core->my_flags[core->parity][di] != core->sense) LIBXSMM_SYNC_PAUSE;
-        if (1 == core->parity) {
-          core->sense = (uint8_t)(0 == core->sense ? 1 : 0);
-        }
-        core->parity = (uint8_t)(1 - core->parity);
-      }
-
-      /* wake up the core's remaining threads */
-      core->core_sense = core->thread_senses[0];
-    }
-    else { /* other threads wait for cross-core sync to complete */
-      uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[thread->core_tid];
-      while (core_sense != thread_sense) { /* avoid evaluation in unspecified order */
-        LIBXSMM_SYNC_PAUSE;
-        core_sense = core->core_sense;
-        thread_sense = core->thread_senses[thread->core_tid];
-      }
-    }
-  }
-#endif
-}
-
-
-LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
-{
-#if (0 != LIBXSMM_SYNC)
-  if (NULL != barrier && 1 < barrier->nthreads) {
-    if (2 == barrier->init_done) {
-      int i;
-      for (i = 0; i < barrier->ncores; ++i) {
-        int j;
-        libxsmm_free((const void*)barrier->cores[i]->thread_senses);
-        for (j = 0; j < 2; ++j) {
-          libxsmm_free((const void*)barrier->cores[i]->my_flags[j]);
-          libxsmm_free(barrier->cores[i]->partner_flags[j]);
-        }
-        libxsmm_free(barrier->cores[i]);
-      }
-      for (i = 0; i < barrier->nthreads; ++i) {
-        libxsmm_free(barrier->threads[i]);
-      }
-    }
-    libxsmm_free(barrier->threads);
-    libxsmm_free(barrier->cores);
-  }
-#endif
-  free((libxsmm_barrier*)barrier);
+  LIBXSMM_ASSERT(-128 <= x && x <= 127);
+  return libxsmm_sexp2_i8((signed char)x);
 }
 
 
@@ -383,28 +370,5 @@ LIBXSMM_API void libxsmm_gemm_dprint2(
       libxsmm_gemm_print2(ostream, iprec, oprec, &transa, &transb,
         &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
     }
-  }
-}
-
-
-LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
-  libxsmm_xmmfunction kernel, const void* a, const void* b, void* c)
-{
-  const libxsmm_descriptor* desc;
-  libxsmm_code_pointer code = { NULL };
-  size_t code_size;
-  code.xgemm = kernel;
-  if (NULL != libxsmm_get_kernel_xinfo(code, &desc, &code_size) &&
-      NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
-  {
-    libxsmm_gemm_dprint2(ostream,
-      (libxsmm_datatype)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype),
-      (libxsmm_datatype)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype),
-      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->gemm.desc.flags) ? 'N' : 'T'),
-      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->gemm.desc.flags) ? 'N' : 'T'),
-      (libxsmm_blasint)desc->gemm.desc.m, (libxsmm_blasint)desc->gemm.desc.n, (libxsmm_blasint)desc->gemm.desc.k,
-      1, a, (libxsmm_blasint)desc->gemm.desc.lda, b, (libxsmm_blasint)desc->gemm.desc.ldb,
-      0 != (LIBXSMM_GEMM_FLAG_BETA_0 & desc->gemm.desc.flags) ? 0 : 1, c, (libxsmm_blasint)desc->gemm.desc.ldc);
-    fprintf((FILE*)ostream, " = %p+%u", code.ptr_const, (unsigned int)code_size);
   }
 }

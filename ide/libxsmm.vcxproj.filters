@@ -279,9 +279,6 @@
     <ClInclude Include="..\include\utils\libxsmm_utils.h">
       <Filter>include\utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_rng.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_intrinsics_x86.h">
       <Filter>include\utils</Filter>
     </ClInclude>
@@ -298,6 +295,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_barrier.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_math.h">
       <Filter>include\utils</Filter>
     </ClInclude>
   </ItemGroup>
@@ -570,6 +570,9 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_utils.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_barrier.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

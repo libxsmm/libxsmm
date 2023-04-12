@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_BARRIER_H
-#define LIBXSMM_BARRIER_H
+#ifndef LIBXSMM_UTILS_BARRIER_H
+#define LIBXSMM_UTILS_BARRIER_H
 
 #include "../libxsmm_macros.h"
 
@@ -26,4 +26,4 @@ LIBXSMM_API void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid);
 /** Destroy the resources associated with this barrier. */
 LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier);
 
-#endif /*LIBXSMM_BARRIER_H*/
+#endif /*LIBXSMM_UTILS_BARRIER_H*/

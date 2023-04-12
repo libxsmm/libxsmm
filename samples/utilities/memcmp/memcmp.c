@@ -9,7 +9,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <utils/libxsmm_utils.h>
-#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
 
 

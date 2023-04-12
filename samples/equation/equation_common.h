@@ -12,7 +12,6 @@
 #define LIBXSMM_EQUATION_COMMON_H
 
 #include <utils/libxsmm_utils.h>
-#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
 
 #define EPS 1.19209290e-03F

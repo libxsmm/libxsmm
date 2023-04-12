@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_TIMER_H
-#define LIBXSMM_TIMER_H
+#ifndef LIBXSMM_UTILS_TIMER_H
+#define LIBXSMM_UTILS_TIMER_H
 
 #include "../libxsmm_macros.h"
 
@@ -38,4 +38,4 @@ LIBXSMM_API_INLINE libxsmm_timer_tickint libxsmm_timer_ncycles(libxsmm_timer_tic
 /** Returns the duration (in seconds) between two values received by libxsmm_timer_tick. */
 LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
 
-#endif /*LIBXSMM_TIMER_H*/
+#endif /*LIBXSMM_UTILS_TIMER_H*/

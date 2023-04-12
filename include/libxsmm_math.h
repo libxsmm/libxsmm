@@ -152,38 +152,45 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_hf8_rne(libxsmm_float16 in);
 /* Convert FP32 to FP16 (scalar). */
 LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in);
 
+/**
+ * create a new external state for thread-save execution managed
+ * by the user. We do not provide a function for drawing the random numbers
+ * the user is supposed to call the LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS
+ * or LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32 intrinsic.
+ * */
+LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ seed);
+
+/**
+ * return the size of the state such that users can save it
+ * and recreate the same sequence of PRNG numbers.
+ */
+LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size(void);
+
+/** free a previously created rng_avx512_extstate */
+LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr);
+
+/** Set the seed of libxsmm_rng_* (similar to srand). */
+LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
+
+/**
+ * This SP-RNG is using xoshiro128+ 1.0, work done by
+ * David Blackman and Sebastiano Vigna (vigna @ acm.org).
+ * It is their best and fastest 32-bit generator for
+ * 32-bit floating-point numbers. They suggest to use
+ * its upper bits for floating-point generation, what
+ * we do here and generate numbers in [0,1(.
+ */
+LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
+
 /** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
 /** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x);
-/** Based on libxsmm_isqrt_u32, but actual factor of x. */
+/** Based on libxsmm_isqrt_u32; result is factor of x. */
 LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x);
 /** SQRT with Newton's method using double-precision. */
 LIBXSMM_API double libxsmm_dsqrt(double x);
 /** SQRT with Newton's method using single-precision. */
 LIBXSMM_API float libxsmm_ssqrt(float x);
-
-/** CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x);
-/** CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x);
-
-/** Single-precision approximation of exponential function (base 2). */
-LIBXSMM_API float libxsmm_sexp2(float x);
-
-/**
- * Exponential function (base 2), which is limited to unsigned 8-bit input values.
- * This function reproduces bit-accurate results (single-precision).
- */
-LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
-
-/**
-* Exponential function (base 2), which is limited to signed 8-bit input values.
-* This function reproduces bit-accurate results (single-precision).
-*/
-LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
-
-/** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */
-LIBXSMM_API float libxsmm_sexp2_i8i(int x);
 
 #endif /*LIBXSMM_MATH_H*/

@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_LPFLT_QUANT_H
-#define LIBXSMM_LPFLT_QUANT_H
+#ifndef LIBXSMM_UTILS_LPFLT_QUANT_H
+#define LIBXSMM_UTILS_LPFLT_QUANT_H
 
 #include "../libxsmm_typedefs.h"
 
@@ -57,4 +57,4 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
 LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int len);
 LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, unsigned int length);
 
-#endif /*LIBXSMM_LPFLT_QUANT_H*/
+#endif /*LIBXSMM_UTILS_LPFLT_QUANT_H*/
