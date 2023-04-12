@@ -10,8 +10,9 @@
 ******************************************************************************/
 #ifndef GENERATOR_MATEQUATION_SCRATCH_AVX_AVX512_H
 #define GENERATOR_MATEQUATION_SCRATCH_AVX_AVX512_H
+
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_gemm_set_reg_mapping_amx( libxsmm_gemm_descriptor* i_xgemm_desc, libxsmm_gp_reg_mapping*  i_gp_reg_mapping );

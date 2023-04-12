@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_COMMON_H
 #define GENERATOR_GEMM_COMMON_H
 

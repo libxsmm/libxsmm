@@ -9,7 +9,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_trace.h"
-#include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_TRACE_MINDEPTH) || 0 > (LIBXSMM_TRACE_MINDEPTH)
 # undef LIBXSMM_TRACE_MINDEPTH

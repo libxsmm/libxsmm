@@ -8,10 +8,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_memory.h>
+#include <libxsmm_generator.h>
+#include <libxsmm.h>
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
-#include "libxsmm_main.h"
 #include <ctype.h>
 
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0

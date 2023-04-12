@@ -13,15 +13,14 @@
 #include "generator_mateltwise_reduce_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
-
-#if 0
-#define USE_ENV_TUNING
-#endif
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC
 #endif
+#if 0
+#define USE_ENV_TUNING
+#endif
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_reduce_set_lp_vlen_vname_vmove_x86( libxsmm_generated_code*                        io_generated_code,

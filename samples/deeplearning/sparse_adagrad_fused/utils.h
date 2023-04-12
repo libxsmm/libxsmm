@@ -9,7 +9,6 @@
 /* Ishwar Bhati (Intel Corp.)
    Dhiraj Kalamkar (Intel Corp.)
 ******************************************************************************/
-
 #ifndef _UTILS_H_
 #define _UTILS_H_
 

@@ -13,11 +13,11 @@
 #include "generator_mateltwise_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_matequation_regblocks_avx_avx512.h"
 #include "generator_matequation_regblocks_aarch64.h"
 #include "generator_matequation_avx_avx512.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_copy_opargs_aarch64(libxsmm_generated_code*        io_generated_code,

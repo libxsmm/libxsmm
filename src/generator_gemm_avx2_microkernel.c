@@ -11,7 +11,7 @@
 #include "generator_gemm_avx2_microkernel.h"
 #include "generator_common_x86.h"
 #include "generator_x86_instructions.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx2_kloop_kernel( libxsmm_generated_code*            io_generated_code,

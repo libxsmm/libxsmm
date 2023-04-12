@@ -8,13 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_common_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_aarch64.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_unpack_network_aarch64_asimd( libxsmm_generated_code* io_generated_code,

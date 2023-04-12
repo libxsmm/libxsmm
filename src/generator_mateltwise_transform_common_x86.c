@@ -8,11 +8,10 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Barukh Ziv, Menachem Adelmanm (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_transform_common_x86.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_unpack_network_avx_avx512( libxsmm_generated_code* io_generated_code,

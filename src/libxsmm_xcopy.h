@@ -11,7 +11,6 @@
 #ifndef LIBXSMM_XCOPY_H
 #define LIBXSMM_XCOPY_H
 
-#include <libxsmm_typedefs.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_XCOPY_CHECK) && !defined(NDEBUG)

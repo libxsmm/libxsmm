@@ -8,17 +8,16 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Barukh Ziv, Menachem Adelmanm (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_common_x86.h"
 #include "generator_mateltwise_transform_avx512.h"
 #include "generator_mateltwise_transform_sse.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 
 #define USE_OPTIMIZED_AVX512_TRANSPOSE 1
 #define COPY_UPPER_BOUND 0
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_shuffle_network_avx512( libxsmm_generated_code* io_generated_code,

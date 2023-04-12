@@ -9,7 +9,8 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_cpuid.h>
-#include "libxsmm_main.h"
+#include <libxsmm_generator.h>
+#include <libxsmm_sync.h>
 #include <ctype.h>
 #if !defined(_WIN32)
 # if !defined(__linux__)
