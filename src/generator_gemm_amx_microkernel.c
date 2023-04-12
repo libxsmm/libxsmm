@@ -55,7 +55,7 @@ void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     
     unsigned int base_reg,
     long long    offset) {
   unsigned int i;
-  const char *const l_env_AB_prefetch_type = getenv("AB_PREFETCH_TYPE");
+  const char *const l_env_AB_prefetch_type = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_TYPE");
   LIBXSMM_UNUSED( i_micro_kernel_config );
   for (i=0; i<tile_cols; i++) {
     /* TODO: cacht overflow in offset */
@@ -1078,15 +1078,16 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
   unsigned int gp_reg_a;
-  const char *const l_env_pf_c_scratch_dist = getenv("C_SCR_PF_DIST");
-  const char *const l_env_pf_c_matrix_dist  = getenv("C_MAT_PF_DIST");
+  const char *const l_env_pf_c_scratch_dist = getenv("LIBXSMM_X86_AMX_GEMM_OUTPUT_SCR_PF_DIST");
+  const char *const l_env_pf_c_matrix_dist  = getenv("LIBXSMM_X86_AMX_GEMM_OUTPUT_MAT_PF_DIST");
   /*unsigned int prefetch_C_scratch       = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C_SCRATCH) > 0) ? 1 : 0;*/
   unsigned int prefetch_C_scratch       = (l_env_pf_c_scratch_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_scratch_dist  = (l_env_pf_c_scratch_dist == 0) ? 4 : atoi(l_env_pf_c_scratch_dist);
   /*unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;*/
   unsigned int prefetch_C_matrix        = (l_env_pf_c_matrix_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_matrix_dist   = (l_env_pf_c_matrix_dist == 0) ? 3 : atoi(l_env_pf_c_matrix_dist);
-
+  unsigned int streaming_tileload = 0, l_tileload_instr = LIBXSMM_X86_INSTR_TILELOADD;
+  const char *const env_streaming_tileload= getenv("LIBXSMM_X86_AMX_GEMM_STREAMING_TILELOAD");
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
@@ -1130,8 +1131,17 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int _im_offset_prefix_sums[4] = { 0 };
   int _in_offset_prefix_sums[4] = { 0 };
 
-  const char *const env_pf_dist = getenv("PF_DIST");
-  const char *const env_pf_dist_l1 = getenv("PF_DIST_L1");
+  const char *const env_pf_dist = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_DIST");
+  const char *const env_pf_dist_l1 = getenv("LIBXSMM_X86_AMX_GEMM_SECONDARY_PF_INPUTS_DIST");
+
+  if ( 0 == env_streaming_tileload ) {
+    l_tileload_instr = LIBXSMM_X86_INSTR_TILELOADD;
+  } else {
+    streaming_tileload = atoi(env_streaming_tileload);
+    if (streaming_tileload > 0) {
+      l_tileload_instr = LIBXSMM_X86_INSTR_TILELOADDT1;
+    }
+  }
 
   if ( 0 == env_pf_dist ) {
   } else {
@@ -1211,8 +1221,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 7, 7);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, 7, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, 1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, LIBXSMM_X86_INSTR_TILELOADD, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, l_tileload_instr, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, -1, l_tileload_instr, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
@@ -1231,8 +1241,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 6, 7);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, 6, 6, 7);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, 1, 2, 3);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, l_tileload_instr, l_tileload_instr, l_tileload_instr);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
@@ -1251,8 +1261,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 7, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, 7, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, 1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, l_tileload_instr, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
@@ -1271,8 +1281,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, l_tileload_instr, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
@@ -1295,8 +1305,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 6, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, l_tileload_instr, l_tileload_instr, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, -1);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
@@ -1315,8 +1325,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 6, 6);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD, LIBXSMM_X86_INSTR_TILELOADD);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, l_tileload_instr, l_tileload_instr, l_tileload_instr);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
@@ -1335,8 +1345,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
-      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, LIBXSMM_X86_INSTR_TILELOADD, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, l_tileload_instr, -1, -1, -1);
+      libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, l_tileload_instr, -1, -1, -1);
       libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, -1, -1, -1);
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {

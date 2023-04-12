@@ -2270,7 +2270,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int brgemm_assm_loop_iters = 1;
   unsigned int peeled_iters = 0;
   int pf_dist = 0;
-  const char *const env_pf_dist = getenv("PF_DIST");
+  const char *const env_pf_dist = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_DIST");
 #if defined(LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker *const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
 #else
@@ -2313,7 +2313,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       /* Restrict unrolling only if prefetching is enabled */
       if ((unroll_factor > 16) && (pf_dist > 0) && (i_micro_kernel_config->decompress_A == 0)) {
         unsigned int unrolling_iters = 0;
-        const char *const env_unroll_factor = getenv("UNROLL_FACTOR");
+        const char *const env_unroll_factor = getenv("LIBXSMM_X86_AMX_GEMM_UNROLL_FACTOR_LIMIT");
         if ( 0 == env_unroll_factor ) {
           unroll_factor = 16;
         } else {

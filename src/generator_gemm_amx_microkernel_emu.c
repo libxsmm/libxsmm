@@ -681,7 +681,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
   int _im_offset_prefix_sums[4] = { 0 };
   int _in_offset_prefix_sums[4] = { 0 };
 
-  const char *const env_pf_dist = getenv("PF_DIST");
+  const char *const env_pf_dist = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_DIST");
   if ( 0 == env_pf_dist ) {
   } else {
     pf_dist = atoi(env_pf_dist);
