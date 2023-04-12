@@ -9,9 +9,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-#include <utils/libxsmm_lpflt_quant.h>
-#include <utils/libxsmm_timer.h>
-#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_utils.h>
 #include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
 

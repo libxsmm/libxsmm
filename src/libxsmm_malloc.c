@@ -11,7 +11,6 @@
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
-
 #include <utils/libxsmm_utils.h>
 
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))

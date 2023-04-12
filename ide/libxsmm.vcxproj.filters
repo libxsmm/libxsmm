@@ -273,16 +273,10 @@
     <ClInclude Include="..\include\utils\libxsmm_mhd.h">
       <Filter>include\utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_sync.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_timer.h">
       <Filter>include\utils</Filter>
     </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_utils.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_math.h">
       <Filter>include\utils</Filter>
     </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_rng.h">
@@ -294,10 +288,16 @@
     <ClInclude Include="..\include\utils\libxsmm_lpflt_quant.h">
       <Filter>include\utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_utils.h">
-      <Filter>src</Filter>
+    <ClInclude Include="..\include\libxsmm_memory.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_memory.h">
+    <ClInclude Include="..\include\libxsmm_sync.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_math.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_barrier.h">
       <Filter>include\utils</Filter>
     </ClInclude>
   </ItemGroup>

@@ -8,12 +8,12 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include "libxsmm_main.h"
 #include "libxsmm_trace.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
-#include "libxsmm_main.h"
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
 #endif

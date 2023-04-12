@@ -9,7 +9,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <utils/libxsmm_intrinsics_x86.h>
-#include <utils/libxsmm_memory.h>
 #include <libxsmm.h>
 
 #if !defined(CHECK_SETUP) && 1

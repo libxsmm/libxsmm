@@ -14,7 +14,6 @@
 # include <libxsmm_source.h>
 #endif
 #include <utils/libxsmm_utils.h>
-#include <utils/libxsmm_timer.h>
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>

@@ -332,23 +332,25 @@ KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
           $(ROOTDIR)/include/utils/libxsmm_intrinsics_x86.h \
           $(ROOTDIR)/include/utils/libxsmm_lpflt_quant.h \
-          $(ROOTDIR)/include/utils/libxsmm_memory.h \
+          $(ROOTDIR)/include/utils/libxsmm_barrier.h \
           $(ROOTDIR)/include/utils/libxsmm_timer.h \
           $(ROOTDIR)/include/utils/libxsmm_utils.h \
-          $(ROOTDIR)/include/utils/libxsmm_sync.h \
-          $(ROOTDIR)/include/utils/libxsmm_math.h \
           $(ROOTDIR)/include/utils/libxsmm_rng.h \
           $(ROOTDIR)/include/utils/libxsmm_mhd.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
+          $(ROOTDIR)/include/libxsmm_memory.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
+          $(ROOTDIR)/include/libxsmm_math.h \
+          $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c \
-          libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c libxsmm_fsspmdm.c libxsmm_rng.c libxsmm_lpflt_quant.c)
+          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
+          libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
+          libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_utils.c libxsmm_rng.c libxsmm_mhd.c)
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 

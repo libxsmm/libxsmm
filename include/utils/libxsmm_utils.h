@@ -11,11 +11,14 @@
 #ifndef LIBXSMM_UTILS_H
 #define LIBXSMM_UTILS_H
 
-#include "libxsmm_math.h"
-
-#if !defined(LIBXSMM_DESCRIPTION)
-# define LIBXSMM_DESCRIPTION "Library for specialized dense and sparse matrix operations, and deep learning primitives."
-#endif
+/**
+ * Any intrinsics interface (libxsmm_intrinsics_x86.h) shall be explicitly
+ * included, i.e., separate from libxsmm_utils.h.
+*/
+#include "libxsmm_lpflt_quant.h"
+#include "libxsmm_barrier.h"
+#include "libxsmm_timer.h"
+#include "libxsmm_mhd.h"
 
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
 #if !defined(_WIN32) && !defined(__CYGWIN__) /* TODO: fully support calling convention */
@@ -267,14 +270,6 @@
     } \
   } \
 } while(0)
-
-#if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
-# undef LIBXSMM_INIT
-# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(1 < libxsmm_ninit, "LIBXSMM is not initialized");
-# define LIBXSMM_INIT_COMPLETED
-#else
-# define LIBXSMM_INIT if (2 > libxsmm_ninit) libxsmm_init();
-#endif
 
 /** Map to appropriate BLAS function (or fallback). The mapping is used, e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))

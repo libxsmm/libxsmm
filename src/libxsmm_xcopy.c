@@ -9,6 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_xcopy.h"
+#include <libxsmm_memory.h>
 #include <utils/libxsmm_utils.h>
 
 

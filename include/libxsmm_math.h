@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_MATH_H
 #define LIBXSMM_MATH_H
 
-#include "../libxsmm_typedefs.h"
+#include "libxsmm_typedefs.h"
 
 /** Helper macro to setup a matrix with some initial values. */
 #define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \

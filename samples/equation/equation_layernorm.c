@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include "equation_common.h"
 #include <utils/libxsmm_intrinsics_x86.h>
-#include <utils/libxsmm_math.h>
 
 #define FWD_LNORM 1
 #define BWD_LNORM 2

@@ -8,9 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_lpflt_quant.h>
-#include <utils/libxsmm_memory.h>
-#include <utils/libxsmm_timer.h>
 #include <utils/libxsmm_utils.h>
 #include <utils/libxsmm_rng.h>
 #include <libxsmm.h>

@@ -13,6 +13,12 @@
 
 #include "libxsmm_config.h"
 
+#if !defined(LIBXSMM_DESCRIPTION)
+# define LIBXSMM_DESCRIPTION \
+    "Library for specialized dense and sparse matrix " \
+    "operations, and deep learning primitives."
+#endif
+
 /**
  * Strings to denote the version of LIBXSMM (libxsmm_config.h).
  * LIBXSMM_VERSION: Name of the version (stringized version numbers).
@@ -34,15 +40,24 @@
 #define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 /**
- * The following interfaces shall be explicitly included,
- * i.e., separate from libxsmm.h:
- * - libxsmm_cpuid.h
- * - utils
+ * The utils interface (libxsmm_utils.h) shall be explicitly
+ * included, i.e., separate from libxsmm.h.
 */
 #include "libxsmm_generator.h"
 #include "libxsmm_fsspmdm.h"
+#include "libxsmm_memory.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_cpuid.h"
+#include "libxsmm_math.h"
+#include "libxsmm_sync.h"
+
+#if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
+# undef LIBXSMM_INIT
+# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(1 < libxsmm_ninit, "LIBXSMM is not initialized");
+# define LIBXSMM_INIT_COMPLETED
+#else
+# define LIBXSMM_INIT if (2 > libxsmm_ninit) libxsmm_init();
+#endif
 
 
 /** Initialize the library; pay for setup cost at a specific point. */

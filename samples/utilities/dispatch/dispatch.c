@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_timer.h>
 #include <utils/libxsmm_utils.h>
 #include <libxsmm.h>
 

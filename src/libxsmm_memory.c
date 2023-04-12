@@ -8,8 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_memory.h>
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_memory.h>
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
 #include "libxsmm_main.h"

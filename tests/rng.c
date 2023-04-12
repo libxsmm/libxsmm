@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_math.h>
 #include <utils/libxsmm_rng.h>
+#include <libxsmm_math.h>
 
 #if !defined(USE_EXPECTED) && 0
 # define USE_EXPECTED

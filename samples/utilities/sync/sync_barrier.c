@@ -8,8 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_timer.h>
-#include <utils/libxsmm_sync.h>
+#include <utils/libxsmm_utils.h>
 
 #if defined(_OPENMP)
 # include <omp.h>

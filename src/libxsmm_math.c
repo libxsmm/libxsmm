@@ -8,15 +8,21 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_math.h>
-#include <utils/libxsmm_lpflt_quant.h>
-#include <utils/libxsmm_utils.h>
-#include <utils/libxsmm_mhd.h>
-#include <libxsmm_cpuid.h>
+#include <libxsmm_math.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_NO_LIBM)
 # include <math.h>
+#endif
+
+#if !defined(LIBXSMM_MATHDIFF_MHD) && 0
+# if !defined(LIBXSMM_MATHDIFF_MHD)
+#   include <utils/libxsmm_mhd.h>
+#   define LIBXSMM_MATHDIFF_MHD
+# elif defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+#   include <utils/libxsmm_mhd.h>
+#   define LIBXSMM_MATHDIFF_MHD
+# endif
 #endif
 
 /**
@@ -123,12 +129,13 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
       LIBXSMM_INIT
       if (NULL != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
+#if defined(LIBXSMM_MATHDIFF_MHD)
           const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
           const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
           const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
+          char filename[256] = "";
           const int envi = atoi(env), reshape = (1 < envi || -1 > envi);
           size_t shape[2] = { 0 }, size[2] = { 0 };
-          char filename[256] = "";
           if (0 == reshape) {
             shape[0] = (size_t)mm; shape[1] = (size_t)nn;
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
@@ -143,7 +150,9 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
           libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
             type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
             NULL/*extension*/, 0/*extension_size*/);
+#endif
           if (NULL != tst) {
+#if defined(LIBXSMM_MATHDIFF_MHD)
             if (0 == reshape) {
               size[0] = (size_t)ldt;
               size[1] = (size_t)nn;
@@ -152,6 +161,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
               type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
               NULL/*extension*/, 0/*extension_size*/);
+#endif
             if ('-' == *env && '1' < env[1]) {
               printf("LIBXSMM MATDIFF (%s): m=%" PRIuPTR " n=%" PRIuPTR " ldi=%" PRIuPTR " ldo=%" PRIuPTR " failed.\n",
                 libxsmm_get_typename(datatype), (uintptr_t)m, (uintptr_t)n, (uintptr_t)ldr, (uintptr_t)ldt);

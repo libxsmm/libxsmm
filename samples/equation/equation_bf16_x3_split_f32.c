@@ -9,8 +9,7 @@
 /* Kirill Voronin (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <utils/libxsmm_lpflt_quant.h>
-#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_utils.h>
 #include <utils/libxsmm_rng.h>
 
 
