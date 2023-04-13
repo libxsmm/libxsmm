@@ -40,5 +40,15 @@
 #define LIBXSMM_CONFIG_BETA 1
 #define LIBXSMM_CONFIG_WRAP 1
 
+#if !defined(LIBXSMM_NO_BLAS)
+# if (!defined(__BLAS) || (0 != __BLAS))
+#   define LIBXSMM_NO_BLAS 0
+#   define LIBXSMM_BLAS 1
+# else
+#   define LIBXSMM_NO_BLAS 1
+#   define LIBXSMM_BLAS 0
+# endif
+#endif
+
 #endif
 

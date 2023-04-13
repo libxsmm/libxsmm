@@ -138,16 +138,6 @@
 # define LIBXSMM_BLAS_CONST const
 #endif
 
-#if !defined(LIBXSMM_NO_BLAS)
-# if (!defined(__BLAS) || (0 != __BLAS))
-#   define LIBXSMM_NO_BLAS 0
-#   define LIBXSMM_BLAS 1
-# else
-#   define LIBXSMM_NO_BLAS 1
-#   define LIBXSMM_BLAS 0
-# endif
-#endif
-
 #if defined(__BLAS) && (1 == __BLAS)
 # if defined(__OPENBLAS)
     LIBXSMM_EXTERN void openblas_set_num_threads(int num_threads);
