@@ -40,7 +40,7 @@
 #define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 /**
- * The utils interface (libxsmm_utils.h) shall be explicitly
+ * The utilities (libxsmm_utils.h) shall be explicitly
  * included, i.e., separate from libxsmm.h.
 */
 #include "libxsmm_generator.h"
