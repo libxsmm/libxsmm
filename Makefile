@@ -329,7 +329,7 @@ NINDICES := $(words $(INDICES))
 SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 
-HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
+HEADERS_UTILS := \
           $(ROOTDIR)/include/utils/libxsmm_intrinsics_x86.h \
           $(ROOTDIR)/include/utils/libxsmm_lpflt_quant.h \
           $(ROOTDIR)/include/utils/libxsmm_barrier.h \
@@ -337,6 +337,8 @@ HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$
           $(ROOTDIR)/include/utils/libxsmm_utils.h \
           $(ROOTDIR)/include/utils/libxsmm_math.h \
           $(ROOTDIR)/include/utils/libxsmm_mhd.h \
+          $(NULL)
+HEADERS_MAIN := \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
@@ -346,7 +348,12 @@ HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_math.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
-          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c
+          $(NULL)
+HEADERS := \
+          $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) \
+          $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
+          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
+          $(HEADERS_MAIN) $(HEADERS_UTILS)
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
           libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
@@ -365,7 +372,7 @@ NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_LIB) \
-          $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
+           $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o
 endif
@@ -588,13 +595,14 @@ $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_con
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h $(INCDIR)/libxsmm_version.h
 
-$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(DIRSTATE)/.state
+$(INCDIR)/libxsmm_config.h: $(INCDIR)/utils/.make $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(DIRSTATE)/.state
 	$(information)
 	$(info --- LIBXSMM build log)
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
 		$(ROOTDIR)/.github/install.sh 2>/dev/null; \
 	fi
-	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
+	@$(CP) $(HEADERS_UTILS) $(INCDIR)/utils 2>/dev/null || true
+	@$(CP) $(HEADERS_MAIN) $(INCDIR) 2>/dev/null || true
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
@@ -1385,8 +1393,8 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing interface..."
 	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/utils
-	@$(CP) -v $(INCDIR)/utils/libxsmm*.h $(PREFIX)/$(PINCDIR)/utils 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(HEADERS_UTILS) $(PREFIX)/$(PINCDIR)/utils 2>/dev/null || true
+	@$(CP) -v $(HEADERS_MAIN) $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
