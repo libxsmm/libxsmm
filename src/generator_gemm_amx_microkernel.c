@@ -1155,6 +1155,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   /* Disable prefetched if not strided BRGEMM... */
   if (i_brgemm_loop == -2) {
     pf_dist += i_xgemm_desc->c3 + 2;
+    pf_dist_l1 += i_xgemm_desc->c3 + 2;
   }
 
   for (i = 1; i < 4; i++) {
