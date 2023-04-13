@@ -145,7 +145,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
   }
 }
 
-/* Setup A tensonspose tensor in stack */
+/* Setup A transpose tensor in stack */
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aarch64( libxsmm_generated_code*       io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
@@ -210,7 +210,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
   libxsmm_aarch64_instruction_restore_regs( io_generated_code, 0xe0f );
 }
 
-/* Setup A tensonspose tensor in stack */
+/* Setup A transpose tensor in stack */
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack_aarch64( libxsmm_generated_code*       io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
@@ -304,7 +304,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB_aarch64( libxsmm_ge
                                                                       libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                       const libxsmm_gemm_descriptor* i_xgemm_desc_orig ) {
   if ( ( i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_A) && (i_xgemm_desc_orig->m != 0) && (i_xgemm_desc_orig->k != 0) ) {
-    /* if A needs to be transposed, use sratch in stack */
+    /* if A needs to be transposed, use scratch in stack */
     libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ));
   }
   if (libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack() > 0) {
@@ -1544,7 +1544,7 @@ void libxsmm_generator_gemm_setup_stack_frame_aarch64( libxsmm_generated_code*  
    *      Transpose A ptr                       <-- RBP-96
    *      AVX2 Mask                             <-- RBP-104
    *      AVX2 low precision helper             <-- RBP-112, RSP
-   *      [ Potentianl  pad for 64b align ]
+   *      [ Potential pad for 64b align ]
    *      AV2 mask, 64b aligned                 <-- (RBP-104) contains this address
    *      AV2 low precision helper, 64b aligned <-- (RBP-112) contains this address
    *      GEMM scratch, 64b aligned             <-- (RBP-48) contains this address

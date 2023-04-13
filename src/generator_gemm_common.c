@@ -163,7 +163,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
   }
 }
 
-/* Setup A tensonspose tensor in stack */
+/* Setup A transpose tensor in stack */
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( libxsmm_generated_code*       io_generated_code,
                                                                                     libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                     const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
@@ -391,10 +391,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB( libxsmm_generated_
                                                               libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc_orig ) {
   if ( ( i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_A) && (i_xgemm_desc_orig->m != 0) && (i_xgemm_desc_orig->k != 0) ) {
-    /* if A needs to be transposed, use sratch in stack */
+    /* if A needs to be transposed, use scratch in stack */
     libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ));
   } else if ( ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) ) {
-    /* if B is in vnni2T, use sratch in stack */
+    /* if B is in vnni2T, use scratch in stack */
     libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ));
   } else if (( i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0)) {
     /* Now setup A and B tensors in stack as FP32 flat tensors */
@@ -620,7 +620,7 @@ void libxsmm_generator_gemm_dump_2D_block_and_prepare_sigmoid_fusion( libxsmm_ge
     const unsigned int                 aux_gpr) {
   unsigned int n_avail_vregs = (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) ? 32 : 16;
   unsigned int n_avail_masks = (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) ? 8 : 16;
-  /* First dump the accumulators to scratch and then setup sigmoid coeffcients to be reused */
+  /* First dump the accumulators to scratch and then setup sigmoid coefficients to be reused */
   libxsmm_x86_instruction_push_reg( io_generated_code, scratch_gpr);
   libxsmm_x86_instruction_push_reg( io_generated_code, aux_gpr );
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, scratch_gpr);
@@ -1381,7 +1381,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      C OUTPUT PTR                          <-- RBP-160,
    *      BIAS SCRATCH PTR                      <-- RBP-168, RSP
    *
-   *      [ Potentianl  pad for 64b align ]
+   *      [ Potential pad for 64b align ]
    *      AV2 mask, 64b aligned                 <-- (RBP-104) contains this address
    *      AV2 low precision helper, 64b aligned <-- (RBP-112) contains this address
    *      GEMM scratch, 64b aligned             <-- (RBP-48) contains this address
@@ -3417,7 +3417,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       libxsmm_generator_gemm_prepare_relu_fusion( io_generated_code, i_micro_kernel_config,
           zero_vreg, i_micro_kernel_config->fused_relu, relu_bitmask_gpr, aux_gpr);
     } else if (i_micro_kernel_config->fused_sigmoid == 1) {
-      /* First dump the accumulators to scratch and then setup sigmoid coeffcients to be reused */
+      /* First dump the accumulators to scratch and then setup sigmoid coefficients to be reused */
       libxsmm_generator_gemm_dump_2D_block_and_prepare_sigmoid_fusion( io_generated_code, i_micro_kernel_config_mod,
           l_vec_reg_acc_start, l_m_blocking, i_n_blocking, scratch_gpr, aux_gpr);
     }
