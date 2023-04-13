@@ -9,6 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include "libxsmm_main.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
 #include <ctype.h>
