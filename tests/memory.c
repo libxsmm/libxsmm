@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
       "The hazy fog crawls over the lazy crocodile"
     };
     int match = 0, i = 0, j = 0;
-    for (; i < (sizeof(sample) / sizeof(*sample)); ++i) {
+    for (; i < ((int)sizeof(sample) / (int)sizeof(*sample)); ++i) {
       const int score = libxsmm_strimatch(init, sample[i], NULL);
       if (match < score) {
         match = score; j = i;
