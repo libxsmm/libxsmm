@@ -1699,8 +1699,8 @@ $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 .PHONY: deb
 deb:
 	@if [ "$$(command -v git)" ]; then \
-		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
-		VERSION_ARCHIVE_SONAME=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $${VERSION_ARCHIVE}); \
+		VERSION_ARCHIVE_SONAME=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1); \
+		VERSION_ARCHIVE=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 5); \
 	fi; \
 	if [ "$${VERSION_ARCHIVE}" ] && [ "$${VERSION_ARCHIVE_SONAME}" ]; then \
 		ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
@@ -1730,7 +1730,7 @@ deb:
 		echo "Vcs-Git: https://github.com/libxsmm/libxsmm/libxsmm.git" >>control; \
 		echo "Maintainer: $${ARCHIVE_AUTHOR}" >>control; \
 		echo "Priority: optional" >>control; \
-		echo "Build-Depends: debhelper (>= 9)" >>control; \
+		echo "Build-Depends: debhelper (>= 13)" >>control; \
 		echo "Standards-Version: 3.9.8" >>control; \
 		echo >>control; \
 		echo "Package: $${ARCHIVE_NAME}" >>control; \
@@ -1738,7 +1738,7 @@ deb:
 		echo "Architecture: amd64" >>control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >>control; \
 		echo "Description: Specialized tensor operations" >>control; \
-		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm/" \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm" \
 		| $(SED) -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | $(SED) -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >>control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" >changelog; \
@@ -1759,7 +1759,7 @@ deb:
 		echo "override_dh_auto_install:" >>rules; \
 		$$(which echo) -e "\tdh_auto_install -- prefix=/usr" >>rules; \
 		echo >>rules; \
-		echo "9" >compat; \
+		echo "13" >compat; \
 		$(CP) ../LICENSE.md copyright; \
 		rm -f ../$(TSTDIR)/mhd_test.mhd; \
 		chmod +x rules; \
