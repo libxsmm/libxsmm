@@ -9,6 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <utils/libxsmm_intrinsics_x86.h>
+#include <utils/libxsmm_utils.h>
 #include <libxsmm.h>
 
 #define N 1000000
