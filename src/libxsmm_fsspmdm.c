@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include <libxsmm_fsspmdm.h>
 #include <libxsmm_memory.h>
-#include <utils/libxsmm_utils.h>
 #include "generator_spgemm_csr_asparse_reg.h"
 #include "generator_common.h"
 

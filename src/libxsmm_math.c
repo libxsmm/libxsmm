@@ -14,11 +14,8 @@
 # include <math.h>
 #endif
 
-#if !defined(LIBXSMM_MATHDIFF_MHD) && 0
+#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
 # if !defined(LIBXSMM_MATHDIFF_MHD)
-#   include <utils/libxsmm_mhd.h>
-#   define LIBXSMM_MATHDIFF_MHD
-# elif defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
 #   include <utils/libxsmm_mhd.h>
 #   define LIBXSMM_MATHDIFF_MHD
 # endif

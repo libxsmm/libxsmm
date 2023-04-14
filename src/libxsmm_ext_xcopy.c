@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include "libxsmm_xcopy.h"
 #include "libxsmm_ext.h"
-#include <utils/libxsmm_utils.h>
 
 #define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && (64U * 64U) <= (((unsigned int)(M)) * (N)))
 
