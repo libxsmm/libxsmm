@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
       }
       const unsigned long long start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        LIBXSMM_TPREFIX(ITYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
+        LIBXSMM_TPREFIX(ITYPE,gemm_batch)(&transa, &transb, &m, &n, &k,
           &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
       }
@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
       }
       const unsigned long long start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        LIBXSMM_TPREFIX(ITYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
+        LIBXSMM_TPREFIX(ITYPE,gemm_batch)(&transa, &transb, &m, &n, &k,
           &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
       }
@@ -406,7 +406,7 @@ int main(int argc, char* argv[])
 #endif
       const unsigned long long start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        LIBXSMM_TPREFIX(ITYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
+        LIBXSMM_TPREFIX(ITYPE,gemm_batch)(&transa, &transb, &m, &n, &k,
           &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
       }
@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
 #endif
       const unsigned long long start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        LIBXSMM_TPREFIX(ITYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
+        LIBXSMM_TPREFIX(ITYPE,gemm_batch)(&transa, &transb, &m, &n, &k,
           &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
       }
