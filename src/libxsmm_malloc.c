@@ -11,7 +11,6 @@
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
-#include <utils/libxsmm_utils.h>
 
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))
 # include <features.h>
@@ -443,23 +442,6 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
       result = sizeof(void*);
     }
   }
-  return result;
-}
-
-
-LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
-{
-  size_t result = 0, size1 = 0;
-  if (0 != ndims && NULL != shape) {
-    size_t i;
-    result = (NULL != offset ? offset[0] : 0);
-    size1 = shape[0];
-    for (i = 1; i < ndims; ++i) {
-      result += (NULL != offset ? offset[i] : 0) * size1;
-      size1 *= shape[i];
-    }
-  }
-  if (NULL != size) *size = size1;
   return result;
 }
 

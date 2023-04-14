@@ -9,7 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <utils/libxsmm_utils.h>
-#include <libxsmm.h>
+#include "libxsmm_gemm.h"
 
 
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
@@ -244,32 +244,6 @@ LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 }
 
 
-LIBXSMM_API void libxsmm_blas_gemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc)
-{
-  LIBXSMM_INIT
-  switch ((int)iprec) {
-    case LIBXSMM_DATATYPE_F64: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      LIBXSMM_BLAS_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      LIBXSMM_BLAS_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      static int error_once = 0;
-      LIBXSMM_UNUSED(oprec);
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) { /* TODO: support I16, etc. */
-        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
-      }
-    }
-  }
-}
-
-
 LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   libxsmm_datatype precision, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -363,38 +337,6 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
         libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
           NULL/*conversion*/, c, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
       }
-    }
-  }
-}
-
-
-LIBXSMM_API void libxsmm_gemm_dprint(
-  void* ostream, libxsmm_datatype precision, char transa, char transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, double dalpha, const void* a, libxsmm_blasint lda,
-  const void* b, libxsmm_blasint ldb, double dbeta, void* c, libxsmm_blasint ldc)
-{
-  libxsmm_gemm_dprint2(ostream, precision, precision, transa, transb, m, n, k, dalpha, a, lda, b, ldb, dbeta, c, ldc);
-}
-
-
-LIBXSMM_API void libxsmm_gemm_dprint2(
-  void* ostream, libxsmm_datatype iprec, libxsmm_datatype oprec, char transa, char transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, double dalpha, const void* a, libxsmm_blasint lda,
-  const void* b, libxsmm_blasint ldb, double dbeta, void* c, libxsmm_blasint ldc)
-{
-  switch ((int)iprec) {
-    case LIBXSMM_DATATYPE_F64: {
-      libxsmm_gemm_print2(ostream, LIBXSMM_DATATYPE_F64, oprec, &transa, &transb,
-        &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
-      const float alpha = (float)dalpha, beta = (float)dbeta;
-      libxsmm_gemm_print2(ostream, LIBXSMM_DATATYPE_F32, oprec, &transa, &transb,
-        &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-    } break;
-    default: {
-      libxsmm_gemm_print2(ostream, iprec, oprec, &transa, &transb,
-        &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
     }
   }
 }

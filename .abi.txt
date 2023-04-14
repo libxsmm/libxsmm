@@ -117,8 +117,6 @@ libxsmm_gemm_descriptor_dinit2
 libxsmm_gemm_descriptor_init
 libxsmm_gemm_descriptor_init2
 libxsmm_gemm_descriptor_init3
-libxsmm_gemm_dprint
-libxsmm_gemm_dprint2
 libxsmm_gemm_groups
 libxsmm_gemm_groups_omp
 libxsmm_gemm_print

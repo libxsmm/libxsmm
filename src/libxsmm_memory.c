@@ -28,6 +28,40 @@ LIBXSMM_APIVAR_DEFINE(int (*internal_memcmp_function)(const void*, const void*, 
 #endif
 
 
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
+{
+  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
+  if (0 != result) {
+    return result;
+  }
+  else {
+    static int error_once = 0;
+    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
+    }
+    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
+  }
+}
+
+
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
+{
+  size_t result = 0, size1 = 0;
+  if (0 != ndims && NULL != shape) {
+    size_t i;
+    result = (NULL != offset ? offset[0] : 0);
+    size1 = shape[0];
+    for (i = 1; i < ndims; ++i) {
+      result += (NULL != offset ? offset[i] : 0) * size1;
+      size1 *= shape[i];
+    }
+  }
+  if (NULL != size) *size = size1;
+  return result;
+}
+
+
 LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
 {
   const int minalign = libxsmm_cpuid_vlen(libxsmm_target_archid);

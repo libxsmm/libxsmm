@@ -13,7 +13,7 @@
 
 #include "libxsmm_macros.h"
 
-/* include tensorflow/core/public/version.h prior to LIBXSMM otherwise the current TensorFlow API is assumed */
+/** Include <tensorflow/core/public/version.h> prior to LIBXSMM otherwise the current TensorFlow API is assumed. */
 #if !defined(LIBXSMM_TF12) && (!defined(TF_VERSION_STRING) || \
   LIBXSMM_VERSION2(1, 12) <= LIBXSMM_VERSION2(TF_MAJOR_VERSION, TF_MINOR_VERSION))
 # define LIBXSMM_TF12 /* TF_PATCH_VERSION does not matter */
@@ -177,12 +177,6 @@ LIBXSMM_API void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t*
  * Optionally gets the range of enabled malloc-sizes.
  */
 LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi);
-
-/**
- * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),
- * and the (optional) linear size of the corresponding shape.
- */
-LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size);
 
 
 #if defined(__cplusplus)

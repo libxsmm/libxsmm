@@ -12,9 +12,10 @@
 #include "libxsmm_xcopy.h"
 #include "libxsmm_hash.h"
 
-#if !defined(LIBXSMM_GEMM_CHECK_EPSILON)
-# define LIBXSMM_GEMM_CHECK_EPSILON 1E-16
+#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+# include <utils/libxsmm_utils.h> /* LIBXSMM_INLINE_XGEMM */
 #endif
+
 #if !defined(LIBXSMM_GEMM_TASKGRAIN)
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
@@ -228,7 +229,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char
     (LIBXSMM_BLAS_CONST double*) beta,                             c, (LIBXSMM_BLAS_CONST libxsmm_blasint*)ldc);
 #else
   libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-# if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+# if defined(LIBXSMM_INLINE_XGEMM)
   LIBXSMM_INLINE_XGEMM(double, double, /* try producing a result */
     transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 # endif
@@ -250,7 +251,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
     (LIBXSMM_BLAS_CONST float*) beta,                            c, (LIBXSMM_BLAS_CONST libxsmm_blasint*)ldc);
 #else
   libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-# if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+# if defined(LIBXSMM_INLINE_XGEMM)
   LIBXSMM_INLINE_XGEMM(float, float, /* try producing a result */
     transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 # endif
@@ -606,36 +607,7 @@ LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-#if !defined(NDEBUG)
-  const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
-  double check = 0;
-  void* d = NULL;
-  if (NULL != env_check) {
-    const size_t size = sizeof(double) * LIBXSMM_MAX(NULL != ldc ? *ldc : *m, 1) * (*n);
-    check = atof(env_check) * LIBXSMM_GEMM_CHECK_EPSILON;
-    d = LIBXSMM_NEQ(0, check) ? libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER) : NULL;
-    if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
-  }
-#endif
   LIBXSMM_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-#if !defined(NDEBUG)
-  if (NULL != d) {
-    libxsmm_matdiff_info diff;
-    libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
-    if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F64, *m, *n, d, c, ldc, ldc)) {
-      const double epsilon = libxsmm_matdiff_epsilon(&diff);
-      if (LIBXSMM_ABS(check) < epsilon) {
-        LIBXSMM_STDIO_ACQUIRE();
-        fprintf(stderr, "LIBXSMM: ");
-        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE_F64, transa, transb,
-          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " => %g ERROR\n", epsilon);
-        LIBXSMM_STDIO_RELEASE();
-      }
-    }
-    libxsmm_free(d);
-  }
-#endif
 }
 
 
@@ -645,36 +617,33 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-#if !defined(NDEBUG)
-  const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
-  double check = 0;
-  void* d = NULL;
-  if (NULL != env_check) {
-    const size_t size = sizeof(float) * LIBXSMM_MAX(NULL != ldc ? *ldc : *m, 1) * (*n);
-    check = atof(env_check) * LIBXSMM_GEMM_CHECK_EPSILON;
-    d = LIBXSMM_NEQ(0, check) ? libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER) : NULL;
-    if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
-  }
-#endif
   LIBXSMM_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-#if !defined(NDEBUG)
-  if (NULL != d) {
-    libxsmm_matdiff_info diff;
-    libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
-    if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, *m, *n, d, c, ldc, ldc)) {
-      const double epsilon = libxsmm_matdiff_epsilon(&diff);
-      if (LIBXSMM_ABS(check) < epsilon) {
-        LIBXSMM_STDIO_ACQUIRE();
-        fprintf(stderr, "LIBXSMM: ");
-        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE_F32, transa, transb,
-          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " => %g ERROR\n", epsilon);
-        LIBXSMM_STDIO_RELEASE();
+}
+
+
+LIBXSMM_API void libxsmm_blas_gemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_INIT
+  switch ((int)iprec) {
+    case LIBXSMM_DATATYPE_F64: {
+      LIBXSMM_ASSERT(iprec == oprec);
+      LIBXSMM_BLAS_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    case LIBXSMM_DATATYPE_F32: {
+      LIBXSMM_ASSERT(iprec == oprec);
+      LIBXSMM_BLAS_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      static int error_once = 0;
+      LIBXSMM_UNUSED(oprec);
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) { /* TODO: support I16, etc. */
+        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
       }
     }
-    libxsmm_free(d);
   }
-#endif
 }
 
 
@@ -1209,10 +1178,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
         static size_t threshold_max = 0;
         if (threshold_max != threshold) {
           LIBXSMM_STDIO_ACQUIRE();
-          fprintf(stderr, "LIBXSMM WARNING: ");
-          libxsmm_gemm_print2(stderr, iprec, oprec, transa, transb, &m, &n, &k,
-            alpha, NULL/*a*/, lda, NULL/*b*/, ldb, beta, NULL/*c*/, ldc);
-          fprintf(stderr, " => batched GEMM was falling back!\n");
+          fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back!\n");
           LIBXSMM_STDIO_RELEASE();
           threshold_max = threshold;
         }
@@ -1240,6 +1206,12 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype opr
   libxsmm_gemm_batch_task(iprec, oprec, transa, transb, m, n, k,
     alpha,a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
     index_stride, index_base, batchsize, batchcheck, 0/*tid*/, 1/*ntasks*/);
+}
+
+
+LIBXSMM_API void libxsmm_sink(const void* arg, ...)
+{ /* does nothing else but sinking given arguments */
+  LIBXSMM_UNUSED(arg);
 }
 
 

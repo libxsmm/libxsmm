@@ -1477,12 +1477,6 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_sink(const void* arg, ...)
-{ /* does nothing else but sinking given arguments */
-  LIBXSMM_UNUSED(arg);
-}
-
-
 LIBXSMM_API int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT
@@ -1741,23 +1735,6 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
   if (0 == internal_gemm_auto_prefetch_locked) { /* LIBXSMM_GEMM_PREFETCH environment takes precedence */
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch_default, strategy, LIBXSMM_ATOMIC_RELAXED);
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
-  }
-}
-
-
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
-{
-  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
-  if (0 != result) {
-    return result;
-  }
-  else {
-    static int error_once = 0;
-    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
-    }
-    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
   }
 }
 

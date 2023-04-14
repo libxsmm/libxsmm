@@ -50,6 +50,15 @@
   LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS)
 
 
+/** Returns the type-size of data-type (can be also libxsmm_datatype). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/**
+ * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),
+ * and the (optional) linear size of the corresponding shape.
+ */
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size);
+
 /**
  * Check if pointer is SIMD-aligned and optionally consider the next access (increment in Bytes).
  * Optionally calculates the alignment of the given pointer in Bytes.

@@ -435,21 +435,21 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
 #if defined(__cplusplus)
 
 /** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). */
-template<typename T> struct libxsmm_datatype_enum          { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
-template<> struct libxsmm_datatype_enum<double>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
-template<> struct libxsmm_datatype_enum<float>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
-template<> struct libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
-template<> struct libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
-template<> struct libxsmm_datatype_enum<libxsmm_bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct libxsmm_datatype_enum<Eigen::bfloat16>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct libxsmm_datatype_enum<signed char>       { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct libxsmm_datatype_enum<unsigned char>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct libxsmm_datatype_enum<char>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<typename T> struct libxsmm_datatype_enum         { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
+template<> struct libxsmm_datatype_enum<double>           { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
+template<> struct libxsmm_datatype_enum<float>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
+template<> struct libxsmm_datatype_enum<int>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
+template<> struct libxsmm_datatype_enum</*signed*/short>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
+template<> struct libxsmm_datatype_enum<libxsmm_bfloat16> { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<Eigen::bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<signed char>      { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct libxsmm_datatype_enum<unsigned char>    { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct libxsmm_datatype_enum<char>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 
 /** Determine default output type based on the input-type. */
-template<typename INP_TYPE> struct libxsmm_gemm_default_output   { typedef INP_TYPE type; };
-template<> struct libxsmm_gemm_default_output</*signed*/short>   { typedef int type; };
-template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16>  { typedef float type; };
+template<typename INP_TYPE> struct libxsmm_gemm_default_output  { typedef INP_TYPE type; };
+template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
+template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16> { typedef float type; };
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
 template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
@@ -471,7 +471,7 @@ template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_PREFET
 
 /** Construct and execute a specialized function. */
 template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type,
-  int PREFETCH_DEFAULT = LIBXSMM_PREFETCH_AUTO>
+  int PREFETCH_DEFAULT = LIBXSMM_PREFETCH/*LIBXSMM_PREFETCH_AUTO*/>
 class libxsmm_mmfunction {
   /*retargetable*/ libxsmm_xmmfunction m_function;
 public:
@@ -479,13 +479,12 @@ public:
   typedef OUT_TYPE otype;
 public:
   libxsmm_mmfunction() { m_function.ptr = NULL; }
-  libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS) {
+  libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k) {
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape,
-      static_cast<libxsmm_bitfield>(flags),
+    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, 0/*flags*/,
       static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT));
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch = PREFETCH_DEFAULT) {
@@ -539,7 +538,6 @@ public:
     args.a.primary = const_cast<itype*>(a);
     args.b.primary = const_cast<itype*>(b);
     args.c.primary = c;
-    /*if (LIBXSMM_PREFETCH_NONE != PREFETCH_DEFAULT)*/
     libxsmm_mmfunction_prefetch<PREFETCH_DEFAULT>(m_function, args);
     LIBXSMM_ASSERT(NULL != m_function.ptr_const);
     m_function.gemm(&args);
@@ -704,4 +702,40 @@ inline void libxsmm_gemm(const char* transa, const char* transb,
 }
 
 #endif /*__cplusplus*/
+
+/** GEMM_BATCH_STRIDED: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
+/** GEMM_BATCH: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
+/** GEMM: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
+/** GEMV: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
+
+/** The original BLAS functions. */
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
+LIBXSMM_API libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided(void);
+LIBXSMM_API libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided(void);
+LIBXSMM_API libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void);
+LIBXSMM_API libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void);
+LIBXSMM_API libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_API libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_API libxsmm_dgemv_function libxsmm_original_dgemv(void);
+LIBXSMM_API libxsmm_sgemv_function libxsmm_original_sgemv(void);
+
+/** Consume/sink arguments when called. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sink_function)(const void*, ...);
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
+
 #endif /*LIBXSMM_H*/

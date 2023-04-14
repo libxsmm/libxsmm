@@ -518,9 +518,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 /** Determines CPU-name using OS-specific instead of CPU-specific interfaces. */
 LIBXSMM_API_INTERN void libxsmm_cpuid_model(char model[], size_t* model_size);
 
-/** Returns the type-size of data-type (can be also libxsmm_datatype). */
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
-
 LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_xinfo {
   /** Non-zero if kernel is registered. */
   unsigned int registered;
