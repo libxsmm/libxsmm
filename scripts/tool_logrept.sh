@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012
+# shellcheck disable=SC2012,SC2153
 
 # check if logfile is given
 if [ ! "${LOGFILE}" ]; then
@@ -139,10 +139,13 @@ then
   done
 fi
 
-# post-process logfile and generate report
+# process logfile and generate report
 if [ "${LOGDIR}" ]; then
   SYNC=$(command -v sync)
   ${SYNC} # optional
+  ERROR=""
+
+  # extract data from log (tool_logperf.sh)
   if [ ! "${LOGRPTSUM}" ] || \
      [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
   then # "telegram" format
@@ -156,58 +159,71 @@ if [ "${LOGDIR}" ]; then
     RESULT=${LOGRPTSUM}
     SUMMARY=0
   fi
-  if [ ! "${LOGRPTQNO}" ] || [ "0" = "${LOGRPTQNO}" ]; then
-    QUERY=${LOGRPTQRY:-${STEPNAME}}
-  else
-    QUERY=${LOGRPTQRY}
-  fi
-  if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
-    EXACT="-e"
-  fi
-  if [ "${FINPUT}" ]; then
-    if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
-       [ "$(command -v sed)" ];
-    then
+
+  # capture result in database and generate report
+  if [ "${FINPUT}" ] && [ "$(command -v sed)" ]; then
+    QUERY=${LOGRPTQRY-${STEPNAME}}
+    if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
+      EXACT="-e"
+    fi
+    if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1
     else
       VERBOSITY=1
     fi
-    if [ "${LOGRPTHLT}" ]; then # highlight factor
-      DBSCRT="${DBSCRT} -t ${LOGRPTHLT}"
-    fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
+    if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
-      -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
+      -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
       -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" \
-      -v ${VERBOSITY});
-    then
-      # output cause of error
-      echo "${OUTPUT}" | sed '$d'
-      OUTPUT=""
+      -q "${LOGRPTQOP}" -v ${VERBOSITY} \
+      -t "${LOGRPTBND}");
+    then  # ERROR=$?
+      ERROR=1
     fi
+    FIGPAT="[[:space:]][[:space:]]*created\."
+    FIGURE=$(echo "${OUTPUT}" | sed -n "/${FIGPAT}/p" | sed '$!d')
+    if [ "${FIGURE}" ]; then
+      OUTPUT=$(echo "${OUTPUT}" | sed "/${FIGPAT}/d")
+    fi
+    if [ "${OUTPUT}" ] && [[ ("${ERROR}") || ("0" != "$((0>VERBOSITY))") ]]; then
+      echo "${OUTPUT}"
+    fi
+    OUTPUT=${FIGURE}
   fi
+
+  # embed report into log (base64)
   if [ "${OUTPUT}" ]; then
-    if [ "0" != "$((0>VERBOSITY))" ]; then
-      echo "${OUTPUT}" | sed '$d'
-    fi
     if [ "$(command -v base64)" ] && \
        [ "$(command -v cut)" ];
     then
-      if [ "0" != "$((0>VERBOSITY))" ]; then
-        OUTPUT=$(echo "${OUTPUT}" | sed '$!d')
-      fi
-      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi
         if [ "${OUTPUT}" ]; then
+          if [ "$(command -v mimetype)" ]; then
+            MIMETYPE=$(mimetype -b "${FIGURE}")
+          elif [ "${LOGRPTFMT}" ]; then
+            if [ "svgz" = "${LOGRPTFMT}" ]; then
+              MIMETYPE="image/svg+xml-compressed"
+            elif [ "svg" = "${LOGRPTFMT}" ]; then
+              MIMETYPE="image/svg+xml"
+            else  # fallback
+              MIMETYPE="image/${LOGRPTFMT}"
+            fi
+          else  # fallback
+            MIMETYPE="image/${FIGURE##*.}"
+          fi
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-          printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
-            "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
+            "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
+            >&2 echo "WARNING: deviation of latest value exceeds margin."
+            exit "${ERROR}"
+          fi
         else
           >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
         fi

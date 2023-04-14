@@ -56,6 +56,18 @@ int main(void)
     result = EXIT_FAILURE;
   }
 
+  h2 = h1 >> 16;
+  if ((libxsmm_crc32_u16(h2, &h1) & 0xFFFF) !=
+      (libxsmm_crc32_u16(h1 & 0xFFFF, &h2) & 0xFFFF))
+  {
+    result = EXIT_FAILURE;
+  }
+
+  h2 = libxsmm_crc32_u16(h2, &h1) & 0xFFFF;
+  if (h2 != libxsmm_hash16(h1)) {
+    result = EXIT_FAILURE;
+  }
+
   if (seed != libxsmm_hash(NULL/*data*/, 0/*size*/, seed)) {
     result = EXIT_FAILURE;
   }
