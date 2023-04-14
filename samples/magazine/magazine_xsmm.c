@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   int i, j;
 
   /**
-   * LIBXSMM's C interface really is type-generic, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE).
+   * LIBXSMM's C interface is type-generic (unsafe) with some macros to help mapping to type-specific functions.
    * The C++ interface is type-specific and provides overloaded functions and helpers for type-generic
    * programming (e.g., libxsmm_mmfunction<T>).
    */
@@ -67,26 +67,23 @@ int main(int argc, char* argv[])
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb)
     | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
   libxsmm_xmmfunction kernel = { NULL };
-# if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
     LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
     LIBXSMM_DATATYPE(TYPE));
   int prefetch = LIBXSMM_PREFETCH_NONE;
   libxsmm_gemm_param gemm_param;
-#   if defined(_DEBUG)
+# if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(gemm_param));
-#   endif
+# endif
+# if !defined(NOPREFETCH)
 #   if STREAM_A(1)
   prefetch |= LIBXSMM_GEMM_PREFETCH_AL2;
 #   endif
 #   if STREAM_C(1)
   prefetch |= LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
 #   endif
-  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
-# else
-  kernel.LIBXSMM_TPREFIX(TYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(
-    m, n, k, &lda, &ldb, &ldc, &flags);
 # endif
+  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
 #endif
 
   /* initialize data according to touch-first policy */
@@ -115,7 +112,7 @@ int main(int argc, char* argv[])
 #endif
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-# if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+# if !defined(AUTO)
 #   pragma omp for private(i, j) firstprivate(gemm_param)
 # else
 #   pragma omp for private(i, j)
@@ -123,12 +120,12 @@ int main(int argc, char* argv[])
 #endif
     for (i = 0; i < size - 1; ++i) {
 #if defined(SHUFFLE)
-# if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+# if !defined(AUTO)
       const int p = (shuffle * ((size_t)i + 1)) % size;
 # endif
       j = (shuffle * i) % size;
 #else
-# if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+# if !defined(AUTO)
       const int p = i + 1; /* next location */
 # endif
       j = i;
@@ -137,7 +134,7 @@ int main(int argc, char* argv[])
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
          &beta, c + STREAM_C(j * nc), &ldc);
-#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+#else
       gemm_param.a.primary    = a + STREAM_A(j * na);
       gemm_param.a.quaternary = a + STREAM_A(p * na);
       gemm_param.b.primary    = b + STREAM_B(j * nb);
@@ -145,10 +142,6 @@ int main(int argc, char* argv[])
       gemm_param.c.primary    = c + STREAM_C(j * nc);
       gemm_param.c.quaternary = c + STREAM_C(p * nc);
       kernel.gemm(&gemm_param);
-#else
-      kernel.LIBXSMM_TPREFIX(TYPE,mm)(
-        a + STREAM_A(j * na), b + STREAM_B(j * nb),
-        c + STREAM_C(j * nc));
 #endif
     }
   }
@@ -161,7 +154,7 @@ int main(int argc, char* argv[])
   libxsmm_dgemm(&transa, &transb, &m, &n, &k,
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
      &beta, c + STREAM_C(j * nc), &ldc);
-#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+#else
   gemm_param.a.primary    = a + STREAM_A(j * na);
   gemm_param.a.quaternary = gemm_param.a.primary;
   gemm_param.b.primary    = b + STREAM_B(j * nb);
@@ -169,10 +162,6 @@ int main(int argc, char* argv[])
   gemm_param.c.primary    = c + STREAM_C(j * nc);
   gemm_param.c.quaternary = gemm_param.c.primary;
   kernel.gemm(&gemm_param);
-#else
-  kernel.LIBXSMM_TPREFIX(TYPE,mm)(
-    a + STREAM_A(j * na), b + STREAM_B(j * nb),
-    c + STREAM_C(j * nc));
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
