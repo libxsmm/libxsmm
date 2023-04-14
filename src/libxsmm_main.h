@@ -492,11 +492,15 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, in
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
 LIBXSMM_API void libxsmm_xfree(const void* memory, int check);
 
+/** Determines the given value in double-precision (EXIT_SUCCESS if value is NULL). */
+LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
+
 /**
  * Format for instance an amount of Bytes like libxsmm_format_value(result, sizeof(result), nbytes, "KMGT", "B", 10).
  * The value returned is in requested/determined unit so that the user can decide about printing the buffer.
  */
-LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
+LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
+  int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
 /**
  * Print the command line arguments of the current process, and get the number of written

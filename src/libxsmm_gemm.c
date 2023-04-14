@@ -228,8 +228,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char
     (LIBXSMM_BLAS_CONST double*) beta,                             c, (LIBXSMM_BLAS_CONST libxsmm_blasint*)ldc);
 #else
   libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  LIBXSMM_INLINE_XGEMM(double, double, /* try producing a result even if LIBXSMM_INLINE_XGEMM is limited */
+# if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+  LIBXSMM_INLINE_XGEMM(double, double, /* try producing a result */
     transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+# endif
 #endif
 }
 
@@ -248,8 +250,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
     (LIBXSMM_BLAS_CONST float*) beta,                            c, (LIBXSMM_BLAS_CONST libxsmm_blasint*)ldc);
 #else
   libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  LIBXSMM_INLINE_XGEMM(float, float, /* try producing a result even if LIBXSMM_INLINE_XGEMM is limited */
+# if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+  LIBXSMM_INLINE_XGEMM(float, float, /* try producing a result */
     transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+# endif
 #endif
 }
 
@@ -490,7 +494,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 }
 
 
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch)
+LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch)
 {
   LIBXSMM_INIT /* load configuration */
   return libxsmm_get_gemm_prefetch(NULL == prefetch ? ((int)libxsmm_gemm_auto_prefetch) : *prefetch);
@@ -553,32 +557,6 @@ LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
         }
       }
       return LIBXSMM_GEMM_PREFETCH_NONE;
-    }
-  }
-}
-
-
-LIBXSMM_API void libxsmm_blas_gemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc)
-{
-  LIBXSMM_INIT
-  switch ((int)iprec) {
-    case LIBXSMM_DATATYPE_F64: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      LIBXSMM_BLAS_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      LIBXSMM_BLAS_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      static int error_once = 0;
-      LIBXSMM_UNUSED(oprec);
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) { /* TODO: support I16, etc. */
-        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
-      }
     }
   }
 }

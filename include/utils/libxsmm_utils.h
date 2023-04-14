@@ -119,25 +119,6 @@
 #define LIBXSMM_TPREFIX_NAME2(ITYPE, OTYPE)       LIBXSMM_TPREFIX_NAME(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
 #define LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION)  LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), FUNCTION)
 
-/** Helper macro for comparing selected types. */
-#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_CONCATENATE3(LIBXSMM_EQUAL_, T1, T2)
-#define LIBXSMM_EQUAL_floatfloat 1
-#define LIBXSMM_EQUAL_doubledouble 1
-#define LIBXSMM_EQUAL_floatdouble 0
-#define LIBXSMM_EQUAL_doublefloat 0
-
-#if defined(LIBXSMM_BLAS_CONST)
-# undef LIBXSMM_BLAS_CONST
-# define LIBXSMM_BLAS_CONST const
-#elif defined(OPENBLAS_CONST)
-# define LIBXSMM_BLAS_CONST OPENBLAS_CONST
-#elif (defined(LIBXSMM_BLAS_NONCONST) || defined(__OPENBLAS) || defined(__OPENBLAS77)) \
-   && !defined(LIBXSMM_BUILD)
-# define LIBXSMM_BLAS_CONST
-#else
-# define LIBXSMM_BLAS_CONST const
-#endif
-
 #if defined(__BLAS) && (1 == __BLAS)
 # if defined(__OPENBLAS)
     LIBXSMM_EXTERN void openblas_set_num_threads(int num_threads);
@@ -147,67 +128,6 @@
 #if !defined(LIBXSMM_BLAS_INIT)
 # define LIBXSMM_BLAS_INIT
 #endif
-
-#if defined(LIBXSMM_BUILD)
-# if defined(LIBXSMM_BUILD_EXT) && defined(_WINDLL) && \
-    (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
-#   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_APIEXT
-# elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
-#   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_API
-# endif
-#endif
-#if !defined(LIBXSMM_BLAS_SYMBOL_VISIBILITY)
-# define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_EXTERN LIBXSMM_VISIBILITY_IMPORT
-#endif
-
-#if defined(NOTHROW)
-# define LIBXSMM_BLAS_NOEXCEPT_AUX NOTHROW
-#else
-# define LIBXSMM_BLAS_NOEXCEPT_AUX LIBXSMM_NOEXCEPT
-#endif
-#define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
-#if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided LIBXSMM_BLAS_NOEXCEPT_AUX
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOEXCEPT_AUX
-#else
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch
-#endif
-#define LIBXSMM_BLAS_NOEXCEPT_gemm LIBXSMM_BLAS_NOEXCEPT_AUX
-#define LIBXSMM_BLAS_NOEXCEPT_gemv LIBXSMM_BLAS_NOEXCEPT_AUX
-
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch_strided(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR /*m*/, libxsmm_blasint CONST_STAR /*n*/, libxsmm_blasint CONST_STAR /*k*/, \
-  TYPE CONST_STAR /*alpha*/, TYPE CONST_STAR /*a*/, libxsmm_blasint CONST_STAR /*lda*/, libxsmm_blasint CONST_STAR /*stride_a*/, \
-                             TYPE CONST_STAR /*b*/, libxsmm_blasint CONST_STAR /*ldb*/, libxsmm_blasint CONST_STAR /*stride_b*/, \
-  TYPE CONST_STAR /*beta*/,  TYPE       STAR /*c*/, libxsmm_blasint CONST_STAR /*ldc*/, libxsmm_blasint CONST_STAR /*stride_c*/, \
-  libxsmm_blasint CONST_STAR /*batchsize*/
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE STAR STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemv(CONST_STAR, STAR, TYPE) char CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_SYMBOL_SIGNATURE_, KIND)(CONST_STAR, STAR, TYPE)
-#define LIBXSMM_BLAS_SYMBOL_FDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
-#define LIBXSMM_BLAS_SYMBOL_CDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_CBLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
-
-#if (0 != LIBXSMM_BLAS) /* BLAS available */
-# define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND) LIBXSMM_BLAS_DECL(TYPE, KIND, LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, TYPE, KIND))
-#else
-# define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND)
-#endif
-
-/** Helper macro consolidating the transpose requests into a set of flags. */
-#define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
-   ((('n' == (TRANSA) || *"N" == (TRANSA)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_A) \
-  | (('n' == (TRANSB) || *"N" == (TRANSB)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_B))
 
 /** Helper macro consolidating CBLAS transpose requests into a set of flags. */
 #define LIBXSMM_GEMM_CFLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
@@ -220,12 +140,6 @@
   | (('n' == (TRANSB) || *"N" == (TRANSB)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_B) \
   | (('n' == (VNNIA) || *"N" == (VNNIA)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_VNNI_A) \
   | (('n' == (VNNIB) || *"N" == (VNNIB)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_VNNI_B))
-
-/** Helper macro allowing NULL-requests (transposes) supplied by some default. */
-#define LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, DEFAULT) LIBXSMM_GEMM_FLAGS( \
-  NULL != ((const void*)(TRANSA)) ? (*(const char*)(TRANSA)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (DEFAULT)) ? 'n' : 't'), \
-  NULL != ((const void*)(TRANSB)) ? (*(const char*)(TRANSB)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (DEFAULT)) ? 'n' : 't')) \
-  | (~(LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B) & (DEFAULT))
 
 /** Inlinable GEMM exercising the compiler's code generation (macro template). TODO: only NN is supported and SP/DP matrices. */
 #define LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
@@ -350,22 +264,6 @@
 #endif
 #define LIBXSMM_MMCALL(FN, A, B, C, M, N, K) LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, M, K, M)
 
-/** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
-#define LIBXSMM_MNK_SIZE(M, N, K) (((size_t)(M)) * ((size_t)(N)) * ((size_t)(K)))
-/** Calculate total number of matrix-elements; matrices A, B, C are given per M, N, K, and emphasize (S) the C-size. */
-#define LIBXSMM_SIZE(M, N, K, S) \
-    (((size_t)(M) * (size_t)(K)) + ((size_t)(K) * (size_t)(N)) + \
-    (((size_t)(S) * (size_t)(M) * (size_t)(N))))
-/** Condition based on arithmetic intensity (AI) */
-#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) \
-    ((LIBXSMM_MNK_SIZE(M, N, K) * 2) <= ((size_t)(TYPESIZE) * 4/*AI*/ * LIBXSMM_SIZE(M, N, K, S)))
-/** Determine whether an SMM is suitable, i.e., small enough. */
-#if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
-# define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
-#else /* threshold based on arithmetic intensity */
-# define LIBXSMM_SMM LIBXSMM_SMM_AI
-#endif
-
 /** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */
 #if !defined(LIBXSMM_XGEMM_FALLBACK0)
 # define LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
@@ -463,13 +361,6 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
   double dbeta, void* c, libxsmm_blasint ldc);
-
-/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
-
-/** Determines the given value in double-precision (EXIT_SUCCESS if value is NULL). */
-LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 
 /** GEMM_BATCH_STRIDED: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));

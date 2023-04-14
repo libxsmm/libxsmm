@@ -94,6 +94,10 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
+/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
+LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
+
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT)
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));

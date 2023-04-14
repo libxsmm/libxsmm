@@ -244,6 +244,32 @@ LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 }
 
 
+LIBXSMM_API void libxsmm_blas_gemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_INIT
+  switch ((int)iprec) {
+    case LIBXSMM_DATATYPE_F64: {
+      LIBXSMM_ASSERT(iprec == oprec);
+      LIBXSMM_BLAS_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    case LIBXSMM_DATATYPE_F32: {
+      LIBXSMM_ASSERT(iprec == oprec);
+      LIBXSMM_BLAS_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      static int error_once = 0;
+      LIBXSMM_UNUSED(oprec);
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) { /* TODO: support I16, etc. */
+        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
+      }
+    }
+  }
+}
+
+
 LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   libxsmm_datatype precision, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,

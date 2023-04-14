@@ -601,7 +601,8 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 
 
 /* Caution: cannot be used multiple times in a single expression! */
-LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
+LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
+  int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
 {
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
   const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
