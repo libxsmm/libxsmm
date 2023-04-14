@@ -2320,6 +2320,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_reg( "alu_reg_CMPW_R_RM", &mycode, LIBXSMM_X86_INSTR_CMPW_R_RM, 0 );
   test_alu_reg( "alu_reg_CMPD_R_RM", &mycode, LIBXSMM_X86_INSTR_CMPD_R_RM, 0 );
   test_alu_reg( "alu_reg_CMPQ_R_RM", &mycode, LIBXSMM_X86_INSTR_CMPQ_R_RM, 0 );
+  test_alu_reg( "alu_reg_IDIVW", &mycode, LIBXSMM_X86_INSTR_IDIVW, 1 );
+  test_alu_reg( "alu_reg_IDIVD", &mycode, LIBXSMM_X86_INSTR_IDIVD, 1 );
+  test_alu_reg( "alu_reg_IDIVQ", &mycode, LIBXSMM_X86_INSTR_IDIVQ, 1 );
   test_alu_reg( "alu_reg_IMULW", &mycode, LIBXSMM_X86_INSTR_IMULW, 0 );
   test_alu_reg( "alu_reg_IMULD", &mycode, LIBXSMM_X86_INSTR_IMULD, 0 );
   test_alu_reg( "alu_reg_IMULQ", &mycode, LIBXSMM_X86_INSTR_IMULQ, 0 );

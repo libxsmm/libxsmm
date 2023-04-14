@@ -445,6 +445,19 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 }
 
 
+LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data)
+{
+  const unsigned int hash = libxsmm_hash16(data);
+  return libxsmm_crc32_u8(hash >> 8, &hash) & 0xFF;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
+{
+  return libxsmm_crc32_u16(data >> 16, &data) & 0xFFFF;
+}
+
+
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
 {
   unsigned long long result;
@@ -470,30 +483,77 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
 }
 
 
-LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
+LIBXSMM_API const char* libxsmm_stristrn(const char a[], const char b[], size_t maxlen)
 {
   const char* result = NULL;
-  if (NULL != a && NULL != b && '\0' != *a && '\0' != *b) {
+  if (NULL != a && NULL != b && '\0' != *a && '\0' != *b && 0 != maxlen) {
     do {
       if (tolower(*a) != tolower(*b)) {
         ++a;
       }
       else {
         const char* c = b;
+        size_t i = 0;
         result = a;
-        while ('\0' != *++a && '\0' != *++c) {
-          if (tolower(*a) != tolower(*c)) {
+        while ('\0' != *++a && '\0' != c[++i] && i != maxlen) {
+          if (tolower(*a) != tolower(c[i])) {
             result = NULL;
             break;
           }
         }
-        if ('\0' != c[0] && '\0' != c[1]) {
+        if ('\0' != c[i] && '\0' != c[i+1] && c[i] != c[i+1] && i != maxlen) {
           result = NULL;
         }
         else break;
       }
     } while ('\0' != *a);
   }
+  return result;
+}
+
+
+LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
+{
+  return libxsmm_stristrn(a, b, (size_t)-1);
+}
+
+
+LIBXSMM_API_INLINE int internal_isbreak(char c, const char delims[])
+{
+  char s[2] = { '\0' }; s[0] = c;
+  return NULL != strpbrk(s, delims);
+}
+
+
+LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char delims[])
+{
+  int result = 0;
+  if (NULL != a && NULL != b && '\0' != *a && '\0' != *b) {
+    const char *const sep = ((NULL == delims || '\0' == *delims) ? " \t;,:-" : delims);
+    const char *c, *tmp;
+    int nwords = 0;
+    size_t m, n;
+    do {
+      while (internal_isbreak(*b, sep)) ++b; /* left-trim */
+      tmp = b;
+      while ('\0' != *tmp && !internal_isbreak(*tmp, sep)) ++tmp;
+      m = tmp - b;
+      c = libxsmm_stristrn(a, b, LIBXSMM_MIN(1, m));
+      if (NULL != c) {
+        const char *d = c;
+        while ('\0' != *d && !internal_isbreak(*d, sep)) ++d;
+        n = d - c;
+        if (1 >= n || NULL != libxsmm_stristrn(c, b, LIBXSMM_MIN(m, n))) ++result;
+      }
+      b = tmp;
+    } while ('\0' != *b);
+    do { /* count number of words */
+      while (internal_isbreak(*a, sep)) ++a; /* left-trim */
+      if ('\0' != *a) ++nwords;
+      while ('\0' != *a && !internal_isbreak(*a, sep)) ++a;
+    } while ('\0' != *a);
+    if (nwords < result) result = nwords;
+  } else result = -1;
   return result;
 }
 
