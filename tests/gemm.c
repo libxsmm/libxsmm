@@ -24,10 +24,10 @@
 # define GEMM_GOLD LIBXSMM_GEMM_SYMBOL
 #endif
 #if !defined(GEMM)
-# define GEMM LIBXSMM_XGEMM_SYMBOL
+# define GEMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #endif
 #if !defined(SMM)
-# define SMM LIBXSMM_XGEMM_SYMBOL
+# define SMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #endif
 #if !defined(GEMM_NO_BYPASS)
 # define SMM_NO_BYPASS(FLAGS, ALPHA, BETA) LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)
@@ -169,9 +169,13 @@ int main(void)
 #endif
 #if (0 != LIBXSMM_JIT)
       if (0 != smm) { /* dispatch kernel and check that it is available */
-        const LIBXSMM_MMFUNCTION_TYPE(ITYPE) kernel = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(mi, ni, ki,
-          lda + test, ldb + test, ldc + test, &flags);
-        if (NULL == kernel) {
+        libxsmm_xmmfunction kernel = { NULL };
+        const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+          mi, ni, ki, lda[test], ldb[test], ldc[test],
+          LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
+          LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
+        kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, LIBXSMM_PREFETCH_NONE);
+        if (NULL == kernel.ptr_const) {
 # if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
           libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
