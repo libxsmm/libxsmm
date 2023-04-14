@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include <utils/libxsmm_intrinsics_x86.h>
 #include <utils/libxsmm_utils.h>
-#include <libxsmm_math.h>
+#include <libxsmm.h>
 
 #if defined(_OPENMP)
 # include <omp.h>
@@ -70,6 +70,9 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
   unsigned int sign = 0;
   unsigned char rhs = 0;
   unsigned char exp_off = 0;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
 
   /* in case of zero we do not need to do anything */
   if (LIBXSMM_FEQ(input, 0)) {
@@ -145,6 +148,9 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
 /* TODO: make this routine aware of any int type */
 LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
   int i = 0;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
 
   /* in case we are using FP-Mul based quantization we use a different path for now
      TODO: let's unify the paths by using the similar vectorization for both */
