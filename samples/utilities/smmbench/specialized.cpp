@@ -123,8 +123,7 @@ int main(int argc, char* argv[])
       1.0 * (s * ((static_cast<size_t>(asize) + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE))) / (1ULL << 20),
       LIBXSMM_TYPENAME(ITYPE), LIBXSMM_TYPENAME(OTYPE));
 
-    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb),
-      m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH);
+    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
     if (!xmm) throw "no specialized routine found!";
 
     // arrays needed for the batch interface (indirect)

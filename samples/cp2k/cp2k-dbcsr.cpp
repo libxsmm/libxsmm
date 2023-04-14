@@ -29,6 +29,11 @@
 # define ITYPE double
 #endif
 
+#if (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double)) \
+  && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
+#endif
+
 #if !defined(MAX_SIZE)
 # define MAX_SIZE ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif
@@ -170,7 +175,7 @@ int main(int argc, char* argv[])
     const T zero = 0;
 
     // eventually JIT-compile the requested kernel
-    const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
+    const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k);
 
     libxsmm_matdiff_clear(&diff);
     { // LAPACK/BLAS3 (warmup BLAS Library)
@@ -183,7 +188,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          libxsmm_blas_gemm(&transa, &transb, m, n, k,
+          LIBXSMM_TPREFIX(ITYPE,gemm)(&transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
@@ -204,7 +209,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          libxsmm_blas_gemm(&transa, &transb, &m, &n, &k,
+          LIBXSMM_TPREFIX(ITYPE, gemm)(&transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
@@ -300,14 +305,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, tmp,
-            LIBXSMM_GEMM_PREFETCH_A(aij + asize),
-            LIBXSMM_GEMM_PREFETCH_B(bij + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(tmp));
-#else
-          xmm(ai, bi, tmp);
-#endif
+          xmm(ai, bi, tmp, aij + asize, bij + bsize, tmp);
           ai = aij;
           bi = bij;
         }
