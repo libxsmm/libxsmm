@@ -1088,6 +1088,9 @@
 #define LIBXSMM_X86_INSTR_CMPD_R_RM        0xa004003b
 #define LIBXSMM_X86_INSTR_CMPQ_R_RM        0xa284003b
 #define LIBXSMM_X86_INSTR_IMUL             30003
+#define LIBXSMM_X86_INSTR_IDIVW            0x9c7440f7
+#define LIBXSMM_X86_INSTR_IDIVD            0x9c7400f7
+#define LIBXSMM_X86_INSTR_IDIVQ            0x9e7400f7
 #define LIBXSMM_X86_INSTR_IMULW            0xa00450af
 #define LIBXSMM_X86_INSTR_IMULD            0xa00410af
 #define LIBXSMM_X86_INSTR_IMULQ            0xa28410af
