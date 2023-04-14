@@ -1070,9 +1070,9 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
   int i, im, in;
-  int pf_dist = i_xgemm_desc->c3;
-  int pf_dist_l1 = i_xgemm_desc->c3;
-  int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1)) ? 1 : 0;
+  int pf_dist = 0;
+  int pf_dist_l1 = 0;
+  int emit_tilestores = ((i_brgemm_loop == (i_micro_kernel_config->cur_unroll_factor - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1) && (i_micro_kernel_config->is_peeled_br_loop == 1)) ? 1 : 0;
   unsigned int l_enforce_Mx1_amx_tile_blocking = libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking();
   int use_paired_tilestores = ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0) && (l_enforce_Mx1_amx_tile_blocking == 0)) ? 1 : 0;
   int n_CL_to_pf;
@@ -1154,8 +1154,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
 
   /* Disable prefetched if not strided BRGEMM... */
   if (i_brgemm_loop == -2) {
-    pf_dist += i_xgemm_desc->c3 + 2;
-    pf_dist_l1 += i_xgemm_desc->c3 + 2;
+    pf_dist += i_micro_kernel_config->cur_unroll_factor + 2;
+    pf_dist_l1 += i_micro_kernel_config->cur_unroll_factor + 2;
   }
 
   for (i = 1; i < 4; i++) {
@@ -1386,7 +1386,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
         libxsmm_generator_gemm_amx_decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], 0, 0);
       }
       /* Check if SW pipelining is doable for the A decompression... */
-      if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop >= 0) && (i_brgemm_loop < i_xgemm_desc->c3 - 1) && (fully_unrolled_brloop == 1)) {
+      if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop >= 0) && (i_brgemm_loop < i_micro_kernel_config->cur_unroll_factor - 1) && (fully_unrolled_brloop == 1)) {
         if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
           libxsmm_generator_gemm_amx_decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], i_xgemm_desc->c1, 0);
         } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
@@ -1411,7 +1411,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
           (int)(_A_offsets[i] * i_micro_kernel_config->sparsity_factor_A),
           _A_tile_id_load[i]);
 
-      if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
+      if ((fully_unrolled_brloop == 1 && i_brgemm_loop >= 0 && pf_dist > 0) && (((i_brgemm_loop + pf_dist < i_micro_kernel_config->cur_unroll_factor) && (i_micro_kernel_config->is_peeled_br_loop == 1)) || i_micro_kernel_config->is_peeled_br_loop == 0)) {
         unsigned int n_tile_rows, n_tile_cols;
         libxsmm_get_tileinfo( _A_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
         n_CL_to_pf = n_tile_cols;
@@ -1422,7 +1422,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             i_gp_reg_mapping->gp_reg_a,
             _A_offsets[i] + pf_dist * i_xgemm_desc->c1 );
       }
-      if (i_brgemm_loop + pf_dist_l1 < i_xgemm_desc->c3) {
+      if ((fully_unrolled_brloop == 1 && i_brgemm_loop >= 0 && pf_dist_l1 > 0) && (((i_brgemm_loop + pf_dist_l1 < i_micro_kernel_config->cur_unroll_factor) && (i_micro_kernel_config->is_peeled_br_loop == 1)) || i_micro_kernel_config->is_peeled_br_loop == 0)) {
         unsigned int n_tile_rows, n_tile_cols;
         libxsmm_get_tileinfo( _A_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
         n_CL_to_pf = n_tile_cols;
@@ -1451,7 +1451,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
         libxsmm_generator_gemm_amx_normT_32x16_bf16_ext_buf(io_generated_code, io_loop_label_tracker, i_xgemm_desc, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_b, _B_offsets[i], _B_trans_offset);
       }
 
-      if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
+      if ((fully_unrolled_brloop == 1 && i_brgemm_loop >= 0 && pf_dist > 0) && (((i_brgemm_loop + pf_dist < i_micro_kernel_config->cur_unroll_factor) && (i_micro_kernel_config->is_peeled_br_loop == 1)) || i_micro_kernel_config->is_peeled_br_loop == 0)) {
         unsigned int n_tile_rows, n_tile_cols;
         libxsmm_get_tileinfo( _B_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
         n_CL_to_pf = n_tile_cols;
@@ -1462,7 +1462,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             i_gp_reg_mapping->gp_reg_b,
             _B_offsets[i] + pf_dist * i_xgemm_desc->c2 );
       }
-      if (i_brgemm_loop + pf_dist_l1 < i_xgemm_desc->c3) {
+      if ((fully_unrolled_brloop == 1 && i_brgemm_loop >= 0 && pf_dist_l1 > 0) && (((i_brgemm_loop + pf_dist_l1 < i_micro_kernel_config->cur_unroll_factor) && (i_micro_kernel_config->is_peeled_br_loop == 1)) || i_micro_kernel_config->is_peeled_br_loop == 0)) {
         unsigned int n_tile_rows, n_tile_cols;
         libxsmm_get_tileinfo( _B_tile_id_load[i], &n_tile_rows, &n_tile_cols, &i_micro_kernel_config->tile_config );
         n_CL_to_pf = n_tile_cols;
@@ -1482,8 +1482,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
         _B_tile_id[i],
         _C_tile_id[i]);
 
-    if ((prefetch_C_scratch > 0) && (is_last_k == 1) &&
-        (i_brgemm_loop + prefetch_C_scratch_dist == i_xgemm_desc->c3) &&
+    if ((prefetch_C_scratch > 0) && (is_last_k == 1) &&  (i_micro_kernel_config->is_peeled_br_loop == 1)  &&
+        (i_brgemm_loop + prefetch_C_scratch_dist == i_micro_kernel_config->cur_unroll_factor) &&
         (((i < 2) && (use_paired_tilestores == 1)) || ((i < 1) && (use_paired_tilestores == 0)))) {
       unsigned int offset = 0;
       unsigned int gp_reg_gemm_scratch = i_gp_reg_mapping->gp_reg_help_0;
@@ -1498,8 +1498,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
 
     _C_tile_done[_C_tile_id[i]] = 1;
 
-    if ((prefetch_C_matrix > 0) && (is_last_k == 1) &&
-        (i_brgemm_loop + prefetch_C_matrix_dist == i_xgemm_desc->c3)) {
+    if ((prefetch_C_matrix > 0) && (is_last_k == 1) && (i_micro_kernel_config->is_peeled_br_loop == 1)  &&
+        (i_brgemm_loop + prefetch_C_matrix_dist == i_micro_kernel_config->cur_unroll_factor)) {
       unsigned int offset = 0;
       if (use_paired_tilestores == 1) {
         if (_C_tile_done[_C_tile_mate_id[_C_tile_id[i]]] == 1) {
