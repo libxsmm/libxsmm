@@ -41,11 +41,15 @@
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch_v2))
 
+#if !defined(LIBXSMM_BLAS_ERROR_MSG)
+# define LIBXSMM_BLAS_ERROR_MSG(SYMBOL) fprintf(stderr, "LIBXSMM WARNING: application shall be linked against LAPACK/BLAS %s!\n", SYMBOL)
+#endif
+
 #if !defined(LIBXSMM_BLAS_ERROR)
 #define LIBXSMM_BLAS_ERROR(SYMBOL, PCOUNTER) do { \
     const int hash = (int)libxsmm_hash32(libxsmm_hash_string(SYMBOL)), old = *(PCOUNTER); \
     if (LIBXSMM_ATOMIC_CMPSWP(PCOUNTER, old, hash, LIBXSMM_ATOMIC_RELAXED) && old != hash) { \
-      fprintf(stderr, "LIBXSMM WARNING: application shall be linked against LAPACK/BLAS %s!\n", SYMBOL); \
+      LIBXSMM_BLAS_ERROR_MSG(SYMBOL); \
     } \
   } while(0)
 #endif
