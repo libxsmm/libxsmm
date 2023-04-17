@@ -87,6 +87,7 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
 LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data);
 LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data);
+LIBXSMM_API unsigned int libxsmm_hash32(unsigned long long data);
 
 /** Calculate a 64-bit hash for the given character string; accepts NULL-string. */
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[]);
