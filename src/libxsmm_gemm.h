@@ -43,7 +43,8 @@
 
 #if !defined(LIBXSMM_BLAS_ERROR)
 #define LIBXSMM_BLAS_ERROR(SYMBOL, PCOUNTER) do { \
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(PCOUNTER, 1, LIBXSMM_ATOMIC_RELAXED)) { \
+    const int hash = (int)libxsmm_hash32(libxsmm_hash_string(SYMBOL)), old = *(PCOUNTER); \
+    if (LIBXSMM_ATOMIC_CMPSWP(PCOUNTER, old, hash, LIBXSMM_ATOMIC_RELAXED) && old != hash) { \
       fprintf(stderr, "LIBXSMM WARNING: application shall be linked against LAPACK/BLAS %s!\n", SYMBOL); \
     } \
   } while(0)
