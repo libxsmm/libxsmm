@@ -510,13 +510,7 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
     result = hash32; result = (result << 32) | seed32;
   }
   else { /* reinterpret directly as hash value */
-#if 1
     result = (unsigned long long)string;
-#else
-    char *const s = (char*)&result; signed char i;
-    for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
-    for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
-#endif
   }
   return result;
 }
