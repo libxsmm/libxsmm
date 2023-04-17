@@ -502,15 +502,21 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
   unsigned long long result;
   const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
-    const size_t length2 = length / 2;
+    const size_t length2 = LIBXSMM_MAX(length / 2, sizeof(result));
     unsigned int hash32, seed32 = 0; /* seed=0: match else-optimization */
     LIBXSMM_INIT
     seed32 = libxsmm_crc32(seed32, string, length2);
     hash32 = libxsmm_crc32(seed32, string + length2, length - length2);
     result = hash32; result = (result << 32) | seed32;
   }
+  else if (sizeof(result) != length) {
+    char *const s = (char*)&result; signed char i;
+    for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
+    for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
+  }
   else { /* reinterpret directly as hash value */
-    result = (unsigned long long)string;
+    LIBXSMM_ASSERT(NULL != string);
+    result = *(unsigned long long*)string;
   }
   return result;
 }
