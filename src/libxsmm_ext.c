@@ -12,10 +12,6 @@
 #include "libxsmm_gemm.h"
 #include <libxsmm.h>
 
-#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
-# include <utils/libxsmm_utils.h> /* LIBXSMM_INLINE_XGEMM */
-#endif
-
 
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT) && !defined(_WIN32)

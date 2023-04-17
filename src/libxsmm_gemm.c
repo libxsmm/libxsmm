@@ -12,10 +12,6 @@
 #include "libxsmm_xcopy.h"
 #include "libxsmm_hash.h"
 
-#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
-# include <utils/libxsmm_utils.h> /* LIBXSMM_INLINE_XGEMM */
-#endif
-
 #if !defined(LIBXSMM_GEMM_TASKGRAIN)
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
