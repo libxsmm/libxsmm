@@ -16,8 +16,8 @@
 # define FPRINTF(STREAM, ...) do {} while(0)
 #endif
 
-#if !defined(ELEM_TYPE)
-# define ELEM_TYPE int
+#if !defined(ELEMTYPE)
+# define ELEMTYPE int
 #endif
 
 
@@ -29,14 +29,14 @@
 int main(void)
 {
   const unsigned int seed = 1975, size = 2507;
-  const unsigned int n512 = 512 / (8 * sizeof(ELEM_TYPE));
+  const unsigned int n512 = 512 / (8 * sizeof(ELEMTYPE));
   unsigned int s = LIBXSMM_UP(size, n512), i, h1, h2;
   int result = EXIT_SUCCESS;
-  const ELEM_TYPE* value;
+  const ELEMTYPE* value;
 
-  ELEM_TYPE *const data = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * s);
+  ELEMTYPE *const data = (ELEMTYPE*)libxsmm_malloc(sizeof(ELEMTYPE) * s);
   if (NULL == data) s = 0;
-  for (i = 0; i < s; ++i) data[i] = (ELEM_TYPE)(rand() - ((RAND_MAX) >> 1));
+  for (i = 0; i < s; ++i) data[i] = (ELEMTYPE)(rand() - ((RAND_MAX) >> 1));
 
   h1 = libxsmm_crc32_u64(seed, data);
   h2 = libxsmm_crc32_u32(seed, data);
@@ -46,7 +46,7 @@ int main(void)
     result = EXIT_FAILURE;
   }
 
-  h1 = libxsmm_crc32(seed, data, sizeof(ELEM_TYPE) * s);
+  h1 = libxsmm_crc32(seed, data, sizeof(ELEMTYPE) * s);
   h2 = seed; value = data;
   for (i = 0; i < s; i += n512) {
     h2 = libxsmm_crc32_u512(h2, value + i);
