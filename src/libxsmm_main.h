@@ -12,11 +12,6 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
-/**
- * TF includes src/libxsmm_main.h and uses LIBXSMM's sync primitives
- * without including libxsmm_sync. However, libxsmm_sync.h shall be
- * an explicit include separate from including libxsmm.h.
- */
 #include <libxsmm_sync.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
@@ -511,9 +506,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
 /** Determines CPU-name using OS-specific instead of CPU-specific interfaces. */
 LIBXSMM_API_INTERN void libxsmm_cpuid_model(char model[], size_t* model_size);
-
-/** Returns the type-size of data-type (can be also libxsmm_datatype). */
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_xinfo {
   /** Non-zero if kernel is registered. */
