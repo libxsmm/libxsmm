@@ -28,9 +28,9 @@
 ******************************************************************************/
 /* Sanchit Misra (Intel Corp), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef PERF_COUNTER_MARKERS_H
 #define PERF_COUNTER_MARKERS_H
+
 #include <stdint.h>
 
 #ifdef __cplusplus

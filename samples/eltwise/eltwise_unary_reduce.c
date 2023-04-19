@@ -8,17 +8,13 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include "eltwise_common.h"
+
 /*#define FP16_REDUCE_COLSIDX*/
 #ifdef FP16_REDUCE_COLSIDX
 #include <immintrin.h>
 #endif
 
-#include "eltwise_common.h"
 
 LIBXSMM_INLINE
 void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )

@@ -8,17 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "eltwise_common.h"
 
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
+
 
 LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
@@ -288,12 +283,12 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
     for ( i = 0; i < N; ++i ) {
       for ( j = 0; j < M/8; ++j ) {
         if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-          printf("error at possition i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("error at position i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           s = 1;
         }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
       }

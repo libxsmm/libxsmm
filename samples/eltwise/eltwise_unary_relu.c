@@ -9,16 +9,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "eltwise_common.h"
+
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
+
 
 LIBXSMM_INLINE
 void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint ldo_mask, const void *in, void *out, const float alpha, unsigned char *out_mask, const unsigned char type, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
@@ -300,12 +296,12 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < LIBXSMM_UPDIV(M, 8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at position i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
         }
