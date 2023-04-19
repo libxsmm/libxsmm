@@ -8,15 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-# include <libxsmm_intrinsics_x86.h>
-#endif
-#include <math.h>
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-# include <libxsmm_intrinsics_x86.h>
-#endif
+#include <libxsmm_intrinsics_x86.h>
+#include <libxsmm.h>
 
 #define N 1000000
 
@@ -78,8 +71,10 @@ int main(int argc, char* argv[])
 
   for (i = -128; i < 127; ++i) {
     const float a = libxsmm_sexp2_i8((signed char)i);
-    const float b = LIBXSMM_EXP2F((float)i);
-    if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
+    const float b = libxsmm_sexp2_i8i(i);
+    const float c = LIBXSMM_EXP2F((float)i);
+    if (LIBXSMM_NEQ(a, c)) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(b, c)) exit(EXIT_FAILURE);
   }
 
   for (i = 0; i < (N); ++i) {

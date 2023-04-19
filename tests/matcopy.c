@@ -10,8 +10,8 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#if !defined(ELEM_TYPE)
-# define ELEM_TYPE float
+#if !defined(ELEMTYPE)
+# define ELEMTYPE float
 #endif
 #if !defined(TEST_MZERO)
 # define TEST_MZERO
@@ -23,18 +23,18 @@
 # define TEST_JIT
 #endif
 
-#if LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double)
+#if LIBXSMM_EQUAL(ELEMTYPE, float) || LIBXSMM_EQUAL(ELEMTYPE, double)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 #   include <mkl_trans.h>
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) \
-      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'n', \
-        (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEMTYPE, omatcopy))('C', 'n', \
+        (size_t)(*(M)), (size_t)(*(N)), (ELEMTYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
 # elif defined(__OPENBLAS77) && 0/* issue #390 */
 #   include <f77blas.h>
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) do { \
       /*const*/char matcopy_gold_tc_ = 'C', matcopy_gold_tt_ = 'n'; \
-      /*const*/ELEM_TYPE matcopy_gold_alpha_ = 1; \
-      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))(&matcopy_gold_tc_, &matcopy_gold_tt_, \
+      /*const*/ELEMTYPE matcopy_gold_alpha_ = 1; \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEMTYPE, omatcopy))(&matcopy_gold_tc_, &matcopy_gold_tt_, \
         (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &matcopy_gold_alpha_, \
         A, (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO)); \
     } while(0)
@@ -54,9 +54,9 @@ int main(void)
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i, j;
   unsigned int nerrors = 0;
-  ELEM_TYPE *a = 0, *b = 0;
+  ELEMTYPE *a = 0, *b = 0;
 # if defined(MATCOPY_GOLD)
-  ELEM_TYPE *c = 0;
+  ELEMTYPE *c = 0;
 # endif
   void (*matcopy[])(void*, const void*, unsigned int, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
     libxsmm_matcopy, libxsmm_matcopy_omp
@@ -70,33 +70,33 @@ int main(void)
     max_size_a = LIBXSMM_MAX(max_size_a, size_a);
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ELEM_TYPE)));
-  b = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
+  a = (ELEMTYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ELEMTYPE)));
+  b = (ELEMTYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEMTYPE)));
   assert(NULL != a && NULL != b);
 
-  LIBXSMM_MATINIT_OMP(ELEM_TYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT_OMP(ELEMTYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
 # if defined(MATCOPY_GOLD)
-  c = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
+  c = (ELEMTYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEMTYPE)));
   assert(NULL != c);
 # endif
 
   for (fun = 0; fun < nfun; ++fun) {
     for (test = start; test < ntests; ++test) {
-      ELEM_TYPE pattern;
-      memset(b, -1, (size_t)(max_size_b * sizeof(ELEM_TYPE)));
+      ELEMTYPE pattern;
+      memset(b, -1, (size_t)(max_size_b * sizeof(ELEMTYPE)));
       pattern = b[0]; /* -NaN */
 # if defined(TEST_MZERO)
-      matcopy[fun](b, NULL, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
+      matcopy[fun](b, NULL, sizeof(ELEMTYPE), m[test], n[test], ldi[test], ldo[test]);
       for (i = 0; i < n[test]; ++i) {
         for (j = 0; j < m[test]; ++j) {
-          const ELEM_TYPE u = 0;
-          const ELEM_TYPE v = b[i*ldo[test]+j];
+          const ELEMTYPE u = 0;
+          const ELEMTYPE v = b[i*ldo[test]+j];
           if (LIBXSMM_NEQ(u, v)) {
             ++nerrors;
           }
         }
         for (j = m[test]; j < ldo[test]; ++j) {
-          if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEM_TYPE))) {
+          if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEMTYPE))) {
             ++nerrors;
           }
         }
@@ -106,17 +106,17 @@ int main(void)
       }
 # endif
 # if defined(TEST_MCOPY)
-      matcopy[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
+      matcopy[fun](b, a, sizeof(ELEMTYPE), m[test], n[test], ldi[test], ldo[test]);
       for (i = 0; i < n[test]; ++i) {
         for (j = 0; j < m[test]; ++j) {
-          const ELEM_TYPE u = a[i*ldi[test]+j];
-          const ELEM_TYPE v = b[i*ldo[test]+j];
+          const ELEMTYPE u = a[i*ldi[test]+j];
+          const ELEMTYPE v = b[i*ldo[test]+j];
           if (LIBXSMM_NEQ(u, v)) {
             ++nerrors;
           }
         }
         for (j = m[test]; j < ldo[test]; ++j) {
-          if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEM_TYPE))) {
+          if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEMTYPE))) {
             ++nerrors;
           }
         }
@@ -130,14 +130,14 @@ int main(void)
         MATCOPY_GOLD(m + test, n + test, a, ldi + test, c, ldo + test);
         for (i = 0; i < n[test]; ++i) {
           for (j = 0; j < m[test]; ++j) {
-            const ELEM_TYPE u = b[i*ldo[test]+j];
-            const ELEM_TYPE v = c[i*ldo[test]+j];
+            const ELEMTYPE u = b[i*ldo[test]+j];
+            const ELEMTYPE v = c[i*ldo[test]+j];
             if (LIBXSMM_NEQ(u, v)) {
               ++nerrors;
             }
           }
           for (j = m[test]; j < ldo[test]; ++j) {
-            if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEM_TYPE))) {
+            if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEMTYPE))) {
               ++nerrors;
             }
           }
@@ -151,10 +151,10 @@ int main(void)
       if (0 == fun
         && (LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid() &&
             LIBXSMM_X86_ALLFEAT >= libxsmm_get_target_archid())
-        && (/*LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEM_TYPE) ||*/
-            LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
+        && (/*LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEMTYPE) ||*/
+            LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEMTYPE)))
       {
-        const libxsmm_datatype type = LIBXSMM_DATATYPE(ELEM_TYPE);
+        const libxsmm_datatype type = LIBXSMM_DATATYPE(ELEMTYPE);
         const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
           m[test], n[test], ldi[test], ldo[test], type, type, type);
         const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary_v2(

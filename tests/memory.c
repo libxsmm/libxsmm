@@ -61,11 +61,17 @@ int main(int argc, char* argv[])
       "The lazy brown dog jumps over the quick fox", /* match */
       "The hazy fog crawls over the lazy crocodile"
     };
-    int match = 0, i = 0, j = 0;
-    for (; i < (sizeof(sample) / sizeof(*sample)); ++i) {
+    int match = 0, i = 0;
+#if defined(PRINT)
+    int j = 0;
+#endif
+    for (; i < ((int)sizeof(sample) / (int)sizeof(*sample)); ++i) {
       const int score = libxsmm_strimatch(init, sample[i], NULL);
       if (match < score) {
-        match = score; j = i;
+        match = score;
+#if defined(PRINT)
+        j = i;
+#endif
       }
       else if (0 > score) result = EXIT_FAILURE;
     }
