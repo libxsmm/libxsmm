@@ -12,6 +12,7 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
+#include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
