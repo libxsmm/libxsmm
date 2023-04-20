@@ -13,7 +13,6 @@
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_common_x86.h"
 #include "generator_matequation_scratch_avx_avx512.h"
 #include "generator_mateltwise_reduce_avx_avx512.h"
@@ -22,6 +21,7 @@
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
 #include "generator_gemm_amx_emu.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {

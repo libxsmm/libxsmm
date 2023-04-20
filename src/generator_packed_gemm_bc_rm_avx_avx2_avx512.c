@@ -8,12 +8,11 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_common_x86.h"
 #include "generator_packed_gemm_bc_rm_avx_avx2_avx512.h"
 #include "generator_gemm_common.h"
 #include "generator_x86_instructions.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( libxsmm_generated_code*         io_generated_code,
                                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
@@ -29,7 +28,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( lib
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select accumulator blocking */
-  /* TODO: we could do more agressive blocking if needed */
+  /* TODO: we could do more aggressive blocking if needed */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     l_max_reg_block = 28;
   } else {
@@ -92,7 +91,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( lib
 
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
+    /* RDI holds the pointer to the struct, so lets first move this one into R15 */
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1 );
     /* A pointer */
     libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
@@ -107,7 +106,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( lib
       /* A prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 56, l_gp_reg_mapping.gp_reg_a_prefetch, 0 );
-      /* B preftech pointer */
+      /* B prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 88, l_gp_reg_mapping.gp_reg_b_prefetch, 0 );
     }
@@ -247,7 +246,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
                                                                            i_packed_width, l_simd_packed_width, l_simd_packed_width, i_n_blocking );
   /* check if we have a perfect SIMD divisor */
   } else if ( l_simd_packed_remainder == 0 ) {
-    /* initilize packed loop */
+    /* initialize packed loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, 0 );
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, l_simd_packed_width );
@@ -290,7 +289,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
                                                                            i_packed_width, l_simd_packed_width, l_simd_packed_remainder, i_n_blocking );
   /* we need the general case */
   } else {
-    /* initilize packed loop */
+    /* initialize packed loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, 0 );
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, l_simd_packed_width );
@@ -605,4 +604,3 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
                                    i_gp_reg_mapping->gp_reg_b,
                                    (long long)i_xgemm_desc->k * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in );
 }
-

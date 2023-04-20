@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_packed_spgemm_csr_asparse.h"
 #include "generator_packed_spgemm_csr_asparse_avx_avx2_avx512.h"
 #include "generator_packed_spgemm_csr_asparse_aarch64.h"

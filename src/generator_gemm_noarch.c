@@ -9,7 +9,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_gemm_noarch.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*        io_generated_code,

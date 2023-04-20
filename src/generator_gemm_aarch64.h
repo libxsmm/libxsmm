@@ -9,7 +9,6 @@
 ******************************************************************************/
 /* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_AARCH64_H
 #define GENERATOR_GEMM_AARCH64_H
 

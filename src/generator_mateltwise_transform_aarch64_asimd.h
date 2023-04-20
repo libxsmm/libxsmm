@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_TRANSFORM_AARCH64_ASIMD_H
 #define GENERATOR_MATELTWISE_TRANSFORM_AARCH64_ASIMD_H
 

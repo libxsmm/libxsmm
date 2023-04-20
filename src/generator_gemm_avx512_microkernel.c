@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include "generator_gemm_avx512_microkernel.h"
 #include "generator_x86_instructions.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*            io_generated_code,

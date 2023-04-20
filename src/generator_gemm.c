@@ -15,7 +15,7 @@
 #include "generator_gemm_amx_emu.h"
 #include "generator_gemm_aarch64.h"
 #include "generator_gemm_noarch.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,

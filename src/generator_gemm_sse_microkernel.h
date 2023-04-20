@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_SSE_MICROKERNEL_H
 #define GENERATOR_GEMM_SSE_MICROKERNEL_H
 

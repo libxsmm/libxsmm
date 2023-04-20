@@ -8,9 +8,9 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_COMMON_H
 #define GENERATOR_MATELTWISE_COMMON_H
+
 #include <libxsmm.h>
 #include "generator_common.h"
 
