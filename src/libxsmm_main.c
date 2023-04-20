@@ -1477,12 +1477,6 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_sink(const void* arg, ...)
-{ /* does nothing else but sinking given arguments */
-  LIBXSMM_UNUSED(arg);
-}
-
-
 LIBXSMM_API int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT

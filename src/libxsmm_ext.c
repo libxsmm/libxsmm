@@ -199,7 +199,9 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE libxsmm_sink_function internal_nob
 LIBXSMM_API_INTERN libxsmm_sink_function internal_noblas_error(const char* symbol)
 {
   static int internal_noblas_nerror = 0;
-  LIBXSMM_BLAS_ERROR(symbol, &internal_noblas_nerror);
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&internal_noblas_nerror, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_BLAS_ERROR_MSG(symbol); /* LIBXSMM_BLAS_ERROR causes link-time dependencies */
+  }
   return internal_noblas_sink;
 }
 
