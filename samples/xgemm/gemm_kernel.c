@@ -9,14 +9,10 @@
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
 #include <float.h>
-# if defined(__APPLE__) && defined(__arm64__)
-#include <pthread.h>
-# endif
+#if defined(__APPLE__) && defined(__arm64__)
+# include <pthread.h>
+#endif
 
 #define OP_NONE         0
 #define COLBIAS_ADD     1

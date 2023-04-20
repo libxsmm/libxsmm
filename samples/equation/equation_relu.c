@@ -8,12 +8,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include "equation_common.h"
+
 
 LIBXSMM_INLINE
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, unsigned char* relu_mask, float *out) {
@@ -308,7 +304,7 @@ int main( int argc, char* argv[] ) {
       unsigned int gold_val = (mask_ref[(i*mask_ld)+j/8]) & (1 << (j%8));
       unsigned int comp_val = (mask_eqn[(i*mask_ld)+j/8]) & (1 << (j%8));
       if ( gold_val != comp_val ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j,
+        printf("error at position i=%i, j=%i, %u, %u\n", i, j,
           (unsigned int)mask_ref[(i*mask_ld)+j/8],
           (unsigned int)mask_eqn[(i*mask_ld)+j/8]);
         s = 1;

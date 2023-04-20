@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Sanchit Misra (Intel Corp), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

@@ -10,16 +10,12 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
 
-#if !defined(ELEM_TYPE)
-# define ELEM_TYPE double
+#if !defined(ELEMTYPE)
+# define ELEMTYPE double
 #endif
 
 #if !defined(RAND_SEED)
@@ -41,15 +37,15 @@
 #define ITRANS libxsmm_itrans
 
 #if defined(__BLAS) && (0 != __BLAS) && \
-  (LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double))
+  (LIBXSMM_EQUAL(ELEMTYPE, float) || LIBXSMM_EQUAL(ELEMTYPE, double))
 # if defined(__MKL)
 #   include <mkl_trans.h>
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
-      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
-        (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEMTYPE, omatcopy))('C', 'T', \
+        (size_t)(*(M)), (size_t)(*(N)), (ELEMTYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
 #   define ITRANS_GOLD(M, N, A, LDI, LDO) \
-      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))('C', 'T', \
-        (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), (size_t)(*(LDO)))
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEMTYPE, imatcopy))('C', 'T', \
+        (size_t)(*(M)), (size_t)(*(N)), (ELEMTYPE)1, A, (size_t)(*(LDI)), (size_t)(*(LDO)))
 #   if !defined(USE_REFERENCE)
 #     define USE_REFERENCE
 #   endif
@@ -57,15 +53,15 @@
 #   include <f77blas.h>
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
-      /*const*/ELEM_TYPE otrans_gold_alpha_ = 1; \
-      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))(&otrans_gold_tc_, &otrans_gold_tt_, \
+      /*const*/ELEMTYPE otrans_gold_alpha_ = 1; \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEMTYPE, omatcopy))(&otrans_gold_tc_, &otrans_gold_tt_, \
         (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &otrans_gold_alpha_, A, \
         (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO)); \
     }
 #   define ITRANS_GOLD(M, N, A, LDI, LDO) { \
       /*const*/char itrans_gold_tc_ = 'C', itrans_gold_tt_ = 'T'; \
-      /*const*/ELEM_TYPE itrans_gold_alpha_ = 1; \
-      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))(&itrans_gold_tc_, &itrans_gold_tt_, \
+      /*const*/ELEMTYPE itrans_gold_alpha_ = 1; \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEMTYPE, imatcopy))(&itrans_gold_tc_, &itrans_gold_tt_, \
         (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &itrans_gold_alpha_, A, \
         (libxsmm_blasint*)(LDI), (libxsmm_blasint*)(LDO)); \
     }
@@ -76,9 +72,9 @@
 #endif
 
 
-LIBXSMM_INLINE ELEM_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
+LIBXSMM_INLINE ELEMTYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
 {
-  return (ELEM_TYPE)i * ld + j;
+  return (ELEMTYPE)i * ld + j;
 }
 
 
@@ -91,11 +87,11 @@ LIBXSMM_INLINE libxsmm_blasint randstart(libxsmm_blasint start, libxsmm_blasint 
 
 
 #if !defined(USE_REFERENCE)
-LIBXSMM_INLINE void matrix_transpose(ELEM_TYPE *LIBXSMM_RESTRICT dst, const ELEM_TYPE *LIBXSMM_RESTRICT src, libxsmm_blasint rows, libxsmm_blasint cols)
+LIBXSMM_INLINE void matrix_transpose(ELEMTYPE *LIBXSMM_RESTRICT dst, const ELEMTYPE *LIBXSMM_RESTRICT src, libxsmm_blasint rows, libxsmm_blasint cols)
 {
   libxsmm_blasint i, j;
-  LIBXSMM_VLA_DECL(2, const ELEM_TYPE, src_2d, src, cols);
-  LIBXSMM_VLA_DECL(2, ELEM_TYPE, dst_2d, dst, rows);
+  LIBXSMM_VLA_DECL(2, const ELEMTYPE, src_2d, src, cols);
+  LIBXSMM_VLA_DECL(2, ELEMTYPE, dst_2d, dst, rows);
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(i); LIBXSMM_OMP_VAR(j);
 # pragma omp parallel for private(i, j)
@@ -126,15 +122,15 @@ int main(int argc, char* argv[])
     const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (NULL == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     const int check = (NULL == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
-    ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)ldi * (size_t)(('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE));
-    ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)ldo * (size_t)(('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE));
+    ELEMTYPE *const a = (ELEMTYPE*)libxsmm_malloc((size_t)ldi * (size_t)(('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEMTYPE));
+    ELEMTYPE *const b = (ELEMTYPE*)libxsmm_malloc((size_t)ldo * (size_t)(('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEMTYPE));
     libxsmm_timer_tickint start, duration = 0, duration2 = 0;
     libxsmm_blasint i;
     size_t size = 0;
 
     fprintf(stdout, "m=%lli n=%lli ldi=%lli ldo=%lli size=%.fMB (%s, %s)\n",
       (long long)m, (long long)n, (long long)ldi, (long long)ldo,
-      1.0 * (sizeof(ELEM_TYPE) * m * n) / (1ULL << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),
+      1.0 * (sizeof(ELEMTYPE) * m * n) / (1ULL << 20), LIBXSMM_STRINGIFY(ELEMTYPE),
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
 #if defined(_OPENMP)
@@ -164,13 +160,13 @@ int main(int argc, char* argv[])
         kldo = LIBXSMM_MAX(rldo, kn);
         /* warmup: trigger JIT-generated code */
         if ('o' == t || 'O' == t) {
-          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          OTRANS(b, a, sizeof(ELEMTYPE), km, kn, kldi, kldo);
         }
         else {
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          ITRANS(b, sizeof(ELEMTYPE), km, kn, kldi, kldo);
         }
       }
-      size += (size_t)(sizeof(ELEM_TYPE) * km * kn);
+      size += (size_t)(sizeof(ELEMTYPE) * km * kn);
 
       if ('o' == t || 'O' == t) {
 #if !defined(USE_REFERENCE)
@@ -180,9 +176,9 @@ int main(int argc, char* argv[])
           start = libxsmm_timer_tick();
 #if defined(OTRANS_THREAD)
 #         pragma omp parallel
-          OTRANS_THREAD(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo, omp_get_thread_num(), omp_get_num_threads());
+          OTRANS_THREAD(b, a, sizeof(ELEMTYPE), km, kn, kldi, kldo, omp_get_thread_num(), omp_get_num_threads());
 #else
-          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          OTRANS(b, a, sizeof(ELEMTYPE), km, kn, kldi, kldo);
 #endif
           duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
@@ -192,17 +188,17 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single nowait
 #endif
-          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          OTRANS(b, a, sizeof(ELEMTYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
       else {
         assert(('i' == t || 'I' == t));
-        memcpy(b, a, (size_t)(sizeof(ELEM_TYPE) * kldi * kn));
+        memcpy(b, a, (size_t)(sizeof(ELEMTYPE) * kldi * kn));
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          ITRANS(b, sizeof(ELEMTYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
@@ -211,7 +207,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single
 #endif
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          ITRANS(b, sizeof(ELEMTYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
@@ -219,8 +215,8 @@ int main(int argc, char* argv[])
         for (i = 0; i < km; ++i) {
           libxsmm_blasint j;
           for (j = 0; j < kn; ++j) {
-            const ELEM_TYPE u = b[i*kldo+j];
-            const ELEM_TYPE v = a[j*kldi+i];
+            const ELEMTYPE u = b[i*kldo+j];
+            const ELEMTYPE v = a[j*kldi+i];
             if (LIBXSMM_NEQ(u, v)) {
               i += km; /* leave outer loop as well */
               result = EXIT_FAILURE;
@@ -263,7 +259,7 @@ int main(int argc, char* argv[])
         else {
           assert(('i' == t || 'I' == t));
 #if defined(USE_REFERENCE)
-          memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
+          memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEMTYPE)));
           start = libxsmm_timer_tick();
           ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
           duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -276,8 +272,8 @@ int main(int argc, char* argv[])
           for (i = 0; i < km; ++i) {
             libxsmm_blasint j;
             for (j = 0; j < kn; ++j) {
-              const ELEM_TYPE u = b[i*kldo+j];
-              const ELEM_TYPE v = a[j*kldi+i];
+              const ELEMTYPE u = b[i*kldo+j];
+              const ELEMTYPE v = a[j*kldi+i];
               if (LIBXSMM_NEQ(u, v)) {
                 i += km; /* leave outer loop as well */
                 result = EXIT_FAILURE;
@@ -301,7 +297,7 @@ int main(int argc, char* argv[])
         {
           double dbatch;
           start = libxsmm_timer_tick();
-          libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo,
+          libxsmm_itrans_batch(b, sizeof(ELEMTYPE), km, kn, kldi, kldo,
             0/*index_base*/, 0/*index_stride*/, NULL/*stride*/,
             BATCH_SIZE, 0/*tid*/, 1/*ntasks*/);
           dbatch = libxsmm_timer_duration(start, libxsmm_timer_tick());

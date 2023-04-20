@@ -16,6 +16,7 @@
 #define EPS 1.19209290e-03F
 #define DEPS 1.19209290e-06F
 
+
 LIBXSMM_INLINE
 void print_dt_info(int datatype_mode) {
   if (datatype_mode == 0) {

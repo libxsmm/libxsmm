@@ -11,9 +11,6 @@
 #include <libxsmm.h>
 
 #include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
