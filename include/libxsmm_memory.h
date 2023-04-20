@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_MEMORY_H
 #define LIBXSMM_MEMORY_H
 
-#include "libxsmm_macros.h"
+#include <libxsmm_typedefs.h>
 
 #define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, RHS, NTS) do { \
   const signed char libxsmm_memory127_loop_size_ = LIBXSMM_CAST_ICHAR(SIZE); \
