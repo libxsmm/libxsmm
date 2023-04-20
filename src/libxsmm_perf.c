@@ -9,7 +9,6 @@
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
 #include "libxsmm_perf.h"
-#include <libxsmm_sync.h>
 #include <utils/libxsmm_timer.h>
 
 #include "perf_jitdump.h"
