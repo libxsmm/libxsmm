@@ -569,10 +569,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
             static size_t threshold_max = 0;
             if (threshold_max != threshold) {
               LIBXSMM_STDIO_ACQUIRE();
-              fprintf(stderr, "LIBXSMM WARNING: ");
-              libxsmm_gemm_print2(stderr, iprec, oprec, ta, tb, &im, &in, &ik,
-                ialpha, NULL/*a*/, &ilda, NULL/*b*/, &ildb, ibeta, NULL/*c*/, &ildc);
-              fprintf(stderr, " => batched GEMM/omp was falling back!\n");
+              fprintf(stderr, "LIBXSMM WARNING: batched GEMM/omp was falling back!\n");
               LIBXSMM_STDIO_RELEASE();
               threshold_max = threshold;
             }
