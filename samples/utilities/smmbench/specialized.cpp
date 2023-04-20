@@ -122,8 +122,7 @@ int main(int argc, char* argv[])
       1.0 * (s * ((static_cast<size_t>(asize) + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE))) / (1ULL << 20),
       LIBXSMM_TYPENAME(ITYPE), LIBXSMM_TYPENAME(OTYPE));
 
-    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb),
-      m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH);
+    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
     if (!xmm) throw "no specialized routine found!";
 
     // arrays needed for the batch interface (indirect)
@@ -144,14 +143,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, ci,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize),
-            LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
-#else
           xmm(ai, bi, ci);
-#endif
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -213,13 +205,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, b, ci,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(b),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
-#else
           xmm(ai, b, ci);
-#endif
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -281,13 +267,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(a, bi, ci,
-            LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
-#else
           xmm(a, bi, ci);
-#endif
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -352,14 +332,7 @@ int main(int argc, char* argv[])
           if (0 == check) j = omp_get_thread_num() * chunksize * csize;
 #endif
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, c + j,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize),
-            LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(c + j));
-#else
           xmm(ai, bi, c + j);
-#endif
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -426,14 +399,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
           if (0 == check) j = omp_get_thread_num() * chunksize * csize;
 #endif
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(a, b, c + j,
-            LIBXSMM_GEMM_PREFETCH_A(a),
-            LIBXSMM_GEMM_PREFETCH_B(b),
-            LIBXSMM_GEMM_PREFETCH_C(c + j));
-#else
           xmm(a, b, c + j);
-#endif
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());

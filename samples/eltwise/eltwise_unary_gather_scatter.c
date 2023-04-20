@@ -8,11 +8,7 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include "eltwise_common.h"
 
 #define COLS 0
 #define ROWS 1
@@ -24,6 +20,7 @@
 #define GATHER 0
 #define SCATTER 1
 #define EXPANSION_FACTOR 4
+
 
 LIBXSMM_INLINE
 void create_unique_random_array(unsigned long long *inout_array, int n) {

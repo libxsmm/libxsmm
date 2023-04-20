@@ -9,9 +9,7 @@
 /* Xing Liu (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 
 void BlockSpMatStep1(int K, int C, int KB, int CB, unsigned int *colptr,
                      unsigned int *rowidx, unsigned int *b_colptr[],

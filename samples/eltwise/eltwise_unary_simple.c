@@ -9,11 +9,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include "eltwise_common.h"
 
 #define EPS 1.19209290e-03F
