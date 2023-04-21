@@ -133,6 +133,17 @@ int main(int argc, char* argv[])
       }
     }
 
+    d1 = 1.f / LIBXSMM_SQRTF(28.f);
+    e1 = LIBXSMM_FABS(1.0 / (d1 * d1) - 28.0);
+    d2 = 1.0 / sqrt(28.0);
+    e2 = LIBXSMM_FABS(1.0 / (d2 * d2) - 28.0);
+    if (e2 < e1) {
+      e3 = 0 < e2 ? (e1 / e2) : 0.f;
+      if (4E-06 < LIBXSMM_MIN(LIBXSMM_FABS(e1 - e2), e3)) {
+        exit(EXIT_FAILURE);
+      }
+    }
+
     a = libxsmm_icbrt_u32(r32);
     b = ref_icbrt_u32(r32);
     if (a != b) exit(EXIT_FAILURE);
