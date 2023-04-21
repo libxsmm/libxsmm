@@ -12,7 +12,10 @@
 
 #include "generator_riscv_instructions.h"
 
-#define FILL_REGID(r, t) (t & (r << libxsmm_ctz(t)));
+#define FILL_REGID(r, t)        (t & (r << libxsmm_ctz(t)));
+#define REG_VALID_1(r1)         (((r1) >= LIBXSMM_RISCV_GP_REG_X0) && ((r1) <= LIBXSMM_RISCV_GP_REG_X31))
+#define REG_VALID_2(r1, r2)     (REG_VALID_1(r1) && REG_VALID_1(r2))
+#define REG_VALID_3(r1, r2, r3) (REG_VALID_2(r1, r2) && REG_VALID_1(r3))
 
 /* RVV LD/ST */
 LIBXSMM_API_INTERN
@@ -40,18 +43,11 @@ void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generate
                                               const unsigned int       i_vec_reg_dst,
                                               const unsigned int       i_pred_reg,
                                               const libxsmm_riscv_type i_type ) {
-}
-
-/* RVV predicted compute */
-LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_rvv_pcompute( libxsmm_generated_code*      io_generated_code,
-                                               const unsigned int           i_pred_instr,
-                                               const unsigned int           i_pred_reg,
-                                               const unsigned int           i_gp_reg_src_0,
-                                               const libxsmm_riscv_gp_width i_gp_width,
-                                               const unsigned int           i_gp_reg_src_1,
-                                               const libxsmm_riscv_pattern  i_pattern,
-                                               const libxsmm_riscv_type     i_type ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
 }
 
 /* RV64 base ISA LD/ST */
@@ -65,6 +61,12 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
 
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
     fprintf(stderr, "libxsmm_riscv_instruction_move: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_2(i_gp_reg_addr, i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_move: invalid register id !\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -134,7 +136,13 @@ void libxsmm_riscv_instruction_alu_compute( libxsmm_generated_code* io_generated
                                             const unsigned int      i_gp_reg_src_2,
                                             const unsigned int      i_gp_reg_dst) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_3(i_gp_reg_src_1, i_gp_reg_src_2, i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -148,23 +156,52 @@ void libxsmm_riscv_instruction_alu_compute( libxsmm_generated_code* io_generated
     case LIBXSMM_RISCV_INSTR_GP_XOR:
     case LIBXSMM_RISCV_INSTR_GP_SRL:
     case LIBXSMM_RISCV_INSTR_GP_SLL:
+    case LIBXSMM_RISCV_INSTR_GP_SLLW:
     case LIBXSMM_RISCV_INSTR_GP_SLT:
+    case LIBXSMM_RISCV_INSTR_GP_SLTU:
+    case LIBXSMM_RISCV_INSTR_GP_SRA:
+    case LIBXSMM_RISCV_INSTR_GP_SRAW:
+    case LIBXSMM_RISCV_INSTR_GP_SRLW:
+    case LIBXSMM_RISCV_INSTR_GP_SUBW:
+    case LIBXSMM_RISCV_INSTR_GP_MUL:
+    case LIBXSMM_RISCV_INSTR_GP_MULW:
+    case LIBXSMM_RISCV_INSTR_GP_MULH:
+    case LIBXSMM_RISCV_INSTR_GP_MULHU:
+    case LIBXSMM_RISCV_INSTR_GP_MULHSU:
+    case LIBXSMM_RISCV_INSTR_GP_DIV:
+    case LIBXSMM_RISCV_INSTR_GP_DIVW:
+    case LIBXSMM_RISCV_INSTR_GP_DIVU:
+    case LIBXSMM_RISCV_INSTR_GP_REM:
+    case LIBXSMM_RISCV_INSTR_GP_REMW:
+    case LIBXSMM_RISCV_INSTR_GP_REMU:
+    case LIBXSMM_RISCV_INSTR_GP_REMUW:
+    case LIBXSMM_RISCV_INSTR_GP_FADD_S:
+    case LIBXSMM_RISCV_INSTR_GP_FADD_D:
+    case LIBXSMM_RISCV_INSTR_GP_FSUB_S:
+    case LIBXSMM_RISCV_INSTR_GP_FSUB_D:
+    case LIBXSMM_RISCV_INSTR_GP_FMUL_S:
+    case LIBXSMM_RISCV_INSTR_GP_FMUL_D:
+    case LIBXSMM_RISCV_INSTR_GP_FDIV_S:
+    case LIBXSMM_RISCV_INSTR_GP_FDIV_D:
+    case LIBXSMM_RISCV_INSTR_GP_FSQRT_S:
+    case LIBXSMM_RISCV_INSTR_GP_FSQRT_D:
+    case LIBXSMM_RISCV_INSTR_GP_FMADD_S:
+    case LIBXSMM_RISCV_INSTR_GP_FMADD_D:
+    case LIBXSMM_RISCV_INSTR_GP_FMSUB_S:
+    case LIBXSMM_RISCV_INSTR_GP_FMSUB_D:
+    case LIBXSMM_RISCV_INSTR_GP_FNMADD_S:
+    case LIBXSMM_RISCV_INSTR_GP_FNMADD_D:
+    case LIBXSMM_RISCV_INSTR_GP_FNMSUB_S:
+    case LIBXSMM_RISCV_INSTR_GP_FNMSUB_D:
+    case LIBXSMM_RISCV_INSTR_GP_FMIN_S:
+    case LIBXSMM_RISCV_INSTR_GP_FMIN_D:
+    case LIBXSMM_RISCV_INSTR_GP_FMAX_S:
+    case LIBXSMM_RISCV_INSTR_GP_FMAX_D:
       break;
     default:
       fprintf(stderr, "libxsmm_riscv_instruction_alu_compute: unexpected instruction number: %u\n", i_alu_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
-  }
-
-  /* check that all regs are either 32 or 64 bit */
-  if ( ((i_gp_reg_src_1 > 31) && (i_gp_reg_src_2 > 31) && ( i_gp_reg_dst > 31 )) ) {
-    /* nothing */
-  } else if ( ((i_gp_reg_src_1 < 32) && (i_gp_reg_src_2 < 32) && ( i_gp_reg_dst < 32 )) ) {
-    /* nothing */
-  } else {
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: all regsiters need to be either 32 or 64bit; instr: %u\n", i_alu_instr);
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -213,32 +250,41 @@ void libxsmm_riscv_instruction_alu_compute_imm12( libxsmm_generated_code* io_gen
     return;
   }
 
-  // Sanity check
-  switch ( i_alu_instr ) {
-    case LIBXSMM_RISCV_INSTR_GP_ADD:
-    case LIBXSMM_RISCV_INSTR_GP_SUB:
-    case LIBXSMM_RISCV_INSTR_GP_OR:
-    case LIBXSMM_RISCV_INSTR_GP_AND:
-    case LIBXSMM_RISCV_INSTR_GP_XOR:
-    case LIBXSMM_RISCV_INSTR_GP_SRL:
-    case LIBXSMM_RISCV_INSTR_GP_SLL:
-    case LIBXSMM_RISCV_INSTR_GP_SLT:
-      break;
-    default:
-      fprintf(stderr, "libxsmm_riscv_instruction_alu_compute: unexpected instruction number: %u\n", i_alu_instr);
-      LIBXSMM_EXIT_ERROR(io_generated_code);
-      return;
-  }
-
-  /* check that all regs are either 32 or 64 bit */
-  if ( ((i_gp_reg_src > 31) && ( i_gp_reg_dst > 31 )) ) {
-    /* nothing */
-  } else if ( ((i_gp_reg_src < 32) && ( i_gp_reg_dst < 32 )) ) {
-    /* nothing */
-  } else {
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: all regsiters need to be either 32 or 64bit; instr: %u\n", i_alu_instr);
+  if ( REG_VALID_2(i_gp_reg_src, i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_compute_imm12: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
+  }
+
+  if ( i_imm12 > 0xfff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: unexpected imm: %u %u\n", i_alu_instr, i_imm12);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  // Sanity check
+  switch ( i_alu_instr ) {
+    case LIBXSMM_RISCV_INSTR_GP_ADDI:
+    case LIBXSMM_RISCV_INSTR_GP_ADDIW:
+    case LIBXSMM_RISCV_INSTR_GP_CSRRCI:
+    case LIBXSMM_RISCV_INSTR_GP_CSRRSI:
+    case LIBXSMM_RISCV_INSTR_GP_CSRRWI:
+    case LIBXSMM_RISCV_INSTR_GP_ORI:
+    case LIBXSMM_RISCV_INSTR_GP_ANDI:
+    case LIBXSMM_RISCV_INSTR_GP_XORI:
+    case LIBXSMM_RISCV_INSTR_GP_SRLI:
+    case LIBXSMM_RISCV_INSTR_GP_SRLIW:
+    case LIBXSMM_RISCV_INSTR_GP_SLLI:
+    case LIBXSMM_RISCV_INSTR_GP_SLLIW:
+    case LIBXSMM_RISCV_INSTR_GP_SLTI:
+    case LIBXSMM_RISCV_INSTR_GP_SLTIU:
+    case LIBXSMM_RISCV_INSTR_GP_SRAI:
+    case LIBXSMM_RISCV_INSTR_GP_SRAIW:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: unexpected instruction number: %u\n", i_alu_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -279,10 +325,33 @@ void libxsmm_riscv_instruction_alu_compute_imm20( libxsmm_generated_code* io_gen
                                                     const unsigned int      i_alu_instr,
                                                     const unsigned int      i_gp_reg_dst,
                                                     const unsigned int      i_imm20 ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_1(i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: invalid register id %d !\n", i_gp_reg_dst);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
   if ( i_imm20 > 0xfffff ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: unexpected imm: %u %u\n", i_alu_instr, i_imm20);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
+  }
+
+  // Sanity check
+  switch ( i_alu_instr ) {
+    case LIBXSMM_RISCV_INSTR_GP_AUIPC:
+    case LIBXSMM_RISCV_INSTR_GP_LUI:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: unexpected instruction number: %u\n", i_alu_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -306,7 +375,7 @@ void libxsmm_riscv_instruction_alu_compute_imm20( libxsmm_generated_code* io_gen
   io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -315,12 +384,110 @@ void libxsmm_riscv_instruction_alu_compute_imm20( libxsmm_generated_code* io_gen
 /* RV64 base ISA U-type instructions */
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_alu_move_imm12( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_alu_instr,
                                                const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm12 ) {
+                                               const unsigned int      i_imm12 ) 
+{
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_move_imm12: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  /* check for imm being in range */
+  if ( i_imm12 > 0xfff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move_imm12: unexpected imm: %u \n", (unsigned int)i_imm12);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  /* check that all regs are either 32 or 64 bit */
+  if (!REG_VALID_1(i_gp_reg_dst)) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move_imm12: invalid regsiters id: %d\n", i_gp_reg_dst);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
   // ADDI immediate to X0 register
   libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
     LIBXSMM_RISCV_INSTR_GP_ADDI, LIBXSMM_RISCV_GP_REG_X0, i_gp_reg_dst, i_imm12);
+}
+
+/* RV64 base ISA U-type instructions */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_alu_move_imm20( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_dst,
+                                               const unsigned int      i_imm20 ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_1(i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move_imm20: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_imm20 > 0xfffff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move_imm20: unexpected imm: %u\n", i_imm20);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  // ADDI immediate to X0 register
+  libxsmm_riscv_instruction_alu_compute_imm20(io_generated_code,
+    LIBXSMM_RISCV_INSTR_GP_LUI, i_gp_reg_dst, i_imm20);
+
+  // SHIFT Right
+  libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
+      LIBXSMM_RISCV_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 12);
+}
+
+/* Auxilary instruction */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_alu_move_imm32( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_dst,
+                                               const unsigned int      i_imm32 ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm32: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_1(i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_move_imm32: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_imm32 > 0xffffffff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move_imm20: unexpected imm: %u\n", i_imm32);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if (i_imm32 <= 0xfff) {
+    libxsmm_riscv_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, i_imm32 );
+  } else if ( i_imm32 <= 0xfffff ){
+    libxsmm_riscv_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, i_imm32 );
+  } else {
+#define IMM_12_1 (0xfff)
+#define IMM_20_1 (0xfffff000)
+
+   unsigned int imm_12_1 = (i_imm32 & IMM_12_1);
+   unsigned int imm_20_1 = ((i_imm32 & IMM_20_1) >> 12);
+
+   // LUI 20 bits
+   libxsmm_riscv_instruction_alu_compute_imm20(io_generated_code,
+       LIBXSMM_RISCV_INSTR_GP_LUI, i_gp_reg_dst, imm_20_1);
+   // ADD 12 bits
+   libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
+       LIBXSMM_RISCV_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_1);
+
+#undef IMM_12_1
+#undef IMM_20_1
+  }
 }
 
 /* 64 bit immediate move using addi, lui, and shift instructions. */
@@ -328,36 +495,51 @@ LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
                                               const unsigned int       i_gp_reg_dst,
                                               const unsigned long long i_imm64 ) {
-#define IMM_12_1 (0xfff)
-#define IMM_20_1 (0xfffff000)
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm64: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_1(i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_set_imm64: invalid register id\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if (i_imm64 <= 0xfff) {
+    libxsmm_riscv_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, i_imm64 );
+  } else if ( i_imm64 <= 0xfffff ){
+    libxsmm_riscv_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, i_imm64 );
+  } else if ( i_imm64 <= 0xffffffff) {
+    libxsmm_riscv_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, i_imm64 );
+  } else {
 #define IMM_12_2 (0xfff00000000)
 #define IMM_20_2 (0xfffff00000000000)
 
-  unsigned int imm_12_1 = (i_imm64 & IMM_12_1);
-  unsigned int imm_20_1 = ((i_imm64 & IMM_20_1) >> 12);
-  unsigned int imm_12_2 = ((i_imm64 & IMM_12_2) >> 32);
-  unsigned int imm_20_2 = ((i_imm64 & IMM_20_2) >> 44);
+    unsigned int imm_12_2 = ((i_imm64 & IMM_12_2) >> 32);
+    unsigned int imm_20_2 = ((i_imm64 & IMM_20_2) >> 44);
 
-  // LUI 20 bits
-  libxsmm_riscv_instruction_alu_compute_imm20(io_generated_code,
-      LIBXSMM_RISCV_INSTR_GP_LUI, i_gp_reg_dst, imm_20_2);
-  // ADD 16 bits
-  libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
-      LIBXSMM_RISCV_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_2);
-  // SHIFT Left
-  libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
-      LIBXSMM_RISCV_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
-  // LUI 20 bits
-  libxsmm_riscv_instruction_alu_compute_imm20(io_generated_code,
-      LIBXSMM_RISCV_INSTR_GP_LUI, i_gp_reg_dst, imm_20_1);
-  // ADD 16 bits
-  libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
-      LIBXSMM_RISCV_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_1);
+    // LUI 20 bits
+    libxsmm_riscv_instruction_alu_compute_imm20(io_generated_code,
+        LIBXSMM_RISCV_INSTR_GP_LUI, i_gp_reg_dst, imm_20_2);
+    // ADD 12 bits
+    libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
+        LIBXSMM_RISCV_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_2);
 
-#undef IMM_12_1
-#undef IMM_20_1
 #undef IMM_12_2
 #undef IMM_20_2
+
+    // SHIFT Left
+    libxsmm_riscv_instruction_alu_compute_imm12(io_generated_code,
+        LIBXSMM_RISCV_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
+
+#define IMM_32 (0xffffffff)
+
+    libxsmm_riscv_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, i_imm64 & IMM_32 );
+
+#undef IMM_32
+  }
 }
 
 /* 64-bit compute with immediate uses 64-bit move and alu instructions. */
@@ -374,8 +556,20 @@ void libxsmm_riscv_instruction_alu_compute_imm64( libxsmm_generated_code*  io_ge
     return;
   }
 
-  /* move imm64 into the temp register */
-  libxsmm_riscv_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, i_imm64 );
+  if ( REG_VALID_3(i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm64: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+  
+  if (i_imm64 <= 0xfff) {
+    libxsmm_riscv_instruction_alu_move_imm12( io_generated_code, i_gp_reg_tmp, i_imm64 );
+  } else if (i_imm64 <= 0xfffff){
+    libxsmm_riscv_instruction_alu_move_imm20( io_generated_code, i_gp_reg_tmp, i_imm64 );
+  } else {
+    /* move imm64 into the temp register */
+    libxsmm_riscv_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, i_imm64 );
+  }
 
   /* reg-reg instruction */
   libxsmm_riscv_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
@@ -390,43 +584,64 @@ void libxsmm_riscv_instruction_cond_jump( libxsmm_generated_code* io_generated_c
                                           const unsigned int      i_gp_reg_src_2,
                                           const unsigned int      i_imm ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int code_head = io_generated_code->code_size/4;
-    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    switch ( i_jmp_instr ) {
+      case LIBXSMM_RISCV_INSTR_GP_BEQ:
+      case LIBXSMM_RISCV_INSTR_GP_BGE:
+      case LIBXSMM_RISCV_INSTR_GP_BGEU:
+      case LIBXSMM_RISCV_INSTR_GP_BLT:
+      case LIBXSMM_RISCV_INSTR_GP_BLTU:
+      case LIBXSMM_RISCV_INSTR_GP_BNE:
+        break;
+      default:
+        fprintf(stderr, "libxsmm_riscv_instruction_cond_jump: unexpected instruction number: %u\n", i_jmp_instr);
+        LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
+    }
+    if ( io_generated_code->code_type > 1 ) {
+      unsigned int code_head = io_generated_code->code_size/4;
+      unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
-    /* Ensure we have enough space */
-    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      /* Ensure we have enough space */
+      if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+        return;
+      }
+
+      /* Generate immediate */
+      unsigned int imm_lo = ((i_imm >> 11) & 0x1) | (i_imm & 0x1e);
+      unsigned int imm_hi = (i_imm & 0x1fe0) | ((i_imm >> 12) & 0x1);
+
+      /* fix bits */
+      code[code_head]  = i_jmp_instr;
+      /* setting RS1 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_1, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+      /* setting RS2 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_2, LIBXSMM_RISCV_INSTR_FIELD_RS2);
+      /* setting IMM12HI */
+      code[code_head] |= (unsigned int)FILL_REGID(imm_hi, LIBXSMM_RISCV_INSTR_FIELD_BIMM12HI);
+      /* setting IMM12LO */
+      code[code_head] |= (unsigned int)FILL_REGID(imm_lo, LIBXSMM_RISCV_INSTR_FIELD_BIMM12LO);
+
+      /* advance code head */
+      io_generated_code->code_size += 4;
+    } else {
+      /* assembly not supported right now */
+      fprintf(stderr, "libxsmm_riscv_instruction_cond_jmp: inline/pure assembly print is not supported!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
-
-  /* Generate immediate */
-  unsigned int imm_lo = ((i_imm >> 11) & 0x1) | (i_imm & 0x1e);
-  unsigned int imm_hi = (i_imm & 0x1fe0) | ((i_imm >> 12) & 0x1);
-
-  /* fix bits */
-  code[code_head]  = i_jmp_instr;
-  /* setting RS1 */
-  code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_1, LIBXSMM_RISCV_INSTR_FIELD_RS1);
-  /* setting RS2 */
-  code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_2, LIBXSMM_RISCV_INSTR_FIELD_RS2);
-  /* setting IMM12HI */
-  code[code_head] |= (unsigned int)FILL_REGID(imm_hi, LIBXSMM_RISCV_INSTR_FIELD_BIMM12HI);
-  /* setting IMM12LO */
-  code[code_head] |= (unsigned int)FILL_REGID(imm_lo, LIBXSMM_RISCV_INSTR_FIELD_BIMM12LO);
-
-  /* advance code head */
-  io_generated_code->code_size += 4;
-  } else {
-    /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: inline/pure assembly print is not supported!\n");
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
   }
 }
 
@@ -437,40 +652,62 @@ void libxsmm_riscv_instruction_jump_and_link( libxsmm_generated_code* io_generat
                                      const unsigned int      i_gp_reg_dst,
                                      const unsigned int      i_imm ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_1(i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int code_head = io_generated_code->code_size/4;
-    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
-
-    /* Ensure we have enough space */
-    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
+    switch ( i_jmp_instr ) {
+      case LIBXSMM_RISCV_INSTR_GP_BEQ:
+      case LIBXSMM_RISCV_INSTR_GP_BGE:
+      case LIBXSMM_RISCV_INSTR_GP_BGEU:
+      case LIBXSMM_RISCV_INSTR_GP_BLT:
+      case LIBXSMM_RISCV_INSTR_GP_BLTU:
+      case LIBXSMM_RISCV_INSTR_GP_BNE:
+        break;
+      default:
+        fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link: unexpected instruction number: %u\n", i_jmp_instr);
+        LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
     }
 
-  /* Generate immediate */
-  unsigned int imm_lo = (((i_imm & 0x7ff) >> 2)|((i_imm >> 12) & 0xff));
-  unsigned int imm_hi = (i_imm & 0x7fe) | ((i_imm & 0x100000) >> 9);
-  unsigned int imm_f  = imm_lo | (imm_hi << 8);
+    if ( io_generated_code->code_type > 1 ) {
+      unsigned int code_head = io_generated_code->code_size/4;
+      unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
-  /* fix bits */
-  code[code_head]  = i_jmp_instr;
-  /* setting RS1 */
-  code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
-  /* setting IMM20 */
-  code[code_head] |= (unsigned int)FILL_REGID(imm_f, LIBXSMM_RISCV_INSTR_FIELD_IMM12HI);
+      /* Ensure we have enough space */
+      if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+        return;
+      }
 
-  /* advance code head */
-  io_generated_code->code_size += 4;
-  } else {
-    /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: inline/pure assembly print is not supported!\n");
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
+      /* Generate immediate */
+      unsigned int imm_lo = (((i_imm & 0x7ff) >> 2)|((i_imm >> 12) & 0xff));
+      unsigned int imm_hi = (i_imm & 0x7fe) | ((i_imm & 0x100000) >> 9);
+      unsigned int imm_f  = imm_lo | (imm_hi << 8);
+
+      /* fix bits */
+      code[code_head]  = i_jmp_instr;
+      /* setting RS1 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+      /* setting IMM20 */
+      code[code_head] |= (unsigned int)FILL_REGID(imm_f, LIBXSMM_RISCV_INSTR_FIELD_IMM12HI);
+
+      /* advance code head */
+      io_generated_code->code_size += 4;
+    } else {
+      /* assembly not supported right now */
+      fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link: inline/pure assembly print is not supported!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
   }
 }
 
@@ -482,9 +719,29 @@ void libxsmm_riscv_instruction_jump_and_link_reg( libxsmm_generated_code* io_gen
                                               const unsigned int      i_gp_reg_src_1,
                                               const unsigned int      i_imm12 ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link_reg: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
+  }
+
+  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link_reg: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  switch ( i_jmp_instr ) {
+    case LIBXSMM_RISCV_INSTR_GP_BEQ:
+    case LIBXSMM_RISCV_INSTR_GP_BGE:
+    case LIBXSMM_RISCV_INSTR_GP_BGEU:
+    case LIBXSMM_RISCV_INSTR_GP_BLT:
+    case LIBXSMM_RISCV_INSTR_GP_BLTU:
+    case LIBXSMM_RISCV_INSTR_GP_BNE:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link_reg: unexpected instruction number: %u\n", i_jmp_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -497,26 +754,25 @@ void libxsmm_riscv_instruction_jump_and_link_reg( libxsmm_generated_code* io_gen
       return;
     }
 
-  /* fix bits */
-  code[code_head]  = i_jmp_instr;
-  /* setting RS1 */
-  code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
-  /* setting RS2 */
-  code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_1, LIBXSMM_RISCV_INSTR_FIELD_RS1);
-  /* setting IMM12HI */
-  code[code_head] |= (unsigned int)FILL_REGID(i_imm12, LIBXSMM_RISCV_INSTR_FIELD_IMM12);
+    /* fix bits */
+    code[code_head]  = i_jmp_instr;
+    /* setting RS1 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+    /* setting RS2 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_1, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+    /* setting IMM12HI */
+    code[code_head] |= (unsigned int)FILL_REGID(i_imm12, LIBXSMM_RISCV_INSTR_FIELD_IMM12);
 
-  /* advance code head */
-  io_generated_code->code_size += 4;
+    /* advance code head */
+    io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link_reg: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 }
 
-/* Required : same as ARM64 */
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
                                                     const unsigned int          i_label_no,
@@ -550,7 +806,7 @@ void libxsmm_riscv_instruction_register_jump_label( libxsmm_generated_code*     
     }
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -559,7 +815,8 @@ void libxsmm_riscv_instruction_register_jump_label( libxsmm_generated_code*     
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     io_generated_code,
                                                    const unsigned int          i_jmp_instr,
-                                                   const unsigned int          i_gp_reg_cmp,
+                                                   const unsigned int          i_gp_reg_src_1,
+                                                   const unsigned int          i_gp_reg_src_2,
                                                    const unsigned int          i_label_no,
                                                    libxsmm_jump_label_tracker* io_jump_label_tracker ) {
   unsigned int l_pos;
@@ -569,6 +826,13 @@ void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     i
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
+
+  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_to_label: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
   /* check if the label we are trying to set is in bounds */
   if ( 512 <= i_label_no ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
@@ -590,7 +854,7 @@ void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     i
     case LIBXSMM_RISCV_INSTR_GP_BNE:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
+      fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
   }
@@ -603,7 +867,6 @@ void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     i
 
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_jmp_dst = (io_jump_label_tracker->label_address[i_label_no]) / 4;
-    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
     unsigned int code_head = io_generated_code->code_size / 4;
     int l_jmp_imm = (l_jmp_dst == 0) /* computing jump immediate */
       ? 0 : (int)l_jmp_dst - (int)code_head;
@@ -614,21 +877,20 @@ void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     i
       return;
     }
 
-    // TODO: comd jump
-    /* fix bits */
-    code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
-    /* setting Rd */
-    code[code_head] |= (unsigned int)(0x1f & i_gp_reg_cmp);
-    /* setting sf */
-    code[code_head] |= (unsigned int)((0x20 & i_gp_reg_cmp) << 26);
-     /* setting imm16 */
-    code[code_head] |= (unsigned int)((0x7ffff & l_jmp_imm) << 5);
+    if (l_jmp_imm > 0xfff) {
+      fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: unexpected jump offser: %u\n", l_jmp_imm);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+
+    libxsmm_riscv_instruction_cond_jump(io_generated_code, i_jmp_instr,
+        i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm);
 
     /* advance code head */
     io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_to_label: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_to_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -638,7 +900,7 @@ LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
                                                            libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: at least ARM V81 needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_register_jump_back_label: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -655,7 +917,7 @@ void libxsmm_riscv_instruction_register_jump_back_label( libxsmm_generated_code*
     io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -664,10 +926,17 @@ void libxsmm_riscv_instruction_register_jump_back_label( libxsmm_generated_code*
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_cond_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
                                                           const unsigned int          i_jmp_instr,
-                                                          const unsigned int          i_gp_reg_cmp,
+                                                          const unsigned int          i_gp_reg_src_1,
+                                                          const unsigned int          i_gp_reg_src_2,
                                                           libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: at least ARM V81 needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_lable: invalid register id !\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -681,13 +950,12 @@ void libxsmm_riscv_instruction_cond_jump_back_to_label( libxsmm_generated_code* 
     case LIBXSMM_RISCV_INSTR_GP_BNE:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
+      fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int* code = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_lab = --io_loop_label_tracker->label_count;
     unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab]) / 4;
     unsigned int code_head = io_generated_code->code_size / 4;
@@ -699,23 +967,26 @@ void libxsmm_riscv_instruction_cond_jump_back_to_label( libxsmm_generated_code* 
       return;
     }
 
-     /* fix bits */
-    code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
-    /* setting Rd */
-    code[code_head] |= (unsigned int)(0x1f & i_gp_reg_cmp);
-    /* setting sf */
-    code[code_head] |= (unsigned int)((0x20 & i_gp_reg_cmp) << 26);
-     /* setting imm16 */
-    code[code_head] |= (unsigned int)((0x7ffff & l_jmp_imm) << 5);
+    if (l_jmp_imm > 0xfff) {
+      fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: unexpected jump offser: %u\n", l_jmp_imm);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+
+    libxsmm_riscv_instruction_cond_jump(io_generated_code, i_jmp_instr,
+        i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm);
 
     /* advance code head */
     io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 }
 
 #undef FILL_REGID
+#undef REG_VALID_1
+#undef REG_VALID_2
+#undef REG_VALID_3

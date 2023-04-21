@@ -3030,16 +3030,41 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
  * Generates movk, movz instructions
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_alu_instr actual mov instr.
  * @param i_gp_reg_dst the destination register
  * @param i_shift the shift of the immediate
  * @param i_imm16 the 16bit immediate operand
  */
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_alu_move_imm12( libxsmm_generated_code* io_generated_code,
-                                                 const unsigned int      i_alu_instr,
                                                  const unsigned int      i_gp_reg_dst,
                                                  const unsigned int      i_imm12 );
+
+/**
+ * Generates mov 20-bit immediate instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_alu_instr actual mov instr.
+ * @param i_gp_reg_dst the destination register
+ * @param i_imm20 the 16bit immediate operand
+ */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_alu_move_imm20( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_dst,
+                                               const unsigned int      i_imm20 );
+
+
+/**
+ * Generates mov 32-bit immediate instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_alu_instr actual mov instr.
+ * @param i_gp_reg_dst the destination register
+ * @param i_imm20 the 16bit immediate operand
+ */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_alu_move_imm32( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_dst,
+                                               const unsigned int      i_imm32 );
 
 /**
  * Generates a sequence of instructions to load a int64 into a GPR
@@ -3144,11 +3169,27 @@ void libxsmm_riscv_instruction_cond_jump( libxsmm_generated_code* io_generated_c
  * @param i_imm 20 bit immediate
  */
 LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_jump( libxsmm_generated_code* io_generated_code,
+void libxsmm_riscv_instruction_jump_and_link( libxsmm_generated_code* io_generated_code,
                                      const unsigned int      i_jmp_instr,
                                      const unsigned int      i_gp_reg_dst,
                                      const unsigned int      i_imm );
 
+
+/**
+ * Generates jump and link with register
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_jmp_instr actual jmp instruction
+ * @param i_gp_reg_dst link register for return address
+ * @param i_gp_reg_src_1 base address register
+ * @param i_imm 12 bit immediate
+ */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_jump_and_link_reg( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_jmp_instr,
+                                              const unsigned int      i_gp_reg_dst,
+                                              const unsigned int      i_gp_reg_src_1,
+                                              const unsigned int      i_imm12 );
 /**
  * Generates jump and link instruction with register
  *
@@ -3186,7 +3227,8 @@ void libxsmm_riscv_instruction_register_jump_back_label( libxsmm_generated_code*
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_cond_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
                                                           const unsigned int          i_jmp_instr,
-                                                          const unsigned int          i_gp_reg_cmp,
+                                                          const unsigned int          i_gp_reg_src_1,
+                                                          const unsigned int          i_gp_reg_src_2,
                                                           libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
@@ -3214,7 +3256,8 @@ void libxsmm_riscv_instruction_register_jump_label( libxsmm_generated_code*     
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     io_generated_code,
                                                      const unsigned int          i_jmp_instr,
-                                                     const unsigned int          i_gp_reg_cmp,
+                                                     const unsigned int          i_gp_reg_src_1,
+                                                     const unsigned int          i_gp_reg_stc_2,
                                                      const unsigned int          i_label_no,
                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
 
