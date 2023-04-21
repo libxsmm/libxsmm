@@ -11,6 +11,9 @@
 #include <utils/libxsmm_utils.h>
 #include <libxsmm.h>
 
+#if !defined(CONVERT_SCALE)
+# define CONVERT_SCALE(SIZE) (1.0/(SIZE))
+#endif
 #if !defined(CONVERT_SEED)
 # define CONVERT_SEED 1
 #endif
@@ -43,7 +46,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_truncate_convert_f32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -62,7 +65,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_truncate_convert_f32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf16_truncate.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
@@ -84,7 +87,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rnaz_convert_fp32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -103,7 +106,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rnaz_convert_fp32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf16_rnaz.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
@@ -125,7 +128,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -144,7 +147,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf16_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
@@ -166,7 +169,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_f16((const float*)data, (libxsmm_float16*)data_lp, s);
       libxsmm_convert_f16_f32((const libxsmm_float16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -185,7 +188,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_f16((const float*)data, (libxsmm_float16*)data_lp, s);
       libxsmm_convert_f16_f32((const libxsmm_float16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_f16_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
@@ -207,7 +210,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s);
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -226,7 +229,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s);
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf8_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
@@ -248,7 +251,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_hf8((const float*)data, (libxsmm_hfloat8*)data_lp, s);
       libxsmm_convert_hf8_f32((const libxsmm_hfloat8*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -267,7 +270,7 @@ int main(/*int argc, char* argv[]*/void)
       size1 = s;
     }
     if (NULL != data && NULL != data_lp) {
-      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], 1.f/*SCALE*/);
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
       libxsmm_rne_convert_fp32_hf8((const float*)data, (libxsmm_hfloat8*)data_lp, s);
       libxsmm_convert_hf8_f32((const libxsmm_hfloat8*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_hf8_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
@@ -282,4 +285,3 @@ int main(/*int argc, char* argv[]*/void)
 
   return result;
 }
-
