@@ -385,7 +385,7 @@ void libxsmm_riscv_instruction_alu_compute_imm20( libxsmm_generated_code* io_gen
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_alu_move_imm12( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm12 ) 
+                                               const unsigned int      i_imm12 )
 {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
     fprintf(stderr, "libxsmm_riscv_instruction_move_imm12: at least RISCV needs to be specified as target arch!\n");
@@ -561,7 +561,7 @@ void libxsmm_riscv_instruction_alu_compute_imm64( libxsmm_generated_code*  io_ge
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
-  
+
   if (i_imm64 <= 0xfff) {
     libxsmm_riscv_instruction_alu_move_imm12( io_generated_code, i_gp_reg_tmp, i_imm64 );
   } else if (i_imm64 <= 0xfffff){
