@@ -225,8 +225,8 @@ LIBXSMM_API void libxsmm_dequantize_i16( short* in_buffer, float* out_buffer, in
   }
 }
 
-LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, size_t length) {
+  size_t i = 0;
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < length; ++i ) {
@@ -246,8 +246,8 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
   }
 }
 
-LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t len) {
+  size_t i = 0;
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
@@ -267,8 +267,8 @@ LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat1
   }
 }
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t len) {
+  size_t i = 0;
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
@@ -291,8 +291,8 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16
   }
 }
 
-LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, size_t length) {
+  size_t i = 0;
 
   /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
@@ -307,8 +307,8 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
   }
 }
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* out, unsigned int len) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* out, size_t len) {
+  size_t i = 0;
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
@@ -316,8 +316,8 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* 
   }
 }
 
-LIBXSMM_API void libxsmm_convert_f16_f32(const libxsmm_float16* in, float* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_convert_f16_f32(const libxsmm_float16* in, float* out, size_t length) {
+  size_t i = 0;
 
   /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
@@ -325,8 +325,8 @@ LIBXSMM_API void libxsmm_convert_f16_f32(const libxsmm_float16* in, float* out, 
   }
 }
 
-LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, size_t length) {
+  size_t i = 0;
   for ( i = 0; i < length; ++i ) {
     libxsmm_hfloat8 inp = in[i];
     unsigned int f32_bias = 127;
@@ -361,16 +361,16 @@ LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, 
   }
 }
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, size_t length) {
+  size_t i = 0;
   for ( i = 0; i < length; ++i ) {
     libxsmm_float16 itm = libxsmm_convert_f32_to_f16(in[i]) ;
     out[i] = libxsmm_convert_f16_hf8_rne(itm);
   }
 }
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, size_t length) {
+  size_t i = 0;
 
   /* truncate buffer to bf8 */
   for ( i = 0; i < length; ++i ) {
@@ -393,8 +393,8 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* 
   }
 }
 
-LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, unsigned int length) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, size_t length) {
+  size_t i = 0;
 
   for ( i = 0; i < length; ++i ) {
     const unsigned short inus = (unsigned short)in[i];
@@ -403,8 +403,8 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
   }
 }
 
-LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len) {
-  unsigned int i = 0;
+LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, size_t len) {
+  size_t i = 0;
 
   unsigned short rand = (unsigned short)libxsmm_rng_u32(1);
   /* truncate buffer to bf8 */
