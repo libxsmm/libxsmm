@@ -102,8 +102,15 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       case LIBXSMM_DATATYPE_BF8: {
-#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) libxsmm_convert_bf16_to_f32(VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) libxsmm_convert_bf8_to_f32(VALUE)
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_bfloat8
+#       include "template/libxsmm_matdiff.h"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_HF8: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) libxsmm_convert_hf8_to_f32(VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_hfloat8
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
@@ -393,6 +400,39 @@ LIBXSMM_API float libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in)
   const unsigned short inus = (unsigned short)in;
   const unsigned short tmp = (unsigned short)(inus << 8);
   return libxsmm_convert_f16_to_f32(tmp);
+}
+
+
+LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in)
+{
+  const unsigned int f32_bias = 127, f8_bias = 7;
+  const unsigned int s = (in & 0x80 ) << 24;
+  const unsigned int e = (in & 0x78 ) >> 3;
+  unsigned int m = (in & 0x07 );
+  unsigned int e_norm = e + (f32_bias - f8_bias);
+  libxsmm_float_uint res;
+  /* convert denormal fp8 number into a normal fp32 number */
+  if ( (e == 0) && (m != 0) ) {
+    unsigned int lz_cnt = 2;
+    lz_cnt = (m > 0x1 ? 1 : lz_cnt);
+    lz_cnt = (m > 0x3 ? 0 : lz_cnt);
+    LIBXSMM_ASSERT(e_norm >= lz_cnt);
+    e_norm -= lz_cnt;
+    m = (m << (lz_cnt+1)) & 0x07;
+  } else if (e == 0 && m == 0) {
+    e_norm = 0;
+  } else if (e == 0xf && m == 0x7) {
+    e_norm = 0xff;
+    m = 0x4; /* making first mantissa bit 1 */
+  }
+  /* set result to 0 */
+  res.u = 0x0;
+  /* set exponent and mantissa */
+  res.u |= (e_norm << 23);
+  res.u |= (m << 20);
+  /* sign it */
+  res.u |= s;
+  return res.f;
 }
 
 

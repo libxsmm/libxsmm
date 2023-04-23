@@ -179,6 +179,8 @@ LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* 
 
 /* Convert BF8 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in);
+/* Convert HF8 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in);
 /* Convert BF16 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in);
 /* Convert FP16 to FP32 (scalar). */
