@@ -185,8 +185,10 @@ LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in);
 LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in);
 /* Convert FP16 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in);
+/* Convert FP32 to BF8 (scalar). */
+LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in);
 /* Convert FP16 to HF8 (scalar). */
-LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_hf8_rne(libxsmm_float16 in);
+LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in);
 /* Convert FP32 to FP16 (scalar). */
 LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in);
 

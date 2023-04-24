@@ -324,31 +324,15 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
   size_t i = 0;
   for ( i = 0; i < length; ++i ) {
     libxsmm_float16 itm = libxsmm_convert_f32_to_f16(in[i]) ;
-    out[i] = libxsmm_convert_f16_hf8_rne(itm);
+    out[i] = libxsmm_convert_f16_to_hf8_rne(itm);
   }
 }
 
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, size_t length) {
   size_t i = 0;
-
   /* truncate buffer to bf8 */
   for ( i = 0; i < length; ++i ) {
-    libxsmm_float16_ushort hybrid_in = { 0 };
-    libxsmm_bfloat8 res;
-    unsigned int fixup;
-
-    hybrid_in.f = libxsmm_convert_f32_to_f16( in[i] );
-
-    /* RNE round */
-    fixup = (hybrid_in.u >> 8) & 1;
-    /* we do not round inf and NaN */
-    hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
-      ? (((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200)
-      : hybrid_in.u + 0x007f + fixup);
-    /* shift right */
-    res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
-
-    out[i] = res;
+    out[i] = libxsmm_convert_f32_to_bf8_rne( in[i] );
   }
 }
 

@@ -493,7 +493,25 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in)
 }
 
 
-LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_hf8_rne(libxsmm_float16 in)
+LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in)
+{
+  libxsmm_float16_ushort hybrid_in = { 0 };
+  libxsmm_bfloat8 res;
+  unsigned int fixup;
+  hybrid_in.f = libxsmm_convert_f32_to_f16(in);
+  /* RNE round */
+  fixup = (hybrid_in.u >> 8) & 1;
+  /* we do not round inf and NaN */
+  hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
+    ? (((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200)
+    : hybrid_in.u + 0x007f + fixup);
+  /* shift right */
+  res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in)
 {
   unsigned int f16_bias = 15;
   unsigned int f8_bias = 7;
