@@ -40,7 +40,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
@@ -70,7 +70,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -82,13 +82,13 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           const libxsmm_bfloat16* bf16_in = (const libxsmm_bfloat16*)in;
           libxsmm_convert_bf16_f32( &(bf16_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
           out_value = ( in_value <= 0.0f ) ? 0.0f : in_value;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in_value <= 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -98,12 +98,12 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
           libxsmm_rne_convert_fp32_bf16(&out_value, &(bf16_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -141,7 +141,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
           libxsmm_convert_hf8_f32( &(hf8_fwd_out[(j*ldi) + i]), &out_fwd_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
@@ -168,7 +168,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -182,20 +182,20 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_convert_bf16_f32( &(bf16_in[(j*ldi) + i]), &in_value, 1 );
           libxsmm_convert_bf16_f32( &(bf16_fwd_out[(j*ldi) + i]), &out_fwd_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
           out_value = ( mask[(j*ldi) + i] == 0 ) ? in_value : 0.0f;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
           libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
           libxsmm_rne_convert_fp32_bf16(&out_value, &(bf16_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }

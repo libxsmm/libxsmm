@@ -1256,7 +1256,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
   } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     k_blocking = 64;
   } else {
-    /* shouldn't happen */
+    /* should not happen */
     k_blocking = 1; /* surpress div by zero in following while loop */
   }
   while (i_xgemm_desc->k % k_blocking != 0) {
