@@ -2,6 +2,10 @@ libxsmm_aligned
 libxsmm_aligned_
 libxsmm_aligned_malloc
 libxsmm_backtrace
+libxsmm_barrier_create
+libxsmm_barrier_destroy
+libxsmm_barrier_init
+libxsmm_barrier_wait
 libxsmm_bbgemm_descriptor_init
 libxsmm_bgemm_descriptor_init
 libxsmm_bigemm_descriptor_init
