@@ -10,10 +10,6 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))
-# define LIBXSMM_RNG_DRAND48
-#endif
-
 #if !defined(LIBXSMM_RNG_AVX512) && 1
 # define LIBXSMM_RNG_AVX512
 #endif
