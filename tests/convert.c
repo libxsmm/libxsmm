@@ -80,7 +80,7 @@ int main(/*int argc, char* argv[]*/void)
     &ndims, size, &channels, (libxsmm_mhd_elemtype*)&type, &header, NULL/*extension_size*/))
   { /* check against gold data */
     const size_t s = size[0] * size[1];
-    if (s < s) {
+    if (size1 < s) {
       free(data_lp); free(data);
       data_lp = malloc(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) * s);
       data = malloc(LIBXSMM_TYPESIZE(type) * s);
