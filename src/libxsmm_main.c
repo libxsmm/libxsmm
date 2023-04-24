@@ -1759,8 +1759,11 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_HF8:  return "hf8";
     case LIBXSMM_DATATYPE_I64:  return "i64";
     case LIBXSMM_DATATYPE_I32:  return "i32";
+    case LIBXSMM_DATATYPE_U32:  return "u32";
     case LIBXSMM_DATATYPE_I16:  return "i16";
+    case LIBXSMM_DATATYPE_U16:  return "u16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
+    case LIBXSMM_DATATYPE_IMPLICIT:   return "implicit";
     default: {
       if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
           LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))

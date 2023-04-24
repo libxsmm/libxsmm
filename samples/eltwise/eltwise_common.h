@@ -130,9 +130,9 @@ void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
       if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
         d_data[(i*ld)+j] = d_data[i*ld];
-      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) || (dtype == LIBXSMM_DATATYPE_U32)) {
         f_data[(i*ld)+j] = f_data[i*ld];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) || (dtype == LIBXSMM_DATATYPE_U16)) {
         s_data[(i*ld)+j] = s_data[i*ld];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
         c_data[(i*ld)+j] = c_data[i*ld];
@@ -153,9 +153,9 @@ void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
       if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
         d_data[(i*ld)+j] = d_data[j];
-      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) || (dtype == LIBXSMM_DATATYPE_U32)) {
         f_data[(i*ld)+j] = f_data[j];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) || (dtype == LIBXSMM_DATATYPE_U16)) {
         s_data[(i*ld)+j] = s_data[j];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8)) {
         c_data[(i*ld)+j] = c_data[j];
@@ -176,9 +176,9 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
       if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
         d_data[(i*ld)+j] = d_data[0];
-      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) || (dtype == LIBXSMM_DATATYPE_U32) ) {
         f_data[(i*ld)+j] = f_data[0];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) || (dtype == LIBXSMM_DATATYPE_U16)) {
         s_data[(i*ld)+j] = s_data[0];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
         c_data[(i*ld)+j] = c_data[0];
