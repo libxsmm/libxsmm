@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_X86_INSTRUCTIONS_H
 #define GENERATOR_X86_INSTRUCTIONS_H
 
