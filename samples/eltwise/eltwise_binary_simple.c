@@ -504,7 +504,8 @@ int main( int argc, char* argv[] ) {
   }
 
   if ( valid_op > 0 ) {
-    if ( ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+    if ( op != ZIP_OP && (
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_F64 ) && (dtype_in1 == LIBXSMM_DATATYPE_F64 ) && (dtype_out == LIBXSMM_DATATYPE_F64 ) && (dtype_comp == LIBXSMM_DATATYPE_F64 ) ) ||
          /* BF16 */
          ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
@@ -537,7 +538,11 @@ int main( int argc, char* argv[] ) {
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
-         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) ){
+      printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
+        libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
+      res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
+    } else if ( op == ZIP_OP && ( (dtype_in0 == LIBXSMM_DATATYPE_U16 ) && (dtype_in1 == LIBXSMM_DATATYPE_U16 ) && ((dtype_out == LIBXSMM_DATATYPE_F32) || (dtype_out == LIBXSMM_DATATYPE_I32) || (dtype_out == LIBXSMM_DATATYPE_U32)) && (dtype_comp == LIBXSMM_DATATYPE_IMPLICIT ) )  ) {
       printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
         libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
       res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
