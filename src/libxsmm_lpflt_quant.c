@@ -293,23 +293,13 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16
 
 LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, size_t length) {
   size_t i = 0;
-
-  /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
-    libxsmm_float_uint hybrid_in = { 0 };
-
-    hybrid_in.u = in[i];
-    /* DAZ */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f80) == 0x0 ) ? (unsigned short)(hybrid_in.u & 0x8000) : hybrid_in.u;
-    hybrid_in.u = hybrid_in.u << 16;
-
-    out[i] = hybrid_in.f;
+    out[i] = libxsmm_convert_bf16_to_f32( in[i] );
   }
 }
 
 LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* out, size_t len) {
   size_t i = 0;
-
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
     out[i] = libxsmm_convert_f32_to_f16( in[i] );
@@ -318,46 +308,15 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* 
 
 LIBXSMM_API void libxsmm_convert_f16_f32(const libxsmm_float16* in, float* out, size_t length) {
   size_t i = 0;
-
-  /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
-    out[i] = libxsmm_convert_f16_to_f32( in [i] );
+    out[i] = libxsmm_convert_f16_to_f32( in[i] );
   }
 }
 
 LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, size_t length) {
   size_t i = 0;
   for ( i = 0; i < length; ++i ) {
-    libxsmm_hfloat8 inp = in[i];
-    unsigned int f32_bias = 127;
-    unsigned int f8_bias = 7;
-    unsigned int s = ( inp & 0x80 ) << 24;
-    unsigned int e = ( inp & 0x78 ) >> 3;
-    unsigned int m = ( inp & 0x07 );
-    unsigned int e_norm = e + (f32_bias - f8_bias);
-    libxsmm_float_uint res;
-    /* convert denormal fp8 number into a normal fp32 number */
-    if ( (e == 0) && (m != 0) ) {
-      unsigned int lz_cnt = 2;
-      lz_cnt = ( m >   0x1 ) ? 1 : lz_cnt;
-      lz_cnt = ( m >   0x3 ) ? 0 : lz_cnt;
-      LIBXSMM_ASSERT(e_norm >= lz_cnt);
-      e_norm -= lz_cnt;
-      m = (m << (lz_cnt+1)) & 0x07;
-    } else if ( (e == 0) && (m == 0) ) {
-      e_norm = 0;
-    } else if ( (e == 0xf) && (m == 0x7) ) {
-      e_norm = 0xff;
-      m = 0x4; /* making first mantissa bit 1 */
-    }
-    /* set result to 0 */
-    res.u = 0x0;
-    /* set exponent and mantissa */
-    res.u |= (e_norm << 23);
-    res.u |= (m << 20);
-    /* sign it */
-    res.u |= s;
-    out[i] = res.f;
+    out[i] = libxsmm_convert_hf8_to_f32( in[i] );
   }
 }
 
@@ -395,11 +354,8 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* 
 
 LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, size_t length) {
   size_t i = 0;
-
   for ( i = 0; i < length; ++i ) {
-    const unsigned short inus = (unsigned short)in[i];
-    const unsigned short tmp = (unsigned short)(inus << 8);
-    out[i] = libxsmm_convert_f16_to_f32( tmp );
+    out[i] = libxsmm_convert_bf8_to_f32(in[i]);
   }
 }
 
