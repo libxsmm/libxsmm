@@ -13,6 +13,87 @@
 
 #include "libxsmm_typedefs.h"
 
+/** Helper macro to setup a matrix with some initial values. */
+#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \
+  /*const*/ double libxsmm_matinit_seed_ = SEED; /* avoid constant conditional */ \
+  const double libxsmm_matinit_scale_ = libxsmm_matinit_seed_ * (SCALE) + (SCALE); \
+  const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)(NROWS); \
+  const libxsmm_blasint libxsmm_matinit_ncols_ = (libxsmm_blasint)(NCOLS); \
+  const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)(LD); \
+  libxsmm_blasint libxsmm_matinit_i_ = 0, libxsmm_matinit_j_ = 0; \
+  LIBXSMM_OMP_VAR(libxsmm_matinit_i_); LIBXSMM_OMP_VAR(libxsmm_matinit_j_); \
+  if (0 != libxsmm_matinit_seed_) { \
+    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
+    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < libxsmm_matinit_ncols_; ++libxsmm_matinit_i_) { \
+      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_nrows_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_scale_ * (1.0 + \
+          (double)libxsmm_matinit_i_ * libxsmm_matinit_nrows_ + libxsmm_matinit_j_)); \
+      } \
+      for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)libxsmm_matinit_seed_; \
+      } \
+    } \
+  } \
+  else { /* shuffle based initialization */ \
+    const libxsmm_blasint libxsmm_matinit_maxval_ = libxsmm_matinit_ncols_ * libxsmm_matinit_ld_; \
+    const TYPE libxsmm_matinit_maxval2_ = (TYPE)((libxsmm_blasint)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2)); /* non-zero */ \
+    const TYPE libxsmm_matinit_inv_ = ((TYPE)(SCALE)) / libxsmm_matinit_maxval2_; \
+    const size_t libxsmm_matinit_shuffle_ = libxsmm_coprime2((size_t)libxsmm_matinit_maxval_); \
+    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
+    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < libxsmm_matinit_ncols_; ++libxsmm_matinit_i_) { \
+      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = libxsmm_matinit_inv_ * /* normalize values to an interval of [-1, +1] */ \
+          ((TYPE)(libxsmm_matinit_shuffle_ * libxsmm_matinit_k_ % libxsmm_matinit_maxval_) - libxsmm_matinit_maxval2_); \
+      } \
+    } \
+  } \
+} while(0)
+
+#define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT_AUX(LIBXSMM_ELIDE, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+#define LIBXSMM_MATINIT_SEQ(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+#define LIBXSMM_MATINIT_OMP(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT_AUX(LIBXSMM_PRAGMA_OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+
+/** GEMM exercising the compiler's code generation. TODO: only NN is supported and SP/DP matrices. */
+#define LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
+  /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
+  const char libxsmm_inline_xgemm_transa_ = (char)(NULL != ((void*)(TRANSA)) ? (*(const char*)(TRANSA)) : \
+    (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS) ? 'n' : 't')); \
+  const char libxsmm_inline_xgemm_transb_ = (char)(NULL != ((void*)(TRANSB)) ? (*(const char*)(TRANSB)) : \
+    (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & LIBXSMM_FLAGS) ? 'n' : 't')); \
+  const libxsmm_blasint libxsmm_inline_xgemm_m_ = *(const libxsmm_blasint*)(M); /* must be specified */ \
+  const libxsmm_blasint libxsmm_inline_xgemm_k_ = (NULL != ((void*)(K)) ? (*(const libxsmm_blasint*)(K)) : libxsmm_inline_xgemm_m_); \
+  const libxsmm_blasint libxsmm_inline_xgemm_n_ = (NULL != ((void*)(N)) ? (*(const libxsmm_blasint*)(N)) : libxsmm_inline_xgemm_k_); \
+  const libxsmm_blasint libxsmm_inline_xgemm_lda_ = (NULL != ((void*)(LDA)) ? (*(const libxsmm_blasint*)(LDA)) : \
+    (('n' == libxsmm_inline_xgemm_transa_ || *"N" == libxsmm_inline_xgemm_transa_) ? libxsmm_inline_xgemm_m_ : libxsmm_inline_xgemm_k_)); \
+  const libxsmm_blasint libxsmm_inline_xgemm_ldb_ = (NULL != ((void*)(LDB)) ? (*(const libxsmm_blasint*)(LDB)) : \
+    (('n' == libxsmm_inline_xgemm_transb_ || *"N" == libxsmm_inline_xgemm_transb_) ? libxsmm_inline_xgemm_k_ : libxsmm_inline_xgemm_n_)); \
+  const libxsmm_blasint libxsmm_inline_xgemm_ldc_ = (NULL != ((void*)(LDC)) ? (*(const libxsmm_blasint*)(LDC)) : libxsmm_inline_xgemm_m_); \
+  const OTYPE libxsmm_inline_xgemm_alpha_ = (NULL != ((void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
+  const OTYPE libxsmm_inline_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
+  libxsmm_blasint libxsmm_inline_xgemm_ni_, libxsmm_inline_xgemm_mi_ = 0, libxsmm_inline_xgemm_ki_; /* loop induction variables */ \
+  LIBXSMM_ASSERT('n' == libxsmm_inline_xgemm_transa_ || *"N" == libxsmm_inline_xgemm_transa_); \
+  LIBXSMM_ASSERT('n' == libxsmm_inline_xgemm_transb_ || *"N" == libxsmm_inline_xgemm_transb_); \
+  LIBXSMM_PRAGMA_SIMD \
+  for (libxsmm_inline_xgemm_mi_ = 0; libxsmm_inline_xgemm_mi_ < libxsmm_inline_xgemm_m_; ++libxsmm_inline_xgemm_mi_) { \
+    LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_CONFIG_MAX_DIM, LIBXSMM_CONFIG_AVG_DIM) \
+    for (libxsmm_inline_xgemm_ki_ = 0; libxsmm_inline_xgemm_ki_ < libxsmm_inline_xgemm_k_; ++libxsmm_inline_xgemm_ki_) { \
+      LIBXSMM_PRAGMA_UNROLL \
+      for (libxsmm_inline_xgemm_ni_ = 0; libxsmm_inline_xgemm_ni_ < libxsmm_inline_xgemm_n_; ++libxsmm_inline_xgemm_ni_) { \
+        ((OTYPE*)(C))[libxsmm_inline_xgemm_ni_*libxsmm_inline_xgemm_ldc_+libxsmm_inline_xgemm_mi_] \
+          = ((const ITYPE*)(B))[libxsmm_inline_xgemm_ni_*libxsmm_inline_xgemm_ldb_+libxsmm_inline_xgemm_ki_] * \
+           (((const ITYPE*)(A))[libxsmm_inline_xgemm_ki_*libxsmm_inline_xgemm_lda_+libxsmm_inline_xgemm_mi_] * libxsmm_inline_xgemm_alpha_) \
+          + ((const OTYPE*)(C))[libxsmm_inline_xgemm_ni_*libxsmm_inline_xgemm_ldc_+libxsmm_inline_xgemm_mi_] * libxsmm_inline_xgemm_beta_; \
+      } \
+    } \
+  } \
+} while(0)
+
 
 /**
  * Structure of differences with matrix norms according
@@ -96,66 +177,60 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
 /* Kahan's summation returns accumulator += value and updates compensation. */
 LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* compensation);
 
+/* Convert BF8 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in);
+/* Convert HF8 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in);
+/* Convert BF16 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in);
+/* Convert FP16 to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in);
+/* Convert FP32 to BF8 (scalar). */
+LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in);
+/* Convert FP16 to HF8 (scalar). */
+LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in);
+/* Convert FP32 to FP16 (scalar). */
+LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in);
+
+/**
+ * create a new external state for thread-save execution managed
+ * by the user. We do not provide a function for drawing the random numbers
+ * the user is supposed to call the LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS
+ * or LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32 intrinsic.
+ * */
+LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ seed);
+
+/**
+ * return the size of the state such that users can save it
+ * and recreate the same sequence of PRNG numbers.
+ */
+LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size(void);
+
+/** free a previously created rng_avx512_extstate */
+LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr);
+
+/** Set the seed of libxsmm_rng_* (similar to srand). */
+LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
+
+/**
+ * This SP-RNG is using xoshiro128+ 1.0, work done by
+ * David Blackman and Sebastiano Vigna (vigna @ acm.org).
+ * It is their best and fastest 32-bit generator for
+ * 32-bit floating-point numbers. They suggest to use
+ * its upper bits for floating-point generation, what
+ * we do here and generate numbers in [0,1(.
+ */
+LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
+
 /** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
 /** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x);
-/** Based on libxsmm_isqrt_u32, but actual factor of x. */
+/** Based on libxsmm_isqrt_u32; result is factor of x. */
 LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x);
 /** SQRT with Newton's method using double-precision. */
 LIBXSMM_API double libxsmm_dsqrt(double x);
 /** SQRT with Newton's method using single-precision. */
 LIBXSMM_API float libxsmm_ssqrt(float x);
-
-/** CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x);
-/** CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x);
-
-/** Single-precision approximation of exponential function (base 2). */
-LIBXSMM_API float libxsmm_sexp2(float x);
-
-/**
- * Exponential function (base 2), which is limited to unsigned 8-bit input values.
- * This function reproduces bit-accurate results (single-precision).
- */
-LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
-
-/**
-* Exponential function (base 2), which is limited to signed 8-bit input values.
-* This function reproduces bit-accurate results (single-precision).
-*/
-LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
-
-/** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */
-LIBXSMM_API float libxsmm_sexp2_i8i(int x);
-
-/** Inlineable fast tanh, such that a the compiler can potentially vectorize. */
-LIBXSMM_API_INLINE float libxsmm_stanh_pade78(float i_x) {
-  const float l_c0       = 2027025.0f;
-  const float l_c1       = 270270.0f;
-  const float l_c2       = 6930.0f;
-  const float l_c3       = 36.0f;
-  const float l_c1_d     = 945945.0f;
-  const float l_c2_d     = 51975.0f;
-  const float l_c3_d     = 630.0f;
-  const float l_hi_bound = 4.97f;
-  const float l_lo_bound = -4.97f;
-  const float l_ones     = 1.0f;
-  const float l_neg_ones = -1.0f;
-  const float x2         = i_x * i_x;
-  const float t1_nom     = (l_c3 * x2) + l_c2;
-  const float t2_nom     = (t1_nom * x2) + l_c1;
-  const float t3_nom     = (t2_nom * x2) + l_c0;
-  const float nom        = t3_nom * i_x;
-  const float t1_denom   = x2 + l_c3_d;
-  const float t2_denom   = (t1_denom * x2) + l_c2_d;
-  const float t3_denom   = (t2_denom * x2) + l_c1_d;
-  const float denom      = (t3_denom * x2) + l_c0;
-  float result           = nom/denom ;
-  result = (result > l_hi_bound) ? l_ones : result;
-  result = (result < l_lo_bound) ? l_neg_ones : result;
-  return result;
-}
 
 #endif /*LIBXSMM_MATH_H*/

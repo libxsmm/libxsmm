@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_DIFF_H
 #define LIBXSMM_DIFF_H
 
-#include <libxsmm_intrinsics_x86.h>
+#include <utils/libxsmm_intrinsics_x86.h>
 
 #if !defined(LIBXSMM_DIFF_AVX512_ENABLED) && 0
 # define LIBXSMM_DIFF_AVX512_ENABLED

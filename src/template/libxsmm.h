@@ -40,22 +40,24 @@
 #define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 /**
- * The following interfaces shall be explicitly included,
- * i.e., separate from libxsmm.h:
- * - libxsmm_intrinsics_x86.h
- * - libxsmm_cpuid.h
- * - libxsmm_sync.h
- * - libxsmm_mhd.h
+ * The utilities (libxsmm_utils.h) shall be explicitly
+ * included, i.e., separate from libxsmm.h.
 */
-#include "libxsmm_lpflt_quant.h"
 #include "libxsmm_generator.h"
-#include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
+#include "libxsmm_memory.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_cpuid.h"
-#include "libxsmm_timer.h"
 #include "libxsmm_math.h"
-#include "libxsmm_rng.h"
+#include "libxsmm_sync.h"
+
+#if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
+# undef LIBXSMM_INIT
+# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(1 < libxsmm_ninit, "LIBXSMM is not initialized");
+# define LIBXSMM_INIT_COMPLETED
+#else
+# define LIBXSMM_INIT if (2 > libxsmm_ninit) libxsmm_init();
+#endif
 
 
 /** Initialize the library; pay for setup cost at a specific point. */
@@ -426,18 +428,6 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
-/**
- * General dense matrix multiplication, which re-exposes LAPACK/BLAS
- * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
- * when supplying NULL-arguments in certain places.
- */
-LIBXSMM_API void libxsmm_blas_gemm(
-  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
-
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && (!defined(LIBXSMM_SOURCE_H) || defined(LIBXSMM_CONFIGURED))
 $MNK_INTERFACE_LIST
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/
@@ -711,41 +701,41 @@ inline void libxsmm_gemm(const char* transa, const char* transb,
   libxsmm_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
-/** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-                       const double* b, const libxsmm_blasint* ldb,
-  const double* beta,        double* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-                       const double* b, const libxsmm_blasint* ldb,
-  const double* beta,        double* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-                      const float* b, const libxsmm_blasint* ldb,
-  const float* beta,        float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-                      const float* b, const libxsmm_blasint* ldb,
-  const float* beta,        float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
 #endif /*__cplusplus*/
+
+/** GEMM_BATCH_STRIDED: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
+/** GEMM_BATCH: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
+/** GEMM: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
+/** GEMV: fallback prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
+
+/** The original BLAS functions. */
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
+LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
+LIBXSMM_API libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided(void);
+LIBXSMM_API libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided(void);
+LIBXSMM_API libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void);
+LIBXSMM_API libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void);
+LIBXSMM_API libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_API libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_API libxsmm_dgemv_function libxsmm_original_dgemv(void);
+LIBXSMM_API libxsmm_sgemv_function libxsmm_original_sgemv(void);
+
+/** Consume/sink arguments when called. */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_sink_function)(const void*, ...);
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
+
 #endif /*LIBXSMM_H*/

@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_mhd.h>
+#include <utils/libxsmm_utils.h>
 #include <libxsmm.h>
 
 #if !defined(CONVERT_SCALE)

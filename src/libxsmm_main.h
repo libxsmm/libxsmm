@@ -12,8 +12,7 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
-#include <libxsmm_memory.h>
-#include <libxsmm_sync.h>
+#include <utils/libxsmm_timer.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -502,6 +501,13 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
  */
 LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
   int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
+
+/**
+ * Print the command line arguments of the current process, and get the number of written
+ * characters including the prefix, the postfix, but not the terminating NULL character.
+ * If zero is returned, nothing was printed (no prefix, no postfix).
+ */
+LIBXSMM_API_INTERN int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
 
 /** Dump data and (optionally) checks attempt to dump different data into an existing file (unique). */
 LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique);

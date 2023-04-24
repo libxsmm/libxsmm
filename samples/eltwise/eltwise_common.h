@@ -9,6 +9,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
+#include <utils/libxsmm_utils.h>
 #include <libxsmm.h>
 
 
@@ -177,49 +178,7 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
   libxsmm_matdiff_info l_diff;
 
   libxsmm_matdiff_clear(&l_diff);
-
-  if ( dtype == LIBXSMM_DATATYPE_F64 ) {
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
-  } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
-  } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
-    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
-    libxsmm_convert_bf16_f32( data_gold, f_data_gold, n*ld );
-    libxsmm_convert_bf16_f32( data,      f_data,      n*ld );
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
-    free( f_data );
-    free( f_data_gold );
-  } else if ( dtype == LIBXSMM_DATATYPE_F16 ) {
-    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
-    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
-    libxsmm_convert_f16_f32( data_gold, f_data_gold, n*ld );
-    libxsmm_convert_f16_f32( data,      f_data,      n*ld );
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
-    free( f_data );
-    free( f_data_gold );
-  } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
-    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
-    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
-    libxsmm_convert_bf8_f32( data_gold, f_data_gold, n*ld );
-    libxsmm_convert_bf8_f32( data,      f_data,      n*ld );
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
-    free( f_data );
-    free( f_data_gold );
-  } else if ( dtype == LIBXSMM_DATATYPE_HF8 ) {
-    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
-    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
-    libxsmm_convert_hf8_f32( data_gold, f_data_gold, n*ld );
-    libxsmm_convert_hf8_f32( data,      f_data,      n*ld );
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
-    free( f_data );
-    free( f_data_gold );
-  } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
-  } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
-  }
-
+  libxsmm_matdiff(&l_diff, dtype, m, n, data_gold, data, &ld, &ld);
   return l_diff;
 }
 

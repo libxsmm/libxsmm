@@ -16,6 +16,9 @@
     <Filter Include="src\generator">
       <UniqueIdentifier>{23f4992b-2a02-4f5a-9287-9d00762dfcef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\utils">
+      <UniqueIdentifier>{6918a095-2c79-4ace-b2ab-a36696128d0b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm_macros.h">
@@ -24,13 +27,7 @@
     <ClInclude Include="..\src\libxsmm_hash.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_frontend.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_generator.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_timer.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_typedefs.h">
@@ -57,22 +54,10 @@
     <ClInclude Include="..\src\perf_jitdump.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_sync.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_cpuid.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_fsspmdm.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_mhd.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_math.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_common.h">
@@ -114,14 +99,8 @@
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_rng.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_memory.h">
-      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\template\libxsmm.h">
       <Filter>include</Filter>
@@ -276,9 +255,6 @@
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\template\libxsmm_matdiff.h">
       <Filter>src\template</Filter>
     </ClInclude>
@@ -293,6 +269,36 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_aarch64.h">
       <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_mhd.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_timer.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_utils.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_intrinsics_x86.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_lpflt_quant.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_memory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_sync.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_math.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_barrier.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_math.h">
+      <Filter>include\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -562,6 +568,12 @@
     </ClCompile>
     <ClCompile Include="..\src\generator_mateltwise_gather_scatter_aarch64.c">
       <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_utils.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_barrier.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_timer.h>
+#include <utils/libxsmm_timer.h>
 #include "libxsmm_main.h"
 
 #if defined(_WIN32)
