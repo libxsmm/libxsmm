@@ -484,7 +484,7 @@ int main( int argc, char* argv[] ) {
   ldi       = atoi(argv[9]);
   ldo       = atoi(argv[10]);
 
-  if (  op == 'B' && bitm == 0 && (type == 'D' || type == 'L') ) {
+  if ( op == 'B' && bitm == 0 && (type == 'D' || type == 'L') ) {
     printf("Backward needs masks!\n");
     return ret;
   }
@@ -525,10 +525,10 @@ int main( int argc, char* argv[] ) {
        ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
        ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
        ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
-    if (  op == 'F' ) {
+    if ( op == 'F' ) {
       printf("in: %s out: %s comp: %s forward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
-    } else if (  op == 'B' ) {
+    } else if ( op == 'B' ) {
       printf("in: %s out: %s comp: %s backward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_bwd( M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
     } else {
@@ -536,10 +536,10 @@ int main( int argc, char* argv[] ) {
       exit(-1);
     }
   } else if ( ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_BF16 ) ) && ( itype == 0 ) ) {
-    if (  op == 'F' ) {
+    if ( op == 'F' ) {
       printf("in: %s out: %s comp: %s forward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
-    } else if (  op == 'B' ) {
+    } else if ( op == 'B' ) {
       printf("in: %s out: %s comp: %s backward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_bwd( M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
     } else {
