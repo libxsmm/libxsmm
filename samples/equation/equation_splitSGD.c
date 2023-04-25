@@ -175,16 +175,16 @@ int main( int argc, char* argv[] ) {
 
   /* Split sgd via equation */
   my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_IMPLICIT );
   libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
     (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT),
     LIBXSMM_DATATYPE_F32);
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 3, 0, LIBXSMM_DATATYPE_BF16 ); /* This is the "gradient" weights   */
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );   /* This is the scalar learning rate */
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_BF16 );  /* This is the tensor with lo bits  */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_BF16 );  /* This is the tensor with hi bits  */
-  arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_BF16 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_IMPLICIT );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with lo bits  */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with hi bits  */
+  arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_U16 );
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
