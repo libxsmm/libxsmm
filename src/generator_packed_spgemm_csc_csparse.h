@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_PACKED_SPGEMM_CSC_CSPARSE_H
 #define GENERATOR_PACKED_SPGEMM_CSC_CSPARSE_H
 

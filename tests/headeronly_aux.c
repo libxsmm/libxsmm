@@ -32,4 +32,3 @@ LIBXSMM_EXTERN_C LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n,
 #endif
   return result;
 }
-

@@ -17,8 +17,8 @@
 #include "generator_mateltwise_aarch64.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_matequation_regblocks_aarch64.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_aarch64_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -342,7 +342,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
         fprintf( stderr, "JITing Matrix Equation with HYBRID STRATEGY for TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB , addr_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0, (1.0*addr_scratch_size)/1024.0 );
       }
     } else {
-      fprintf( stderr, "Should not happen, not supported matrix equaiton JITing mode...\n");
+      fprintf( stderr, "Should not happen, not supported matrix equation JITing mode...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }

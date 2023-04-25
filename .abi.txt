@@ -39,6 +39,7 @@ libxsmm_cpuid_dot_pack_factor
 libxsmm_cpuid_name
 libxsmm_cpuid_vlen32
 libxsmm_cpuid_x86
+libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking
 libxsmm_create_gemm_batch_reduce_config
 libxsmm_create_gemm_ext_binary_postops
 libxsmm_create_gemm_ext_unary_argops
@@ -163,6 +164,9 @@ libxsmm_get_timer_info
 libxsmm_get_typename
 libxsmm_get_verbosity
 libxsmm_hash
+libxsmm_hash16
+libxsmm_hash32
+libxsmm_hash8
 libxsmm_hash_char
 libxsmm_hash_i32
 libxsmm_hash_i64
@@ -342,7 +346,9 @@ libxsmm_stdio_acquire
 libxsmm_stdio_release
 libxsmm_stochastic_convert_fp32_bf8
 libxsmm_strerror
+libxsmm_strimatch
 libxsmm_stristr
+libxsmm_stristrn
 libxsmm_timer_duration
 libxsmm_timer_ncycles
 libxsmm_timer_ncycles_

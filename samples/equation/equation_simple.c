@@ -9,10 +9,7 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "equation_common.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+
 
 LIBXSMM_INLINE
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, float*arg3, float *out) {
@@ -563,46 +560,46 @@ int main( int argc, char* argv[] ) {
     for ( j = 0; j < ld; ++j ) {
       if (out_dt == LIBXSMM_DATATYPE_F32) {
         if ( unequal_fp32_vals(out[(i*ld)+j], eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ld)+j], eqn_out[(i*ld)+j]);*/
+          /*printf("error at position i=%i, j=%i, %f, %f\n", i, j, out[(i*ld)+j], eqn_out[(i*ld)+j]);*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_F64) {
         if ( unequal_fp64_vals(f64_out[(i*ld)+j], f64_eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f64_out[(i*ld)+j], f64_eqn_out[(i*ld)+j]);*/
+          /*printf("error at position i=%i, j=%i, %f, %f\n", i, j, f64_out[(i*ld)+j], f64_eqn_out[(i*ld)+j]);*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_BF16) {
         out[(i*ld)+j] = upconvert_bf16(bf16_out[(i*ld)+j]);
         eqn_out[(i*ld)+j] = upconvert_bf16(bf16_eqn_out[(i*ld)+j]);
         if ( unequal_bf16_vals(bf16_out[(i*ld)+j], bf16_eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
+          /*printf("error at position i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_F16) {
         libxsmm_convert_f16_f32(&(f16_out[(i*ld)+j]), &(out[(i*ld)+j]), 1);
         libxsmm_convert_f16_f32(&(f16_eqn_out[(i*ld)+j]), &(eqn_out[(i*ld)+j]), 1);
         if ( unequal_f16_vals(f16_out[(i*ld)+j], f16_eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
+          /*printf("error at position i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_BF8) {
         libxsmm_convert_bf8_f32(&(bf8_out[(i*ld)+j]), &(out[(i*ld)+j]), 1);
         libxsmm_convert_bf8_f32(&(bf8_eqn_out[(i*ld)+j]), &(eqn_out[(i*ld)+j]), 1);
         if ( unequal_bf8_vals(bf8_out[(i*ld)+j], bf8_eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
+          /*printf("error at position i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_HF8) {
         libxsmm_convert_hf8_f32(&(hf8_out[(i*ld)+j]), &(out[(i*ld)+j]), 1);
         libxsmm_convert_hf8_f32(&(hf8_eqn_out[(i*ld)+j]), &(eqn_out[(i*ld)+j]), 1);
         if ( unequal_hf8_vals(hf8_out[(i*ld)+j], hf8_eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
+          /*printf("error at position i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
           s = 1;
         }
       }
 #if 0
       else {
-        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+        printf("correct at position i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
       }
 #endif
     }

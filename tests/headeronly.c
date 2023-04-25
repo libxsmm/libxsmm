@@ -19,20 +19,20 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k);
+LIBXSMM_EXTERN_C LIBXSMM_MMFUNCTION_TYPE2(ITYPE,OTYPE) mmdispatch(int m, int n, int k);
 
 
 int main(void)
 {
   const int m = LIBXSMM_MAX_M, n = LIBXSMM_MAX_N, k = LIBXSMM_MAX_K;
-  const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fa = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)(m, n, k,
+  const LIBXSMM_MMFUNCTION_TYPE2(ITYPE,OTYPE) fa = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(m, n, k,
     NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*flags*/);
-  const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fb = mmdispatch(m, n, k);
+  const LIBXSMM_MMFUNCTION_TYPE2(ITYPE,OTYPE) fb = mmdispatch(m, n, k);
   int result = EXIT_SUCCESS;
 
   if (fa == fb) { /* test unregistering and freeing kernel */
     union {
-      LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) f;
+      LIBXSMM_MMFUNCTION_TYPE2(ITYPE,OTYPE) f;
       const void* p;
     } kernel;
     kernel.f = fa;
@@ -47,4 +47,3 @@ int main(void)
   }
   return result;
 }
-

@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_SSE_AVX_AVX2_AVX512_H
 #define GENERATOR_GEMM_SSE_AVX_AVX2_AVX512_H
 

@@ -13,6 +13,12 @@
 
 #include "libxsmm_config.h"
 
+#if !defined(LIBXSMM_DESCRIPTION)
+# define LIBXSMM_DESCRIPTION \
+    "Library for specialized dense and sparse matrix " \
+    "operations, and deep learning primitives."
+#endif
+
 /**
  * Strings to denote the version of LIBXSMM (libxsmm_config.h).
  * LIBXSMM_VERSION: Name of the version (stringized version numbers).
@@ -166,7 +172,7 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
   int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c,
   /**
    * If the returned value is larger than zero, the vector-length (in Bytes)
-   * is larger than C's elementwidth and it can be used to check against a
+   * is larger than C's element-width and it can be used to check against a
    * stride of subsequent C-addresses, i.e., there is sufficient alignment
    * if 0 == LIBXSMM_MOD2(stride_in_byte, *vlen) and the tuned flag
    * can be adopted.
@@ -432,108 +438,130 @@ LIBXSMM_API void libxsmm_blas_gemm(
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 
-#if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
+#if !defined(LIBXSMM_DEFAULT_CONFIG) && (!defined(LIBXSMM_SOURCE_H) || defined(LIBXSMM_CONFIGURED))
 
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/
 
 #if defined(__cplusplus)
 
 /** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). */
-template<typename T> struct libxsmm_datatype_enum          { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
-template<> struct libxsmm_datatype_enum<double>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
-template<> struct libxsmm_datatype_enum<float>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
-template<> struct libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
-template<> struct libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
-template<> struct libxsmm_datatype_enum<libxsmm_bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct libxsmm_datatype_enum<Eigen::bfloat16>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct libxsmm_datatype_enum<signed char>       { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct libxsmm_datatype_enum<unsigned char>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct libxsmm_datatype_enum<char>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<typename T> struct libxsmm_datatype_enum         { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
+template<> struct libxsmm_datatype_enum<double>           { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
+template<> struct libxsmm_datatype_enum<float>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
+template<> struct libxsmm_datatype_enum<int>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
+template<> struct libxsmm_datatype_enum</*signed*/short>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
+template<> struct libxsmm_datatype_enum<libxsmm_bfloat16> { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<Eigen::bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<signed char>      { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct libxsmm_datatype_enum<unsigned char>    { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct libxsmm_datatype_enum<char>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 
 /** Determine default output type based on the input-type. */
-template<typename INP_TYPE> struct libxsmm_gemm_default_output   { typedef INP_TYPE type; };
-template<> struct libxsmm_gemm_default_output</*signed*/short>   { typedef int type; };
-template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16>  { typedef float type; };
+template<typename INP_TYPE> struct libxsmm_gemm_default_output  { typedef INP_TYPE type; };
+template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
+template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16> { typedef float type; };
+
+/** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
+template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
+  const libxsmm_xmmfunction& function, libxsmm_gemm_param& args)
+{
+  libxsmm_mmkernel_info info;
+  if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(function, &info) && LIBXSMM_PREFETCH_NONE != info.prefetch) {
+    const size_t itypesize = LIBXSMM_TYPESIZE(info.iprecision), otypesize = LIBXSMM_TYPESIZE(info.oprecision);
+    args.a.quaternary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
+    args.b.quaternary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
+    args.c.quaternary = static_cast<char*>(args.c.primary) + otypesize * info.m * info.n;
+  }
+}
+template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_PREFETCH_NONE>(
+  const libxsmm_xmmfunction& function, libxsmm_gemm_param& args)
+{
+  LIBXSMM_UNUSED(function); LIBXSMM_UNUSED(args);
+}
 
 /** Construct and execute a specialized function. */
-template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type>
+template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type,
+  int PREFETCH_DEFAULT = LIBXSMM_PREFETCH/*LIBXSMM_PREFETCH_AUTO*/>
 class libxsmm_mmfunction {
-  mutable/*retargetable*/ libxsmm_xmmfunction m_function;
+  /*retargetable*/ libxsmm_xmmfunction m_function;
 public:
   typedef INP_TYPE itype;
   typedef OUT_TYPE otype;
 public:
-  libxsmm_mmfunction() { m_function.xmm = 0; }
-  libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS) {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
-      NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_xprefetch(NULL));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+  libxsmm_mmfunction() { m_function.ptr = NULL; }
+  libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k) {
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, 0/*flags*/,
+      static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT));
   }
-  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch) {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
-      NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_prefetch(prefetch));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch = PREFETCH_DEFAULT) {
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape,
+      static_cast<libxsmm_bitfield>(flags),
+      static_cast<libxsmm_bitfield>(prefetch));
   }
-  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta) {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
-      &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(NULL));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
-  }
-  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta, int prefetch) {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
-      &alpha, &beta, flags, libxsmm_get_gemm_prefetch(prefetch));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta, int prefetch = PREFETCH_DEFAULT) {
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    m_function.gemm = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
+      static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
+      static_cast<libxsmm_bitfield>(prefetch)) : NULL);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, int prefetch)
+    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, int prefetch = PREFETCH_DEFAULT)
   {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
-      NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_prefetch(prefetch));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape,
+      static_cast<libxsmm_bitfield>(flags),
+      static_cast<libxsmm_bitfield>(prefetch));
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, otype alpha, otype beta)
+    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, otype alpha, otype beta,
+    int prefetch = PREFETCH_DEFAULT)
   {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
-      &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(NULL));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
-  }
-  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, otype alpha, otype beta, int prefetch)
-  {
-    libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
-      &alpha, &beta, flags, libxsmm_get_gemm_prefetch(prefetch));
-    m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    m_function.gemm = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
+      static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
+      static_cast<libxsmm_bitfield>(prefetch)) : NULL);
   }
 public:
   const libxsmm_xmmfunction& kernel() const {
     return m_function;
   }
   operator const void*() const {
-    return 0 != m_function.xmm ? this : 0;
+    return NULL != m_function.ptr_const ? this : NULL;
   }
   void operator()(const itype* a, const itype* b, otype* c) const {
-    LIBXSMM_MMCALL_ABC(m_function.xmm, a, b, c);
+    libxsmm_gemm_param args;
+    args.a.primary = const_cast<itype*>(a);
+    args.b.primary = const_cast<itype*>(b);
+    args.c.primary = c;
+    libxsmm_mmfunction_prefetch<PREFETCH_DEFAULT>(m_function, args);
+    LIBXSMM_ASSERT(NULL != m_function.ptr_const);
+    m_function.gemm(&args);
   }
   void operator()(const itype* a, const itype* b, otype* c, const itype* pa, const itype* pb, const otype* pc) const {
-    LIBXSMM_UNUSED( pa );
-    LIBXSMM_UNUSED( pb );
-    LIBXSMM_UNUSED( pc );
-    LIBXSMM_MMCALL_PRF(m_function.xmm, a, b, c, pa, pb, pc);
+    libxsmm_gemm_param args;
+    args.a.primary = const_cast<itype*>(a);
+    args.b.primary = const_cast<itype*>(b);
+    args.c.primary = c;
+    args.a.quaternary = const_cast<itype*>(pa);
+    args.b.quaternary = const_cast<itype*>(pb);
+    args.c.quaternary = const_cast<otype*>(pc);
+    LIBXSMM_ASSERT(NULL != m_function.ptr_const);
+    m_function.gemm(&args);
   }
 };
 

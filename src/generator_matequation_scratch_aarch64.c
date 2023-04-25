@@ -16,12 +16,13 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 #include "generator_common_aarch64.h"
 #include "generator_matequation_scratch_aarch64.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
+
 
 #if 0
 LIBXSMM_API_INTERN
@@ -471,4 +472,3 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     }
   }
 }
-

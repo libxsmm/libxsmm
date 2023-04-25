@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_EXT_H
 #define LIBXSMM_EXT_H
 
-#include "libxsmm_main.h"
+#include <libxsmm_macros.h>
 
 #if defined(_OPENMP)
 # if defined(LIBXSMM_PRAGMA_DIAG)

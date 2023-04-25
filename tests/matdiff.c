@@ -10,8 +10,8 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 
-#if !defined(ITYPE)
-# define ITYPE double
+#if !defined(ELEMTYPE)
+# define ELEMTYPE double
 #endif
 
 
@@ -20,33 +20,33 @@ int main(void)
   int result = EXIT_SUCCESS;
   libxsmm_matdiff_info di[6], diff /*= { 0 }*/;
   /* http://www.netlib.org/lapack/lug/node75.html */
-  const ITYPE a[] = {
-    (ITYPE)1.00, (ITYPE)2.00, (ITYPE)3.00,
-    (ITYPE)4.00, (ITYPE)5.00, (ITYPE)6.00,
-    (ITYPE)7.00, (ITYPE)8.00, (ITYPE)10.0
+  const ELEMTYPE a[] = {
+    (ELEMTYPE)1.00, (ELEMTYPE)2.00, (ELEMTYPE)3.00,
+    (ELEMTYPE)4.00, (ELEMTYPE)5.00, (ELEMTYPE)6.00,
+    (ELEMTYPE)7.00, (ELEMTYPE)8.00, (ELEMTYPE)10.0
   };
-  const ITYPE b[] = {
-    (ITYPE)0.44, (ITYPE)2.36, (ITYPE)3.04,
-    (ITYPE)3.09, (ITYPE)5.87, (ITYPE)6.66,
-    (ITYPE)7.36, (ITYPE)7.77, (ITYPE)9.07
+  const ELEMTYPE b[] = {
+    (ELEMTYPE)0.44, (ELEMTYPE)2.36, (ELEMTYPE)3.04,
+    (ELEMTYPE)3.09, (ELEMTYPE)5.87, (ELEMTYPE)6.66,
+    (ELEMTYPE)7.36, (ELEMTYPE)7.77, (ELEMTYPE)9.07
   };
-  const ITYPE x[] = {
-    (ITYPE)1.00, (ITYPE)100.0, (ITYPE)9.00
+  const ELEMTYPE x[] = {
+    (ELEMTYPE)1.00, (ELEMTYPE)100.0, (ELEMTYPE)9.00
   };
-  const ITYPE y[] = {
-    (ITYPE)1.10, (ITYPE)99.00, (ITYPE)11.0
+  const ELEMTYPE y[] = {
+    (ELEMTYPE)1.10, (ELEMTYPE)99.00, (ELEMTYPE)11.0
   };
-  const ITYPE r[] = {
-    (ITYPE)0.00, (ITYPE)0.00, (ITYPE)0.00
+  const ELEMTYPE r[] = {
+    (ELEMTYPE)0.00, (ELEMTYPE)0.00, (ELEMTYPE)0.00
   };
-  const ITYPE t[] = {
-    (ITYPE)0.01, (ITYPE)0.02, (ITYPE)0.01
+  const ELEMTYPE t[] = {
+    (ELEMTYPE)0.01, (ELEMTYPE)0.02, (ELEMTYPE)0.01
   };
 
   /* no need to clear di; just the accumulator (diff) */
   libxsmm_matdiff_clear(&diff);
 
-  result = libxsmm_matdiff(di + 0, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 3/*n*/,
+  result = libxsmm_matdiff(di + 0, LIBXSMM_DATATYPE(ELEMTYPE), 3/*m*/, 3/*n*/,
     a/*ref*/, b/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
 
   if (EXIT_SUCCESS == result) {
@@ -80,7 +80,7 @@ int main(void)
   }
 
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_matdiff(di + 1, LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
+    result = libxsmm_matdiff(di + 1, LIBXSMM_DATATYPE(ELEMTYPE), 1/*m*/, 3/*n*/,
       x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
   }
   if (EXIT_SUCCESS == result) {
@@ -114,7 +114,7 @@ int main(void)
   }
 
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_matdiff(di + 2, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+    result = libxsmm_matdiff(di + 2, LIBXSMM_DATATYPE(ELEMTYPE), 3/*m*/, 1/*n*/,
       x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
   }
   if (EXIT_SUCCESS == result) {
@@ -148,7 +148,7 @@ int main(void)
   }
 
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_matdiff(di + 3, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+    result = libxsmm_matdiff(di + 3, LIBXSMM_DATATYPE(ELEMTYPE), 3/*m*/, 1/*n*/,
       r/*ref*/, t/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
   }
   if (EXIT_SUCCESS == result) {
@@ -182,7 +182,7 @@ int main(void)
   }
 
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_matdiff(di + 4, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+    result = libxsmm_matdiff(di + 4, LIBXSMM_DATATYPE(ELEMTYPE), 3/*m*/, 1/*n*/,
       t/*ref*/, r/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
   }
   if (EXIT_SUCCESS == result) {
@@ -216,7 +216,7 @@ int main(void)
   }
 
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_matdiff(di + 5, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+    result = libxsmm_matdiff(di + 5, LIBXSMM_DATATYPE(ELEMTYPE), 3/*m*/, 1/*n*/,
       r/*ref*/, r/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
   }
   if (EXIT_SUCCESS == result) {

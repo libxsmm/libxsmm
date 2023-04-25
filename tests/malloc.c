@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm.h>
 
 #if !defined(CHECK_SETUP) && 1
 # define CHECK_SETUP

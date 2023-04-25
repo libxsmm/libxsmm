@@ -8,17 +8,18 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include "libxsmm_main.h"
 #include "libxsmm_trace.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
-#include "libxsmm_main.h"
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
 #endif
 #include "generator_common.h"
 
+#include <signal.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -36,7 +37,7 @@
 # include <pthread.h>
 #endif
 
-/* used internally to reimplement certain exit-handler */
+/* used internally to re-implement certain exit-handler */
 #if !defined(LIBXSMM_EXIT_SUCCESS)
 # define LIBXSMM_EXIT_SUCCESS() exit(EXIT_SUCCESS)
 #endif
@@ -259,6 +260,7 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
 #endif
 LIBXSMM_APIVAR_DEFINE(INTERNAL_SINGLETON_HANDLE internal_singleton_handle);
+LIBXSMM_APIVAR_DEFINE(void (*internal_libxsmm_prvabrt)(int));
 LIBXSMM_APIVAR_DEFINE(char internal_stdio_fname[64]);
 
 /* definition of corresponding variables */
@@ -564,13 +566,15 @@ LIBXSMM_API_INLINE void internal_register_static_code(
         i = LIBXSMM_MOD2(i + 1, LIBXSMM_CAPACITY_REGISTRY);
         if (NULL == registry[i].ptr_const) break;
       } while (i != i0);
-#if defined(LIBXSMM_HASH_COLLISION) /* mark entry as a collision */
-      dst_entry->uval |= LIBXSMM_HASH_COLLISION;
-#endif
-      dst_entry = registry + i; /* update destination */
-      internal_update_mmstatistic(desc, 0, 1/*collision*/, 0, 0);
       /* out of capacity (no registry slot available) */
-      LIBXSMM_ASSERT(NULL == dst_entry->ptr_const || i == i0);
+      LIBXSMM_ASSERT(NULL == registry[i].ptr_const || i == i0);
+      if (NULL == registry[i].ptr_const) { /* registry not exhausted */
+        internal_update_mmstatistic(desc, 0, 1/*collision*/, 0, 0);
+#if defined(LIBXSMM_HASH_COLLISION) /* mark entry as a collision */
+        dst_entry->uval |= LIBXSMM_HASH_COLLISION;
+#endif
+        dst_entry = registry + i; /* update destination */
+      }
     }
     if (NULL == dst_entry->ptr_const) { /* registry not exhausted */
       internal_registry_keys[i].entry.kind = LIBXSMM_KERNEL_KIND_MATMUL;
@@ -597,7 +601,8 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 
 
 /* Caution: cannot be used multiple times in a single expression! */
-LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
+LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
+  int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
 {
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
   const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
@@ -819,6 +824,25 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
 #endif
 }
+
+
+LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int /*signum*/);
+LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int signum) {
+  LIBXSMM_ASSERT(SIGABRT == signum);
+  if (SIG_ERR != internal_libxsmm_prvabrt) {
+    internal_finalize();
+    if (NULL != internal_libxsmm_prvabrt) {
+      internal_libxsmm_prvabrt(SIGABRT);
+    }
+    else {
+      void (*const default_handler)(int) = signal(signum, SIG_DFL);
+      if (NULL != default_handler && SIG_ERR != default_handler) {
+        default_handler(SIGABRT);
+      }
+    }
+  }
+}
+
 
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
@@ -1241,7 +1265,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
 #endif
       }
       { /* calibrate timer */
-        int register_termination_proc;
+        int result_atexit = EXIT_SUCCESS;
         libxsmm_timer_tickint s1, t1;
         internal_init(); /* must be first to initialize verbosity, etc. */
         if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* after internal_init */
@@ -1254,7 +1278,8 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
 #endif
-        register_termination_proc = atexit(internal_finalize);
+        internal_libxsmm_prvabrt = signal(SIGABRT, internal_libxsmm_sigabrt);
+        result_atexit = atexit(internal_finalize);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
         if (t0 < t1 && 0.0 < libxsmm_timer_scale) {
@@ -1277,7 +1302,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = 0;
         }
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          if (EXIT_SUCCESS != register_termination_proc) {
+          if (SIG_ERR == internal_libxsmm_prvabrt || EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
           if (0 == libxsmm_timer_scale
@@ -1452,12 +1477,6 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_sink(const void* arg, ...)
-{ /* does nothing else but sinking given arguments */
-  LIBXSMM_UNUSED(arg);
-}
-
-
 LIBXSMM_API int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT
@@ -1473,6 +1492,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_GNR:
     case LIBXSMM_X86_AVX512_SPR:
     case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
@@ -1484,6 +1504,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_VL256_CLX:
     case LIBXSMM_X86_AVX512_VL256_CPX:
     case LIBXSMM_X86_AVX2_ADL:
+    case LIBXSMM_X86_AVX2_SRF:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE42:
@@ -1562,7 +1583,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
       target_archid = LIBXSMM_X86_AVX512_VL256;
     }
-    else if (arch == libxsmm_stristr(arch, "spr") || arch == libxsmm_stristr(arch, "amx")) {
+    else if (arch == libxsmm_stristr(arch, "gnr")) {
+      target_archid = LIBXSMM_X86_AVX512_GNR;
+    }
+    else if (arch == libxsmm_stristr(arch, "spr")) {
       target_archid = LIBXSMM_X86_AVX512_SPR;
     }
     else if (arch == libxsmm_stristr(arch, "cpx")) {
@@ -1582,6 +1606,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (arch == libxsmm_stristr(arch, "knl") || arch == libxsmm_stristr(arch, "mic")) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
+    }
+    else if (arch == libxsmm_stristr(arch, "srf")) {
+      target_archid = LIBXSMM_X86_AVX2_SRF;
     }
     else if (arch == libxsmm_stristr(arch, "adl")) {
       target_archid = LIBXSMM_X86_AVX2_ADL;
@@ -1708,23 +1735,6 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
   if (0 == internal_gemm_auto_prefetch_locked) { /* LIBXSMM_GEMM_PREFETCH environment takes precedence */
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch_default, strategy, LIBXSMM_ATOMIC_RELAXED);
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
-  }
-}
-
-
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
-{
-  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
-  if (0 != result) {
-    return result;
-  }
-  else {
-    static int error_once = 0;
-    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
-    }
-    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
   }
 }
 
@@ -2191,7 +2201,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seemlessly to the current CPU arch */
+        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
         if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
              ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
           int emu_amx = 0;
@@ -2225,7 +2235,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MEQN: { /* matequation kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seemlessly to the current CPU arch */
+        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
         if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
              ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
           int emu_amx = 0;
@@ -2522,6 +2532,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
             } while (i != i0);
             if (i == i0) { /* out of capacity (no registry slot available) */
               diff = 0; /* do not use break if inside of locked region */
+#if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
+              build = EXIT_FAILURE;
+#endif
             }
             flux_entry.ptr = NULL; /* no result */
           }
@@ -3035,14 +3048,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
       wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
     }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
-#if defined(_DEBUG)
-    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && NULL != result.xmm) {
-      LIBXSMM_STDIO_ACQUIRE();
-      fprintf(stderr, "\nLIBXSMM: ");
-      libxsmm_gemm_xprint(stderr, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
-      LIBXSMM_STDIO_RELEASE();
-    }
-#endif
   }
 #if !defined(NDEBUG)
   else { /* quietly accept NULL-descriptor */

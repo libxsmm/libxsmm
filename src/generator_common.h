@@ -12,9 +12,8 @@
 #define GENERATOR_COMMON_H
 
 #include <libxsmm_generator.h>
-#include <libxsmm_cpuid.h>
-#include "libxsmm_main.h"
 #include "libxsmm_matrixeqn.h"
+#include "libxsmm_main.h"
 
 /* TODO: check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
@@ -57,7 +56,7 @@
  * 29 #operands (2 bits=0-3)
  * 28 #operands (2 bits=0-3)
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
- * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
+ * 26 Op code extension in ModRM Regfiles (extension is bits 20-22)
  * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX, in REX only -> force REX prefix
  * 24 used for pure/base REX/IA32 encodings to signal that the instructions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
  * 3rd byte:
@@ -491,7 +490,7 @@
 
 /* AVX512 BF16 */
 #define LIBXSMM_X86_INSTR_VDPBF16PS        0xf0062652
-#define LIBXSMM_X86_INSTR_VCVTNEPS2BF16    0xe0062672
+#define LIBXSMM_X86_INSTR_VCVTNEPS2BF16    0x20062672
 #define LIBXSMM_X86_INSTR_VCVTNE2PS2BF16   0xf0072672
 
 /* AVX512 FP16 */
@@ -638,6 +637,23 @@
 #define LIBXSMM_X86_INSTR_KMOVW_ST         0xa0041191
 #define LIBXSMM_X86_INSTR_KMOVD_ST         0xa0851191
 #define LIBXSMM_X86_INSTR_KMOVQ_ST         0xa0841191
+
+/* AVX2 low precision convert instructions, AVX-NE-CONVERT */
+#define LIBXSMM_X86_INSTR_VBCSTNEBF162PS   0x600620b1
+#define LIBXSMM_X86_INSTR_VBCSTNESH2PS     0x600520b1
+#define LIBXSMM_X86_INSTR_VCVTNEEBF162PS   0x600620b0
+#define LIBXSMM_X86_INSTR_VCVTNEEPH2PS     0x600520b0
+#define LIBXSMM_X86_INSTR_VCVTNEOBF162PS   0x600720b0
+#define LIBXSMM_X86_INSTR_VCVTNEOPH2PS     0x600420b0
+/* #define LIBXSMM_X86_INSTR_VCVTNEPS2BF16 is not needed as the encoding overlaps with EVEX */
+
+/* AVX2 Int8 VNNI will all sign combinations, AVX-VNNI-INT8 */
+#define LIBXSMM_X86_INSTR_VPDPBSUD         0x70062050
+#define LIBXSMM_X86_INSTR_VPDPBSUDS        0x70062051
+#define LIBXSMM_X86_INSTR_VPDPBSSD         0x70072050
+#define LIBXSMM_X86_INSTR_VPDPBSSDS        0x70072051
+#define LIBXSMM_X86_INSTR_VPDPBUUD         0x70042050
+#define LIBXSMM_X86_INSTR_VPDPBUUDS        0x70042051
 
 /* SSE1 instructions */
 #define LIBXSMM_X86_INSTR_MOVAPS           0xa0041028
@@ -1072,6 +1088,9 @@
 #define LIBXSMM_X86_INSTR_CMPD_R_RM        0xa004003b
 #define LIBXSMM_X86_INSTR_CMPQ_R_RM        0xa284003b
 #define LIBXSMM_X86_INSTR_IMUL             30003
+#define LIBXSMM_X86_INSTR_IDIVW            0x9c7440f7
+#define LIBXSMM_X86_INSTR_IDIVD            0x9c7400f7
+#define LIBXSMM_X86_INSTR_IDIVQ            0x9e7400f7
 #define LIBXSMM_X86_INSTR_IMULW            0xa00450af
 #define LIBXSMM_X86_INSTR_IMULD            0xa00410af
 #define LIBXSMM_X86_INSTR_IMULQ            0xa28410af
@@ -1218,6 +1237,8 @@
 #define LIBXSMM_X86_INSTR_TDPBUUD            0x7004205e
 /* CPUID: AMX-BF16 INTERCEPT: SPR */
 #define LIBXSMM_X86_INSTR_TDPBF16PS          0x7006205c
+/* CPUID: AMX-FP16 INTERCEPT: GNR */
+#define LIBXSMM_X86_INSTR_TDPFP16PS          0x7007205c
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL               90000
@@ -1587,7 +1608,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int ldi_mask;
   unsigned int ldo_mask;
 
-  /* Auxiliary varialiables for vreg management */
+  /* Auxiliary variables for vreg management */
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int use_fp32bf16_cvt_replacement;
@@ -2013,7 +2034,7 @@ typedef enum libxsmm_meltw_comp_scal_flags {
   LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS_COLS = 26
 } libxsmm_meltw_comp_scal_flags;
 
-/* compressed metlw cvta strcuture */
+/* compressed metlw cvta structure */
 typedef enum libxsmm_meltw_comp_cvta_flags {
   LIBXSMM_MELTW_COMP_FLAG_CVTA_NONE           = 0,
   LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_RELU      = 1,
@@ -2028,7 +2049,7 @@ typedef enum libxsmm_meltw_comp_acvt_flags {
   LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_SIGM      = 2
 } libxsmm_meltw_comp_acvt_flags;
 
-/* compressed meltw cbiasact strcuture */
+/* compressed meltw cbiasact structure */
 typedef enum libxsmm_meltw_comp_flags {
   LIBXSMM_MELTW_COMP_FLAG_NONE                         =  0,
   LIBXSMM_MELTW_COMP_FLAG_COLBIAS                      =  1,
@@ -2141,4 +2162,3 @@ typedef enum libxsmm_ulp_precision {
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void);
 
 #endif /* GENERATOR_COMMON_H */
-

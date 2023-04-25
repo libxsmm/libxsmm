@@ -8,13 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_common.h"
 #include "generator_packed_spgemm_csr_bsparse.h"
 #include "generator_packed_spgemm_csr_asparse.h"
 #include "generator_packed_spgemm_csc_bsparse.h"
 #include "generator_packed_spgemm_csc_csparse.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API
 void libxsmm_generator_packed_spgemm_csr_kernel( libxsmm_generated_code*        io_generated_code,
@@ -98,4 +97,3 @@ void libxsmm_generator_packed_spgemm_csc_kernel( libxsmm_generated_code*        
     return;
   }
 }
-

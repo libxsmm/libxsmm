@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
@@ -19,7 +18,7 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "generator_mateltwise_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {

@@ -15,7 +15,7 @@
 #include "generator_spgemm_csc_bsparse.h"
 #include "generator_spgemm_csr_asparse.h"
 #include "generator_spgemm_csr_asparse_reg.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
