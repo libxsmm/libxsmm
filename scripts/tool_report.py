@@ -851,10 +851,12 @@ def main(args, argd, dbfname):
             else f"-{entries[0].translate(clean)}"
         )
         figcat = re.sub(r"[ ,;]+", "_", figdet)
-        if 0 < len(match):
+        if 0 < len(match) and 2 >= len(match):
             match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
             parts = [s.lower() for c in match for s in c.split("_")]
             figqry = f"-{'_'.join(dict.fromkeys(parts))}{figcat}"
+        elif query:
+            figqry = f"-{'_'.join(query)}{figcat}"
         else:
             figqry = figcat
         figcanvas = figure.canvas
