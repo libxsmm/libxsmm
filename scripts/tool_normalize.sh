@@ -185,7 +185,8 @@ then
     #
     # Check (naive) for scripts relying on in-place edit (sed).
     #
-    if [[ ("*.sh" = "${PATTERN}") || ("*.slurm" = "${PATTERN}") ]] && \
+    if [ "$(basename "${FILE}")" != "$(basename "$0")" ] && \
+       [[ ("*.sh" = "${PATTERN}") || ("*.slurm" = "${PATTERN}") ]] && \
        [ "$(${SED} -n '/sed[[:space:]][[:space:]]*-i/p' "${FILE}")" ];
     then
       echo " : use of sed -i is not portable"
