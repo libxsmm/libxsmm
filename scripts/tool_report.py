@@ -709,7 +709,11 @@ def main(args, argd, dbfname):
                         weight = wlist[key] if key in wlist else 1.0
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
-                        unit = strval[parsed.end(3) :].strip()  # noqa: E203
+                        unit = (
+                            strval[parsed.end(3) :].strip()  # noqa: E203
+                            if parsed
+                            else ""
+                        )
                         vals.append(float(strval.split()[0]) * vscale * weight)
                         if not ylabel:
                             ylabel = (
@@ -1017,7 +1021,7 @@ if __name__ == "__main__":
         "--bounds",
         type=str,
         default="2.0 10",
-        help="Highlight if exceeding max(A*Stdev%,B%)",
+        help="Highlight if exceeding max(A*Stdev%%,B%%)",
     )
     argparser.add_argument(
         "-m",
