@@ -307,7 +307,8 @@ def trend(values):
     the standard deviation (cv), and the linear trend (equation).
     """
     rd, cv, eqn, size = None, None, None, len(values)
-    b, a = values[0:2] if values else (0, 0)
+    b = values[0] if 0 < size else 0
+    a = values[1] if 1 < size else 0
     if 0 != a:
         rd = (b - a) / a
     if 2 < size:
