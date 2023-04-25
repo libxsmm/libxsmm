@@ -830,13 +830,17 @@ LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int /*signum*/);
 LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int signum) {
   LIBXSMM_ASSERT(SIGABRT == signum);
   if (SIG_ERR != internal_libxsmm_prvabrt) {
+    libxsmm_verbosity = LIBXSMM_MAX(LIBXSMM_VERBOSITY_HIGH + 1, libxsmm_verbosity);
     internal_finalize();
     if (NULL != internal_libxsmm_prvabrt) {
       internal_libxsmm_prvabrt(SIGABRT);
     }
     else {
       void (*const default_handler)(int) = signal(signum, SIG_DFL);
-      if (NULL != default_handler && SIG_ERR != default_handler) {
+      if (internal_libxsmm_sigabrt != default_handler /* recursion */
+        && SIG_ERR != default_handler
+        && NULL != default_handler)
+      {
         default_handler(SIGABRT);
       }
     }
