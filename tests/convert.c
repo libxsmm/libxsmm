@@ -34,6 +34,11 @@ int main(/*int argc, char* argv[]*/void)
   void *data = NULL, *data_lp = NULL;
   char filename[1024];
 
+#if defined(__linux__)
+  /* seed RNG for reproducible stochastic rounding */
+  libxsmm_rng_set_seed(CONVERT_SEED);
+#endif
+
   /* libxsmm_truncate_convert_f32_bf16 */
   if (EXIT_SUCCESS == libxsmm_mhd_read_header("convert_bf16_truncate.mhd", sizeof(filename), filename,
     &ndims, size, &channels, (libxsmm_mhd_elemtype*)&type, &header, NULL/*extension_size*/))
@@ -238,6 +243,49 @@ int main(/*int argc, char* argv[]*/void)
     }
     else result = EXIT_FAILURE;
   }
+
+#if defined(__linux__)
+  /* libxsmm_stochastic_convert_fp32_bf8 */
+  if (EXIT_SUCCESS == libxsmm_mhd_read_header("convert_bf8_stochastic.mhd", sizeof(filename), filename,
+    &ndims, size, &channels, (libxsmm_mhd_elemtype*)&type, &header, NULL/*extension_size*/))
+  { /* check against gold data */
+    const size_t s = size[0] * size[1];
+    if (size1 < s) {
+      free(data_lp); free(data);
+      data_lp = malloc(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF8) * s);
+      data = malloc(LIBXSMM_TYPESIZE(type) * s);
+      size1 = s;
+    }
+    if (NULL != data && NULL != data_lp) {
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
+      libxsmm_stochastic_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s);
+      libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
+      result = libxsmm_mhd_read(filename,
+        NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
+        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        NULL/*extension*/, 0/*extension_size*/);
+    }
+    else result = EXIT_FAILURE;
+  }
+  else { /* write gold data */
+    const size_t s = size[0] * size[1];
+    if (size1 < s) {
+      free(data_lp); free(data);
+      data_lp = malloc(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF8) * s);
+      data = malloc(LIBXSMM_TYPESIZE(type) * s);
+      size1 = s;
+    }
+    if (NULL != data && NULL != data_lp) {
+      LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
+      libxsmm_stochastic_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s);
+      libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
+      result = libxsmm_mhd_write("convert_bf8_stochastic.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
+        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
+    }
+    else result = EXIT_FAILURE;
+  }
+#endif
 
   /* libxsmm_rne_convert_fp32_hf8 */
   if (EXIT_SUCCESS == libxsmm_mhd_read_header("convert_hf8_rne.mhd", sizeof(filename), filename,

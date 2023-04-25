@@ -133,7 +133,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
       if (NULL != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
 #if defined(LIBXSMM_MATHDIFF_MHD)
-          const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
+          const char *const defaultname = ((('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env);
           const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
           const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
           char filename[256] = "";
@@ -441,7 +441,9 @@ LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in)
   libxsmm_float_uint hybrid_in = { 0 };
   hybrid_in.u = in;
   /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f80) == 0x0) ? (unsigned short)(hybrid_in.u & 0x8000) : hybrid_in.u;
+  hybrid_in.u = ((hybrid_in.u & 0x7f80) == 0x0
+    ? (unsigned short)(hybrid_in.u & 0x8000)
+    : hybrid_in.u);
   hybrid_in.u = hybrid_in.u << 16;
   return hybrid_in.f;
 }
@@ -460,15 +462,15 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in)
   /* convert denormal fp16 number into a normal fp32 number */
   if ((e == 0) && (m != 0)) {
     unsigned int lz_cnt = 9;
-    lz_cnt = (m > 0x1) ? 8 : lz_cnt;
-    lz_cnt = (m > 0x3) ? 7 : lz_cnt;
-    lz_cnt = (m > 0x7) ? 6 : lz_cnt;
-    lz_cnt = (m > 0xf) ? 5 : lz_cnt;
-    lz_cnt = (m > 0x1f) ? 4 : lz_cnt;
-    lz_cnt = (m > 0x3f) ? 3 : lz_cnt;
-    lz_cnt = (m > 0x7f) ? 2 : lz_cnt;
-    lz_cnt = (m > 0xff) ? 1 : lz_cnt;
-    lz_cnt = (m > 0x1ff) ? 0 : lz_cnt;
+    lz_cnt = (m > 0x1 ? 8 : lz_cnt);
+    lz_cnt = (m > 0x3 ? 7 : lz_cnt);
+    lz_cnt = (m > 0x7 ? 6 : lz_cnt);
+    lz_cnt = (m > 0xf ? 5 : lz_cnt);
+    lz_cnt = (m > 0x1f ? 4 : lz_cnt);
+    lz_cnt = (m > 0x3f ? 3 : lz_cnt);
+    lz_cnt = (m > 0x7f ? 2 : lz_cnt);
+    lz_cnt = (m > 0xff ? 1 : lz_cnt);
+    lz_cnt = (m > 0x1ff ? 0 : lz_cnt);
     LIBXSMM_ASSERT(e_norm >= lz_cnt);
     e_norm -= lz_cnt;
     m = (m << (lz_cnt + 1)) & 0x03ff;
@@ -478,7 +480,7 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in)
   }
   else if (e == 0x1f) {
     e_norm = 0xff;
-    m |= (m == 0) ? 0 : 0x0200; /* making first mantissa bit 1 */
+    m |= (m == 0 ? 0 : 0x0200); /* making first mantissa bit 1 */
   }
 
   /* set result to 0 */
@@ -493,6 +495,85 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in)
 }
 
 
+LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_truncate(float in)
+{
+  libxsmm_float_uint hybrid_in = { 0 };
+  libxsmm_bfloat16 res;
+  hybrid_in.f = in;
+  /* DAZ */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
+    ? (hybrid_in.u & 0x80000000)
+    : hybrid_in.u);
+  /* we do not round inf and NaN */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x7f800000
+    ? ((hybrid_in.u & 0x007fffff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x00400000))
+    : hybrid_in.u);
+  /* shift right */
+  res = (unsigned short)(hybrid_in.u >> 16);
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_rnaz(float in)
+{
+  libxsmm_float_uint hybrid_in = { 0 };
+  libxsmm_bfloat16 res;
+  hybrid_in.f = in;
+  /* DAZ */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
+    ? (hybrid_in.u & 0x80000000)
+    : hybrid_in.u);
+  /* we do not round inf and NaN */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x7f800000
+    ? ((hybrid_in.u & 0x007fffff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x00400000))
+    : (hybrid_in.u + 0x00008000));
+  /* shift right */
+  res = (unsigned short)(hybrid_in.u >> 16);
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_rne(float in)
+{
+  libxsmm_float_uint hybrid_in = { 0 };
+  libxsmm_bfloat16 res;
+  unsigned int fixup;
+  hybrid_in.f = in;
+  /* DAZ */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
+    ? (hybrid_in.u & 0x80000000)
+    : hybrid_in.u);
+  /* RNE round */
+  fixup = (hybrid_in.u >> 16) & 1;
+  /* we do not round inf and NaN */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x7f800000
+    ? ((hybrid_in.u & 0x007fffff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x00400000))
+    : (hybrid_in.u + 0x00007fff + fixup));
+  /* shift right */
+  res = (unsigned short)(hybrid_in.u >> 16);
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_stochastic(float in, unsigned int seed)
+{
+  unsigned short short_round = libxsmm_convert_f32_to_f16(in);
+  const unsigned short rand = (unsigned short)(seed & 1);
+  /* perform round nearest tie even */
+  if ((short_round & 0x7c00) != 0x7c00) { /* we do not round NaN and inf */
+    if ((short_round & 0x7c00) == 0x0000) {
+      unsigned short fixup = (short_round >> 8) & 1;
+      short_round = short_round + 0x007f + fixup;
+    }
+    else {
+      short_round = short_round + (rand & 0x00ff);
+    }
+  }
+  /* create the bf8 value by shifting out the lower 16 bits */
+  return (unsigned char)(short_round >> 8);
+}
+
+
 LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in)
 {
   libxsmm_float16_ushort hybrid_in = { 0 };
@@ -503,8 +584,8 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in)
   fixup = (hybrid_in.u >> 8) & 1;
   /* we do not round inf and NaN */
   hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
-    ? (((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200)
-    : hybrid_in.u + 0x007f + fixup);
+    ? ((hybrid_in.u & 0x03ff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x0200))
+    : (hybrid_in.u + 0x007f + fixup));
   /* shift right */
   res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
   return res;
@@ -578,6 +659,13 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in)
 }
 
 
+LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f32_to_hf8_rne(float in)
+{
+  const libxsmm_float16 itm = libxsmm_convert_f32_to_f16(in);
+  return libxsmm_convert_f16_to_hf8_rne(itm);
+}
+
+
 LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in)
 {
   unsigned int f32_bias = 127;
@@ -589,7 +677,9 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in)
   hybrid_in.f = in;
 
   /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0) ? (hybrid_in.u & 0x80000000) : (hybrid_in.u & 0xffffffff);
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
+    ? (hybrid_in.u & 0x80000000)
+    : (hybrid_in.u & 0xffffffff));
 
   s = (hybrid_in.u & 0x80000000) >> 16;
   e_f32 = (hybrid_in.u & 0x7f800000) >> 23;
@@ -598,7 +688,7 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in)
   /* special value */
   if (e_f32 == 0xff) {
     e = 0x1f;
-    m = (m_f32 == 0) ? 0 : (m_f32 >> 13) | 0x200;
+    m = (m_f32 == 0 ? 0 : ((m_f32 >> 13) | 0x200));
     /* overflow */
   }
   else if (e_f32 > (f32_bias + f16_bias)) {

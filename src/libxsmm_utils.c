@@ -9,9 +9,11 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <utils/libxsmm_utils.h>
-#include "libxsmm_gemm.h"
+#include <libxsmm.h>
 
-#if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))
+/** Denote quality of scalar random number generator. */
+#if !defined(LIBXSMM_RNG_DRAND48) && !defined(_WIN32) && !defined(__CYGWIN__) && \
+    (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
 # define LIBXSMM_RNG_DRAND48
 #endif
 

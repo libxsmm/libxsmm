@@ -15,7 +15,8 @@
 
 
 /**
- * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n).
+ * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n),
+ * i.e., the generated range of values 0..n-1 excludes n.
  * This function compensates for an n, which is not a factor of RAND_MAX.
  * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.
  */

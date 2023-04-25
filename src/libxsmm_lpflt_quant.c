@@ -227,67 +227,25 @@ LIBXSMM_API void libxsmm_dequantize_i16( short* in_buffer, float* out_buffer, in
 
 LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, size_t length) {
   size_t i = 0;
-
   /* truncate buffer to bf16 */
   for ( i = 0; i < length; ++i ) {
-    libxsmm_float_uint hybrid_in = { 0 };
-    libxsmm_bfloat16 res;
-
-    hybrid_in.f = in[i];
-
-    /* DAZ */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : hybrid_in.u;
-    /* we do not round inf and NaN */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x7f800000 ) ? ( ((hybrid_in.u & 0x007fffff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x00400000 ) : hybrid_in.u;
-    /* shift right */
-    res = (unsigned short)(hybrid_in.u >> 16);
-
-    out[i] = res;
+    out[i] = libxsmm_convert_f32_to_bf16_truncate( in[i] );
   }
 }
 
 LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t len) {
   size_t i = 0;
-
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    libxsmm_float_uint hybrid_in = { 0 };
-    libxsmm_bfloat16 res;
-
-    hybrid_in.f = in[i];
-
-    /* DAZ */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : hybrid_in.u;
-    /* we do not round inf and NaN */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x7f800000 ) ? ( ((hybrid_in.u & 0x007fffff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x00400000 ) : hybrid_in.u + 0x00008000;
-    /* shift right */
-    res = (unsigned short)(hybrid_in.u >> 16);
-
-    out[i] = res;
+    out[i] = libxsmm_convert_f32_to_bf16_rnaz( in[i] );
   }
 }
 
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t len) {
   size_t i = 0;
-
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    libxsmm_float_uint hybrid_in = { 0 };
-    libxsmm_bfloat16 res;
-    unsigned int fixup;
-
-    hybrid_in.f = in[i];
-
-    /* DAZ */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : hybrid_in.u;
-    /* RNE round */
-    fixup = (hybrid_in.u >> 16) & 1;
-    /* we do not round inf and NaN */
-    hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x7f800000 ) ? ( ((hybrid_in.u & 0x007fffff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x00400000 ) : hybrid_in.u + 0x00007fff + fixup;
-    /* shift right */
-    res = (unsigned short)(hybrid_in.u >> 16);
-
-    out[i] = res;
+    out[i] = libxsmm_convert_f32_to_bf16_rne( in[i] );
   }
 }
 
@@ -323,8 +281,7 @@ LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, 
 LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, size_t length) {
   size_t i = 0;
   for ( i = 0; i < length; ++i ) {
-    libxsmm_float16 itm = libxsmm_convert_f32_to_f16(in[i]) ;
-    out[i] = libxsmm_convert_f16_to_hf8_rne(itm);
+    out[i] = libxsmm_convert_f32_to_hf8_rne(in[i]);
   }
 }
 
@@ -345,28 +302,9 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
 
 LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, size_t len) {
   size_t i = 0;
-
-  unsigned short rand = (unsigned short)libxsmm_rng_u32(1);
+  unsigned int rand = libxsmm_rng_u32(2);
   /* truncate buffer to bf8 */
   for ( i = 0; i < len; ++i ) {
-    unsigned short short_round = libxsmm_convert_f32_to_f16( in[i] );
-    unsigned int do_round = 1;
-
-    /* we do not round NaN and inf */
-    if ( (short_round & 0x7c00) == 0x7c00 ) {
-      do_round = 0;
-    }
-    /* perform round nearest tie even */
-    if ( do_round != 0) {
-      if ( (short_round & 0x7c00) == 0x0000) {
-        unsigned short fixup = (short_round >> 8) & 1;
-        short_round = short_round + 0x007f + fixup;
-      } else {
-        short_round = short_round + (rand & 0x00ff);
-      }
-    }
-    /* create the bf8 value by shifting out the lower 16bits */
-    short_round = short_round >> 8;
-    out[i] = (unsigned char)short_round;
+    out[i] = libxsmm_convert_f32_to_bf8_stochastic(in[i], rand);
   }
 }

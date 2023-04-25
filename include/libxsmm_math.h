@@ -177,19 +177,32 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
 /* Kahan's summation returns accumulator += value and updates compensation. */
 LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* compensation);
 
-/* Convert BF8 to FP32 (scalar). */
+/** Convert BF8 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in);
-/* Convert HF8 to FP32 (scalar). */
+/** Convert HF8 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in);
-/* Convert BF16 to FP32 (scalar). */
+/** Convert BF16 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in);
-/* Convert FP16 to FP32 (scalar). */
+/** Convert FP16 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_f16_to_f32(libxsmm_float16 in);
+
+/** Convert FP32 to BF16 (scalar). */
+LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_truncate(float in);
+/** Convert FP32 to BF16 (scalar). */
+LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_rnaz(float in);
+/** Convert FP32 to BF16 (scalar). */
+LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_rne(float in);
 /* Convert FP32 to BF8 (scalar). */
+LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_stochastic(float in,
+  /** Random number may decide rounding direction (boolean/odd/even). */
+  unsigned int seed);
+/** Convert FP32 to BF8 (scalar). */
 LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in);
-/* Convert FP16 to HF8 (scalar). */
+/** Convert FP16 to HF8 (scalar). */
 LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in);
-/* Convert FP32 to FP16 (scalar). */
+/** Convert FP32 to HF8 (scalar). */
+LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f32_to_hf8_rne(float in);
+/** Convert FP32 to FP16 (scalar). */
 LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in);
 
 /**
@@ -221,6 +234,13 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
  * we do here and generate numbers in [0,1(.
  */
 LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
+
+/**
+ * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n).
+ * This function compensates for an n, which is not a factor of RAND_MAX.
+ * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.
+ */
+LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n);
 
 /** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
