@@ -41,7 +41,7 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_aar
                                                    unsigned int                            i_adjust_instr,
                                                    unsigned int                            m_microkernel,
                                                    unsigned int                            n_microkernel,
-                                                   unsigned int                            i_loop_type ) ;
+                                                   unsigned int                            i_loop_type );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_unary_binary_adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*                 io_generated_code,

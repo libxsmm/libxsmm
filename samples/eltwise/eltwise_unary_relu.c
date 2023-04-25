@@ -149,7 +149,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           out_value = ( mask[(j*ldi) + i] == 0 ) ? in_value : alpha*in_value;
         } else if ( type == 2 ) {
-          out_value = ( out_fwd_value > 0 ) ? in_value : in_value * (out_fwd_value + alpha) ;
+          out_value = ( out_fwd_value > 0 ) ? in_value : in_value * (out_fwd_value + alpha);
         }
 
         if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
