@@ -172,7 +172,7 @@ if [ "${LOGDIR}" ]; then
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
+    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
       -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
