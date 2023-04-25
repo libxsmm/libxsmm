@@ -258,7 +258,7 @@ for BINARY_POSTOP in 0 1; do
                   NEWNAME=mmla_bvnni_${OUTNAME}
                   NEWNAME="${NEWNAME/_nn_/_nt_}"
                   sed \
-                    -e 's/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g' \
+                    -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
                     -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
                     -e 's/TRB=0/TRB=1/g' \
                     mmla_${OUTNAME} >${NEWNAME}
@@ -271,7 +271,7 @@ for BINARY_POSTOP in 0 1; do
                   NEWNAME=bfdot_bvnni_${OUTNAME}
                   NEWNAME="${NEWNAME/_nn_/_nt_}"
                   sed \
-                    -e 's/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g' \
+                    -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
                     -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
                     -e 's/TRB=0/TRB=1/g' \
                     ${OUTNAME} >${NEWNAME}
