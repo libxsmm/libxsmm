@@ -166,6 +166,9 @@ if [ "${LOGDIR}" ]; then
     if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
       EXACT="-e"
     fi
+    if [ "${LOGRPTSEP}" ] && [ "0" != "${LOGRPTSEP}" ]; then
+      UNTIED="-u"
+    fi
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1
     else
@@ -178,8 +181,9 @@ if [ "${LOGDIR}" ]; then
       -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
       -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" -v ${VERBOSITY} \
-      -t "${LOGRPTBND}");
+      -q "${LOGRPTQOP}" ${UNTIED} \
+      -t "${LOGRPTBND}" \
+      -v ${VERBOSITY});
     then  # ERROR=$?
       ERROR=1
     fi

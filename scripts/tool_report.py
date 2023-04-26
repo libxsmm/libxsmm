@@ -17,6 +17,7 @@ import tempfile
 import pathlib
 import pickle
 import numpy
+import math
 import copy
 import json
 import stat
@@ -609,7 +610,7 @@ def main(args, argd, dbfname):
     else:
         template = dict()
 
-    entries = [
+    entries = [  # collect all categories
         e  # category (one level below build number)
         for e in template
         if (e != infokey or (select and infokey in select))
@@ -617,29 +618,6 @@ def main(args, argd, dbfname):
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
-
-    # determine image resolution
-    rdef = [int(r) for r in argd.resolution.split("x")]
-    if 2 == len(rdef):
-        rdef.append(100)
-    rstr = args.resolution.split("x")
-    rint = []
-    for i in range(len(rdef)):
-        try:
-            rint.append(int(rstr[i]))
-        except:  # noqa: E722
-            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            rint.append(r)
-
-    # setup figure
-    figure, axes = plot.subplots(
-        max(len(entries), 1),
-        sharex=True,
-        figsize=(divup(rint[0], rint[2]), divup(rint[1], rint[2])),
-        dpi=rint[2],
-    )
-    if 2 > len(entries):
-        axes = [axes]
 
     # parse bounds used to highlight results
     strbounds = re.split(
@@ -666,8 +644,8 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    sval, yunit, addon = None, None, args.branch
-    ngraphs = span = i = 0
+    plots, sval, yunit, addon = {}, None, None, args.branch
+    ngraphs = span = 0
     for entry in entries:
         n = 0
         for value in (
@@ -823,27 +801,63 @@ def main(args, argd, dbfname):
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
-                    axes[i].step(  # xvalue,
-                        yvalue, ".:", where="mid", label=ylabel
-                    )
-                    axes[i].set_ylabel(yunit)
+                    # collect plot data
+                    if entry not in plots:
+                        plots[entry] = []
+                    plots[entry].append([yvalue, ylabel, yunit, sval])
                     n = n + 1
+        # maximum number of graphs discovered over all plot-areas
         ngraphs = max(ngraphs, n)
-        if 0 < n:
-            axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
-            axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
-            axes[i].set_title(entry.upper())
+
+    # determine image resolution
+    rdef = [int(r) for r in argd.resolution.split("x")]
+    if 2 == len(rdef):
+        rdef.append(100)
+    rstr, rint = args.resolution.split("x"), []
+    for i in range(len(rdef)):
+        try:
+            rint.append(int(rstr[i]))
+        except:  # noqa: E722
+            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
+            rint.append(r)
+
+    nplots = len(plots)
+    if args.untied:  # auto-adjust y-resolution according to number of plots
+        nplots = sum(len(v) for v in plots.values())
+        if args.resolution == argd.resolution:  # resolution not user-supplied
+            rint[1] = divup(rint[1] * math.sqrt(nplots), rint[2]) * rint[2]
+
+    # setup figure
+    figres = (divup(rint[0], rint[2]), divup(rint[1], rint[2]))
+    subplots = plot.subplots(nplots, sharex=True, figsize=figres, dpi=rint[2])
+    figure, axes = subplots  # unpack
+    if 2 > nplots:  # ensure axes object is always a list
+        axes = [axes]
+    i = 0
+    for entry in plots:
+        for data in plots[entry]:
+            axes[i].step(data[0], ".:", where="mid", label=data[1])
+            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            axes[i].xaxis.set_ticks(
+                range(len(data[-1])), data[-1], rotation=45
+            )
+            axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
             axes[i].legend(loc="upper left")  # ncol=2
-        i = i + 1
-    axes[-1].set_xlabel("Build Number")
-    title = "Performance History"
-    figure.suptitle(
-        f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
-    )
-    figure.gca().invert_xaxis()
-    figure.tight_layout()
+            if args.untied:
+                i = i + 1
+        if not args.untied:
+            i = i + 1
 
     if 0 < ngraphs:
+        axes[-1].set_xlabel("Build Number")
+        title = "Performance History"
+        figure.suptitle(
+            f"{title} ({addon.lower()})" if addon else title,
+            fontsize="x-large",
+        )
+        figure.tight_layout(rect=[0, 0, 1, 0.98])  # fit suptitle
+        figure.gca().invert_xaxis()
+
         # supported file types and filename components
         figdet = (
             ""  # eventually add details about category
@@ -1025,6 +1039,12 @@ if __name__ == "__main__":
         type=str,
         default="2.0 10",
         help="Highlight if exceeding max(A*Stdev%%,B%%)",
+    )
+    argparser.add_argument(
+        "-u",
+        "--untied",
+        action="store_true",
+        help="Separate plot per query",
     )
     argparser.add_argument(
         "-m",
