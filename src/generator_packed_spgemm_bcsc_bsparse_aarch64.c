@@ -101,7 +101,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       } else {
         l_simd_packed_width = 8;
         l_bf16_mmla_kernel = 0;
-        if ((i_bk != 2) || ((i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
+        if ((i_bk != 2) || ((i_bn != 1) && (i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
           free(p_jump_label_tracker);
@@ -1439,8 +1439,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   unsigned int l_p = 0;
   unsigned int l_k = 0;
   unsigned int l_found_mul = 0;
-  unsigned int l_max_reg_block = (i_n_limit - i_n_processed) * 2 * (i_bn/2) * i_packed_blocking;
-  unsigned int l_n_blocking = (i_n_limit - i_n_processed) * (i_bn/2);
+  unsigned int l_max_reg_block = (i_bn == 1) ? (i_n_limit - i_n_processed) * i_packed_blocking : (i_n_limit - i_n_processed) * 2 * (i_bn/2) * i_packed_blocking;
+  unsigned int l_n_blocking = (i_n_limit - i_n_processed) * ((i_bn+1)/2);
   unsigned int l_vec_reg_tmp[5];
   unsigned int l_n_advancements = 0;
   unsigned int l_m_advancements = 0;
@@ -1626,15 +1626,17 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                          l_gp_reg_scratch,
                                                          i_gp_reg_mapping->gp_reg_c,
                                                          i_packed_width * i_micro_kernel_config->datatype_size_out );
-          /* load 2nd [8m] */
-          libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF,
-                                                i_gp_reg_mapping->gp_reg_c,
-                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                                0,
-                                                l_reg1,
-                                                ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_remainder_bf16_mask  : l_output_bf16_mask );
-          libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code, l_reg1, 0);
+          if (i_bn != 1) {
+            /* load 2nd [8m] */
+            libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                  LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF,
+                                                  i_gp_reg_mapping->gp_reg_c,
+                                                  LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                  0,
+                                                  l_reg1,
+                                                  ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_remainder_bf16_mask  : l_output_bf16_mask );
+            libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code, l_reg1, 0);
+          }
           if (l_p == i_packed_blocking - 1) {
             libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                            LIBXSMM_AARCH64_INSTR_GP_META_SUB,
@@ -1718,8 +1720,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
     }
 
     /* loop over the columns of B/C */
-    for ( l_n = 0; l_n < l_n_blocking/(i_bn/2); l_n++ ) {
-      for (l_n_in_bn = 0; l_n_in_bn < i_bn/2; l_n_in_bn++) {
+    for ( l_n = 0; l_n < l_n_blocking/((i_bn+1)/2); l_n++ ) {
+      for (l_n_in_bn = 0; l_n_in_bn < (i_bn+1)/2; l_n_in_bn++) {
         libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
                                               i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_max_reg_block+i_packed_blocking, LIBXSMM_AARCH64_SVE_REG_P0 );
         libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
@@ -1743,14 +1745,16 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                  ((2*(l_n*(i_bn/2)+l_n_in_bn)+0)*i_packed_blocking) + l_p,
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  LIBXSMM_AARCH64_SVE_TYPE_H );
-          libxsmm_aarch64_instruction_sve_compute( io_generated_code,
-                                                 LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V,
-                                                 l_max_reg_block+i_packed_blocking+1,
-                                                 l_max_reg_block+l_p,
-                                                 0,
-                                                 ((2*(l_n*(i_bn/2)+l_n_in_bn)+1)*i_packed_blocking) + l_p,
-                                                 LIBXSMM_AARCH64_SVE_REG_UNDEF,
-                                                 LIBXSMM_AARCH64_SVE_TYPE_H );
+          if (i_bn != 1) {
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V,
+                                                   l_max_reg_block+i_packed_blocking+1,
+                                                   l_max_reg_block+l_p,
+                                                   0,
+                                                   ((2*(l_n*(i_bn/2)+l_n_in_bn)+1)*i_packed_blocking) + l_p,
+                                                   LIBXSMM_AARCH64_SVE_REG_UNDEF,
+                                                   LIBXSMM_AARCH64_SVE_TYPE_H );
+          }
         }
       }
     }
@@ -1979,15 +1983,17 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                        l_gp_reg_scratch,
                                                        i_gp_reg_mapping->gp_reg_c,
                                                        i_packed_width * i_micro_kernel_config->datatype_size_out );
-        /* Cvt + store --> write 2nd [8m] */
-        libxsmm_generator_vcvt_f32bf16_aarch64_sve( io_generated_code, l_reg1, 0);
-        libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF,
-                                              i_gp_reg_mapping->gp_reg_c,
-                                              LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                              0,
-                                              l_reg1,
-                                              l_mask_use );
+        if (i_bn != 1) {
+          /* Cvt + store --> write 2nd [8m] */
+          libxsmm_generator_vcvt_f32bf16_aarch64_sve( io_generated_code, l_reg1, 0);
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF,
+                                                i_gp_reg_mapping->gp_reg_c,
+                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                0,
+                                                l_reg1,
+                                                l_mask_use );
+        }
         if (l_p == i_packed_blocking - 1) {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                          LIBXSMM_AARCH64_INSTR_GP_META_SUB,
