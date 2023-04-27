@@ -190,21 +190,23 @@ def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
     """
-    dflt, plst = pathlib.Path(in_dflt), str(in_main).strip().split()
-    path = pathlib.Path(plst[0] if plst else in_main)
+    dflt, inplst = pathlib.Path(in_dflt), str(in_main).strip().split()
+    path, result = pathlib.Path(inplst[0] if inplst else in_main), []
     if path.is_dir():
-        figloc, figstm = path, dflt.stem
-        figext = f".{plst[1]}" if 1 < len(plst) else dflt.suffix
+        if 2 >= len(inplst):
+            figext = [f".{inplst[1]}" if 1 < len(inplst) else dflt.suffix]
+        else:
+            figext = inplst[1:]
+        result = [path / f"{dflt.stem}{idetail}.{ext}" for ext in figext]
     elif path.suffix[1:] in extlst:
-        figloc, figstm = path.parent, path.stem
-        figext = path.suffix
+        result = [path.parent / f"{path.stem}{idetail}{path.suffix}"]
     elif "." == str(path.parent):
-        figloc, figstm = path.parent, dflt.stem
         figext = f".{path.name}" if path.name in extlst else dflt.suffix
+        result = [path.parent / f"{dflt.stem}{idetail}{figext}"]
     else:
-        figloc, figext = path.parent, dflt.suffix
         figstm = path.stem if path.stem else dflt.stem
-    return figloc / f"{figstm}{idetail}{figext}"
+        result = [path.parent / f"{figstm}{idetail}{dflt.suffix}"]
+    return result
 
 
 def mtime(filename):
@@ -369,6 +371,43 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
     else:
         label = f"{base} = {label}"
     return label, bad, eqn
+
+
+def create_figure(plots, nplots, resint, untied, addon):
+    figsize = (divup(resint[0], resint[2]), divup(resint[1], resint[2]))
+    subplots = plot.subplots(
+        max(nplots, 1),
+        sharex=True,
+        figsize=figsize,
+        dpi=resint[2],
+    )
+    figure, axes = subplots  # unpack
+    if 2 > nplots:  # ensure axes object is always a list
+        axes = [axes]
+    i = 0
+    for entry in plots:
+        for data in plots[entry]:
+            axes[i].step(data[0], ".:", where="mid", label=data[1])
+            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            axes[i].xaxis.set_ticks(
+                range(len(data[-1])), data[-1], rotation=45
+            )
+            axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
+            axes[i].legend(loc="upper left")  # ncol=2
+            if untied:
+                i = i + 1
+        if not untied:
+            i = i + 1
+    if 0 < nplots:
+        axes[-1].set_xlabel("Build Number")
+        title = "Performance History"
+        figure.suptitle(
+            f"{title} ({addon.lower()})" if addon else title,
+            fontsize="x-large",
+        )
+        figure.tight_layout(rect=[0, 0, 1, 0.98])  # fit suptitle
+        figure.gca().invert_xaxis()
+    return figure
 
 
 def main(args, argd, dbfname):
@@ -813,50 +852,34 @@ def main(args, argd, dbfname):
     rdef = [int(r) for r in argd.resolution.split("x")]
     if 2 == len(rdef):
         rdef.append(100)
-    rstr, rint = args.resolution.split("x"), []
+    rstr, resint = args.resolution.split("x"), []
     for i in range(len(rdef)):
         try:
-            rint.append(int(rstr[i]))
+            resint.append(int(rstr[i]))
         except:  # noqa: E722
-            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            rint.append(r)
+            r = rdef[i] if 1 != i else round(resint[0] * rdef[1] / rdef[0])
+            resint.append(r)
 
     nplots = len(plots)
-    if args.untied:  # auto-adjust y-resolution according to number of plots
-        nplots = sum(len(v) for v in plots.values())
-        if args.resolution == argd.resolution:  # resolution not user-supplied
-            rint[1] = divup(rint[1] * math.sqrt(nplots), rint[2]) * rint[2]
-
-    # setup figure
-    figres = (divup(rint[0], rint[2]), divup(rint[1], rint[2]))
-    subplots = plot.subplots(nplots, sharex=True, figsize=figres, dpi=rint[2])
-    figure, axes = subplots  # unpack
-    if 2 > nplots:  # ensure axes object is always a list
-        axes = [axes]
-    i = 0
-    for entry in plots:
-        for data in plots[entry]:
-            axes[i].step(data[0], ".:", where="mid", label=data[1])
-            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
-            axes[i].xaxis.set_ticks(
-                range(len(data[-1])), data[-1], rotation=45
+    if 0 < nplots:
+        nplots_untied = sum(len(v) for v in plots.values())
+        # auto-adjust y-resolution according to number of plots
+        if args.resolution == argd.resolution:  # resolution not user-defined
+            resint_untied = copy.deepcopy(resint)
+            resint_untied[1] = resint[2] * divup(
+                resint[1] * math.sqrt(nplots), resint[2]
             )
-            axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
-            axes[i].legend(loc="upper left")  # ncol=2
-            if args.untied:
-                i = i + 1
-        if not args.untied:
-            i = i + 1
+        else:  # alias
+            resint_untied = resint
 
-    if 0 < ngraphs:
-        axes[-1].set_xlabel("Build Number")
-        title = "Performance History"
-        figure.suptitle(
-            f"{title} ({addon.lower()})" if addon else title,
-            fontsize="x-large",
+        # setup primary figure
+        if args.untied:
+            nplots_primry, resint_primry = nplots_untied, resint_untied
+        else:
+            nplots_primry, resint_primry = nplots, resint
+        figure_primry = create_figure(
+            plots, nplots_primry, resint_primry, args.untied, addon
         )
-        figure.tight_layout(rect=[0, 0, 1, 0.98])  # fit suptitle
-        figure.gca().invert_xaxis()
 
         # supported file types and filename components
         figdet = (
@@ -873,27 +896,40 @@ def main(args, argd, dbfname):
             figqry = f"-{'_'.join(query)}{figcat}"
         else:
             figqry = figcat
-        figcanvas = figure.canvas
         figout = fname(
-            extlst=figcanvas.get_supported_filetypes().keys(),
+            extlst=figure_primry.canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
             idetail=figqry,
         )
-        # reduce file size (png) and save figure
-        if ".png" == figout.suffix.lower():
-            figcanvas.draw()  # otherwise the image is empty
-            imageraw = figcanvas.tostring_rgb()
-            image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
-            # avoid Palette.ADAPTIVE, consider back/foreground color
-            image = image.convert("P", colors=ngraphs + 2)
-            image.save(figout, "PNG", optimize=True)
-        else:
-            figure.savefig(figout)  # save graphics file
-        if 1 == abs(args.verbosity):
-            print(f"{figout} created.")
 
-        return exceeded
+        # setup untied figure
+        if 1 < len(figout) and not args.untied:
+            figure_untied = create_figure(
+                plots, nplots_untied, resint_untied, True, addon
+            )
+        else:  # alias
+            resint_untied = resint_primry
+            figure_untied = figure_primry
+
+        # save figure(s) for all requested formats
+        for i in range(len(figout)):
+            figure = figure_primry if 0 == i else figure_untied
+            figres = resint_primry if 0 == i else resint_untied
+            # reduce file size (png) and save figure
+            if ".png" == figout[i].suffix.lower():
+                figure.canvas.draw()  # otherwise the image is empty
+                imageraw = figure.canvas.tostring_rgb()
+                image = PIL.Image.frombytes("RGB", figres[0:2], imageraw)
+                # avoid Palette.ADAPTIVE, consider back/foreground color
+                image = image.convert("P", colors=ngraphs + 2)
+                image.save(figout[i], "PNG", optimize=True)
+            else:
+                figure.savefig(figout[i])  # save graphics file
+            if 1 == abs(args.verbosity) and 0 == i:  # notify only first
+                print(f"{figout[i]} created.")
+
+    return exceeded
 
 
 if __name__ == "__main__":
@@ -942,7 +978,7 @@ if __name__ == "__main__":
         "-d",
         "--resolution",
         type=str,
-        default="1600x900",
+        default="800x500",
         help="Graphics WxH[xDPI]",
     )
     argparser.add_argument(
@@ -1080,13 +1116,15 @@ if __name__ == "__main__":
         in_main=args.filepath,
         in_dflt=argd.filepath,
     )
-    if dbfname.name:
-        weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
+    if dbfname and dbfname[0].name:
+        weights = dbfname[0].with_name(
+            f"{dbfname[0].stem}.weights{dbfname[0].suffix}"
+        )
         argparser.set_defaults(weights=weights)
         args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
-    exceeded = main(args, argd, dbfname)
+    exceeded = main(args, argd, dbfname[0] if dbfname else None)
     if exceeded:
         if 2 <= abs(args.verbosity):
             print(

@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012,SC2153
+# shellcheck disable=SC2012,SC2153,SC2206
 
 # check if logfile is given
 if [ ! "${LOGFILE}" ]; then
@@ -208,20 +208,26 @@ if [ "${LOGDIR}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi
         if [ "${OUTPUT}" ]; then
+          FORMAT=(${LOGRPTFMT:${FIGURE##*.}})
           if [ "$(command -v mimetype)" ]; then
             MIMETYPE=$(mimetype -b "${FIGURE}")
-          elif [ "${LOGRPTFMT}" ]; then
-            if [ "svgz" = "${LOGRPTFMT}" ]; then
+          else
+            if [ "svgz" = "${FORMAT[0]}" ]; then
               MIMETYPE="image/svg+xml-compressed"
-            elif [ "svg" = "${LOGRPTFMT}" ]; then
+            elif [ "svg" = "${FORMAT[0]}" ]; then
               MIMETYPE="image/svg+xml"
             else  # fallback
-              MIMETYPE="image/${LOGRPTFMT}"
+              MIMETYPE="image/${FORMAT[0]}"
             fi
-          else  # fallback
-            MIMETYPE="image/${FIGURE##*.}"
           fi
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+          if [ "$(command -v buildkite-agent)" ]; then
+            PDFREPORT=${LOGDIR}/${PIPELINE}/${JOBID}/${FIGURE%."${FORMAT[0]}"}.pdf
+            if [ -e "${PDFREPORT}" ]; then
+              buildkite-agent artifact upload "${PDFREPORT}"
+              printf "\n\033]1339;url=\"artifact://%s\";content=\"PDF Report\"\a\n" "${PDFREPORT}"
+            fi
+          fi
           printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
             "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
           if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
