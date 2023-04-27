@@ -2109,7 +2109,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_bcsc && 0 != request->descriptor.pspgemm_bcsc->gemm);
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_bcsc->row_idx && 0 != request->descriptor.pspgemm_bcsc->column_ptr);
       /* only floating point */
-      if (LIBXSMM_DATATYPE_BF16 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_bcsc->gemm->datatype))
+      if (LIBXSMM_DATATYPE_BF16 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_bcsc->gemm->datatype) || LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_bcsc->gemm->datatype))
       {
         const unsigned int nnz = (request->descriptor.pspgemm_bcsc->gemm->lda == 0) ?
             request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->k] : request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->n/request->descriptor.pspgemm_bcsc->bn]*(request->descriptor.pspgemm_bcsc->bn*request->descriptor.pspgemm_bcsc->bk);
