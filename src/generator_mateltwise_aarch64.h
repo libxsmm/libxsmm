@@ -9,7 +9,6 @@
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_AARCH64_H
 #define GENERATOR_MATELTWISE_AARCH64_H
 

@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_generator.h>
 #include "libxsmm_main.h"
 #if !defined(_WIN32)
 # include <sys/file.h>

@@ -9,8 +9,8 @@
 ******************************************************************************/
 /* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_aarch64_instructions.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code,

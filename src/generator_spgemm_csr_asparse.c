@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include "generator_spgemm_csr_asparse.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_generated_code,

@@ -10,8 +10,8 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#if !defined(ELEM_TYPE)
-# define ELEM_TYPE float
+#if !defined(ELEMTYPE)
+# define ELEMTYPE float
 #endif
 #if !defined(ITRANS) && 1
 # define ITRANS
@@ -27,7 +27,7 @@
 #endif
 
 
-unsigned int validate(const ELEM_TYPE* a, const ELEM_TYPE* b, const ELEM_TYPE* c, libxsmm_blasint max_size_b,
+unsigned int validate(const ELEMTYPE* a, const ELEMTYPE* b, const ELEMTYPE* c, libxsmm_blasint max_size_b,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 int main(void)
@@ -48,11 +48,11 @@ int main(void)
 # if defined(PRINT)
   unsigned int njit = 0;
 # endif
-  /*const*/ int elemtype = LIBXSMM_DATATYPE(ELEM_TYPE);
+  /*const*/ int elemtype = LIBXSMM_DATATYPE(ELEMTYPE);
 #endif
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i;
-  ELEM_TYPE *a = NULL, *b = NULL, *c = NULL;
-  const size_t typesize = sizeof(ELEM_TYPE);
+  ELEMTYPE *a = NULL, *b = NULL, *c = NULL;
+  const size_t typesize = sizeof(ELEMTYPE);
   int* batchidx = NULL;
   int test, fun;
 
@@ -72,16 +72,16 @@ int main(void)
     max_size_a = LIBXSMM_MAX(max_size_a, size_a);
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_a);
-  b = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b * batchsize);
-  c = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b * batchsize);
+  a = (ELEMTYPE*)libxsmm_malloc(typesize * max_size_a);
+  b = (ELEMTYPE*)libxsmm_malloc(typesize * max_size_b * batchsize);
+  c = (ELEMTYPE*)libxsmm_malloc(typesize * max_size_b * batchsize);
   batchidx = (int*)libxsmm_malloc(sizeof(int) * batchsize);
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
 
   /* initialize data */
-  LIBXSMM_MATINIT(ELEM_TYPE, 42/*seed*/, a, max_size_a, 1, max_size_a, 1.0/*scale*/);
+  LIBXSMM_MATINIT(ELEMTYPE, 42/*seed*/, a, max_size_a, 1, max_size_a, 1.0/*scale*/);
   for (i = 0; i < batchsize; ++i) {
-    LIBXSMM_MATINIT(ELEM_TYPE, 24 + i/*seed*/, b + (size_t)i * max_size_b,
+    LIBXSMM_MATINIT(ELEMTYPE, 24 + i/*seed*/, b + (size_t)i * max_size_b,
       max_size_b, 1, max_size_b, 1.0/*scale*/);
     batchidx[i] = i * max_size_b;
   }
@@ -190,7 +190,7 @@ int main(void)
 }
 
 
-unsigned int validate(const ELEM_TYPE* a, const ELEM_TYPE* b, const ELEM_TYPE* c, libxsmm_blasint max_size_b,
+unsigned int validate(const ELEMTYPE* a, const ELEMTYPE* b, const ELEMTYPE* c, libxsmm_blasint max_size_b,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   unsigned int result = 0;

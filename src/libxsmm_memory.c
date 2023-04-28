@@ -8,11 +8,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_memory.h>
+#include <libxsmm.h>
+#include "libxsmm_main.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
-#include "libxsmm_main.h"
-
 #include <ctype.h>
 
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0
@@ -27,6 +26,40 @@
 LIBXSMM_APIVAR_DEFINE(unsigned char (*internal_diff_function)(const void*, const void*, unsigned char));
 LIBXSMM_APIVAR_DEFINE(int (*internal_memcmp_function)(const void*, const void*, size_t));
 #endif
+
+
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
+{
+  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
+  if (0 != result) {
+    return result;
+  }
+  else {
+    static int error_once = 0;
+    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
+    }
+    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
+  }
+}
+
+
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
+{
+  size_t result = 0, size1 = 0;
+  if (0 != ndims && NULL != shape) {
+    size_t i;
+    result = (NULL != offset ? offset[0] : 0);
+    size1 = shape[0];
+    for (i = 1; i < ndims; ++i) {
+      result += (NULL != offset ? offset[i] : 0) * size1;
+      size1 *= shape[i];
+    }
+  }
+  if (NULL != size) *size = size1;
+  return result;
+}
 
 
 LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
@@ -458,26 +491,32 @@ LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
 }
 
 
+LIBXSMM_API unsigned int libxsmm_hash32(unsigned long long data)
+{
+  return libxsmm_crc32_u32(data >> 32, &data) & 0xFFFFFFFF;
+}
+
+
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
 {
   unsigned long long result;
   const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
-    const size_t length2 = length / 2;
+    const size_t length2 = LIBXSMM_MAX(length / 2, sizeof(result));
     unsigned int hash32, seed32 = 0; /* seed=0: match else-optimization */
     LIBXSMM_INIT
     seed32 = libxsmm_crc32(seed32, string, length2);
     hash32 = libxsmm_crc32(seed32, string + length2, length - length2);
     result = hash32; result = (result << 32) | seed32;
   }
-  else { /* reinterpret directly as hash value */
-#if 1
-    result = (unsigned long long)string;
-#else
+  else if (sizeof(result) != length) {
     char *const s = (char*)&result; signed char i;
     for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
     for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
-#endif
+  }
+  else { /* reinterpret directly as hash value */
+    LIBXSMM_ASSERT(NULL != string);
+    result = *(unsigned long long*)string;
   }
   return result;
 }

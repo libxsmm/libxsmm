@@ -13,11 +13,11 @@
 #include "generator_mateltwise_misc_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC
 #endif
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_generated_code*                        io_generated_code,

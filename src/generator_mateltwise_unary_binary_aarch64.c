@@ -9,18 +9,17 @@
 ******************************************************************************/
 /* Deepti Aggarwal, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-
 #include "generator_aarch64_instructions.h"
 #include "generator_mateltwise_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
-#include "libxsmm_main.h"
 
 #define MN_LOOP_ORDER 0
 #define NM_LOOP_ORDER 1
 #define LOOP_TYPE_M 0
 #define LOOP_TYPE_N 1
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*                 io_generated_code,

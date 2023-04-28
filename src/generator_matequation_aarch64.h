@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evanelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATEQUATION_AARCH64_H
 #define GENERATOR_MATEQUATION_AARCH64_H
 

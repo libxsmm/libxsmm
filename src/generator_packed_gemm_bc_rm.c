@@ -8,10 +8,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_packed_gemm_bc_rm_avx_avx2_avx512.h"
 #include "generator_packed_gemm_bc_rm_aarch64.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_generated_code,
                                                       const libxsmm_gemm_descriptor*  i_xgemm_desc,

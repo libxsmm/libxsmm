@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include <libxsmm_cpuid.h>
 #include <libxsmm_generator.h>
-#include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 #include <ctype.h>
@@ -95,7 +94,7 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
   /* setup failed */
   if (0 != status || !(bitmask & (1<<18))) return -1;
 
-  /* setup successfull */
+  /* setup successful */
   return 0;
 }
 # else

@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Deepti Aggarwal, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_UNARY_BINARY_AARCH64_H
 #define GENERATOR_MATELTWISE_UNARY_BINARY_AARCH64_H
 

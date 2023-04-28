@@ -13,11 +13,11 @@
 #include "generator_mateltwise_misc_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_MISC_AARCH64_JUMP_LABEL_TRACKER_MALLOC
 #endif
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generated_code*                        io_generated_code,

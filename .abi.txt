@@ -165,6 +165,7 @@ libxsmm_get_typename
 libxsmm_get_verbosity
 libxsmm_hash
 libxsmm_hash16
+libxsmm_hash32
 libxsmm_hash8
 libxsmm_hash_char
 libxsmm_hash_i32

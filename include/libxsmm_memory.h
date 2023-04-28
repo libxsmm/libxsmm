@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_MEMORY_H
 #define LIBXSMM_MEMORY_H
 
-#include "libxsmm_macros.h"
+#include <libxsmm_typedefs.h>
 
 #define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, RHS, NTS) do { \
   const signed char libxsmm_memory127_loop_size_ = LIBXSMM_CAST_ICHAR(SIZE); \
@@ -50,6 +50,15 @@
   LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS)
 
 
+/** Returns the type-size of data-type (can be also libxsmm_datatype). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/**
+ * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),
+ * and the (optional) linear size of the corresponding shape.
+ */
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size);
+
 /**
  * Check if pointer is SIMD-aligned and optionally consider the next access (increment in Bytes).
  * Optionally calculates the alignment of the given pointer in Bytes.
@@ -78,6 +87,7 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
 LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data);
 LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data);
+LIBXSMM_API unsigned int libxsmm_hash32(unsigned long long data);
 
 /** Calculate a 64-bit hash for the given character string; accepts NULL-string. */
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[]);

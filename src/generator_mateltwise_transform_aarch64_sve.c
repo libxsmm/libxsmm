@@ -8,14 +8,13 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_mateltwise_transform_aarch64_sve.h"
 #include "generator_common_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_aarch64.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel_block( libxsmm_generated_code*                 io_generated_code,

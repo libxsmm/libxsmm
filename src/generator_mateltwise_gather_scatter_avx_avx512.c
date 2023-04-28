@@ -8,21 +8,19 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_common_x86.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_gather_scatter_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC
 #endif
-
 #if 0
 #define USE_ENV_TUNING
 #endif
+
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_unified_vec_move_ext( libxsmm_generated_code* io_generated_code,

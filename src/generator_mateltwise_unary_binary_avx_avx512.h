@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_UNARY_BINARY_AVX_AVX512_H
 #define GENERATOR_MATELTWISE_UNARY_BINARY_AVX_AVX512_H
 

@@ -49,7 +49,7 @@
  */
 #include "generator_spgemm_csc_bsparse.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_generated_code,

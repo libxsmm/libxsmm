@@ -11,7 +11,6 @@
 ******************************************************************************/
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
-#include "libxsmm_main.h"
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511
@@ -172,7 +171,10 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
       libxsmm_strncpy(o_gp_reg_name, "r15", i_gp_reg_name_max_length, 3 );
       break;
     default:
-      LIBXSMM_ASSERT_MSG(0, "GP register number");
+#if !defined(_WIN32) /* TODO: Windows calling convention */
+      LIBXSMM_ASSERT_MSG(0, "GP register number")
+#endif
+      ;
   }
 }
 

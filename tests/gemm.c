@@ -8,14 +8,11 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm.h>
 
-#if !defined(ITYPE)
-# define ITYPE double
-#endif
-#if !defined(OTYPE)
-# define OTYPE ITYPE
+#if !defined(REALTYPE)
+# define REALTYPE double
 #endif
 #if !defined(CHECK_FPE)
 # define CHECK_FPE
@@ -24,17 +21,17 @@
 # define GEMM_GOLD LIBXSMM_GEMM_SYMBOL
 #endif
 #if !defined(GEMM)
-# define GEMM LIBXSMM_XGEMM_SYMBOL
+# define GEMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #endif
 #if !defined(SMM)
-# define SMM LIBXSMM_XGEMM_SYMBOL
+# define SMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #endif
 #if !defined(GEMM_NO_BYPASS)
 # define SMM_NO_BYPASS(FLAGS, ALPHA, BETA) LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)
 #endif
-#if (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double)) \
+#if (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double)) \
   && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
+LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
 #endif
 
 
@@ -48,8 +45,8 @@ int main(void)
   libxsmm_blasint lda[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 4, 8,   64,  64,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9, 13, 5 };
   libxsmm_blasint ldb[] = { 1, 1, 1, 1, 1, 2, 2, 3, 2, 2, 4, 8, 9216, 240,    16,  1,  3,  5,  5,    16,   1,   3,   5,   7,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742, 13, 5 };
   libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 4, 8, 4096, 240,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9, 13, 5 };
-  OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 1 };
-  OTYPE beta[]          = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  1, 1 };
+  REALTYPE alpha[]      = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 1 };
+  REALTYPE beta[]       = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  1, 1 };
 #if defined(LIBXSMM_PLATFORM_X86) && (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   char transa[] = "NNNTT";
 #else
@@ -68,13 +65,13 @@ int main(void)
 #if defined(_DEBUG)
   libxsmm_matdiff_info diff;
 #endif
-  ITYPE *a = NULL, *b = NULL;
-  OTYPE *c = NULL;
+  REALTYPE *a = NULL, *b = NULL;
+  REALTYPE *c = NULL;
 #if defined(GEMM)
-  OTYPE *d = NULL;
+  REALTYPE *d = NULL;
 #endif
 #if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-  OTYPE *gold = NULL;
+  REALTYPE *gold = NULL;
 #endif
   int result = EXIT_SUCCESS, test, i;
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
@@ -99,20 +96,20 @@ int main(void)
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
     max_size_c = LIBXSMM_MAX(max_size_c, size_c);
   }
-  a = (ITYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ITYPE)));
-  b = (ITYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ITYPE)));
-  c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
+  a = (REALTYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(REALTYPE)));
+  b = (REALTYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(REALTYPE)));
+  c = (REALTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REALTYPE)));
 #if defined(GEMM)
-  d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
+  d = (REALTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REALTYPE)));
   LIBXSMM_ASSERT(NULL != d);
 #endif
 #if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-  gold = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
+  gold = (REALTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REALTYPE)));
   LIBXSMM_ASSERT(NULL != gold);
 #endif
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
-  LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
-  LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT(REALTYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT(REALTYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(_DEBUG)
   libxsmm_matdiff_clear(&diff);
 #endif
@@ -139,42 +136,46 @@ int main(void)
       }
       if (LIBXSMM_FEQ(0, beta[test])) {
 #if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-        memset(gold, -1, (size_t)(sizeof(OTYPE) * max_size_c));
+        memset(gold, -1, (size_t)(sizeof(REALTYPE) * max_size_c));
 #endif
-        memset(c, -1, (size_t)(sizeof(OTYPE) * max_size_c));
+        memset(c, -1, (size_t)(sizeof(REALTYPE) * max_size_c));
 #if defined(GEMM)
-        memset(d, -1, (size_t)(sizeof(OTYPE) * max_size_c));
+        memset(d, -1, (size_t)(sizeof(REALTYPE) * max_size_c));
 #endif
       }
       else {
 #if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-        memset(gold, 0, (size_t)(sizeof(OTYPE) * max_size_c));
+        memset(gold, 0, (size_t)(sizeof(REALTYPE) * max_size_c));
 #endif
-        memset(c, 0, (size_t)(sizeof(OTYPE) * max_size_c));
+        memset(c, 0, (size_t)(sizeof(REALTYPE) * max_size_c));
 #if defined(GEMM)
-        memset(d, 0, (size_t)(sizeof(OTYPE) * max_size_c));
+        memset(d, 0, (size_t)(sizeof(REALTYPE) * max_size_c));
 #endif
       }
       if (0 != smm) {
-        SMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+        SMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       }
 #if defined(GEMM)
       else {
-        GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+        GEMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       }
-      GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+      GEMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
         alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 #endif
 #if (0 != LIBXSMM_JIT)
       if (0 != smm) { /* dispatch kernel and check that it is available */
-        const LIBXSMM_MMFUNCTION_TYPE(ITYPE) kernel = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(mi, ni, ki,
-          lda + test, ldb + test, ldc + test, &flags);
-        if (NULL == kernel) {
+        libxsmm_xmmfunction kernel = { NULL };
+        const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+          mi, ni, ki, lda[test], ldb[test], ldc[test],
+          LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
+          LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
+        kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, LIBXSMM_PREFETCH_NONE);
+        if (NULL == kernel.ptr_const) {
 # if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
-          libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+          libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
             alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
           fprintf(stderr, "\n");
 # endif
@@ -204,10 +205,10 @@ int main(void)
       {
 # if defined(GEMM_GOLD)
         libxsmm_matdiff_info diff_test;
-        GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+        GEMM_GOLD(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, gold, ldc + test);
 
-        result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, c, ldc + test, ldc + test);
+        result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result) {
 #   if defined(_DEBUG)
           libxsmm_matdiff_reduce(&diff, &diff_test);
@@ -220,7 +221,7 @@ int main(void)
             else {
               fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
             }
-            libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+            libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
               alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
             fprintf(stderr, "\n");
 #   endif
@@ -228,7 +229,7 @@ int main(void)
           }
 #   if defined(GEMM)
           else {
-            result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, d, ldc + test, ldc + test);
+            result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, d, ldc + test, ldc + test);
             if (EXIT_SUCCESS == result) {
 #     if defined(_DEBUG)
               libxsmm_matdiff_reduce(&diff, &diff_test);
@@ -236,7 +237,7 @@ int main(void)
               if (1.0 < (1000.0 * diff_test.normf_rel)) {
 #     if defined(_DEBUG)
                 fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
-                libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+                libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
                   alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
                 fprintf(stderr, "\n");
 #     endif
@@ -250,9 +251,9 @@ int main(void)
       }
 # if defined(GEMM_GOLD)
       /* avoid drift between Gold and test-results */
-      memcpy(c, gold, (size_t)(sizeof(OTYPE) * max_size_c));
+      memcpy(c, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
 #   if defined(GEMM)
-      memcpy(d, gold, (size_t)(sizeof(OTYPE) * max_size_c));
+      memcpy(d, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
 #   endif
 # endif
 #elif defined(_DEBUG)

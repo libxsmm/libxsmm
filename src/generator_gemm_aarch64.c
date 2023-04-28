@@ -9,7 +9,6 @@
 ******************************************************************************/
 /* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_gemm_common_aarch64.h"
@@ -17,7 +16,7 @@
 #include "generator_mateltwise_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generated_code*            io_generated_code,
@@ -1322,7 +1321,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       /* A prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 56, l_gp_reg_mapping.gp_reg_a_prefetch );
-      /* B preftech pointer */
+      /* B prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 88, l_gp_reg_mapping.gp_reg_b_prefetch );
     }

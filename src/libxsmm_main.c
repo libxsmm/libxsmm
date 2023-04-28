@@ -8,12 +8,12 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include "libxsmm_main.h"
 #include "libxsmm_trace.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
-#include "libxsmm_main.h"
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
 #endif
@@ -601,7 +601,8 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 
 
 /* Caution: cannot be used multiple times in a single expression! */
-LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
+LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
+  int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
 {
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
   const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
@@ -1476,12 +1477,6 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_sink(const void* arg, ...)
-{ /* does nothing else but sinking given arguments */
-  LIBXSMM_UNUSED(arg);
-}
-
-
 LIBXSMM_API int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT
@@ -1740,23 +1735,6 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
   if (0 == internal_gemm_auto_prefetch_locked) { /* LIBXSMM_GEMM_PREFETCH environment takes precedence */
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch_default, strategy, LIBXSMM_ATOMIC_RELAXED);
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
-  }
-}
-
-
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
-{
-  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
-  if (0 != result) {
-    return result;
-  }
-  else {
-    static int error_once = 0;
-    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
-    }
-    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
   }
 }
 
@@ -3067,14 +3045,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
       wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
     }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
-#if defined(_DEBUG)
-    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && NULL != result.xmm) {
-      LIBXSMM_STDIO_ACQUIRE();
-      fprintf(stderr, "\nLIBXSMM: ");
-      libxsmm_gemm_xprint(stderr, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
-      LIBXSMM_STDIO_RELEASE();
-    }
-#endif
   }
 #if !defined(NDEBUG)
   else { /* quietly accept NULL-descriptor */
