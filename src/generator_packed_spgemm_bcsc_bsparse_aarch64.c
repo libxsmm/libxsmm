@@ -479,6 +479,23 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
         l_col_reg_block[1][1] = l_max_cols % l_max_n_blocking;
       }
     }
+
+    /* mask for M remainder  */
+    if ( l_simd_packed_remainder != 0 ) {
+      int m_nnz_bits = l_simd_packed_remainder * 4;
+      if (m_nnz_bits > 0) {
+        libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                      LIBXSMM_AARCH64_SVE_REG_P4,
+                                                      m_nnz_bits,
+                                                      l_gp_reg_mapping.gp_reg_help_0 );
+      }
+      m_nnz_bits = l_simd_packed_remainder * 4;
+      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                    LIBXSMM_AARCH64_SVE_REG_P5,
+                                                    m_nnz_bits,
+                                                    l_gp_reg_mapping.gp_reg_help_0 );
+
+    }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
