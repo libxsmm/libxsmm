@@ -403,7 +403,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_bitfield unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
   unsigned long long strides[2];
