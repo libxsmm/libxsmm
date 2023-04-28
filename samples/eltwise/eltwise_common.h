@@ -266,7 +266,7 @@ double getBenchmarkDuration(void) {
 LIBXSMM_INLINE
 void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
                       libxsmm_meltw_unary_shape unary_shape,
-                      libxsmm_meltw_unary_flags unary_flags,
+                      libxsmm_bitfield          unary_flags,
                       libxsmm_meltw_unary_param unary_param ) {
 
   libxsmm_meltwfunction_unary unary_kernel;
@@ -322,7 +322,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
 LIBXSMM_INLINE
 void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
                        libxsmm_meltw_binary_shape binary_shape,
-                       libxsmm_meltw_binary_flags binary_flags,
+                       libxsmm_bitfield           binary_flags,
                        libxsmm_meltw_binary_param binary_param ) {
 
   libxsmm_meltwfunction_binary binary_kernel;

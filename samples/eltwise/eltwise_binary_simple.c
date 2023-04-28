@@ -168,7 +168,7 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
 LIBXSMM_INLINE
 void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi0, const libxsmm_blasint ldi1, const libxsmm_blasint ldo,
                     const void *in0, const void *in1, char *out, const unsigned int op,
-                    const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_binary_flags flags, void *rng_state) {
+                    const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_bitfield flags, void *rng_state) {
   libxsmm_blasint i,j;
   LIBXSMM_UNUSED(ldi1);
 
