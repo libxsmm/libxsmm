@@ -70,7 +70,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
           if [ "$PREC_OUT" == 'bf8' ] ; then
             PREC_IN=$(echo "$PRECLC" |  awk -F"_" '{print $1}')
             PREC_COMP=$(echo "$PRECLC" |  awk -F"_" '{print $3}')
-            PREC_OUT=${PREC_OUT}_${ROUND}
+            PREC_OUT=${PREC_OUT}${ROUND}
             RMODE=1
             PRECLC=${PREC_IN}_${PREC_OUT}_${PREC_COMP}
           else
