@@ -1798,7 +1798,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   }
 
   if (l_hardwire_sparsity_pattern == 0) {
-    unsigned int l_fma_iters = 1;
+    unsigned int l_fma_iters = i_bk/l_vnni_block_size;
     unsigned int l_fma_i = 0;
     unsigned int l_a_adjustments = 0;
     unsigned int l_b_adjustments = 0;
@@ -1849,7 +1849,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                        l_tmp_a_gp_reg,
                                                        l_gp_reg_scratch,
                                                        l_tmp_a_gp_reg,
-                                                       (long long)(i_packed_width - l_a_adjustments * i_simd_packed_width * l_vnni_block_size ) * i_micro_kernel_config->datatype_size_in );
+                                                       (long long)(i_packed_width * l_vnni_block_size - l_a_adjustments * i_simd_packed_width * l_vnni_block_size ) * i_micro_kernel_config->datatype_size_in );
       }
 
       /* loop over the columns of B/C */
@@ -1895,20 +1895,20 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
         }
       }
       if (l_fma_iters > 1) {
-        if ( ((long long)2 * i_bk * l_b_adjustments - 1) > 0 ) {
+        if ( ((long long)2 * i_bk * l_b_adjustments - l_vnni_block_size) > 0 ) {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                        LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                        i_gp_reg_mapping->gp_reg_help_1,
                                                        l_gp_reg_scratch,
                                                        i_gp_reg_mapping->gp_reg_help_1,
-                                                       (2 * i_bk * l_b_adjustments - 1) * i_micro_kernel_config->datatype_size_in );
+                                                       (2 * i_bk * l_b_adjustments - l_vnni_block_size) * i_micro_kernel_config->datatype_size_in );
         } else {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                        LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_mapping->gp_reg_help_1,
                                                        l_gp_reg_scratch,
                                                        i_gp_reg_mapping->gp_reg_help_1,
-                                                       i_micro_kernel_config->datatype_size_in );
+                                                       l_vnni_block_size * i_micro_kernel_config->datatype_size_in );
         }
       }
     }
