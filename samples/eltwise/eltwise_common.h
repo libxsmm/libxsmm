@@ -181,6 +181,29 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+#if 0
+    libxsmm_blasint i, j;
+    float* f_data_gold = (float*)data_gold;
+    float* f_data = (float*)data;
+    for ( j = 0; j < n; ++j ) {
+      for ( i = 0; i < m; ++i ) {
+        libxsmm_float_uint tmp0;
+        libxsmm_float_uint tmp1;
+        tmp0.f = f_data_gold[i + j*ld];
+        tmp1.f = f_data[i + j*ld];
+        if ( tmp0.u == tmp1.u) {
+#if 1
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+#else
+          printf("[-------- --------] ");
+#endif
+        } else {
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+        }
+      }
+      printf("\n");
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
     float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
@@ -199,10 +222,33 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     free( f_data );
     free( f_data_gold );
   } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
+#if 0
+    libxsmm_blasint i, j;
+#endif
     float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
     float* f_data      = (float*) malloc( sizeof(float)*n*ld );
     libxsmm_convert_bf8_f32( data_gold, f_data_gold, n*ld );
     libxsmm_convert_bf8_f32( data,      f_data,      n*ld );
+#if 0
+    for ( j = 0; j < n; ++j ) {
+      for ( i = 0; i < m; ++i ) {
+        libxsmm_float_uint tmp0;
+        libxsmm_float_uint tmp1;
+        tmp0.f = f_data_gold[i + j*ld];
+        tmp1.f = f_data[i + j*ld];
+        if ( tmp0.u == tmp1.u) {
+#if 1
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+#else
+          printf("[-------- --------] ");
+#endif
+        } else {
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+        }
+      }
+      printf("\n");
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
     free( f_data );
     free( f_data_gold );
