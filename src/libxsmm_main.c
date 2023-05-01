@@ -2107,12 +2107,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     } break;
     case LIBXSMM_BUILD_KIND_PSPGEMM_BCSC: { /* packed sparse gemm kernel, BCSC format */
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_bcsc && 0 != request->descriptor.pspgemm_bcsc->gemm);
+#if 0
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_bcsc->row_idx && 0 != request->descriptor.pspgemm_bcsc->column_ptr);
+#endif
       /* only floating point */
       if (LIBXSMM_DATATYPE_BF16 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_bcsc->gemm->datatype) || LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_bcsc->gemm->datatype))
       {
         const unsigned int nnz = (request->descriptor.pspgemm_bcsc->gemm->lda == 0) ?
-            request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->k] : request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->n/request->descriptor.pspgemm_bcsc->bn]*(request->descriptor.pspgemm_bcsc->bn*request->descriptor.pspgemm_bcsc->bk);
+            request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->k] : (( request->descriptor.pspgemm_bcsc->gemm->ldb == -1 ) ? 0 : request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->n/request->descriptor.pspgemm_bcsc->bn]*(request->descriptor.pspgemm_bcsc->bn*request->descriptor.pspgemm_bcsc->bk));
         const unsigned int gemm_factor = (request->descriptor.pspgemm_bcsc->gemm->lda == 0) ? request->descriptor.pspgemm_bcsc->gemm->n : request->descriptor.pspgemm_bcsc->gemm->m;
         extra.nflops = 2 * nnz * gemm_factor * request->descriptor.pspgemm_bcsc->packed_width;
         libxsmm_generator_packed_spgemm_bcsc_kernel(&generated_code, request->descriptor.pspgemm_bcsc->gemm,
@@ -2148,8 +2150,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_bk%u_bn%u_a%i_b%i_p%i_nnz%u_tc-%s_%s.pspgemm_bcsc", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
-            request->descriptor.pspgemm_bcsc->gemm->m,   request->descriptor.pspgemm_bcsc->gemm->n,   request->descriptor.pspgemm_bcsc->gemm->k,
-            request->descriptor.pspgemm_bcsc->gemm->lda, request->descriptor.pspgemm_bcsc->gemm->ldb, request->descriptor.pspgemm_bcsc->gemm->ldc,
+            request->descriptor.pspgemm_bcsc->gemm->m,  ( request->descriptor.pspgemm_bcsc->gemm->ldb == -1 ) ? 0 : request->descriptor.pspgemm_bcsc->gemm->n,   request->descriptor.pspgemm_bcsc->gemm->k,
+            request->descriptor.pspgemm_bcsc->gemm->lda,( request->descriptor.pspgemm_bcsc->gemm->ldb == -1 ) ? 0 : request->descriptor.pspgemm_bcsc->gemm->ldb, request->descriptor.pspgemm_bcsc->gemm->ldc,
             request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn,
             1, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.pspgemm_bcsc->gemm->flags) ? 0 : 1,
             uid, nnz, tc_option, hw_sparsity);
@@ -3606,9 +3608,11 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
+#if 0
   if ( (NULL == column_ptr) || (NULL == row_idx) ) {
     return NULL;
   }
+#endif
 
   /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;

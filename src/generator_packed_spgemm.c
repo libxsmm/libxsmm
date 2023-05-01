@@ -109,7 +109,7 @@ void libxsmm_generator_packed_spgemm_bcsc_kernel( libxsmm_generated_code*       
                                                   const unsigned int             i_bk,
                                                   const unsigned int             i_bn ) {
   /* B matrix is sparse */
-  if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
+  if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
     if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
