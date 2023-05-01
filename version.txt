@@ -1,1 +1,1 @@
-feature_sparse_weight_bcsc_mmla_param_bn_rt_bcsc_cflat_option_bn1_support_fp32_support-1.17-3587
+feature_sparse_weight_bcsc_mmla_param_bn_rt_bcsc_cflat_option_bn1_support_fp32_support-1.17-3588
