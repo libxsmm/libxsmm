@@ -209,6 +209,7 @@ if [ "${LOGDIR}" ]; then
         then OUTPUT=""; fi
         if [ "${OUTPUT}" ]; then
           FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
+          REPORT=${LOGDIR}/${PIPELINE}/${JOBID}/${FIGURE%."${FORMAT[0]}"}.pdf
           if [ "$(command -v mimetype)" ]; then
             MIMETYPE=$(mimetype -b "${FIGURE}")
           else
@@ -221,12 +222,8 @@ if [ "${LOGDIR}" ]; then
             fi
           fi
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-          if [ "$(command -v buildkite-agent)" ]; then
-            PDFREPORT=${LOGDIR}/${PIPELINE}/${JOBID}/${FIGURE%."${FORMAT[0]}"}.pdf
-            if [ -e "${PDFREPORT}" ]; then
-              buildkite-agent artifact upload "${PDFREPORT}"
-              printf "\n\033]1339;url=\"artifact://%s\";content=\"PDF Report\"\a\n" "${PDFREPORT}"
-            fi
+          if [ -e "${REPORT}" ]; then  # print after summary
+            printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
           fi
           printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
             "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
