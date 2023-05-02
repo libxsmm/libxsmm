@@ -333,9 +333,15 @@ def bold(s, cond=True):
 
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
-    guess, rd, cv, eqn = trend(values)
-    label = f"{num2fix(values[0], accuracy)} {unit}"
-    bad = False
+    label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
+    guess, rd, cv, eqn = trend(values)  # unpack
+    blist = base.split()
+    if 1 < len(blist):  # category and detail
+        dlist = blist[1].split("_")
+        for c in blist[0].split("_"):
+            while c in dlist:  # no redundancy
+                dlist.remove(c)
+        base = f"{blist[0]} {'_'.join(dlist)}"
     if rd:
         inum = num2fix(100 * rd)
         if cv and bounds and 0 != bounds[0]:
@@ -393,7 +399,7 @@ def create_figure(plots, nplots, resint, untied, addon):
                 range(len(data[-1])), data[-1], rotation=45
             )
             axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
-            axes[i].legend(loc="upper left")  # ncol=2
+            axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
             if untied:
                 i = i + 1
         if not untied:
@@ -867,7 +873,7 @@ def main(args, argd, dbfname):
         if args.resolution == argd.resolution:  # resolution not user-defined
             resint_untied = copy.deepcopy(resint)
             resint_untied[1] = resint[2] * divup(
-                resint[1] * math.sqrt(nplots), resint[2]
+                resint[1] * math.sqrt(nplots_untied), resint[2]
             )
         else:  # alias
             resint_untied = resint
@@ -978,7 +984,7 @@ if __name__ == "__main__":
         "-d",
         "--resolution",
         type=str,
-        default="800x500",
+        default="1600x900",
         help="Graphics WxH[xDPI]",
     )
     argparser.add_argument(
