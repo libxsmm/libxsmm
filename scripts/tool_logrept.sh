@@ -208,7 +208,7 @@ if [ "${LOGDIR}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi
         if [ "${OUTPUT}" ]; then
-          FORMAT=(${LOGRPTFMT:${FIGURE##*.}})
+          FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
           if [ "$(command -v mimetype)" ]; then
             MIMETYPE=$(mimetype -b "${FIGURE}")
           else
