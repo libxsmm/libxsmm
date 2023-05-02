@@ -245,7 +245,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
 
     if (l_bf16_mmla_kernel == 0) {
       l_max_n_blocking = 6;
-      l_max_m_blocking = 2;
+      l_max_m_blocking = 4;
       if (i_bn <= 2) {
         l_max_n_blocking = 6;
       } else if (i_bn <= 4) {
@@ -428,7 +428,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     unsigned int l_max_n_blocking = 6;
     unsigned int l_max_m_blocking = 4;
     l_max_n_blocking = 6;
-    l_max_m_blocking = 2;
+    l_max_m_blocking = 4;
     if (i_bn <= 2) {
       l_max_n_blocking = 6;
     } else if (i_bn <= 4) {
