@@ -194,7 +194,7 @@ def fname(extlst, in_main, in_dflt, idetail=""):
     path, result = pathlib.Path(inplst[0] if inplst else in_main), []
     if path.is_dir():
         if 2 >= len(inplst):
-            figext = [f".{inplst[1]}" if 1 < len(inplst) else dflt.suffix]
+            figext = [inplst[1] if 1 < len(inplst) else dflt.suffix]
         else:
             figext = inplst[1:]
         result = [path / f"{dflt.stem}{idetail}.{ext}" for ext in figext]
