@@ -88,9 +88,7 @@ then
   PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
-  if [ ! "${PIPELINE}" ] && \
-     [ "$(pwd -P)" = "$(cd "$(dirname "${LOGDIR}")" && pwd -P)" ];
-  then
+  if [ ! "${PIPELINE}" ]; then
     PIPELINE="debug"
   fi
   if [ "${PIPELINE}" ]; then
@@ -209,7 +207,7 @@ if [ "${LOGDIR}" ]; then
         then OUTPUT=""; fi
         if [ "${OUTPUT}" ]; then
           FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
-          REPORT=${LOGDIR}/${PIPELINE}/${JOBID}/${FIGURE%."${FORMAT[0]}"}.pdf
+          REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
           if [ "$(command -v mimetype)" ]; then
             MIMETYPE=$(mimetype -b "${FIGURE}")
           else
