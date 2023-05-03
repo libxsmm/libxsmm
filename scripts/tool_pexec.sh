@@ -29,6 +29,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   BL_DEFAULT=1
   QT_DEFAULT=0
   SP_DEFAULT=2
+  MT_DEFAULT=1
   CONSUMED=0
   # ensure proper permissions
   if [ "${UMASK}" ]; then
@@ -76,7 +77,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
       echo
       echo "Example: seq 100 | xargs -I{} echo \"echo \\\"{}\\\"\" \\"
-      echo "                 | tool_pexec.sh"
+      echo "                 | $0"
       echo
       exit 0;;
     -x|--xfail)
@@ -148,6 +149,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     esac
   done
   NIFIX=0
+  TOTAL=0
   COUNTER=0
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   XFAIL=${PEXEC_XF:-${XFAIL}}; if [ ! "${XFAIL}" ]; then XFAIL=${XF_DEFAULT}; fi
@@ -155,8 +157,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
   NI=${PEXEC_NI:-${NI}}; if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS:-1}; else NIFIX=1; fi
   NP=${PEXEC_NP:-${NP}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
-  CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}
-  MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
+  CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}; MIN=${PEXEC_MT:-${MIN}};
+  if [ ! "${MIN}" ]; then MIN=${MT_DEFAULT}; else MIN=$((1<MIN?MIN:1)); MT_DEFAULT=0; fi
   BUILD=${PEXEC_UP:-${BUILD}}; if [ "-" = "${BUILD:0:1}" ]; then BUILD=${FNAME}; fi
   ALLOW=${PEXEC_WL:-${ALLOW}}; if [ "${BUILD}" ]; then unset ALLOW; fi
   MAKE_PRETTY_FUNCTION="_PEXEC_MAKE_PRETTY() { \
@@ -192,14 +194,35 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
         elif [ "0" != "$((COUNTER<MIN))" ]; then
           ATLEAST="${ATLEAST}"$'\n'"${LINE}"
         fi
+        TOTAL=$((TOTAL+1))
       fi
     fi
   done
+  if [ "0" != "${MT_DEFAULT}" ]; then
+    if [ "${NTH}" ] && [ "0" != "$((1<NTH))" ]; then
+      TOTAL=$(((TOTAL+NTH-1)/NTH))
+    else
+      TOTAL=${COUNTER}
+    fi
+  else
+    TOTAL=${MIN}
+  fi
   IFS=$'\n' && for LINE in ${ATLEAST}; do
-    if [ "0" != "$((MIN<=COUNTER))" ]; then break; fi
+    if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
     COUNTED="${COUNTED}"$'\n'"${LINE}"
     COUNTER=$((COUNTER+1))
   done
+  if [ "${COUNTER}" != "${TOTAL}" ]; then
+    ATLEAST=${COUNTED}
+    COUNTED=""
+    COUNTER=0
+    IFS=$'\n' && for LINE in ${ATLEAST}; do
+      if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
+      COUNTED="${COUNTED}"$'\n'"${LINE}"
+      COUNTER=$((COUNTER+1))
+    done
+  fi
+  unset ATLEAST
   if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
