@@ -9,13 +9,19 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
+# shellcheck disable=SC2023
 #set -eo pipefail
 
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
+DATE=$(command -v date)
 SED=$(command -v sed)
 CAT=$(command -v cat)
 CUT=$(command -v cut)
+
+if [ "${DATE}" ]; then
+  NSECS=$(date +%s)
+fi
 
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
 if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
@@ -24,13 +30,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   INFO=${HERE}/tool_cpuinfo.sh
   PYTHON=$(command -v python3)
   FLOCK=${HERE}/../.flock.sh
-  LG_DEFAULT="./${NAME}.log"
-  XF_DEFAULT=1
-  BL_DEFAULT=1
-  QT_DEFAULT=0
-  SP_DEFAULT=2
-  MT_DEFAULT=1
-  CONSUMED=0
+  LG_DEFAULT="${NAME}.log"
+  XF_DEFAULT=1; BL_DEFAULT=1; QT_DEFAULT=0
+  SP_DEFAULT=2; MT_DEFAULT=1; CONSUMED=0
   # ensure proper permissions
   if [ "${UMASK}" ]; then
     UMASK_CMD="umask ${UMASK};"
@@ -148,9 +150,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       shift 1;;
     esac
   done
-  NIFIX=0
-  TOTAL=0
-  COUNTER=0
+  NIFIX=0; TOTAL=0; COUNTER=0; PEXEC_IL=0
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   XFAIL=${PEXEC_XF:-${XFAIL}}; if [ ! "${XFAIL}" ]; then XFAIL=${XF_DEFAULT}; fi
   SHAKY=${PEXEC_BL:-${SHAKY}}; if [ ! "${SHAKY}" ]; then SHAKY=${BL_DEFAULT}; fi
@@ -178,19 +178,20 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     done; \
     echo \"\${CMD}\${PRE}\${ARGS}\" \
     | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
-    | if [ \"${CT}\" ]; then ${CUT} -d_ -f\"${CT}\"; else ${CAT}; fi; \
+    $(if [ "${CT}" ]; then echo "| ${CUT} -d_ -f${CT}"; fi); \
   }"
   if [ "${ALLOW}" ] && [ ! -e "${ALLOW}" ]; then
     1>&2 echo "ERROR: \"${ALLOW}\" file not found!"
     exit 1
   fi
   while read -r LINE; do
-    if [ ! "$(echo "${LINE}" | ${SED} -n '/^[[:space:]]*#/p')" ]; then # ignore comments
-      PRETTY=$(eval "${MAKE_PRETTY_FUNCTION}; echo \"\$(_PEXEC_MAKE_PRETTY ${LINE})\"")
-      if [ ! "${ALLOW}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -En "/^${PRETTY}([[:space:]]|$)/p" "${ALLOW}")" ]; then
+    if [[ ! ${LINE} =~ ^[[:space:]]*# ]]; then # ignore comments
+      if [ ! "${ALLOW}" ] || [ "0" != "$((1>=NTH))" ]; then PRETTY="";
+      else PRETTY=$(eval "${MAKE_PRETTY_FUNCTION}; echo \"\$(_PEXEC_MAKE_PRETTY ${LINE})\""); fi
+      if [ ! "${PRETTY}" ] || [ ! "$(${SED} -En "/^${PRETTY}([[:space:]]|$)/p" "${ALLOW}")" ]; then
         if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
+          if [ "${COUNTED}" ]; then COUNTED="${COUNTED}"$'\n'"${LINE}"; else COUNTED=${LINE}; fi
           COUNTER=$((COUNTER+1))
-          COUNTED="${COUNTED}"$'\n'"${LINE}"
         elif [ "0" != "$((COUNTER<MIN))" ]; then
           ATLEAST="${ATLEAST}"$'\n'"${LINE}"
         fi
@@ -212,16 +213,20 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     COUNTED="${COUNTED}"$'\n'"${LINE}"
     COUNTER=$((COUNTER+1))
   done
-  if [ "${COUNTER}" != "${TOTAL}" ]; then
-    ATLEAST=${COUNTED}
-    COUNTED=""
-    COUNTER=0
+  PEXEC_SCRARG="\$0"
+  if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
+    if [ "0" = "${PEXEC_IL}" ]; then
+      PEXEC_SCRIPT=$(mktemp)
+      PEXEC_SCRARG="\$*"
+    fi
+    ATLEAST=${COUNTED}; COUNTED=""; COUNTER=0
     IFS=$'\n' && for LINE in ${ATLEAST}; do
       if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
-      COUNTED="${COUNTED}"$'\n'"${LINE}"
+      if [ "${COUNTED}" ]; then COUNTED="${COUNTED}"$'\n'"${LINE}"; else COUNTED=${LINE}; fi
       COUNTER=$((COUNTER+1))
     done
   fi
+  trap 'rm -f ${NAME}.txt ${PEXEC_SCRIPT}' EXIT
   unset ATLEAST
   if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
@@ -290,9 +295,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   else
     LOG_OUTER=${LOG}
   fi
-  PEXEC_SCRIPT="set -eo pipefail; ${UMASK_CMD} \
+  PEXEC_INLINE="set -eo pipefail; ${UMASK_CMD} \
     ${MAKE_PRETTY_FUNCTION}; \
-    _PEXEC_PRETTY=\$(_PEXEC_MAKE_PRETTY \$0); \
+    _PEXEC_PRETTY=\$(_PEXEC_MAKE_PRETTY \"${PEXEC_SCRARG}\"); \
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
@@ -312,14 +317,12 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
             exit 1; \
           fi; \
         fi; \
-      else \
-        if [ ! \"${ALLOW}\" ] || [ \"0\" = \"${SHAKY}\" ] || [ \"no\" = \"${SHAKY}\" ] || \
+      elif [ ! \"${ALLOW}\" ] || [ \"0\" = \"${SHAKY}\" ] || [ \"no\" = \"${SHAKY}\" ] || \
            [ ! \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
-        then \
-          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo -e \" -> \033[92mVALID\033[0m[000]: \${_PEXEC_PRETTY}\"; fi; \
-        else \
-          1>&2 printf \" -> \033[33mSHAKY\033[0m[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
-        fi; \
+      then \
+        if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo -e \" -> \033[92mVALID\033[0m[000]: \${_PEXEC_PRETTY}\"; fi; \
+      else \
+        1>&2 printf \" -> \033[33mSHAKY\033[0m[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
       fi; \
       exit 0; \
     }; \
@@ -329,11 +332,15 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       _PEXEC_LOG=/dev/stdout; \
     fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
-    if [ \"\$(${FILE} -bL --mime \"\${0%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
-      source \$0; \
-      if [ \"\${PEXEC_PID}\" ]; then for PID in \${PEXEC_PID[@]}; do wait \${PID}; done; fi; \
+    if [[ \$(${FILE} -bL --mime \"\${0%% *}\") =~ ^text/ ]]; then \
+      if [ \"\${PEXEC_PID}\" ]; then \
+        source \"${PEXEC_SCRARG}\"; \
+        for PID in \"\${PEXEC_PID[@]}\"; do wait \"\${PID}\"; done; \
+      else \
+        eval \"${PEXEC_SCRARG}\"; \
+      fi; \
     else \
-      \$0; \
+      exec \"${PEXEC_SCRARG}\"; \
     fi >\"\${_PEXEC_LOG}\" 2>&1"
   if [ "0" = "${QUIET}" ]; then
     if [ "$(command -v tr)" ]; then
@@ -349,10 +356,31 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}x${NJ}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
   fi
   if [ "${BUILD}" ]; then ${CAT} /dev/null >"${BUILD}"; fi # truncate file
-  echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
-  RESULT=$?
+  if [ "${NSECS}" ]; then
+    NSECS=$(($(date +%s)-NSECS))
+  fi
+  export TIME="(${NSECS}+%U+%S)/(${NSECS}+%e)"
+  if [ "0" != "${PEXEC_IL}" ]; then
+    echo -e "${COUNTED}" | time -o "${NAME}.txt" "${XARGS}" >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_INLINE}" "{}"
+    RESULT=$?
+  else
+    echo "#!/usr/bin/env bash" >"${PEXEC_SCRIPT}"
+    echo "${PEXEC_INLINE}"    >>"${PEXEC_SCRIPT}"
+    chmod +x "${PEXEC_SCRIPT}"
+    echo -e "${COUNTED}" | time -o "${NAME}.txt" "${XARGS}" >"${LOG_OUTER}" -P${NP} -I{} "${PEXEC_SCRIPT}" "{}"
+    RESULT=$?
+  fi
+  if [ "$(command -v bc)" ] && [ "$(command -v uname)" ] && [ "Linux" = "$(uname)" ]; then
+    echo "--------------------------------------------------------------------------------"
+    SPEEDUP=$(bc 2>/dev/null -l <"${NAME}.txt")
+    EFFINCY=$(bc 2>/dev/null -l <<<"100*${SPEEDUP}/${NP}")
+    printf "Executed ${COUNTER} tasks with %.0f%% parallel efficiency (speedup=%.1fx init=%is)\n" \
+      "${EFFINCY}" "${SPEEDUP}" "${NSECS}"
+  fi
   if [ "0" != "${RESULT}" ]; then
-    1>&2 echo "--------------------------------------------------------------------------------"
+    if [ ! "${SPEEDUP}" ] && [ ! "${EFFINCY}" ]; then
+      echo "--------------------------------------------------------------------------------"
+    fi
     if [ "${BUILD}" ] && [ -f "${BUILD}" ] && [ "$(command -v sort)" ]; then
       sort -u "${BUILD}" -o "${BUILD}"
     fi
