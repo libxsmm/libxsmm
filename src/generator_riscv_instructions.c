@@ -65,8 +65,15 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
     return;
   }
 
-  if ( REG_VALID_2(i_gp_reg_addr, i_gp_reg_dst) ) {
+  if ( !REG_VALID_2(i_gp_reg_addr, i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_move: invalid register id !\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_offset > 0xfff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move: unexpected imm: %u %u\n",
+      i_move_instr, i_offset);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -107,16 +114,20 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
     if (is_load) {
       /* setting RD */
       code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+      /* setting IMM */
+      code[code_head] |= (unsigned int)FILL_REGID(i_offset, LIBXSMM_RISCV_INSTR_FIELD_IMM12);
     } else {
       /* setting RS2 */
       code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RS2);
+
+      /* setting IMM */
+      code[code_head] |= (unsigned int)FILL_REGID((i_offset & 0x1f), LIBXSMM_RISCV_INSTR_FIELD_IMM12LO);
+      code[code_head] |= (unsigned int)FILL_REGID((i_offset >> 5), LIBXSMM_RISCV_INSTR_FIELD_IMM12HI);
     }
 
     /* setting RS1 */
     code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_addr, LIBXSMM_RISCV_INSTR_FIELD_RS1);
-
-    /* setting IMM */
-    code[code_head] |= (unsigned int)FILL_REGID(i_offset, LIBXSMM_RISCV_INSTR_FIELD_IMM12);
 
     /* advance code head */
     io_generated_code->code_size += 4;
@@ -141,7 +152,7 @@ void libxsmm_riscv_instruction_alu_compute( libxsmm_generated_code* io_generated
     return;
   }
 
-  if ( REG_VALID_3(i_gp_reg_src_1, i_gp_reg_src_2, i_gp_reg_dst) ) {
+  if ( !REG_VALID_3(i_gp_reg_src_1, i_gp_reg_src_2, i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_compute: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -250,7 +261,7 @@ void libxsmm_riscv_instruction_alu_compute_imm12( libxsmm_generated_code* io_gen
     return;
   }
 
-  if ( REG_VALID_2(i_gp_reg_src, i_gp_reg_dst) ) {
+  if ( !REG_VALID_2(i_gp_reg_src, i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_compute_imm12: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -331,7 +342,7 @@ void libxsmm_riscv_instruction_alu_compute_imm20( libxsmm_generated_code* io_gen
     return;
   }
 
-  if ( REG_VALID_1(i_gp_reg_dst) ) {
+  if ( !REG_VALID_1(i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm20: invalid register id %d !\n", i_gp_reg_dst);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -423,7 +434,7 @@ void libxsmm_riscv_instruction_alu_move_imm20( libxsmm_generated_code* io_genera
     return;
   }
 
-  if ( REG_VALID_1(i_gp_reg_dst) ) {
+  if ( !REG_VALID_1(i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_move_imm20: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -455,7 +466,7 @@ void libxsmm_riscv_instruction_alu_move_imm32( libxsmm_generated_code* io_genera
     return;
   }
 
-  if ( REG_VALID_1(i_gp_reg_dst) ) {
+  if ( !REG_VALID_1(i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_move_imm32: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -501,7 +512,7 @@ void libxsmm_riscv_instruction_alu_set_imm64( libxsmm_generated_code*  io_genera
     return;
   }
 
-  if ( REG_VALID_1(i_gp_reg_dst) ) {
+  if ( !REG_VALID_1(i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_set_imm64: invalid register id\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -556,7 +567,7 @@ void libxsmm_riscv_instruction_alu_compute_imm64( libxsmm_generated_code*  io_ge
     return;
   }
 
-  if ( REG_VALID_3(i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst) ) {
+  if ( !REG_VALID_3(i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm64: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -589,7 +600,7 @@ void libxsmm_riscv_instruction_cond_jump( libxsmm_generated_code* io_generated_c
     return;
   }
 
-  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
+  if ( !REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_cond_jump: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -657,7 +668,7 @@ void libxsmm_riscv_instruction_jump_and_link( libxsmm_generated_code* io_generat
     return;
   }
 
-  if ( REG_VALID_1(i_gp_reg_dst) ) {
+  if ( !REG_VALID_1(i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -724,7 +735,7 @@ void libxsmm_riscv_instruction_jump_and_link_reg( libxsmm_generated_code* io_gen
     return;
   }
 
-  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_dst) ) {
+  if ( !REG_VALID_2(i_gp_reg_src_1, i_gp_reg_dst) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link_reg: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -827,7 +838,7 @@ void libxsmm_riscv_instruction_cond_jump_to_label( libxsmm_generated_code*     i
     return;
   }
 
-  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
+  if ( !REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_to_label: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -935,7 +946,7 @@ void libxsmm_riscv_instruction_cond_jump_back_to_label( libxsmm_generated_code* 
     return;
   }
 
-  if ( REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
+  if ( !REG_VALID_2(i_gp_reg_src_1, i_gp_reg_src_2) ) {
     fprintf(stderr, "libxsmm_riscv_instruction_cond_jump_back_to_lable: invalid register id !\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
