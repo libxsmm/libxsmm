@@ -193,11 +193,12 @@ def fname(extlst, in_main, in_dflt, idetail=""):
     dflt, inplst = pathlib.Path(in_dflt), str(in_main).strip().split()
     path, result = pathlib.Path(inplst[0] if inplst else in_main), []
     if path.is_dir():
-        if 2 >= len(inplst):
-            figext = [inplst[1] if 1 < len(inplst) else dflt.suffix]
-        else:
-            figext = inplst[1:]
-        result = [path / f"{dflt.stem}{idetail}.{ext}" for ext in figext]
+        figext = [dflt.suffix[1:]] if 1 >= len(inplst) else inplst[1:]
+        result = [
+            path / f"{dflt.stem}{idetail}.{ext}"
+            for ext in figext
+            if ext in extlst
+        ]
     elif path.suffix[1:] in extlst:
         result = [path.parent / f"{path.stem}{idetail}{path.suffix}"]
     elif "." == str(path.parent):
@@ -398,7 +399,8 @@ def create_figure(plots, nplots, resint, untied, addon):
             axes[i].xaxis.set_ticks(
                 range(len(data[-1])), data[-1], rotation=45
             )
-            axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
+            if 1 < len(data[-1]):
+                axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
             axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
             if untied:
                 i = i + 1
