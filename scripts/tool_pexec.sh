@@ -150,7 +150,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       shift 1;;
     esac
   done
-  NIFIX=0; TOTAL=0; COUNTER=0; PEXEC_IL=0
+  NIFIX=0; TOTAL=0; COUNTER=0; PEXEC_IL=1
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   XFAIL=${PEXEC_XF:-${XFAIL}}; if [ ! "${XFAIL}" ]; then XFAIL=${XF_DEFAULT}; fi
   SHAKY=${PEXEC_BL:-${SHAKY}}; if [ ! "${SHAKY}" ]; then SHAKY=${BL_DEFAULT}; fi
@@ -333,11 +333,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [[ \$(${FILE} -bL --mime \"\${0%% *}\") =~ ^text/ ]]; then \
+      source \"${PEXEC_SCRARG}\"; \
       if [ \"\${PEXEC_PID}\" ]; then \
-        source \"${PEXEC_SCRARG}\"; \
         for PID in \"\${PEXEC_PID[@]}\"; do wait \"\${PID}\"; done; \
-      else \
-        eval \"${PEXEC_SCRARG}\"; \
       fi; \
     else \
       exec \"${PEXEC_SCRARG}\"; \
