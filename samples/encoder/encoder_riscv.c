@@ -19,19 +19,28 @@
 #define TEST_IMM12_I(o, c, i, s, d) do          \
 {                                               \
   int i1=0, i2=4095, i3=4096, i4=4097;          \
-  libxsmm_riscv_instruction_##o(c, i, s, i1, d);\
-  libxsmm_riscv_instruction_##o(c, i, s, i2, d);\
-  libxsmm_riscv_instruction_##o(c, i, s, i3, d);\
-  libxsmm_riscv_instruction_##o(c, i, s, i4, d);\
+  libxsmm_riscv_instruction_##o(c, i, s, d, i1);\
+  libxsmm_riscv_instruction_##o(c, i, s, d, i2);\
+  libxsmm_riscv_instruction_##o(c, i, s, d, i3);\
+  libxsmm_riscv_instruction_##o(c, i, s, d, i4);\
 }while(0)
 
 #define TEST_IMM20_I(o, c, i, d) do               \
 {                                                 \
-  int i1=0, i2=(1 << 19), i3=(1<<20), i4=(1<<21); \
+  int i1=0, i2=(0x00ffe), i3=(1<<20), i4=(1<<21); \
   libxsmm_riscv_instruction_##o(c, i, d, i1);     \
   libxsmm_riscv_instruction_##o(c, i, d, i2);     \
   libxsmm_riscv_instruction_##o(c, i, d, i3);     \
   libxsmm_riscv_instruction_##o(c, i, d, i4);     \
+}while(0)
+
+#define TEST_IMM64_I(o, c, d) do                  \
+{                                                 \
+  unsigned long long i1=0, i2=(0xffe), i3=(0xfff1), i4=(0xfffff1);\
+  libxsmm_riscv_instruction_##o(c, d, i1);        \
+  libxsmm_riscv_instruction_##o(c, d, i2);        \
+  libxsmm_riscv_instruction_##o(c, d, i3);        \
+  libxsmm_riscv_instruction_##o(c, d, i4);        \
 }while(0)
 
 void reset_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
@@ -66,11 +75,24 @@ void test_alu_move( char* test_name, libxsmm_generated_code* mycode, unsigned in
 
   reset_code_buffer( mycode, test_name );
 
-    for (a = 0; a < 33; ++a ) {
-      for (d = 0; d < 33; ++d ) {
-        TEST_IMM12_I( alu_move, mycode, instr, a, d );
-      }
+  for (a = 0; a < 33; ++a ) {
+    for (d = 0; d < 33; ++d ) {
+      TEST_IMM12_I( alu_move, mycode, instr, a, d );
     }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
+void test_alu_set_imm64( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned char a;
+  unsigned char d;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (d = 0; d < 2; ++d ) {
+    TEST_IMM64_I( alu_set_imm64, mycode, d );
+  }
 
   dump_code_buffer( mycode, test_name );
 }
@@ -101,7 +123,7 @@ void test_alu_compute_imm12( char* test_name, libxsmm_generated_code* mycode, un
 
   for (a = 0; a < 33; ++a ) {
     for (d = 0; d < 33; ++d ) {
-      TEST_IMM12_I( alu_compute, mycode, instr, a, d );
+      TEST_IMM12_I( alu_compute_imm12, mycode, instr, a, d );
     }
   }
 
@@ -120,6 +142,48 @@ void test_alu_compute_imm20( char* test_name, libxsmm_generated_code* mycode, un
   dump_code_buffer( mycode, test_name );
 }
 
+void test_cond_jump( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned char a;
+  unsigned char d;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (a = 0; a < 33; ++a ) {
+    for (d = 0; d < 33; ++d ) {
+      TEST_IMM12_I( cond_jump, mycode, instr, a, d );
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
+void test_jump_and_link_reg( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned char a;
+  unsigned char d;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (a = 0; a < 33; ++a ) {
+    for (d = 0; d < 33; ++d ) {
+      TEST_IMM12_I( jump_and_link_reg, mycode, instr, a, d );
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
+void test_jump_and_link( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned char d;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (d = 5; d < 7; ++d ) {
+    TEST_IMM20_I( jump_and_link, mycode, instr, d );
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -131,45 +195,22 @@ int main( /*int argc, char* argv[]*/ ) {
 
   /* testing ALU ldr/str instructions */
   test_alu_move( "alu_mov_LB", &mycode, INST(LB) );
-  test_alu_move( "alu_mov_LBU", &mycode, INST(LBU) );
-  test_alu_move( "alu_mov_LD", &mycode, INST(LD) );
-  test_alu_move( "alu_mov_LH", &mycode, INST(LH) );
-  test_alu_move( "alu_mov_LHU", &mycode, INST(LHU) );
-  test_alu_move( "alu_mov_LW", &mycode, INST(LW) );
-  test_alu_move( "alu_mov_LWU", &mycode, INST(LWU) );
-  test_alu_move( "alu_mov_SB", &mycode, INST(SB) );
-  test_alu_move( "alu_mov_SD", &mycode, INST(SD) );
-  test_alu_move( "alu_mov_SH", &mycode, INST(SH) );
-  test_alu_move( "alu_mov_SW", &mycode, INST(SW) );
-
-  test_alu_compute_imm20( "alu_compute_LUI", &mycode, INST(LUI) );
-  test_alu_compute_imm20( "alu_compute_AUIPC", &mycode, INST(AUIPC) );
 
   test_alu_compute( "alu_compute_ADD", &mycode, INST(ADD) );
-  test_alu_compute( "alu_compute_ADD", &mycode, INST(SUB) );
-  test_alu_compute( "alu_compute_ADD", &mycode, INST(SUBW) );
-  test_alu_compute( "alu_compute_ADDW", &mycode, INST(ADDW) );
   test_alu_compute( "alu_compute_AND", &mycode, INST(AND) );
-  test_alu_compute( "alu_compute_OR", &mycode, INST(OR) );
-  test_alu_compute( "alu_compute_XOR", &mycode, INST(XOR) );
-  test_alu_compute( "alu_compute_SLL", &mycode, INST(SLL) );
-  test_alu_compute( "alu_compute_SLLW", &mycode, INST(SLLW) );
-  test_alu_compute( "alu_compute_SLLW", &mycode, INST(SLT) );
-  test_alu_compute( "alu_compute_SLLW", &mycode, INST(SRL) );
-  test_alu_compute_imm12( "alu_compute_ADDI", &mycode, INST(ADDI) );
-  test_alu_compute_imm12( "alu_compute_ADDIW", &mycode, INST(ADDIW) );
-  test_alu_compute_imm12( "alu_compute_ANDI", &mycode, INST(ANDI) );
-  test_alu_compute_imm12( "alu_compute_ORI", &mycode, INST(ORI) );
-  test_alu_compute_imm12( "alu_compute_XORI", &mycode, INST(XORI) );
-  test_alu_compute_imm12( "alu_compute_SLL", &mycode, INST(SLLI) );
-  test_alu_compute_imm12( "alu_compute_SLLW", &mycode, INST(SLLIW) );
-  test_alu_compute_imm12( "alu_compute_SLLW", &mycode, INST(SLTI) );
-  test_alu_compute_imm12( "alu_compute_SLLW", &mycode, INST(SRLI) );
 
-  test_alu_compute_imm12( "alu_compute_CSRRC", &mycode, INST(CSRRC) );
-  test_alu_compute_imm12( "alu_compute_CSRRCI", &mycode, INST(CSRRCI) );
-  test_alu_compute_imm12( "alu_compute_CSRRS", &mycode, INST(CSRRS) );
-  test_alu_compute_imm12( "alu_compute_CSRRSI", &mycode, INST(CSRRSI) );
+  test_alu_compute_imm20( "alu_compute_LUI", &mycode, INST(LUI) );
+
+  test_alu_compute_imm12( "alu_compute_ADDI", &mycode, INST(ADDI) );
+  test_alu_compute_imm12( "alu_compute_ANDI", &mycode, INST(ANDI) );
+
+  test_cond_jump( "alu_compute_BEQ", &mycode, INST(BEQ) );
+
+  test_jump_and_link( "alu_compute_JAL", &mycode, INST(JAL) );
+
+  test_jump_and_link_reg( "alu_compute_JALR", &mycode, INST(JALR) );
+
+  test_alu_set_imm64( "alu_set_imm64", &mycode, INST(LW) );
 
   free( codebuffer );
 

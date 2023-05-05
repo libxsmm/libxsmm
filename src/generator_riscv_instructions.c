@@ -55,8 +55,8 @@ LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_code,
                                          const unsigned int       i_move_instr,
                                          const unsigned int       i_gp_reg_addr,
-                                         const int                i_offset,
-                                         const unsigned int       i_gp_reg_dst ) {
+                                         const unsigned int       i_gp_reg_dst,
+                                         const int                i_offset ) {
   int is_load = 0;
 
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
@@ -254,7 +254,7 @@ void libxsmm_riscv_instruction_alu_compute_imm12( libxsmm_generated_code* io_gen
                                                     const unsigned int      i_alu_instr,
                                                     const unsigned int      i_gp_reg_src,
                                                     const unsigned int      i_gp_reg_dst,
-                                                    const unsigned char     i_imm12 ) {
+                                                    const unsigned int      i_imm12 ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
     fprintf(stderr, "libxsmm_riscv_instruction_alu_compute_imm12: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -606,6 +606,12 @@ void libxsmm_riscv_instruction_cond_jump( libxsmm_generated_code* io_generated_c
     return;
   }
 
+  if ( i_imm > 0xfff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_cond_jump: unexpected imm: %u %u\n", i_jmp_instr, i_imm);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
     switch ( i_jmp_instr ) {
       case LIBXSMM_RISCV_INSTR_GP_BEQ:
@@ -674,14 +680,15 @@ void libxsmm_riscv_instruction_jump_and_link( libxsmm_generated_code* io_generat
     return;
   }
 
+  if ( i_imm > 0xfffff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_jal: unexpected imm: %u %u\n", i_jmp_instr, i_imm);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
     switch ( i_jmp_instr ) {
-      case LIBXSMM_RISCV_INSTR_GP_BEQ:
-      case LIBXSMM_RISCV_INSTR_GP_BGE:
-      case LIBXSMM_RISCV_INSTR_GP_BGEU:
-      case LIBXSMM_RISCV_INSTR_GP_BLT:
-      case LIBXSMM_RISCV_INSTR_GP_BLTU:
-      case LIBXSMM_RISCV_INSTR_GP_BNE:
+      case LIBXSMM_RISCV_INSTR_GP_JAL:
         break;
       default:
         fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link: unexpected instruction number: %u\n", i_jmp_instr);
@@ -699,17 +706,21 @@ void libxsmm_riscv_instruction_jump_and_link( libxsmm_generated_code* io_generat
         return;
       }
 
+      unsigned int imm_lo = 0;
+      unsigned int imm_hi = 0;
+      unsigned int imm_f  = 0;
+
       /* Generate immediate */
-      unsigned int imm_lo = (((i_imm & 0x7ff) >> 2)|((i_imm >> 12) & 0xff));
-      unsigned int imm_hi = (i_imm & 0x7fe) | ((i_imm & 0x100000) >> 9);
-      unsigned int imm_f  = imm_lo | (imm_hi << 8);
+      imm_lo = (((i_imm & 0x7fe) << 9)|((i_imm >> 12) & 0xff));
+      imm_hi = ((i_imm & 0x800) >> 2) | ((i_imm & 0x100000) >> 1);
+      imm_f  = imm_lo | imm_hi;
 
       /* fix bits */
       code[code_head]  = i_jmp_instr;
       /* setting RS1 */
       code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
       /* setting IMM20 */
-      code[code_head] |= (unsigned int)FILL_REGID(imm_f, LIBXSMM_RISCV_INSTR_FIELD_IMM12HI);
+      code[code_head] |= (unsigned int)FILL_REGID(imm_f, LIBXSMM_RISCV_INSTR_FIELD_IMM20);
 
       /* advance code head */
       io_generated_code->code_size += 4;
@@ -741,13 +752,14 @@ void libxsmm_riscv_instruction_jump_and_link_reg( libxsmm_generated_code* io_gen
     return;
   }
 
+  if ( i_imm12 > 0xfff ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_jalr: unexpected imm: %u %u\n", i_jmp_instr, i_imm12);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
   switch ( i_jmp_instr ) {
-    case LIBXSMM_RISCV_INSTR_GP_BEQ:
-    case LIBXSMM_RISCV_INSTR_GP_BGE:
-    case LIBXSMM_RISCV_INSTR_GP_BGEU:
-    case LIBXSMM_RISCV_INSTR_GP_BLT:
-    case LIBXSMM_RISCV_INSTR_GP_BLTU:
-    case LIBXSMM_RISCV_INSTR_GP_BNE:
+    case LIBXSMM_RISCV_INSTR_GP_JALR:
       break;
     default:
       fprintf(stderr, "libxsmm_riscv_instruction_jump_and_link_reg: unexpected instruction number: %u\n", i_jmp_instr);

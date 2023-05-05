@@ -3023,8 +3023,8 @@ LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_code,
                                            const unsigned int      i_move_instr,
                                            const unsigned int      i_gp_reg_addr,
-                                           const int               i_offset,
-                                           const unsigned int      i_gp_reg_dst );
+                                           const unsigned int      i_gp_reg_dst,
+                                           const int               i_offset );
 
 /**
  * Generates movk, movz instructions
@@ -3110,7 +3110,7 @@ void libxsmm_riscv_instruction_alu_compute_imm12( libxsmm_generated_code* io_gen
                                                     const unsigned int      i_alu_instr,
                                                     const unsigned int      i_gp_reg_src,
                                                     const unsigned int      i_gp_reg_dst,
-                                                    const unsigned char     i_imm12 );
+                                                    const unsigned int      i_imm12 );
 
 /**
  * Generates a sequence of compute with intermediates
