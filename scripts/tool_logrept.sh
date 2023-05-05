@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012,SC2153
+# shellcheck disable=SC2012,SC2153,SC2206
 
 # check if logfile is given
 if [ ! "${LOGFILE}" ]; then
@@ -88,9 +88,7 @@ then
   PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
-  if [ ! "${PIPELINE}" ] && \
-     [ "$(pwd -P)" = "$(cd "$(dirname "${LOGDIR}")" && pwd -P)" ];
-  then
+  if [ ! "${PIPELINE}" ]; then
     PIPELINE="debug"
   fi
   if [ "${PIPELINE}" ]; then
@@ -166,20 +164,24 @@ if [ "${LOGDIR}" ]; then
     if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
       EXACT="-e"
     fi
+    if [ "${LOGRPTSEP}" ] && [ "0" != "${LOGRPTSEP}" ]; then
+      UNTIED="-u"
+    fi
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1
     else
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
+    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
       -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
       -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" -v ${VERBOSITY} \
-      -t "${LOGRPTBND}");
+      -q "${LOGRPTQOP}" ${UNTIED} \
+      -t "${LOGRPTBND}" \
+      -v ${VERBOSITY});
     then  # ERROR=$?
       ERROR=1
     fi
@@ -204,20 +206,23 @@ if [ "${LOGDIR}" ]; then
         if ! OUTPUT=$(base64 -w0 "${FIGURE}");
         then OUTPUT=""; fi
         if [ "${OUTPUT}" ]; then
+          FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
+          REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
           if [ "$(command -v mimetype)" ]; then
             MIMETYPE=$(mimetype -b "${FIGURE}")
-          elif [ "${LOGRPTFMT}" ]; then
-            if [ "svgz" = "${LOGRPTFMT}" ]; then
+          else
+            if [ "svgz" = "${FORMAT[0]}" ]; then
               MIMETYPE="image/svg+xml-compressed"
-            elif [ "svg" = "${LOGRPTFMT}" ]; then
+            elif [ "svg" = "${FORMAT[0]}" ]; then
               MIMETYPE="image/svg+xml"
             else  # fallback
-              MIMETYPE="image/${LOGRPTFMT}"
+              MIMETYPE="image/${FORMAT[0]}"
             fi
-          else  # fallback
-            MIMETYPE="image/${FIGURE##*.}"
           fi
           if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+          if [ -e "${REPORT}" ]; then  # print after summary
+            printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
+          fi
           printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
             "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
           if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then

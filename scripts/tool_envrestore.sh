@@ -24,9 +24,9 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
     shift
     ENVSRCF=$1
     if [ "${ENVSRCF}" ]; then
-      if [ -e "${ENVSRCF}" ]; then truncate -s0 "${ENVSRCF}"; fi
       if [ ! "${UNIQ}" ] && [ "$(command -v sort)" ]; then UNIQ="| sort -u"; fi
       if [ ! "${UNIQ}" ] && [ "$(command -v uniq)" ]; then UNIQ="| uniq"; fi
+      echo "#!/usr/bin/env bash" >"${ENVSRCF}"
       shift
     fi
     # no need to have unique values in ENVDIFF in general

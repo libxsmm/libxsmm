@@ -1040,9 +1040,11 @@ ifeq (,$(strip $(GFC)))
 endif
 endif
 ifneq (0,$(FREEFORM))
-ifeq (0,$(PGI))
-  FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
-endif
+  ifneq (,$(strip $(GFC)))
+    FFORM_FLAG ?= -ffree-form
+  else ifeq (0,$(PGI))
+    FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
+  endif
 endif
 
 # CCE: resolve linker issue
@@ -1677,7 +1679,7 @@ else # GCC assumed
           endif
           CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
           CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
-        else
+        else # macOS
           CXXLDFLAGS += $(call abslib,$(OMPLIBFILE))
           CLDFLAGS += $(call abslib,$(OMPLIBFILE))
         endif
@@ -2058,6 +2060,13 @@ ifeq (0,$(COMPATIBLE))
         CFLAGS += -fvisibility=hidden
       endif
     endif
+    endif
+  else # macOS
+    ifneq (,$(wildcard /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib))
+      FLDFLAGS += -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib
+    endif
+    ifneq (,$(OMPLIBFILE))
+      FLDFLAGS += $(OMPLIBFILE)
     endif
   endif
   ifeq (0,$(EXP))
