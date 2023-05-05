@@ -38,6 +38,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     UMASK_CMD="umask ${UMASK};"
     eval "${UMASK_CMD}"
   fi
+  if [ -e "${INFO}" ]; then
+    NC=$(${INFO} -nc); NT=$(${INFO} -nt); HT=$(${INFO} -ht)
+    if [ "0" != "$((HT<SP_DEFAULT))" ]; then SP_DEFAULT=${HT}; fi
+  fi
   # ensure consistent sort
   export LC_ALL=C
   if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
@@ -229,9 +233,6 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   trap 'rm -f ${NAME}.txt ${PEXEC_SCRIPT}' EXIT
   unset ATLEAST
   if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
-  if [ -e "${INFO}" ]; then
-    NC=$(${INFO} -nc); NT=$(${INFO} -nt)
-  fi
   if [ ! "${NP}" ] || [ "0" != "$((1>NP))" ]; then
     NP=${NC}
   fi
@@ -338,7 +339,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
         for PID in \"\${PEXEC_PID[@]}\"; do wait \"\${PID}\"; done; \
       fi; \
     else \
-      exec \"${PEXEC_SCRARG}\"; \
+      eval \"${PEXEC_SCRARG}\"; \
     fi >\"\${_PEXEC_LOG}\" 2>&1"
   if [ "0" = "${QUIET}" ]; then
     if [ "$(command -v tr)" ]; then
@@ -371,7 +372,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   if [ "$(command -v bc)" ] && [ "$(command -v uname)" ] && [ "Linux" = "$(uname)" ]; then
     echo "--------------------------------------------------------------------------------"
     SPEEDUP=$(bc 2>/dev/null -l <"${NAME}.txt")
-    EFFINCY=$(bc 2>/dev/null -l <<<"100*${SPEEDUP}/${NP}")
+    EFFINCY=$(bc 2>/dev/null -l <<<"100*${SPEEDUP}/(${NP}*${NJ})")
     printf "Executed ${COUNTER} tasks with %.0f%% parallel efficiency (speedup=%.1fx init=%is)\n" \
       "${EFFINCY}" "${SPEEDUP}" "${NSECS}"
   fi
