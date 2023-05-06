@@ -59,7 +59,7 @@ Command: ./eltwise_binary_simple 1 0 F32 F32 F32 F32 10 10 10 10
 
 It is desirable to exercise portability and reliability of LIBXSMM's source code even on Non-Intel Architecture by the means of compilation, linkage, and generic tests. This section is *not* about Intel Architecture (or compatible). Successful compilation (or even running some of the tests successfully) does not mean LIBXSMM is valuable on that platform.
 
-Make sure to rely on `PLATFORM=1`, otherwise a compilation error should occur _Intel Architecture or compatible CPU required!_ This error avoids (automated) attempts to upstream LIBXSMM to an unsupported platform. LIBXSMM is upstreamed for Intel Architecture on all major Linux distributions, FreeBSD, and others. If compilation fails with _LIBXSMM is only supported on a 64-bit platform!_, `make PLATFORM=1 DBG=1` can be used to exercise compilation.
+Make sure to rely on `PLATFORM=1`, otherwise a compilation error should occur _Intel Architecture or compatible CPU required!_ This error avoids (automated) attempts to upstream LIBXSMM to an unsupported platform. LIBXSMM is upstreamed for Intel Architecture on all major Linux distributions, FreeBSD, and others. If compilation fails with "_LIBXSMM is only supported on a 64-bit platform!_", `make PLATFORM=1 DBG=1` can be used to exercise compilation.
 
 If platform support is forced (`PLATFORM=1`), runtime code generation is disabled at compile-time (`JIT=0`). Runtime code generation can be also enabled (`PLATFORM=1 JIT=1`) but code-dispatch will still return NULL-kernels. However, some tests will start failing as missing JIT-support it is not signaled at compile-time as with `JIT=0`.
 
@@ -67,7 +67,7 @@ If platform support is forced (`PLATFORM=1`), runtime code generation is disable
 
 ### TinyCC
 
-The Tiny C Compiler (TinyCC) supports Intel Architecture, but lacks at least support for thread-local storage (TLS).
+The Tiny C Compiler (TinyCC) supports Intel Architecture but lacks at least support for thread-local storage (TLS).
 
 ```bash
 make CC=tcc THREADS=0 INTRINSICS=0 VLA=0 ASNEEDED=0 BLAS=0 FORCE_CXX=0
@@ -75,7 +75,7 @@ make CC=tcc THREADS=0 INTRINSICS=0 VLA=0 ASNEEDED=0 BLAS=0 FORCE_CXX=0
 
 ### IBM XL Compiler for Linux (POWER)
 
-The POWER platform requires aforementioned `PLATFORM=1` to unlock compilation.
+The POWER platform requires `PLATFORM=1` to unlock compilation.
 
 ```bash
 make PLATFORM=1 CC=xlc CXX=xlc++ FC=xlf
@@ -83,7 +83,7 @@ make PLATFORM=1 CC=xlc CXX=xlc++ FC=xlf
 
 ### Cross-compilation for ARM
 
-ARM AArch64 is regularly [supported](https://github.com/libxsmm/libxsmm/wiki/Compatibility#arm-aarch64). However, 32-bit ARM requires aforementioned `PLATFORM=1` to unlock compilation (similar to 32-bit Intel Architecture). Unlocking compilation for 32-bit ARM is not be confused with supporting 32-bit ARM architectures.
+ARM AArch64 is regularly [supported](https://github.com/libxsmm/libxsmm/wiki/Compatibility#arm-aarch64). However, 32-bit ARM requires `PLATFORM=1` to unlock compilation (like 32-bit Intel Architecture). Unlocking compilation for 32-bit ARM is not confused with supporting 32-bit ARM architectures.
 
 ```bash
 make PLATFORM=1 AR=arm-linux-gnueabi-ar \

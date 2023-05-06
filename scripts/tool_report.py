@@ -17,6 +17,7 @@ import tempfile
 import pathlib
 import pickle
 import numpy
+import math
 import copy
 import json
 import stat
@@ -189,21 +190,24 @@ def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
     """
-    dflt, plst = pathlib.Path(in_dflt), str(in_main).strip().split()
-    path = pathlib.Path(plst[0] if plst else in_main)
+    dflt, inplst = pathlib.Path(in_dflt), str(in_main).strip().split()
+    path, result = pathlib.Path(inplst[0] if inplst else in_main), []
     if path.is_dir():
-        figloc, figstm = path, dflt.stem
-        figext = f".{plst[1]}" if 1 < len(plst) else dflt.suffix
+        figext = [dflt.suffix[1:]] if 1 >= len(inplst) else inplst[1:]
+        result = [
+            path / f"{dflt.stem}{idetail}.{ext}"
+            for ext in figext
+            if ext in extlst
+        ]
     elif path.suffix[1:] in extlst:
-        figloc, figstm = path.parent, path.stem
-        figext = path.suffix
+        result = [path.parent / f"{path.stem}{idetail}{path.suffix}"]
     elif "." == str(path.parent):
-        figloc, figstm = path.parent, dflt.stem
         figext = f".{path.name}" if path.name in extlst else dflt.suffix
+        result = [path.parent / f"{dflt.stem}{idetail}{figext}"]
     else:
-        figloc, figext = path.parent, dflt.suffix
         figstm = path.stem if path.stem else dflt.stem
-    return figloc / f"{figstm}{idetail}{figext}"
+        result = [path.parent / f"{figstm}{idetail}{dflt.suffix}"]
+    return result
 
 
 def mtime(filename):
@@ -307,7 +311,8 @@ def trend(values):
     the standard deviation (cv), and the linear trend (equation).
     """
     rd, cv, eqn, size = None, None, None, len(values)
-    b, a = values[0:2] if values else (0, 0)
+    b = values[0] if 0 < size else 0
+    a = values[1] if 1 < size else 0
     if 0 != a:
         rd = (b - a) / a
     if 2 < size:
@@ -329,9 +334,15 @@ def bold(s, cond=True):
 
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
-    guess, rd, cv, eqn = trend(values)
-    label = f"{num2fix(values[0], accuracy)} {unit}"
-    bad = False
+    label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
+    guess, rd, cv, eqn = trend(values)  # unpack
+    blist = base.split()
+    if 1 < len(blist):  # category and detail
+        dlist = blist[1].split("_")
+        for c in blist[0].split("_"):
+            while c in dlist:  # no redundancy
+                dlist.remove(c)
+        base = f"{blist[0]} {'_'.join(dlist)}"
     if rd:
         inum = num2fix(100 * rd)
         if cv and bounds and 0 != bounds[0]:
@@ -367,6 +378,44 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
     else:
         label = f"{base} = {label}"
     return label, bad, eqn
+
+
+def create_figure(plots, nplots, resint, untied, addon):
+    figsize = (divup(resint[0], resint[2]), divup(resint[1], resint[2]))
+    subplots = plot.subplots(
+        max(nplots, 1),
+        sharex=True,
+        figsize=figsize,
+        dpi=resint[2],
+    )
+    figure, axes = subplots  # unpack
+    if 2 > nplots:  # ensure axes object is always a list
+        axes = [axes]
+    i = 0
+    for entry in plots:
+        for data in plots[entry]:
+            axes[i].step(data[0], ".:", where="mid", label=data[1])
+            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            axes[i].xaxis.set_ticks(
+                range(len(data[-1])), data[-1], rotation=45
+            )
+            if 1 < len(data[-1]):
+                axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
+            axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
+            if untied:
+                i = i + 1
+        if not untied:
+            i = i + 1
+    if 0 < nplots:
+        axes[-1].set_xlabel("Build Number")
+        title = "Performance History"
+        figure.suptitle(
+            f"{title} ({addon.lower()})" if addon else title,
+            fontsize="x-large",
+        )
+        figure.tight_layout(rect=[0, 0, 1, 0.98])  # fit suptitle
+        figure.gca().invert_xaxis()
+    return figure
 
 
 def main(args, argd, dbfname):
@@ -608,7 +657,7 @@ def main(args, argd, dbfname):
     else:
         template = dict()
 
-    entries = [
+    entries = [  # collect all categories
         e  # category (one level below build number)
         for e in template
         if (e != infokey or (select and infokey in select))
@@ -616,29 +665,6 @@ def main(args, argd, dbfname):
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
-
-    # determine image resolution
-    rdef = [int(r) for r in argd.resolution.split("x")]
-    if 2 == len(rdef):
-        rdef.append(100)
-    rstr = args.resolution.split("x")
-    rint = []
-    for i in range(len(rdef)):
-        try:
-            rint.append(int(rstr[i]))
-        except:  # noqa: E722
-            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            rint.append(r)
-
-    # setup figure
-    figure, axes = plot.subplots(
-        max(len(entries), 1),
-        sharex=True,
-        figsize=(divup(rint[0], rint[2]), divup(rint[1], rint[2])),
-        dpi=rint[2],
-    )
-    if 2 > len(entries):
-        axes = [axes]
 
     # parse bounds used to highlight results
     strbounds = re.split(
@@ -665,8 +691,8 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    sval, yunit, addon = None, None, args.branch
-    ngraphs = span = i = 0
+    plots, sval, yunit, addon = {}, None, None, args.branch
+    ngraphs = span = 0
     for entry in entries:
         n = 0
         for value in (
@@ -709,7 +735,11 @@ def main(args, argd, dbfname):
                         weight = wlist[key] if key in wlist else 1.0
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
-                        unit = strval[parsed.end(3) :].strip()  # noqa: E203
+                        unit = (
+                            strval[parsed.end(3) :].strip()  # noqa: E203
+                            if parsed
+                            else ""
+                        )
                         vals.append(float(strval.split()[0]) * vscale * weight)
                         if not ylabel:
                             ylabel = (
@@ -818,27 +848,47 @@ def main(args, argd, dbfname):
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
-                    axes[i].step(  # xvalue,
-                        yvalue, ".:", where="mid", label=ylabel
-                    )
-                    axes[i].set_ylabel(yunit)
+                    # collect plot data
+                    if entry not in plots:
+                        plots[entry] = []
+                    plots[entry].append([yvalue, ylabel, yunit, sval])
                     n = n + 1
+        # maximum number of graphs discovered over all plot-areas
         ngraphs = max(ngraphs, n)
-        if 0 < n:
-            axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
-            axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
-            axes[i].set_title(entry.upper())
-            axes[i].legend(loc="upper left")  # ncol=2
-        i = i + 1
-    axes[-1].set_xlabel("Build Number")
-    title = "Performance History"
-    figure.suptitle(
-        f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
-    )
-    figure.gca().invert_xaxis()
-    figure.tight_layout()
 
-    if 0 < ngraphs:
+    # determine image resolution
+    rdef = [int(r) for r in argd.resolution.split("x")]
+    if 2 == len(rdef):
+        rdef.append(100)
+    rstr, resint = args.resolution.split("x"), []
+    for i in range(len(rdef)):
+        try:
+            resint.append(int(rstr[i]))
+        except:  # noqa: E722
+            r = rdef[i] if 1 != i else round(resint[0] * rdef[1] / rdef[0])
+            resint.append(r)
+
+    nplots = len(plots)
+    if 0 < nplots:
+        nplots_untied = sum(len(v) for v in plots.values())
+        # auto-adjust y-resolution according to number of plots
+        if args.resolution == argd.resolution:  # resolution not user-defined
+            resint_untied = copy.deepcopy(resint)
+            resint_untied[1] = resint[2] * divup(
+                resint[1] * math.sqrt(nplots_untied), resint[2]
+            )
+        else:  # alias
+            resint_untied = resint
+
+        # setup primary figure
+        if args.untied:
+            nplots_primry, resint_primry = nplots_untied, resint_untied
+        else:
+            nplots_primry, resint_primry = nplots, resint
+        figure_primry = create_figure(
+            plots, nplots_primry, resint_primry, args.untied, addon
+        )
+
         # supported file types and filename components
         figdet = (
             ""  # eventually add details about category
@@ -846,33 +896,48 @@ def main(args, argd, dbfname):
             else f"-{entries[0].translate(clean)}"
         )
         figcat = re.sub(r"[ ,;]+", "_", figdet)
-        if 0 < len(match):
+        if 0 < len(match) and 2 >= len(match):
             match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
             parts = [s.lower() for c in match for s in c.split("_")]
             figqry = f"-{'_'.join(dict.fromkeys(parts))}{figcat}"
+        elif query:
+            figqry = f"-{'_'.join(query)}{figcat}"
         else:
             figqry = figcat
-        figcanvas = figure.canvas
         figout = fname(
-            extlst=figcanvas.get_supported_filetypes().keys(),
+            extlst=figure_primry.canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
             idetail=figqry,
         )
-        # reduce file size (png) and save figure
-        if ".png" == figout.suffix.lower():
-            figcanvas.draw()  # otherwise the image is empty
-            imageraw = figcanvas.tostring_rgb()
-            image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
-            # avoid Palette.ADAPTIVE, consider back/foreground color
-            image = image.convert("P", colors=ngraphs + 2)
-            image.save(figout, "PNG", optimize=True)
-        else:
-            figure.savefig(figout)  # save graphics file
-        if 1 == abs(args.verbosity):
-            print(f"{figout} created.")
 
-        return exceeded
+        # setup untied figure
+        if 1 < len(figout) and not args.untied:
+            figure_untied = create_figure(
+                plots, nplots_untied, resint_untied, True, addon
+            )
+        else:  # alias
+            resint_untied = resint_primry
+            figure_untied = figure_primry
+
+        # save figure(s) for all requested formats
+        for i in range(len(figout)):
+            figure = figure_primry if 0 == i else figure_untied
+            figres = resint_primry if 0 == i else resint_untied
+            # reduce file size (png) and save figure
+            if ".png" == figout[i].suffix.lower():
+                figure.canvas.draw()  # otherwise the image is empty
+                imageraw = figure.canvas.tostring_rgb()
+                image = PIL.Image.frombytes("RGB", figres[0:2], imageraw)
+                # avoid Palette.ADAPTIVE, consider back/foreground color
+                image = image.convert("P", colors=ngraphs + 2)
+                image.save(figout[i], "PNG", optimize=True)
+            else:
+                figure.savefig(figout[i])  # save graphics file
+            if 1 == abs(args.verbosity) and 0 == i:  # notify only first
+                print(f"{figout[i]} created.")
+
+    return exceeded
 
 
 if __name__ == "__main__":
@@ -1017,7 +1082,13 @@ if __name__ == "__main__":
         "--bounds",
         type=str,
         default="2.0 10",
-        help="Highlight if exceeding max(A*Stdev%,B%)",
+        help="Highlight if exceeding max(A*Stdev%%,B%%)",
+    )
+    argparser.add_argument(
+        "-u",
+        "--untied",
+        action="store_true",
+        help="Separate plot per query",
     )
     argparser.add_argument(
         "-m",
@@ -1053,13 +1124,15 @@ if __name__ == "__main__":
         in_main=args.filepath,
         in_dflt=argd.filepath,
     )
-    if dbfname.name:
-        weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
+    if dbfname and dbfname[0].name:
+        weights = dbfname[0].with_name(
+            f"{dbfname[0].stem}.weights{dbfname[0].suffix}"
+        )
         argparser.set_defaults(weights=weights)
         args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
-    exceeded = main(args, argd, dbfname)
+    exceeded = main(args, argd, dbfname[0] if dbfname else None)
     if exceeded:
         if 2 <= abs(args.verbosity):
             print(

@@ -257,10 +257,11 @@ for BINARY_POSTOP in 0 1; do
                   # create MMLA scripts with B in VNNIT
                   NEWNAME=mmla_bvnni_${OUTNAME}
                   NEWNAME="${NEWNAME/_nn_/_nt_}"
-                  cp mmla_${OUTNAME} ${NEWNAME}
-                  sed -i "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" ${NEWNAME}
-                  sed -i 's/TRB=0/TRB=1/g' ${NEWNAME}
-                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${NEWNAME}
+                  sed \
+                    -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                    -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
+                    -e 's/TRB=0/TRB=1/g' \
+                    mmla_${OUTNAME} >${NEWNAME}
                   chmod 755 ${NEWNAME}
                 fi
 
@@ -269,10 +270,11 @@ for BINARY_POSTOP in 0 1; do
                   # create BFDOT scripts with B in VNNIT
                   NEWNAME=bfdot_bvnni_${OUTNAME}
                   NEWNAME="${NEWNAME/_nn_/_nt_}"
-                  cp ${OUTNAME} ${NEWNAME}
-                  sed -i "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" ${NEWNAME}
-                  sed -i 's/TRB=0/TRB=1/g' ${NEWNAME}
-                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${NEWNAME}
+                  sed \
+                    -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                    -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
+                    -e 's/TRB=0/TRB=1/g' \
+                    ${OUTNAME} >${NEWNAME}
                   chmod 755 ${NEWNAME}
                 fi
               done
