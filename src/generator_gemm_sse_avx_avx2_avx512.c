@@ -168,7 +168,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     }
   }
 
-  /* in case when A needs to be transposed, we need to change temporarily the desciptor dimensions for gemm */
+  /* in case when A needs to be transposed, we need to change temporarily the descriptor dimensions for gemm */
   lda_transpose = l_xgemm_desc->m;
   if (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
     if ((LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(l_xgemm_desc->datatype)) || (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(l_xgemm_desc->datatype))) {
@@ -262,7 +262,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 88, i_gp_reg_mapping->gp_reg_b_prefetch, 0 );
     }
-    /* batch reduce count & offsett arrays*/
+    /* batch reduce count & offset arrays*/
     if ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_mapping->gp_reg_reduce_count, 0 );
@@ -274,7 +274,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                          i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, i_gp_reg_mapping->gp_reg_b_offset, 0 );
       }
     }
-    /* loading scaling factor for tertenary C */
+    /* loading scaling factor for ternary C */
     if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_opa->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( l_xgemm_desc_opa->datatype )) ) {
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, i_gp_reg_mapping->gp_reg_scf, 0 );
@@ -648,7 +648,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_generator_gemm_vnni_store_C_from_scratch( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc);
   }
 
-  /* destry stack frame */
+  /* destroy stack frame */
   libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, l_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
 }
 
@@ -674,13 +674,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     l_k_blocking = 4;
     l_k_threshold = 23;
   }
-  /* VNNI kenrel should maintain the same amount of unrolled instructions */
+  /* VNNI kernel should maintain the same amount of unrolled instructions */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
     l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
     l_k_blocking = l_k_blocking*l_k_pack_factor;
     l_k_threshold = ((l_k_threshold+1)*l_k_pack_factor)-1;
   }
-  /* for BF8 we need to limit the unrolling, software emualtion code is very large */
+  /* for BF8 we need to limit the unrolling, software emulation code is very large */
   if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
     l_k_blocking = 8;
     l_k_threshold = 23;
@@ -973,4 +973,3 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
   }
   return 0;
 }
-
