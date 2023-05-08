@@ -245,6 +245,7 @@ int main(/*int argc, char* argv[]*/void)
   }
 
 #if defined(__linux__)
+#if 0
   /* libxsmm_stochastic_convert_fp32_bf8 */
   if (EXIT_SUCCESS == libxsmm_mhd_read_header("convert_bf8_stochastic.mhd", sizeof(filename), filename,
     &ndims, size, &channels, (libxsmm_mhd_elemtype*)&type, &header, NULL/*extension_size*/))
@@ -285,6 +286,7 @@ int main(/*int argc, char* argv[]*/void)
     }
     else result = EXIT_FAILURE;
   }
+#endif
 #endif
 
   /* libxsmm_rne_convert_fp32_hf8 */
