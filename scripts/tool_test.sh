@@ -221,6 +221,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       # convert: seconds -> minutes
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
+    if [ "${SRUN_NODE}" ]; then  # request specific node
+      SRUN_FLAGS="${SRUN_FLAGS} -w ${SRUN_NODE}"
+    fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     chmod +rx "${TESTSCRIPT}"
