@@ -192,7 +192,7 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
         tmp0.f = f_data_gold[i + j*ld];
         tmp1.f = f_data[i + j*ld];
         if ( tmp0.u == tmp1.u) {
-#if 1
+#if 0
           printf("[%x %x] ", tmp0.u, tmp1.u);
 #else
           printf("[-------- --------] ");

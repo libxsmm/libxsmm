@@ -176,6 +176,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
     float in1_value = 0;
     float in0_value = 0;
     float out_value = 0;
+    unsigned int seed_idx = 0;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         if ( dtype_in0 == LIBXSMM_DATATYPE_F32 ) {
@@ -249,7 +250,8 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
           if ((flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
-            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state);
+            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
+            seed_idx++;
           } else {
             libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
           }
@@ -322,7 +324,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
-  init_random_matrix( dtype_in1,  in2,      1, ldi, N, 0 );
+  init_random_matrix( dtype_in1, in2,      1, ldi, N, 0 );
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 

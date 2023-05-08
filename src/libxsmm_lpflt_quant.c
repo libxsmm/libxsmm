@@ -753,38 +753,37 @@ LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int*
   rng_state[seed_idx + (3 * state_ld)] = state_3;
 }
 
-LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state) {
+LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state, unsigned int start_seed_idx) {
   unsigned int i = 0;
   unsigned int j = 0;
 
   /* truncate buffer to bf8 */
   for ( i = 0; i < len; i+=16 ) {
-    unsigned int do_round = 1;
     unsigned int j_length = ( i + 16 < len ) ? 16 : len - i;
     for (j=0; j < j_length; j++) {
-      unsigned short short_round = libxsmm_convert_f32_to_f16( in[i+j] );
+      libxsmm_float16_ushort hybrid_in = { 0 };
+      libxsmm_bfloat8 res;
+      unsigned short fixup;
       unsigned int vrng;
-      unsigned int rand;
+      unsigned short rand;
 
-      libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, j);
-      rand = (unsigned short)(vrng >> 24);
+      hybrid_in.f = libxsmm_convert_f32_to_f16( in[i+j] );
+      libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
+      rand = (unsigned short)((vrng >> 24) & 0xff);
 
-      /* we do not round NaN and inf */
-      if ( (short_round & 0x7c00) == 0x7c00 ) {
-        do_round = 0;
-      }
-      /* perform round nearest tie even */
-      if ( do_round != 0) {
-        if ( (short_round & 0x7c00) == 0x0000 ) {
-          unsigned short fixup = (short_round >> 8) & 1;
-          short_round = short_round + 0x007f + fixup;
-        } else {
-          short_round = short_round + (rand & 0x00ff);
-        }
-      }
-      /* create the bf8 value by shifting out the lower 16bits */
-      short_round = short_round >> 8;
-      out[i+j] = (unsigned char)short_round;
+      /* RNE fixup */
+      fixup = (unsigned short)((hybrid_in.u >> 8) & 1);
+
+      /* we do not round inf and NaN */
+      hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
+        ? ( ((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200 )
+        /* we only stochastically round normal numbers, RNE for subnormal */
+        : ( ((hybrid_in.u & 0x7c00) == 0x0000) ? hybrid_in.u + 0x007f + fixup : hybrid_in.u + rand ) );
+
+      /* shift right */
+      res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
+
+      out[i+j] = res;
     }
   }
 }
