@@ -11,8 +11,9 @@
 ###############################################################################
 # shellcheck disable=SC2012,SC2153,SC2206
 
-# check if logfile is given
-if [ ! "${LOGFILE}" ]; then
+if [ "$1" ]; then  # argument takes precedence
+  LOGFILE=$1
+elif [ ! "${LOGFILE}" ]; then  # logfile given?
   if [ "$1" ]; then
     LOGFILE=$1
   else
@@ -67,14 +68,14 @@ else
   elif [ "${HOME_REMOTE}" ] && [ -d "${HOME_REMOTE}/artifacts" ]; then
     LOGDIR=${HOME_REMOTE}/artifacts
   elif [ "$(command -v cut)" ] && [ "$(command -v getent)" ]; then
-    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3) # group
+    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3)  # group
     ARTROOT=$(getent passwd "${ARTUSER}" 2>/dev/null | cut -d: -f6 2>/dev/null)
     if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
     if [ -d "${ARTROOT}/artifacts" ]; then
       LOGDIR=${ARTROOT}/artifacts
     elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
-    else # debug purpose
+    else  # debug purpose
       LOGDIR=.
     fi
   fi
@@ -124,14 +125,14 @@ then
             WEIGHTS=${PARENT_DIR}/../weights.json
           fi
         fi
-        if [ "${WEIGHTS}" ]; then # break
+        if [ "${WEIGHTS}" ]; then  # break
           DBSCRT="${DBSCRT} -w ${WEIGHTS}"
           PARENT_PID=""
         fi
-      else # break
+      else  # break
         PARENT_PID=""
       fi
-    else # break
+    else  # break
       PARENT_PID=""
     fi
   done
@@ -140,18 +141,18 @@ fi
 # process logfile and generate report
 if [ "${LOGDIR}" ]; then
   SYNC=$(command -v sync)
-  ${SYNC} # optional
+  ${SYNC}  # optional
   ERROR=""
 
   # extract data from log (tool_logperf.sh)
   if [ ! "${LOGRPTSUM}" ] || \
      [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
-  then # "telegram" format
+  then  # "telegram" format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" ${LOGFILE});
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
     RESULT="ms"
-  else # JSON-format
+  else  # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
