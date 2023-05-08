@@ -203,16 +203,18 @@ if [ "${LOGDIR}" ]; then
     then
       FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-        if ! OUTPUT=$(base64 -w0 "${FIGURE}");
-        then OUTPUT=""; fi
-        if [ "${OUTPUT}" ]; then
-          FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
-          REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
-          if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-          if [ -e "${REPORT}" ]; then  # print after summary
-            printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
-          fi
-          if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
+        FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
+        REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
+        # echo parsed/captured JSON
+        if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+        if [ -e "${REPORT}" ]; then  # print after summary
+          printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
+        fi
+        # embed figure if report is not exclusive
+        if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
+          if ! OUTPUT=$(base64 -w0 "${FIGURE}");
+          then OUTPUT=""; fi
+          if [ "${OUTPUT}" ]; then
             if [ "$(command -v mimetype)" ]; then
               MIMETYPE=$(mimetype -b "${FIGURE}")
             else
@@ -226,13 +228,13 @@ if [ "${LOGDIR}" ]; then
             fi
             printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
               "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          else
+            >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
           fi
-          if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
-            >&2 echo "WARNING: deviation of latest value exceeds margin."
-            exit "${ERROR}"
-          fi
-        else
-          >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
+        fi
+        if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
+          >&2 echo "WARNING: deviation of latest value exceeds margin."
+          exit "${ERROR}"
         fi
       else
         >&2 echo "WARNING: report not ready (\"${OUTPUT}\")."
