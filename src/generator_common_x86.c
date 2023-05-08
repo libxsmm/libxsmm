@@ -3057,17 +3057,22 @@ void libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( libxsmm_generated_code*
               0, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
 
   /* AND with naninf and compute mask  */
+  /* hybrid_in.u & 0x7c00 */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname_2,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, 1,
                                                 i_vec_reg, io_vec_tmp_0 );
+  /* load 0x7c00 */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTD,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_vname_2, io_vec_tmp_1, 0, 1, 0 );
+  /* hybrid_in.u & 0x7c00 != 0x7c00 */
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname_2,
                                                  io_vec_tmp_0, io_vec_tmp_1, io_mask_0, 4 );
   if ( stochastic_rnd != 0 ) {
     /* compute non-sub-normal mask */
+    /* set temp to 0 */
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_vname_2,
                                                  io_vec_tmp_1, io_vec_tmp_1, io_vec_tmp_1);
+    /* hybrid_in.u & 0x7c00 == 0x0000 */
     libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname_2,
                                                    io_vec_tmp_0, io_vec_tmp_1, io_mask_1, 0 );
     /* shift int32 by 24bit to right */
@@ -3118,170 +3123,6 @@ void libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( libxsmm_generated_code*
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVWB, i_vname_2,
                                             o_vec_reg, o_vec_reg );
 }
-
-#if 0
-LIBXSMM_API_INTERN
-void libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( libxsmm_generated_code* io_generated_code,
-                                                          const char              i_vname,
-                                                          const unsigned int      i_vec_reg,
-                                                          const unsigned int      o_vec_reg,
-                                                          const unsigned int      io_vec_tmp_0,
-                                                          const unsigned int      io_vec_tmp_1,
-                                                          const unsigned int      io_vec_tmp_2,
-                                                          const unsigned int      io_mask_0,
-                                                          const unsigned int      io_mask_1,
-                                                          const unsigned int      stochastic_rnd,
-                                                          const unsigned int      i_vec_rand ) {
-  /* TODO: check for valid i_vnames */
-  /* and with naninf */
-  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
-                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 24, 1,
-                                                i_vec_reg, io_vec_tmp_0 );
-
-  /* compute naninf mask */
-  libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPD, i_vname,
-                                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 24, 1,
-                                                     io_vec_tmp_0, io_mask_0, 4 );
-  /* and with fixup */
-  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
-                                              LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, 1,
-                                              i_vec_reg, io_vec_tmp_1 );
-
-  /* compute fixup mask */
-  libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPD, i_vname,
-                                                   LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, 1,
-                                                   io_vec_tmp_1, io_mask_1, 0 );
-
-  /* load rneadd */
-  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                  LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, i_vname,
-                                  io_vec_tmp_0, 0, 1, 0 );
-
-  /* load fixup */
-  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                  LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_vname,
-                                  io_vec_tmp_1, 0, 1, 0 );
-
-  /* compute fixup */
-  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, i_vname,
-                                               io_vec_tmp_1, io_vec_tmp_0, io_vec_tmp_0, io_mask_1, 0 );
-
-  if ( i_vec_reg != o_vec_reg ) {
-    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vname,
-                                            i_vec_reg, o_vec_reg );
-  }
-
-  if ( stochastic_rnd == 0) {
-    /* compute fixup */
-    libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, i_vname,
-                                                 io_vec_tmp_0, i_vec_reg, o_vec_reg, io_mask_0, 0 );
-  } else {
-    /* compute non-sub-normal mask */
-    libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPD, i_vname,
-                                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 80, 0,
-                                                     i_vec_reg, io_mask_1, 5 );
-    /* combined mask of naninf and sub-normal mask */
-    libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KANDW,
-                                              io_mask_1, io_mask_0, io_mask_0, 0);
-    /* shift random number to align bf8 mantissa */
-    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, i_vname,
-                                                   i_vec_rand, i_vec_rand, 11 );
-    /* add rand_bits */
-    libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, i_vname,
-                                                   i_vec_rand, i_vec_reg, o_vec_reg, io_mask_0, 0 );
-    /* sub-normal mask */
-    libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KNOTW,
-                                              io_mask_1, LIBXSMM_X86_VEC_REG_UNDEF, io_mask_1, 0);
-    /* compute fixup */
-    libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, i_vname,
-                                                 io_vec_tmp_0, o_vec_reg, o_vec_reg, io_mask_1, 0 );
-  }
-  /* and with naninf */
-  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
-                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 24, 1,
-                                                o_vec_reg, io_vec_tmp_0);
-
-  /* compute flush-to-zero mask */
-  libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPD, i_vname,
-                                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 64, 1,
-                                                     io_vec_tmp_0, io_mask_0, 1 );
-
-  /* compute sub-normal mask */
-  libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPD, i_vname,
-                                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 80, 1,
-                                                     io_vec_tmp_0, io_mask_1, 1 );
-
-  /* compute F32 exponent */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, i_vname,
-                                                 io_vec_tmp_0, io_vec_tmp_0, 23 );
-  /* load F32 exponent offset */
-  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, i_vname,
-                                    io_vec_tmp_1, 0, 1, 0 );
-  /* load BF8 exponent offset */
-  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, i_vname,
-                                    io_vec_tmp_2, 0, 1, 0 );
-
-  /* extract exponent */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBD, i_vname,
-                                            io_vec_tmp_1, io_vec_tmp_0, io_vec_tmp_0);
-  /* Zero reg */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_vname,
-                                            io_vec_tmp_1, io_vec_tmp_1, io_vec_tmp_1);
-
-  /* compute min BF8 exponent */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBD, i_vname,
-                                            io_vec_tmp_2, io_vec_tmp_1, io_vec_tmp_1);
-
-  /* compute sub-normal shift */
-  libxsmm_x86_instruction_vec_compute_3reg_mask ( io_generated_code, LIBXSMM_X86_INSTR_VPSUBD, i_vname,
-                                                  io_vec_tmp_0, io_vec_tmp_1, io_vec_tmp_1, io_mask_1, 0);
-  /* add bf8 exponent offset */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, i_vname,
-                                            io_vec_tmp_0, io_vec_tmp_2, io_vec_tmp_0);
-  /* shift the exponent in-place */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, i_vname,
-                                                 io_vec_tmp_0, io_vec_tmp_0, 2 );
-  /* compute mantissa mask */
-  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
-                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 56, 1,
-                                                o_vec_reg, io_vec_tmp_2);
-  /* sign */
-  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
-                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 48, 1,
-                                                o_vec_reg, o_vec_reg);
-  /* shift sign bit */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, i_vname,
-                                                 o_vec_reg, o_vec_reg, 24 );
-
-  /* compute manstissa (denormal, denormalize) */
-  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPSRAVD, i_vname,
-                                                 io_vec_tmp_1, io_vec_tmp_2, io_vec_tmp_2, io_mask_1, 0 );
-  /* shift the mantissa */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, i_vname,
-                                                 io_vec_tmp_2, io_vec_tmp_2, 21 );
-  /* compute manstissa (denormal, normalize) */
-  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPSLLVD, i_vname,
-                                                 io_vec_tmp_1, io_vec_tmp_2, io_vec_tmp_2, io_mask_1, 0 );
-  /* put exponent + mantissa together */
-  libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
-                                             io_vec_tmp_0, io_vec_tmp_2, io_vec_tmp_2 );
-  /* put sign + exponent + mantissa together */
-  libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
-                                             o_vec_reg, io_vec_tmp_2, o_vec_reg );
-  /* Zero reg */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_vname,
-                                            io_vec_tmp_1, io_vec_tmp_1, io_vec_tmp_1);
-  /* flush values below smallest bf8 value */
-  libxsmm_x86_instruction_vec_compute_3reg_mask ( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQA32, i_vname,
-                                                  io_vec_tmp_1, LIBXSMM_X86_VEC_REG_UNDEF, o_vec_reg, io_mask_0, 0);
-
-  /* store 8 bit values into lower portion of reg_0 */
-  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDB, i_vname,
-                                            o_vec_reg, o_vec_reg );
-}
-#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated_code,
