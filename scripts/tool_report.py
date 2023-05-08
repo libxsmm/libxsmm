@@ -395,7 +395,10 @@ def create_figure(plots, nplots, resint, untied, addon):
     for entry in plots:
         for data in plots[entry]:
             axes[i].step(data[0], ".:", where="mid", label=data[1])
-            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            if addon and addon != data[2]:
+                axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            else:
+                axes[i].set_ylabel(f"{entry.upper()}")
             axes[i].xaxis.set_ticks(
                 range(len(data[-1])), data[-1], rotation=45
             )
@@ -409,11 +412,10 @@ def create_figure(plots, nplots, resint, untied, addon):
     if 0 < nplots:
         axes[-1].set_xlabel("Build Number")
         title = "Performance History"
-        figure.suptitle(
-            f"{title} ({addon.lower()})" if addon else title,
-            fontsize="x-large",
-        )
-        figure.tight_layout(rect=[0, 0, 1, 0.98])  # fit suptitle
+        suptitle = f"{title} ({addon.lower()})" if addon else title
+        figure.suptitle(f"\n{suptitle}", fontsize="x-large", y=1.0)
+        figure.tight_layout()  # before subplots_adjust
+        figure.subplots_adjust(hspace=0.0)
         figure.gca().invert_xaxis()
     return figure
 
@@ -1113,12 +1115,17 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
+    if args.untied:
+        figtype = "pdf"
+        argparser.set_defaults(figure=f"{base}.{figtype}")
+        args = argparser.parse_args()  # reparse
     if args.pipeline:
         filepath = rdir / f"{args.pipeline}.json"
         figure = f"{args.pipeline}.{figtype}"
         argparser.set_defaults(filepath=filepath, figure=figure)
-        args = argparser.parse_args()  # 2nd pass
-    argd = argparser.parse_args([])
+        args = argparser.parse_args()  # reparse
+    argd = argparser.parse_args([])  # final defaults
+
     dbfname = fname(  # database filename
         ["json", "pickle", "pkl", "db"],
         in_main=args.filepath,
@@ -1129,7 +1136,7 @@ if __name__ == "__main__":
             f"{dbfname[0].stem}.weights{dbfname[0].suffix}"
         )
         argparser.set_defaults(weights=weights)
-        args = argparser.parse_args()  # 3rd pass
+        args = argparser.parse_args()  # reparse
     argd = argparser.parse_args([])
 
     exceeded = main(args, argd, dbfname[0] if dbfname else None)
