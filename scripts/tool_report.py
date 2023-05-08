@@ -170,7 +170,10 @@ def parselog(
                     for i in values:
                         if i not in database[strbuild][category]:
                             m = m + 1
-                        database[strbuild][category][i] = values[i]
+                        if values[i]:
+                            database[strbuild][category][i] = values[i]
+                        else:  # error (empty value)
+                            n = n + 1
                 else:
                     if jobname not in database[strbuild][category]:
                         m = m + 1
@@ -395,10 +398,7 @@ def create_figure(plots, nplots, resint, untied, addon):
     for entry in plots:
         for data in plots[entry]:
             axes[i].step(data[0], ".:", where="mid", label=data[1])
-            if addon and addon != data[2]:
-                axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
-            else:
-                axes[i].set_ylabel(f"{entry.upper()}")
+            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
             axes[i].xaxis.set_ticks(
                 range(len(data[-1])), data[-1], rotation=45
             )
@@ -521,7 +521,7 @@ def main(args, argd, dbfname):
             database, str(nbld), name, infokey, info, txt, nentries, nerrors
         )
         if 0 < nentries:
-            latest = next
+            latest = next if 0 == nbuild else nbuild
     elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -813,8 +813,8 @@ def main(args, argd, dbfname):
                 else:  # unit-weight
                     layers[a] = [y[k] for k in range(s)]
                 j = j + 1
-            if not yunit and (ylabel or args.result):
-                yunit = (ylabel if ylabel else args.result).split()[0]
+            if not yunit and ylabel:
+                yunit = ylabel
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
                 yvalue = [sum(y) for y in zip(*layers.values())]
