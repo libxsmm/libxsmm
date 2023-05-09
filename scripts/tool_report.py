@@ -938,8 +938,8 @@ def main(args, argd, dbfname):
                 figure.savefig(figout[i])  # save graphics file
             if (1 == abs(args.verbosity) and 0 == i) or 2 <= abs(
                 args.verbosity
-            ):  # print canonical path (readlink -f)
-                print(f"{figout[i].resolve()} created.")
+            ):  # print only one/first filepath if verbosity=automation
+                print(f"{figout[i]} created.")
 
     return exceeded
 
