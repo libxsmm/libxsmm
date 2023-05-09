@@ -218,8 +218,9 @@ if [ "${LOGDIR}" ]; then
             LABEL=$(tr "[:lower:]" "[:upper:]" <<<"${RPTFMT}")
           fi
           if [ -e "${REPDIR}/${REPFLE}" ]; then
+            if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
             printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
-              "${REPDIR}" "${REPFLE}" "${LABEL}"
+              "${ARTDIR}" "${REPFLE}" "${LABEL}"
           fi
         fi
         # embed figure if report is not exclusive
