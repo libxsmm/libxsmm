@@ -178,20 +178,20 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
         unsigned int l_use_stoch = 0;
         if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
           l_use_stoch = 1;
-          libxsmm_generator_xoshiro128pp_axv2_avx512 ( io_generated_code, 'z',
+          libxsmm_generator_xoshiro128pp_axv2_avx512 ( io_generated_code, i_micro_kernel_config->vector_name,
                                                        i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
                                                        i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg,
                                                        i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_tmp1,
                                                        i_micro_kernel_config->prng_vreg_rand);
         }
 
-        libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, 'z',
+        libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
             im, im,
             i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
             i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
             l_use_stoch, i_micro_kernel_config->prng_vreg_rand );
       } else if (downconvert_input_f32hf8 > 0) {
-        libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( io_generated_code, 'z',
+        libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
             im, im,
             i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1, i_micro_kernel_config->dcvt_zmm_aux2, i_micro_kernel_config->dcvt_zmm_aux3,
             i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1, i_micro_kernel_config->dcvt_mask_aux2 );
@@ -208,7 +208,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
   for (im = 0; im < m_unroll_factor; im++) {
     unsigned int use_masking = ((im == m_unroll_factor - 1) && (i_use_masking == 1)) ? 1 : 0;
     libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-        i_micro_kernel_config->vmove_instruction_out,
+        ( ((downconvert_input_f32bf8 > 0) || (downconvert_input_f32hf8 > 0)) && (use_masking == 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->vmove_instruction_out,
         i_gp_reg_mapping->gp_reg_out,
         LIBXSMM_X86_GP_REG_UNDEF,
         0,

@@ -2310,28 +2310,6 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
   }
 
-  /* load prng state into registers for stochastic rounding */
-  if ( (flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
-    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
-      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-      reserved_zmms += 7;
-
-      i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
-      i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
-      i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
-      i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
-      i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
-      i_micro_kernel_config->prng_vreg_tmp1       = reserved_zmms - 6;
-      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 7;
-
-      libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
-                                                    i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
-                                                    i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
-
-      i_micro_kernel_config->reserved_zmms = reserved_zmms;
-    }
-  }
-
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) || (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV)) {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) ) {
       i_micro_kernel_config->dropout_vreg_avxmask = i_micro_kernel_config->reserved_zmms;
@@ -2820,6 +2798,28 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
                                      0,
                                      i_gp_reg_aux0,
                                      0 );
+  }
+
+  /* load prng state into registers for stochastic rounding */
+  if ( (flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
+      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+      reserved_zmms += 7;
+
+      i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
+      i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
+      i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
+      i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
+      i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
+      i_micro_kernel_config->prng_vreg_tmp1       = reserved_zmms - 6;
+      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 7;
+
+      libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
+                                                    i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                    i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+
+      i_micro_kernel_config->reserved_zmms = reserved_zmms;
+    }
   }
 }
 
