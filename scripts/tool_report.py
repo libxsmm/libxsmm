@@ -936,8 +936,10 @@ def main(args, argd, dbfname):
                 image.save(figout[i], "PNG", optimize=True)
             else:
                 figure.savefig(figout[i])  # save graphics file
-            if 1 == abs(args.verbosity) and 0 == i:  # notify only first
-                print(f"{figout[i]} created.")
+            if (1 == abs(args.verbosity) and 0 == i) or 2 <= abs(
+                args.verbosity
+            ):  # print canonical path (readlink -f)
+                print(f"{figout[i].resolve()} created.")
 
     return exceeded
 
