@@ -358,11 +358,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   if [ "${NSECS}" ]; then
     NSECS=$(($(date +%s)-NSECS))
   fi
-  export TIME="(${NSECS}+%U+%S)/(${NSECS}+%e)"
-  TIMEX=$(which time)  # !command
+  TIME=$(which time)  # !command
   if [ "0" != "${PEXEC_IL}" ]; then
-    if [ "${TIMEX}" ] && [ -e "${TIMEX}" ]; then
-      echo -e "${COUNTED}" | ${TIMEX} -o "${NAME}.txt" "${XARGS}" >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_INLINE}" "{}"
+    if [ "${TIME}" ] && [ -e "${TIME}" ]; then
+      echo -e "${COUNTED}" | ${TIME} -p -o "${NAME}.txt" "${XARGS}" >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_INLINE}" "{}"
       RESULT=$?
     else
       echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_INLINE}" "{}"
@@ -372,8 +371,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     echo "#!/usr/bin/env bash" >"${PEXEC_SCRIPT}"
     echo "${PEXEC_INLINE}"    >>"${PEXEC_SCRIPT}"
     chmod +x "${PEXEC_SCRIPT}"
-    if [ "${TIMEX}" ] && [ -e "${TIMEX}" ]; then
-      echo -e "${COUNTED}" | ${TIMEX} -o "${NAME}.txt" "${XARGS}" >"${LOG_OUTER}" -P${NP} -I{} "${PEXEC_SCRIPT}" "{}"
+    if [ "${TIME}" ] && [ -e "${TIME}" ]; then
+      echo -e "${COUNTED}" | ${TIME} -p -o "${NAME}.txt" "${XARGS}" >"${LOG_OUTER}" -P${NP} -I{} "${PEXEC_SCRIPT}" "{}"
       RESULT=$?
     else
       echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} "${PEXEC_SCRIPT}" "{}"
@@ -381,8 +380,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     fi
   fi
   if [ -e "${NAME}.txt" ] && [ "$(command -v bc)" ]; then
+    read -r -d $'\04' TREAL TUSER TSYST <<<"$(${CUT} -d' ' -f2 "${NAME}.txt")"
     echo "--------------------------------------------------------------------------------"
-    SPEEDUP=$(bc 2>/dev/null -l <"${NAME}.txt")
+    SPEEDUP=$(bc 2>/dev/null -l <<<"(${NSECS}+${TUSER}+${TSYST})/(${NSECS}+${TREAL})")
     EFFINCY=$(bc 2>/dev/null -l <<<"100*${SPEEDUP}/(${NP}*${NJ})")
     printf "Executed ${COUNTER} tasks with %.0f%% parallel efficiency (speedup=%.1fx init=%is)\n" \
       "${EFFINCY}" "${SPEEDUP}" "${NSECS}"
