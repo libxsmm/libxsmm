@@ -955,7 +955,7 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
           if ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) {
             libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VRSQRTPS, i_micro_kernel_config->vector_name, cur_vreg, LIBXSMM_X86_VEC_REG_UNDEF, cur_vreg, 0, 0, 0, 0);
             libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VRCPPS, i_micro_kernel_config->vector_name, cur_vreg, LIBXSMM_X86_VEC_REG_UNDEF, cur_vreg, 0, 0, 0, 0);
-          } else if (  LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) {
+          } else if ( LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) {
             libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSQRTPD, i_micro_kernel_config->vector_name, cur_vreg, LIBXSMM_X86_VEC_REG_UNDEF, cur_vreg, 0, 0, 0, 0);
           } else {
 
@@ -2057,7 +2057,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       } else if (i_vlen_in == 4) {
         fake_dt = LIBXSMM_DATATYPE_I64;
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
       mask_in_count = i_vlen_in - i_m % i_vlen_in;
       mask_reg_in   = reserved_mask_regs;
@@ -2074,7 +2074,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       } else if (i_vlen_in == 8) {
         fake_dt = LIBXSMM_DATATYPE_I64;
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
       mask_in_count = i_vlen_in - i_m % i_vlen_in;
       mask_reg_in   = reserved_mask_regs;
@@ -2101,7 +2101,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
         } else if (i_vlen_out == 8) {
           fake_dt = LIBXSMM_DATATYPE_I64;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
         mask_out_count = i_vlen_out - i_m % i_vlen_out;
         mask_reg_out   = reserved_mask_regs;
@@ -2118,7 +2118,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
         } else if (i_vlen_out == 8) {
           fake_dt = LIBXSMM_DATATYPE_I64;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
         mask_out_count = i_vlen_out - i_m % i_vlen_out;
         mask_reg_out   = reserved_mask_regs;

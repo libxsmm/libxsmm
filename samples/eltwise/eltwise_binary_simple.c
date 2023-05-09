@@ -189,7 +189,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           const libxsmm_hfloat8* hf8_in0 = (const libxsmm_hfloat8*)in0;
           libxsmm_convert_hf8_f32( &(hf8_in0[(j*ldi0) + i]), &in0_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( dtype_in1 == LIBXSMM_DATATYPE_F32 ) {
@@ -208,7 +208,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           const libxsmm_hfloat8* hf8_in1 = (const libxsmm_hfloat8*)in1;
           libxsmm_convert_hf8_f32( &(hf8_in1[(j*ldi1) + i]), &in1_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
@@ -227,7 +227,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           const libxsmm_hfloat8* hf8_out = (const libxsmm_hfloat8*)out;
           libxsmm_convert_hf8_f32( &(hf8_out[(j*ldo) + i]), &out_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         out_value = fp32_binary_compute(in0_value, in1_value, out_value, op);
@@ -248,7 +248,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1);
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }

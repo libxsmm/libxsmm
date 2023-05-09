@@ -141,7 +141,7 @@ LIBXSMM_API void libxsmm_matcopy_task_internal(void* out, const void* in, unsign
   else { /* parallelized over M and N */
     const int mntasks = ntasks / mtasks;
     const int mtid = tid / mntasks, ntid = tid - mtid * mntasks;
-    const unsigned int nt = LIBXSMM_UP(LIBXSMM_UPDIV(n, mntasks), tn) ;
+    const unsigned int nt = LIBXSMM_UP(LIBXSMM_UPDIV(n, mntasks), tn);
     m0 = LIBXSMM_MIN(mtid * tm, m); m1 = LIBXSMM_MIN(m0 + tm, m);
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }

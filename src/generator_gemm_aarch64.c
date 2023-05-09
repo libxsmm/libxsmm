@@ -1285,7 +1285,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     return;
   }
 
-  /* in case when A needs to be transposed, we need to change temporarily the desciptor dimensions for gemm, hence the local descriptor */
+  /* in case when A needs to be transposed, we need to change temporarily the descriptor dimensions for gemm, hence the local descriptor */
   lda_transpose = i_xgemm_desc->m;
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
     if ((LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype)) || (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype))) {
@@ -1325,7 +1325,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 88, l_gp_reg_mapping.gp_reg_b_prefetch );
     }
-    /* batch reduce count & offsett arrays*/
+    /* batch reduce count & offset arrays*/
     if ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, l_gp_reg_mapping.gp_reg_reduce_count );
@@ -1668,7 +1668,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
           libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_1);
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                          l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1,
-                                                         (l_micro_kernel_config.fused_scolbias == 1) ? (long long)l_m_blocking*4 : (long long)l_m_blocking*2 ) ;
+                                                         (l_micro_kernel_config.fused_scolbias == 1) ? (long long)l_m_blocking*4 : (long long)l_m_blocking*2 );
           libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1);
         }
 
@@ -1737,7 +1737,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_1);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                      l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1,
-                                                     (l_micro_kernel_config.fused_scolbias == 1) ? (long long)l_xgemm_desc_opa->m*4 : (long long)l_xgemm_desc_opa->m *2 ) ;
+                                                     (l_micro_kernel_config.fused_scolbias == 1) ? (long long)l_xgemm_desc_opa->m*4 : (long long)l_xgemm_desc_opa->m *2 );
       libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1);
     }
 
