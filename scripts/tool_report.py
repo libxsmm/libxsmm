@@ -898,17 +898,17 @@ def main(args, argd, dbfname):
         )
 
         # supported file types and filename components
-        figdet = (
+        figcat = (
             ""  # eventually add details about category
             if 1 < len(entries) or 0 == len(entries)
             else f"-{entries[0].translate(clean)}"
         )
-        figcat = re.sub(r"[ ,;]+", "_", figdet)
+        figdet = re.sub(r"[ ,;]+", "_", figcat)
         figout = fname(
             extlst=figure_primry.canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
-            idetail=figcat,
+            idetail=f"-{latest}{figdet}" if 0 < latest else figdet,
         )
 
         # setup untied figure
