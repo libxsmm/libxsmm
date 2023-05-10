@@ -1412,6 +1412,10 @@ endif
 install: install-minimal
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
+	@echo "LIBXSMM installing stand-alone generator..."
+	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@echo
 	@echo "LIBXSMM installing documentation..."
 	@$(MKDIR) -p $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
@@ -1429,17 +1433,13 @@ endif
 install-all: install build-tests
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
-	@echo "LIBXSMM installing stand-alone generators..."
-	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@echo
 	@echo "LIBXSMM installing tests..."
 	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(PTSTDIR)
 	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PSHRDIR)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
-install-dev: install-all
+install-dev: install
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "================================================================================"
@@ -1469,7 +1469,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 endif
 
 .PHONY: install-realall
-install-realall: install-dev samples
+install-realall: install-all install-dev samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
