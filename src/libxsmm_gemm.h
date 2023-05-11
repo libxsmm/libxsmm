@@ -289,6 +289,19 @@ LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemv);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemv);
 
+/** Helper for tuning the given gemm_flags for batches of SMMs (NTS-hint). */
+LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
+  int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c,
+  /**
+   * If the returned value is larger than zero, the vector-length (in Bytes)
+   * is larger than C's element-width and it can be used to check against a
+   * stride of subsequent C-addresses, i.e., there is sufficient alignment
+   * if 0 == LIBXSMM_MOD2(stride_in_byte, *vlen) and the tuned flag
+   * can be adopted.
+   * The vlen argument can be NULL if no further check is desired.
+   */
+  int* vlen);
+
 LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_blasint index_base,
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, /*unsigned*/int tid, /*unsigned*/int ntasks,

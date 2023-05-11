@@ -162,19 +162,6 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
-/** Helper for tuning the given gemm_flags for batches of SMMs (NTS-hint). */
-LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
-  int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c,
-  /**
-   * If the returned value is larger than zero, the vector-length (in Bytes)
-   * is larger than C's element-width and it can be used to check against a
-   * stride of subsequent C-addresses, i.e., there is sufficient alignment
-   * if 0 == LIBXSMM_MOD2(stride_in_byte, *vlen) and the tuned flag
-   * can be adopted.
-   * The vlen argument can be NULL if no further check is desired.
-   */
-  int* vlen);
-
 /**
  * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
  * The kind of matrix operands (a, b, c) depend on index_stride.
