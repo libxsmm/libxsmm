@@ -549,13 +549,6 @@ typedef enum libxsmm_gemm_batch_reduce_type {
   LIBXSMM_GEMM_BATCH_REDUCE_STRIDE  = 4
 } libxsmm_gemm_batch_reduce_type;
 
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_matcopy_flags {
-  LIBXSMM_MATCOPY_FLAG_DEFAULT = 0,
-  /** If set, then use zero matrix as source */
-  LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
-} libxsmm_matcopy_flags;
-
 /** Determines the kernel kind. */
 typedef enum libxsmm_kernel_kind {
   /** Matrix multiplication kernel */
