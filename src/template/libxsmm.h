@@ -104,6 +104,7 @@ LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libx
 
 /** Receive information about JIT-generated code (kernel or registry entry). */
 LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info* info);
+
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 /** Enumerate registry by kind (e.g., LIBXSMM_KERNEL_KIND_USER); can be NULL (no such kind). */

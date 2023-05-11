@@ -2241,7 +2241,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           if (0 > libxsmm_verbosity) { /* avoid dump if just the profiler is enabled */
             LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr,
               /* dump executable code without constant data (apply_size vs info_size) */
-              apply_size, 1/*unique*/));
+              apply_size, 1/*unique*/, 0/*overwrite*/));
           }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
