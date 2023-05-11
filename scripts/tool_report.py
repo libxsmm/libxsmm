@@ -170,7 +170,10 @@ def parselog(
                     for i in values:
                         if i not in database[strbuild][category]:
                             m = m + 1
-                        database[strbuild][category][i] = values[i]
+                        if values[i]:
+                            database[strbuild][category][i] = values[i]
+                        else:  # error (empty value)
+                            n = n + 1
                 else:
                     if jobname not in database[strbuild][category]:
                         m = m + 1
@@ -409,11 +412,10 @@ def create_figure(plots, nplots, resint, untied, addon):
     if 0 < nplots:
         axes[-1].set_xlabel("Build Number")
         title = "Performance History"
-        figure.suptitle(
-            f"{title} ({addon.lower()})" if addon else title,
-            fontsize="x-large",
-        )
-        figure.tight_layout(rect=[0, 0, 1, 0.98])  # fit suptitle
+        suptitle = f"{title} ({addon.lower()})" if addon else title
+        figure.suptitle(f"\n{suptitle}", fontsize="x-large", y=1.0)
+        figure.tight_layout()  # before subplots_adjust
+        figure.subplots_adjust(hspace=0.0)
         figure.gca().invert_xaxis()
     return figure
 
@@ -519,7 +521,7 @@ def main(args, argd, dbfname):
             database, str(nbld), name, infokey, info, txt, nentries, nerrors
         )
         if 0 < nentries:
-            latest = next
+            latest = next if 0 == nbuild else nbuild
     elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -811,8 +813,8 @@ def main(args, argd, dbfname):
                 else:  # unit-weight
                     layers[a] = [y[k] for k in range(s)]
                 j = j + 1
-            if not yunit and (ylabel or args.result):
-                yunit = (ylabel if ylabel else args.result).split()[0]
+            if not yunit and ylabel:
+                yunit = ylabel
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
                 yvalue = [sum(y) for y in zip(*layers.values())]
@@ -1113,12 +1115,17 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
+    if args.untied:
+        figtype = "pdf"
+        argparser.set_defaults(figure=f"{base}.{figtype}")
+        args = argparser.parse_args()  # reparse
     if args.pipeline:
         filepath = rdir / f"{args.pipeline}.json"
         figure = f"{args.pipeline}.{figtype}"
         argparser.set_defaults(filepath=filepath, figure=figure)
-        args = argparser.parse_args()  # 2nd pass
-    argd = argparser.parse_args([])
+        args = argparser.parse_args()  # reparse
+    argd = argparser.parse_args([])  # final defaults
+
     dbfname = fname(  # database filename
         ["json", "pickle", "pkl", "db"],
         in_main=args.filepath,
@@ -1129,7 +1136,7 @@ if __name__ == "__main__":
             f"{dbfname[0].stem}.weights{dbfname[0].suffix}"
         )
         argparser.set_defaults(weights=weights)
-        args = argparser.parse_args()  # 3rd pass
+        args = argparser.parse_args()  # reparse
     argd = argparser.parse_args([])
 
     exceeded = main(args, argd, dbfname[0] if dbfname else None)

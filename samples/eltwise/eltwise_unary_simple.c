@@ -273,7 +273,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( op == XOR_OP ) {
           bf_out[(j*ldo) + i] = 0;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -312,7 +312,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         out_value = fp32_unary_compute(in_value, op);
@@ -338,7 +338,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1);
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -355,7 +355,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       }
     }
   } else {
-    /* should happen */
+    /* should not happen */
   }
 }
 

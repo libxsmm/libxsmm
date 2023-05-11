@@ -1265,7 +1265,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     error = libxsmm_matdiff_epsilon(&l_diff);
 
     free( data_f );
-    free( data_gold_f ) ;
+    free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
     float* data_gold_f = malloc( ld * n * sizeof(float) );
     float* data_f      = malloc( ld * n * sizeof(float) );
@@ -1276,7 +1276,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     error = l_diff.normf_rel;
 
     free( data_f );
-    free( data_gold_f ) ;
+    free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_HF8 ) {
     float* data_gold_f = malloc( ld * n * sizeof(float) );
     float* data_f      = malloc( ld * n * sizeof(float) );
@@ -1296,7 +1296,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
 #endif
 
     free( data_f );
-    free( data_gold_f ) ;
+    free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);

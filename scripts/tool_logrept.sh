@@ -11,8 +11,9 @@
 ###############################################################################
 # shellcheck disable=SC2012,SC2153,SC2206
 
-# check if logfile is given
-if [ ! "${LOGFILE}" ]; then
+if [ "$1" ]; then  # argument takes precedence
+  LOGFILE=$1
+elif [ ! "${LOGFILE}" ]; then  # logfile given?
   if [ "$1" ]; then
     LOGFILE=$1
   else
@@ -67,14 +68,14 @@ else
   elif [ "${HOME_REMOTE}" ] && [ -d "${HOME_REMOTE}/artifacts" ]; then
     LOGDIR=${HOME_REMOTE}/artifacts
   elif [ "$(command -v cut)" ] && [ "$(command -v getent)" ]; then
-    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3) # group
+    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3)  # group
     ARTROOT=$(getent passwd "${ARTUSER}" 2>/dev/null | cut -d: -f6 2>/dev/null)
     if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
     if [ -d "${ARTROOT}/artifacts" ]; then
       LOGDIR=${ARTROOT}/artifacts
     elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
-    else # debug purpose
+    else  # debug purpose
       LOGDIR=.
     fi
   fi
@@ -124,14 +125,14 @@ then
             WEIGHTS=${PARENT_DIR}/../weights.json
           fi
         fi
-        if [ "${WEIGHTS}" ]; then # break
+        if [ "${WEIGHTS}" ]; then  # break
           DBSCRT="${DBSCRT} -w ${WEIGHTS}"
           PARENT_PID=""
         fi
-      else # break
+      else  # break
         PARENT_PID=""
       fi
-    else # break
+    else  # break
       PARENT_PID=""
     fi
   done
@@ -140,18 +141,18 @@ fi
 # process logfile and generate report
 if [ "${LOGDIR}" ]; then
   SYNC=$(command -v sync)
-  ${SYNC} # optional
+  ${SYNC}  # optional
   ERROR=""
 
   # extract data from log (tool_logperf.sh)
   if [ ! "${LOGRPTSUM}" ] || \
      [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
-  then # "telegram" format
+  then  # "telegram" format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" ${LOGFILE});
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
     RESULT="ms"
-  else # JSON-format
+  else  # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
@@ -203,34 +204,38 @@ if [ "${LOGDIR}" ]; then
     then
       FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-        if ! OUTPUT=$(base64 -w0 "${FIGURE}");
-        then OUTPUT=""; fi
-        if [ "${OUTPUT}" ]; then
-          FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
-          REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
-          if [ "$(command -v mimetype)" ]; then
-            MIMETYPE=$(mimetype -b "${FIGURE}")
-          else
-            if [ "svgz" = "${FORMAT[0]}" ]; then
-              MIMETYPE="image/svg+xml-compressed"
-            elif [ "svg" = "${FORMAT[0]}" ]; then
-              MIMETYPE="image/svg+xml"
-            else  # fallback
-              MIMETYPE="image/${FORMAT[0]}"
+        FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
+        REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
+        # echo parsed/captured JSON
+        if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+        if [ -e "${REPORT}" ]; then  # print after summary
+          printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
+        fi
+        # embed figure if report is not exclusive
+        if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
+          if ! OUTPUT=$(base64 -w0 "${FIGURE}");
+          then OUTPUT=""; fi
+          if [ "${OUTPUT}" ]; then
+            if [ "$(command -v mimetype)" ]; then
+              MIMETYPE=$(mimetype -b "${FIGURE}")
+            else
+              if [ "svgz" = "${FORMAT[0]}" ]; then
+                MIMETYPE="image/svg+xml-compressed"
+              elif [ "svg" = "${FORMAT[0]}" ]; then
+                MIMETYPE="image/svg+xml"
+              else  # fallback
+                MIMETYPE="image/${FORMAT[0]}"
+              fi
             fi
+            printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
+              "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          else
+            >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
           fi
-          if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-          if [ -e "${REPORT}" ]; then  # print after summary
-            printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
-          fi
-          printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
-            "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
-          if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
-            >&2 echo "WARNING: deviation of latest value exceeds margin."
-            exit "${ERROR}"
-          fi
-        else
-          >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
+        fi
+        if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
+          >&2 echo "WARNING: deviation of latest value exceeds margin."
+          exit "${ERROR}"
         fi
       else
         >&2 echo "WARNING: report not ready (\"${OUTPUT}\")."
