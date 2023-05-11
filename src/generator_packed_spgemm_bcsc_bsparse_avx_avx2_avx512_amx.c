@@ -191,6 +191,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_jump_label_tracker *const p_jump_label_tracker = &l_jump_label_tracker;
 #endif
+  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
