@@ -335,7 +335,9 @@ def trend(values):
 def bold(s, cond=True):
     if cond:
         c, t = s.count("$"), s.replace("%", r"\%")
-        return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+        a = t.replace("$", "") if 0 == (c % 2) else t
+        b = r"$\bf{" + a.replace(" ", "\ ") + "}$"
+        return b
     else:
         return s
 
