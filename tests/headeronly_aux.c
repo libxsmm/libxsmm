@@ -19,16 +19,20 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k);
-LIBXSMM_EXTERN_C LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k)
+LIBXSMM_EXTERN_C libxsmm_gemmfunction mmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k);
+LIBXSMM_EXTERN_C libxsmm_gemmfunction mmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 {
-  LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) result;
+  libxsmm_gemmfunction result;
 #if defined(__cplusplus) /* C++ by chance: test libxsmm_mmfunction<> wrapper */
-  const libxsmm_mmfunction<ITYPE, OTYPE> mmfunction(m, n, k);
-  result = mmfunction.kernel().LIBXSMM_TPREFIX2(ITYPE, OTYPE, mm);
+  const libxsmm_mmfunction<ITYPE, OTYPE, LIBXSMM_PREFETCH> mmfunction(m, n, k);
+  result = mmfunction.kernel();
 #else
-  result = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)(m, n, k,
-    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*flags*/);
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+    m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
+    LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
+    LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
+  result = libxsmm_dispatch_gemm_v2(gemm_shape,
+    LIBXSMM_GEMM_FLAG_NONE, LIBXSMM_PREFETCH);
 #endif
   return result;
 }
