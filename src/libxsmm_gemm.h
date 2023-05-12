@@ -127,26 +127,6 @@
 # define LIBXSMM_GEMM_PREFETCH_C(EXPR) 0
 #endif
 
-/** Call dispatched function in row/column-major fashion. */
-#define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
-  LIBXSMM_ASSERT(FN); FN(A, B, C)
-/* TODO: fix prefetch */
-#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) do { \
-  LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
-  LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
-  LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
-  LIBXSMM_ASSERT(FN); FN(A, B, C); \
-} while(0)
-
-#if (0/*LIBXSMM_GEMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
-# define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
-  LIBXSMM_MMCALL_ABC(FN, A, B, C)
-#else
-# define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
-  LIBXSMM_MMCALL_PRF(FN, A, B, C, (A) + ((size_t)LDA) * (K), (B) + ((size_t)LDB) * (N), (C) + ((size_t)LDC) * (N))
-#endif
-#define LIBXSMM_MMCALL(FN, A, B, C, M, N, K) LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, M, K, M)
-
 /** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */
 #if !defined(LIBXSMM_XGEMM_FALLBACK0)
 # define LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
