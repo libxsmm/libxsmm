@@ -30,7 +30,7 @@ int main(void)
     LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
     LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
   const libxsmm_gemmfunction fa = libxsmm_dispatch_gemm_v2(gemm_shape,
-    (libxsmm_bitfield)LIBXSMM_PREFETCH, (libxsmm_bitfield)LIBXSMM_PREFETCH);
+    LIBXSMM_GEMM_FLAG_NONE, (libxsmm_bitfield)LIBXSMM_PREFETCH);
   const libxsmm_gemmfunction fb = mmdispatch(m, n, k);
   int result = EXIT_SUCCESS;
 

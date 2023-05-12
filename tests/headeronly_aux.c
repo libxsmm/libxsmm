@@ -27,12 +27,10 @@ LIBXSMM_EXTERN_C libxsmm_gemmfunction mmdispatch(libxsmm_blasint m, libxsmm_blas
   const libxsmm_mmfunction<ITYPE, OTYPE, LIBXSMM_PREFETCH> mmfunction(m, n, k);
   result = mmfunction.kernel();
 #else
-  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-    m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
-    LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
-    LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
-  result = libxsmm_dispatch_gemm_v2(gemm_shape,
-    LIBXSMM_GEMM_FLAG_NONE, LIBXSMM_PREFETCH);
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
+    LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
+  result = libxsmm_dispatch_gemm_v2(gemm_shape, LIBXSMM_GEMM_FLAG_NONE,
+    (libxsmm_bitfield)LIBXSMM_PREFETCH);
 #endif
   return result;
 }
