@@ -138,7 +138,7 @@
 #endif
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
-#if (LIBXSMM_PREFETCH_NONE != LIBXSMM_PREFETCH)
+#if (LIBXSMM_GEMM_PREFETCH_NONE != LIBXSMM_PREFETCH)
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) do { \
     (ARGS).a.quaternary = ((char*)(ARGS).a.primary) + sizeof(ITYPE) * (M) * (K); \
     (ARGS).b.quaternary = ((char*)(ARGS).b.primary) + sizeof(ITYPE) * (K) * (N); \

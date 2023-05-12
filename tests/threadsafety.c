@@ -58,7 +58,7 @@ int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 #if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
 # pragma omp single
 #endif
-  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, LIBXSMM_PREFETCH_NONE);
+  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
   if (NULL != kernel.ptr_const) {
     libxsmm_mmkernel_info info;
     result = libxsmm_get_mmkernel_info(kernel, &info);
@@ -98,7 +98,7 @@ int main(void)
   const OTYPE beta = LIBXSMM_BETA/*, alpha = LIBXSMM_ALPHA*/;
   const int flags = LIBXSMM_FLAGS /*| LIBXSMM_GEMM_FLAGS(transa, transb)*/
     | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
-  const int prefetch = LIBXSMM_PREFETCH_NONE;
+  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int max_shape = LIBXSMM_MAX_M;
   int result = EXIT_SUCCESS, nkernels = MAX_NKERNELS, ndup = 0, i;
 #if defined(CHECK_SEPARATE)

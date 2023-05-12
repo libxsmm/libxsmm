@@ -443,15 +443,15 @@ template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
   libxsmm_mmkernel_info info;
   libxsmm_xmmfunction xmm;
   xmm.gemm = function;
-  LIBXSMM_ASSERT(LIBXSMM_PREFETCH_NONE != PREFETCH);
-  if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(xmm, &info) && LIBXSMM_PREFETCH_NONE != info.prefetch) {
+  LIBXSMM_ASSERT(LIBXSMM_GEMM_PREFETCH_NONE != PREFETCH);
+  if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(xmm, &info) && LIBXSMM_GEMM_PREFETCH_NONE != info.prefetch) {
     const size_t itypesize = LIBXSMM_TYPESIZE(info.iprecision), otypesize = LIBXSMM_TYPESIZE(info.oprecision);
     args.a.quaternary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
     args.b.quaternary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
     args.c.quaternary = static_cast<char*>(args.c.primary) + otypesize * info.m * info.n;
   }
 }
-template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_PREFETCH_NONE>(
+template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_GEMM_PREFETCH_NONE>(
   const libxsmm_gemmfunction& function, libxsmm_gemm_param& args)
 {
   LIBXSMM_UNUSED(function);
