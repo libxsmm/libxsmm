@@ -422,29 +422,37 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
 
 #if defined(__cplusplus)
 
-/** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). */
+/** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). TODO: LP-types shall rely on struct for proper overload in C++. */
 template<typename T> struct libxsmm_datatype_enum         { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
 template<> struct libxsmm_datatype_enum<double>           { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
 template<> struct libxsmm_datatype_enum<float>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
 template<> struct libxsmm_datatype_enum<int>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
+template<> struct libxsmm_datatype_enum<unsigned int>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_U32; };
 template<> struct libxsmm_datatype_enum</*signed*/short>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
 template<> struct libxsmm_datatype_enum<libxsmm_bfloat16> { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
 template<> struct libxsmm_datatype_enum<Eigen::bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<libxsmm_bfloat8>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF8; };
 template<> struct libxsmm_datatype_enum<signed char>      { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct libxsmm_datatype_enum<unsigned char>    { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 template<> struct libxsmm_datatype_enum<char>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 
-/** Determine default output type based on the input-type. */
+/** Determine default output type based on the input-type. TODO: LP-types shall rely on struct for proper overload in C++. */
 template<typename INP_TYPE> struct libxsmm_gemm_default_output  { typedef INP_TYPE type; };
-template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
 template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16> { typedef float type; };
+template<> struct libxsmm_gemm_default_output<Eigen::bfloat16>  { typedef float type; };
+template<> struct libxsmm_gemm_default_output<libxsmm_bfloat8>  { typedef float type; };
+template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
+template<> struct libxsmm_gemm_default_output<signed char>      { typedef int type; };
+template<> struct libxsmm_gemm_default_output<char>             { typedef int type; };
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
 template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
-  const libxsmm_xmmfunction& function, libxsmm_gemm_param& args)
+  const libxsmm_gemmfunction& function, libxsmm_gemm_param& args)
 {
   libxsmm_mmkernel_info info;
-  if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(function, &info) && LIBXSMM_PREFETCH_NONE != info.prefetch) {
+  libxsmm_xmmfunction xmm;
+  xmm.gemm = function;
+  LIBXSMM_ASSERT(LIBXSMM_PREFETCH_NONE != PREFETCH);
+  if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(xmm, &info) && LIBXSMM_PREFETCH_NONE != info.prefetch) {
     const size_t itypesize = LIBXSMM_TYPESIZE(info.iprecision), otypesize = LIBXSMM_TYPESIZE(info.oprecision);
     args.a.quaternary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
     args.b.quaternary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
@@ -452,27 +460,32 @@ template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
   }
 }
 template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_PREFETCH_NONE>(
-  const libxsmm_xmmfunction& function, libxsmm_gemm_param& args)
+  const libxsmm_gemmfunction& function, libxsmm_gemm_param& args)
 {
-  LIBXSMM_UNUSED(function); LIBXSMM_UNUSED(args);
+  LIBXSMM_UNUSED(function);
+#if defined(NDEBUG)
+  LIBXSMM_UNUSED(args);
+#else
+  args.a.quaternary = args.b.quaternary = args.c.quaternary = NULL;
+#endif
 }
 
 /** Construct and execute a specialized function. */
 template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type,
   int PREFETCH_DEFAULT = LIBXSMM_PREFETCH/*LIBXSMM_PREFETCH_AUTO*/>
 class libxsmm_mmfunction {
-  /*retargetable*/ libxsmm_xmmfunction m_function;
+  /*retargetable*/ libxsmm_gemmfunction m_function;
 public:
   typedef INP_TYPE itype;
   typedef OUT_TYPE otype;
 public:
-  libxsmm_mmfunction() { m_function.ptr = NULL; }
+  libxsmm_mmfunction() { m_function = NULL; }
   libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k) {
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, 0/*flags*/,
+    m_function = libxsmm_dispatch_gemm_v2(gemm_shape, 0/*flags*/,
       static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT));
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch = PREFETCH_DEFAULT) {
@@ -480,7 +493,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = libxsmm_dispatch_gemm_v2(gemm_shape,
       static_cast<libxsmm_bitfield>(flags),
       static_cast<libxsmm_bitfield>(prefetch));
   }
@@ -489,7 +502,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
       static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
       static_cast<libxsmm_bitfield>(prefetch)) : NULL);
   }
@@ -499,7 +512,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = libxsmm_dispatch_gemm_v2(gemm_shape,
       static_cast<libxsmm_bitfield>(flags),
       static_cast<libxsmm_bitfield>(prefetch));
   }
@@ -510,16 +523,16 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function.gemm = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
       static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
       static_cast<libxsmm_bitfield>(prefetch)) : NULL);
   }
 public:
-  const libxsmm_xmmfunction& kernel() const {
+  const libxsmm_gemmfunction& kernel() const {
     return m_function;
   }
   operator const void*() const {
-    return NULL != m_function.ptr_const ? this : NULL;
+    return NULL != m_function ? this : NULL;
   }
   void operator()(const itype* a, const itype* b, otype* c) const {
     libxsmm_gemm_param args;
@@ -527,8 +540,8 @@ public:
     args.b.primary = const_cast<itype*>(b);
     args.c.primary = c;
     libxsmm_mmfunction_prefetch<PREFETCH_DEFAULT>(m_function, args);
-    LIBXSMM_ASSERT(NULL != m_function.ptr_const);
-    m_function.gemm(&args);
+    LIBXSMM_ASSERT(NULL != m_function);
+    m_function(&args);
   }
   void operator()(const itype* a, const itype* b, otype* c, const itype* pa, const itype* pb, const otype* pc) const {
     libxsmm_gemm_param args;
@@ -538,8 +551,8 @@ public:
     args.a.quaternary = const_cast<itype*>(pa);
     args.b.quaternary = const_cast<itype*>(pb);
     args.c.quaternary = const_cast<otype*>(pc);
-    LIBXSMM_ASSERT(NULL != m_function.ptr_const);
-    m_function.gemm(&args);
+    LIBXSMM_ASSERT(NULL != m_function);
+    m_function(&args);
   }
 };
 
