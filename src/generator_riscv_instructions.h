@@ -15,6 +15,8 @@
 
 #include "generator_common.h"
 
+#define RVI(i) (LIBXSMM_RISCV_INSTR_GP_##i)
+
 /* defining gp register mappings */
 #define LIBXSMM_RISCV_GP_REG_X0   0
 #define LIBXSMM_RISCV_GP_REG_X1    1
@@ -2936,6 +2938,54 @@ void libxsmm_riscv_instruction_compute( libxsmm_generated_code*               io
                                                 const unsigned int                    i_vec_reg_dst,
                                                 const libxsmm_riscv_tupletype i_tupletype );
 
+
+/**
+ * Generates vector lenght instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_gp_reg_src gp register containing requeseted vector length
+ * @param i_reg_dst application vector length
+ * @param i_sew the standard element width
+ * @param i_lmul length multiplier
+ */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_setvli( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_gp_reg_src,
+                                           const unsigned int      i_reg_dst,
+                                           const unsigned int      i_sew,
+                                           const unsigned int      i_lmul );
+
+/**
+ * Generates vector lenght instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_rvl requested vector length
+ * @param i_reg_dst application vector length
+ * @param i_sew the standard element width
+ * @param i_lmul length multiplier
+ */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_setivli( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_rvl,
+                                           const unsigned int      i_reg_dst,
+                                           const unsigned int      i_sew,
+                                           const unsigned int      i_lmul );
+
+/**
+ * Generates vector lenght instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_gp_reg_src gp register containing the base address
+ * @param i_gp_reg_src gp register containing the base address
+ * @param i_reg_dst application vector length
+ */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_setvl( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_gp_reg_src_1,
+                                           const unsigned int      i_gp_reg_src_2,
+                                           const unsigned int      i_reg_dst);
+
+
 /**
  * Generates ldX, stX, etc. instructions for structs
  *
@@ -2943,18 +2993,14 @@ void libxsmm_riscv_instruction_compute( libxsmm_generated_code*               io
  * @param i_vmove_instr actual vmov variant
  * @param i_gp_reg_addr gp register containing the base address
  * @param i_gp_reg_offset gp register containing an offset
- * @param i_offset imm offset
  * @param i_vec_reg the simd register
- * @param i_pred_reg pred specifier
  */
 LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code*                io_generated_code,
-                                           const unsigned int                     i_vmove_instr,
-                                           const unsigned int                     i_gp_reg_addr,
-                                           const unsigned int                     i_reg_offset_idx,
-                                           const int                              i_offset,
-                                           const unsigned int                     i_vec_reg,
-                                           const unsigned int                     i_pred_reg );
+void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_code,
+                                         const unsigned int      i_vmove_instr,
+                                         const unsigned int      i_vec_reg_addr,
+                                         const unsigned int      i_vec_reg_offset,
+                                         const unsigned int      i_vec_reg_dst );
 
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_rvv_prefetch( libxsmm_generated_code*            io_generated_code,
@@ -2970,22 +3016,16 @@ void libxsmm_riscv_instruction_rvv_prefetch( libxsmm_generated_code*            
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_instr actual operation variant
- * @param i_vec_reg_src_0 first source register
- * @param i_index index if non-negative this value is the scalar access to src0
- * @param i_vec_reg_src_1 second source register
+ * @param i_vec_reg_src_1 first source register
+ * @param i_vec_reg_src_2 second source register
  * @param i_vec_reg_dst destination register
- * @param i_pred_reg pred register
- * @param i_type  type
  */
 LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*        io_generated_code,
-                                              const unsigned int             i_vec_instr,
-                                              const unsigned int             i_vec_reg_src_0,
-                                              const unsigned int             i_vec_reg_src_1,
-                                              const unsigned char            i_index,
-                                              const unsigned int             i_vec_reg_dst,
-                                              const unsigned int             i_pred_reg,
-                                              const libxsmm_riscv_type i_type );
+void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generated_code,
+                                            const unsigned int     i_vec_instr,
+                                            const unsigned int     i_vec_reg_src_1,
+                                            const unsigned int     i_vec_reg_src_2,
+                                            const unsigned int     i_vec_reg_dst);
 
 /**
  * Generates ptrue and similar

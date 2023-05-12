@@ -17,34 +17,403 @@
 #define REG_VALID_2(r1, r2)     (REG_VALID_1(r1) && REG_VALID_1(r2))
 #define REG_VALID_3(r1, r2, r3) (REG_VALID_2(r1, r2) && REG_VALID_1(r3))
 
-/* RVV LD/ST */
+/* RVV VL config */
 LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_vmove_instr,
-                                           const unsigned int      i_gp_reg_addr,
-                                           const unsigned int      i_reg_offset_idx,
-                                           const int               i_offset,
-                                           const unsigned int      i_vec_reg,
-                                           const unsigned int      i_pred_reg ) {
+void libxsmm_riscv_instruction_rvv_setvli( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_gp_reg_src,
+                                           const unsigned int      i_reg_dst,
+                                           const unsigned int      i_sew,
+                                           const unsigned int      i_lmul ) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( !REG_VALID_2(i_gp_reg_src, i_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_sew > 0x3 ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: unexpected imm: %u \n", i_sew);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_lmul > 0x3 ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: unexpected imm: %u \n", i_lmul);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    unsigned int zimm11 = (i_sew << 3 | i_lmul) & 0x3f;
+
+    /* fix bits */
+    code[code_head]  = LIBXSMM_RISCV_INSTR_GP_VSETVLI;
+
+    /* setting RS1 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+
+    /* setting RD */
+    code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+    /* setting lmul and sew */
+    code[code_head] |= (unsigned int)FILL_REGID(zimm11, LIBXSMM_RISCV_INSTR_FIELD_ZIMM11);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_setivli( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_rvl,
+                                           const unsigned int      i_reg_dst,
+                                           const unsigned int      i_sew,
+                                           const unsigned int      i_lmul ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( !REG_VALID_1(i_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_sew > 0x3 ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: unexpected imm: %u \n", i_sew);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_lmul > 0x3 ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: unexpected imm: %u \n", i_lmul);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_rvl > 0x1f ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: unexpected imm: %u \n", i_lmul);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    unsigned int uimm = (i_sew << 3 | i_lmul) & 0x3f;
+
+    /* fix bits */
+    code[code_head]  = LIBXSMM_RISCV_INSTR_GP_VSETIVLI;
+
+    /* setting RVL */
+    code[code_head] |= (unsigned int)FILL_REGID(i_rvl, LIBXSMM_RISCV_INSTR_FIELD_SIMM5);
+
+    /* setting RD */
+    code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+    /* setting lmul and sew */
+    code[code_head] |= (unsigned int)FILL_REGID(uimm, LIBXSMM_RISCV_INSTR_FIELD_ZIMM11);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_setvl( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_gp_reg_src_1,
+                                           const unsigned int      i_gp_reg_src_2,
+                                           const unsigned int      i_reg_dst ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( !REG_VALID_3(i_gp_reg_src_1, i_gp_reg_src_2, i_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* fix bits */
+    code[code_head]  = LIBXSMM_RISCV_INSTR_GP_VSETVL;
+
+    /* setting RS1 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_1, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+
+    /* setting RD */
+    code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+    /* setting RS2 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_2, LIBXSMM_RISCV_INSTR_FIELD_RS2);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+}
+
+/* RVV LD/ST */
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_vmove_instr,
+                                           const unsigned int      i_vec_reg_addr,
+                                           const unsigned int      i_vec_reg_offset,
+                                           const unsigned int      i_vec_reg_dst ) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+#define RVV_M(i)    ((i == RVI(VLM_V)) || (i == RVI(VSM_V)))
+
+#define RVV_LU(i)   ((i == RVI(VLE8_V))||(i == RVI(VLE16_V))||(i == RVI(VLE32_V))||(i == RVI(VLE64_V)))
+#define RVV_SU(i)   ((i == RVI(VSE8_V))||(i == RVI(VSE16_V))||(i == RVI(VSE32_V))||(i == RVI(VSE64_V)))
+#define RVV_U(i)    (RVV_LU(i) || RVV_SU(i))
+
+#define RVV_LS(i)   ((i == RVI(VLSE8_V))||(i == RVI(VLSE16_V))||(i == RVI(VLSE32_V))||(i == RVI(VLSE64_V)))
+#define RVV_SS(i)   ((i == RVI(VSSE8_V))||(i == RVI(VSSE16_V))||(i == RVI(VSSE32_V))||(i == RVI(VSSE64_V)))
+#define RVV_S(i)    (RVV_LS(i) || RVV_SS(i))
+
+#define RVV_LUI(i)  ((i == RVI(VLUXEI8_V))||(i == RVI(VLUXEI16_V))||(i == RVI(VLUXEI32_V))||(i == RVI(VLUXEI64_V)))
+#define RVV_LOI(i)  ((i == RVI(VLOXEI8_V))||(i == RVI(VLOXEI16_V))||(i == RVI(VLOXEI32_V))||(i == RVI(VLOXEI64_V)))
+#define RVV_SUI(i)  ((i == RVI(VSUXEI8_V))||(i == RVI(VSUXEI16_V))||(i == RVI(VSUXEI32_V))||(i == RVI(VSUXEI64_V)))
+#define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
+#define RVV_I(i)    (RVV_LS(i) || RVV_SS(i))
+
+  // Unit stride and mask memory ops
+  if ( RVV_U(i_vmove_instr)||(RVV_M(i_vmove_instr)) ) {
+    if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+
+    if ( io_generated_code->code_type > 1 ) {
+      unsigned int code_head = io_generated_code->code_size/4;
+      unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+      /* Ensure we have enough space */
+      if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+        return;
+      }
+
+      /* fix bits */
+      code[code_head]  = i_vmove_instr;
+
+      /* setting RS1 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_addr, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+
+      /* setting RD */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+      /* advance code head */
+      io_generated_code->code_size += 4;
+    } else {
+      /* assembly not supported right now */
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+  }
+
+  // Stride and Indexed memory ops
+  if ( RVV_S(i_vmove_instr) || RVV_I(i_vmove_instr)) {
+    if ( !REG_VALID_3(i_vec_reg_addr, i_vec_reg_offset, i_vec_reg_dst) ) {
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+
+    if ( io_generated_code->code_type > 1 ) {
+      unsigned int code_head = io_generated_code->code_size/4;
+      unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+      /* Ensure we have enough space */
+      if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+        return;
+      }
+
+      /* fix bits */
+      code[code_head]  = i_vmove_instr;
+
+      /* setting RS1 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_addr, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+
+      /* setting RD */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+      /* setting RS2 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_offset, LIBXSMM_RISCV_INSTR_FIELD_RS2);
+
+      /* advance code head */
+      io_generated_code->code_size += 4;
+    } else {
+      /* assembly not supported right now */
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+  }
+
+#undef RVV_LU
+#undef RVV_SU
+#undef RVV_U
+}
+
 /* RVV compute instruction */
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generated_code,
-                                              const unsigned int       i_vec_instr,
-                                              const unsigned int       i_vec_reg_src_0,
-                                              const unsigned int       i_vec_reg_src_1,
-                                              const unsigned char      i_index,
-                                              const unsigned int       i_vec_reg_dst,
-                                              const unsigned int       i_pred_reg,
-                                              const libxsmm_riscv_type i_type ) {
+                                            const unsigned int     i_vec_instr,
+                                            const unsigned int     i_vec_reg_src_1,
+                                            const unsigned int     i_vec_reg_src_2,
+                                            const unsigned int     i_vec_reg_dst) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( !REG_VALID_3(i_vec_reg_src_1, i_vec_reg_src_2, i_vec_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* fix bits */
+    code[code_head]  = i_vec_instr;
+
+    /* setting RS1 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src_1, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+
+    /* setting RD */
+    code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+    /* setting RS2 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src_2, LIBXSMM_RISCV_INSTR_FIELD_RS2);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_riscv_instruction_rvv_compute_imm( libxsmm_generated_code*  io_generated_code,
+                                              const unsigned int     i_vec_instr,
+                                              const unsigned int     i_vec_reg_src,
+                                              const unsigned int     i_imm,
+                                              const unsigned int     i_reg_dst) {
+  if ( io_generated_code->arch < LIBXSMM_RISCV ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: at least RISCV needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( !REG_VALID_2(i_vec_reg_src, i_reg_dst) ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( i_imm > 0x1f ) {
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute_imm: unexpected imm: %u %u\n", i_vec_instr, i_imm);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* fix bits */
+    code[code_head]  = i_vec_instr;
+
+    /* setting RS1 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src, LIBXSMM_RISCV_INSTR_FIELD_RS1);
+
+    /* setting RD */
+    code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
+
+    /* setting RS2 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_imm, LIBXSMM_RISCV_INSTR_FIELD_SIMM5);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }

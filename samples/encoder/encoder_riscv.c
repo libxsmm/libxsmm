@@ -195,6 +195,7 @@ int main( /*int argc, char* argv[]*/ ) {
 
   /* testing ALU ldr/str instructions */
   test_alu_move( "alu_mov_LB", &mycode, INST(LB) );
+  test_alu_move( "alu_mov_SB", &mycode, INST(SB) );
 
   test_alu_compute( "alu_compute_ADD", &mycode, INST(ADD) );
   test_alu_compute( "alu_compute_AND", &mycode, INST(AND) );
