@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
     LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
     LIBXSMM_DATATYPE(TYPE));
-  int prefetch = LIBXSMM_PREFETCH_NONE;
+  int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_gemm_param gemm_param;
 # if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(gemm_param));

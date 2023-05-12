@@ -311,34 +311,40 @@ def trend(values):
     """
     Calculate the predicted value (linear trend of history),
     the relative difference of lastest and previous value (rd),
-    the standard deviation (cv), and the linear trend (equation).
+    the relative difference of lastest and average value (ad),
+    the standard deviation (cv), the arithmetic average (avg),
+    and the linear trend (equation).
     """
-    rd, cv, eqn, size = None, None, None, len(values)
-    b = values[0] if 0 < size else 0
-    a = values[1] if 1 < size else 0
+    rd, ad, cv, avg, eqn, size = None, None, None, None, None, len(values)
+    a, b = (values[1] if 1 < size else 0), (values[0] if 0 < size else 0)
+    if 1 < size:
+        avg = numpy.mean(values[1:])
     if 0 != a:
         rd = (b - a) / a
+    if 0 != avg:
+        ad = (b - avg) / avg
     if 2 < size:
         # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
-        avg = numpy.mean(values[1:])
         if 0 != avg:
             cv = numpy.std(values[1:]) / avg
-    return (b, rd, cv, eqn)
+    return (b, rd, ad, cv, avg, eqn)
 
 
 def bold(s, cond=True):
     if cond:
         c, t = s.count("$"), s.replace("%", r"\%")
-        return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+        a = t.replace("$", "") if 0 == (c % 2) else t
+        b = r"$\bf{" + a.replace(" ", "\ ") + "}$"
+        return b
     else:
         return s
 
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
     label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
-    guess, rd, cv, eqn = trend(values)  # unpack
+    guess, rd, ad, cv, avg, eqn = trend(values)  # unpack
     blist = base.split()
     if 1 < len(blist):  # category and detail
         dlist = blist[1].split("_")
@@ -346,8 +352,10 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
             while c in dlist:  # no redundancy
                 dlist.remove(c)
         base = f"{blist[0]} {'_'.join(dlist)}"
-    if rd:
-        inum = num2fix(100 * rd)
+    # combine relative differences (new value vs last/avg value)
+    xd = max(abs(rd if rd else 0), abs(ad if ad else 0))
+    if xd:
+        inum = num2fix(100 * (rd if xd == abs(rd) else ad))
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum = num2fix(max(100 * cv, 1))
@@ -634,12 +642,12 @@ def main(args, argd, dbfname):
                 file=sys.stderr,
             )
         y = "ies" if 1 != nentries else "y"
-        print(f"Database consists of {dbsize} builds.")
+        print(f"Database consists of {dbsize} builds.", end="")
         if 0 < nentries:
             s = "s" if 1 != nbuilds else ""
-            print(f"Found {nentries} new entr{y} in {nbuilds} build{s}.")
+            print(f" Found {nentries} new entr{y} in {nbuilds} build{s}.")
         else:
-            print(f"Found {nentries} new entr{y}.")
+            print(f" Found {nentries} new entr{y}.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
@@ -892,25 +900,17 @@ def main(args, argd, dbfname):
         )
 
         # supported file types and filename components
-        figdet = (
+        figcat = (
             ""  # eventually add details about category
             if 1 < len(entries) or 0 == len(entries)
             else f"-{entries[0].translate(clean)}"
         )
-        figcat = re.sub(r"[ ,;]+", "_", figdet)
-        if 0 < len(match) and 2 >= len(match):
-            match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
-            parts = [s.lower() for c in match for s in c.split("_")]
-            figqry = f"-{'_'.join(dict.fromkeys(parts))}{figcat}"
-        elif query:
-            figqry = f"-{'_'.join(query)}{figcat}"
-        else:
-            figqry = figcat
+        figdet = re.sub(r"[ ,;]+", "_", figcat)
         figout = fname(
             extlst=figure_primry.canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
-            idetail=figqry,
+            idetail=f"-{latest}{figdet}" if 0 < latest else figdet,
         )
 
         # setup untied figure
@@ -936,7 +936,9 @@ def main(args, argd, dbfname):
                 image.save(figout[i], "PNG", optimize=True)
             else:
                 figure.savefig(figout[i])  # save graphics file
-            if 1 == abs(args.verbosity) and 0 == i:  # notify only first
+            if (1 == abs(args.verbosity) and 0 == i) or 2 <= abs(
+                args.verbosity
+            ):  # print only one/first filepath if verbosity=automation
                 print(f"{figout[i]} created.")
 
     return exceeded
@@ -1083,7 +1085,7 @@ if __name__ == "__main__":
         "-t",
         "--bounds",
         type=str,
-        default="2.0 10",
+        default="4.0 15",
         help="Highlight if exceeding max(A*Stdev%%,B%%)",
     )
     argparser.add_argument(

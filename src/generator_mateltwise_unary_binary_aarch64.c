@@ -2568,7 +2568,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
       libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_micro_kernel_config->mask_helper0_vreg), i_gp_reg_tmp0,
                                                                 LIBXSMM_AARCH64_SVE_TYPE_S, l_pred_reg, l_fp32_lsb_mak );
     } else {
-      /* nothing todo */
+      /* nothing to do */
     }
 
     /* load offsets */

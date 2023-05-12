@@ -503,8 +503,11 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
 LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
   int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
-/** Dump data and (optionally) checks attempt to dump different data into an existing file (unique). */
-LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique);
+/**
+ * Dump data, (optionally) check attempt to dump different data into an existing file (unique),
+ * or (optionally) permit overwriting an existing file.
+ */
+LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique, int overwrite);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
