@@ -153,15 +153,6 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
                                                                   const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
                                                                   const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
 
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch);
-
 /**
  * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
  * The kind of matrix operands (a, b, c) depend on index_stride.
