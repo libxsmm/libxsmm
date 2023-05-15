@@ -96,37 +96,6 @@
   LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL); \
 } while(0)
 
-/** Elide calculating prefetch-address depending on prefetch scheme. */
-#if !defined(_WIN32) && !defined(__CYGWIN__) /* TODO: fully support calling convention */
-#if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
- || 0 != ((LIBXSMM_PREFETCH) & 8/*AL2_AHEAD*/)
-# define LIBXSMM_GEMM_PREFETCH_A(EXPR) (EXPR)
-#endif
-#if 0 != ((LIBXSMM_PREFETCH) & 4/*BL2_VIA_C*/) \
- || 0 != ((LIBXSMM_PREFETCH) & 16/*BL1*/)
-# define LIBXSMM_GEMM_PREFETCH_B(EXPR) (EXPR)
-#endif
-#endif
-/** Secondary helper macros derived from the above group. */
-#if defined(LIBXSMM_GEMM_PREFETCH_A)
-# define LIBXSMM_NOPREFETCH_A(EXPR)
-#else
-# define LIBXSMM_NOPREFETCH_A(EXPR) EXPR
-# define LIBXSMM_GEMM_PREFETCH_A(EXPR) 0
-#endif
-#if defined(LIBXSMM_GEMM_PREFETCH_B)
-# define LIBXSMM_NOPREFETCH_B(EXPR)
-#else
-# define LIBXSMM_NOPREFETCH_B(EXPR) EXPR
-# define LIBXSMM_GEMM_PREFETCH_B(EXPR) 0
-#endif
-#if defined(LIBXSMM_GEMM_PREFETCH_C)
-# define LIBXSMM_NOPREFETCH_C(EXPR)
-#else
-# define LIBXSMM_NOPREFETCH_C(EXPR) EXPR
-# define LIBXSMM_GEMM_PREFETCH_C(EXPR) 0
-#endif
-
 /** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */
 #if !defined(LIBXSMM_XGEMM_FALLBACK0)
 # define LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
