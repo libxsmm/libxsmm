@@ -11,10 +11,10 @@
 #include <libxsmm_lpflt_quant.h>
 #include "libxsmm_main.h"
 
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+
 
 LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length ) {
   float absmax_value = LIBXSMM_ABS(in_buffer[0]);

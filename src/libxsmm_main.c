@@ -830,13 +830,17 @@ LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int /*signum*/);
 LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int signum) {
   LIBXSMM_ASSERT(SIGABRT == signum);
   if (SIG_ERR != internal_libxsmm_prvabrt) {
+    libxsmm_verbosity = LIBXSMM_MAX(LIBXSMM_VERBOSITY_HIGH + 1, libxsmm_verbosity);
     internal_finalize();
     if (NULL != internal_libxsmm_prvabrt) {
       internal_libxsmm_prvabrt(SIGABRT);
     }
     else {
       void (*const default_handler)(int) = signal(signum, SIG_DFL);
-      if (NULL != default_handler && SIG_ERR != default_handler) {
+      if (internal_libxsmm_sigabrt != default_handler /* recursion */
+        && SIG_ERR != default_handler
+        && NULL != default_handler)
+      {
         default_handler(SIGABRT);
       }
     }
@@ -1444,7 +1448,8 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 #endif
                 nchar = LIBXSMM_SNPRINTF(name, sizeof(name), "%010u.user", id);
                 if (0 < nchar && (int)sizeof(name) > nchar) {
-                  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-USER-DUMP", name, code.ptr_const, size, 0/*unique*/));
+                  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-USER-DUMP",
+                    name, code.ptr_const, size, 0/*unique*/, 0/*overwrite*/));
                 }
               }
 #if !defined(NDEBUG)
@@ -1823,11 +1828,11 @@ LIBXSMM_API_INLINE void internal_get_typesize_string(char buffer[4], int buffer_
 }
 
 
-LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique)
+LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique, int overwrite)
 {
   int result;
   if (NULL != name && '\0' != *name && NULL != data && 0 != size) {
-    FILE* data_file = fopen(name, "rb");
+    FILE* data_file = ((0 != unique || 0 == overwrite) ? fopen(name, "rb") : NULL);
     int diff = 0, result_close;
     if (NULL == data_file) { /* file does not exist */
       data_file = fopen(name, "wb");
@@ -1856,7 +1861,7 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
     if (EXIT_SUCCESS == result && NULL != title && '\0' != *title) {
       fprintf(stderr, "%s(ptr:file) %p : %s\n", title, data, name);
     }
-    if (0 != diff) { /* override existing dump and warn about erroneous condition */
+    if (0 != diff) { /* overwrite existing dump and warn about erroneous condition */
       fprintf(stderr, "LIBXSMM ERROR: %s is not a unique filename!\n", name);
       data_file = fopen(name, "wb");
       if (NULL != data_file) { /* dump data into a file */

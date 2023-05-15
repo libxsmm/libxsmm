@@ -139,10 +139,14 @@
 # endif
 #endif
 
-/* special type for bitfield flags */
+/** Special type for bitfield flags. */
 typedef unsigned int libxsmm_bitfield;
 
-/* Support for Bfloat16 */
+/**
+ * Support for low-precision types.
+ * TODO: rely on struct for proper
+ * overload in C++.
+ */
 typedef unsigned short libxsmm_bfloat16;
 typedef unsigned char  libxsmm_bfloat8;
 typedef unsigned char  libxsmm_hfloat8;
@@ -549,13 +553,6 @@ typedef enum libxsmm_gemm_batch_reduce_type {
   LIBXSMM_GEMM_BATCH_REDUCE_STRIDE  = 4
 } libxsmm_gemm_batch_reduce_type;
 
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_matcopy_flags {
-  LIBXSMM_MATCOPY_FLAG_DEFAULT = 0,
-  /** If set, then use zero matrix as source */
-  LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
-} libxsmm_matcopy_flags;
-
 /** Determines the kernel kind. */
 typedef enum libxsmm_kernel_kind {
   /** Matrix multiplication kernel */
@@ -794,7 +791,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_binary_postops {
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction_ext)( const libxsmm_gemm_ext_param* in_struct );
 
-/** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
+/** Union to convert between different function types or plain pointers (weak-typed). */
 LIBXSMM_EXTERN_C typedef union libxsmm_xmmfunction {
   const void* ptr_const; void* ptr;
   void (*xmm)(const void* a, const void* b, void* c);
