@@ -69,8 +69,8 @@ for MTX in "${MATS}"/p*/{pri,hex}/m{0,132,460}"${POSTFX}".mtx; do
   echo "${MAT}${SEP}${PERF_N}${SEP}${PERF_R}${SEP}${PERF_B}${SEP}${SPARSE}${SEP}${DENSE}${SEP}${BLAS}"
 done | tee -a "${TMPF}"
 
-echo "MATRIX${SEP}N${SEP}NREP${SEP}BETA${SEP}SPARSE${SEP}DENSE${SEP}BLAS" >libxsmm.csv
-sort -t"${SEP}" -k1 "${TMPF}" >>libxsmm.csv
+echo "MATRIX${SEP}N${SEP}NREP${SEP}BETA${SEP}SPARSE${SEP}DENSE${SEP}BLAS" >"${HERE}/libxsmm.csv"
+sort -t"${SEP}" -k1 "${TMPF}" >>"${HERE}/libxsmm.csv"
 
 echo
 echo "------------------------------------------------------------------"
@@ -78,20 +78,20 @@ echo "Gimmik"
 echo "------------------------------------------------------------------"
 echo "MATRIX${SEP}GFLOPS${SEP}MEMBW"
 "${HERE}/gimmik" "${PERF_R}" | tee "${TMPF}"
-echo "MATRIX${SEP}GFLOPS${SEP}MEMBW" >gimmik.csv
-sort -t"${SEP}" -k1 "${TMPF}" >>gimmik.csv
+echo "MATRIX${SEP}GFLOPS${SEP}MEMBW" >"${HERE}/gimmik.csv"
+sort -t"${SEP}" -k1 "${TMPF}" >>"${HERE}/gimmik.csv"
 
-cut -d"${SEP}" -f1,2 gimmik.csv | sed "1s/GFLOPS/GIMMIK/" \
+cut -d"${SEP}" -f1,2 "${HERE}/gimmik.csv" | sed "1s/GFLOPS/GIMMIK/" \
 | join --header -t"${SEP}" \
-  libxsmm.csv \
+  "${HERE}/libxsmm.csv" \
   - \
->"${BASE}.csv"
+>"${HERE}/${BASE}.csv"
 
 if [ "$(command -v datamash)" ]; then
   if [ "$(datamash geomean 2>&1 | grep invalid)" ]; then
-    datamash --headers -t"${SEP}"    mean 5-8 <performance.csv >"${TMPF}"
+    datamash --headers -t"${SEP}"    mean 5-8 <"${HERE}/${BASE}.csv" >"${TMPF}"
   else
-    datamash --headers -t"${SEP}" geomean 5-8 <performance.csv >"${TMPF}"
+    datamash --headers -t"${SEP}" geomean 5-8 <"${HERE}/${BASE}.csv" >"${TMPF}"
   fi
   read -r -d $'\04' HEADER VALUES <"${TMPF}"
   if [ "${HEADER}" ] && [ "${VALUES}" ]; then
