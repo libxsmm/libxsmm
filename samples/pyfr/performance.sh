@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2143
+# shellcheck disable=SC2129,SC2143
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 BASE=$(echo "$0" | sed 's/\(.[^/]*\/\)*//' | sed 's/\(.*\)\..*/\1/')
@@ -56,7 +56,7 @@ for MTX in "${MATS}"/p*/{pri,hex}/m{3,6}"${POSTFX}".mtx; do
   DENSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p")
   BLAS=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*BLAS GFLOPS    : \(..*\)/\1/p")
   echo "${MAT}${SEP}${PERF_N}${SEP}${PERF_R}${SEP}${PERF_B}${SEP}${SPARSE}${SEP}${DENSE}${SEP}${BLAS}"
-done | tee -a "${TMPF}.csv"
+done | tee -a "${TMPF}"
 
 PERF_B=0
 export FSSPMDM_NTS=0
@@ -67,19 +67,19 @@ for MTX in "${MATS}"/p*/{pri,hex}/m{0,132,460}"${POSTFX}".mtx; do
   DENSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p")
   BLAS=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*BLAS GFLOPS    : \(..*\)/\1/p")
   echo "${MAT}${SEP}${PERF_N}${SEP}${PERF_R}${SEP}${PERF_B}${SEP}${SPARSE}${SEP}${DENSE}${SEP}${BLAS}"
-done | tee -a "${TMPF}.csv"
+done | tee -a "${TMPF}"
 
 echo "MATRIX${SEP}N${SEP}NREP${SEP}BETA${SEP}SPARSE${SEP}DENSE${SEP}BLAS" >libxsmm.csv
-sort -t"${SEP}" -k1 "${TMPF}.csv" >>libxsmm.csv
+sort -t"${SEP}" -k1 "${TMPF}" >>libxsmm.csv
 
 echo
 echo "------------------------------------------------------------------"
 echo "Gimmik"
 echo "------------------------------------------------------------------"
 echo "MATRIX${SEP}GFLOPS${SEP}MEMBW"
-"${HERE}/gimmik" "${PERF_R}" | tee "${TMPF}.csv"
+"${HERE}/gimmik" "${PERF_R}" | tee "${TMPF}"
 echo "MATRIX${SEP}GFLOPS${SEP}MEMBW" >gimmik.csv
-sort -t"${SEP}" -k1 "${TMPF}.csv" >>gimmik.csv
+sort -t"${SEP}" -k1 "${TMPF}" >>gimmik.csv
 
 cut -d"${SEP}" -f1,2 gimmik.csv | sed "1s/GFLOPS/GIMMIK/" \
 | join --header -t"${SEP}" \
@@ -88,13 +88,28 @@ cut -d"${SEP}" -f1,2 gimmik.csv | sed "1s/GFLOPS/GIMMIK/" \
 >"${BASE}.csv"
 
 if [ "$(command -v datamash)" ]; then
-  echo
-  echo "------------------------------------------------------------------"
-  echo "Performance"
-  echo "------------------------------------------------------------------"
   if [ "$(datamash geomean 2>&1 | grep invalid)" ]; then
-    datamash --headers -t"${SEP}"    mean 5-8 <performance.csv
+    datamash --headers -t"${SEP}"    mean 5-8 <performance.csv >"${TMPF}"
   else
-    datamash --headers -t"${SEP}" geomean 5-8 <performance.csv
+    datamash --headers -t"${SEP}" geomean 5-8 <performance.csv >"${TMPF}"
+  fi
+  read -r -d $'\04' HEADER VALUES <"${TMPF}"
+  if [ "${HEADER}" ] && [ "${VALUES}" ]; then
+    IFS="${SEP}"; N=0
+    read -ra ENTRIES <<<"${VALUES}"
+    COUNT=${#ENTRIES[@]}
+    echo > "${TMPF}"
+    echo "------------------------------------------------------------------" >>"${TMPF}"
+    echo "Benchmark: PyFR" >>"${TMPF}"
+    echo >>"${TMPF}"
+    for LABEL in ${HEADER}; do
+      if [ "0" != "$((COUNT<=N))" ]; then break; fi
+      echo "${LABEL}: ${ENTRIES[N]} GFLOPS/s" >>"${TMPF}"
+      N=$((N+1))
+    done
+    unset IFS COUNT N
+    echo >>"${TMPF}"
+    # post-process result further (graphical report)
+    eval "${HERE}/../../scripts/tool_logrept.sh ${TMPF}"
   fi
 fi
