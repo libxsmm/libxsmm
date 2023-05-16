@@ -19,15 +19,19 @@
 /** Opaque type for Fixed-size Sparse Matrix x Dense Matrix (FsSpMDM). */
 LIBXSMM_EXTERN_C typedef struct libxsmm_fsspmdm libxsmm_fsspmdm;
 
+/**
+ * Create a handle used for subsequent execution (libxsmm_fsspmdm_execute),
+ * and optionally benchmark alternative kernels (if timer_tick is given).
+ */
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  const void* alpha, const void* beta, libxsmm_blasint c_is_nt, const void* a_dense);
+  const void* alpha, const void* beta, const void* a_dense, int c_is_nt, unsigned long long (*timer_tick)(void));
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  double alpha, double beta, libxsmm_blasint c_is_nt, const double* a_dense);
+  double alpha, double beta, const double* a_dense, int c_is_nt, unsigned long long (*timer_tick)(void));
 LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  float alpha, float beta, libxsmm_blasint c_is_nt, const float* a_dense);
+  float alpha, float beta, const float* a_dense, int c_is_nt, unsigned long long (*timer_tick)(void));
 
 LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const void* B, void* C);
 LIBXSMM_API void libxsmm_dfsspmdm_execute(const libxsmm_dfsspmdm* handle, const double* B, double* C);

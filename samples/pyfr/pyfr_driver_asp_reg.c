@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
     /* setting up fsspmdm */
     beta = 0;
     gemm_op_betazero = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta,
-      (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0, l_a_dense);
+      l_a_dense, (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0, libxsmm_timer_tick);
   }
 
   if (0 > l_beta || 0 < l_beta) {
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
     beta = 1;
     gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE),
       l_m, LIBXSMM_MIN(l_n_block, l_n), l_k, l_k, l_n, l_n,
-      &alpha, &beta, 0, l_a_dense);
+      &alpha, &beta, l_a_dense, 0, libxsmm_timer_tick);
   }
 
   /* compute golden results */
