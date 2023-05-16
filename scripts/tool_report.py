@@ -321,13 +321,13 @@ def trend(values):
         avg = numpy.mean(values[1:])
     if 0 != a:
         rd = (b - a) / a
-    if 0 != avg:
+    if avg:  # not zero/none
         ad = (b - avg) / avg
     if 2 < size:
         # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
-        if 0 != avg:
+        if avg:  # not zero/none
             cv = numpy.std(values[1:]) / avg
     return (b, rd, ad, cv, avg, eqn)
 
