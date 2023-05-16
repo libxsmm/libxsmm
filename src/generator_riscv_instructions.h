@@ -119,6 +119,22 @@
 
 #define LIBXSMM_RISCV_GP_REG_UNDEF  32
 
+/* SEW encoding */
+#define LIBXSMM_RISCV_SEW_B (0)
+#define LIBXSMM_RISCV_SEW_W (1)
+#define LIBXSMM_RISCV_SEW_D (2)
+#define LIBXSMM_RISCV_SEW_Q (3)
+
+#define LIBXSMM_RISCV_LMUL_F8 (0)
+#define LIBXSMM_RISCV_LMUL_F4 (1)
+#define LIBXSMM_RISCV_LMUL_F2 (2)
+#define LIBXSMM_RISCV_LMUL_M1 (3)
+#define LIBXSMM_RISCV_LMUL_M2 (4)
+#define LIBXSMM_RISCV_LMUL_M3 (5)
+#define LIBXSMM_RISCV_LMUL_M4 (6)
+
+#define LIBXSMM_RISCV_GP_REG_UNDEF  32
+
 /* special instruction */
 #define LIBXSMM_RISCV_INSTR_UNDEF 9999
 

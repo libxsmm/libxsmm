@@ -228,7 +228,7 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
 #define RVV_LOI(i)  ((i == RVI(VLOXEI8_V))||(i == RVI(VLOXEI16_V))||(i == RVI(VLOXEI32_V))||(i == RVI(VLOXEI64_V)))
 #define RVV_SUI(i)  ((i == RVI(VSUXEI8_V))||(i == RVI(VSUXEI16_V))||(i == RVI(VSUXEI32_V))||(i == RVI(VSUXEI64_V)))
 #define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
-#define RVV_I(i)    (RVV_LS(i) || RVV_SS(i))
+#define RVV_I(i)    (RVV_LUI(i) || RVV_LOI(i) || RVV_SUI(i) || RVV_SOI(i))
 
   // Unit stride and mask memory ops
   if ( RVV_U(i_vmove_instr)||(RVV_M(i_vmove_instr)) ) {
@@ -310,6 +310,15 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
 #undef RVV_LU
 #undef RVV_SU
 #undef RVV_U
+#undef RVV_M
+#undef RVV_LS
+#undef RVV_SS
+#undef RVV_S
+#undef RVV_LUI
+#undef RVV_LOI
+#undef RVV_SUI
+#undef RVV_SOI
+#undef RVV_I
 }
 
 /* RVV compute instruction */
