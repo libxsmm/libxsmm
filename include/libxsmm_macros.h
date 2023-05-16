@@ -750,6 +750,7 @@
 #define LIBXSMM_UP(N, MULT) (LIBXSMM_UPDIV(N, MULT) * (MULT))
 #define LIBXSMM_LO2(N, NPOT) ((N) & ~((NPOT) - 1))
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_LO2((N) + ((NPOT) - 1), NPOT)
+#define LIBXSMM_UPF(N, NOM, DEN) (((N) * ((NOM) + (DEN))) / (DEN))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
@@ -765,7 +766,7 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
-#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE,((double)(A)/2.0))*2)))
+#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE, ((double)(A) / 2.0)) * 2)))
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 #define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
