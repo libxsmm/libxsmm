@@ -365,12 +365,11 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
 
     /* Dense fastest (or within 10%) */
-    if ((0 == fsspmdm_hint
+    if (NULL != k_dense && NULL != aa_dense && ((0 == fsspmdm_hint
         && dt_dense <= LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse1)
         && dt_dense <= LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse2)
         && dt_dense <= LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse4))
-      || ((4 <= fsspmdm_hint || 0 > fsspmdm_hint)
-        && NULL != k_dense && NULL != aa_dense))
+      || (4 <= fsspmdm_hint || 0 > fsspmdm_hint)))
     {
       LIBXSMM_ASSERT(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
@@ -379,10 +378,10 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
 
     /* Sparse (regular) fastest */
-    if ((0 == fsspmdm_hint
+    if (NULL != k_sparse1 && ((0 == fsspmdm_hint
         && LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse1) < dt_dense
         && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4)
-      || (1 == fsspmdm_hint && NULL != k_sparse1))
+      || 1 == fsspmdm_hint))
     {
       LIBXSMM_ASSERT(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
@@ -394,10 +393,10 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
 
     /* Sparse (wide) fastest */
-    if ((0 == fsspmdm_hint
+    if (NULL != k_sparse2 && ((0 == fsspmdm_hint
         && dt_sparse2 < LIBXSMM_FSSPMDM_DENSE_BIAS(dt_dense)
         && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4)
-      || (2 == fsspmdm_hint && NULL != k_sparse2))
+      || 2 == fsspmdm_hint))
     {
       LIBXSMM_ASSERT(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
@@ -409,10 +408,10 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
 
     /* Sparse (widest) fastest */
-    if ((0 == fsspmdm_hint
+    if (NULL != k_sparse4 && ((0 == fsspmdm_hint
         && dt_sparse4 < LIBXSMM_FSSPMDM_DENSE_BIAS(dt_dense)
         && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2)
-      || (3 == fsspmdm_hint && NULL != k_sparse4))
+      || 3 == fsspmdm_hint))
     {
       LIBXSMM_ASSERT(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
