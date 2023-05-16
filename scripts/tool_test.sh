@@ -440,10 +440,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           ABSDIR=$(cd "${ABSDIR}" && pwd -P)
           ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} ${MAKETGT}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           if [ "${REPOREMOTE}" != "${ABSREM}" ]; then
-            echo "cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+            echo "cd ${ABSREM} && make -e \${MAKEJ} ${MAKETGT}" >>"${TESTSCRIPT}"
             echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           fi
           if [ "none" != "${PARTITION}" ]; then
