@@ -481,6 +481,8 @@
 # else
 #   define LIBXSMM_CALLER __FUNCNAME__
 # endif
+/** Function argument with default value (C++). */
+# define LIBXSMM_ARGDEF(ARG, DEF) ARG = DEF
 #else /* C */
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
@@ -502,6 +504,8 @@
 #   define LIBXSMM_INLINE_KEYWORD
 #   define LIBXSMM_INLINE_FIXUP
 # endif
+/** Function argument with default value (C++). */
+# define LIBXSMM_ARGDEF(ARG, DEF) ARG
 /* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
 #endif /*__cplusplus*/
