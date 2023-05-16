@@ -152,7 +152,8 @@ if [ "${LOGDIR}" ]; then
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
     RESULT="ms"
-  else  # JSON-format
+  fi
+  if [ ! "${FINPUT}" ]; then  # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
