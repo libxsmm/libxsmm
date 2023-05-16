@@ -92,11 +92,6 @@ LIBXSMM_API int libxsmm_get_verbosity(void);
  */
 LIBXSMM_API void libxsmm_set_verbosity(int level);
 
-/** Get the default prefetch strategy. */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
-/** Set the default prefetch strategy. */
-LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
-
 /** Get information about the matrix multiplication kernel. */
 LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info);
 /** Get information about the matrix eltwise kernel. */

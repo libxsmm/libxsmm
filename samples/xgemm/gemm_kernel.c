@@ -1671,7 +1671,7 @@ void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
-  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
+  printf("    PREFETCH: nopf (none), BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
   printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF16F32_BVNNI, BF16_BVNNI, BF8F32, BF8, BF8F32_FLAT, BF8_FLAT, HF8F32, HF8, HF8F32_FLAT, HF8_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
@@ -1786,9 +1786,6 @@ int main(int argc, char* argv []) {
     /* set value of prefetch flag */
     if (strcmp("nopf", argv[13]) == 0) {
       l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-    }
-    else if (strcmp("pfsigonly", argv[13]) == 0) {
-      l_prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
     }
     else if (strcmp("BL2viaC", argv[13]) == 0) {
       l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
@@ -2333,7 +2330,6 @@ int main(int argc, char* argv []) {
         const char *prefetch = NULL, *br_type = NULL;
         switch (l_prefetch) {
           case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
-          case LIBXSMM_GEMM_PREFETCH_SIGONLY: prefetch = "pfsigonly"; break;
           case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
           case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
           case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;

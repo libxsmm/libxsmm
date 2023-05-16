@@ -147,7 +147,6 @@ libxsmm_generator_spgemm_csc_kernel
 libxsmm_generator_spgemm_csr_kernel
 libxsmm_generator_spgemm_csr_reg_kernel
 libxsmm_get_default_allocator
-libxsmm_get_gemm_auto_prefetch
 libxsmm_get_gemm_prefetch
 libxsmm_get_kernel_info
 libxsmm_get_malloc
@@ -315,7 +314,6 @@ libxsmm_rng_set_seed
 libxsmm_rng_u32
 libxsmm_scratch_malloc
 libxsmm_set_default_allocator
-libxsmm_set_gemm_auto_prefetch
 libxsmm_set_malloc
 libxsmm_set_scratch_allocator
 libxsmm_set_scratch_limit

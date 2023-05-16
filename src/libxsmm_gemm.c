@@ -66,7 +66,6 @@ LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_taskgrain);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_tasks);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
 
-LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
@@ -485,71 +484,19 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 }
 
 
-LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch)
-{
-  LIBXSMM_INIT /* load configuration */
-  return libxsmm_get_gemm_prefetch(NULL == prefetch ? ((int)libxsmm_gemm_auto_prefetch) : *prefetch);
-}
-
-
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 {
   libxsmm_gemm_prefetch_type result;
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
   if (0 > prefetch) {
     LIBXSMM_INIT /* load configuration */
-    result = libxsmm_gemm_auto_prefetch_default;
+    result = ((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid)
+      ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C
+      : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C/*KNx*/);
   }
   else {
     result = (libxsmm_gemm_prefetch_type)prefetch;
   }
-#else /* TODO: full support for Windows calling convention */
-  result = LIBXSMM_GEMM_PREFETCH_NONE;
-  LIBXSMM_UNUSED(prefetch);
-#endif
   return result;
-}
-
-
-LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
-{
-  switch ((int)prefetch) {
-    case LIBXSMM_GEMM_PREFETCH_SIGONLY:            return 2;
-    case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C:          return 3;
-    case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD:          return 4;
-    case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: return 5;
-    case LIBXSMM_GEMM_PREFETCH_AL2:                return 6;
-    case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C:       return 7;
-    case LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB:         return 8;
-    default: {
-      LIBXSMM_ASSERT(LIBXSMM_GEMM_PREFETCH_NONE == prefetch);
-      return 0;
-    }
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
-{
-  switch (uid) {
-    case 1: return LIBXSMM_GEMM_PREFETCH_NONE;               /* nopf */
-    case 2: return LIBXSMM_GEMM_PREFETCH_SIGONLY;            /* pfsigonly */
-    case 3: return LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;          /* BL2viaC */
-    case 4: return LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;          /* curAL2 */
-    case 5: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD; /* curAL2_BL2viaC */
-    case 6: return LIBXSMM_GEMM_PREFETCH_AL2;                /* AL2 */
-    case 7: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;       /* AL2_BL2viaC */
-    case 8: return LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB;
-    default: {
-      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        static int error_once = 0;
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-          fprintf(stderr, "LIBXSMM WARNING: invalid prefetch strategy requested!\n");
-        }
-      }
-      return LIBXSMM_GEMM_PREFETCH_NONE;
-    }
-  }
 }
 
 

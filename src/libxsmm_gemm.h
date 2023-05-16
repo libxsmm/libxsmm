@@ -201,11 +201,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(void);
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 
-LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
-
-/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
-LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
+/** Translates GEMM-prefetch requests incl. LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
 
 #if defined(LIBXSMM_BUILD)
@@ -310,8 +306,6 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_tasks);
  */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
 
-/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
