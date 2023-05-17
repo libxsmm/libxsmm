@@ -3028,42 +3028,40 @@ void libxsmm_riscv_instruction_rvv_prefetch( libxsmm_generated_code*            
                                                const libxsmm_riscv_prefetch i_prefetch );
 
 /**
- * Generates fmla and similar
+ * Generates compute
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_instr actual operation variant
  * @param i_vec_reg_src_1 first source register
  * @param i_vec_reg_src_2 second source register
  * @param i_vec_reg_dst destination register
+ * @param i_masked true if instruction is masked
  */
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generated_code,
                                             const unsigned int     i_vec_instr,
                                             const unsigned int     i_vec_reg_src_1,
                                             const unsigned int     i_vec_reg_src_2,
-                                            const unsigned int     i_vec_reg_dst);
+                                            const unsigned int     i_vec_reg_dst,
+                                            const unsigned int     i_masked);
 
 /**
- * Generates ptrue and similar
+ * Generates compute with immediate
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_pred_instr actual operation variant
- * @param i_pred_reg pred register
- * @param i_gp_reg_src_0 first source register
- * @param i_gp_width width of the GP-registers.
- * @param i_gp_reg_src_1 second source register
- * @param i_pattern type
- * @param i_type type
+ * @param i_vec_instr actual operation variant
+ * @param i_vec_reg_src_1 first source register
+ * @param i_imm immediate
+ * @param i_vec_reg_dst destination register
+ * @param i_masked true if instruction is masked
  */
 LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_rvv_pcompute( libxsmm_generated_code*           io_generated_code,
-                                               const unsigned int                i_pred_instr,
-                                               const unsigned int                i_pred_reg,
-                                               const unsigned int                i_gp_reg_src_0,
-                                               libxsmm_riscv_gp_width          i_gp_width,
-                                               const unsigned int                i_gp_reg_src_1,
-                                               const libxsmm_riscv_pattern i_pattern,
-                                               const libxsmm_riscv_type    i_type );
+void libxsmm_riscv_instruction_rvv_compute_imm( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vec_instr,
+                                                const unsigned int      i_vec_reg_src_1,
+                                                const unsigned int      i_imm,
+                                                const unsigned int      i_vec_reg_dst,
+                                                const unsigned int      i_masked);
 
 /**
  * Generates alu memory movements like ldr, str,

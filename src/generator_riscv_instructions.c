@@ -36,13 +36,13 @@ void libxsmm_riscv_instruction_rvv_setvli( libxsmm_generated_code* io_generated_
     return;
   }
 
-  if ( i_sew > 0x3 ) {
+  if ( i_sew > 0x8 ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: unexpected imm: %u \n", i_sew);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
-  if ( i_lmul > 0x3 ) {
+  if ( i_lmul > 0x8 ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvli: unexpected imm: %u \n", i_lmul);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -100,13 +100,13 @@ void libxsmm_riscv_instruction_rvv_setivli( libxsmm_generated_code* io_generated
     return;
   }
 
-  if ( i_sew > 0x3 ) {
+  if ( i_sew > 0x8 ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: unexpected imm: %u \n", i_sew);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
-  if ( i_lmul > 0x3 ) {
+  if ( i_lmul > 0x8 ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_setivli: unexpected imm: %u \n", i_lmul);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -233,7 +233,7 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
   // Unit stride and mask memory ops
   if ( RVV_U(i_vmove_instr)||(RVV_M(i_vmove_instr)) ) {
     if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
-      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: invalid register!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
@@ -261,7 +261,7 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
       io_generated_code->code_size += 4;
     } else {
       /* assembly not supported right now */
-      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: inline/pure assembly print is not supported!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
@@ -270,7 +270,7 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
   // Stride and Indexed memory ops
   if ( RVV_S(i_vmove_instr) || RVV_I(i_vmove_instr)) {
     if ( !REG_VALID_3(i_vec_reg_addr, i_vec_reg_offset, i_vec_reg_dst) ) {
-      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: invalid register!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
@@ -301,7 +301,7 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
       io_generated_code->code_size += 4;
     } else {
       /* assembly not supported right now */
-      fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+      fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: inline/pure assembly print is not supported!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
@@ -327,7 +327,8 @@ void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generate
                                             const unsigned int     i_vec_instr,
                                             const unsigned int     i_vec_reg_src_1,
                                             const unsigned int     i_vec_reg_src_2,
-                                            const unsigned int     i_vec_reg_dst) {
+                                            const unsigned int     i_vec_reg_dst,
+                                            const unsigned int     i_masked) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -335,7 +336,7 @@ void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generate
   }
 
   if ( !REG_VALID_3(i_vec_reg_src_1, i_vec_reg_src_2, i_vec_reg_dst) ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -362,11 +363,14 @@ void libxsmm_riscv_instruction_rvv_compute( libxsmm_generated_code*  io_generate
     /* setting RS2 */
     code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src_2, LIBXSMM_RISCV_INSTR_FIELD_RS2);
 
+    /* setting mask bit */
+    code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RISCV_INSTR_FIELD_VM);
+
     /* advance code head */
     io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -377,21 +381,22 @@ void libxsmm_riscv_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gene
                                               const unsigned int     i_vec_instr,
                                               const unsigned int     i_vec_reg_src,
                                               const unsigned int     i_imm,
-                                              const unsigned int     i_reg_dst) {
+                                              const unsigned int     i_reg_dst,
+                                              const unsigned int     i_masked) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute_imm: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
   if ( !REG_VALID_2(i_vec_reg_src, i_reg_dst) ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: invalid register!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute_imm: invalid register!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
   if ( i_imm > 0x1f ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute_imm: unexpected imm: %u %u\n", i_vec_instr, i_imm);
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute_compute_imm: unexpected imm: %u %u\n", i_vec_instr, i_imm);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -415,14 +420,17 @@ void libxsmm_riscv_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gene
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
 
-    /* setting RS2 */
+    /* setting IMM */
     code[code_head] |= (unsigned int)FILL_REGID(i_imm, LIBXSMM_RISCV_INSTR_FIELD_SIMM5);
+
+    /* setting mask bit */
+    code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RISCV_INSTR_FIELD_VM);
 
     /* advance code head */
     io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_rvv_setvl: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_rvv_compute_imm: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
