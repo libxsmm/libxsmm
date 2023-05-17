@@ -14,7 +14,10 @@
 #include "generator_common.h"
 
 #if !defined(LIBXSMM_FSSPMDM_DENSE_BIAS)
-# define LIBXSMM_FSSPMDM_DENSE_BIAS(VALUE) LIBXSMM_UPF(VALUE, 1, 10)
+# define LIBXSMM_FSSPMDM_DENSE_BIAS(VALUE) LIBXSMM_UPF(VALUE, -1, 10)
+#endif
+#if !defined(LIBXSMM_FSSPMDM_NTUNE)
+# define LIBXSMM_FSSPMDM_NTUNE 250
 #endif
 
 
@@ -29,6 +32,8 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_gemmfunction k_sparse4 = NULL;
   libxsmm_gemmfunction k_dense = NULL;
   libxsmm_fsspmdm* new_handle = NULL;
+  const char *const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
+  const int fsspmdm_hint = (NULL == env_fsspmdm_hint ? 0 : atoi(env_fsspmdm_hint));
   int N_sparse1, N_sparse2, N_sparse4, N_dense, i, j, n, nkerns, a_nnz = 0;
   unsigned char typesize = 0;
   static int error_once = 0;
@@ -232,21 +237,21 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
   {
     /* Attempt to JIT a sparse kernel */
-    if (N_sparse1 <= N) {
+    if (N_sparse1 <= N && (0 == fsspmdm_hint || 1 == fsspmdm_hint)) {
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse1, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
       k_sparse1 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
-    /* If that worked try to JIT a second (wider) sparse kernel */
-    if (NULL != k_sparse1 && 0 == (N % N_sparse2)) {
+    /* Try to JIT a second (wider) sparse kernel */
+    if (N_sparse1 <= N && 0 == (N % N_sparse2) && (0 == fsspmdm_hint || 2 == fsspmdm_hint)) {
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse2, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
       k_sparse2 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
-    /* And if that worked try going even wider still */
-    if (NULL != k_sparse2 && 0 == (N % N_sparse4)) {
+    /* Try to JIT an even wider kernel */
+    if (N_sparse1 <= N && 0 == (N % N_sparse4) && (0 == fsspmdm_hint || 3 == fsspmdm_hint)) {
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse4, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
       k_sparse4 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
@@ -265,15 +270,13 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   /* We have at least one kernel */
   if (0 < nkerns) {
-    const char *const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
-    const int fsspmdm_hint = (NULL == env_fsspmdm_hint ? 0 : atoi(env_fsspmdm_hint));
     void *B = NULL, *C = NULL;
     unsigned long long dt_sparse1 = (unsigned long long)-1;
     unsigned long long dt_sparse2 = (unsigned long long)-1;
     unsigned long long dt_sparse4 = (unsigned long long)-1;
     unsigned long long dt_dense = (unsigned long long)-1;
     libxsmm_gemm_param gemm_param;
-    unsigned long long t;
+    unsigned long long s, t;
 
     /* Run benchmark if there are at least two kernels and a timer routine */
     if (2 <= nkerns && NULL != timer_tick) {
@@ -306,9 +309,10 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
       LIBXSMM_ASSERT(NULL != timer_tick);
-      t = timer_tick();
-      for (i = 0; i < 250; ++i) {
-        gemm_param.b.primary = aa_dense;
+      LIBXSMM_ASSERT(NULL != aa_dense);
+      gemm_param.b.primary = aa_dense;
+      s = timer_tick();
+      for (i = 0; i < LIBXSMM_FSSPMDM_NTUNE; ++i) {
         for (j = 0; j < N; j += N_dense) {
           gemm_param.a.primary = (char*)B + j * typesize;
           gemm_param.c.primary = (char*)C + j * typesize;
@@ -316,7 +320,8 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
         }
       }
       /* Bias to prefer dense kernels */
-      dt_dense = LIBXSMM_DELTA(t, timer_tick());
+      t = timer_tick();
+      dt_dense = LIBXSMM_FSSPMDM_DENSE_BIAS(LIBXSMM_DELTA(s, t));
     }
 
     /* Benchmark sparse (regular) */
@@ -325,13 +330,15 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
       LIBXSMM_ASSERT(NULL != timer_tick);
-      t = timer_tick();
+      gemm_param.a.primary = NULL;
       gemm_param.b.primary = B;
       gemm_param.c.primary = C;
-      for (i = 0; i < 250; ++i) {
+      s = timer_tick();
+      for (i = 0; i < LIBXSMM_FSSPMDM_NTUNE; ++i) {
         k_sparse1(&gemm_param);
       }
-      dt_sparse1 = LIBXSMM_DELTA(t, timer_tick());
+      t = timer_tick();
+      dt_sparse1 = LIBXSMM_DELTA(s, t);
     }
 
     /* Benchmark sparse (wide) */
@@ -340,13 +347,15 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
       LIBXSMM_ASSERT(NULL != timer_tick);
-      t = timer_tick();
+      gemm_param.a.primary = NULL;
       gemm_param.b.primary = B;
       gemm_param.c.primary = C;
-      for (i = 0; i < 250; ++i) {
+      s = timer_tick();
+      for (i = 0; i < LIBXSMM_FSSPMDM_NTUNE; ++i) {
         k_sparse2(&gemm_param);
       }
-      dt_sparse2 = LIBXSMM_DELTA(t, timer_tick());
+      t = timer_tick();
+      dt_sparse2 = LIBXSMM_DELTA(s, t);
     }
 
     /* Benchmark sparse (widest) */
@@ -355,23 +364,25 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
       LIBXSMM_ASSERT(NULL != timer_tick);
-      t = timer_tick();
-      gemm_param.b.primary = (void*)B;
-      gemm_param.c.primary = (void*)C;
-      for (i = 0; i < 250; ++i) {
+      gemm_param.a.primary = NULL;
+      gemm_param.b.primary = B;
+      gemm_param.c.primary = C;
+      s = timer_tick();
+      for (i = 0; i < LIBXSMM_FSSPMDM_NTUNE; ++i) {
         k_sparse4(&gemm_param);
       }
-      dt_sparse4 = LIBXSMM_DELTA(t, timer_tick());
+      t = timer_tick();
+      dt_sparse4 = LIBXSMM_DELTA(s, t);
     }
 
-    /* Dense fastest (or within 10%) */
-    if (NULL != k_dense && NULL != aa_dense && ((0 == fsspmdm_hint
-        && dt_dense <= LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse1)
-        && dt_dense <= LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse2)
-        && dt_dense <= LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse4))
+    /* Dense fastest (or within LIBXSMM_FSSPMDM_DENSE_BIAS) */
+    if (NULL != k_dense && ((0 == fsspmdm_hint
+        && dt_dense <= dt_sparse1
+        && dt_dense <= dt_sparse2
+        && dt_dense <= dt_sparse4)
       || (4 <= fsspmdm_hint || 0 > fsspmdm_hint)))
     {
-      LIBXSMM_ASSERT(NULL != k_dense && NULL != aa_dense);
+      LIBXSMM_ASSERT(NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
       new_handle->a_dense = aa_dense;
@@ -379,8 +390,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Sparse (regular) fastest */
     if (NULL != k_sparse1 && ((0 == fsspmdm_hint
-        && LIBXSMM_FSSPMDM_DENSE_BIAS(dt_sparse1) < dt_dense
-        && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4)
+        && dt_sparse1 < dt_dense
+        && dt_sparse1 <= dt_sparse2
+        && dt_sparse1 <= dt_sparse4)
       || 1 == fsspmdm_hint))
     {
       LIBXSMM_ASSERT(NULL != k_sparse1);
@@ -394,8 +406,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Sparse (wide) fastest */
     if (NULL != k_sparse2 && ((0 == fsspmdm_hint
-        && dt_sparse2 < LIBXSMM_FSSPMDM_DENSE_BIAS(dt_dense)
-        && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4)
+        && dt_sparse2 < dt_dense
+        && dt_sparse2 < dt_sparse1
+        && dt_sparse2 <= dt_sparse4)
       || 2 == fsspmdm_hint))
     {
       LIBXSMM_ASSERT(NULL != k_sparse2);
@@ -409,8 +422,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Sparse (widest) fastest */
     if (NULL != k_sparse4 && ((0 == fsspmdm_hint
-        && dt_sparse4 < LIBXSMM_FSSPMDM_DENSE_BIAS(dt_dense)
-        && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2)
+        && dt_sparse4 < dt_dense
+        && dt_sparse4 < dt_sparse1
+        && dt_sparse4 < dt_sparse2)
       || 3 == fsspmdm_hint))
     {
       LIBXSMM_ASSERT(NULL != k_sparse4);
@@ -427,6 +441,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
         libxsmm_free(aa_dense);
       }
       else { /* fallback */
+        LIBXSMM_ASSERT(NULL != k_dense && NULL != aa_dense);
         new_handle->N_chunksize = N_dense;
         new_handle->kernel = k_dense;
         new_handle->a_dense = aa_dense;
@@ -475,6 +490,7 @@ LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const vo
   memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
   if (NULL == handle->a_dense) {
+    gemm_param.a.primary = NULL;
     gemm_param.b.primary = (void*)B;
     gemm_param.c.primary = (void*)C;
     handle->kernel(&gemm_param);
