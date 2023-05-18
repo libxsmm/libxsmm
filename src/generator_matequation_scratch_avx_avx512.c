@@ -230,7 +230,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-  if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+  if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
     l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
@@ -245,7 +245,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
     l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
-    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_R8;
       l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R9;
       l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
@@ -263,7 +263,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_X86_GP_REG_R9;
-    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RAX;
     } else {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;

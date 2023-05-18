@@ -2157,4 +2157,11 @@ typedef enum libxsmm_ulp_precision {
  */
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void);
 
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_C_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
+
 #endif /* GENERATOR_COMMON_H */

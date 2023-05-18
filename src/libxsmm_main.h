@@ -211,7 +211,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
   /** Prefetch strategy. */
   unsigned char prefetch;
   /** Denotes the data-type. */
-  unsigned char datatype;
+  unsigned char datatype[3];
   /**
    * Do not reorder elements between above and below blocks!
    */
@@ -562,5 +562,4 @@ LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 /** Counts the maximum number of thread that have been active. */
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
-
 #endif /*LIBXSMM_MAIN_H*/
