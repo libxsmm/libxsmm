@@ -518,8 +518,8 @@ def main(args, argd, dbfname):
 
     nbuilds, nbuild = 0, int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
-        next = latest + 1
-        nbld = nbuild if 0 < nbuild else next
+        nnew = latest + 1
+        nbld = nbuild if 0 < nbuild else nnew
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -529,7 +529,7 @@ def main(args, argd, dbfname):
             database, str(nbld), name, infokey, info, txt, nentries, nerrors
         )
         if 0 < nentries:
-            latest = next if 0 == nbuild else nbuild
+            latest = nnew if 0 == nbuild else nbuild
     elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -739,7 +739,7 @@ def main(args, argd, dbfname):
             for build in reversed(builds):  # order: latest -> older
                 values, ylabel = database[build][entry][value], None
                 if isinstance(values, dict):  # JSON-format
-                    vals, legd = [], []
+                    vals, legd, detail = [], [], None
                     for key in (k for k in keys if k in values):
                         vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
                         weight = wlist[key] if key in wlist else 1.0
@@ -758,9 +758,19 @@ def main(args, argd, dbfname):
                                 else qlst[2]
                             )
                         lst = key.translate(split).split()
-                        detail = [s for s in lst if s.lower() != qlst[0]]
+                        if lst and all(
+                            lst[0] == s for s in lst if qlst[0] in s.lower()
+                        ):
+                            detail = (
+                                lst[0]
+                                if not detail or detail == lst[0]
+                                else qlst[0]
+                            )
+                        else:
+                            detail = qlst[0]
+                        itm = [s for s in lst if s.lower() != detail]
                         legd.append(
-                            f"{value} {'_'.join(detail)}" if detail else value
+                            f"{value} {'_'.join(itm)}" if itm else value
                         )
                     if vals:
                         if yvalue:
@@ -770,10 +780,10 @@ def main(args, argd, dbfname):
                                 yvalue.append(vals)
                         elif int(build) == latest:
                             yvalue, legend = [vals], legd
-                            if addon == args.branch:
-                                addon = rslt.split(",")[0] + (
-                                    f"@{addon}" if addon else ""
-                                )  # title-addon
+                            if addon == args.branch and detail:
+                                addon = (  # title-addon
+                                    f"{detail}@{addon}" if addon else detail
+                                )
                         xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
