@@ -9,10 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2129,SC2143
-
 HERE=$(cd "$(dirname "$0")" && pwd -P)
-BASE=$(echo "$0" | sed 's/\(.[^/]*\/\)*//' | sed 's/\(.*\)\..*/\1/')
 MATS=${HERE}/mats
 #
 # Build PyFR sample code with "make all".
@@ -21,7 +18,7 @@ MATS=${HERE}/mats
 #
 export OMP_PROC_BIND=${OMP_PROC_BIND:-TRUE}
 export FSSPMDM_NBLOCK=${FSSPMDM_NBLOCK:-40}
-export PERF_R=${PERF_R:-200000}
+export PERF_R=${PERF_R:-10000}
 export PERF_N=${PERF_N:-40}
 
 WAIT=12
@@ -85,30 +82,31 @@ cut -d"${SEP}" -f1,2 "${HERE}/gimmik.csv" | sed "1s/GFLOPS/GIMMIK/" \
 | join --header -t"${SEP}" \
   "${HERE}/libxsmm.csv" \
   - \
->"${HERE}/${BASE}.csv"
+>"${HERE}/performance.csv"
 
 if [ "$(command -v datamash)" ]; then
-  if [ "$(datamash geomean 2>&1 | grep invalid)" ]; then
-    datamash --headers -t"${SEP}"    mean 5-8 <"${HERE}/${BASE}.csv" >"${TMPF}"
+  if datamash geomean 2>&1 | grep -q invalid; then
+    datamash --headers -t"${SEP}"    mean 5-8 <"${HERE}/performance.csv" >"${TMPF}"
   else
-    datamash --headers -t"${SEP}" geomean 5-8 <"${HERE}/${BASE}.csv" >"${TMPF}"
+    datamash --headers -t"${SEP}" geomean 5-8 <"${HERE}/performance.csv" >"${TMPF}"
   fi
-  read -r -d $'\04' HEADER VALUES <"${TMPF}"
+  read -r -d $'\04' HEADER VALUES <"${TMPF}" || true
   if [ "${HEADER}" ] && [ "${VALUES}" ]; then
     IFS="${SEP}"; N=0
     read -ra ENTRIES <<<"${VALUES}"
     COUNT=${#ENTRIES[@]}
-    echo > "${TMPF}"
-    echo "------------------------------------------------------------------" >>"${TMPF}"
-    echo "Benchmark: PyFR" >>"${TMPF}"
-    echo >>"${TMPF}"
-    for LABEL in ${HEADER}; do
-      if [ "0" != "$((COUNT<=N))" ]; then break; fi
-      echo "${LABEL}: ${ENTRIES[N]} GFLOPS/s" >>"${TMPF}"
-      N=$((N+1))
-    done
+    { echo
+      echo "------------------------------------------------------------------"
+      echo "Benchmark: PyFR"
+      echo
+      for LABEL in ${HEADER}; do
+        if [ "0" != "$((COUNT<=N))" ]; then break; fi
+        echo "${LABEL}: ${ENTRIES[N]} GFLOPS/s"
+        N=$((N+1))
+      done
+      echo
+    } >"${TMPF}"
     unset IFS COUNT N
-    echo >>"${TMPF}"
     # post-process result further (graphical report)
     eval "${HERE}/../../scripts/tool_logrept.sh ${TMPF}"
   fi
