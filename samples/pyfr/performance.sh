@@ -84,30 +84,44 @@ cut -d"${SEP}" -f1,2 "${HERE}/gimmik.csv" | sed "1s/GFLOPS/GIMMIK/" \
   - \
 >"${HERE}/performance.csv"
 
+RESULT=$?
 if [ "$(command -v datamash)" ]; then
   if datamash geomean 2>&1 | grep -q invalid; then
     datamash --headers -t"${SEP}"    mean 5-8 <"${HERE}/performance.csv" >"${TMPF}"
   else
     datamash --headers -t"${SEP}" geomean 5-8 <"${HERE}/performance.csv" >"${TMPF}"
   fi
-  read -r -d $'\04' HEADER VALUES <"${TMPF}" || true
-  if [ "${HEADER}" ] && [ "${VALUES}" ]; then
-    IFS="${SEP}"; N=0
-    read -ra ENTRIES <<<"${VALUES}"
-    COUNT=${#ENTRIES[@]}
-    { echo
-      echo "------------------------------------------------------------------"
-      echo "Benchmark: PyFR"
-      echo
-      for LABEL in ${HEADER}; do
-        if [ "0" != "$((COUNT<=N))" ]; then break; fi
-        echo "${LABEL}: ${ENTRIES[N]} GFLOPS/s"
-        N=$((N+1))
-      done
-      echo
-    } >"${TMPF}"
-    unset IFS COUNT N
-    # post-process result further (graphical report)
-    eval "${HERE}/../../scripts/tool_logrept.sh ${TMPF}"
+  if [ "-r" != "$1" ] && [ "--report" != "$1" ]; then
+    echo
+    echo "------------------------------------------------------------------"
+    echo "Performance"
+    echo "------------------------------------------------------------------"
+    cat "${TMPF}"
+    echo
+  else
+    read -r -d $'\04' HEADER VALUES <"${TMPF}" || true
+    if [ "${HEADER}" ] && [ "${VALUES}" ]; then
+      IFS="${SEP}"; N=0
+      read -ra ENTRIES <<<"${VALUES}"
+      COUNT=${#ENTRIES[@]}
+      { echo
+        echo "------------------------------------------------------------------"
+        echo "Benchmark: PyFR"
+        echo
+        for LABEL in ${HEADER}; do
+          if [ "0" != "$((COUNT<=N))" ]; then break; fi
+          echo "${LABEL}: ${ENTRIES[N]} GFLOPS/s"
+          N=$((N+1))
+        done
+        echo
+      } >"${TMPF}"
+      unset IFS COUNT N
+      if [ ! "${LOGRPT_ECHO}" ]; then export LOGRPT_ECHO=1; fi
+      # post-process result further (graphical report)
+      eval "${HERE}/../../scripts/tool_logrept.sh ${TMPF}"
+      RESULT=$?
+    fi
   fi
 fi
+
+exit ${RESULT}
