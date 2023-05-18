@@ -1300,7 +1300,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
       internal_init();
     }
 #if defined(LIBXSMM_PERF)
-    libxsmm_perf_init();
+    libxsmm_perf_init(libxsmm_timer_tick);
 #endif
   }
 }
