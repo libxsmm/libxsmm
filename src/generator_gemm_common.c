@@ -1153,33 +1153,17 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   unsigned int avx2_ones_size         = 64;
   short sixteen_ones[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };
   unsigned short avx2_bf16_mask[16] = { 0x0, 0xffff, 0x0, 0xffff,   0x0, 0xffff, 0x0, 0xffff,   0x0, 0xffff, 0x0, 0xffff,   0x0, 0xffff, 0x0, 0xffff };
-  int l_emu_amx = 0;
-  const char *const l_env_emu_amx = getenv("EMULATE_AMX");
-  if ( 0 == l_env_emu_amx ) {
-  } else {
-    l_emu_amx = atoi(l_env_emu_amx);
-  }
 
-  if (l_emu_amx > 0) {
+  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
     i_micro_kernel_config->gemm_scratch_ld = 16;
-    i_micro_kernel_config->emulation_scratch_offset = 64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/;
-    gemm_scratch_size =  64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
-    if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-      i_micro_kernel_config->emulation_scratch_offset = 0;
-      gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
-    }
+    gemm_scratch_size = LIBXSMM_MAX(32*64, 64 * i_micro_kernel_config->gemm_scratch_ld * 4/*i_micro_kernel_config->datatype_size*/);
   } else {
-    if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
-      i_micro_kernel_config->gemm_scratch_ld = 16;
-      gemm_scratch_size = LIBXSMM_MAX(32*64, 64 * i_micro_kernel_config->gemm_scratch_ld * 4/*i_micro_kernel_config->datatype_size*/);
-    } else {
-      /* Allocate scratch for stashing 32 zmms */
-      if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-        gemm_scratch_size = 32 * 64;
-      }
-      if (i_micro_kernel_config->vnni_format_C > 0) {
-        gemm_scratch_size = 32 * 64 + i_xgemm_desc->n * i_xgemm_desc->m * 4;
-      }
+    /* Allocate scratch for stashing 32 zmms */
+    if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+      gemm_scratch_size = 32 * 64;
+    }
+    if (i_micro_kernel_config->vnni_format_C > 0) {
+      gemm_scratch_size = 32 * 64 + i_xgemm_desc->n * i_xgemm_desc->m * 4;
     }
   }
 

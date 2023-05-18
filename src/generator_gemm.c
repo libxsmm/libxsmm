@@ -12,7 +12,6 @@
 #include "generator_gemm_common.h"
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
-#include "generator_gemm_amx_emu.h"
 #include "generator_gemm_aarch64.h"
 #include "generator_gemm_noarch.h"
 
@@ -23,14 +22,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   /* apply the alignment override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
-  int l_emu_amx = 0;
   int l_aarch64_bfdot = libxsmm_cpuid_arm_use_bfdot();
-  const char *const l_env_emu_amx = getenv("EMULATE_AMX");
   unsigned int l_saved_arch = io_generated_code->arch;
-  if ( 0 == l_env_emu_amx ) {
-  } else {
-    l_emu_amx = atoi(l_env_emu_amx);
-  }
 
   /* We allow b vnniT for x86 and bf16 whenever possible */
   if ( ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ( io_generated_code->arch >= LIBXSMM_X86_GENERIC ) &&  ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
@@ -427,21 +420,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
          ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
            ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) &&
          ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
-      if (l_emu_amx == 0) {
-        libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
-      } else {
-        /* let's recheck CPU to even emulation AVX512_BF16 */
-        io_generated_code->arch = libxsmm_cpuid(NULL);
-        l_xgemm_desc_mod.c3 = 0;
-        libxsmm_generator_gemm_amx_kernel_emu_wrapper( io_generated_code, &l_xgemm_desc_mod );
-      }
+      libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     } else if ( ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) && ( io_generated_code->arch < LIBXSMM_X86_ALLFEAT ) ) &&
                 ( ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) || ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )))) {
       libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     } else {
-      if (l_emu_amx != 0) {
-        io_generated_code->arch = libxsmm_cpuid(NULL);
-      }
       libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     }
   } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_V81) || (io_generated_code->arch == LIBXSMM_AARCH64_V82) ) {

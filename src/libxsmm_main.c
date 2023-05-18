@@ -2203,19 +2203,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
-        if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
-             ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
-          int emu_amx = 0;
-          const char *const env_emu_amx = getenv("EMULATE_AMX");
-          if ( 0 == env_emu_amx ) {
-          } else {
-            emu_amx = atoi(env_emu_amx);
-          }
-          if (emu_amx > 0) {
-            generated_code.arch = libxsmm_cpuid(NULL);
-          }
-        }
         libxsmm_generator_mateltwise_kernel(&generated_code, request->descriptor.meltw);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -2237,19 +2224,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MEQN: { /* matequation kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        /* dispatch eltwise code with AVX512_BF16 by demoting seamlessly to the current CPU arch */
-        if ( ( generated_code.arch >= LIBXSMM_X86_AVX512_SPR ) &&
-             ( generated_code.arch <= LIBXSMM_X86_ALLFEAT )       ) {
-          int emu_amx = 0;
-          const char *const env_emu_amx = getenv("EMULATE_AMX");
-          if ( 0 == env_emu_amx ) {
-          } else {
-            emu_amx = atoi(env_emu_amx);
-          }
-          if (emu_amx > 0) {
-            generated_code.arch = libxsmm_cpuid(NULL);
-          }
-        }
         libxsmm_generator_matequation_kernel(&generated_code, request->descriptor.meqn);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
