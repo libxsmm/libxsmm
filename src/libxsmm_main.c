@@ -3812,8 +3812,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
 {
 #if !defined(NDEBUG)
   if (NULL != fn && NULL != m
-    && (NULL == iprec || (0 <= *iprec && *iprec < LIBXSMM_DATATYPE_UNSUPPORTED))
-    && (NULL == oprec || (0 <= *oprec && *oprec < LIBXSMM_DATATYPE_UNSUPPORTED)))
+    && (NULL == aprec    || (0 <= *aprec    && *aprec    < LIBXSMM_DATATYPE_UNSUPPORTED))
+    && (NULL == bprec    || (0 <= *bprec    && *bprec    < LIBXSMM_DATATYPE_UNSUPPORTED))
+    && (NULL == compprec || (0 <= *compprec && *compprec < LIBXSMM_DATATYPE_UNSUPPORTED))
+    && (NULL == cprec    || (0 <= *cprec    && *cprec    < LIBXSMM_DATATYPE_UNSUPPORTED)))
 #endif
   {
     const int gemm_flags = (NULL != flags ? *flags : LIBXSMM_FLAGS);
