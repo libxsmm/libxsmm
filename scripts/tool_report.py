@@ -311,25 +311,27 @@ def trend(values):
     """
     Calculate the predicted value (linear trend of history),
     the relative difference of lastest and previous value (rd),
-    the relative difference of lastest and average value (ad),
+    the relative difference of lastest and median value (md),
     the standard deviation (cv), the arithmetic average (avg),
-    and the linear trend (equation).
+    the median value (med), and the linear trend (equation).
     """
-    rd, ad, cv, avg, eqn, size = None, None, None, None, None, len(values)
+    rd, md, cv, avg, med, eqn = None, None, None, None, None, None
+    size = len(values)
     a, b = (values[1] if 1 < size else 0), (values[0] if 0 < size else 0)
     if 1 < size:
         avg = numpy.mean(values[1:])
+        med = numpy.median(values[1:])
     if 0 != a:
         rd = (b - a) / a
-    if avg:  # not zero/none
-        ad = (b - avg) / avg
+    if med:  # not zero/none
+        md = (b - med) / med
     if 2 < size:
         # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
         if avg:  # not zero/none
             cv = numpy.std(values[1:]) / avg
-    return (b, rd, ad, cv, avg, eqn)
+    return (b, rd, md, cv, avg, med, eqn)
 
 
 def bold(s, cond=True):
@@ -344,7 +346,7 @@ def bold(s, cond=True):
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
     label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
-    guess, rd, ad, cv, avg, eqn = trend(values)  # unpack
+    guess, rd, md, cv, avg, med, eqn = trend(values)  # unpack
     blist = base.split()
     if 1 < len(blist):  # category and detail
         dlist = blist[1].split("_")
@@ -353,9 +355,9 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
                 dlist.remove(c)
         base = f"{blist[0]} {'_'.join(dlist)}"
     # combine relative differences (new value vs last/avg value)
-    xd = max(abs(rd if rd else 0), abs(ad if ad else 0))
+    xd = max(abs(rd if rd else 0), abs(md if md else 0))
     if xd:
-        inum = num2fix(100 * (rd if xd == abs(rd) else ad))
+        inum = num2fix(100 * (rd if xd == abs(rd) else md))
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum = num2fix(max(100 * cv, 1))
