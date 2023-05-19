@@ -3094,7 +3094,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
 
   /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
-    return NULL;
+    /*return NULL;*/
   }
 
   /* use the XGEMM ABI which utilizes an arg struct */
@@ -3123,7 +3123,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
 
   /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
-    return NULL;
+    /*return NULL;*/
   }
 
   /* use the XGEMM ABI which utilizes an arg struct */
