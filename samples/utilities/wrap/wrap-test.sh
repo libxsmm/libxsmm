@@ -19,7 +19,6 @@ UNAME=$(command -v uname)
 GREP=$(command -v grep)
 SORT=$(command -v sort)
 RM=$(command -v rm)
-TR=$(command -v tr)
 
 if [ "Darwin" != "$(${UNAME})" ]; then
   LIBEXT=so
@@ -34,7 +33,7 @@ else
 fi
 
 if [ -e "${HERE}/${TEST}-blas" ]; then
-  NAME=$(echo ${TEST} | ${TR} [[:lower:]] [[:upper:]])
+  NAME=${TEST^^}
   echo "-----------------------------------"
   echo "${NAME} (ORIGINAL BLAS)"
   echo "args    $@"

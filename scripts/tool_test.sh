@@ -303,7 +303,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
        [ "$(command -v date)" ];
     then
       NOW=$(date +%s)
-      LIMITFILE=$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]")
+      LIMITFILE=${LABEL,,}
       if [ ! "${LIMITFILE}" ]; then
         LIMITFILE=$(echo "${TESTID}" | ${SED} "s/[^A-Za-z0-9._-]//g")
       fi
@@ -378,10 +378,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then HEADER="${PARTITION}"; fi
       if [ "none" != "${CONFIG}" ]; then HEADER="${HEADER} ${CONFIG}"; fi
       if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
-      HEADER=$(echo "${HEADER}" \
+      HEADER=$(echo "${HEADER^^}" \
         | ${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" \
-        | ${TR} "[:lower:]" "[:upper:]" | ${TR} -s " " "/")
-      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | ${TR} "[:upper:]" "[:lower:]")" ]; then
+        | ${TR} -s " " "/")
+      if [ "${TESTID}" ] && [ "test" != "${TESTID,,}" ]; then
         if [ "${HEADER}" ]; then
           CAPTION="${TESTID} (${HEADER})"
         else
@@ -504,7 +504,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             LOGFILE=${PWD}/${LOGFILE_INIT}
           fi
         elif [ "${LABEL}" ]; then
-          LOGFILE=${PWD}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
+          LOGFILE=${PWD}/.test-${LABEL,,}.log
         else
           LOGFILE=${PWD}/.test.log
         fi
