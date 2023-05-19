@@ -336,7 +336,7 @@ def bold(s, cond=True):
     if cond:
         c, t = s.count("$"), s.replace("%", r"\%")
         a = t.replace("$", "") if 0 == (c % 2) else t
-        b = r"$\bf{" + a.replace(" ", "\ ") + "}$"
+        b = r"$\bf{" + a.replace(" ", r"\ ") + "}$"
         return b
     else:
         return s
@@ -891,6 +891,14 @@ def main(args, argd, dbfname):
     nplots = len(plots)
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
+        if 2 > nplots_untied:  # rebuild plots
+            key, val = next(iter(plots.keys())), list(*list(*plots.values()))
+            nplots_untied = len(val)
+            val[0] = list(zip(*val[0]))
+            val[2] = [val[2]] * nplots_untied
+            val[3] = [val[3]] * nplots_untied
+            plots[key] = list(zip(*val))
+
         # auto-adjust y-resolution according to number of plots
         if args.resolution == argd.resolution:  # resolution not user-defined
             resint_untied = copy.deepcopy(resint)
