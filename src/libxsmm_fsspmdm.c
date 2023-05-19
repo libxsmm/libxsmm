@@ -42,6 +42,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   double* a_csr_values = NULL;
   void* aa_dense = NULL;
 
+  /* count number of attempts to create handle */
+  LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_statistic_num_spmdm, 1, LIBXSMM_ATOMIC_RELAXED);
+
   if (NULL == a_dense) { /* basic checks */
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
