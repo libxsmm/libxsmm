@@ -1137,6 +1137,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VSQRTSH", &mycode, LIBXSMM_X86_INSTR_VSQRTSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VSUBPH", &mycode, LIBXSMM_X86_INSTR_VSUBPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VSUBSH", &mycode, LIBXSMM_X86_INSTR_VSUBSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTW2PH", &mycode, LIBXSMM_X86_INSTR_VCVTW2PH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
 
   /* VEX only encodings, even on EVEX machine */
   test_vex_compute_3reg_general( "vex_reg_VPERM2F128", &mycode, LIBXSMM_X86_INSTR_VPERM2F128, 0, 0x01, 0 );
@@ -1563,6 +1564,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VSQRTSH", &mycode, LIBXSMM_X86_INSTR_VSQRTSH, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VSUBPH", &mycode, LIBXSMM_X86_INSTR_VSUBPH, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VSUBSH", &mycode, LIBXSMM_X86_INSTR_VSUBSH, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTW2PH", &mycode, LIBXSMM_X86_INSTR_VCVTW2PH, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
 
   /* testing AVX512 masking */
   test_mask_move( "mask_move_KMOVB_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVB_GPR_LD );

@@ -570,6 +570,7 @@
 #define LIBXSMM_X86_INSTR_VSQRTSH          0xf0065951
 #define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
 #define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
+#define LIBXSMM_X86_INSTR_VCVTW2PH         0xe106567d
 
 /* AVX512 Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
