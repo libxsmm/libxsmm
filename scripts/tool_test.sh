@@ -212,10 +212,19 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         | ${SED} "s/^-//;s/-$//" \
         | ${SED} "s/[^A-Za-z0-9._-]//g")
     fi
+    SRUN_LABEL=""
     if [ "${PIPELINE}" ] && [ "${JOBID}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} -J ${PIPELINE}/${JOBID}"
+      SRUN_LABEL="${PIPELINE}/${JOBID}"
     elif [ "${LABEL}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
+      SRUN_LABEL="${LABEL}"
+    fi
+    if [ "${SRUN_LABEL}" ]; then
+      if [ "${BUILD_USER}" ]; then
+        SRUN_LABEL="${SRUN_LABEL}/${BUILD_USER}"
+      fi
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${SRUN_LABEL}"
+    elif [ "${BUILD_USER}" ]; then
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${BUILD_USER}"
     fi
     if [ "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
       # convert: seconds -> minutes
