@@ -1801,7 +1801,7 @@ int main(int argc, char* argv []) {
 # endif
 
   /* check argument count for a valid range */
-  if ( argc == 25 || argc == 24 || argc == 26 || argc == 27 || argc == 28 ) {
+  if ( argc == 25 || argc == 26 || argc == 27 || argc == 28 ) {
     /* datatypes */
     l_a_dt = argv[1];
     l_b_dt = argv[2];
@@ -1879,21 +1879,23 @@ int main(int argc, char* argv []) {
     l_br = atoi(argv[22]);
     l_br_unroll = atoi(argv[23]);
     l_reps = atoi(argv[24]);
-    if ( argc >= 25 ) {
+
+    /* optional flags */
+    if ( argc >= 26 ) {
       l_tc_config = atoi(argv[25]);
     } else {
       l_tc_config = 0;
     }
-    if ( argc >= 26 ) {
+    if ( argc >= 27 ) {
       l_binary_postop = atoi(argv[26]);
     }
-    if ( argc >= 27 ) {
+    if ( argc >= 28 ) {
       l_unary_postop = atoi(argv[27]);
     }
 
     l_file_input = 0;
     l_run_check = 1;
-  } else if ( argc == 20 || argc == 19 || argc == 21 || argc == 22 || argc == 23 ) {
+  } else if ( argc == 20 || argc == 21 || argc == 22 || argc == 23 ) {
     l_file_input = 1;
     /* datatypes */
     l_a_dt = argv[1];
@@ -1937,15 +1939,16 @@ int main(int argc, char* argv []) {
     l_reps = atoi(argv[18]);
     l_run_check = atoi(argv[19]);
 
-    if ( argc >= 20 ) {
+    /* optional flags */
+    if ( argc >= 21 ) {
       l_tc_config = atoi(argv[20]);
     } else {
       l_tc_config = 0;
     }
-    if ( argc >= 21 ) {
+    if ( argc >= 22 ) {
       l_binary_postop = atoi(argv[21]);
     }
-    if ( argc >= 22 ) {
+    if ( argc >= 23 ) {
       l_unary_postop = atoi(argv[22]);
     }
 
@@ -2068,11 +2071,11 @@ int main(int argc, char* argv []) {
   } else {
     if ( l_trans_b == 0 ) {
       printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), a:%s, b:%s, comp:%s, c:%s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_br);
+      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)\na:%s, b:%s, comp:%s, c:%s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_br);
       printf("------------------------------------------------\n");
     } else {
       printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), a:%s, b:%s, comp:%s, c:%s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_br);
+      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i)\na:%s, b:%s, comp:%s, c:%s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_br);
       printf("------------------------------------------------\n");
     }
   }
