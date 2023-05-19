@@ -60,7 +60,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
   libxsmm_gemm_batch_reduce_config br_config;
   libxsmm_blasint m = 0, n = 0, k = 0, lda = 0, ldb = 0, ldc = 0;
   libxsmm_datatype a_in_type;
-  /*libxsmm_datatype b_in_type;*/
+  libxsmm_datatype b_in_type;
 
   m = cur_op->tmp.m;
   n = cur_op->tmp.n;
@@ -75,10 +75,10 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
   }
   if (cur_op->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     ldb = cur_op->ri->info.arg.ld;
-    /*b_in_type = cur_op->ri->info.arg.dtype;*/
+    b_in_type = cur_op->ri->info.arg.dtype;
   } else {
     ldb = cur_op->ri->tmp.ld;
-    /*b_in_type = cur_op->ri->tmp.dtype;*/
+    b_in_type = cur_op->ri->tmp.dtype;
   }
   ldc = cur_op->tmp.ld;
   memset(&br_config, 0, sizeof(libxsmm_gemm_batch_reduce_config));
@@ -172,10 +172,9 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
     gemm_flags = (gemm_flags & remove_flag) | LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
   }
 
-  desc = libxsmm_gemm_descriptor_dinit2(blob, a_in_type, cur_op->tmp.dtype,
-    m, n, k, lda, ldb, ldc,
-    LIBXSMM_ALPHA, !((gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
-    gemm_flags, 0);
+  desc = libxsmm_gemm_descriptor_init(blob, a_in_type, b_in_type,
+    cur_op->tmp.dtype, LIBXSMM_DATATYPE_F32,
+    m, n, k, lda, ldb, ldc, gemm_flags, 0);
 
   /* Enforce overwrite C flag */
   desc->internal_flags_2 = desc->internal_flags_2 & 0xfb;
