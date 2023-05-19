@@ -554,6 +554,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     RESULT=${RESULTCODE}
   fi
 
+  # upload artifacts
+  if [ "$(command -v buildkite-agent)" ] && [ -d "${ARTIFACT_PATH}" ]; then
+    buildkite-agent artifact upload "${ARTIFACT_PATH}/*"
+  fi
+
   exit "${RESULT}"
 else
   >&2 echo "ERROR: missing prerequisites!"
