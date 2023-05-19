@@ -1657,6 +1657,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     io_micro_kernel_config->vector_name = 'a';
     io_micro_kernel_config->vector_length = 0;
     io_micro_kernel_config->datatype_size_in = 0;
+    io_micro_kernel_config->datatype_size_in2 = 0;
     io_micro_kernel_config->datatype_size_out = 0;
     io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
     io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
@@ -1673,6 +1674,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->datatype_size_in2 = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1701,6 +1703,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     } else {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->datatype_size_in2 = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1730,6 +1733,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->datatype_size_in2 = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1758,6 +1762,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->datatype_size_in2 = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1787,6 +1792,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
                 ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else {
@@ -1820,6 +1826,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
                 ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else {
@@ -1852,6 +1859,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1875,6 +1883,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->datatype_size_in2 = 1;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1903,6 +1912,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vector_name = 'a';
       io_micro_kernel_config->vector_length = 0;
       io_micro_kernel_config->datatype_size_in = 0;
+      io_micro_kernel_config->datatype_size_in2 = 0;
       io_micro_kernel_config->datatype_size_out = 0;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
@@ -1920,6 +1930,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->datatype_size_in2 = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -1947,6 +1958,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->datatype_size_in2 = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       /* We overwrite in order to support F32BF8 kernels (currently used internally for BF8 emulation via stack allocated arrays) */
       if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||  (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))  ) {
@@ -1979,6 +1991,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -2007,6 +2020,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->datatype_size_in2 = 1;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -2036,6 +2050,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||  (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))  ) {
@@ -2071,6 +2086,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||  (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))  ) {
@@ -2106,6 +2122,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->datatype_size_in2 = 1;
       if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||
            (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
         io_micro_kernel_config->datatype_size_out = 1;
@@ -2141,6 +2158,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vector_name = 'a';
       io_micro_kernel_config->vector_length = 0;
       io_micro_kernel_config->datatype_size_in = 0;
+      io_micro_kernel_config->datatype_size_in2 = 0;
       io_micro_kernel_config->datatype_size_out = 0;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
@@ -2158,6 +2176,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->datatype_size_in2 = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -2185,6 +2204,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->datatype_size_in2 = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       /* We overwrite in order to support F32BF8 kernels (currently used internally for BF8 emulation via stack allocated arrays) */
       if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))  ) {
@@ -2217,6 +2237,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -2245,6 +2266,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->datatype_size_in2 = 1;
       io_micro_kernel_config->datatype_size_out = 4;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
@@ -2274,6 +2296,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))  ) {
@@ -2309,6 +2332,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
       if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))  ) {
@@ -2344,6 +2368,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->datatype_size_in2 = 1;
       if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))) {
         io_micro_kernel_config->datatype_size_out = 1;
       } else {
@@ -2378,6 +2403,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vector_name = 'a';
       io_micro_kernel_config->vector_length = 0;
       io_micro_kernel_config->datatype_size_in = 0;
+      io_micro_kernel_config->datatype_size_in2 = 0;
       io_micro_kernel_config->datatype_size_out = 0;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
@@ -2412,6 +2438,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     io_micro_kernel_config->vector_name = 'a';
     io_micro_kernel_config->vector_length = 0;
     io_micro_kernel_config->datatype_size_in = 0;
+    io_micro_kernel_config->datatype_size_in2 = 0;
     io_micro_kernel_config->datatype_size_out = 0;
     io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
     io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
@@ -2429,6 +2456,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->datatype_size_in2 = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
@@ -2441,6 +2469,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     } else {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->datatype_size_in2 = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
@@ -2459,6 +2488,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->datatype_size_in2 = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
@@ -2476,6 +2506,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     } else {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->datatype_size_in2 = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSS;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSS;
@@ -2555,9 +2586,9 @@ void libxsmm_generator_gemm_footer_kloop( libxsmm_generated_code*             io
   if ( i_kloop_complete != 0 ) {
     int l_b_offset = 0;
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-      l_b_offset = i_xgemm_desc->ldb * i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in;
+      l_b_offset = i_xgemm_desc->ldb * i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
     } else {
-      l_b_offset = i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in;
+      l_b_offset = i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
     }
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
@@ -2693,7 +2724,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
        i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD    ) {
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_prefetch,
-          ((long long)i_n_blocking*(i_xgemm_desc->ldc)*i_micro_kernel_config->datatype_size_in) - ((long long)(i_xgemm_desc->m)*i_micro_kernel_config->datatype_size_in) );
+          ((long long)i_n_blocking*(i_xgemm_desc->ldc)*i_micro_kernel_config->datatype_size_in2) - ((long long)(i_xgemm_desc->m)*i_micro_kernel_config->datatype_size_in2) );
     }
   }
 
@@ -2717,9 +2748,9 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     }
 
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-      l_b_offset = i_n_blocking * i_micro_kernel_config->datatype_size_in * l_k_pack_factor;
+      l_b_offset = i_n_blocking * i_micro_kernel_config->datatype_size_in2 * l_k_pack_factor;
     } else {
-      l_b_offset = i_n_blocking * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
+      l_b_offset = i_n_blocking * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
     }
 
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
@@ -2791,9 +2822,9 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     }
 
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-      l_b_offset = i_n_blocking * i_micro_kernel_config->datatype_size_in * l_k_pack_factor;
+      l_b_offset = i_n_blocking * i_micro_kernel_config->datatype_size_in2 * l_k_pack_factor;
     } else {
-      l_b_offset = i_n_blocking * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
+      l_b_offset = i_n_blocking * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
     }
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
@@ -2918,7 +2949,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
        i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD    ) {
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
-          i_gp_reg_mapping->gp_reg_b_prefetch, (long long)i_m_blocking*i_micro_kernel_config->datatype_size_in );
+          i_gp_reg_mapping->gp_reg_b_prefetch, (long long)i_m_blocking*i_micro_kernel_config->datatype_size_in2 );
     }
   }
 
