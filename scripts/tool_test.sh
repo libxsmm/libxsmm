@@ -564,8 +564,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   fi
 
   # upload artifacts
-  if [ "$(command -v buildkite-agent)" ] && [ -d "${ARTIFACT_PATH}" ]; then
-    buildkite-agent artifact upload "${ARTIFACT_PATH}/*"
+  if [ "$(command -v buildkite-agent)" ] && [ -d "$(eval "${ARTIFACT_PATH}")" ]; then
+    buildkite-agent artifact upload "$(eval "${ARTIFACT_PATH}")/*"
   fi
 
   exit "${RESULT}"
