@@ -864,6 +864,17 @@ int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype) {
 }
 
 LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char *datatype) {
+  int result = 0;
+  if ((LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) && ((LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_C_PREC(datatype)))) {
+    result = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  } else {
+    result = LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype) {
   unsigned char uc_a = (unsigned char) a_dt;
   unsigned char uc_b = (unsigned char) b_dt;

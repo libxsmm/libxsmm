@@ -1288,7 +1288,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   /* in case when A needs to be transposed, we need to change temporarily the descriptor dimensions for gemm, hence the local descriptor */
   lda_transpose = i_xgemm_desc->m;
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
-    if ((LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype)) || (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype))) {
+    if ((LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(i_xgemm_desc->datatype)) || (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(i_xgemm_desc->datatype))) {
       l_new_xgemm_desc_opa = *i_xgemm_desc;
       l_new_xgemm_desc_opa.lda = lda_transpose;
       l_new_xgemm_desc_opa.flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));

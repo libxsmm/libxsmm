@@ -1761,6 +1761,58 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
   return result;
 }
 
+LIBXSMM_API const char* libxsmm_get_gemm_typename(const unsigned char *datatype)
+{
+  int common_dt = (int)LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(datatype);
+  switch (common_dt) {
+    case LIBXSMM_DATATYPE_F64:  return "f64";
+    case LIBXSMM_DATATYPE_F32:  return "f32";
+    case LIBXSMM_DATATYPE_BF16: return "bf16";
+    case LIBXSMM_DATATYPE_F16:  return "f16";
+    case LIBXSMM_DATATYPE_BF8:  return "bf8";
+    case LIBXSMM_DATATYPE_HF8:  return "hf8";
+    case LIBXSMM_DATATYPE_I64:  return "i64";
+    case LIBXSMM_DATATYPE_I32:  return "i32";
+    case LIBXSMM_DATATYPE_I16:  return "i16";
+    case LIBXSMM_DATATYPE_I8:   return "i8";
+    default: {
+      if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+          LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "i16i32";
+      }
+      else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "i16f32";
+      }
+      else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+               LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "i8i32";
+      }
+      else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf16f32";
+      }
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf8f32";
+      }
+      else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "hf8f32";
+      }
+      else {
+        return "void";
+      }
+    }
+  }
+}
+
 
 LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
 {
@@ -1943,7 +1995,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.gemm->prefetch);
-          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.gemm->datatype);
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.gemm->datatype);
           const char *const meltw_tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.gemm->meltw_datatype_aux);
           int typesigns = 0, br = 0, kernabi = 0, stride_a = 0, stride_b = 0;
           char tc_option[16] = { 0 };
@@ -2074,7 +2126,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pspgemm_csr->gemm->prefetch);
-          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pspgemm_csr->gemm->datatype);
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.pspgemm_csr->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_a%i_b%i_p%i_nnz%u.pspgemm_csr", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_csr->gemm->flags) ? 'n' : 't',
@@ -2105,7 +2157,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pspgemm_csc->gemm->prefetch);
-          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pspgemm_csc->gemm->datatype);
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.pspgemm_csc->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_a%i_b%i_p%i_nnz%u.pspgemm_csc", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_csc->gemm->flags) ? 'n' : 't',
@@ -2131,7 +2183,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pgemmacrm->gemm->prefetch);
-          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pgemmacrm->gemm->datatype);
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.pgemmacrm->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_a%i_b%i_p%i.pgemmacrm", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pgemmacrm->gemm->flags) ? 'n' : 't',
@@ -2157,7 +2209,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pgemmbcrm->gemm->prefetch);
-          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pgemmbcrm->gemm->datatype);
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.pgemmbcrm->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_a%i_b%i_p%i.pgemmbcrm", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pgemmbcrm->gemm->flags) ? 'n' : 't',
@@ -2187,7 +2239,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.sreg->gemm->prefetch);
-          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.sreg->gemm->datatype);
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.sreg->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.sreg", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.sreg->gemm->flags) ? 'n' : 't',
