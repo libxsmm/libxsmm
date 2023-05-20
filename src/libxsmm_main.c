@@ -3891,16 +3891,16 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     LIBXSMM_PRAGMA_FORCEINLINE
     gemm_prefetch = libxsmm_get_gemm_xprefetch(prefetch);
     if ( ctype == LIBXSMM_DATATYPE_F64 ) {
-      const double dalpha = *((const double*)alpha);
-      const double dbeta  = *((const double*)beta);
+      const double dalpha = (alpha != NULL) ? *((const double*)alpha) : 1.0;
+      const double dbeta  = (beta  != NULL) ? *((const double*)beta)  : 1.0;
       if ( (dalpha != 1) || (dbeta != 1 && dbeta != 0 ) ) {
         jit_bypass = 1;
       } else {
         gemm_flags |= ( dbeta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
       }
     } else {
-      const float falpha = *((const float*)alpha);
-      const float fbeta  = *((const float*)beta);
+      const float falpha = (alpha != NULL) ? *((const float*)alpha) : 1.0f;
+      const float fbeta  = (beta  != NULL) ? *((const float*)beta)  : 1.0f;
       if ( (falpha != 1) || (fbeta != 1 && fbeta != 0 ) ) {
         jit_bypass = 1;
       } else {
