@@ -114,7 +114,7 @@ for BINARY_POSTOP in 0 1; do
                       OUTNAME="bf16gemm_"
                       KSTART=2
                       KSTEP=2
-                    elif [[ ("$PREC" == 'BF16_Bf16_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    elif [[ ("$PREC" == 'BF16_BF16_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf16f32gemm_"
                       KSTART=2
                       KSTEP=2
