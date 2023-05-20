@@ -2020,6 +2020,11 @@ int main(int argc, char* argv []) {
     exit(EXIT_FAILURE);
   }
 
+  l_gemm_def.unsigned_a = 0;
+  l_gemm_def.unsigned_b = 0;
+  l_gemm_def.unsigned_c = 0;
+  l_gemm_def.scf = 0.0;
+
   /* handle unsigned cases */
   if ( l_dtype_a == LIBXSMM_DATATYPE_U8 ) {
     l_dtype_a = LIBXSMM_DATATYPE_I8;
@@ -2029,7 +2034,7 @@ int main(int argc, char* argv []) {
     l_dtype_b = LIBXSMM_DATATYPE_I8;
     l_gemm_def.unsigned_b = 1;
   }
-  if ( (l_dtype_a == LIBXSMM_DATATYPE_I8) && (l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
+  if ( ((l_dtype_a == LIBXSMM_DATATYPE_I8) || (l_dtype_a == LIBXSMM_DATATYPE_U8)) && (l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
     l_gemm_def.scf = 1.0f;
   }
 
@@ -2045,17 +2050,13 @@ int main(int argc, char* argv []) {
   l_gemm_def.vnni_a = l_vnni_a;
   l_gemm_def.vnni_b = l_vnni_b;
   l_gemm_def.vnni_c = l_vnni_c;
-  l_gemm_def.unsigned_a = 0;
-  l_gemm_def.unsigned_b = 0;
-  l_gemm_def.unsigned_c = 0;
-  l_gemm_def.aligned_a = l_aligned_a;
+   l_gemm_def.aligned_a = l_aligned_a;
   l_gemm_def.aligned_c = l_aligned_c;
   l_gemm_def.prefetch = l_prefetch;
   l_gemm_def.br_type = l_br_type;
   l_gemm_def.br_count = l_br;
   l_gemm_def.br_unroll = l_br_unroll;
   l_gemm_def.tc_config = l_tc_config;
-  l_gemm_def.scf = 0.0;
   l_gemm_def.binary_postop = l_binary_postop;
   l_gemm_def.unary_postop  = l_unary_postop;
 

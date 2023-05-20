@@ -11,7 +11,7 @@ trap 'rm ${TMPFILE}' EXIT
 
 for BINARY_POSTOP in 0 1; do
   for UNARY_POSTOP in 0 1 2 3; do
-    for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF8_F32_F32' 'BF8_BF8_F32_BF8' 'HF8_HF8_F32_HF8' 'I16_I16_I32_I32' 'U8_I8_I32_I32' 'I8_U8_I32_I32' 'U8_I8_I32_F32' 'I8_U8_I32_F32'; do
+    for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF8_F32_F32' 'BF8_BF8_F32_BF8' 'HF8_HF8_F32_F32' 'HF8_HF8_F32_HF8' 'I16_I16_I32_I32' 'U8_I8_I32_I32' 'I8_U8_I32_I32' 'U8_I8_I32_F32' 'I8_U8_I32_F32'; do
       for LD in 'eqld' 'gtld'; do
         for AVNNI in 0 1; do
           for BVNNI in 0 1; do
@@ -31,7 +31,7 @@ for BINARY_POSTOP in 0 1; do
                     #split PREC string into 4 variables
 
 
-                    if [[ ("$BINARY_POSTOP" == '0'  &&  "$UNARY_POSTOP" == '0') && ( "$CVNNI" == '0') ]]; then
+                    if [[ ("$BINARY_POSTOP" == '0'  &&  "$UNARY_POSTOP" == '0') ]]; then
                       NOFUSION=1
                     fi
 
@@ -41,8 +41,13 @@ for BINARY_POSTOP in 0 1; do
                       continue
                     fi
 
+                    # TODO fix BVNNI supprt in the script
+                    if [ "$BVNNI" == '1' ] ; then
+                      continue
+                    fi
+
                     # some precision don't support fusion at all
-                    if [[ ( "$PREC" == 'F64' || "$PREC" == 'I16I32' || "$PREC" == 'USI8I32' || "$PREC" == 'SUI8I32' || "$PREC" == 'USI8F32' || "$PREC" == 'SUI8F32' ) && ( "$NOFUSION" == '0' ) ]] ; then
+                    if [[ ( "$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' ) && ( "$NOFUSION" == '0' ) ]] ; then
                       continue
                     fi
 
@@ -51,90 +56,105 @@ for BINARY_POSTOP in 0 1; do
                       continue
                     fi
 
+                    # loading A in VNNI layout is only supported/makes sense for select precision
+                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' ) && ( "$AVNNI" == '1' ) ]]; then
+                      continue
+                    fi
+
+                    # loading B in VNNI layout is only supported/makes sense for select precision
+                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' ) && ( "$BVNNI" == '1' ) ]]; then
+                      continue
+                    fi
+
+                    # loading A in VNNI layout is mandatory for select precision
+                    if [[ ("$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32') && ( "$AVNNI" == '0' ) ]]; then
+                      continue
+                    fi
+
                     # storing in VNNI layout is only supported/makes sense for select precision
-                    if [[ ("$PREC" == 'F32' || "$PREC" == 'BF16F32' || "$PREC" == 'BF16_FLAT' || "$PREC" == 'BF16F32_FLAT' || "$PREC" == 'BF8F32' || "$PREC" == 'BF8_FLAT' || "$PREC" == 'BF8F32_FLAT' || "$PREC" == 'HF8F32' || "$PREC" == 'HF8_FLAT' || "$PREC" == 'HF8F32_FLAT' ) && ( "$CVNNI" == '1' ) ]]; then
+                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' || "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' ) && ( "$CVNNI" == '1' ) ]]; then
                       continue
                     fi
 
                     # low precision has no transpose support
-                    if [[ ( "$PREC" == 'I16I32' || "$PREC" == 'USI8I32' || "$PREC" == 'SUI8I32' || "$PREC" == 'USI8F32' || "$PREC" == 'SUI8F32' || "$PREC" == 'BF16' || "$PREC" == 'BF16_FLAT' || "$PREC" == 'BF16F32' || "$PREC" == 'BF16F32_FLAT' || "$PREC" == 'BF8' || "$PREC" == 'BF8_FLAT' || "$PREC" == 'BF8F32' || "$PREC" == 'BF8F32_FLAT'|| "$PREC" == 'HF8' || "$PREC" == 'HF8_FLAT' || "$PREC" == 'HF8F32' || "$PREC" == 'HF8F32_FLAT'  ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
+                    if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
                       continue
                     fi
 
                     # only FP8 has stack tansforms for data prep
-                    if [[ ( "$PREC" != 'BF8' && "$PREC" != 'BF8_FLAT' && "$PREC" != 'BF8F32' && "$PREC" != 'BF8F32_FLAT' && "$PREC" != 'HF8' && "$PREC" != 'HF8_FLAT' && "$PREC" != 'HF8F32' && "$PREC" != 'HF8F32_FLAT') && ( "$STACK" == '1' ) ]]; then
+                    if [[ ( "$PREC" != 'BF8_BF8_F32_F32' && "$PREC" != 'BF8_BF8_F32_BF8' && "$PREC" != 'HF8_HF8_F32_F32' && "$PREC" != 'HF8_HF8_F32_HF8' ) && ( "$STACK" == '1' ) ]]; then
                       continue
                     fi
 
-                    if [ "$PREC" == 'F64' ] ; then
+                    if [ "$PREC" == 'F64_F64_F64_F64' ] ; then
                       OUTNAME="dgemm_"
-                    elif [ "$PREC" == 'F32' ] ; then
+                    elif [ "$PREC" == 'F32_F32_F32_F32' ] ; then
                       OUTNAME="sgemm_"
-                    elif [ "$PREC" == 'I16I32' ] ; then
+                    elif [ "$PREC" == 'I16_I16_I32_I32' ] ; then
                       OUTNAME="i16i32gemm_"
                       KSTART=2
                       KSTEP=2
-                    elif [ "$PREC" == 'USI8I32' ] ; then
+                    elif [ "$PREC" == 'U8_I8_I32_I32' ] ; then
                       OUTNAME="usi8i32gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'SUI8I32' ] ; then
+                    elif [ "$PREC" == 'I8_U8_I32_I32' ] ; then
                       OUTNAME="sui8i32gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'USI8F32' ] ; then
+                    elif [ "$PREC" == 'U8_I8_I32_F32' ] ; then
                       OUTNAME="usi8f32gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'SUI8F32' ] ; then
+                    elif [ "$PREC" == 'I8_U8_I32_F32' ] ; then
                       OUTNAME="sui8f32gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'BF16' ] ; then
+                    elif [[ ("$PREC" == 'BF16_BF16_F32_BF16') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf16gemm_"
                       KSTART=2
                       KSTEP=2
-                    elif [ "$PREC" == 'BF16F32' ] ; then
+                    elif [[ ("$PREC" == 'BF16_Bf16_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf16f32gemm_"
                       KSTART=2
                       KSTEP=2
-                    elif [ "$PREC" == 'BF16_FLAT' ] ; then
+                    elif [[ ("$PREC" == 'BF16_BF16_F32_BF16') && ("$AVNNI" == '0') ]] ; then
                       OUTNAME="bf16_flatgemm_"
                       KSTART=2
                       KSTEP=2
-                    elif [ "$PREC" == 'BF16F32_FLAT' ] ; then
+                    elif [[ ("$PREC" == 'BF16_BF16_F32_F32') && ("$AVNNI" == '0') ]] ; then
                       OUTNAME="bf16f32_flatgemm_"
                       KSTART=2
                       KSTEP=2
-                    elif [ "$PREC" == 'BF8' ] ; then
+                    elif [[ ("$PREC" == 'BF8_BF8_F32_BF8') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf8gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'BF8F32' ] ; then
+                    elif [[ ("$PREC" == 'BF8_BF8_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf8f32gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'HF8' ] ; then
+                    elif [[ ("$PREC" == 'HF8_HF8_F32_HF8') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="hf8gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'HF8F32' ] ; then
+                    elif [[ ("$PREC" == 'HF8_HF8_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="hf8f32gemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'BF8_FLAT' ] ; then
+                    elif [[ ("$PREC" == 'BF8_BF8_F32_BF8') && ("$AVNNI" == '0') ]] ; then
                       OUTNAME="bf8_flatgemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'BF8F32_FLAT' ] ; then
+                    elif [[ ("$PREC" == 'BF8_BF8_F32_F32') && ("$AVNNI" == '0') ]] ; then
                       OUTNAME="bf8f32_flatgemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'HF8_FLAT' ] ; then
+                    elif [[ ("$PREC" == 'HF8_HF8_F32_HF8') && ("$AVNNI" == '0') ]] ; then
                       OUTNAME="hf8_flatgemm_"
                       KSTART=4
                       KSTEP=4
-                    elif [ "$PREC" == 'HF8F32_FLAT' ] ; then
+                    elif [[ ("$PREC" == 'HF8_HF8_F32_F32') && ("$AVNNI" == '0') ]] ; then
                       OUTNAME="hf8f32_flatgemm_"
                       KSTART=4
                       KSTEP=4
@@ -143,13 +163,13 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     if [ "$CVNNI" == '1' ] ; then
-                      if [ "$PREC" == 'BF16' ] ; then
+                      if [ "$PREC" == 'BF16_BF16_F32_BF16' ] ; then
                         NSTART=2
                         NSTEP=2
-                      elif [ "$PREC" == 'BF8' ] ; then
+                      elif [ "$PREC" == 'BF8_BF8_F32_BF8' ] ; then
                         NSTART=4
                         NSTEP=4
-                      elif [ "$PREC" == 'HF8' ] ; then
+                      elif [ "$PREC" == 'HF8_HF8_F32_HF8' ] ; then
                         NSTART=4
                         NSTEP=4
                       else
@@ -222,11 +242,11 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # stack exports
-                    if [[ ( "$PREC" == 'BF8' || "$PREC" == 'BF8_FLAT' || "$PREC" == 'BF8F32' || "$PREC" == 'BF8F32_FLAT' ) && ( "$STACK" == '1' ) ]]; then
+                    if [[ ( "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'BF8_BF8_F32_F32' ) && ( "$STACK" == '1' ) ]]; then
                       sed 's/LIBXSMM_ENV_VAR/LIBXSMM_BF8_GEMM_VIA_STACK/g' ${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${OUTNAME}
                     fi
-                    if [[ ( "$PREC" == 'HF8' || "$PREC" == 'HF8_FLAT' || "$PREC" == 'HF8F32' || "$PREC" == 'HF8F32_FLAT' ) && ( "$STACK" == '1' ) ]]; then
+                    if [[ ( "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'HF8_HF8_F32_F32' ) && ( "$STACK" == '1' ) ]]; then
                       sed 's/LIBXSMM_ENV_VAR/LIBXSMM_HF8_GEMM_VIA_STACK/g' ${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${OUTNAME}
                     fi
@@ -235,7 +255,7 @@ for BINARY_POSTOP in 0 1; do
                     if [ "$NOFUSION" == '1' ] ; then
                       sed 's/gemm_kernel_fused/gemm_kernel/g' ${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${OUTNAME}
-                      sed 's/ ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}//g' ${OUTNAME} >${TMPFILE}
+                      sed 's/ ${BINARY_POSTOP} ${UNARY_POSTOP}//g' ${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${OUTNAME}
                     fi
 
@@ -243,7 +263,7 @@ for BINARY_POSTOP in 0 1; do
 
                     # for certain prericsion we are adding some special scripts for more restricted hardware
                     # QVNNI for I16I32
-                    if [ "$PREC" == 'I16I32' ] ; then
+                    if [ "$PREC" == 'I16_I16_I32_I32' ] ; then
                       cp ${OUTNAME} qvnni_${OUTNAME}
                       sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 8)/g' qvnni_${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} qvnni_${OUTNAME}
@@ -251,7 +271,7 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # MMLA for BF16
-                    if [[ ( "$PREC" == 'BF16' || "$PREC" == 'BF16F32' ) ]] ; then
+                    if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
                       cp ${OUTNAME} mmla_${OUTNAME}
                       sed 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} mmla_${OUTNAME}
@@ -261,29 +281,29 @@ for BINARY_POSTOP in 0 1; do
                       fi
                       chmod 755 mmla_${OUTNAME}
 
-                      # create MMLA scripts with B in VNNIT
-                      NEWNAME=mmla_bvnni_${OUTNAME}
-                      NEWNAME="${NEWNAME/_nn_/_nt_}"
-                      sed \
-                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
-                        -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
-                        -e 's/TRB=0/TRB=1/g' \
-                        mmla_${OUTNAME} >${NEWNAME}
-                      chmod 755 ${NEWNAME}
+#                      # create MMLA scripts with B in VNNIT
+#                      NEWNAME=mmla_bvnni_${OUTNAME}
+#                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+#                      sed \
+#                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+#                        -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
+#                        -e 's/TRB=0/TRB=1/g' \
+#                        mmla_${OUTNAME} >${NEWNAME}
+#                      chmod 755 ${NEWNAME}
                     fi
 
-                    # BFDOT for BF16 wth B in VNNIT
-                    if [[ ( "$PREC" == 'BF16' || "$PREC" == 'BF16F32' ) ]] ; then
-                      # create BFDOT scripts with B in VNNIT
-                      NEWNAME=bfdot_bvnni_${OUTNAME}
-                      NEWNAME="${NEWNAME/_nn_/_nt_}"
-                      sed \
-                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
-                        -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
-                        -e 's/TRB=0/TRB=1/g' \
-                        ${OUTNAME} >${NEWNAME}
-                      chmod 755 ${NEWNAME}
-                    fi
+#                    # BFDOT for BF16 wth B in VNNIT
+#                    if [[ ( "$PREC" == 'BF16' || "$PREC" == 'BF16F32' ) ]] ; then
+#                      # create BFDOT scripts with B in VNNIT
+#                      NEWNAME=bfdot_bvnni_${OUTNAME}
+#                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+#                      sed \
+#                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+#                        -e "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" \
+#                        -e 's/TRB=0/TRB=1/g' \
+#                        ${OUTNAME} >${NEWNAME}
+#                      chmod 755 ${NEWNAME}
+#                    fi
                   done
                 done
               done
