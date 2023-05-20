@@ -214,10 +214,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   if ((bf8_gemm_via_stack_alloc_tensors > 0) || (hf8_gemm_via_stack_alloc_tensors > 0)) {
     /* Adjust descriptor to perform GEMM with bf16 or f32 inputs */
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) {
-      LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(i_xgemm_desc->datatype), LIBXSMM_DATATYPE_F32, (unsigned char *)l_xgemm_desc->datatype);
+      LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc->datatype), LIBXSMM_DATATYPE_F32, (unsigned char *)l_xgemm_desc->datatype);
       l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
     } else {
-      LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(i_xgemm_desc->datatype), LIBXSMM_DATATYPE_F32, (unsigned char *)l_xgemm_desc->datatype);
+      LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc->datatype), LIBXSMM_DATATYPE_F32, (unsigned char *)l_xgemm_desc->datatype);
     }
     l_xgemm_desc->lda = l_xgemm_desc->m;
     l_xgemm_desc->ldb = l_xgemm_desc->k;
