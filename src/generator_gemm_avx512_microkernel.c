@@ -1664,7 +1664,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
         unsigned int l_scale = 0;
         unsigned int l_disp = (l_k*i_micro_kernel_config->datatype_size_in2*l_k_pack_factor)+(l_n*i_xgemm_desc->ldb*i_micro_kernel_config->datatype_size_in2);
 
-        if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Ai8_Bf16_Cf16_gemm > 0 || LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+        if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Ai8_Bf16_Cf16_gemm > 0 || LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
                                                         i_micro_kernel_config->vmul_instruction,
                                                         i_micro_kernel_config->vector_name,
@@ -1965,6 +1965,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       if ( (LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
            (LIBXSMM_DATATYPE_F64  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
            (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+           (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
            (l_is_Ai8_Bf16_Cf16_gemm > 0)) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                              i_micro_kernel_config->vadd_instruction,
