@@ -25,7 +25,7 @@ void libxsmm_generator_gemm_sse_kloop_kernel( libxsmm_generated_code*           
   unsigned int l_k_pack_factor = 1;
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
   }
 
   for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
@@ -102,7 +102,7 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
                                       i_micro_kernel_config->vector_name,
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE has no broadcast load for single precision, SSE2 has no broadcast at all */
-        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
+        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
              && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, i_micro_kernel_config->b_shuff_instruction,
                                                          i_micro_kernel_config->vector_name, l_n, l_n, 0 );
@@ -124,7 +124,7 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
                                       i_micro_kernel_config->vector_name,
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE has no broadcast load for single precision, SSE2 has no broadcast at all */
-        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
+        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
              && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, i_micro_kernel_config->b_shuff_instruction,
                                                          i_micro_kernel_config->vector_name, l_n, l_n, 0 );
@@ -175,7 +175,7 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
                                       i_micro_kernel_config->vector_name,
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE has no broadcast load for single precision, SSE2 has no broadcast at all */
-        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
+        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
              && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, i_micro_kernel_config->b_shuff_instruction,
                                                          i_micro_kernel_config->vector_name, l_n, l_n, 0 );
@@ -199,7 +199,7 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
                                       i_micro_kernel_config->vector_name,
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE has no broadcast load for single precision, SSE2 has no broadcast at all */
-        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
+        if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (io_generated_code->arch == LIBXSMM_X86_GENERIC))
              && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, i_micro_kernel_config->b_shuff_instruction,
                                                          i_micro_kernel_config->vector_name, l_n, l_n, 0 );
