@@ -570,6 +570,7 @@
 #define LIBXSMM_X86_INSTR_VSQRTSH          0xf0065951
 #define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
 #define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
+#define LIBXSMM_X86_INSTR_VCVTW2PH         0xe106567d
 
 /* AVX512 Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
@@ -1452,11 +1453,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
-  unsigned int emulation_scratch_offset;
   unsigned int gemm_scratch_ld;
-  unsigned int lda_emu;
-  unsigned int ldb_emu;
-  unsigned int ldc_emu;
   unsigned int emulate_cvt2bf16fp32;
   unsigned int emulate_cvt2bf16fp32_vperm;
   unsigned int emulate_cvt2bf16fp32_vaux;
@@ -2161,5 +2158,13 @@ typedef enum libxsmm_ulp_precision {
  * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}
  */
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void);
+
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_C_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
 
 #endif /* GENERATOR_COMMON_H */

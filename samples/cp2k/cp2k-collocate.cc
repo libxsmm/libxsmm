@@ -86,13 +86,13 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
           1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_AL2/*_AHEAD*/);
         kernelset[2*a1+1] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], static_cast<libxsmm_blasint>(co.size(2)) - a1,
           static_cast<libxsmm_blasint>(C.ld()), static_cast<libxsmm_blasint>(p_alpha_beta_reduced_.ld()), static_cast<libxsmm_blasint>(xyz_alpha_beta.ld()),
-          1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+          1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_NONE);
       }
       kernelset[2*(key.lmax-1)] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B,
         length_[2], length_[0] * length_[1], static_cast<libxsmm_blasint>(co.size(2)),
         static_cast<libxsmm_blasint>(p_alpha_beta_reduced_.ld()),
         static_cast<libxsmm_blasint>(xyz_alpha_beta.size(1)) * static_cast<libxsmm_blasint>(xyz_alpha_beta.ld()),
-        ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+        ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_NONE);
 # else
       kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xregister(&key, sizeof(key), 3 * sizeof(libxsmm_mmfunction<T>), NULL));
       kernelset[0] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_NONE,
@@ -105,7 +105,7 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
       kernelset[2] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B,
         length_[2], length_[0] * length_[1], static_cast<libxsmm_blasint>(co.size(2)), static_cast<libxsmm_blasint>(p_alpha_beta_reduced_.ld()),
         static_cast<libxsmm_blasint>(xyz_alpha_beta.size(1)) * static_cast<libxsmm_blasint>(xyz_alpha_beta.ld()),
-        ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+        ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_NONE);
 # endif
     }
 #endif

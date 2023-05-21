@@ -312,7 +312,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   unsigned int l_need_bcast_reg = 0;
   unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0U, l_nbcast_regs = 0, l_cur_bcast_reg = 0;
 
-  const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
+  const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
 
   const unsigned int l_movu_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVUPD : LIBXSMM_X86_INSTR_VMOVUPS;
@@ -808,7 +808,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
-  const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
+  const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype );
   unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_base_ld_reg;
   int l_curr_b_disp = 0, l_curr_rvb_disp = -1;
 
@@ -1296,7 +1296,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   unsigned int l_bcast_reg_vals[30], l_nbcast_vals = 0;
 
-  const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
+  const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
   unsigned int l_vlen, l_vbytes, l_c_is_nt;
   unsigned int l_npacked_reg, l_npacked_values_per_reg;

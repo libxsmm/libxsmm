@@ -93,6 +93,19 @@
   LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL); \
 } while(0)
 
+/** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
+#if (LIBXSMM_GEMM_PREFETCH_NONE != LIBXSMM_PREFETCH)
+# define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) do { \
+    (ARGS).a.quaternary = ((char*)(ARGS).a.primary) + sizeof(ITYPE) * (M) * (K); \
+    (ARGS).b.quaternary = ((char*)(ARGS).b.primary) + sizeof(ITYPE) * (K) * (N); \
+    (ARGS).c.quaternary = ((char*)(ARGS).c.primary) + sizeof(OTYPE) * (M) * (N); \
+  } while(0)
+#elif !defined(NDEBUG)
+# define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) \
+    (ARGS).a.quaternary = (ARGS).b.quaternary = (ARGS).c.quaternary = NULL
+#else
+# define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS);
+#endif
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_init(void);

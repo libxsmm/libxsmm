@@ -21,7 +21,7 @@ elif [ ! "${LOGFILE}" ]; then  # logfile given?
   fi
 fi
 if [ ! -e "${LOGFILE}" ]; then
-  >&2 echo "ERROR: logfile \"${LOGFILE}\" does not exist!"
+  >&2 echo -e "ERROR: logfile \"${LOGFILE}\" does not exist!\n"
   exit 1
 fi
 
@@ -204,12 +204,24 @@ if [ "${LOGDIR}" ]; then
     then
       FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
+        RPTFMT=${LOGRPTDOC:-pdf}
         FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
-        REPORT=${FIGURE%."${FORMAT[0]}"}.pdf
+        REPORT=${FIGURE%."${FORMAT[0]}"}.${RPTFMT}
         # echo parsed/captured JSON
         if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
         if [ -e "${REPORT}" ]; then  # print after summary
-          printf "\n\033]1339;url=\"artifact://%s\";content=\"Report\"\a\n" "${REPORT}"
+          # normalize path to report file (buildkite-agent)
+          REPDIR="$(cd "$(dirname "${REPORT}")" && pwd -P)"
+          REPFLE=$(basename "${REPORT}")
+          LABEL=${RPTFMT}
+          if [ "$(command -v tr)" ]; then
+            LABEL=$(tr "[:lower:]" "[:upper:]" <<<"${RPTFMT}")
+          fi
+          if [ -e "${REPDIR}/${REPFLE}" ]; then
+            if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
+            printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
+              "${ARTDIR}" "${REPFLE}" "${LABEL}"
+          fi
         fi
         # embed figure if report is not exclusive
         if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
@@ -230,18 +242,18 @@ if [ "${LOGDIR}" ]; then
             printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
               "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
           else
-            >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
+            >&2 echo -e "WARNING: encoding failed (\"${FIGURE}\").\n"
           fi
         fi
         if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
-          >&2 echo "WARNING: deviation of latest value exceeds margin."
+          >&2 echo -e "WARNING: deviation of latest value exceeds margin.\n"
           exit "${ERROR}"
         fi
       else
-        >&2 echo "WARNING: report not ready (\"${OUTPUT}\")."
+        >&2 echo -e "WARNING: report not ready (\"${OUTPUT}\").\n"
       fi
     else
-      >&2 echo "WARNING: missing prerequisites for report."
+      >&2 echo -e "WARNING: missing prerequisites for report.\n"
     fi
   fi
 fi

@@ -41,7 +41,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select simd packing width and accumulator blocking */
-  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
       l_max_reg_block = 28;
@@ -79,7 +79,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   printf("packed parameters: %u, %u, %u, %u, %u\n", i_packed_width, l_simd_packed_remainder, l_simd_packed_iters, l_simd_packed_iters_full, l_simd_packed_width );
 #endif
   /* packed blocking */
-  /* TODO: for 2^x for l_simd_packed iters we might want to todo something else */
+  /* TODO: for 2^x for l_simd_packed iters we might want to do something else */
   libxsmm_compute_equalized_blocking( l_simd_packed_iters, l_max_reg_block, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
 #if 0
   printf("packed blocking (range0, block0, range1, block1): %u %u %u %u\n", l_packed_reg_range[0], l_packed_reg_block[0], l_packed_reg_range[1], l_packed_reg_block[1]);
@@ -280,13 +280,13 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
   if ( i_packed_remainder != 0 ) {
     /* on AVX512 we can use mask registers */
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-      libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_micro_kernel_config->vector_length-i_packed_remainder, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_micro_kernel_config->vector_length-i_packed_remainder, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
     } else {
       const char l_id = LIBXSMM_CAST_CHAR(128 > l_n_blocking ? ((int)l_n_blocking) : 127);
       unsigned char l_data[32] = { 0 };
       unsigned int l_count;
 
-      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
         unsigned long long* l_i64_ptr = (unsigned long long*)l_data;
         for ( l_count = 0; l_count < 4; ++l_count ) {
           if ( l_count < i_packed_remainder ) {
