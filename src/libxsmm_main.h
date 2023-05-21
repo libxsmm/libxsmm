@@ -159,37 +159,36 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
+/** TODO double check it's save to not set the descriptor to zero
+ *we saw issues with re-jit due to different hash */
+#if 0
 #if defined(LIBXSMM_UNPACKED) || !defined(NDEBUG)
 # define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #else
 # define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) \
     /*if (LIBXSMM_GEMM_FLAG_DESC_ISBIG <= (FLAGS)) LIBXSMM_MEMSET127(DST, 0, SIZE)*/
 #endif
+#else
+#define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
+#endif
 #define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
   LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \
   LIBXSMM_DESCRIPTOR_CLEAR_AUX(BLOB, LIBXSMM_DESCRIPTOR_MAXSIZE, 0)
 
 /** Low-level/internal GEMM descriptor initialization. */
-#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
+#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE0, DATA_TYPE1, DATA_TYPE2, FLAGS, M, N, K, LDA, LDB, LDC, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
   LIBXSMM_DESCRIPTOR_CLEAR_AUX(&(DESCRIPTOR), sizeof(DESCRIPTOR), FLAGS); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
-  (DESCRIPTOR).flags = (unsigned int)((FLAGS) | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
+  (DESCRIPTOR).datatype[0] = (unsigned char)(DATA_TYPE0); (DESCRIPTOR).datatype[1] = (unsigned char)(DATA_TYPE1); \
+  (DESCRIPTOR).datatype[2] = (unsigned char)(DATA_TYPE2); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
+  (DESCRIPTOR).flags = (unsigned int)(FLAGS); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC)
 
-/** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
-#define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-  LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
-
 /** Declare and construct a GEMM descriptor. */
-#define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-  libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
-    FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
-
-/** Similar to LIBXSMM_GEMM_DESCRIPTOR_TYPE, but separately taking the input-/output-precision. */
-#define LIBXSMM_GEMM_DESCRIPTOR2_TYPE(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
+#define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE0, DATA_TYPE1, DATA_TYPE2, FLAGS, M, N, K, LDA, LDB, LDC, PREFETCH) \
+  libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE0, DATA_TYPE1, DATA_TYPE2 \
+    FLAGS, M, N, K, LDA, LDB, LDC, PREFETCH)
 
 #define LIBXSMM_REGDESC_DEFAULT
 #define LIBXSMM_REGDESC(START, MODIFIER) \
@@ -211,7 +210,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
   /** Prefetch strategy. */
   unsigned char prefetch;
   /** Denotes the data-type. */
-  unsigned char datatype;
+  unsigned char datatype[3];
   /**
    * Do not reorder elements between above and below blocks!
    */
@@ -562,5 +561,4 @@ LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 /** Counts the maximum number of thread that have been active. */
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
-
 #endif /*LIBXSMM_MAIN_H*/

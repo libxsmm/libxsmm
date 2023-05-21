@@ -49,7 +49,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    ARCH: noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2,\n"
          "              AL2_BL2viaC, curAL2_BL2viaC,\n");
-  printf("    PRECISION: I16, SP, DP\n");
+  printf("    PRECISION: SP, DP\n");
   printf("\n\n\n\n");
 }
 
@@ -110,6 +110,7 @@ int main(int argc, char* argv []) {
 
   l_flags |= (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+  l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
 
   /* arch specific stuff */
   l_arch = argv[14];
@@ -188,29 +189,32 @@ int main(int argc, char* argv []) {
   }
 
   /* check alpha */
-  if ((l_alpha < -1 || -1 < l_alpha) && (l_alpha < 1 || 1 < l_alpha)) {
+  if (l_alpha != 1) {
     print_help();
     return EXIT_FAILURE;
   }
 
   /* check beta */
-  if ((l_beta < 0 || 0 < l_beta) && (l_beta < 1 || 1 < l_beta)) {
+  if ((l_beta != 0) && (l_beta != 1)) {
     print_help();
     return EXIT_FAILURE;
   }
 
   switch (l_single_precision) {
     case 0: {
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE_F64,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+      l_xgemm_desc = libxsmm_gemm_descriptor_init(&l_xgemm_blob, LIBXSMM_DATATYPE_F64,
+        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_flags, l_prefetch);
     } break;
     case 1: {
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE_F32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+      l_xgemm_desc = libxsmm_gemm_descriptor_init(&l_xgemm_blob, LIBXSMM_DATATYPE_F32,
+        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_flags, l_prefetch);
     } break;
     case 2: {
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE_I16,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+      l_xgemm_desc = libxsmm_gemm_descriptor_init(&l_xgemm_blob, LIBXSMM_DATATYPE_I16,
+        LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I32, LIBXSMM_DATATYPE_I32,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_flags, l_prefetch);
     } break;
     default: {
       print_help();
