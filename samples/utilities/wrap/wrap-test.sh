@@ -9,16 +9,15 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
+# shellcheck disable=SC2011
 set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 DEPDIR=${HERE}/../../..
 
-TMPF=$("${DEPDIR}/.mktmp.sh" /tmp/.libxsmm_XXXXXX.out)
 UNAME=$(command -v uname)
 GREP=$(command -v grep)
-SORT=$(command -v sort)
-RM=$(command -v rm)
+TR=$(command -v tr)
 
 if [ "Darwin" != "$(${UNAME})" ]; then
   LIBEXT=so
@@ -26,64 +25,74 @@ else
   LIBEXT=dylib
 fi
 if [ "$1" ]; then
-  TEST=$1
+  TESTS=$1
   shift
 else
-  TEST=dgemm
+  TESTS="$(ls -1 "${HERE}"/*.c | xargs -I{} basename {} .c)"
 fi
 
-if [ -e "${HERE}/${TEST}-blas" ]; then
-  NAME=${TEST^^}
-  echo "-----------------------------------"
-  echo "${NAME} (ORIGINAL BLAS)"
-  echo "args    $@"
-  { time "${HERE}/${TEST}-blas" "$@" 2>"${TMPF}"; } 2>&1 | ${GREP} real
-  RESULT=$?
-  if [ 0 != ${RESULT} ]; then
-    echo -n "FAILED(${RESULT}) "; ${SORT} -u "${TMPF}"
-    ${RM} -f "${TMPF}"
-    exit ${RESULT}
-  else
-    echo -n "OK "; ${SORT} -u "${TMPF}"
-  fi
-  echo
+TMPF=$(mktemp)
+trap 'rm ${TMPF}' EXIT
 
-  if [ -e "${DEPDIR}/lib/libxsmm.${LIBEXT}" ]; then
+export LIBXSMM_VERBOSE=2
+for TEST in ${TESTS}; do
+  if [ -e "${HERE}/${TEST}-blas" ]; then
+    NAME=$(echo "${TEST}" | ${TR} [[:lower:]] [[:upper:]])
     echo "-----------------------------------"
-    echo "${NAME} (LD_PRELOAD)"
-    echo "args    $@"
-    { time \
-      LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmm.${LIBEXT} \
-      DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmm.${LIBEXT} \
-      "${HERE}/${TEST}-blas" "$@" 2>"${TMPF}"; } 2>&1 | ${GREP} real
+    echo "${NAME} (ORIGINAL BLAS)"
+    if [ "$*" ]; then echo "args    $*"; fi
+    { time "${HERE}/${TEST}-blas" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
     RESULT=$?
-    if [ 0 != ${RESULT} ]; then
-      echo -n "FAILED(${RESULT}) "; ${SORT} -u "${TMPF}"
-      ${RM} -f "${TMPF}"
+    if [ "0" != "${RESULT}" ]; then
+      echo "FAILED(${RESULT})"
       exit ${RESULT}
+    elif ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+      echo "OK"
     else
-      echo -n "OK "; ${SORT} -u "${TMPF}"
+      echo "FAILED"
+      exit 1
+    fi
+    echo
+
+    if [ -e "${DEPDIR}/lib/libxsmmext.${LIBEXT}" ]; then
+      echo "-----------------------------------"
+      echo "${NAME} (LD_PRELOAD)"
+      if [ "$*" ]; then echo "args    $*"; fi
+      { time \
+        LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
+        DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmm.${LIBEXT} \
+        "${HERE}/${TEST}-blas" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
+      RESULT=$?
+      if [ "0" != "${RESULT}" ]; then
+        echo "FAILED(${RESULT})"
+        exit ${RESULT}
+      elif ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+        echo "OK"
+      else
+        echo "FAILED"
+        exit 1
+      fi
+      echo
+    fi
+  fi
+
+  if [ -e "${HERE}/${TEST}-wrap" ] && [ -e .state ] && \
+     [ ! "$(${GREP} 'BLAS=0' .state)" ];
+  then
+    echo "-----------------------------------"
+    echo "${NAME} (STATIC WRAP)"
+    if [ "$*" ]; then echo "args    $*"; fi
+    { time "${HERE}/${TEST}-wrap" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
+    RESULT=$?
+    if [ "0" != "${RESULT}" ]; then
+      echo "FAILED(${RESULT})"
+      exit ${RESULT}
+    elif ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+      echo "OK"
+    else
+      echo "FAILED"
+      exit 1
     fi
     echo
   fi
-fi
-
-if [ -e "${HERE}/${TEST}-wrap" ] && [ -e .state ] && \
-   [ ! "$(${GREP} 'BLAS=0' .state)" ];
-then
-  echo "-----------------------------------"
-  echo "${NAME} (STATIC WRAP)"
-  echo "args    $@"
-  { time "${HERE}/${TEST}-wrap" "$@" 2>"${TMPF}"; } 2>&1 | ${GREP} real
-  RESULT=$?
-  if [ 0 != ${RESULT} ]; then
-    echo -n "FAILED(${RESULT}) "; ${SORT} -u "${TMPF}"
-    ${RM} -f "${TMPF}"
-    exit ${RESULT}
-  else
-    echo -n "OK "; ${SORT} -u "${TMPF}"
-  fi
-  echo
-fi
-
-${RM} -f "${TMPF}"
+done
