@@ -82,7 +82,7 @@
         ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
       } \
       else { \
-        libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_DEFAULT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
+        libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_DEFAULT, "mkl_blas." LIBXSMM_STRINGIFY(LIBXSMM_CBLAS_SYMBOL(TYPE, KIND))); \
         ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); /* LIBXSMM_ATOMIC_STORE */ \
       } \
     } \
