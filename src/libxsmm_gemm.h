@@ -306,7 +306,4 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_tasks);
  */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
 
-/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
-
 #endif /*LIBXSMM_GEMM_H*/

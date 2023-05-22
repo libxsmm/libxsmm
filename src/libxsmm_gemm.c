@@ -67,9 +67,6 @@ LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_taskgrain);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_tasks);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
 
-/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
-
 
 #if defined(LIBXSMM_BUILD)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm_batch_strided)(
