@@ -48,13 +48,13 @@ if [ -e "${HERE}/${TEST}-blas" ]; then
   fi
   echo
 
-  if [ -e "${DEPDIR}/lib/libxsmmext.${LIBEXT}" ]; then
+  if [ -e "${DEPDIR}/lib/libxsmm.${LIBEXT}" ]; then
     echo "-----------------------------------"
     echo "${NAME} (LD_PRELOAD)"
     echo "args    $@"
     { time \
-      LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
-      DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
+      LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmm.${LIBEXT} \
+      DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmm.${LIBEXT} \
       "${HERE}/${TEST}-blas" "$@" 2>"${TMPF}"; } 2>&1 | ${GREP} real
     RESULT=$?
     if [ 0 != ${RESULT} ]; then
