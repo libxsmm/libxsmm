@@ -9,6 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm.h"
+#include "generator_common.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_hash.h"
 

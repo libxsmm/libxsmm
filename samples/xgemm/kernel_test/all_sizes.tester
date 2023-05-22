@@ -67,37 +67,43 @@ f7.close()
 f8.close()
 END
 
-PREC="SP"
+PREC="F32_F32_F32_F32"
 TRA=0
 TRB=0
 BINARY_POSTOP=1
 UNARY_POSTOP=3
+AVNNI=0
+BVNNI=0
 CVNNI=0
 BRTYPE="nobr"
 BRCOUNT=5
 TESTFUSED=0
+PREC_A=$(echo ${PREC} | awk -F"_" '{print $1}')
+PREC_B=$(echo ${PREC} | awk -F"_" '{print $2}')
+PREC_COMP=$(echo ${PREC} | awk -F"_" '{print $3}')
+PREC_C=$(echo ${PREC} | awk -F"_" '{print $4}')
 
 if [ ${TESTFUSED} == 0 ]; then
   (trap 'kill 0' SIGINT;
-  ./kernel ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE1}.out &
-  ./kernel ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE2}.out &
-  ./kernel ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE3}.out &
-  ./kernel ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE4}.out &
-  ./kernel ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE5}.out &
-  ./kernel ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE6}.out &
-  ./kernel ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE7}.out &
-  ./kernel ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE8}.out )
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE1}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE2}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE3}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE4}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE5}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE6}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE7}.out &
+  ./kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE8}.out )
   wait
 else
   (trap 'kill 0' SIGINT; 
-  ./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE1}.fused.out &
-  ./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE2}.fused.out &
-  ./kernel_fused ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE3}.fused.out &
-  ./kernel_fused ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE4}.fused.out &
-  ./kernel_fused ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE5}.fused.out &
-  ./kernel_fused ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE6}.fused.out &
-  ./kernel_fused ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE7}.fused.out &
-  ./kernel_fused ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE8}.fused.out )
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE1}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE2}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE3}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE4}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE5}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE6}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE7}.fused.out &
+  ./kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} | tee ${TESTFILE8}.fused.out )
   wait
 fi
 
