@@ -35,6 +35,9 @@ void LIBXSMM_FSYMBOL(dgemm_batch_strided)(const char* transa, const char* transb
       beta, c, ldc, stride_c, batchsize);
   }
   else {
+    libxsmm_gemm_batch_blas(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, transa, transb,
+      *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      -1/*index_stride*/, 0/*index_base*/, *batchsize);
     libxsmm_blas_error("dgemm_batch_strided")(transa, transb, m, n, k,
       alpha, a, lda, stride_a, b, ldb, stride_b,
       beta, c, ldc, stride_c, batchsize);
@@ -62,6 +65,9 @@ void LIBXSMM_FSYMBOL(sgemm_batch_strided)(const char* transa, const char* transb
       beta, c, ldc, stride_c, batchsize);
   }
   else {
+    libxsmm_gemm_batch_blas(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, transa, transb,
+      *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      -1/*index_stride*/, 0/*index_base*/, *batchsize);
     libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
       alpha, a, lda, stride_a, b, ldb, stride_b,
       beta, c, ldc, stride_c, batchsize);
