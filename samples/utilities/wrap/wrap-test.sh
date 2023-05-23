@@ -34,14 +34,37 @@ fi
 TMPF=$(mktemp)
 trap 'rm ${TMPF}' EXIT
 
-export LIBXSMM_VERBOSE=2
+# set verbosity to check for generated kernels
+export LIBXSMM_VERBOSE=${LIBXSMM_VERBOSE:-2}
+
 for TEST in ${TESTS}; do
+  NAME=$(echo "${TEST}" | ${TR} [[:lower:]] [[:upper:]])
+
   if [ -e "${HERE}/${TEST}-blas" ]; then
-    NAME=$(echo "${TEST}" | ${TR} [[:lower:]] [[:upper:]])
     echo "-----------------------------------"
     echo "${NAME} (ORIGINAL BLAS)"
     if [ "$*" ]; then echo "args    $*"; fi
     { time "${HERE}/${TEST}-blas" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
+    RESULT=$?
+    if [ "0" != "${RESULT}" ]; then
+      echo "FAILED(${RESULT})"
+      exit ${RESULT}
+    elif ! ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+      echo "OK"
+    else
+      echo "FAILED"
+      exit 1
+    fi
+    echo
+  fi
+
+  if [ -e "${HERE}/${TEST}-wrap" ] && [ -e .state ] && \
+     [ ! "$(${GREP} 'BLAS=0' .state)" ];
+  then
+    echo "-----------------------------------"
+    echo "${NAME} (STATIC WRAP)"
+    if [ "$*" ]; then echo "args    $*"; fi
+    { time "${HERE}/${TEST}-wrap" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
     RESULT=$?
     if [ "0" != "${RESULT}" ]; then
       echo "FAILED(${RESULT})"
@@ -53,36 +76,18 @@ for TEST in ${TESTS}; do
       exit 1
     fi
     echo
-
-    if [ -e "${DEPDIR}/lib/libxsmmext.${LIBEXT}" ]; then
-      echo "-----------------------------------"
-      echo "${NAME} (LD_PRELOAD)"
-      if [ "$*" ]; then echo "args    $*"; fi
-      { time \
-        LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
-        DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmm.${LIBEXT} \
-        "${HERE}/${TEST}-blas" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
-      RESULT=$?
-      if [ "0" != "${RESULT}" ]; then
-        echo "FAILED(${RESULT})"
-        exit ${RESULT}
-      elif ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
-        echo "OK"
-      else
-        echo "FAILED"
-        exit 1
-      fi
-      echo
-    fi
   fi
 
-  if [ -e "${HERE}/${TEST}-wrap" ] && [ -e .state ] && \
-     [ ! "$(${GREP} 'BLAS=0' .state)" ];
+  if [ -e "${HERE}/${TEST}-blas" ] && \
+     [ -e "${DEPDIR}/lib/libxsmmext.${LIBEXT}" ];
   then
     echo "-----------------------------------"
-    echo "${NAME} (STATIC WRAP)"
+    echo "${NAME} (LD_PRELOAD)"
     if [ "$*" ]; then echo "args    $*"; fi
-    { time "${HERE}/${TEST}-wrap" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
+    { time \
+      LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
+      DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmm.${LIBEXT} \
+      "${HERE}/${TEST}-blas" "$*" 2>"${TMPF}"; } 2>&1 | ${GREP} real
     RESULT=$?
     if [ "0" != "${RESULT}" ]; then
       echo "FAILED(${RESULT})"

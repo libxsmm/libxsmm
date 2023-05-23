@@ -58,7 +58,8 @@ void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT
 
 int main(int argc, char* argv[])
 {
-  int nrepeat = (2 == argc ? atoi(argv[1]) : 500);
+  const int arg1 = (2 == argc ? atoi(argv[1]) : 0);
+  int nrepeat = (0 < arg1 ? arg1 : 500);
   const BLASINT_TYPE m = (2 < argc ? atoi(argv[1]) : 23);
   const BLASINT_TYPE n = (2 < argc ? atoi(argv[2]) : m);
   const BLASINT_TYPE lda = (3 < argc ? atoi(argv[3]) : m);
