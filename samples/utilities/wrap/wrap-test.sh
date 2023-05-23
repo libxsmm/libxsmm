@@ -17,6 +17,7 @@ DEPDIR=${HERE}/../../..
 
 UNAME=$(command -v uname)
 GREP=$(command -v grep)
+CUT=$(command -v cut)
 TR=$(command -v tr)
 
 if [ "Darwin" != "$(${UNAME})" ]; then
@@ -34,11 +35,14 @@ fi
 TMPF=$(mktemp)
 trap 'rm ${TMPF}' EXIT
 
+# enable interceptor for all cases (for the sake of testing)
+export LIBXSMM_GEMM_WRAP=${LIBXSMM_GEMM_WRAP:-5}
 # set verbosity to check for generated kernels
-export LIBXSMM_VERBOSE=${LIBXSMM_VERBOSE:-2}
+export LIBXSMM_VERBOSE=${LIBXSMM_VERBOSE:-3}
 
 for TEST in ${TESTS}; do
   NAME=$(echo "${TEST}" | ${TR} [[:lower:]] [[:upper:]])
+  KERN=$(echo "${TEST:1}" | ${CUT} -d_ -f1)
 
   if [ -e "${HERE}/${TEST}-blas" ]; then
     echo "-----------------------------------"
@@ -49,7 +53,7 @@ for TEST in ${TESTS}; do
     if [ "0" != "${RESULT}" ]; then
       echo "FAILED(${RESULT})"
       exit ${RESULT}
-    elif ! ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+    elif ! ${GREP} -q "Registry and code: .\+${KERN}=[[:digit:]]\+" "${TMPF}"; then
       echo "OK"
     else
       echo "FAILED"
@@ -69,7 +73,7 @@ for TEST in ${TESTS}; do
     if [ "0" != "${RESULT}" ]; then
       echo "FAILED(${RESULT})"
       exit ${RESULT}
-    elif ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+    elif ${GREP} -q "Registry and code: .\+${KERN}=[[:digit:]]\+" "${TMPF}"; then
       echo "OK"
     else
       echo "FAILED"
@@ -92,7 +96,7 @@ for TEST in ${TESTS}; do
     if [ "0" != "${RESULT}" ]; then
       echo "FAILED(${RESULT})"
       exit ${RESULT}
-    elif ${GREP} -q 'TRY[[:space:]]\+JIT' "${TMPF}"; then
+    elif ${GREP} -q "Registry and code: .\+${KERN}=[[:digit:]]\+" "${TMPF}"; then
       echo "OK"
     else
       echo "FAILED"
