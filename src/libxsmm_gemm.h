@@ -78,9 +78,11 @@
       ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
     } \
     else { \
-      libxsmm_blas_wrapper_dynamic_.pfin = (NULL == (NEXT) ? \
+      /*const*/ LIBXSMM_BLAS_FNTYPE(TYPE, KIND)(*libxsmm_blas_wrapper_dynamic_next_)(void) = NEXT; \
+      libxsmm_blas_wrapper_dynamic_.pfin = (NULL == libxsmm_blas_wrapper_dynamic_next_ ? \
         dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
-      if  (NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain || (NEXT) == libxsmm_blas_wrapper_dynamic_.chain \
+      if  (NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain \
+        || libxsmm_blas_wrapper_dynamic_next_ == libxsmm_blas_wrapper_dynamic_.chain \
         || NULL == libxsmm_blas_wrapper_dynamic_.chain()) \
       { \
         libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
