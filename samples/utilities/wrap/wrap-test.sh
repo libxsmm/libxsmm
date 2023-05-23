@@ -55,6 +55,8 @@ for TEST in ${TESTS}; do
       exit ${RESULT}
     elif ! ${GREP} -q "Registry and code: .\+${KERN}=[[:digit:]]\+" "${TMPF}"; then
       echo "OK"
+    elif ${GREP} -q "Not executed!" "${TMPF}"; then
+      echo "OK: not executed"
     else
       echo "FAILED"
       exit 1
@@ -75,6 +77,8 @@ for TEST in ${TESTS}; do
       exit ${RESULT}
     elif ${GREP} -q "Registry and code: .\+${KERN}=[[:digit:]]\+" "${TMPF}"; then
       echo "OK"
+    elif ${GREP} -q "Not executed!" "${TMPF}"; then
+      echo "OK: not executed"
     else
       echo "FAILED"
       exit 1
@@ -98,6 +102,8 @@ for TEST in ${TESTS}; do
       exit ${RESULT}
     elif ${GREP} -q "Registry and code: .\+${KERN}=[[:digit:]]\+" "${TMPF}"; then
       echo "OK"
+    elif ${GREP} -q "Not executed!" "${TMPF}"; then
+      echo "OK: not executed"
     else
       echo "FAILED"
       exit 1

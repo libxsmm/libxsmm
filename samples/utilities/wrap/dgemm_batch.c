@@ -133,10 +133,11 @@ int main(int argc, char* argv[])
     }
 #endif
 #if defined(GEMM_BATCH) && defined(_OPENMP)
-    printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
+    if (0 < nrepeat) printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
 #else
-    printf("Called %i times.\n", nrepeat);
+    if (0 < nrepeat) printf("Called %i times.\n", nrepeat);
 #endif
+    else fprintf(stderr, "Not executed!\n");
   }
 
   free(pa);
