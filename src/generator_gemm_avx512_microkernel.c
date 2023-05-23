@@ -163,6 +163,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset);
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset );
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, vname_cvt, 1+l_m+l_vreg_ab_offset, l_vec_scf_a, 1+l_m+l_vreg_ab_offset);
+        libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, vname_cvt, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset, 0,
+            (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset );
       } else {
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_micro_kernel_config->vector_name, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset);
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset );
@@ -492,6 +495,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, vname_cvt, l_vreg_ab_offset, l_vec_scf_a, l_vreg_ab_offset);
+        libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset, 0,
+                                                                (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
       } else {
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_micro_kernel_config->vector_name, l_vreg_ab_offset, l_vreg_ab_offset);
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, l_vreg_ab_offset, l_vreg_ab_offset );
@@ -1653,6 +1659,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset);
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, vname_cvt, l_vreg_ab_offset, l_vec_scf_a, l_vreg_ab_offset);
+          libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset, 0,
+                                                                  (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
         } else {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_micro_kernel_config->vector_name, 0 + l_vreg_ab_offset, 0 + l_vreg_ab_offset);
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, 0 + l_vreg_ab_offset, 0 + l_vreg_ab_offset);
@@ -1690,6 +1699,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, 1 + l_vreg_ab_offset, 1 + l_vreg_ab_offset );
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, 1 + l_vreg_ab_offset, 1 + l_vreg_ab_offset );
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, vname_cvt, 1 + l_vreg_ab_offset, l_vec_scf_a, 1 + l_vreg_ab_offset);
+            libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, vname_cvt, 1 + l_vreg_ab_offset, 1 + l_vreg_ab_offset, 0,
+                                                                    (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, 1 + l_vreg_ab_offset, 1 + l_vreg_ab_offset );
           } else {
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_micro_kernel_config->vector_name, 1 + l_vreg_ab_offset, 1 + l_vreg_ab_offset);
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, 1 + l_vreg_ab_offset, 1 + l_vreg_ab_offset);
@@ -1727,6 +1739,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, (l_k+1)%2 + l_vreg_ab_offset, (l_k+1)%2 + l_vreg_ab_offset );
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, (l_k+1)%2 + l_vreg_ab_offset, (l_k+1)%2 + l_vreg_ab_offset );
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, vname_cvt, (l_k+1)%2 + l_vreg_ab_offset, l_vec_scf_a, (l_k+1)%2 + l_vreg_ab_offset);
+          libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, vname_cvt, (l_k+1)%2 + l_vreg_ab_offset, (l_k+1)%2 + l_vreg_ab_offset, 0,
+                                                                  (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, (l_k+1)%2 + l_vreg_ab_offset, (l_k+1)%2 + l_vreg_ab_offset );
         } else {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_micro_kernel_config->vector_name, (l_k+1)%2 + l_vreg_ab_offset, (l_k+1)%2 + l_vreg_ab_offset);
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, (l_k+1)%2 + l_vreg_ab_offset, (l_k+1)%2 + l_vreg_ab_offset);
