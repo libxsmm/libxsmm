@@ -1370,11 +1370,11 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
                 const unsigned int nsta = (0 != (LIBXSMM_CODE_STATIC & code.uval) ? 1 : 0);
                 /* count whether kernel is static or JIT-code */
                 internal_update_mmstatistic(desc, 0, 0, njit, nsta);
+                ++rest;
               }
               else {
                 ++internal_statistic_num_gemv;
               }
-              ++rest;
             } break;
             case LIBXSMM_KERNEL_KIND_MELTW: {
               ++internal_statistic_num_meltw;
