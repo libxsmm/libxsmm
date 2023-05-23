@@ -78,18 +78,15 @@
       ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
     } \
     else { \
-      int libxsmm_blas_wrapper_dynamic_fallback_ = 0; \
-      libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))); \
-      if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.chain && (NEXT) != libxsmm_blas_wrapper_dynamic_.chain) { \
-        libxsmm_blas_wrapper_dynamic_.pfout = libxsmm_blas_wrapper_dynamic_.chain(); \
-      } \
-      else libxsmm_blas_wrapper_dynamic_fallback_ = 1; \
-      if (0 != libxsmm_blas_wrapper_dynamic_fallback_ || NULL == libxsmm_blas_wrapper_dynamic_.pfout) { \
+      libxsmm_blas_wrapper_dynamic_.pfin = (NULL == (NEXT) ? \
+        dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
+      if  (NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain || (NEXT) == libxsmm_blas_wrapper_dynamic_.chain \
+        || NULL == libxsmm_blas_wrapper_dynamic_.chain()) \
+      { \
         libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
-        if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
-          ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
+        if (NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
+          ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); /* LIBXSMM_ATOMIC_STORE */ \
         } \
-        else ORIGINAL = NULL; /* LIBXSMM_ATOMIC_STORE */ \
       } \
     } \
   } while(0)
