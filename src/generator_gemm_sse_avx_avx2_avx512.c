@@ -234,13 +234,30 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   {
     const unsigned int init_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch );
     const unsigned int init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, l_micro_kernel_config.vector_length);
-    if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
-      while ((init_m_blocks * l_max_n_blocking + l_max_n_blocking + 1) > l_micro_kernel_config.vector_reg_count) {
-        l_max_n_blocking--;
+    unsigned int l_is_Ai8_Bf16_Cf16_gemm = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( l_xgemm_desc_opa->datatype )) &&
+                                            (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_opa->datatype )) &&
+                                            (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_opa->datatype )) ) ? 1 : 0;
+    if (l_is_Ai8_Bf16_Cf16_gemm == 0) {
+      if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+        while ((init_m_blocks * l_max_n_blocking + l_max_n_blocking + 1) > l_micro_kernel_config.vector_reg_count) {
+          l_max_n_blocking--;
+        }
+      } else {
+        while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
+          l_max_n_blocking--;
+        }
       }
     } else {
-      while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
-        l_max_n_blocking--;
+      int l_m_scf_vregs = ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) == 0) ? 1 : init_m_blocks;
+      /* In this case we need m vec regs for the scaling factors... */
+      if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+        while ((init_m_blocks * l_max_n_blocking + l_max_n_blocking + 1 + l_m_scf_vregs) > l_micro_kernel_config.vector_reg_count) {
+          l_max_n_blocking--;
+        }
+      } else {
+        while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1 + l_m_scf_vregs) > l_micro_kernel_config.vector_reg_count) {
+          l_max_n_blocking--;
+        }
       }
     }
   }
@@ -384,16 +401,19 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   if ( ( LIBXSMM_DATATYPE_I8  == LIBXSMM_GEMM_GETENUM_A_PREC( l_xgemm_desc->datatype ) ) && ( LIBXSMM_DATATYPE_F16  == LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc->datatype ) ) && ( LIBXSMM_DATATYPE_F16  == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ) ) ) {
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-        l_micro_kernel_config.instruction_set,
-        LIBXSMM_X86_INSTR_VPBROADCASTW,
-        i_gp_reg_mapping->gp_reg_scf,
-        LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-        l_micro_kernel_config.vector_name,
-        0, 0, 1, 0 );
-    if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc->datatype) || io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
-      char vname_cvt = (l_micro_kernel_config.vector_name == 'y') ? 'z' : ((l_micro_kernel_config.vector_name == 'x') ? 'y' : 'z');
-      libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, 0, 0 );
+    /* In this case we have one scaling factor per full tensor, load it here */
+    if ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) == 0) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          l_micro_kernel_config.instruction_set,
+          LIBXSMM_X86_INSTR_VPBROADCASTW,
+          i_gp_reg_mapping->gp_reg_scf,
+          LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+          l_micro_kernel_config.vector_name,
+          0, 0, 1, 0 );
+      if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc->datatype) || io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
+        char vname_cvt = (l_micro_kernel_config.vector_name == 'y') ? 'z' : ((l_micro_kernel_config.vector_name == 'x') ? 'y' : 'z');
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, 0, 0 );
+      }
     }
   }
 

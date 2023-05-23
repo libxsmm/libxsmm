@@ -104,6 +104,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
 
   if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
     l_vreg_ab_offset = 1;
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
+      l_vreg_ab_offset = i_m_blocking;
+    }
   }
 
 #if !defined(NDEBUG)
@@ -153,6 +156,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         1+l_m+l_vreg_ab_offset, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
     if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
+      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
+        l_vec_scf_a = l_m;
+      }
       if (l_use_f16_replacement_fma > 0) {
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset);
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, 1+l_m+l_vreg_ab_offset, 1+l_m+l_vreg_ab_offset );
@@ -374,6 +380,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
 
   if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
     l_vreg_ab_offset = 1;
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
+      l_vreg_ab_offset = i_m_blocking;
+    }
   }
 
   /* for VNNI we are stepping through to pack ks */
@@ -463,7 +472,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
     }
   }
 
-  for ( l_m = 0; l_m< l_m_blocking; l_m++ ) {
+  for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
     unsigned int l_a_vmove_instruction = ((l_is_Ai8_Bf16_Cf16_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && (l_m != (l_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->a_vmove_instruction;
 
     libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -476,6 +485,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         l_vreg_ab_offset, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
     if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
+      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
+        l_vec_scf_a = l_m;
+      }
       if (l_use_f16_replacement_fma > 0) {
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, vname_cvt, l_vreg_ab_offset, l_vreg_ab_offset );
