@@ -51,7 +51,8 @@ typedef struct gemm_def {
   int br_unroll;
   int tc_config;
   float scf;
-  libxsmm_float16 scf_f16;
+  float *scf_f32;
+  libxsmm_float16 *scf_f16;
   int binary_postop;
   int unary_postop;
 } gemm_def;
@@ -914,7 +915,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               a_use = (float) short_a;
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
-              a_use = a_use * i_gemm_def->scf;
+              a_use = a_use * i_gemm_def->scf_f32[l_i];
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
@@ -1532,6 +1533,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   if ( i_gemm_def->unsigned_b != 0 ) {
     l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED;
   }
+  if ( (i_gemm_def->a_type == LIBXSMM_DATATYPE_I8) && (i_gemm_def->b_type == LIBXSMM_DATATYPE_F16) && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16) ) {
+    l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF;
+  }
 
   l_flags |= (0 != i_gemm_def->trans_a ? LIBXSMM_GEMM_FLAG_TRANS_A : 0);
   l_flags |= (0 != i_gemm_def->trans_b ? LIBXSMM_GEMM_FLAG_TRANS_B : 0);
@@ -1655,7 +1659,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   gemm_param.op.tertiary = &l_br;
   gemm_param.c.primary = (void*)o_c;
   gemm_param.c.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
-  gemm_param.a.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) ? &(i_gemm_def->scf_f16) : NULL);
+  gemm_param.a.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) ? i_gemm_def->scf_f16 : NULL);
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)i_a;
@@ -2146,11 +2150,16 @@ int main(int argc, char* argv []) {
   }
   if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_F16) &&
        (l_dtype_comp == LIBXSMM_DATATYPE_F16 || l_dtype_comp == LIBXSMM_DATATYPE_F32 || l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT ) && (l_dtype_c == LIBXSMM_DATATYPE_F16)    ) {
-    libxsmm_float16 tmp_scf;
-    l_gemm_def.scf = 2.0f;
-    libxsmm_rne_convert_fp32_f16(&l_gemm_def.scf, &tmp_scf, 1);
+    libxsmm_blasint scf_i = 0;
+    float *tmp_scf_f32 = (float*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(float), 64);
+    libxsmm_float16 *tmp_scf = (libxsmm_float16*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(libxsmm_float16), 64);
+    for (scf_i = 0; scf_i < l_gemm_def.m; scf_i++) {
+      tmp_scf_f32[scf_i] = (float)0.1f * (float)get_random_posneg_p5_num();
+    }
+    l_gemm_def.scf_f32 = tmp_scf_f32;
     l_gemm_def.scf_f16 = tmp_scf;
-    libxsmm_convert_f16_f32( &tmp_scf, &l_gemm_def.scf, 1 );
+    libxsmm_rne_convert_fp32_f16(l_gemm_def.scf_f32, l_gemm_def.scf_f16, l_gemm_def.m);
+    libxsmm_convert_f16_f32( l_gemm_def.scf_f16, l_gemm_def.scf_f32, l_gemm_def.m );
   }
 
   /* setting static GEMM parameters */
@@ -2470,6 +2479,12 @@ int main(int argc, char* argv []) {
   printf("\n\n Total Max Error %f\n\n", l_total_max_error );
   if (l_gemm_def.unary_postop == RELU_BITMASK) {
     printf("\n\n Total Max Error bitmask %f\n\n", l_total_max_error_bitmask );
+  }
+
+  if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_F16) &&
+       (l_dtype_comp == LIBXSMM_DATATYPE_F16 || l_dtype_comp == LIBXSMM_DATATYPE_F32 || l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT ) && (l_dtype_c == LIBXSMM_DATATYPE_F16)    ) {
+    libxsmm_free(l_gemm_def.scf_f32);
+    libxsmm_free(l_gemm_def.scf_f16);
   }
 
   if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {

@@ -105,7 +105,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
     l_vreg_ab_offset = 1;
     if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
-      l_vreg_ab_offset = i_m_blocking;
+      l_vreg_ab_offset = l_m_blocking;
     }
   }
 
@@ -381,7 +381,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
   if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
     l_vreg_ab_offset = 1;
     if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
-      l_vreg_ab_offset = i_m_blocking;
+      l_vreg_ab_offset = l_m_blocking;
     }
   }
 
