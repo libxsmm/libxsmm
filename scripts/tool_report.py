@@ -409,6 +409,7 @@ def create_figure(plots, nplots, resint, untied, addon):
         for data in plots[entry]:
             axes[i].step(data[0], ".:", where="mid", label=data[1])
             axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            axes[i].yaxis.set_label_position("right")
             axes[i].xaxis.set_ticks(
                 range(len(data[-1])), data[-1], rotation=45
             )
