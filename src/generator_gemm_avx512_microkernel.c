@@ -141,9 +141,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   /* load column vectors of A upfront */
   for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
     char l_a_vname = (l_is_Ai8_Bf16_Cf16_gemm == 0) ? i_micro_kernel_config->vector_name : ( i_micro_kernel_config->vector_name == 'z' ? 'y' : 'x');
+    unsigned int l_a_vmove_instruction = ((l_is_Ai8_Bf16_Cf16_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && (l_m != (l_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->a_vmove_instruction;
+
     libxsmm_x86_instruction_vec_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
-        i_micro_kernel_config->a_vmove_instruction,
+        l_a_vmove_instruction,
         i_gp_reg_mapping->gp_reg_a,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor,
@@ -462,12 +464,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
   }
 
   for ( l_m = 0; l_m< l_m_blocking; l_m++ ) {
+    unsigned int l_a_vmove_instruction = ((l_is_Ai8_Bf16_Cf16_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && (l_m != (l_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->a_vmove_instruction;
+
     libxsmm_x86_instruction_vec_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
-        i_micro_kernel_config->a_vmove_instruction,
+        l_a_vmove_instruction,
         i_gp_reg_mapping->gp_reg_a,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-       (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor,
+        (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor,
         i_micro_kernel_config->vector_name,
         l_vreg_ab_offset, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
@@ -1527,6 +1531,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   unsigned int  l_use_f16_replacement_fma = (((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) ||
                                              ((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
   char vname_cvt = i_micro_kernel_config->vector_name;
+  unsigned int l_a_vmove_instruction = ((l_is_Ai8_Bf16_Cf16_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_micro_kernel_config->use_masking_a_c == 0)) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->a_vmove_instruction;
 
   if (l_use_f16_replacement_fma > 0) {
     vname_cvt = (i_micro_kernel_config->vector_name == 'y') ? 'z' : ((i_micro_kernel_config->vector_name == 'x') ? 'y' : i_micro_kernel_config->vector_name);
@@ -1534,6 +1539,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
 
   if (l_is_Ai8_Bf16_Cf16_gemm > 0) {
     l_vec_name_ld_a = 'y';
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
+      l_vec_name_ld_a = 'x';
+    }
     l_vreg_ab_offset = 1;
   }
 
@@ -1617,10 +1625,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   /* apply k blocking */
   for ( l_k = 0; l_k < l_k_iters; l_k++ ) {
     if ( l_k == 0 ) {
-       /* load A */
+      /* load A */
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         io_generated_code->arch,
-                                        i_micro_kernel_config->a_vmove_instruction,
+                                        l_a_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_a,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size_in * l_k_pack_factor,
@@ -1657,7 +1665,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
         /* second A load in first iteration, in case of large blockings -> hiding L1 latencies */
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
-                                          i_micro_kernel_config->a_vmove_instruction,
+                                          l_a_vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_a,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size_in * l_k_pack_factor,
@@ -1695,7 +1703,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       /* pipelined load of A, one k iteration ahead */
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         io_generated_code->arch,
-                                        i_micro_kernel_config->a_vmove_instruction,
+                                        l_a_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_a,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size_in * l_k_pack_factor,
