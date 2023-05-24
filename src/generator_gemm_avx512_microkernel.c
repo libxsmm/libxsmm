@@ -93,7 +93,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
                                          (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
   unsigned int l_is_Af16_Bf16_Cf16_gemm =((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                                          (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
-                                         (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
+                                         (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
   unsigned int l_use_f16_replacement_fma = (((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) ||
                                             ((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
   char vname_cvt = i_micro_kernel_config->vector_name;
@@ -372,7 +372,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
                                          (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
   unsigned int l_is_Af16_Bf16_Cf16_gemm =((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                                          (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
-                                         (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
+                                         (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ||LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
   unsigned int l_use_f16_replacement_fma = (((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) ||
                                             ((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
   char vname_cvt = i_micro_kernel_config->vector_name;
@@ -1545,7 +1545,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                           (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
   unsigned int  l_is_Af16_Bf16_Cf16_gemm =((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                                          (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
-                                         (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
+                                         (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
   unsigned int  l_use_f16_replacement_fma = (((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) ||
                                              ((l_is_Af16_Bf16_Cf16_gemm > 0 || l_is_Ai8_Bf16_Cf16_gemm > 0) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
   char vname_cvt = i_micro_kernel_config->vector_name;
