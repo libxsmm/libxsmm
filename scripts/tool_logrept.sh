@@ -152,7 +152,8 @@ if [ "${LOGDIR}" ]; then
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
     RESULT="ms"
-  else  # JSON-format
+  fi
+  if [ ! "${FINPUT}" ]; then  # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
@@ -213,9 +214,10 @@ if [ "${LOGDIR}" ]; then
           # normalize path to report file (buildkite-agent)
           REPDIR="$(cd "$(dirname "${REPORT}")" && pwd -P)"
           REPFLE=$(basename "${REPORT}")
-          LABEL=${RPTFMT}
           if [ "$(command -v tr)" ]; then
             LABEL=$(tr "[:lower:]" "[:upper:]" <<<"${RPTFMT}")
+          else
+            LABEL=${RPTFMT^^}
           fi
           if [ -e "${REPDIR}/${REPFLE}" ]; then
             if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi

@@ -574,10 +574,6 @@ LIBXSMM_API void libxsmm_sink(const void* arg, ...);
   libxsmm_blas_gemm(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
-/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
-
 /** Determines the given value in double-precision (EXIT_SUCCESS if value is NULL). */
 LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 

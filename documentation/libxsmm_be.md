@@ -40,19 +40,18 @@ The code generator driver program accepts the following arguments:
 12. Alignment override for A (1 auto, 0 unalignment)
 13. Alignment override for C (1 auto, 0 unalignment)
 14. Architecture (noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx)
-15. Prefetch strategy, see below (only nopf or pfsigonly for "sparse*")
+15. Prefetch strategy, see below (only nopf for "sparse*")
 16. SP (single-precision), DP (double-recision), or I16 (only "dense*")
 17. CSC file in Matrix market format (only if 1st arg. is "sparse*").
 
 <a name="prefetch-strategy"></a>The prefetch strategy can be:
 
 1. "nopf": data is not prefetched, just three arguments: A, B, and C
-2. "pfsigonly": no prefetches, kernel signature: A, B, C, A', B', and C'
-3. "BL2viaC": uses accesses to C to prefetch B'
-4. "AL2": uses accesses to A to prefetch A
-5. "curAL2": prefetches current A ahead in the kernel
-6. "AL2_BL2viaC": combines AL2 and BL2viaC
-7. "curAL2_BL2viaC": combines curAL2 and BL2viaC
+2. "BL2viaC": uses accesses to C to prefetch B'
+3. "AL2": uses accesses to A to prefetch A
+4. "curAL2": prefetches current A ahead in the kernel
+5. "AL2_BL2viaC": combines AL2 and BL2viaC
+6. "curAL2_BL2viaC": combines curAL2 and BL2viaC
 
 Here are some examples of invoking the driver program:
 

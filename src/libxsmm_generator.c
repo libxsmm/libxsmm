@@ -38,13 +38,13 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descri
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, int flags, int prefetch)
 {
+  /*const*/int no_bypass = LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc) && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k);
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result = { 0 };
-  if ( LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
-  {
+  LIBXSMM_ASSERT(NULL == result.ptr);
+  if (no_bypass) {
     unsigned char datatype_field[3];
     result.blob = blob;
     LIBXSMM_ASSERT(NULL != result.ptr);
@@ -53,9 +53,6 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descri
     /* Note: iprec/oprec combination is not checked to omit type-switch (invalid combination may result in BE-error) */
     LIBXSMM_GEMM_DESCRIPTOR(*result.ptr, datatype_field[0], datatype_field[1], datatype_field[2],
                              flags, m, n, k, lda, ldb, ldc, prefetch);
-  }
-  else { /* quiet error (unsupported) */
-    result.ptr = NULL;
   }
   return result.ptr;
 }
