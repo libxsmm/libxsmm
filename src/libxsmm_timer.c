@@ -27,28 +27,20 @@
 #   define LIBXSMM_TIMER_VERBOSE
 # endif
 #endif
-#if !defined(LIBXSMM_TIMER_TSC)
-# define LIBXSMM_TIMER_TSC
-#endif
-#if !defined(LIBXSMM_TIMER_WPC)
-# define LIBXSMM_TIMER_WPC
-#endif
 
-#if defined(LIBXSMM_TIMER_TSC)
-# if defined(__powerpc64__)
-#   define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
-      CYCLE = __ppc_get_timebase(); \
-    } while(0)
-# elif ((defined(LIBXSMM_PLATFORM_X86) && (64 <= (LIBXSMM_BITS))) && \
-        (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)))
-#   define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
-      libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
-      __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
-      CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
-    } while(0)
-# elif (defined(_rdtsc) || defined(_WIN32)) && defined(LIBXSMM_PLATFORM_X86)
-#   define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
-# endif
+#if defined(__powerpc64__)
+# define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
+    CYCLE = __ppc_get_timebase(); \
+  } while(0)
+#elif ((defined(LIBXSMM_PLATFORM_X86) && (64 <= (LIBXSMM_BITS))) && \
+      (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)))
+# define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
+    libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
+    __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
+    CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
+  } while(0)
+#elif (defined(_rdtsc) || defined(_WIN32)) && defined(LIBXSMM_PLATFORM_X86)
+# define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
 #endif
 
 
@@ -56,13 +48,9 @@ LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0
 {
   double result = (double)LIBXSMM_DELTA(tick0, tick1);
 #if defined(_WIN32)
-# if defined(LIBXSMM_TIMER_WPC)
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);
   result /= (double)frequency.QuadPart;
-# else /* low resolution */
-  result *= 1E-3;
-# endif
 #elif defined(CLOCK_MONOTONIC)
   result *= 1E-9;
 #else
@@ -76,13 +64,9 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
 #if defined(_WIN32)
-# if defined(LIBXSMM_TIMER_WPC)
   LARGE_INTEGER t;
   QueryPerformanceCounter(&t);
   result = (libxsmm_timer_tickint)t.QuadPart;
-# else /* low resolution */
-  result = (libxsmm_timer_tickint)GetTickCount64();
-# endif
 #elif defined(CLOCK_MONOTONIC)
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
