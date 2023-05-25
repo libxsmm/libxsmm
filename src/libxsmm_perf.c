@@ -58,13 +58,13 @@ LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_CLOSE);
 
 LIBXSMM_APIVAR_DEFINE(FILE* internal_perf_fp);
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
-LIBXSMM_APIVAR_DEFINE(unsigned long long (*internal_perf_timer)(void));
+LIBXSMM_APIVAR_DEFINE(libxsmm_timer_tickint (*internal_perf_timer)(void));
 LIBXSMM_APIVAR_DEFINE(void* internal_perf_marker);
 LIBXSMM_APIVAR_DEFINE(int internal_perf_codeidx);
 #endif
 
 
-LIBXSMM_API_INTERN void libxsmm_perf_init(unsigned long long (*timer_tick)(void))
+LIBXSMM_API_INTERN void libxsmm_perf_init(libxsmm_timer_tickint (*timer_tick)(void))
 {
   const uint32_t pid = (uint32_t)libxsmm_get_pid();
   char file_name[LIBXSMM_MAX_PATH] = "";

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
   libxsmm_gemm_param gemm_param;
   libxsmm_gemmfunction mykernel_csr = NULL;
 
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total;
   unsigned int nnz = 0;
 

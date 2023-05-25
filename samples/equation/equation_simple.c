@@ -319,7 +319,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j, s, it;
   libxsmm_matrix_eqn_param eqn_param;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
   float *arg0, *arg1, *arg2, *arg3, *out, *eqn_out;

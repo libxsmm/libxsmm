@@ -608,7 +608,7 @@ int main( int argc, char* argv[] ) {
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it, ld, tmp_ld, tmp_ld2;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   double t_vec = 0, t_tpp = 0;
   libxsmm_matdiff_info norms_out;

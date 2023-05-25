@@ -254,7 +254,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_blasint i, j, k, l, it, i2;
   libxsmm_matrix_eqn_param eqn_param;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
   int datatype_mode = 0, iters = 100;

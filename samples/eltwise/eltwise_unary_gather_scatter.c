@@ -474,7 +474,7 @@ int main(int argc, char* argv[])
   libxsmm_meltw_unary_param unary_param;
   int ret = EXIT_FAILURE;
 
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
 
   libxsmm_init();

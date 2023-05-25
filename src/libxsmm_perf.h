@@ -11,10 +11,10 @@
 #ifndef LIBXSMM_PERF_H
 #define LIBXSMM_PERF_H
 
-#include <libxsmm_macros.h>
+#include <libxsmm_typedefs.h>
 
 
-LIBXSMM_API_INTERN void libxsmm_perf_init(unsigned long long (*timer_tick)(void));
+LIBXSMM_API_INTERN void libxsmm_perf_init(libxsmm_timer_tickint (*timer_tick)(void));
 LIBXSMM_API_INTERN void libxsmm_perf_finalize(void);
 LIBXSMM_API_INTERN void libxsmm_perf_dump_code(
   const void* memory, size_t size,
