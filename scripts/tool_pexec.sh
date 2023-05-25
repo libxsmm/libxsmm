@@ -343,11 +343,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     fi >\"\${_PEXEC_LOG}\" 2>&1"
   if [ "0" = "${QUIET}" ]; then
     if [ "$(command -v tr)" ]; then
-      if [ "${TARGET}" ]; then AT="@${TARGET^^}"; fi
+      if [ "${TARGET}" ]; then AT=$(echo "@${TARGET}" | tr "[:lower:]" "[:upper:]"); fi
       STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
       if [ "${STEPNAME}" ]; then
-        LABEL="$(echo "${STEPNAME^^}" | tr -s "[:punct:][:space:]" - \
-        | ${SED} 's/^-//;s/-$//')${AT} "
+        LABEL="$(echo "${STEPNAME}" | tr -s "[:punct:][:space:]" - \
+        | ${SED} 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]")${AT} "
       else
         LABEL="$(basename "$(pwd -P)" | tr "[:lower:]" "[:upper:]")${AT} "
       fi

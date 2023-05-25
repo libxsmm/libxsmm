@@ -79,7 +79,7 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   export LC_ALL=C.UTF-8
 
   if [ ! "$1" ]; then
-    FILENAME=cp2k-${VARIANT,,}.pdf
+    FILENAME=cp2k-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift

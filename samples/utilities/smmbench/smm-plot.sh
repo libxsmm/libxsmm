@@ -64,7 +64,7 @@ function capturedTxtToDataFile {
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   RM=$(command -v rm)
   if [ ! "$1" ]; then
-    FILENAME=smm-$(echo ${VARIANT,,} | tr ' ,' '-' | tr -d '()').pdf
+    FILENAME=smm-$(echo ${VARIANT} | tr ' ,' '-' | tr -d '()' | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift

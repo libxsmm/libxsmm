@@ -214,7 +214,11 @@ if [ "${LOGDIR}" ]; then
           # normalize path to report file (buildkite-agent)
           REPDIR="$(cd "$(dirname "${REPORT}")" && pwd -P)"
           REPFLE=$(basename "${REPORT}")
-          LABEL=${RPTFMT^^}
+          if [ "$(command -v tr)" ]; then
+            LABEL=$(tr "[:lower:]" "[:upper:]" <<<"${RPTFMT}")
+          else
+            LABEL=${RPTFMT^^}
+          fi
           if [ -e "${REPDIR}/${REPFLE}" ]; then
             if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
             printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
