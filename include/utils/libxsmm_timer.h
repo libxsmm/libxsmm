@@ -11,10 +11,8 @@
 #ifndef LIBXSMM_UTILS_TIMER_H
 #define LIBXSMM_UTILS_TIMER_H
 
-#include "../libxsmm_macros.h"
+#include "../libxsmm_typedefs.h"
 
-
-typedef unsigned long long libxsmm_timer_tickint;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_timer_info {
   int tsc;

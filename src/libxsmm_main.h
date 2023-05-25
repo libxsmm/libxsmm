@@ -12,7 +12,6 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
-#include <utils/libxsmm_timer.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -121,6 +120,21 @@
 # endif
 #endif
 
+#if defined(__powerpc64__)
+# define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
+    CYCLE = __ppc_get_timebase(); \
+  } while(0)
+#elif ((defined(LIBXSMM_PLATFORM_X86) && (64 <= (LIBXSMM_BITS))) && \
+      (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)))
+# define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
+    libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
+    __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
+    CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
+  } while(0)
+#elif (defined(_rdtsc) || defined(_WIN32)) && defined(LIBXSMM_PLATFORM_X86)
+# define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
+#endif
+
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
 # define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
 #endif
@@ -168,7 +182,7 @@
     /*if (LIBXSMM_GEMM_FLAG_DESC_ISBIG <= (FLAGS)) LIBXSMM_MEMSET127(DST, 0, SIZE)*/
 #endif
 #else
-#define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
+# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #endif
 #define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
   LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \

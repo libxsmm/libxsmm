@@ -138,6 +138,9 @@
 # endif
 #endif
 
+/** Integer type used to represent tick of a high-resolution timer. */
+typedef unsigned long long libxsmm_timer_tickint;
+
 /** Special type for bitfield flags. */
 typedef unsigned int libxsmm_bitfield;
 
