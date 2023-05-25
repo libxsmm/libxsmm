@@ -146,19 +146,6 @@
 # define LIBXSMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
 
-#if !defined(LIBXSMM_EXT_MIN_NTASKS)
-# define LIBXSMM_MIN_NTASKS(NT) 1
-#endif
-#if !defined(LIBXSMM_OVERHEAD)
-# define LIBXSMM_OVERHEAD(NT) 0
-#endif
-#if !defined(LIBXSMM_NOOP_ARGS)
-# define LIBXSMM_NOOP_ARGS(...)
-#endif
-#if !defined(LIBXSMM_NOOP)
-# define LIBXSMM_NOOP
-#endif
-
 /** Check if M, N, K, or LDx fits into the descriptor. */
 #if (0 != LIBXSMM_ILP64)
 # define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) (0xFFFFFFFF >= (M) && 0xFFFFFFFF >= (N) && 0xFFFFFFFF >= (K))
