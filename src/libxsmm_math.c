@@ -9,10 +9,8 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-
-#if !defined(LIBXSMM_NO_LIBM)
-# include <math.h>
-#endif
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
 # if !defined(LIBXSMM_MATHDIFF_MHD)
@@ -20,13 +18,16 @@
 #   define LIBXSMM_MATHDIFF_MHD
 # endif
 #endif
-
 #if !defined(LIBXSMM_MATH_DELIMS)
 # define LIBXSMM_MATH_DELIMS " \t;,:"
 #endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
+#if !defined(LIBXSMM_MATH_ISDIR)
+# if defined(S_IFDIR)
+#   define LIBXSMM_MATH_ISDIR(MODE) 0 != ((MODE) & (S_IFDIR))
+# else
+#   define LIBXSMM_MATH_ISDIR(MODE) S_ISDIR(MODE)
+# endif
+#endif
 
 /**
  * LIBXSMM_MATDIFF_DIV devises the nominator by the reference-denominator
@@ -253,7 +254,7 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
       char buffer[1024];
       struct stat stat_info;
       const char* arg = strtok(matdiff_env, LIBXSMM_MATH_DELIMS), * filename = NULL;
-      if (0 == stat(arg, &stat_info) && 0 != (stat_info.st_mode & S_IFDIR)) {
+      if (0 == stat(arg, &stat_info) && LIBXSMM_MATH_ISDIR(stat_info.st_mode)) {
         const int nchars = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%s/libxsmm_matdiff.log", arg);
         if (0 < nchars && nchars < (int)sizeof(buffer)) filename = buffer;
       }
