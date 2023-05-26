@@ -652,7 +652,7 @@ int main( int argc, char* argv[] ) {
   /* eventually amend LIBXSMM_MATDIFF output with error bound */
   matdiff_env = getenv("LIBXSMM_MATDIFF");
   if (NULL != matdiff_env) {
-    char matdiff_ext[1024];
+    static char matdiff_ext[1024];
     const int nchars = LIBXSMM_SNPRINTF(matdiff_ext, sizeof(matdiff_ext),
       "LIBXSMM_MATDIFF=%s %.17g", matdiff_env, error_bound);
     if (0 < nchars && nchars < (int)sizeof(matdiff_ext)) {
