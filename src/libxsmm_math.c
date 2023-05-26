@@ -241,7 +241,7 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
 {
   double result;
   if (NULL != input) {
-    char *const matdiff_env = getenv("LIBXSMM_MATDIFF");
+    const char *const matdiff_env = getenv("LIBXSMM_MATDIFF");
     if (0 < input->rsq) {
       result = LIBXSMM_MIN(input->normf_rel, input->linf_abs) / input->rsq;
     }
@@ -251,27 +251,41 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
       result = LIBXSMM_MAX(a, b);
     }
     if (NULL != matdiff_env && '\0' != *matdiff_env) {
-      char buffer[1024];
+      char buffer[4096];
       struct stat stat_info;
-      const char* arg = strtok(matdiff_env, LIBXSMM_MATH_DELIMS), * filename = NULL;
+      size_t offset = strlen(matdiff_env) + 1;
+      char *const env = strncpy(buffer, matdiff_env, sizeof(buffer));
+      const char *arg = strtok(env, LIBXSMM_MATH_DELIMS), *filename = NULL;
       if (0 == stat(arg, &stat_info) && LIBXSMM_MATH_ISDIR(stat_info.st_mode)) {
-        const int nchars = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%s/libxsmm_matdiff.log", arg);
-        if (0 < nchars && nchars < (int)sizeof(buffer)) filename = buffer;
+        const int nchars = LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset,
+          "%s/libxsmm_matdiff.log", arg);
+        if (0 < nchars && (offset + nchars + 1) < sizeof(buffer)) {
+          filename = buffer + offset;
+          offset += nchars + 1;
+        }
       }
-      else { /* assume file */
-        filename = arg;
-      }
-      if (NULL != filename) {
-        FILE *const file = fopen(filename, "a");
-        if (NULL != file) {
-          fprintf(file, "%.17g", result);
+      else filename = arg; /* assume file */
+      if (NULL != filename) { /* bufferize output before file I/O */
+        const size_t begin = offset;
+        int nchars = ((2 * offset) < sizeof(buffer)
+          ? LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset, "%.17g", result)
+          : 0);
+        arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
+        while (NULL != arg) {
+          if (0 < nchars) offset += nchars;
+          nchars = ((2 * offset) < sizeof(buffer)
+            ? LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset, " %s", arg)
+            : 0);
           arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
-          while (NULL != arg) {
-            fprintf(file, " %s", arg);
-            arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
+        }
+        if (0 < nchars) offset += nchars;
+        if ((2 * offset) < sizeof(buffer)) {
+          FILE *const file = fopen(filename, "a");
+          if (NULL != file) {
+            buffer[offset] = '\n'; /* replace terminator */
+            fwrite(buffer + begin, 1, offset - begin + 1, file);
+            fclose(file);
           }
-          fprintf(file, "\n");
-          fclose(file);
         }
       }
     }
