@@ -90,11 +90,6 @@ LIBXSMM_API int libxsmm_get_verbosity(void);
  */
 LIBXSMM_API void libxsmm_set_verbosity(int level);
 
-/** Get the default prefetch strategy. */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
-/** Set the default prefetch strategy. */
-LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
-
 /** Get information about the matrix multiplication kernel. */
 LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info);
 /** Get information about the matrix eltwise kernel. */
@@ -158,28 +153,6 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m,
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
                                                      const int* basicflags );
-
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch);
-
-/** Helper for tuning the given gemm_flags for batches of SMMs (NTS-hint). */
-LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
-  int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c,
-  /**
-   * If the returned value is larger than zero, the vector-length (in Bytes)
-   * is larger than C's element-width and it can be used to check against a
-   * stride of subsequent C-addresses, i.e., there is sufficient alignment
-   * if 0 == LIBXSMM_MOD2(stride_in_byte, *vlen) and the tuned flag
-   * can be adopted.
-   * The vlen argument can be NULL if no further check is desired.
-   */
-  int* vlen);
 
 /**
  * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.

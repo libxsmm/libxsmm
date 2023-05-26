@@ -152,6 +152,10 @@ int main(int argc, char* argv[]) {
   int l_n_block = ((NULL == env_fsspmdm_nblock || '\0' == *env_fsspmdm_nblock)
     ? 48 : atoi(env_fsspmdm_nblock));
 
+  const char* const env_fsspmdm_notune = getenv("FSSPMDM_NOTUNE");
+  int l_notune = ((NULL == env_fsspmdm_notune || '\0' == *env_fsspmdm_notune)
+    ? 0 : atoi(env_fsspmdm_notune));
+
   libxsmm_matdiff_info diff;
   int l_m, l_n, l_k;
   int l_i, l_j, l_z;
@@ -237,7 +241,8 @@ int main(int argc, char* argv[]) {
     /* setting up fsspmdm */
     beta = 0;
     gemm_op_betazero = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta,
-      (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0, l_a_dense);
+      l_a_dense, (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0,
+      l_notune ? NULL : libxsmm_timer_tick);
   }
 
   if (0 > l_beta || 0 < l_beta) {
@@ -261,7 +266,7 @@ int main(int argc, char* argv[]) {
     beta = 1;
     gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE),
       l_m, LIBXSMM_MIN(l_n_block, l_n), l_k, l_k, l_n, l_n,
-      &alpha, &beta, 0, l_a_dense);
+      &alpha, &beta, l_a_dense, 0, l_notune ? NULL : libxsmm_timer_tick);
   }
 
   /* compute golden results */
@@ -325,7 +330,7 @@ int main(int argc, char* argv[]) {
   if (0 >= l_beta) {
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betazero, l_c_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=0 (libxmm vs. gold): %f", diff.linf_abs);
+    printf("\tmax error beta=0 (libxsmm vs. gold): %f", diff.linf_abs);
     if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
       printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
       ret |= 1;
@@ -342,7 +347,7 @@ int main(int argc, char* argv[]) {
   if (0 > l_beta || 0 < l_beta) {
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betaone, l_c_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=1 (libxmm vs. gold): %f", diff.linf_abs);
+    printf("\tmax error beta=1 (libxsmm vs. gold): %f", diff.linf_abs);
     if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
       printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
       ret |= 1;

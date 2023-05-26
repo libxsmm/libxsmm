@@ -14,7 +14,7 @@
 #include <libxsmm_macros.h>
 
 
-LIBXSMM_API_INTERN void libxsmm_perf_init(void);
+LIBXSMM_API_INTERN void libxsmm_perf_init(unsigned long long (*timer_tick)(void));
 LIBXSMM_API_INTERN void libxsmm_perf_finalize(void);
 LIBXSMM_API_INTERN void libxsmm_perf_dump_code(
   const void* memory, size_t size,

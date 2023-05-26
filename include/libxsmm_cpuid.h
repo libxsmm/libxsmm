@@ -62,13 +62,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
 } libxsmm_cpuid_info;
 
 /** Returns the target architecture and instruction set extensions. */
-#if defined(__cplusplus) /* note: stay compatible with TF */
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info = NULL);
-LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info = NULL);
-#else
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info);
-LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
-#endif
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
  * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
@@ -92,11 +87,7 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype);
  * The actual code path (as used by LIBXSMM) is determined by
  * libxsmm_[get|set]_target_archid/libxsmm_[get|set]_target_arch.
  */
-#if defined(__cplusplus)
-LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info = NULL);
-#else
-LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info);
-#endif
+LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
  * Names the CPU architecture given by CPUID.
