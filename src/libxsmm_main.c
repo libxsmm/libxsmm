@@ -85,8 +85,8 @@
 #if !defined(LIBXSMM_AUTOPIN) && 0
 # define LIBXSMM_AUTOPIN
 #endif
-#if !defined(INTERNAL_DELIMS)
-# define INTERNAL_DELIMS ";,:"
+#if !defined(LIBXSMM_MAIN_DELIMS)
+# define LIBXSMM_MAIN_DELIMS ";,:"
 #endif
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
@@ -625,9 +625,9 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
   LIBXSMM_ASSERT_MSG(INTERNAL_SINGLETON(internal_singleton_handle), "Invalid handle");
   /* determine whether this instance is unique or not */
   if (NULL != env_dump_files && '\0' != *env_dump_files && 0 == urgent) { /* dump per-node info */
-    const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
+    const char* filename = strtok(env_dump_files, LIBXSMM_MAIN_DELIMS);
     char buffer[1024] = "";
-    for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
+    for (; NULL != filename; filename = strtok(NULL, LIBXSMM_MAIN_DELIMS)) {
       FILE* file = fopen(filename, "r");
       if (NULL != file) buffer[0] = '\0';
       else { /* parse keywords */
@@ -1103,10 +1103,10 @@ LIBXSMM_API_INTERN void internal_init(void)
       const libxsmm_malloc_function null_malloc_fn = { 0 };
       const libxsmm_free_function null_free_fn = { 0 };
       char *const env_k = getenv("LIBXSMM_MALLOC"), *const env_t = getenv("LIBXSMM_MALLOC_LIMIT"), *end = NULL;
-      const char* env_i = (NULL != env_t ? strtok(env_t, INTERNAL_DELIMS) : NULL);
+      const char* env_i = (NULL != env_t ? strtok(env_t, LIBXSMM_MAIN_DELIMS) : NULL);
       size_t malloc_lo = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT, NULL/*valid*/);
       size_t malloc_hi = (NULL != env_i ? internal_parse_nbytes(
-        strtok(NULL, INTERNAL_DELIMS), LIBXSMM_SCRATCH_UNLIMITED, NULL/*valid*/) : LIBXSMM_SCRATCH_UNLIMITED);
+        strtok(NULL, LIBXSMM_MAIN_DELIMS), LIBXSMM_SCRATCH_UNLIMITED, NULL/*valid*/) : LIBXSMM_SCRATCH_UNLIMITED);
       const int malloc_kind = ((NULL == env_k || 0 == *env_k) ? 0/*disabled*/ : ((int)strtol(env_k, &end, 10)));
       libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
       libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
@@ -1119,9 +1119,9 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       else {
         int valid = 1;
-        env_i = strtok(env_k, INTERNAL_DELIMS);
+        env_i = strtok(env_k, LIBXSMM_MAIN_DELIMS);
         malloc_lo = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT, &valid);
-        env_i = (0 != valid ? strtok(NULL, INTERNAL_DELIMS) : NULL);
+        env_i = (0 != valid ? strtok(NULL, LIBXSMM_MAIN_DELIMS) : NULL);
         malloc_hi = (NULL != env_i
           ? internal_parse_nbytes(env_i, LIBXSMM_SCRATCH_UNLIMITED, &valid)
           : LIBXSMM_SCRATCH_UNLIMITED);
