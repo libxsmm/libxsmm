@@ -680,6 +680,55 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 }
 
 
+LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
+{
+  double result = (double)LIBXSMM_DELTA(tick0, tick1);
+#if defined(_WIN32)
+  LARGE_INTEGER frequency;
+  QueryPerformanceFrequency(&frequency);
+  result /= (double)frequency.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+  result *= 1E-9;
+#else
+  result *= 1E-6;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
+{
+  libxsmm_timer_tickint result;
+#if defined(_WIN32)
+  LARGE_INTEGER t;
+  QueryPerformanceCounter(&t);
+  result = (libxsmm_timer_tickint)t.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  result = 1000000000ULL * t.tv_sec + t.tv_nsec;
+#else
+  struct timeval t;
+  gettimeofday(&t, 0);
+  result = 1000000ULL * t.tv_sec + t.tv_usec;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+libxsmm_timer_tickint libxsmm_timer_tick_tsc(void)
+{
+  libxsmm_timer_tickint result;
+#if defined(LIBXSMM_TIMER_RDTSC)
+  LIBXSMM_TIMER_RDTSC(result);
+#else
+  result = libxsmm_timer_tick_rtc();
+#endif
+  return result;
+}
+
+
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
@@ -945,55 +994,6 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
   else if (NULL != valid) {
     *valid = 0;
   }
-  return result;
-}
-
-
-LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
-{
-  double result = (double)LIBXSMM_DELTA(tick0, tick1);
-#if defined(_WIN32)
-  LARGE_INTEGER frequency;
-  QueryPerformanceFrequency(&frequency);
-  result /= (double)frequency.QuadPart;
-#elif defined(CLOCK_MONOTONIC)
-  result *= 1E-9;
-#else
-  result *= 1E-6;
-#endif
-  return result;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
-{
-  libxsmm_timer_tickint result;
-#if defined(_WIN32)
-  LARGE_INTEGER t;
-  QueryPerformanceCounter(&t);
-  result = (libxsmm_timer_tickint)t.QuadPart;
-#elif defined(CLOCK_MONOTONIC)
-  struct timespec t;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  result = 1000000000ULL * t.tv_sec + t.tv_nsec;
-#else
-  struct timeval t;
-  gettimeofday(&t, 0);
-  result = 1000000ULL * t.tv_sec + t.tv_usec;
-#endif
-  return result;
-}
-
-
-LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
-libxsmm_timer_tickint libxsmm_timer_tick_tsc(void)
-{
-  libxsmm_timer_tickint result;
-#if defined(LIBXSMM_TIMER_RDTSC)
-  LIBXSMM_TIMER_RDTSC(result);
-#else
-  result = libxsmm_timer_tick_rtc();
-#endif
   return result;
 }
 

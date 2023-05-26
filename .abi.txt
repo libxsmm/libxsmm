@@ -341,9 +341,12 @@ libxsmm_strimatch
 libxsmm_stristr
 libxsmm_stristrn
 libxsmm_timer_duration
+libxsmm_timer_duration_rtc
 libxsmm_timer_ncycles
 libxsmm_timer_ncycles_
 libxsmm_timer_tick
+libxsmm_timer_tick_rtc
+libxsmm_timer_tick_tsc
 libxsmm_trace
 libxsmm_trace_finalize
 libxsmm_trace_info

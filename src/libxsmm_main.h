@@ -532,11 +532,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_xinfo {
 LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size);
 
 /** Calculates duration in seconds from given RTC ticks. */
-LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
+LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
 /** Returns the current tick of platform-specific real-time clock. */
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 /** Returns the current tick of a (monotonic) platform-specific counter. */
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
 
 LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_memory_finalize(void);
