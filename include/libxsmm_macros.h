@@ -1060,12 +1060,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if defined(LIBXSMM_BUILD) && !defined(_WIN32) && 0
+#if defined(LIBXSMM_BUILD) && !defined(_WIN32)
+# if !defined(_XOPEN_SOURCE) && 0
+#   define _XOPEN_SOURCE 500
+# endif
 # if !defined(_DEFAULT_SOURCE)
 #   define _DEFAULT_SOURCE
-# endif
-# if !defined(_XOPEN_SOURCE)
-#   define _XOPEN_SOURCE 500
 # endif
 # if !defined(_GNU_SOURCE)
 #   define _GNU_SOURCE
