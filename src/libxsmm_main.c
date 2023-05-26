@@ -23,9 +23,7 @@
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
-#if defined(_WIN32)
-# include <Windows.h>
-#else
+#if !defined(_WIN32)
 # if defined(__GNUC__) || defined(__PGI) || defined(_CRAYC)
 #   include <sys/time.h>
 #   include <time.h>
@@ -33,7 +31,6 @@
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
-# include <unistd.h>
 # include <fcntl.h>
 #endif
 #if defined(__APPLE__)

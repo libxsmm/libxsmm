@@ -25,7 +25,6 @@
 # include <syscall.h>
 #endif
 #if defined(_WIN32)
-# include <windows.h>
 # define LIBXSMM_MAX_PATH MAX_PATH
 #else
 # if defined(__linux__)
@@ -36,7 +35,6 @@
 # else /* fallback */
 #   define LIBXSMM_MAX_PATH 1024
 # endif
-# include <unistd.h>
 #endif
 
 #if !defined(NDEBUG)

@@ -1100,13 +1100,13 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define __has_builtin(A) 0
 #endif
 
-#if (0 != LIBXSMM_SYNC)
-# if defined(_WIN32) || defined(__CYGWIN__)
-#   include <windows.h>
-# else
-#   include <pthread.h>
-#   include <unistd.h>
-# endif
+#if (0 != LIBXSMM_SYNC) && !defined(_WIN32) && !defined(__CYGWIN__)
+# include <pthread.h>
+#endif
+#if defined(_WIN32) || defined(__CYGWIN__)
+# include <windows.h>
+#else
+# include <unistd.h>
 #endif
 #if !defined(LIBXSMM_ASSERT)
 # include <assert.h>
