@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#include "libxsmm_main.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -280,15 +280,19 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
             arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
           }
           if (NULL == arg) { /* all args consumed */
-            FILE *const file = fopen(filename, "a");
-            if (NULL != file) {
-              buffer[offset] = '\n'; /* replace terminator */
-              fwrite(buffer + begin, 1, offset - begin + 1, file);
-              fclose(file);
+            nchars = libxsmm_print_cmdline(buffer + offset, sizeof(buffer) - offset, " [", "]");
+            if (0 < nchars && (2 * (offset + nchars)) < sizeof(buffer)) {
+              FILE *const file = fopen(filename, "a");
+              if (NULL != file) {
+                buffer[offset + nchars] = '\n'; /* replace terminator */
+                fwrite(buffer + begin, 1, offset + nchars - begin + 1, file);
+                fclose(file);
 #if defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE) || \
    (defined(_XOPEN_SOURCE) && (500 <= _XOPEN_SOURCE))
-              sync(); /* attempt to flush filesystem */
+                sync(); /* attempt to flush FS */
 #endif
+              }
+
             }
           }
         }
