@@ -21,6 +21,13 @@
 # endif
 #endif
 
+#if !defined(LIBXSMM_MATH_DELIMS)
+# define LIBXSMM_MATH_DELIMS " \t;,:"
+#endif
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
 /**
  * LIBXSMM_MATDIFF_DIV devises the nominator by the reference-denominator
  * unless the latter is zero in which case the fallback is returned.
@@ -233,6 +240,7 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
 {
   double result;
   if (NULL != input) {
+    char *const matdiff_env = getenv("LIBXSMM_MATDIFF");
     if (0 < input->rsq) {
       result = LIBXSMM_MIN(input->normf_rel, input->linf_abs) / input->rsq;
     }
@@ -240,6 +248,31 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
       const double a = LIBXSMM_MIN(input->norm1_abs, input->normi_abs);
       const double b = LIBXSMM_MAX(input->linf_abs, input->l2_abs);
       result = LIBXSMM_MAX(a, b);
+    }
+    if (NULL != matdiff_env && '\0' != *matdiff_env) {
+      char buffer[1024];
+      struct stat stat_info;
+      const char* arg = strtok(matdiff_env, LIBXSMM_MATH_DELIMS), * filename = NULL;
+      if (0 == stat(arg, &stat_info) && 0 != (stat_info.st_mode & S_IFDIR)) {
+        const int nchars = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%s/libxsmm_matdiff.log", arg);
+        if (0 < nchars && nchars < (int)sizeof(buffer)) filename = buffer;
+      }
+      else { /* assume file */
+        filename = arg;
+      }
+      if (NULL != filename) {
+        FILE *const file = fopen(filename, "a");
+        if (NULL != file) {
+          fprintf(file, "%.17g", result);
+          arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
+          while (NULL != arg) {
+            fprintf(file, " %s", arg);
+            arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
+          }
+          fprintf(file, "\n");
+          fclose(file);
+        }
+      }
     }
   }
   else result = 0;
