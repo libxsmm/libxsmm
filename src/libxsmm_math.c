@@ -285,6 +285,10 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
             buffer[offset] = '\n'; /* replace terminator */
             fwrite(buffer + begin, 1, offset - begin + 1, file);
             fclose(file);
+#if defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE) || \
+   (defined(_XOPEN_SOURCE) && (500 <= _XOPEN_SOURCE))
+            sync(); /* attempt to flush filesystem */
+#endif
           }
         }
       }
