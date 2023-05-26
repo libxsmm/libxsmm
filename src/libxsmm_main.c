@@ -831,7 +831,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         {
           uptime = libxsmm_timer_duration_rtc(internal_timer_start, timer_end);
         }
-        libxsmm_print_cmdline(stderr, "Command: ", "\n");
+        libxsmm_print_cmdline(stderr, 0, "Command: ", "\n");
         fprintf(stderr, "Uptime: %f s", uptime);
         if (1 < libxsmm_thread_count && INT_MAX == libxsmm_verbosity) {
           fprintf(stderr, " (nthreads=%u)", libxsmm_thread_count);
@@ -3711,17 +3711,20 @@ LIBXSMM_EXTERN int* _NSGetArgc(void);
 #endif
 
 
-LIBXSMM_API_INTERN int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
+LIBXSMM_API_INTERN int libxsmm_print_cmdline(void* buffer, size_t buffer_size, const char* prefix, const char* postfix)
 {
   int result = 0;
 #if defined(__linux__)
-  FILE* const cmdline = fopen("/proc/self/cmdline", "r");
+  FILE *const cmdline = fopen("/proc/self/cmdline", "r");
   if (NULL != cmdline) {
     char c;
     if (1 == fread(&c, 1, 1, cmdline) && '\0' != c) {
-      result += fprintf(stream, "%s", prefix);
+      result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s", prefix)
+        : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s", prefix));
       do {
-        result += (int)fwrite('\0' != c ? &c : " ", 1, 1, stream);
+        const char d = '\0' != c ? c : ' ';
+        result += (0 == buffer_size ? fprintf((FILE*)buffer, "%c", d)
+          : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%c", d));
       } while (1 == fread(&c, 1, 1, cmdline));
     }
     fclose(cmdline);
@@ -3738,17 +3741,24 @@ LIBXSMM_API_INTERN int libxsmm_print_cmdline(FILE* stream, const char* prefix, c
 # endif
   if (0 < argc) {
     int i = 1;
-#   if defined(_WIN32)
+# if defined(_WIN32)
     const char *const cmd = strrchr(argv[0], '\\');
-    result += fprintf(stream, "%s%s", prefix, NULL != cmd ? (cmd + 1) : argv[0]);
-#   else
-    result += fprintf(stream, "%s%s", prefix, argv[0]);
-#   endif
-    for (; i < argc; ++i) result += fprintf(stream, " %s", argv[i]);
+    const char *const exe = (NULL != cmd ? (cmd + 1) : argv[0]);
+    result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s%s", prefix, exe)
+      : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s%s", prefix, exe));
+# else
+    result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s%s", prefix, argv[0])
+      : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s%s", prefix, argv[0]));
+# endif
+    for (; i < argc; ++i) {
+      result += (0 == buffer_size ? fprintf((FILE*)buffer, " %s", argv[i])
+        : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, " %s", argv[i]));
+    }
   }
 #endif
   if (0 < result) {
-    result += fprintf(stream, "%s", postfix);
+    result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s", postfix)
+      : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s", postfix));
   }
   return result;
 }

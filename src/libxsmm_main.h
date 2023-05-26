@@ -506,8 +506,9 @@ LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
  * Print the command line arguments of the current process, and get the number of written
  * characters including the prefix, the postfix, but not the terminating NULL character.
  * If zero is returned, nothing was printed (no prefix, no postfix).
+ * If buffer_size is zero, buffer is assumed to be a FILE-pointer.
  */
-LIBXSMM_API_INTERN int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
+LIBXSMM_API_INTERN int libxsmm_print_cmdline(void* buffer, size_t buffer_size, const char* prefix, const char* postfix);
 
 /**
  * Dump data, (optionally) check attempt to dump different data into an existing file (unique),
