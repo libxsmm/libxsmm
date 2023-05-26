@@ -1218,6 +1218,9 @@
 #define LIBXSMM_X86_INSTR_XORD_R_RM        0xa0040033
 #define LIBXSMM_X86_INSTR_XORQ_R_RM        0xa2840033
 
+/* newer instrutions */
+#define LIBXSMM_X86_INSTR_RDPID            0x9c7610c7
+
 /* Jump instructions */
 #define LIBXSMM_X86_INSTR_JL                 30100
 #define LIBXSMM_X86_INSTR_JE                 30101

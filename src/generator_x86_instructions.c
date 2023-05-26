@@ -3089,6 +3089,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_XORW_R_RM:
     case LIBXSMM_X86_INSTR_XORD_R_RM:
     case LIBXSMM_X86_INSTR_XORQ_R_RM:
+    case LIBXSMM_X86_INSTR_RDPID:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_reg: Unknown instruction type: 0x%08x\n", i_alu_instr);
