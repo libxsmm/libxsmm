@@ -254,7 +254,7 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
       char buffer[4096];
       struct stat stat_info;
       size_t offset = strlen(matdiff_env) + 1;
-      char *const env = strncpy(buffer, matdiff_env, sizeof(buffer));
+      char *const env = strncpy(buffer, matdiff_env, sizeof(buffer) - 1);
       const char *arg = strtok(env, LIBXSMM_MATH_DELIMS), *filename = NULL;
       if (0 == stat(arg, &stat_info) && LIBXSMM_MATH_ISDIR(stat_info.st_mode)) {
         const int nchars = LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset,
