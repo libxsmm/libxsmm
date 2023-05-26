@@ -270,25 +270,26 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
         int nchars = ((2 * offset) < sizeof(buffer)
           ? LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset, "%.17g", result)
           : 0);
-        arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
-        while (NULL != arg) {
-          if (0 < nchars) offset += nchars;
-          nchars = ((2 * offset) < sizeof(buffer)
-            ? LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset, " %s", arg)
-            : 0);
+        if (0 < nchars && (2 * (offset + nchars)) < sizeof(buffer)) {
+          offset += nchars;
           arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
-        }
-        if (0 < nchars) offset += nchars;
-        if ((2 * offset) < sizeof(buffer)) {
-          FILE *const file = fopen(filename, "a");
-          if (NULL != file) {
-            buffer[offset] = '\n'; /* replace terminator */
-            fwrite(buffer + begin, 1, offset - begin + 1, file);
-            fclose(file);
+          while (NULL != arg) {
+            nchars = LIBXSMM_SNPRINTF(buffer + offset, sizeof(buffer) - offset, " %s", arg);
+            if (0 < nchars && (2 * (offset + nchars)) < sizeof(buffer)) offset += nchars;
+            else break;
+            arg = strtok(NULL, LIBXSMM_MATH_DELIMS);
+          }
+          if (NULL == arg) { /* all args consumed */
+            FILE *const file = fopen(filename, "a");
+            if (NULL != file) {
+              buffer[offset] = '\n'; /* replace terminator */
+              fwrite(buffer + begin, 1, offset - begin + 1, file);
+              fclose(file);
 #if defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE) || \
    (defined(_XOPEN_SOURCE) && (500 <= _XOPEN_SOURCE))
-            sync(); /* attempt to flush filesystem */
+              sync(); /* attempt to flush filesystem */
 #endif
+            }
           }
         }
       }
