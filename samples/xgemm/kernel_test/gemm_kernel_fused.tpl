@@ -47,21 +47,21 @@ PREC_B=$(echo ${PREC} | awk -F"_" '{print $2}')
 PREC_COMP=$(echo ${PREC} | awk -F"_" '{print $3}')
 PREC_C=$(echo ${PREC} | awk -F"_" '{print $4}')
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} addrbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} addrbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} strdbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} strdbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} offsbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 0 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} offsbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} addrbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} addrbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} offsbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} offsbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
-./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} strdbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
+${BIN_INSTR_TOOL} ./gemm_kernel_fused ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} strdbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP}
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}
