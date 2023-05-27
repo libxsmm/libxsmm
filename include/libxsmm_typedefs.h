@@ -27,7 +27,7 @@
 # define LIBXSMM_BLASINT int
 #endif
 
-/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO */
+/** Generic prefetch applicable for all domains. */
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 /** Attempt to automatically select a strategy. */
@@ -525,7 +525,7 @@ typedef enum libxsmm_gemm_flags {
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
-  /** No prefetching and no prefetch fn. signature. */
+  /** No data-prefetch. */
   LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
   /** Only function prefetch signature. */
   LIBXSMM_GEMM_PREFETCH_SIGONLY            = LIBXSMM_PREFETCH_SIGONLY,
@@ -684,7 +684,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_unary_param {
 
 /** argument struct for matrix-eltwise: binary */
 LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_binary_param {
-  libxsmm_matrix_op_arg op;   /* op state & paramters */
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg out;     /* output     */

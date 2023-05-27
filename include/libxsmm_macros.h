@@ -115,7 +115,7 @@
   (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
 
 /**
- * Macro to check minimum version requiremnts in code, for example:
+ * Macro to check minimum version requirements in code, for example:
  * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
  * // code requiring version 1.17 or later
  * #else
@@ -272,6 +272,8 @@
 # else
 #   define LIBXSMM_CALLER __FUNCNAME__
 # endif
+/** Function argument with default value (C++). */
+# define LIBXSMM_ARGDEF(ARG, DEF) ARG = DEF
 #else /* C */
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
@@ -293,6 +295,8 @@
 #   define LIBXSMM_INLINE_KEYWORD
 #   define LIBXSMM_INLINE_FIXUP
 # endif
+/** Function argument with default value (C++). */
+# define LIBXSMM_ARGDEF(ARG, DEF) ARG
 /* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
 #endif /*__cplusplus*/
@@ -541,6 +545,8 @@
 #define LIBXSMM_UP(N, MULT) (LIBXSMM_UPDIV(N, MULT) * (MULT))
 #define LIBXSMM_LO2(N, NPOT) ((N) & ~((NPOT) - 1))
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_LO2((N) + ((NPOT) - 1), NPOT)
+/** Examples: N+10%->UPF(N,1,10), N-10%->UPF(N,-1,10), N*90%->UPF(N,-1,10) */
+#define LIBXSMM_UPF(N, NOM, DEN) (((N) * ((DEN) + (NOM))) / (DEN))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
@@ -556,7 +562,7 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
-#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE,((double)(A)/2.0))*2)))
+#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE, ((double)(A) / 2.0)) * 2)))
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 #define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 

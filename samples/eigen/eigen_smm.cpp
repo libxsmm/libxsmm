@@ -59,22 +59,6 @@ void smm_eigen_dynamic(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
 #endif /*defined(__EIGEN)*/
 
 
-template<typename itype, typename otype>
-LIBXSMM_INLINE
-void smm_xsmm_specialized(const libxsmm_mmfunction<itype,otype>& xmm,
-  const itype* a, const itype* b, otype* c, const itype* next_a, const itype* next_b, const otype* next_c)
-{
-#if (0 != LIBXSMM_PREFETCH)
-  xmm(a, b, c, next_a, next_b, next_c);
-#else
-  xmm(a, b, c);
-  LIBXSMM_UNUSED(next_a);
-  LIBXSMM_UNUSED(next_b);
-  LIBXSMM_UNUSED(next_c);
-#endif
-}
-
-
 int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
@@ -145,7 +129,7 @@ int main(int argc, char* argv[])
       static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
       1.0 * (s * ((static_cast<size_t>(asize) + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE))) / (1ULL << 20), 8 == sizeof(ITYPE) ? "DP" : "SP");
 
-    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_AUTO);
+    const libxsmm_mmfunction<ITYPE,OTYPE,LIBXSMM_PREFETCH_AUTO> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
 
     switch (benchmark) {
     case 0: if (xmm) {
@@ -158,9 +142,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-          smm_xsmm_specialized<ITYPE,OTYPE>(xmm, ai, bi, ci,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
+          xmm(ai, bi, ci, ai + asize, bi + bsize, ci + csize);
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -208,9 +190,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-          smm_xsmm_specialized<ITYPE,OTYPE>(xmm, ai, b, ci,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(b),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
+          xmm(ai, b, ci, ai + asize, b, ci + csize);
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -258,9 +238,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-          smm_xsmm_specialized<ITYPE,OTYPE>(xmm, a, bi, ci,
-            LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
+          xmm(a, bi, ci, a, bi + bsize, ci + csize);
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -312,9 +290,7 @@ int main(int argc, char* argv[])
           const libxsmm_blasint j = 0;
 #endif
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-          smm_xsmm_specialized<ITYPE,OTYPE>(xmm, ai, bi, c + j,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(c + j));
+          xmm(ai, bi, c + j, ai + asize, bi + bsize, c + j);
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -369,9 +345,7 @@ int main(int argc, char* argv[])
 #else
           const libxsmm_blasint j = 0;
 #endif
-          smm_xsmm_specialized<ITYPE,OTYPE>(xmm, a, b, c + j,
-            LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(b),
-            LIBXSMM_GEMM_PREFETCH_C(c + j));
+          xmm(a, b, c + j, a, b, c + j);
         }
       }
       const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());

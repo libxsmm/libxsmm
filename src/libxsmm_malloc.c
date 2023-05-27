@@ -429,7 +429,8 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result;
   if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_MALLOC_ALIGNMAX) <= size) {
-    result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT) : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_MALLOC_ALIGNMAX);
+    result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT)
+      : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_MALLOC_ALIGNMAX);
   }
   else { /* small-size request */
     if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_ALIGNMENT) <= size) {
@@ -480,7 +481,8 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 #if defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE)
         || (result->size_alloc < result->size)
 #endif
-        || (LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max), internal_malloc_private_max) < result->size
+        || (LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max),
+              internal_malloc_private_max) < result->size
             && 0 == (flags_px & result->flags)) || (0 == result->size)
         || (2 > libxsmm_ninit) /* before checksum calculation */
 #if !defined(LIBXSMM_MALLOC_CRC_OFF) /* last check: checksum over info */
@@ -492,6 +494,11 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 # endif
 #endif
       ) { /* mismatch */
+#if !defined(NDEBUG)
+        if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM ERROR: malloc/free mismatch!\n");
+        }
+#endif
         result = NULL;
       }
     }

@@ -840,7 +840,14 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VEXTRACTI64X2", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X2, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VEXTRACTI32X8", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI32X8, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VEXTRACTI64X4", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X4, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTF32X4", &mycode, LIBXSMM_X86_INSTR_VINSERTF32X4, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTF64X2", &mycode, LIBXSMM_X86_INSTR_VINSERTF64X2, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTF32X8", &mycode, LIBXSMM_X86_INSTR_VINSERTF32X8, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTF64X4", &mycode, LIBXSMM_X86_INSTR_VINSERTF64X4, 0, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VINSERTI32X4", &mycode, LIBXSMM_X86_INSTR_VINSERTI32X4, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTI64X2", &mycode, LIBXSMM_X86_INSTR_VINSERTI64X2, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTI32X8", &mycode, LIBXSMM_X86_INSTR_VINSERTI32X8, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTI64X4", &mycode, LIBXSMM_X86_INSTR_VINSERTI64X4, 0, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VBLENDMPS", &mycode, LIBXSMM_X86_INSTR_VBLENDMPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VBLENDMPD", &mycode, LIBXSMM_X86_INSTR_VBLENDMPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPBLENDMB", &mycode, LIBXSMM_X86_INSTR_VPBLENDMB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
@@ -1284,7 +1291,14 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VEXTRACTI64X2", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X2, 1, 0x01, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VEXTRACTI32X8", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI32X8, 1, 0x01, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VEXTRACTI64X4", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X4, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTF32X4", &mycode, LIBXSMM_X86_INSTR_VINSERTF32X4, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTF64X2", &mycode, LIBXSMM_X86_INSTR_VINSERTF64X2, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTF32X8", &mycode, LIBXSMM_X86_INSTR_VINSERTF32X8, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTF64X4", &mycode, LIBXSMM_X86_INSTR_VINSERTF64X4, 1, 0x01, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VINSERTI32X4", &mycode, LIBXSMM_X86_INSTR_VINSERTI32X4, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTI64X2", &mycode, LIBXSMM_X86_INSTR_VINSERTI64X2, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTI32X8", &mycode, LIBXSMM_X86_INSTR_VINSERTI32X8, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VINSERTI64X4", &mycode, LIBXSMM_X86_INSTR_VINSERTI64X4, 1, 0x01, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VBLENDMPS", &mycode, LIBXSMM_X86_INSTR_VBLENDMPS, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VBLENDMPD", &mycode, LIBXSMM_X86_INSTR_VBLENDMPD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPBLENDMB", &mycode, LIBXSMM_X86_INSTR_VPBLENDMB, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
@@ -2389,6 +2403,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_reg( "alu_reg_XORW_R_RM", &mycode, LIBXSMM_X86_INSTR_XORW_R_RM, 0 );
   test_alu_reg( "alu_reg_XORD_R_RM", &mycode, LIBXSMM_X86_INSTR_XORD_R_RM, 0 );
   test_alu_reg( "alu_reg_XORQ_R_RM", &mycode, LIBXSMM_X86_INSTR_XORQ_R_RM, 0 );
+  test_alu_reg( "alu_reg_RDPID", &mycode, LIBXSMM_X86_INSTR_RDPID, 1 );
 
   /* test alu mem */
   test_alu_mem( "alu_mov_MOVB_LD", &mycode, LIBXSMM_X86_INSTR_MOVB, 1 );

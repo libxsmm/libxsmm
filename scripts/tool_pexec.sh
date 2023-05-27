@@ -219,7 +219,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   done
   PEXEC_SCRARG="\$0"
   if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
-    if [ "0" = "${PEXEC_IL}" ]; then
+    if [ "0" = "${PEXEC_IL}" ] && [ "$(command -v mktemp)" ]; then
       PEXEC_SCRIPT=$(mktemp)
       PEXEC_SCRARG="\$*"
     fi
