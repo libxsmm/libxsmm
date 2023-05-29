@@ -176,9 +176,59 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
 LIBXSMM_INLINE
 libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
-
+#if 0
+  if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+    libxsmm_blasint i, j;
+    float* f_data_gold = (float*)data_gold;
+    float* f_data = (float*)data;
+    for ( j = 0; j < n; ++j ) {
+      for ( i = 0; i < m; ++i ) {
+        libxsmm_float_uint tmp0;
+        libxsmm_float_uint tmp1;
+        tmp0.f = f_data_gold[i + j*ld];
+        tmp1.f = f_data[i + j*ld];
+        if ( tmp0.u == tmp1.u) {
+#if 0
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+#else
+          printf("[-------- --------] ");
+#endif
+        } else {
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+        }
+      }
+      printf("\n");
+    }
+  } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
+    libxsmm_blasint i, j;
+    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
+    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
+    libxsmm_convert_bf8_f32( data_gold, f_data_gold, n*ld );
+    libxsmm_convert_bf8_f32( data,      f_data,      n*ld );
+    for ( j = 0; j < n; ++j ) {
+      for ( i = 0; i < m; ++i ) {
+        libxsmm_float_uint tmp0;
+        libxsmm_float_uint tmp1;
+        tmp0.f = f_data_gold[i + j*ld];
+        tmp1.f = f_data[i + j*ld];
+        if ( tmp0.u == tmp1.u) {
+#if 1
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+#else
+          printf("[-------- --------] ");
+#endif
+        } else {
+          printf("[%x %x] ", tmp0.u, tmp1.u);
+        }
+      }
+      printf("\n");
+    }
+    free( f_data );
+    free( f_data_gold );
+  }
+#endif
   libxsmm_matdiff_clear(&l_diff);
-  libxsmm_matdiff(&l_diff, dtype, m, n, data_gold, data, &ld, &ld);
+  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_matdiff(&l_diff, dtype, m, n, data_gold, data, &ld, &ld));
   return l_diff;
 }
 
@@ -225,7 +275,7 @@ double getBenchmarkDuration(void) {
 LIBXSMM_INLINE
 void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
                       libxsmm_meltw_unary_shape unary_shape,
-                      libxsmm_meltw_unary_flags unary_flags,
+                      libxsmm_bitfield          unary_flags,
                       libxsmm_meltw_unary_param unary_param ) {
 
   libxsmm_meltwfunction_unary unary_kernel;
@@ -281,7 +331,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
 LIBXSMM_INLINE
 void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
                        libxsmm_meltw_binary_shape binary_shape,
-                       libxsmm_meltw_binary_flags binary_flags,
+                       libxsmm_bitfield           binary_flags,
                        libxsmm_meltw_binary_param binary_param ) {
 
   libxsmm_meltwfunction_binary binary_kernel;

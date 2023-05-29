@@ -11,7 +11,7 @@
 #include "libxsmm_matrixeqn.h"
 
 /* aux struct for matrix equations */
-LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
+LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[LIBXSMM_MAX_EQN_COUNT]);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_init);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_count);
 
@@ -1277,11 +1277,16 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   /* lazy init of helper array */
   if ( libxsmm_matrix_eqns_init == 0 ) {
     libxsmm_blasint i;
-    for ( i = 0; i < 256; ++i ) {
+    for ( i = 0; i < LIBXSMM_MAX_EQN_COUNT; ++i ) {
       libxsmm_matrix_eqns[i] = NULL;
     }
     libxsmm_matrix_eqns_count = 0;
     libxsmm_matrix_eqns_init = 1;
+  }
+
+  if (ret >= LIBXSMM_MAX_EQN_COUNT) {
+    fprintf(stderr, "Exceeded maximum number of equations (%d). Can't create requested equation...\n", LIBXSMM_MAX_EQN_COUNT);
+    return -1;
   }
 
   libxsmm_matrix_eqns_count++;

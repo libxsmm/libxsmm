@@ -3452,6 +3452,11 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2(
   const libxsmm_meqn_descriptor *const desc = libxsmm_meqn_descriptor_init(&blob,
     out_shape.type, out_shape.m, out_shape.n, out_shape.ld, (unsigned int)idx );
 
+  if (idx >= LIBXSMM_MAX_EQN_COUNT) {
+    fprintf(stderr, "Exceeded maximum number of equations (%d). Can't create requested equation...\n", LIBXSMM_MAX_EQN_COUNT);
+    return NULL;
+  }
+
   return libxsmm_dispatch_matrix_eqn_desc( desc );
 }
 

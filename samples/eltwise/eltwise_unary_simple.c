@@ -39,18 +39,21 @@
 #define REPLICATE_COL_VAR 27
 #define FP32_TO_BF16X2 64
 #define FP32_TO_BF16X3 65
-#if 0
+#if 1
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
 LIBXSMM_INLINE
-void adjust_input_for_hf8_rcp_family( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
+void adjust_input_for_fp8_rcp_family( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
   float test_vals[20] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0 };
   float *in_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
   float *in_use;
   libxsmm_blasint i, j;
   if (dtype_in == LIBXSMM_DATATYPE_HF8) {
     libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
+    in_use = in_f;
+  } else if (dtype_in == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)in, in_f, N*ldi );
     in_use = in_f;
   } else {
     in_use = (float*)in;
@@ -62,6 +65,8 @@ void adjust_input_for_hf8_rcp_family( libxsmm_datatype dtype_in, void *in, libxs
   }
   if (dtype_in == LIBXSMM_DATATYPE_HF8) {
     libxsmm_rne_convert_fp32_hf8( in_f, (libxsmm_hfloat8*)in, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_bf8( in_f, (libxsmm_bfloat8*)in, N*ldi );
   }
   libxsmm_free(in_f);
 }
@@ -254,7 +259,7 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
 
 LIBXSMM_INLINE
 void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const void *in, void *out,
-                   const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_unary_flags flags) {
+                   const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_bitfield flags, void *rng_state) {
   libxsmm_blasint i, j;
 
   if ( ( ((dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_BF16)) ||
@@ -286,6 +291,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       }
     }
   } else if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
+    unsigned int seed_idx = 0;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         float in_value = 0.0f;
@@ -323,7 +329,8 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
           if ((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
-            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
+            libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
+            seed_idx++;
           } else {
             libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
           }
@@ -397,12 +404,13 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   char *in, *_in;
   char *out, *out_gold;
   unsigned int *rng_state = NULL;
+  unsigned int *rng_state_gold = NULL;
 
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_bitfield unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
   unsigned long long strides[2];
@@ -441,7 +449,10 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N_out );
 
   if (((op == RCP_OP) || (op == RCP_SQRT_OP)) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8) )) {
-    adjust_input_for_hf8_rcp_family( dtype_in, in, ldi, N  );
+    adjust_input_for_fp8_rcp_family( dtype_in, in, ldi, N  );
+  }
+  if (((op == RCP_OP) || (op == RCP_SQRT_OP)) && ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8) )) {
+    adjust_input_for_fp8_rcp_family( dtype_in, in, ldi, N  );
   }
 
   if (use_bcast != NO_BCAST) {
@@ -459,10 +470,11 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if (rnd_mode == RND_STOCHASTIC) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND;
     rng_state = libxsmm_rng_create_extstate( 555 );
+    rng_state_gold = libxsmm_rng_create_extstate( 555 );
 #ifdef USE_ZERO_RNG_STATE_UNITTEST
     memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+    memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
 #endif
-    unary_param.op.secondary = (void*)rng_state;
   } else {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   }
@@ -471,15 +483,17 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if ( (op == FP32_TO_BF16X2) || (op == FP32_TO_BF16X3) ) {
     unary_op_fp32_to_bf16x2_bf16x3( M, N, ldi, ldo, op, in, out_gold );
   } else {
-    unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
+    unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags, rng_state_gold );
   }
-
   /* use jited transpose */
   memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+  if (rnd_mode == RND_STOCHASTIC) {
+    unary_param.op.secondary = (void*)rng_state;
+  }
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_param.op.primary = (void*) &_N;
+    unary_param.op.primary = (void*)&_N;
   }
   if ( (unary_type == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2) || (unary_type == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3) ) {
     strides[0] = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N);
@@ -489,19 +503,19 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
-      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
+      unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
     }
     if (use_bcast == COL_BCAST) {
-      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
+      unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     }
     if (use_bcast == SCALAR_BCAST) {
-      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
+      unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
 
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_shape.n = 0;
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   } else {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   }
@@ -555,6 +569,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   if (rnd_mode == RND_STOCHASTIC) {
     libxsmm_rng_destroy_extstate( rng_state );
+    libxsmm_rng_destroy_extstate( rng_state_gold );
   }
   libxsmm_free( out_gold );
   libxsmm_free( out );

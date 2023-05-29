@@ -32,6 +32,9 @@
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 
+/* Parameters of matrix equations */
+#define LIBXSMM_MAX_EQN_COUNT LIBXSMM_CONFIG_MAX_EQN_COUNT
+
 /**
  * Use "make PLATFORM=1" to disable platform checks.
  * The platform check is to bail-out with an error
