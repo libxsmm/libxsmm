@@ -621,7 +621,11 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_stochastic(float in, unsi
     f16 = (unsigned short)(((f16 & 0x03ff) == 0x0) ? f16 : (f16 | 0x0200));
   }
   else if ((f16 & 0x7c00) != 0x0000) { /* only round normal numbers */
+#if 1
+    const unsigned short stochastic = (unsigned short)LIBXSMM_MOD2(seed, 0xff + 1);
+#else
     const unsigned short stochastic = (unsigned short)((seed >> 24) & 0xff);
+#endif
     f16 = (unsigned short)(f16 + stochastic);
   }
   else { /* RNE for subnormal */
