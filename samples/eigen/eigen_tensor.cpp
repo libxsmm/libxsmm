@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     tensor_type ta(m, k), tb(k, n), tc(m, n);
     LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
     LIBXSMM_BLAS_CONST REALTYPE alpha(1), beta(0);
-    unsigned long long start;
+    libxsmm_timer_tickint start
     double d1;
     {
       std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {

@@ -434,7 +434,7 @@ int main(int argc, char* argv[])
   libxsmm_meltwfunction_unary kernel2 = NULL;
   libxsmm_meltw_unary_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   unsigned int reduce_on_outputs = 0;
   char* dt = NULL;

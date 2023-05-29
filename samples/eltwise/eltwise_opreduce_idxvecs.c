@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   libxsmm_meltw_opreduce_vecs_flags opredop_flags;
   libxsmm_meltwfunction_opreduce_vecs_idx kernel;
   libxsmm_matdiff_info norms_elts, diff;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   char opname[50];
   char opordername[50];

@@ -26,15 +26,15 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_fsspmdm libxsmm_fsspmdm;
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   const void* alpha, const void* beta, const void* a_dense, int LIBXSMM_ARGDEF(c_is_nt, 0),
-  unsigned long long LIBXSMM_ARGDEF((*timer_tick)(void), NULL));
+  libxsmm_timer_tickint LIBXSMM_ARGDEF((*timer_tick)(void), NULL));
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, const double* a_dense, int LIBXSMM_ARGDEF(c_is_nt, 0),
-  unsigned long long LIBXSMM_ARGDEF((*timer_tick)(void), NULL));
+  libxsmm_timer_tickint LIBXSMM_ARGDEF((*timer_tick)(void), NULL));
 LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, const float* a_dense, int LIBXSMM_ARGDEF(c_is_nt, 0),
-  unsigned long long LIBXSMM_ARGDEF((*timer_tick)(void), NULL));
+  libxsmm_timer_tickint LIBXSMM_ARGDEF((*timer_tick)(void), NULL));
 
 LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const void* B, void* C);
 LIBXSMM_API void libxsmm_dfsspmdm_execute(const libxsmm_dfsspmdm* handle, const double* B, double* C);

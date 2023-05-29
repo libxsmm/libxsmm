@@ -23,18 +23,22 @@
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
-#if defined(_WIN32)
-# include <Windows.h>
-#else
+#if !defined(_WIN32)
+# if defined(__GNUC__) || defined(__PGI) || defined(_CRAYC)
+#   include <sys/time.h>
+#   include <time.h>
+# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
-# include <unistd.h>
 # include <fcntl.h>
 #endif
 #if defined(__APPLE__)
 # include <libkern/OSCacheControl.h>
 # include <pthread.h>
+#endif
+#if defined(__powerpc64__)
+# include <sys/platform/ppc.h>
 #endif
 
 /* used internally to re-implement certain exit-handler */
@@ -78,8 +82,8 @@
 #if !defined(LIBXSMM_AUTOPIN) && 0
 # define LIBXSMM_AUTOPIN
 #endif
-#if !defined(INTERNAL_DELIMS)
-# define INTERNAL_DELIMS ";,:"
+#if !defined(LIBXSMM_MAIN_DELIMS)
+# define LIBXSMM_MAIN_DELIMS ";,:"
 #endif
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
@@ -618,9 +622,9 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
   LIBXSMM_ASSERT_MSG(INTERNAL_SINGLETON(internal_singleton_handle), "Invalid handle");
   /* determine whether this instance is unique or not */
   if (NULL != env_dump_files && '\0' != *env_dump_files && 0 == urgent) { /* dump per-node info */
-    const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
+    const char* filename = strtok(env_dump_files, LIBXSMM_MAIN_DELIMS);
     char buffer[1024] = "";
-    for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
+    for (; NULL != filename; filename = strtok(NULL, LIBXSMM_MAIN_DELIMS)) {
       FILE* file = fopen(filename, "r");
       if (NULL != file) buffer[0] = '\0';
       else { /* parse keywords */
@@ -670,6 +674,55 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
       fprintf(ostream, "%s\n", internal_build_state);
     }
   }
+}
+
+
+LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
+{
+  double result = (double)LIBXSMM_DELTA(tick0, tick1);
+#if defined(_WIN32)
+  LARGE_INTEGER frequency;
+  QueryPerformanceFrequency(&frequency);
+  result /= (double)frequency.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+  result *= 1E-9;
+#else
+  result *= 1E-6;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
+{
+  libxsmm_timer_tickint result;
+#if defined(_WIN32)
+  LARGE_INTEGER t;
+  QueryPerformanceCounter(&t);
+  result = (libxsmm_timer_tickint)t.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  result = 1000000000ULL * t.tv_sec + t.tv_nsec;
+#else
+  struct timeval t;
+  gettimeofday(&t, 0);
+  result = 1000000ULL * t.tv_sec + t.tv_usec;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+libxsmm_timer_tickint libxsmm_timer_tick_tsc(void)
+{
+  libxsmm_timer_tickint result;
+#if defined(LIBXSMM_TIMER_RDTSC)
+  LIBXSMM_TIMER_RDTSC(result);
+#else
+  result = libxsmm_timer_tick_rtc();
+#endif
+  return result;
 }
 
 
@@ -767,8 +820,19 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         }
       }
       if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        libxsmm_print_cmdline(stderr, "Command: ", "\n");
-        fprintf(stderr, "Uptime: %f s", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
+        const libxsmm_timer_tickint timer_end = libxsmm_timer_tick_tsc();
+        double uptime;
+#if defined(LIBXSMM_TIMER_RDTSC)
+        if (0 < libxsmm_timer_scale) {
+          uptime = (double)LIBXSMM_DELTA(internal_timer_start, timer_end) * libxsmm_timer_scale;
+        }
+        else
+#endif
+        {
+          uptime = libxsmm_timer_duration_rtc(internal_timer_start, timer_end);
+        }
+        libxsmm_print_cmdline(stderr, 0, "Command: ", "\n");
+        fprintf(stderr, "Uptime: %f s", uptime);
         if (1 < libxsmm_thread_count && INT_MAX == libxsmm_verbosity) {
           fprintf(stderr, " (nthreads=%u)", libxsmm_thread_count);
         }
@@ -1036,10 +1100,10 @@ LIBXSMM_API_INTERN void internal_init(void)
       const libxsmm_malloc_function null_malloc_fn = { 0 };
       const libxsmm_free_function null_free_fn = { 0 };
       char *const env_k = getenv("LIBXSMM_MALLOC"), *const env_t = getenv("LIBXSMM_MALLOC_LIMIT"), *end = NULL;
-      const char* env_i = (NULL != env_t ? strtok(env_t, INTERNAL_DELIMS) : NULL);
+      const char* env_i = (NULL != env_t ? strtok(env_t, LIBXSMM_MAIN_DELIMS) : NULL);
       size_t malloc_lo = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT, NULL/*valid*/);
       size_t malloc_hi = (NULL != env_i ? internal_parse_nbytes(
-        strtok(NULL, INTERNAL_DELIMS), LIBXSMM_SCRATCH_UNLIMITED, NULL/*valid*/) : LIBXSMM_SCRATCH_UNLIMITED);
+        strtok(NULL, LIBXSMM_MAIN_DELIMS), LIBXSMM_SCRATCH_UNLIMITED, NULL/*valid*/) : LIBXSMM_SCRATCH_UNLIMITED);
       const int malloc_kind = ((NULL == env_k || 0 == *env_k) ? 0/*disabled*/ : ((int)strtol(env_k, &end, 10)));
       libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
       libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
@@ -1052,9 +1116,9 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       else {
         int valid = 1;
-        env_i = strtok(env_k, INTERNAL_DELIMS);
+        env_i = strtok(env_k, LIBXSMM_MAIN_DELIMS);
         malloc_lo = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT, &valid);
-        env_i = (0 != valid ? strtok(NULL, INTERNAL_DELIMS) : NULL);
+        env_i = (0 != valid ? strtok(NULL, LIBXSMM_MAIN_DELIMS) : NULL);
         malloc_hi = (NULL != env_i
           ? internal_parse_nbytes(env_i, LIBXSMM_SCRATCH_UNLIMITED, &valid)
           : LIBXSMM_SCRATCH_UNLIMITED);
@@ -1300,7 +1364,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
       internal_init();
     }
 #if defined(LIBXSMM_PERF)
-    libxsmm_perf_init(libxsmm_timer_tick);
+    libxsmm_perf_init(libxsmm_timer_tick_rtc);
 #endif
   }
 }
@@ -3684,17 +3748,20 @@ LIBXSMM_EXTERN int* _NSGetArgc(void);
 #endif
 
 
-LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
+LIBXSMM_API_INTERN int libxsmm_print_cmdline(void* buffer, size_t buffer_size, const char* prefix, const char* postfix)
 {
   int result = 0;
 #if defined(__linux__)
-  FILE* const cmdline = fopen("/proc/self/cmdline", "r");
+  FILE *const cmdline = fopen("/proc/self/cmdline", "r");
   if (NULL != cmdline) {
     char c;
     if (1 == fread(&c, 1, 1, cmdline) && '\0' != c) {
-      result += fprintf(stream, "%s", prefix);
+      result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s", prefix)
+        : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s", prefix));
       do {
-        result += (int)fwrite('\0' != c ? &c : " ", 1, 1, stream);
+        const char d = '\0' != c ? c : ' ';
+        result += (0 == buffer_size ? fprintf((FILE*)buffer, "%c", d)
+          : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%c", d));
       } while (1 == fread(&c, 1, 1, cmdline));
     }
     fclose(cmdline);
@@ -3711,17 +3778,24 @@ LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const ch
 # endif
   if (0 < argc) {
     int i = 1;
-#   if defined(_WIN32)
+# if defined(_WIN32)
     const char *const cmd = strrchr(argv[0], '\\');
-    result += fprintf(stream, "%s%s", prefix, NULL != cmd ? (cmd + 1) : argv[0]);
-#   else
-    result += fprintf(stream, "%s%s", prefix, argv[0]);
-#   endif
-    for (; i < argc; ++i) result += fprintf(stream, " %s", argv[i]);
+    const char *const exe = (NULL != cmd ? (cmd + 1) : argv[0]);
+    result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s%s", prefix, exe)
+      : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s%s", prefix, exe));
+# else
+    result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s%s", prefix, argv[0])
+      : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s%s", prefix, argv[0]));
+# endif
+    for (; i < argc; ++i) {
+      result += (0 == buffer_size ? fprintf((FILE*)buffer, " %s", argv[i])
+        : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, " %s", argv[i]));
+    }
   }
 #endif
   if (0 < result) {
-    result += fprintf(stream, "%s", postfix);
+    result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s", postfix)
+      : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s", postfix));
   }
   return result;
 }

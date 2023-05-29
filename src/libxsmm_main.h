@@ -122,6 +122,21 @@
 # endif
 #endif
 
+#if defined(__powerpc64__)
+# define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
+    CYCLE = __ppc_get_timebase(); \
+  } while(0)
+#elif ((defined(LIBXSMM_PLATFORM_X86) && (64 <= (LIBXSMM_BITS))) && \
+      (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)))
+# define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
+    libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
+    __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
+    CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
+  } while(0)
+#elif (defined(_rdtsc) || defined(_WIN32)) && defined(LIBXSMM_PLATFORM_X86)
+# define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
+#endif
+
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
 # define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
 #endif
@@ -131,19 +146,6 @@
 
 #if !defined(LIBXSMM_LOCK)
 # define LIBXSMM_LOCK LIBXSMM_LOCK_DEFAULT
-#endif
-
-#if !defined(LIBXSMM_EXT_MIN_NTASKS)
-# define LIBXSMM_MIN_NTASKS(NT) 1
-#endif
-#if !defined(LIBXSMM_OVERHEAD)
-# define LIBXSMM_OVERHEAD(NT) 0
-#endif
-#if !defined(LIBXSMM_NOOP_ARGS)
-# define LIBXSMM_NOOP_ARGS(...)
-#endif
-#if !defined(LIBXSMM_NOOP)
-# define LIBXSMM_NOOP
 #endif
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
@@ -169,7 +171,7 @@
     /*if (LIBXSMM_GEMM_FLAG_DESC_ISBIG <= (FLAGS)) LIBXSMM_MEMSET127(DST, 0, SIZE)*/
 #endif
 #else
-#define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
+# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #endif
 #define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
   LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \
@@ -503,6 +505,14 @@ LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32],
   int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
 /**
+ * Print the command line arguments of the current process, and get the number of written
+ * characters including the prefix, the postfix, but not the terminating NULL character.
+ * If zero is returned, nothing was printed (no prefix, no postfix).
+ * If buffer_size is zero, buffer is assumed to be a FILE-pointer.
+ */
+LIBXSMM_API_INTERN int libxsmm_print_cmdline(void* buffer, size_t buffer_size, const char* prefix, const char* postfix);
+
+/**
  * Dump data, (optionally) check attempt to dump different data into an existing file (unique),
  * or (optionally) permit overwriting an existing file.
  */
@@ -525,11 +535,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_xinfo {
 LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size);
 
 /** Calculates duration in seconds from given RTC ticks. */
-LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
+LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
 /** Returns the current tick of platform-specific real-time clock. */
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 /** Returns the current tick of a (monotonic) platform-specific counter. */
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
 
 LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_memory_finalize(void);

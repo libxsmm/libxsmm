@@ -1717,7 +1717,7 @@ void print_help(void) {
   printf("    0: A normal, 1: A vnni\n");
   printf("    0: B normal, 1: B vnni\n");
   printf("    0: C normal, 1: C vnni\n");
-  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
+  printf("    PREFETCH: nopf (none), BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");

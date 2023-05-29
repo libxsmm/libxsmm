@@ -89,6 +89,7 @@ libxsmm_dmmcall
 libxsmm_dmmcall_abc
 libxsmm_dmmcall_prf
 libxsmm_dmmdispatch
+libxsmm_dmmdispatch_v2
 libxsmm_dsqrt
 libxsmm_dvalue
 libxsmm_finalize
@@ -245,7 +246,6 @@ libxsmm_pfree
 libxsmm_pmalloc
 libxsmm_pmalloc_init
 libxsmm_primes_u32
-libxsmm_print_cmdline
 libxsmm_product_limit
 libxsmm_ptr_b0
 libxsmm_ptr_b1
@@ -327,6 +327,7 @@ libxsmm_smmcall
 libxsmm_smmcall_abc
 libxsmm_smmcall_prf
 libxsmm_smmdispatch
+libxsmm_smmdispatch_v2
 libxsmm_ssqrt
 libxsmm_stdio_acquire
 libxsmm_stdio_release
@@ -336,9 +337,12 @@ libxsmm_strimatch
 libxsmm_stristr
 libxsmm_stristrn
 libxsmm_timer_duration
+libxsmm_timer_duration_rtc
 libxsmm_timer_ncycles
 libxsmm_timer_ncycles_
 libxsmm_timer_tick
+libxsmm_timer_tick_rtc
+libxsmm_timer_tick_tsc
 libxsmm_trace
 libxsmm_trace_finalize
 libxsmm_trace_info

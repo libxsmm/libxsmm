@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
     { // LAPACK/BLAS3 (reference)
       fprintf(stdout, "LAPACK/BLAS...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     { // inline an optimized implementation
       fprintf(stdout, "Inlined...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
     { // auto-dispatched
       fprintf(stdout, "Dispatched...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
     if (xmm) { // specialized routine
       fprintf(stdout, "Specialized...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif

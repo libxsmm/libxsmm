@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
 
   libxsmm_kernel_info l_kinfo;
   unsigned long long l_libxsmmflops;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total;
   int result = EXIT_SUCCESS;
 
