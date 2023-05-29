@@ -335,37 +335,11 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
   /* truncate buffer to bf8 */
   for ( i = 0; i < len; i += 16 ) {
     const size_t j_length = ( (i + 16) < len ? 16 : (len - i) );
-
     for (j=0; j < j_length; j++) {
-      libxsmm_float16_ushort hybrid_in = { 0 };
-      libxsmm_bfloat8 res;
       unsigned int vrng;
-
-      /* independent of below conditions (always) perform RNG state modification */
+      /* independent of scalar value, always advance given RNG state */
       libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
-
-      /* initial downcast */
-      hybrid_in.f = libxsmm_convert_f32_to_f16(in[i + j]);
-
-      /* we do not round inf and NaN */
-      if ((hybrid_in.u & 0x7c00) == 0x7c00) {
-        hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x03ff) == 0x0)
-          ? (hybrid_in.u)
-          : (hybrid_in.u | 0x0200));
-      }
-      else if ((hybrid_in.u & 0x7c00) != 0x0000) { /* only round normal numbers */
-        const unsigned short rand = (unsigned short)((vrng >> 24) & 0xff);
-        hybrid_in.u = (unsigned short)(hybrid_in.u + rand);
-      }
-      else { /* RNE for subnormal */
-        const unsigned short rne_fixup = (unsigned short)((hybrid_in.u >> 8) & 1);
-        hybrid_in.u = (unsigned short)(hybrid_in.u + 0x007f + rne_fixup);
-      }
-
-      /* shift right */
-      res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
-
-      out[i+j] = res;
+      out[i+j] = libxsmm_convert_f32_to_bf8_stochastic(in[i+j], vrng);
     }
   }
 }

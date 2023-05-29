@@ -614,20 +614,22 @@ LIBXSMM_API libxsmm_bfloat16 libxsmm_convert_f32_to_bf16_rne(float in)
 
 LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_stochastic(float in, unsigned int seed)
 {
-  unsigned short short_round = libxsmm_convert_f32_to_f16(in);
-  const unsigned short rand = (unsigned short)(seed & 1);
-  /* perform round nearest tie even */
-  if ((short_round & 0x7c00) != 0x7c00) { /* we do not round NaN and inf */
-    if ((short_round & 0x7c00) == 0x0000) {
-      unsigned short fixup = (short_round >> 8) & 1;
-      short_round = short_round + 0x007f + fixup;
-    }
-    else {
-      short_round = short_round + (rand & 0x00ff);
-    }
+  /* initial downcast */
+  libxsmm_float16 f16 = libxsmm_convert_f32_to_f16(in);
+  /* do not round inf and NaN */
+  if ((f16 & 0x7c00) == 0x7c00) {
+    f16 = (unsigned short)(((f16 & 0x03ff) == 0x0) ? f16 : (f16 | 0x0200));
   }
-  /* create the bf8 value by shifting out the lower 16 bits */
-  return (unsigned char)(short_round >> 8);
+  else if ((f16 & 0x7c00) != 0x0000) { /* only round normal numbers */
+    const unsigned short stochastic = (unsigned short)((seed >> 24) & 0xff);
+    f16 = (unsigned short)(f16 + stochastic);
+  }
+  else { /* RNE for subnormal */
+    const unsigned short fixup = (unsigned short)((f16 >> 8) & 1);
+    f16 = (unsigned short)(f16 + 0x007f + fixup);
+  }
+  /* create the bf8 value by shifting out the lower 8 bits */
+  return (unsigned char)(f16 >> 8);
 }
 
 
