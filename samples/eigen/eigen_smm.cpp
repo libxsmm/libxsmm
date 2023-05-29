@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     switch (benchmark) {
     case 0: if (xmm) {
       fprintf(stdout, "LIBXSMM batched (A,B,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
           xmm(ai, bi, ci, ai + asize, bi + bsize, ci + csize);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
     case 1: {
       fprintf(stdout, "Eigen/dynamic batched (A,B,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
           smm_eigen_dynamic(m, n, k, ai, bi, ci);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
     break;
     case 2: if (xmm) {
       fprintf(stdout, "LIBXSMM streamed (A,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
           xmm(ai, b, ci, ai + asize, b, ci + csize);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
     case 3: {
       fprintf(stdout, "Eigen/dynamic streamed (A,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
           smm_eigen_dynamic(m, n, k, ai, b, ci);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
     break;
     case 4: if (xmm) {
       fprintf(stdout, "LIBXSMM streamed (B,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
           xmm(a, bi, ci, a, bi + bsize, ci + csize);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
     case 5: {
       fprintf(stdout, "Eigen/dynamic streamed (B,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
           smm_eigen_dynamic(m, n, k, a, bi, ci);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -278,7 +278,7 @@ int main(int argc, char* argv[])
     break;
     case 6: if (xmm) {
       fprintf(stdout, "LIBXSMM streamed (A,B)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
           xmm(ai, bi, c + j, ai + asize, bi + bsize, c + j);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
     case 7: {
       fprintf(stdout, "Eigen/dynamic streamed (A,B)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
           smm_eigen_dynamic(m, n, k, ai, bi, c + j);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
     break;
     case 8: if (xmm) {
       fprintf(stdout, "LIBXSMM cached...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
           xmm(a, b, c + j, a, b, c + j);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
     case 9: {
       fprintf(stdout, "Eigen/dynamic cached...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -374,7 +374,7 @@ int main(int argc, char* argv[])
           smm_eigen_dynamic(m, n, k, a, b, c + j);
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);

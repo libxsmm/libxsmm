@@ -1,6 +1,6 @@
 sphinx-rtd-theme
 recommonmark
-mkdocs>=1.4.3
 mistune==0.8.4
+mkdocs
 m2r2
 ford

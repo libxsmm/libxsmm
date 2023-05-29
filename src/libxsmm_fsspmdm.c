@@ -23,7 +23,7 @@
 
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  const void* alpha, const void* beta, const void* a_dense, int c_is_nt, unsigned long long (*timer_tick)(void))
+  const void* alpha, const void* beta, const void* a_dense, int c_is_nt, libxsmm_timer_tickint (*timer_tick)(void))
 {
   libxsmm_bitfield flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_bitfield prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
@@ -274,12 +274,12 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   /* We have at least one kernel */
   if (0 < nkerns) {
     void *B = NULL, *C = NULL;
-    unsigned long long dt_sparse1 = (unsigned long long)-1;
-    unsigned long long dt_sparse2 = (unsigned long long)-1;
-    unsigned long long dt_sparse4 = (unsigned long long)-1;
-    unsigned long long dt_dense = (unsigned long long)-1;
+    libxsmm_timer_tickint dt_sparse1 = (libxsmm_timer_tickint)-1;
+    libxsmm_timer_tickint dt_sparse2 = (libxsmm_timer_tickint)-1;
+    libxsmm_timer_tickint dt_sparse4 = (libxsmm_timer_tickint)-1;
+    libxsmm_timer_tickint dt_dense = (libxsmm_timer_tickint)-1;
     libxsmm_gemm_param gemm_param;
-    unsigned long long s, t;
+    libxsmm_timer_tickint s, t;
 
     /* Run benchmark if there are at least two kernels and a timer routine */
     if (2 <= nkerns && NULL != timer_tick) {
@@ -471,7 +471,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  double alpha, double beta, const double* a_dense, int c_is_nt, unsigned long long (*timer_tick)(void))
+  double alpha, double beta, const double* a_dense, int c_is_nt, libxsmm_timer_tickint (*timer_tick)(void))
 {
   return libxsmm_fsspmdm_create(LIBXSMM_DATATYPE_F64, M, N, K, lda, ldb, ldc, &alpha, &beta, a_dense, c_is_nt, timer_tick);
 }
@@ -479,7 +479,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
 LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  float alpha, float beta, const float* a_dense, int c_is_nt, unsigned long long (*timer_tick)(void))
+  float alpha, float beta, const float* a_dense, int c_is_nt, libxsmm_timer_tickint (*timer_tick)(void))
 {
   return libxsmm_fsspmdm_create(LIBXSMM_DATATYPE_F32, M, N, K, lda, ldb, ldc, &alpha, &beta, a_dense, c_is_nt, timer_tick);
 }

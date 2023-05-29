@@ -28,7 +28,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned A, otherwise aligned (ignored for sparse)\n");
   printf("    0: unaligned C, otherwise aligned (ignored for sparse)\n");
   printf("    ARCH: noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx\n");
-  printf("    PREFETCH: nopf (none), pfsigonly, other options fallback to pfsigonly\n");
+  printf("    PREFETCH: nopf (none), other options are not supported\n");
   printf("    PRECISION: SP, DP\n");
   printf("    matrix input (CSC mtx file)\n");
   printf("\n\n");
@@ -47,7 +47,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    ARCH: noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx\n");
-  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2,\n"
+  printf("    PREFETCH: nopf (none), BL2viaC, AL2, curAL2,\n"
          "              AL2_BL2viaC, curAL2_BL2viaC,\n");
   printf("    PRECISION: SP, DP\n");
   printf("\n\n\n\n");

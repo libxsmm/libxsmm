@@ -126,7 +126,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
   int i, j, it = 0;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   int iters = 100;
 
