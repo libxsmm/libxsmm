@@ -256,8 +256,12 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
 #endif
 LIBXSMM_APIVAR_DEFINE(INTERNAL_SINGLETON_HANDLE internal_singleton_handle);
-LIBXSMM_APIVAR_DEFINE(void (*internal_libxsmm_prvabrt)(int));
 LIBXSMM_APIVAR_DEFINE(char internal_stdio_fname[64]);
+
+LIBXSMM_EXTERN_C typedef struct internal_sigentry_type {
+  int signum; void (*signal)(int);
+} internal_sigentry_type;
+LIBXSMM_APIVAR_DEFINE(internal_sigentry_type internal_sigentries[4]);
 
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_malloc_function libxsmm_default_malloc_fn);
@@ -882,22 +886,18 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 }
 
 
-LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int /*signum*/);
-LIBXSMM_API_INTERN void internal_libxsmm_sigabrt(int signum) {
-  LIBXSMM_ASSERT(SIGABRT == signum);
-  if (SIG_ERR != internal_libxsmm_prvabrt) {
-    libxsmm_verbosity = LIBXSMM_MAX(LIBXSMM_VERBOSITY_HIGH + 1, libxsmm_verbosity);
-    internal_finalize();
-    if (NULL != internal_libxsmm_prvabrt) {
-      internal_libxsmm_prvabrt(SIGABRT);
-    }
-    else {
-      void (*const default_handler)(int) = signal(signum, SIG_DFL);
-      if (internal_libxsmm_sigabrt != default_handler /* recursion */
-        && SIG_ERR != default_handler
-        && NULL != default_handler)
-      {
-        default_handler(SIGABRT);
+LIBXSMM_API_INTERN void internal_libxsmm_signal(int /*signum*/);
+LIBXSMM_API_INTERN void internal_libxsmm_signal(int signum) {
+  int n = (int)(sizeof(internal_sigentries) / sizeof(*internal_sigentries)), i = 0;
+  for (; i < n; ++i) {
+    if (signum == internal_sigentries[i].signum) {
+      if (0 == libxsmm_get_tid()) {
+        libxsmm_verbosity = LIBXSMM_MAX(LIBXSMM_VERBOSITY_HIGH + 1, libxsmm_verbosity);
+        internal_finalize();
+        signal(signum,
+          (NULL == internal_sigentries[i].signal || SIG_ERR == internal_sigentries[i].signal)
+            ? SIG_DFL : internal_sigentries[i].signal); /* restore */
+        raise(signum);
       }
     }
   }
@@ -1318,7 +1318,10 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
 #endif
-        internal_libxsmm_prvabrt = signal(SIGABRT, internal_libxsmm_sigabrt);
+        internal_sigentries[0].signal = signal(SIGABRT, internal_libxsmm_signal);
+        internal_sigentries[0].signum = SIGABRT;
+        internal_sigentries[1].signal = signal(SIGSEGV, internal_libxsmm_signal);
+        internal_sigentries[1].signum = SIGSEGV;
         result_atexit = atexit(internal_finalize);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
@@ -1342,7 +1345,7 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = 0;
         }
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          if (SIG_ERR == internal_libxsmm_prvabrt || EXIT_SUCCESS != result_atexit) {
+          if (EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
           if (0 == libxsmm_timer_scale
