@@ -1062,6 +1062,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #     define _CMATH_
 #   endif
 # endif
+# if !defined(LIBXSMM_PATH_SEPARATOR)
+#   define LIBXSMM_PATH_SEPARATOR '\\'
+# endif
+#elif !defined(LIBXSMM_PATH_SEPARATOR)
+# define LIBXSMM_PATH_SEPARATOR '/'
 #endif
 #if defined(LIBXSMM_BUILD) && !defined(_WIN32)
 # if !defined(_XOPEN_SOURCE) && 0

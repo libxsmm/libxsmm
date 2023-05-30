@@ -1067,22 +1067,36 @@ void libxsmm_set_handle_error(int enable)
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
-                           const char* context, int linenum,
+                           const char context[],
+                           const char srcfile[],
+                           int linenum,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
+      const char *const errmsg = libxsmm_strerror(i_error_code);
+#if defined(NDEBUG)
+      LIBXSMM_UNUSED(srcfile); LIBXSMM_UNUSED(linenum);
       LIBXSMM_STDIO_ACQUIRE();
-      if (NULL != context && '\0' != *context) {
-        if (0 < linenum) {
-          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", context, linenum, libxsmm_strerror(i_error_code));
+#else
+      const char *const separator = (NULL != srcfile ? strrchr(srcfile, LIBXSMM_PATH_SEPARATOR) : NULL);
+      const char *const filename = (NULL != separator ? (separator + 1) : NULL);
+      LIBXSMM_STDIO_ACQUIRE();
+      if (NULL != filename && 0 < linenum) {
+        if (NULL != context && '\0' != *context) {
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i - %s): %s\n", filename, linenum, context, errmsg);
         }
         else {
-          fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", filename, linenum, errmsg);
         }
       }
+      else
+#endif
+      if (NULL != context && '\0' != *context) {
+        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, errmsg);
+      }
       else {
-        fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
+        fprintf(stderr, "LIBXSMM ERROR: %s\n", errmsg);
       }
       LIBXSMM_STDIO_RELEASE();
     }
