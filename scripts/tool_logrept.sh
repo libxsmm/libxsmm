@@ -20,8 +20,10 @@ elif [ ! "${LOGFILE}" ]; then  # logfile given?
     LOGFILE=/dev/stdin
   fi
 fi
+
 if [ ! -e "${LOGFILE}" ]; then
-  >&2 echo -e "ERROR: logfile \"${LOGFILE}\" does not exist!\n"
+  # keep output in sync, i.e., avoid ">&2 echo"
+  echo -e "ERROR: logfile \"${LOGFILE}\" does not exist!\n"
   exit 1
 fi
 
@@ -244,18 +246,22 @@ if [ "${LOGDIR}" ]; then
             printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
               "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
           else
-            >&2 echo -e "WARNING: encoding failed (\"${FIGURE}\").\n"
+            # keep output in sync, i.e., avoid ">&2 echo"
+            echo -e "WARNING: encoding failed (\"${FIGURE}\").\n"
           fi
         fi
         if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
-          >&2 echo -e "WARNING: deviation of latest value exceeds margin.\n"
+          # keep output in sync, i.e., avoid ">&2 echo"
+          echo -e "WARNING: deviation of latest value exceeds margin.\n"
           exit "${ERROR}"
         fi
       else
-        >&2 echo -e "WARNING: report not ready (\"${OUTPUT}\").\n"
+        # keep output in sync, i.e., avoid ">&2 echo"
+        echo -e "WARNING: report not ready (\"${OUTPUT}\").\n"
       fi
     else
-      >&2 echo -e "WARNING: missing prerequisites for report.\n"
+      # keep output in sync, i.e., avoid ">&2 echo"
+      echo -e "WARNING: missing prerequisites for report.\n"
     fi
   fi
 fi
