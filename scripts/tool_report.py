@@ -202,14 +202,18 @@ def fname(extlst, in_main, in_dflt, idetail=""):
             for ext in figext
             if ext in extlst
         ]
-    elif path.suffix[1:] in extlst:
-        result = [path.parent / f"{path.stem}{idetail}{path.suffix}"]
-    elif "." == str(path.parent):
-        figext = f".{path.name}" if path.name in extlst else dflt.suffix
-        result = [path.parent / f"{dflt.stem}{idetail}{figext}"]
     else:
+        if path.suffix[1:] in extlst:
+            if inplst:
+                inplst[0] = path.suffix[1:]
+            else:
+                inplst = [path.suffix[1:]]
         figstm = path.stem if path.stem else dflt.stem
-        result = [path.parent / f"{figstm}{idetail}{dflt.suffix}"]
+        result = [
+            path.parent / f"{figstm}{idetail}.{ext}"
+            for ext in inplst
+            if ext in extlst
+        ]
     return result
 
 
