@@ -900,13 +900,14 @@ def main(args, argd, dbfname):
     nplots = len(plots)
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
-        if 2 > nplots_untied:  # rebuild plots
+        if 2 > nplots_untied:  # consider rebuilding plots
             key, val = next(iter(plots.keys())), list(*list(*plots.values()))
-            nplots_untied = len(val)
-            val[0] = list(zip(*val[0]))
-            val[2] = [val[2]] * nplots_untied
-            val[3] = [val[3]] * nplots_untied
-            plots[key] = list(zip(*val))
+            if 2 < depth(val):
+                nplots_untied = len(val)
+                val[0] = list(zip(*val[0]))
+                val[2] = [val[2]] * nplots_untied
+                val[3] = [val[3]] * nplots_untied
+                plots[key] = list(zip(*val))
 
         # auto-adjust y-resolution according to number of plots
         if args.resolution == argd.resolution:  # resolution not user-defined
