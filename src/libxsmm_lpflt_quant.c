@@ -233,18 +233,18 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
   }
 }
 
-LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t len) {
+LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t length) {
   size_t i = 0;
   /* truncate buffer to bf16 */
-  for ( i = 0; i < len; ++i ) {
+  for ( i = 0; i < length; ++i ) {
     out[i] = libxsmm_convert_f32_to_bf16_rnaz( in[i] );
   }
 }
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t len) {
+LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, size_t length) {
   size_t i = 0;
   /* truncate buffer to bf16 */
-  for ( i = 0; i < len; ++i ) {
+  for ( i = 0; i < length; ++i ) {
     out[i] = libxsmm_convert_f32_to_bf16_rne( in[i] );
   }
 }
@@ -256,10 +256,10 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
   }
 }
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* out, size_t len) {
+LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* out, size_t length) {
   size_t i = 0;
   /* truncate buffer to bf16 */
-  for ( i = 0; i < len; ++i ) {
+  for ( i = 0; i < length; ++i ) {
     out[i] = libxsmm_convert_f32_to_f16( in[i] );
   }
 }
@@ -329,17 +329,37 @@ LIBXSMM_API_INTERN void libxsmm_lsfr_i32(unsigned int* rng_state, unsigned int* 
   rng_state[seed_idx + (3 * state_ld)] = state_3;
 }
 
-LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, size_t len, void *rng_state, unsigned int start_seed_idx) {
-  size_t i = 0, j = 0;
+LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state, unsigned int start_seed_idx) {
+  unsigned int i = 0;
+  unsigned int j = 0;
 
   /* truncate buffer to bf8 */
-  for ( i = 0; i < len; i += 16 ) {
-    const size_t j_length = ( (i + 16) < len ? 16 : (len - i) );
+  for ( i = 0; i < len; i+=16 ) {
+    unsigned int j_length = ( i + 16 < len ) ? 16 : len - i;
     for (j=0; j < j_length; j++) {
+      libxsmm_float16_ushort hybrid_in = { 0 };
+      libxsmm_bfloat8 res;
+      unsigned short fixup;
       unsigned int vrng;
-      /* independent of scalar value, always advance given RNG state */
+      unsigned short rand;
+
+      hybrid_in.f = libxsmm_convert_f32_to_f16( in[i+j] );
       libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
-      out[i+j] = libxsmm_convert_f32_to_bf8_stochastic(in[i+j], vrng);
+      rand = (unsigned short)((vrng >> 24) & 0xff);
+
+      /* RNE fixup */
+      fixup = (unsigned short)((hybrid_in.u >> 8) & 1);
+
+      /* we do not round inf and NaN */
+      hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
+        ? ( ((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200 )
+        /* we only stochastically round normal numbers, RNE for subnormal */
+        : ( ((hybrid_in.u & 0x7c00) == 0x0000) ? hybrid_in.u + 0x007f + fixup : hybrid_in.u + rand ) );
+
+      /* shift right */
+      res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
+
+      out[i+j] = res;
     }
   }
 }

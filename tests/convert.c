@@ -255,7 +255,7 @@ int main(/*int argc, char* argv[]*/void)
     }
     if (NULL != data && NULL != data_lp && EXIT_SUCCESS == result) {
       LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
-      libxsmm_stochastic_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s,
+      libxsmm_stochastic_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, (unsigned int)s,
         rng_state, 0/*start_seed_idx*/);
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
@@ -275,7 +275,7 @@ int main(/*int argc, char* argv[]*/void)
     }
     if (NULL != data && NULL != data_lp && EXIT_SUCCESS == result) {
       LIBXSMM_MATINIT(float, CONVERT_SEED, data, size[0], size[1], size[0], CONVERT_SCALE(s));
-      libxsmm_stochastic_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s,
+      libxsmm_stochastic_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, (unsigned int)s,
         rng_state, 0/*start_seed_idx*/);
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf8_stochastic.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
