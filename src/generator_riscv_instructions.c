@@ -204,10 +204,11 @@ void libxsmm_riscv_instruction_rvv_setvl( libxsmm_generated_code* io_generated_c
 /* RVV LD/ST */
 LIBXSMM_API_INTERN
 void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_vmove_instr,
-                                           const unsigned int      i_vec_reg_addr,
-                                           const unsigned int      i_vec_reg_offset,
-                                           const unsigned int      i_vec_reg_dst ) {
+                                         const unsigned int      i_vmove_instr,
+                                         const unsigned int      i_vec_reg_addr,
+                                         const unsigned int      i_vec_reg_offset,
+                                         const unsigned int      i_vec_reg_dst,
+                                         const unsigned int      i_masked) {
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
     fprintf(stderr, "libxsmm_riscv_instruction_rvv_move: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -257,6 +258,9 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
       /* setting RD */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RISCV_INSTR_FIELD_RD);
 
+      /* setting mask bit */
+      code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RISCV_INSTR_FIELD_VM);
+
       /* advance code head */
       io_generated_code->code_size += 4;
     } else {
@@ -296,6 +300,9 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
 
       /* setting RS2 */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_offset, LIBXSMM_RISCV_INSTR_FIELD_RS2);
+
+      /* setting mask bit */
+      code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RISCV_INSTR_FIELD_VM);
 
       /* advance code head */
       io_generated_code->code_size += 4;

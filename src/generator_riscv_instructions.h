@@ -3016,16 +3016,27 @@ void libxsmm_riscv_instruction_rvv_move( libxsmm_generated_code* io_generated_co
                                          const unsigned int      i_vmove_instr,
                                          const unsigned int      i_vec_reg_addr,
                                          const unsigned int      i_vec_reg_offset,
-                                         const unsigned int      i_vec_reg_dst );
+                                         const unsigned int      i_vec_reg_dst,
+                                         const unsigned int      i_masked);
 
-LIBXSMM_API_INTERN
-void libxsmm_riscv_instruction_rvv_prefetch( libxsmm_generated_code*            io_generated_code,
-                                               const unsigned int                 i_prefetch_instr,
-                                               const unsigned int                 i_gp_reg_addr,
-                                               const unsigned int                 i_gp_reg_offset,
-                                               const int                          i_offset,
-                                               const unsigned int                 i_pred_reg,
-                                               const libxsmm_riscv_prefetch i_prefetch );
+/**
+ * Generates prefetch instruction
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_prefetch_instr actual prefetch instruction
+ * @param i_gp_reg_addr gp register containing the base address
+ * @param i_gp_reg_offset gp register containing an offset
+ * @param i_offset
+ * @param i_pred_reg
+ * @param i_prefetch
+ */
+void libxsmm_riscv_instruction_rvv_prefetch( libxsmm_generated_code*      io_generated_code,
+                                             const unsigned int           i_prefetch_instr,
+                                             const unsigned int           i_gp_reg_addr,
+                                             const unsigned int           i_gp_reg_offset,
+                                             const int                    i_offset,
+                                             const unsigned int           i_pred_reg,
+                                             const libxsmm_riscv_prefetch i_prefetch );
 
 /**
  * Generates compute
