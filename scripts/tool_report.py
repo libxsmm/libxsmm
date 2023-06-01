@@ -905,6 +905,7 @@ def main(args, argd, dbfname):
             if 2 < depth(val):
                 nplots_untied = len(val)
                 val[0] = list(zip(*val[0]))
+                val[1] = list(val[1])
                 val[2] = [val[2]] * nplots_untied
                 val[3] = [val[3]] * nplots_untied
                 plots[key] = list(zip(*val))
