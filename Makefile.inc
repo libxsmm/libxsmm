@@ -1118,11 +1118,11 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(STATIC))
     SLDFLAGS += -static
   endif
-else
+else # non-Intel
   ifeq (1,$(STATIC))
     ifeq (0,$(PGI))
       SLDFLAGS += -Bstatic
-      ifeq (0,$(CLANG))
+      ifeq (3,$(XSMM_GCC))
         #SLDFLAGS += -static-libstdc++
         ifneq (Darwin,$(UNAME))
           SLDFLAGS += -static-libgcc
