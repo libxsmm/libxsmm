@@ -49,7 +49,7 @@ int main(void)
 # if defined(PRINT)
   unsigned int njit = 0;
 # endif
-  /*const*/ int elemtype = LIBXSMM_DATATYPE(ELEMTYPE);
+  /*const*/ libxsmm_datatype elemtype = LIBXSMM_DATATYPE(ELEMTYPE);
 #endif
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i;
   ELEMTYPE *a = NULL, *b = NULL, *c = NULL;
