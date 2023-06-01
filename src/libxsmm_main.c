@@ -824,16 +824,16 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         }
       }
       if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        const libxsmm_timer_tickint timer_end = libxsmm_timer_tick_tsc();
         double uptime;
 #if defined(LIBXSMM_TIMER_RDTSC)
         if (0 < libxsmm_timer_scale) {
-          uptime = (double)LIBXSMM_DELTA(internal_timer_start, timer_end) * libxsmm_timer_scale;
+          const libxsmm_timer_tickint timer_end = libxsmm_timer_tick_tsc();
+          uptime = libxsmm_timer_scale * LIBXSMM_DELTA(internal_timer_start, timer_end);
         }
         else
 #endif
         {
-          uptime = libxsmm_timer_duration_rtc(internal_timer_start, timer_end);
+          uptime = libxsmm_timer_duration_rtc(internal_timer_start, libxsmm_timer_tick_rtc());
         }
         libxsmm_print_cmdline(stderr, 0, "Command: ", "\n");
         fprintf(stderr, "Uptime: %f s", uptime);
