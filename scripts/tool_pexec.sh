@@ -30,7 +30,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   INFO=${HERE}/tool_cpuinfo.sh
   PYTHON=$(command -v python3)
   FLOCK=${HERE}/../.flock.sh
-  LG_DEFAULT="${NAME}.log"
+  #LG_DEFAULT=${NAME}.log
+  LG_DEFAULT=/dev/null
   XF_DEFAULT=1; BL_DEFAULT=1; QT_DEFAULT=0
   SP_DEFAULT=2; MT_DEFAULT=1; CONSUMED=0
   # ensure proper permissions
@@ -72,7 +73,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       echo "       -w|--allow  F  [PEXEC_WL]: allowed failures (filename); default: ${PEXEC_WL:-${ALLOW:--}}"
       echo "       -u|--build  F* [PEXEC_UP]: collect failures (filename); default: ${PEXEC_UP:-${FNAME:--}}"
       echo "       -q|--quiet  -  [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
-      echo "       -o|--log    F  [PEXEC_LG]: logfile combining output to stdout/stderr"
+      echo "       -o|--log    F  [PEXEC_LG]: combined stdout/stderr; default: ${PEXEC_LG:-${LOG:-${LG_DEFAULT}}}"
       echo "       -c|--cut    S  [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
       echo "       -m|--min    N  [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N  [PEXEC_NT]: only every Nth task; randomized selection"
