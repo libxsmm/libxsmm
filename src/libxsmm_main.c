@@ -3725,15 +3725,15 @@ LIBXSMM_API_INTERN int libxsmm_print_cmdline(void* buffer, size_t buffer_size, c
 #if defined(__linux__)
   FILE *const cmdline = fopen("/proc/self/cmdline", "r");
   if (NULL != cmdline) {
-    char c;
-    if (1 == fread(&c, 1, 1, cmdline) && '\0' != c) {
-      result += (0 == buffer_size ? fprintf((FILE*)buffer, "%s", prefix)
-        : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%s", prefix));
-      do {
-        const char d = '\0' != c ? c : ' ';
-        result += (0 == buffer_size ? fprintf((FILE*)buffer, "%c", d)
-          : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%c", d));
-      } while (1 == fread(&c, 1, 1, cmdline));
+    char a, b;
+    if (1 == fread(&a, 1, 1, cmdline) && '\0' != a) {
+      result = (0 == buffer_size ? fprintf((FILE*)buffer, "%s", prefix)
+        : LIBXSMM_SNPRINTF((char*)buffer, buffer_size, "%s", prefix));
+      while (1 == fread(&b, 1, 1, cmdline)) {
+        result += (0 == buffer_size ? fprintf((FILE*)buffer, "%c", a)
+          : LIBXSMM_SNPRINTF((char*)buffer + result, buffer_size - result, "%c", a));
+        a = ('\0' != b ? b : ' ');
+      };
     }
     fclose(cmdline);
   }
