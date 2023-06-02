@@ -1976,13 +1976,23 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
       libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                                ((long long)i_xgemm_desc->lda - i_m_blocking) * 2*i_micro_kernel_config->datatype_size_in );
     } else {
-      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
-                                               ((long long)2*i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+      if (i_xgemm_desc->k % 2 == 0) {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                                 ((long long)2*i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+      } else {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                                 ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+      }
     }
   } else {
     if (( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 )) {
-      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
-                                               ((long long)2*i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+      if (i_xgemm_desc->k % 2 == 0) {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                                ((long long)2*i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+      } else {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                                ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+      }
     } else {
       libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                                ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
