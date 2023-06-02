@@ -297,7 +297,7 @@ int main( int argc, char* argv[] ) {
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   s = 0;
   for ( i = 0; i < N; ++i ) {
@@ -329,7 +329,7 @@ int main( int argc, char* argv[] ) {
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;

@@ -458,7 +458,7 @@ int main( int argc, char* argv[] ) {
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   /* Now benchmarking the equations */
   if (datatype_mode == 0 || datatype_mode == 1) {
@@ -584,7 +584,7 @@ int main( int argc, char* argv[] ) {
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   /* Now benchmarking the equations */
   if (datatype_mode == 0 || datatype_mode == 1) {
@@ -680,7 +680,7 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f", check_norm);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -792,7 +792,7 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f", check_norm);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -888,7 +888,7 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f", check_norm);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -990,7 +990,7 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f", check_norm);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {

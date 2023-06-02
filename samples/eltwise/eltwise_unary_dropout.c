@@ -274,7 +274,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
@@ -394,7 +394,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
