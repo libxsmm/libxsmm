@@ -566,6 +566,11 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
     l_m_total_blocks = (l_remainder_size <= i_micro_kernel_config->vector_length) ? 2 * l_m_blocks[0] + l_m_blocks[1] : 2 * l_m_blocks[0] + l_m_blocks[1] + 1 ;
   }
 
+  if (i_xgemm_desc->k % 2 == 1 && l_is_a_bf16_flat > 0) {
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+        1+l_m_total_blocks, 1+l_m_total_blocks, 0, 1+l_m_total_blocks, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
+  }
+
   /* stride when accessing B */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
     l_b_stride = 1;
@@ -578,13 +583,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
       l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
     }
     else {
-      if (l_is_a_bf16_flat > 0 && i_xgemm_desc->k % 2 == 1) {
-        l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
-        l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
-      } else {
-        l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
-        l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
-      }
+      l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
+      l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
     }
   }
   else {
@@ -620,9 +620,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                               0,
                                               1+l_m_total_blocks,
                                               LIBXSMM_AARCH64_SVE_REG_UNDEF );
-      } else {
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-            1+l_m_total_blocks, 1+l_m_total_blocks, 0, 1+l_m_total_blocks, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
       }
 
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
@@ -684,9 +681,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                               0,
                                               1+l_m_total_blocks,
                                               LIBXSMM_AARCH64_SVE_REG_P3 );
-      } else {
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-            1+l_m_total_blocks, 1+l_m_total_blocks, 0, 1+l_m_total_blocks, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
       }
 
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
