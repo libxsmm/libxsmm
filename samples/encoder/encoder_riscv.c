@@ -234,24 +234,24 @@ int main( /*int argc, char* argv[]*/ ) {
   mycode.arch = LIBXSMM_RISCV;
 
   /* testing ALU ldr/str instructions */
-  //test_alu_move( "alu_mov_LB", &mycode, INST(LB) );
-  //test_alu_move( "alu_mov_SB", &mycode, INST(SB) );
+  test_alu_move( "alu_mov_LB", &mycode, INST(LB) );
+  test_alu_move( "alu_mov_SB", &mycode, INST(SB) );
 
-  //test_alu_compute( "alu_compute_ADD", &mycode, INST(ADD) );
-  //test_alu_compute( "alu_compute_AND", &mycode, INST(AND) );
+  test_alu_compute( "alu_compute_ADD", &mycode, INST(ADD) );
+  test_alu_compute( "alu_compute_AND", &mycode, INST(AND) );
 
-  //test_alu_compute_imm20( "alu_compute_LUI", &mycode, INST(LUI) );
+  test_alu_compute_imm20( "alu_compute_LUI", &mycode, INST(LUI) );
 
-  //test_alu_compute_imm12( "alu_compute_ADDI", &mycode, INST(ADDI) );
-  //test_alu_compute_imm12( "alu_compute_ANDI", &mycode, INST(ANDI) );
+  test_alu_compute_imm12( "alu_compute_ADDI", &mycode, INST(ADDI) );
+  test_alu_compute_imm12( "alu_compute_ANDI", &mycode, INST(ANDI) );
 
-  //test_cond_jump( "alu_compute_BEQ", &mycode, INST(BEQ) );
+  test_cond_jump( "alu_compute_BEQ", &mycode, INST(BEQ) );
 
-  //test_jump_and_link( "alu_compute_JAL", &mycode, INST(JAL) );
+  test_jump_and_link( "alu_compute_JAL", &mycode, INST(JAL) );
 
-  //test_jump_and_link_reg( "alu_compute_JALR", &mycode, INST(JALR) );
+  test_jump_and_link_reg( "alu_compute_JALR", &mycode, INST(JALR) );
 
-  //test_alu_set_imm64( "alu_set_imm64", &mycode, INST(LW) );
+  test_alu_set_imm64( "alu_set_imm64", &mycode, INST(LW) );
 
   test_rvv_setvl( "setvli", &mycode, INST(VSETVLI) );
   test_rvv_setvl( "setivli", &mycode, INST(VSETIVLI) );
