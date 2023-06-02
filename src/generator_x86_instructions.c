@@ -4422,7 +4422,12 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
       /* push r15 */
       l_code_buffer[l_code_size++] = 0x41;
       l_code_buffer[l_code_size++] = 0x57;
-
+#if defined(_WIN32) || defined(__CYGWIN__)
+      /* push rdi */
+      l_code_buffer[l_code_size++] = 0x57;
+      /* push rsi */
+      l_code_buffer[l_code_size++] = 0x56;
+#endif
       /* update code length */
       io_generated_code->code_size = l_code_size;
 
@@ -4447,7 +4452,12 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-
+#if defined(_WIN32) || defined(__CYGWIN__)
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rdi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rsi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+#endif
       /* adjust stack frame size */
       io_generated_code->sf_size += 40;
     }
@@ -4518,7 +4528,13 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
 
     if ( skip_callee_save == 0 ) {
       /* pop callee save registers */
-      /* pop r15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      /* pop rsi */
+      l_code_buffer[l_code_size++] = 0x5e;
+      /* pop rdi */
+      l_code_buffer[l_code_size++] = 0x5f;
+#endif
+       /* pop r15 */
       l_code_buffer[l_code_size++] = 0x41;
       l_code_buffer[l_code_size++] = 0x5f;
       /* pop r14 */
@@ -4550,6 +4566,12 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
     int l_code_length = 0;
 
     if ( skip_callee_save == 0 ) {
+#if defined(_WIN32) || defined(__CYGWIN__)
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rsi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rdi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+#endif
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
@@ -4777,6 +4799,12 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
       /* push r15 */
       l_code_buffer[l_code_size++] = 0x41;
       l_code_buffer[l_code_size++] = 0x57;
+#if defined(_WIN32) || defined(__CYGWIN__)
+      /* push rdi */
+      l_code_buffer[l_code_size++] = 0x57;
+      /* push rsi */
+      l_code_buffer[l_code_size++] = 0x56;
+#endif
       /* adjust stack frame size */
       io_generated_code->sf_size += 40;
     }
@@ -4801,6 +4829,12 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+#if defined(_WIN32) || defined(__CYGWIN__)
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rdi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rsi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+#endif
 
       /* adjust stack frame size */
       io_generated_code->sf_size += 40;
@@ -4835,6 +4869,13 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
     }
 
     if ( skip_callee_save == 0 ) {
+      /* pop callee save registers */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      /* pop rsi */
+      l_code_buffer[l_code_size++] = 0x5e;
+      /* pop rdi */
+      l_code_buffer[l_code_size++] = 0x5f;
+#endif
       /* pop r15 */
       l_code_buffer[l_code_size++] = 0x41;
       l_code_buffer[l_code_size++] = 0x5f;
@@ -4867,6 +4908,12 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
     int l_code_length = 0;
 
     if ( skip_callee_save  == 0 ) {
+#if defined(_WIN32) || defined(__CYGWIN__)
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rsi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rdi\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+#endif
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
