@@ -594,7 +594,7 @@ void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, 
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0002;
+  double error_bound = 0.0003;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
@@ -610,7 +610,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matdiff_info norms_out;
   float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
-  char *matdiff_env;
+  const char *matdiff_env;
   double check_norm;
 #if defined(USE_SUM)
   float sum = 0.0;
@@ -639,12 +639,12 @@ int main( int argc, char* argv[] ) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
     if ((1 == S1 || 1 == S2 || 1 == S3) && (16 < S1 || 16 < S2 || 16 < S3)) {
-      error_bound = LIBXSMM_MAX(0.005, error_bound);
+      error_bound = LIBXSMM_MAX(0.002, error_bound);
     }
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_BF16;
-    error_bound = LIBXSMM_MAX(0.006, error_bound);
+    error_bound = LIBXSMM_MAX(0.001, error_bound);
   } else {
     printf("ERROR: Supporting only FP32 and BF16 precisions...\n");
   }
