@@ -417,6 +417,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   char opname[256];
   unsigned long long _N = N;
   double error_bound = 0.0, check_norm;
+  const char* matdiff_env;
   libxsmm_blasint N_out = N;
 
   set_opname(op, opname);
@@ -525,20 +526,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
   unary_kernel( &unary_param );
 
-  /* compare result */
-  norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N_out );
-  printf("##########################################\n");
-  printf("#   Correctness  - Output                #\n");
-  printf("##########################################\n");
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f", check_norm);
-
+  /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2)) {
       error_bound = 0.008;
@@ -561,6 +549,31 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   } else {
     error_bound = 0.00001;
   }
+
+  /* eventually amend LIBXSMM_MATDIFF output with error bound */
+  matdiff_env = getenv("LIBXSMM_MATDIFF");
+  if (NULL != matdiff_env) {
+    static char matdiff_ext[1024];
+    const int nchars = LIBXSMM_SNPRINTF(matdiff_ext, sizeof(matdiff_ext),
+      "LIBXSMM_MATDIFF=%s %.17g", matdiff_env, error_bound);
+    if (0 < nchars && nchars < (int)sizeof(matdiff_ext)) {
+      LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(matdiff_ext));
+    }
+  }
+
+  /* compare result */
+  norms_out = check_matrix(dtype_out, out_gold, out, ldo, M, N_out);
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f", check_norm);
 
   if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
