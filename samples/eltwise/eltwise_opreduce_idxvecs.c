@@ -89,6 +89,7 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_info norms_elts, diff;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
+  double check_norm;
   char opname[50];
   char opordername[50];
   char scaleopresname[50];
@@ -103,9 +104,6 @@ int main(int argc, char* argv[])
   unsigned int argop_vec_1;
   libxsmm_datatype idx_dtype;
   unsigned int avoid_small_vals = 0;
-
-  const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(NULL == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
@@ -148,11 +146,11 @@ int main(int argc, char* argv[])
 
   if ((op == 0) && (argop_mode > 0)) {
     if ((op_order == 0) && (argop_mode == 1 || argop_mode == 3)) {
-      fprintf(stderr, "When using COPY OP and and order VECIN_VECIDX the only argop_modes that make sense are 2 or 0...\n");
+      fprintf(stderr, "When using COPY OP and order VECIN_VECIDX the only argop_modes that make sense are 2 or 0...\n");
       exit(EXIT_FAILURE);
     }
     if ((op_order == 1) && (argop_mode == 2 || argop_mode == 3)) {
-      fprintf(stderr, "When using COPY OP and and order VECIDX_VECIN the only argop_modes that make sense are 1 or 0...\n");
+      fprintf(stderr, "When using COPY OP and order VECIDX_VECIN the only argop_modes that make sense are 1 or 0...\n");
       exit(EXIT_FAILURE);
     }
   }
@@ -522,7 +520,8 @@ int main(int argc, char* argv[])
   printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+  printf("Check-norm    : %.24f\n\n", check_norm);
   libxsmm_matdiff_reduce(&diff, &norms_elts);
 
   if (argop_vec_0 > 0) {
@@ -535,7 +534,8 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+    printf("Check-norm    : %.24f\n\n", check_norm);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -549,7 +549,8 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+    printf("Check-norm    : %.24f\n\n", check_norm);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -683,13 +684,10 @@ int main(int argc, char* argv[])
     free(scale_vals_bf16);
   }
 
-  {
-    const char *const env_check_scale = getenv("CHECK_SCALE");
-    const double check_scale = LIBXSMM_ABS(NULL == env_check_scale ? 1.0 : atof(env_check_scale));
-    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
-      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
-      exit(EXIT_FAILURE);
-    }
+  check_norm = libxsmm_matdiff_epsilon(&diff);
+  if (0.01 < check_norm) {
+    fprintf(stderr, "FAILED with an error of %f%%!\n", check_norm);
+    exit(EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

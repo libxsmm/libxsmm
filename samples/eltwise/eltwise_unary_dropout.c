@@ -206,6 +206,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   libxsmm_blasint i, j;
   unsigned int s;
   float p = 0.3f;
+  double check_norm;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
@@ -272,9 +273,10 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -328,6 +330,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unsigned char *mask_gold;
   libxsmm_blasint i;
   float p = 0.3f;
+  double check_norm;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
@@ -390,9 +393,10 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 

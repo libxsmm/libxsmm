@@ -416,7 +416,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned long long strides[2];
   char opname[256];
   unsigned long long _N = N;
-  double error_bound = 0.0;
+  double error_bound = 0.0, check_norm;
   libxsmm_blasint N_out = N;
 
   set_opname(op, opname);
@@ -536,7 +536,8 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f", check_norm);
 
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2)) {
@@ -561,7 +562,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     error_bound = 0.00001;
   }
 
-  if ( norms_out.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 

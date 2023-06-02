@@ -329,6 +329,7 @@ int compare_results(float *sout, float *sout_ref, libxsmm_bfloat16 *bout, libxsm
     libxsmm_blasint out_m, libxsmm_blasint out_n, libxsmm_blasint out_ld,
     unsigned int use_gather_or_scatter, unsigned int use_rows_cols_offs, unsigned int use_16bit_dtype, unsigned int use_64bit_index) {
   int ret = EXIT_SUCCESS;
+  double check_norm;
   libxsmm_blasint result_size_check;
   libxsmm_matdiff_info norms_elts, diff;
   libxsmm_matdiff_clear(&norms_elts);
@@ -448,9 +449,10 @@ int compare_results(float *sout, float *sout_ref, libxsmm_bfloat16 *bout, libxsm
   printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_elts.normf_rel > 0 ) {
+  if ( check_norm > 0 ) {
     ret = EXIT_FAILURE;
   }
 
