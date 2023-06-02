@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
   check_norm = libxsmm_matdiff_epsilon(&norms);
   printf("Check-norm    : %.24f\n", check_norm);
 
-  if ( norms.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
