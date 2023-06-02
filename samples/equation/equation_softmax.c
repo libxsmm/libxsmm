@@ -423,7 +423,7 @@ void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgr
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.009;
+  double error_bound = 0.009, check_norm;
   libxsmm_blasint my_eqn0, my_eqn2, my_eqn3;
   libxsmm_matrix_eqn_function func0, func2, func3;
   libxsmm_blasint i, it, ld, tmp_ld;
@@ -568,9 +568,10 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f", check_norm);
 
-    if ( norms_out.normf_rel > error_bound ) {
+    if ( check_norm > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -719,9 +720,10 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f", check_norm);
 
-    if ( norms_out.normf_rel > error_bound ) {
+    if ( check_norm > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
