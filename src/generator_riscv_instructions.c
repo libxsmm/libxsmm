@@ -453,13 +453,13 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
   int is_load = 0;
 
   if ( io_generated_code->arch < LIBXSMM_RISCV ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_move: at least RISCV needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move: at least RISCV needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
   if ( !REG_VALID_2(i_gp_reg_addr, i_gp_reg_dst) ) {
-    fprintf(stderr, "libxsmm_riscv_instruction_move: invalid register id !\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move: invalid register id !\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -486,7 +486,7 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
     case LIBXSMM_RISCV_INSTR_GP_SQ:
       break;
     default:
-      fprintf(stderr, "libxsmm_riscv_instruction_move: unexpected instruction number: %u\n", i_move_instr);
+      fprintf(stderr, "libxsmm_riscv_instruction_alu_move: unexpected instruction number: %u\n", i_move_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
   }
@@ -526,7 +526,7 @@ void libxsmm_riscv_instruction_alu_move( libxsmm_generated_code* io_generated_co
     io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_riscv_instruction_move: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_riscv_instruction_alu_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
