@@ -813,7 +813,7 @@ int main(int argc, char* argv[])
   free(d_ref_result_reduce_elts_squared);
 
   check_norm = libxsmm_matdiff_epsilon(&diff);
-  if (0.01 < check_norm) {
+  if (7e-07 < check_norm) {
     fprintf(stderr, "FAILED unary reduce with an error of %f%%!\n", check_norm);
     exit(EXIT_FAILURE);
   }
