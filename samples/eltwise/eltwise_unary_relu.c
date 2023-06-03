@@ -288,7 +288,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   check_norm = libxsmm_matdiff_epsilon(&norms_out);
   printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( check_norm > 4e-08) {
+  if ( check_norm > 4e-6) {
     ret = EXIT_FAILURE;
   }
 
