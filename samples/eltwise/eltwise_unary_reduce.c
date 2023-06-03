@@ -814,7 +814,7 @@ int main(int argc, char* argv[])
 
   check_norm = libxsmm_matdiff_epsilon(&diff);
   if (7e-07 < check_norm) {
-    fprintf(stderr, "FAILED unary reduce with an error of %f%%!\n", check_norm);
+    fprintf(stderr, "FAILED unary reduce with an error of %f!\n", check_norm);
     exit(EXIT_FAILURE);
   }
 
