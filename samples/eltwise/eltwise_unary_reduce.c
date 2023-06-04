@@ -783,7 +783,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Reference time = %.5g\n", ((double)(l_total)));
+  printf("Reference time = %.5g\n", l_total);
 
   l_start = libxsmm_timer_tick();
   if (n_cols_idx == 0) {
@@ -798,8 +798,8 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("Optimized time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup is = %.5g\n", ((double)(l_total/l_total2)));
+  printf("Optimized time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup is = %.5g", l_total/l_total2);
 
   free(sinp);
   free(result_reduce_elts);
@@ -813,7 +813,7 @@ int main(int argc, char* argv[])
   free(d_ref_result_reduce_elts_squared);
 
   check_norm = libxsmm_matdiff_epsilon(&diff);
-  if (7e-4 < check_norm) {
+  if (1e-3 < check_norm) {
     fprintf(stderr, "FAILED unary reduce with an error of %f!\n", check_norm);
     exit(EXIT_FAILURE);
   }

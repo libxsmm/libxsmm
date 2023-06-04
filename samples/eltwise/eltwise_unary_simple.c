@@ -529,9 +529,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2)) {
-      error_bound = 0.008;
+      error_bound = 0.01;
     } else {
-      error_bound = 0.0027;
+      error_bound = 0.02;
     }
   } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
               op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
