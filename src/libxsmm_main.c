@@ -247,6 +247,11 @@ LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
 LIBXSMM_APIVAR_DEFINE(libxsmm_timer_tickint internal_timer_start);
 LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 
+#define LIBXSMM_TIMER_DURATION_FDIV(A, B) ((double)(A) / (B))
+#define LIBXSMM_TIMER_DURATION_IDIV(A, B) ((A) <= (B) \
+  ? LIBXSMM_TIMER_DURATION_FDIV(A, B) \
+  : ((A) / (B) + LIBXSMM_TIMER_DURATION_FDIV((A) % (B), B)))
+
 #if defined(_WIN32)
 # define INTERNAL_SINGLETON_HANDLE HANDLE
 # define INTERNAL_SINGLETON(HANDLE) (NULL != (HANDLE))
@@ -683,17 +688,16 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 
 LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
-  double result = (double)LIBXSMM_DELTA(tick0, tick1);
+  const libxsmm_timer_tickint delta = LIBXSMM_DELTA(tick0, tick1);
 #if defined(_WIN32)
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);
-  result /= (double)frequency.QuadPart;
+  return LIBXSMM_TIMER_DURATION_IDIV(delta, (libxsmm_timer_tickint)frequency.QuadPart);
 #elif defined(CLOCK_MONOTONIC)
-  result *= 1E-9;
+  return LIBXSMM_TIMER_DURATION_IDIV(delta, 1000000000ULL);
 #else
-  result *= 1E-6;
+  return LIBXSMM_TIMER_DURATION_IDIV(delta, 1000000ULL);
 #endif
-  return result;
 }
 
 
@@ -705,9 +709,13 @@ LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
   QueryPerformanceCounter(&t);
   result = (libxsmm_timer_tickint)t.QuadPart;
 #elif defined(CLOCK_MONOTONIC)
+# if defined(__APPLE__)
+  result = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+# else
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   result = 1000000000ULL * t.tv_sec + t.tv_nsec;
+# endif
 #else
   struct timeval t;
   gettimeofday(&t, 0);
