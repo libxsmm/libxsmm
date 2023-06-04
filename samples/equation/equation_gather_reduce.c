@@ -296,7 +296,7 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
     printf("JITed TPP equation time = %.5g\n", l_total2);
-    if (0 < l_total2) printf("Speedup is = %.5g", l_total/l_total2);
+    if (0 < l_total2) printf("Speedup is = %.5g\n", l_total/l_total2);
   }
 
   libxsmm_free(out);

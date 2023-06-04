@@ -494,7 +494,7 @@ int main( int argc, char* argv[] ) {
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
   printf("JITed TPP equation time = %.5g\n", l_total2);
-  if (0 < l_total2) printf("Speedup (%d iters) is = %.5g", iters, l_total/l_total2);
+  if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
   printf("\n\nNow testing equation 1...\n\n");
 
@@ -620,7 +620,7 @@ int main( int argc, char* argv[] ) {
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
   printf("JITed TPP equation time = %.5g\n", l_total2);
-  if (0 < l_total2) printf("Speedup (%d iters) is = %.5g", iters, l_total/l_total2);
+  if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
   if (datatype_mode == 0) {
     /* sigmoid( Sum(Ci x Di) + colbias + 1.0) */
@@ -718,7 +718,7 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
     printf("JITed TPP equation time = %.5g\n", l_total2);
-    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g", iters, l_total/l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
   }
 
   if ((datatype_mode == 1) && (n_i[2] % 2 == 0)) {
@@ -828,7 +828,7 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
     printf("JITed TPP equation time = %.5g\n", l_total2);
-    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g", iters, l_total/l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
 
     printf("\n\nNow testing equation 3...\n\n");
@@ -924,7 +924,7 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
     printf("JITed TPP equation time = %.5g\n", l_total2);
-    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g", iters, l_total/l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
 
     printf("\n\nNow testing equation 4...\n\n");
@@ -1028,7 +1028,7 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
     printf("JITed TPP equation time = %.5g\n", l_total2);
-    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g", iters, l_total/l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
   }
 
   for (i = 0; i < n_tensors; i++) {
