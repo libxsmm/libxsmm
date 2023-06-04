@@ -659,7 +659,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Reference time = %.5g\n", ((double)(l_total)));
+  printf("Reference time = %.5g\n", l_total);
 
   kernel( &unary_param );
   l_start = libxsmm_timer_tick();
@@ -668,8 +668,8 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("Optimized time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup is = %.5g\n", ((double)(l_total/l_total2)));
+  printf("Optimized time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup is = %.5g", l_total/l_total2);
 
   libxsmm_free(sinp);
   libxsmm_free(sout);

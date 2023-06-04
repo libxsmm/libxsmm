@@ -227,7 +227,7 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+  printf("Compiler equation time = %.5g\n", l_total);
 
   func0(&eqn_param);
   l_start = libxsmm_timer_tick();
@@ -236,8 +236,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup over compiler is %.5g\n", l_total/l_total2);
+  printf("JITed TPP equation time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup over compiler is = %.5g\n", l_total/l_total2);
 
 #if 0
   vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
@@ -247,8 +247,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Vectorized equation time  = %.5g\n", ((double)(l_total)));
-  printf("Speedup over vectorized code is %.5g\n", l_total/l_total2);
+  printf("Vectorized equation time = %.5g\n", l_total);
+  if (0 < l_total2) printf("Speedup over vectorized code is = %.5g\n", l_total/l_total2);
 #endif
 
   libxsmm_free(wt);
