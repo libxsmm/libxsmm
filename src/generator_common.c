@@ -1388,17 +1388,13 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
   static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
   static int hasBeenInited = 0;
-  if (!hasBeenInited) {
-    char* env = getenv("LIBXSMM_ULP_PRECISION");
-    float p = 0;
-    if (env) {
-      p = (float)atof(env); /* alternatively to atof, we could use strcmp */
-      if (p == 0.5)
-        precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
-      else if (p == 1.0)
-        precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
-      else
-        precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
+  if (0 == hasBeenInited) {
+    const char *const env = getenv("LIBXSMM_ULP_PRECISION");
+    if (NULL != env) {
+      const double p = atof(env); /* alternatively to atof, we could use strcmp */
+      if (0.5 >= p) precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+      else if (1.0 >= p) precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
+      else precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
     }
     hasBeenInited = 1;
   }
