@@ -818,6 +818,6 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  printf(stdout, "SUCCESS unary reduce\n");
+  printf("SUCCESS unary reduce\n");
   return EXIT_SUCCESS;
 }
