@@ -1614,7 +1614,6 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
-  const int cpuid = libxsmm_cpuid(NULL);
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   if (NULL != arch && '\0' != *arch
     && arch != libxsmm_stristr(arch, "default")
@@ -1738,14 +1737,16 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
       }
       else {
-        target_archid = cpuid;
+        target_archid = libxsmm_cpuid(NULL);
       }
     }
   }
   else {
-    target_archid = cpuid;
+    target_archid = libxsmm_cpuid(NULL);
   }
-  if (cpuid < target_archid) { /* warn about code path if beyond CPUID */
+#if defined(NDEBUG)
+  if (libxsmm_cpuid(NULL) < target_archid) { /* warn about code path if beyond CPUID */
+    const int cpuid = libxsmm_cpuid(NULL);
     static int error_once = 0;
     if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -1754,10 +1755,11 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
     }
-#if 0 /* limit code path to confirmed features */
+# if 0 /* limit code path to confirmed features */
     target_archid = cpuid;
-#endif
+# endif
   }
+#endif
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 
