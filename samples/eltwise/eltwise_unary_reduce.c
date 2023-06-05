@@ -24,7 +24,7 @@ void sfill_matrix( float *matrix, unsigned int ld, unsigned int m, unsigned int 
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr, "Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
   for ( j = 1; j <= n; j++ )
@@ -133,7 +133,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_bf16( sinp, (libxsmm_bfloat16*)tmp_sinp_lp, ld_in*n );
@@ -143,7 +143,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_float16)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_float16)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_f16( sinp, (libxsmm_float16*)tmp_sinp_lp, ld_in*n );
@@ -153,7 +153,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)tmp_sinp_lp, ld_in*n );
@@ -163,7 +163,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_hfloat8)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_hfloat8)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_hf8( sinp, (libxsmm_hfloat8*)tmp_sinp_lp, ld_in*n );
@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
        (dtype != LIBXSMM_DATATYPE_BF16) &&
        (dtype != LIBXSMM_DATATYPE_BF8)  &&
        (dtype != LIBXSMM_DATATYPE_HF8) ) {
-    printf(" Only F32,F64,BF16,F16,BF8,HF8 are supported datatypes \n");
+    printf("Only F32,F64,BF16,F16,BF8,HF8 are supported datatypes\n");
     exit(EXIT_FAILURE);
   }
 
@@ -818,6 +818,6 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  fprintf(stdout, "SUCCESS unary reduce\n" );
+  printf(stdout, "SUCCESS unary reduce\n");
   return EXIT_SUCCESS;
 }

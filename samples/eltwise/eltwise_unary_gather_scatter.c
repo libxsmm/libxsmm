@@ -46,7 +46,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr, "Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
   for ( j = 1; j <= n; j++ )
