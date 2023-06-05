@@ -35,6 +35,7 @@
 #endif
 #if defined(__APPLE__)
 # include <libkern/OSCacheControl.h>
+/*# include <mach/mach_time.h>*/
 # include <pthread.h>
 #endif
 #if defined(__powerpc64__)
@@ -694,7 +695,13 @@ LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxs
   QueryPerformanceFrequency(&frequency);
   return LIBXSMM_TIMER_DURATION_IDIV(delta, (libxsmm_timer_tickint)frequency.QuadPart);
 #elif defined(CLOCK_MONOTONIC)
+# if defined(__APPLE__) && 0
+  mach_timebase_info_data_t frequency;
+  mach_timebase_info(&frequency);
+  return LIBXSMM_TIMER_DURATION_IDIV(delta * frequency.numer, 1000000000ULL * frequency.denom);
+# else
   return LIBXSMM_TIMER_DURATION_IDIV(delta, 1000000000ULL);
+# endif
 #else
   return LIBXSMM_TIMER_DURATION_IDIV(delta, 1000000ULL);
 #endif
@@ -703,25 +710,23 @@ LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxs
 
 LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
-  libxsmm_timer_tickint result;
 #if defined(_WIN32)
   LARGE_INTEGER t;
   QueryPerformanceCounter(&t);
-  result = (libxsmm_timer_tickint)t.QuadPart;
+  return (libxsmm_timer_tickint)t.QuadPart;
 #elif defined(CLOCK_MONOTONIC)
-# if defined(__APPLE__)
-  result = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+# if defined(__APPLE__) && 0
+  return mach_absolute_time();
 # else
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
-  result = 1000000000ULL * t.tv_sec + t.tv_nsec;
+  return 1000000000ULL * t.tv_sec + t.tv_nsec;
 # endif
 #else
   struct timeval t;
   gettimeofday(&t, 0);
-  result = 1000000ULL * t.tv_sec + t.tv_usec;
+  return 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
-  return result;
 }
 
 
