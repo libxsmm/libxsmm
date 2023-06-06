@@ -29,27 +29,23 @@
 
 
 LIBXSMM_INLINE
-void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )
+void sfill_matrix( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )
 {
   unsigned int i, j;
-  double dtmp;
-
-  if ( ld < m )
-  {
+  if ( ld < m ) {
      fprintf(stderr, "Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
-  for ( j = 1; j <= n; j++ )
-  {
+  for ( j = 1; j <= n; j++ ) {
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
      {
-        dtmp = 1.0 - 2.0*libxsmm_rng_f64();
+        double dtmp = 1.0 - 2.0*libxsmm_rng_f64();
         if (avoid_small_vals > 0) {
           if (dtmp < 0.0 && dtmp > -1.0 * OFFSET) {
              dtmp = dtmp - OFFSET;
           }
-          if (dtmp > 0.0 && dtmp <  OFFSET) {
+          if (dtmp > 0.0 && dtmp < OFFSET) {
              dtmp = dtmp + OFFSET;
           }
         }
@@ -60,13 +56,11 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 LIBXSMM_INLINE
 void shuffle_array(unsigned long long *array, int n) {
-  if (n > 1)
-  {
+  if (n > 1) {
     int i;
-    for (i = 0; i < n - 1; i++)
-    {
-      int j = i + rand() / (RAND_MAX / (n - i) + 1);
-      unsigned long long t = array[j];
+    for (i = 0; i < n - 1; i++) {
+      const int j = i + rand() / (RAND_MAX / (n - i) + 1);
+      const unsigned long long t = array[j];
       array[j] = array[i];
       array[i] = t;
     }
@@ -77,12 +71,12 @@ int main(int argc, char* argv[])
 {
   unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0, use_implicit_idx = 0, _j = 0, _i = 0;
   libxsmm_blasint ld_in = 64;
-  float  *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
+  float *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
   libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *inp_matrix_bf162, *scale_vals_bf16;
   unsigned long long *cols_ind_array, *cols_ind_array2, *all_ns;
   unsigned long long *argop_off_vec_0, *argop_off_vec_1, *ref_argop_off_vec_0, *ref_argop_off_vec_1;
-  unsigned int  *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
-  unsigned int  *cols_ind_array_i32, *cols_ind_array2_i32;
+  unsigned int *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
+  unsigned int *cols_ind_array_i32, *cols_ind_array2_i32;
   libxsmm_meltw_opreduce_vecs_idx_param params /*= { 0 }*/;
   libxsmm_meltw_opreduce_vecs_flags opredop_flags;
   libxsmm_meltwfunction_opreduce_vecs_idx kernel;
@@ -108,6 +102,7 @@ int main(int argc, char* argv[])
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&diff);
+  libxsmm_rng_set_seed(1);
 
   if (argc == 1) {
     /* probably help is wanted */
