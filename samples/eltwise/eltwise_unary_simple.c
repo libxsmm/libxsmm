@@ -529,9 +529,19 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     const int archid = libxsmm_get_target_archid();
-    if (dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) {
+    if  ((dtype_in == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64)
+      || (dtype_in == LIBXSMM_DATATYPE_F32 && dtype_out == LIBXSMM_DATATYPE_F32))
+    {
       if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
-        error_bound = 100; /* TODO: tighten error bound */
+        error_bound = 25.0; /* TODO: tighten error bound */
+      }
+      else {
+        error_bound = 0.02;
+      }
+    }
+    else if (dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) {
+      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
+        error_bound = 50.0; /* TODO: tighten error bound */
       }
       else if (archid >= LIBXSMM_X86_GENERIC && archid <= LIBXSMM_X86_AVX2) {
         error_bound = 0.008;
