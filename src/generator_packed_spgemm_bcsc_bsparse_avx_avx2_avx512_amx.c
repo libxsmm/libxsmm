@@ -151,7 +151,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
                                                                        const unsigned int              i_packed_width,
                                                                        const unsigned int              i_bk,
                                                                        const unsigned int              i_bn ) {
-  unsigned int l_n = 0;
   unsigned int l_max_cols = 0;
   unsigned int l_simd_packed_remainder = 0;
   unsigned int l_simd_packed_iters = 0;
@@ -167,8 +166,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   unsigned int l_bf16_amx_kernel = 0;
   unsigned int l_output_mask = 1;
   unsigned int l_input_mask  = 2;
-  unsigned int l_c_flat = ((LIBXSMM_GEMM_FLAG_VNNI_C & i_xgemm_desc->flags) > 0) ? 0 : 1;
-  unsigned int l_dynamic_n = (i_xgemm_desc->ldb == -1) ? 1 : 0;
   unsigned int l_vnni_lo_reg_load = 31;
   unsigned int l_vnni_hi_reg_load = 30;
   unsigned int l_vnni_lo_reg_store = 29;
@@ -634,9 +631,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
     while ( l_packed_done != l_simd_packed_iters ) {
       unsigned int l_packed_blocking = l_packed_reg_block[l_packed_count];
       unsigned int l_packed_remainder = 0;
-      unsigned int l_n_done = 0;
-      unsigned int l_n_count = 0;
-      unsigned int l_n_processed = 0;
 
       /* coverity[dead_error_line] */
       if ( (l_simd_packed_remainder != 0) && (l_packed_count == 0) ) {
@@ -793,23 +787,16 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   unsigned int l_n_in_block = 0;
   unsigned int l_n = 0;
   unsigned int l_p = 0;
-  unsigned int l_k = 0;
-  unsigned int l_found_mul = 0;
   unsigned int l_max_reg_block = (i_n_limit - i_n_processed) * i_bn * i_packed_blocking;
   unsigned int l_n_blocking = i_n_limit - i_n_processed;
   unsigned int l_n_cols_kernel = l_n_blocking * i_bn;
   unsigned int l_vec_reg_tmp[5];
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
-  int l_used_column[32];
   unsigned int l_c_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
-  unsigned int l_c_i32 = ( LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
   char l_c_vname = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 'y' : 'z';
   unsigned int l_c_move_instr = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? LIBXSMM_X86_INSTR_VMOVDQU16 : LIBXSMM_X86_INSTR_VMOVUPS;
   unsigned int l_output_bf16_mask = 1;
   unsigned int l_input_bf16_mask  = 2;
-  unsigned int l_c_vnni = 0;
-  unsigned int l_hardwire_sparsity_pattern = 0;
-  unsigned int l_dynamic_n = 1;
   unsigned int l_row_idx_gpr = i_gp_reg_mapping->gp_reg_help_3;
   unsigned int l_cur_column_gpr = i_gp_reg_mapping->gp_reg_help_4;
   unsigned int l_next_column_gpr = i_gp_reg_mapping->gp_reg_help_5;
@@ -1081,12 +1068,10 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
   unsigned int l_k = 0;
   unsigned int _l_n = 0;
   unsigned int l_n_tile = 0;
-  unsigned int l_found_mul = 0;
   unsigned int l_n_blocking = i_n_limit - i_n_processed;
   unsigned int l_vec_reg_tmp[5];
   unsigned int l_vnni_block_size = 2;
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
-  int l_used_column[32];
   unsigned int l_c_tile_offset = ((i_split_tiles > 0) && (i_packed_remainder > 0)) ? 3 : 0;
   unsigned int l_output_bf16_mask = 1;
   unsigned int l_n_tiles_bn = (i_bn <= 16) ? 1 : 2;
