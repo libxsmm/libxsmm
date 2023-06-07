@@ -471,8 +471,7 @@ LIBXSMM_API size_t libxsmm_coprime2(size_t n)
     size_t a = n, b = c;
     do {
       const size_t r = a % b;
-      a = b;
-      b = r;
+      a = b; b = r;
     } while (0 != b);
     if (1 == a) {
       result = c;
