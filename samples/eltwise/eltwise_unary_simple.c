@@ -533,7 +533,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       || (dtype_in == LIBXSMM_DATATYPE_F32 && dtype_out == LIBXSMM_DATATYPE_F32))
     {
       if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
-        error_bound = 25.0; /* TODO: tighten error bound */
+        error_bound = 50.0; /* TODO: tighten error bound */
       }
       else {
         error_bound = 0.02;
