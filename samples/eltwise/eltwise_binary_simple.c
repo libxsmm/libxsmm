@@ -22,11 +22,14 @@
 #define COL_BCAST_IN1 5
 #define SCALAR_BCAST_IN1 6
 
-#define ADD_OP 1
-#define MUL_OP 2
-#define SUB_OP 3
-#define DIV_OP 4
-#define MULADD_OP 5
+#define ADD_OP     1
+#define MUL_OP     2
+#define SUB_OP     3
+#define DIV_OP     4
+#define MULADD_OP  5
+#define MAX_OP     9
+#define MIN_OP    10
+
 #if 1
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
@@ -95,6 +98,10 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
     res = in0 / in1;
   } else if ( op == MULADD_OP) {
     res += in0 * in1;
+  } else if ( op == MAX_OP) {
+    res = (in0 > in1) ? in0 : in1;
+  } else if ( op == MIN_OP) {
+    res = (in0 > in1) ? in1 : in0;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -117,6 +124,10 @@ double fp64_binary_compute(double in0, double in1, double out, unsigned int op) 
     res = in0 / in1;
   } else if ( op == MULADD_OP) {
     res += in0 * in1;
+  } else if ( op == MAX_OP) {
+    res = (in0 > in1) ? in0 : in1;
+  } else if ( op == MIN_OP) {
+    res = (in0 > in1) ? in1 : in0;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -137,8 +148,12 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "div");
   } else if ( op == MULADD_OP ) {
     sprintf(opname, "muladd");
+  } else if ( op == MAX_OP ) {
+    sprintf(opname, "max");
+  } else if ( op == MIN_OP ) {
+    sprintf(opname, "min");
   } else {
-    printf("Invalid OP\n");
+     printf("Invalid OP\n");
     exit(-1);
   }
 }
@@ -157,6 +172,10 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
   } else if ( op == MULADD_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
+  } else if ( op == MAX_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MAX;
+  } else if ( op == MIN_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MIN;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -487,7 +506,7 @@ int main( int argc, char* argv[] ) {
 
   set_opname(op, opname);
 
-  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP ) ? 1 : 0;
+  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP || op == MAX_OP || op == MIN_OP ) ? 1 : 0;
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
