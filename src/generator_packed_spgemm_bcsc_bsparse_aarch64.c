@@ -40,7 +40,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   unsigned int l_col_reg_block[2][2] = { {0,0}, {0,0} };
   unsigned int l_col_reg_range[2][2] = { {0,0}, {0,0} };
   unsigned int l_bf16_mmla_kernel = 0;
-  unsigned int l_vreg_perm_table_loadstore_c = 31;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -242,7 +241,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   }
 
   if (((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))) && (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) {
-    unsigned int l_loadstore_c_perm_indices[8] = { 0, 2, 1, 3, 4, 6, 5, 7 };
     unsigned int l_max_n_blocking = 6;
     unsigned int l_max_m_blocking = 4;
 
@@ -323,26 +321,17 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
 
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
       int l_nnz_bits2 = 16;
-      unsigned char l_mask_array[32] = { 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
-                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-      if ((LIBXSMM_GEMM_FLAG_VNNI_C & i_xgemm_desc->flags) == 0) {
-        if (l_bf16_mmla_kernel > 0) {
-          int l_nnz_4m_bits = 4 * l_micro_kernel_config.datatype_size_out;
-          libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                        LIBXSMM_AARCH64_SVE_REG_P1,
-                                                        l_nnz_4m_bits,
-                                                        l_gp_reg_mapping.gp_reg_help_0 );
-          if (l_simd_packed_remainder != 0) {
-            l_nnz_4m_bits = (l_simd_packed_remainder % 4) * l_micro_kernel_config.datatype_size_out;
-            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                          LIBXSMM_AARCH64_SVE_REG_P2,
-                                                          l_nnz_4m_bits,
-                                                          l_gp_reg_mapping.gp_reg_help_0 );
-          }
-        } else {
+      if (l_bf16_mmla_kernel > 0) {
+        int l_nnz_4m_bits = 4 * l_micro_kernel_config.datatype_size_out;
+        libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                      LIBXSMM_AARCH64_SVE_REG_P1,
+                                                      l_nnz_4m_bits,
+                                                      l_gp_reg_mapping.gp_reg_help_0 );
+        if (l_simd_packed_remainder != 0) {
+          l_nnz_4m_bits = (l_simd_packed_remainder % 4) * l_micro_kernel_config.datatype_size_out;
           libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                         LIBXSMM_AARCH64_SVE_REG_P2,
-                                                        l_nnz_bits2,
+                                                        l_nnz_4m_bits,
                                                         l_gp_reg_mapping.gp_reg_help_0 );
         }
       } else {
@@ -367,47 +356,18 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                         m_nnz_bits,
                                                         l_gp_reg_mapping.gp_reg_help_0 );
         } else {
-          if ((LIBXSMM_GEMM_FLAG_VNNI_C & i_xgemm_desc->flags) > 0) {
-            int m_nnz_bits = (l_simd_packed_remainder % 4) * 4;
-            if (m_nnz_bits > 0) {
-              libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                            LIBXSMM_AARCH64_SVE_REG_P4,
-                                                            m_nnz_bits,
-                                                            l_gp_reg_mapping.gp_reg_help_0 );
-            }
-            m_nnz_bits = l_simd_packed_remainder * 4;
+          int m_nnz_bits = l_simd_packed_remainder * l_micro_kernel_config.datatype_size_out;
+          if (m_nnz_bits > 0) {
             libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                          LIBXSMM_AARCH64_SVE_REG_P5,
+                                                          LIBXSMM_AARCH64_SVE_REG_P4,
                                                           m_nnz_bits,
                                                           l_gp_reg_mapping.gp_reg_help_0 );
-          } else {
-            int m_nnz_bits = l_simd_packed_remainder * l_micro_kernel_config.datatype_size_out;
-            if (m_nnz_bits > 0) {
-              libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                            LIBXSMM_AARCH64_SVE_REG_P4,
-                                                            m_nnz_bits,
-                                                            l_gp_reg_mapping.gp_reg_help_0 );
-            }
-            m_nnz_bits = l_simd_packed_remainder * 4;
-            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                          LIBXSMM_AARCH64_SVE_REG_P5,
-                                                          m_nnz_bits,
-                                                          l_gp_reg_mapping.gp_reg_help_0 );
-
           }
-        }
-      }
-      if (l_bf16_mmla_kernel > 0) {
-        if ((l_col_reg_block[0][0] % 2 > 0) || (l_col_reg_block[0][1] % 2 > 0) ) {
-          libxsmm_aarch64_instruction_sve_loadbytes_const_to_vec( io_generated_code, l_vreg_perm_table_loadstore_c, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1,
-                                                                  LIBXSMM_AARCH64_SVE_REG_P0, (unsigned int *)l_mask_array, 32 );
-          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V,
-                                                   l_vreg_perm_table_loadstore_c, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, LIBXSMM_AARCH64_SVE_REG_P3,
-                                                   LIBXSMM_AARCH64_SVE_REG_P0, libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(1)) );
-          if (l_simd_packed_remainder % 2 > 0) {
-            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, LIBXSMM_AARCH64_SVE_REG_P6, 4, l_gp_reg_mapping.gp_reg_help_0 );
-
-          }
+          m_nnz_bits = l_simd_packed_remainder * 4;
+          libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                        LIBXSMM_AARCH64_SVE_REG_P5,
+                                                        m_nnz_bits,
+                                                        l_gp_reg_mapping.gp_reg_help_0 );
         }
       }
     } else {
@@ -417,14 +377,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
 #endif
       return;
     }
-    if (l_bf16_mmla_kernel > 0) {
-      libxsmm_aarch64_instruction_sve_loadbytes_const_to_vec( io_generated_code, l_vreg_perm_table_loadstore_c, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1,
-                                                              LIBXSMM_AARCH64_SVE_REG_P0, (unsigned int *)l_loadstore_c_perm_indices, 32 );
-    }
-#if 0
-    printf("packed blocking (range0, block0, range1, block1): %u %u %u %u\n", l_packed_reg_range[0], l_packed_reg_block[0], l_packed_reg_range[1], l_packed_reg_block[1]);
-    printf("n blocking 0    (range0, block0, range1, block1): %u %u %u %u\n",  l_col_reg_range[0][0],  l_col_reg_block[0][0],  l_col_reg_range[0][1],  l_col_reg_block[0][1]);
-#endif
   } else if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) {
     unsigned int l_max_n_blocking = 6;
     unsigned int l_max_m_blocking = 4;
