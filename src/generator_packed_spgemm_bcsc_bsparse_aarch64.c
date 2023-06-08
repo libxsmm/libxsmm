@@ -381,8 +381,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                                            i_xgemm_desc,
                                                                            i_row_idx,
                                                                            i_column_idx,
-                                                                           0,
-                                                                           1,
                                                                            l_packed_done,
                                                                            l_packed_reg_range[l_packed_count],
                                                                            l_packed_blocking,
@@ -400,8 +398,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                                              i_xgemm_desc,
                                                                              i_row_idx,
                                                                              i_column_idx,
-                                                                             0,
-                                                                             1,
                                                                              l_packed_done,
                                                                              l_packed_reg_range[l_packed_count],
                                                                              l_packed_blocking,
@@ -473,8 +469,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                           const unsigned int*                i_row_idx,
                                                                           const unsigned int*                i_column_idx,
-                                                                          const unsigned int                 i_n_processed,
-                                                                          const unsigned int                 i_n_limit,
                                                                           const unsigned int                 i_packed_processed,
                                                                           const unsigned int                 i_packed_range,
                                                                           const unsigned int                 i_packed_blocking,
@@ -485,8 +479,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                                           const unsigned int                 i_bn ) {
   unsigned int l_n = 0, l_n_in_bn = 0;
   unsigned int l_p = 0;
-  unsigned int l_max_reg_block = (i_n_limit - i_n_processed) * (i_bn/2) * i_packed_blocking;
-  unsigned int l_n_blocking = (i_n_limit - i_n_processed) * (i_bn/2);
+  unsigned int l_max_reg_block = (i_bn/2) * i_packed_blocking;
+  unsigned int l_n_blocking = (i_bn/2);
   unsigned int l_vec_reg_tmp[5];
   unsigned int l_n_advancements = 0;
   unsigned int l_i8i32_kernel = (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
@@ -503,7 +497,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   unsigned int l_cur_column_gpr = i_gp_reg_mapping->gp_reg_help_5;
   unsigned int l_cur_column_gpr_64bit = l_cur_column_gpr + 32;
   unsigned int l_next_column_gpr = i_gp_reg_mapping->gp_reg_help_6;
-  unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? ((i_n_processed == 0) ? 0 : 1) : ((i_n_processed == 0) ? 2 : 3);
+  unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? 0 : 1;
 
   /* derive zip instructions and auxiliary sve types */
   unsigned int l_fma_iters = i_bk/l_vnni_block_size;
@@ -522,7 +516,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
 
   /* Adjust A and C pointers for already processed N/M  */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-    i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
+    i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
       i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a, (long long)i_packed_processed * i_simd_packed_width * l_vnni_block_size * i_micro_kernel_config->datatype_size_in );
@@ -935,7 +929,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
       i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a, (long long)i_packed_processed * i_simd_packed_width * l_vnni_block_size * i_micro_kernel_config->datatype_size_in );
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_SUB,
-    i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
+    i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
 
 }
 
@@ -948,8 +942,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                           const unsigned int*                i_row_idx,
                                                                           const unsigned int*                i_column_idx,
-                                                                          const unsigned int                 i_n_processed,
-                                                                          const unsigned int                 i_n_limit,
                                                                           const unsigned int                 i_packed_processed,
                                                                           const unsigned int                 i_packed_range,
                                                                           const unsigned int                 i_packed_blocking,
@@ -960,8 +952,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                                           const unsigned int                 i_bn) {
   unsigned int l_n = 0, l_n_in_bn = 0;
   unsigned int l_p = 0;
-  unsigned int l_max_reg_block = (i_bn == 1) ? (i_n_limit - i_n_processed) * i_packed_blocking : (i_n_limit - i_n_processed) * 2 * (i_bn/2) * i_packed_blocking;
-  unsigned int l_n_blocking = (i_n_limit - i_n_processed) * ((i_bn+1)/2);
+  unsigned int l_max_reg_block = (i_bn == 1) ? i_packed_blocking : 2 * (i_bn/2) * i_packed_blocking;
+  unsigned int l_n_blocking = (i_bn+1)/2;
   unsigned int l_vec_reg_tmp[5];
   unsigned int l_n_advancements = 0;
   unsigned int l_m_advancements = 0;
@@ -992,7 +984,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   unsigned int l_cur_column_gpr = i_gp_reg_mapping->gp_reg_help_5;
   unsigned int l_cur_column_gpr_64bit = l_cur_column_gpr + 32;
   unsigned int l_next_column_gpr = i_gp_reg_mapping->gp_reg_help_6;
-  unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? ((i_n_processed == 0) ? 0 : 1) : ((i_n_processed == 0) ? 2 : 3);
+  unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? 0 : 1;
 
   /* temporary vector registers used to load values to before zipping */
   l_vec_reg_tmp[0] = l_max_reg_block+0;
@@ -1005,7 +997,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
 
   /* Adjust A and C pointers for already processed N/M  */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-      i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
+      i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
       i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a, (long long)i_packed_processed * i_simd_packed_width * l_vnni_block_size * i_micro_kernel_config->datatype_size_in );
@@ -1332,6 +1324,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
       i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a, (long long)i_packed_processed * i_simd_packed_width * l_vnni_block_size * i_micro_kernel_config->datatype_size_in );
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_SUB,
-      i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
+      i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
 }
 
