@@ -70,7 +70,7 @@ void shuffle_array(unsigned long long *array, int n) {
 int main(int argc, char* argv[])
 {
   unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0, use_implicit_idx = 0, _j = 0, _i = 0;
-  libxsmm_blasint ld_in = 64;
+  libxsmm_blasint ld_in = 64, ld_in_0 = 64, ld_in_1 = 64;
   float *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
   libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *inp_matrix_bf162, *scale_vals_bf16;
   unsigned long long *cols_ind_array, *cols_ind_array2, *all_ns;
@@ -98,6 +98,8 @@ int main(int argc, char* argv[])
   unsigned int argop_vec_1;
   libxsmm_datatype idx_dtype;
   unsigned int avoid_small_vals = 0;
+  unsigned short bcast_factor_0 = 0;
+  unsigned short bcast_factor_1 = 0;
 
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
@@ -106,31 +108,31 @@ int main(int argc, char* argv[])
 
   if (argc == 1) {
     /* probably help is wanted */
-    printf(" Error! Usage: %s [M=64] [N=64] [N_COLS_IDX=32] [LD_IN=64] [OP=0] [OP_ORDER=0] [SCALE_OP_RES=0] [REDOP=0] [REG_VECIN=0] [IMPLICIT_IDX=0] [ARGOP_MODE=0] [IDX_MODE=0] [ITERS=10000] [BF16=0] [BCAST_FACTOR=0]\n", argv[0] );
+    printf(" Error! Usage: %s [M=64] [N=64] [N_COLS_IDX=32] [LD_IN_0=64] [LD_IN_1=64] [OP=0] [OP_ORDER=0] [SCALE_OP_RES=0] [REDOP=0] [REG_VECIN=0] [IMPLICIT_IDX=0] [ARGOP_MODE=0] [IDX_MODE=0] [ITERS=10000] [BF16=0]\n", argv[0] );
     exit(-1);
   }
 
-  if ( argc > 1 ) m           = atoi(argv[1]);
-  if ( argc > 2 ) n           = atoi(argv[2]);
-  if ( argc > 3 ) n_cols_idx  = atoi(argv[3]);
-  if ( argc > 4 ) ld_in       = atoi(argv[4]);
-  if ( argc > 5 ) op          = atoi(argv[5]);
-  if ( argc > 6 ) op_order    = atoi(argv[6]);
-  if ( argc > 7 ) scale_op_res= atoi(argv[7]);
-  if ( argc > 8 ) redop       = atoi(argv[8]);
-  if ( argc > 9 ) use_regular_vecin = atoi(argv[9]);
-  if ( argc > 10 ) use_implicit_idx = atoi(argv[10]);
-  if ( argc > 11 ) argop_mode      = atoi(argv[11]);
-  if ( argc > 12 ) idx_mode        = atoi(argv[12]);
-  if ( argc > 13 ) iters       = atoi(argv[13]);
-  if ( argc > 14 ) use_bf16    = atoi(argv[14]);
-  if ( argc > 15 ) bcast_factor = (unsigned short)atoi(argv[15]);
+  if ( argc > 1 ) m                  = atoi(argv[1]);
+  if ( argc > 2 ) n                  = atoi(argv[2]);
+  if ( argc > 3 ) n_cols_idx         = atoi(argv[3]);
+  if ( argc > 4 ) ld_in_0            = atoi(argv[4]);
+  if ( argc > 5 ) ld_in_1            = atoi(argv[5]);
+  if ( argc > 6 ) op                 = atoi(argv[6]);
+  if ( argc > 7 ) op_order           = atoi(argv[7]);
+  if ( argc > 8 ) scale_op_res       = atoi(argv[8]);
+  if ( argc > 9 ) redop              = atoi(argv[9]);
+  if ( argc > 10 ) use_regular_vecin = atoi(argv[10]);
+  if ( argc > 11 ) use_implicit_idx  = atoi(argv[11]);
+  if ( argc > 12 ) argop_mode        = atoi(argv[12]);
+  if ( argc > 13 ) idx_mode          = atoi(argv[13]);
+  if ( argc > 14 ) iters             = atoi(argv[14]);
+  if ( argc > 15 ) use_bf16          = atoi(argv[15]);
 
   if (op == OP_DIV)  avoid_small_vals = 1;
 
   /* Some basic arg checking... */
   if ((use_regular_vecin > 0) && (argop_mode > 0)) {
-    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop params is meaningless...\n");
+    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop param is meaningless...\n");
     exit(EXIT_FAILURE);
   }
 
@@ -248,10 +250,63 @@ int main(int argc, char* argv[])
     opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX);
   }
 
-  if (use_bf16 == 0) {
-    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, idx_dtype, opredop_flags, bcast_factor);
+  if (op == OP_COPY) {
+    if (op_order == OPORDER_VECIDX_VECIN) {
+      if ((m % ld_in_0) != 0) {
+        fprintf(stderr, "m has to be a multiple of ld_in_0\n");
+        exit(EXIT_FAILURE);
+      }
+      bcast_factor = bcast_factor_0 = (unsigned short)(m / ld_in_0);
+      if (bcast_factor == 1) {
+        bcast_factor = 0;
+      } else {
+        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+      }
+    } else {
+      printf("OPORDER_VECIN_VECIDX\n");
+      if ((m % ld_in_1) != 0) {
+        fprintf(stderr, "m has to be a multiple of ld_in_1\n");
+        exit(EXIT_FAILURE);
+      }
+      bcast_factor = bcast_factor_1 = (unsigned short)(m / ld_in_1);
+      /*ld_in_0 = ld_in_1;*/
+      if (bcast_factor == 1) {
+        bcast_factor = 0;
+      } else {
+        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+      }
+    }
   } else {
-    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, idx_dtype, opredop_flags, bcast_factor);
+    if (((m % ld_in_0) != 0) || ((m % ld_in_1) != 0)) {
+      fprintf(stderr, "m has to be a multiple of both ld_in_0 and ld_in_1\n");
+      exit(EXIT_FAILURE);
+    }
+    bcast_factor_0 = (unsigned short)(m / ld_in_0);
+    bcast_factor_1 = (unsigned short)(m / ld_in_1);
+    if (bcast_factor_0 == bcast_factor_1) {
+      bcast_factor = bcast_factor_0;
+      if (bcast_factor == 1) {
+        bcast_factor = 0;
+      } else {
+        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+      }
+    } else if ((bcast_factor_0 == 1) && (bcast_factor_1 > 1)) {
+      bcast_factor = bcast_factor_1;
+      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+    } else if ((bcast_factor_0 > 1) && (bcast_factor_1 == 1)) {
+      bcast_factor = bcast_factor_0;
+      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+    } else {
+      fprintf(stderr, "Two broadcast factors are not supported\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if (use_bf16 == 0) {
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in_0, &ld_in_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, idx_dtype, opredop_flags, bcast_factor);
+  } else {
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in_0, &ld_in_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, idx_dtype, opredop_flags, bcast_factor);
   }
   if ( kernel == NULL ) {
     fprintf( stderr, "JIT for OPREDUCE TPP failed. Bailing...!\n");
@@ -260,7 +315,7 @@ int main(int argc, char* argv[])
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
   _n = (use_regular_vecin > 0) ? 1 : n;
-  ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
+  ld_in = LIBXSMM_MAX(LIBXSMM_MAX(ld_in_0, ld_in_1), (libxsmm_blasint)m);
 
   /* Allocate arrays */
   inp_matrix              = (float*) malloc(sizeof(float)*ld_in*n);
@@ -366,6 +421,10 @@ int main(int argc, char* argv[])
   /* Calculate reference results... */
   for (jj = 0; jj < n_cols_idx; jj++) {
     float op_res = 0.0f;
+    if (bcast_factor >= 4096) {
+      /* Invalid bcast settings */
+      continue;
+    }
     j = (unsigned int)cols_ind_array[jj];
     if (use_regular_vecin == 1) {
       _j = 0;
@@ -373,9 +432,15 @@ int main(int argc, char* argv[])
       _j = (unsigned int)cols_ind_array2[jj];
     }
     for (_i = 0; _i < m; _i++) {
-      i = _i;
+      unsigned int i0 = _i;
+      unsigned int i1 = _i;
       if (bcast_factor > 1) {
-        i = _i/bcast_factor;
+        if (bcast_factor_0 > 1) {
+          i0 = _i/bcast_factor;
+      }
+        if (bcast_factor_1 > 1) {
+          i1 = _i/bcast_factor;
+        }
       }
       if (redop == REDOP_NONE) {
         vec_in = ref_result;
@@ -385,25 +450,25 @@ int main(int argc, char* argv[])
 
       if (op == OP_COPY) {
         if (op_order == OPORDER_VECIDX_VECIN) {
-         op_res = inp_matrix[j * ld_in + i];
+         op_res = inp_matrix[j * ld_in_0 + i0];
         } else {/* if (op_order == OPORDER_VECIDX_VECIN) */
-         op_res = vec_in[_j * ld_in + i];
+         op_res = vec_in[_j * ld_in_1 + i1];
         }
       } else if (op == OP_ADD) {
-        op_res = inp_matrix[j * ld_in + i] + vec_in[_j * ld_in + i];
+        op_res = inp_matrix[j * ld_in_0 + i0] + vec_in[_j * ld_in_1 + i1];
       } else if (op == OP_MUL) {
-        op_res = inp_matrix[j * ld_in + i] * vec_in[_j * ld_in + i];
+        op_res = inp_matrix[j * ld_in_0 + i0] * vec_in[_j * ld_in_1 + i1];
       } else if (op == OP_SUB) {
         if (op_order == OPORDER_VECIN_VECIDX) {
-          op_res = vec_in[_j * ld_in + i] - inp_matrix[j * ld_in + i];
+          op_res = vec_in[_j * ld_in_1 + i1] - inp_matrix[j * ld_in_0 + i0];
         } else {/* if (op_order == OPORDER_VECIDX_VECIN) */
-          op_res = inp_matrix[j * ld_in + i] - vec_in[_j * ld_in + i];
+          op_res = inp_matrix[j * ld_in_0 + i0] - vec_in[_j * ld_in_1 + i1];
         }
       } else if (op == OP_DIV) {
         if (op_order == OPORDER_VECIN_VECIDX) {
-          op_res = vec_in[_j * ld_in + i] / inp_matrix[j * ld_in + i];
+          op_res = vec_in[_j * ld_in_1 + i1] / inp_matrix[j * ld_in_0 + i0];
         } else {/* if (op_order == OPORDER_VECIDX_VECIN) */
-          op_res = inp_matrix[j * ld_in + i] / vec_in[_j * ld_in + i];
+          op_res = inp_matrix[j * ld_in_0 + i0] / vec_in[_j * ld_in_1 + i1];
         }/* else should not happen */
       }/* else should not happen */
 
@@ -417,24 +482,24 @@ int main(int argc, char* argv[])
         ref_result[_i] += op_res;
       } else if (redop == REDOP_MIN) {
         if (argop_vec_0 > 0) {
-          if (op_res <= ref_result[_i]) {
+          if (op_res < ref_result[_i]) {
             ref_argop_off_vec_0[_i] = j;
           }
         }
         if (argop_vec_1 > 0) {
-          if (op_res <= ref_result[_i]) {
+          if (op_res < ref_result[_i]) {
             ref_argop_off_vec_1[_i] = _j;
           }
         }
         ref_result[_i] = LIBXSMM_MIN(ref_result[_i], op_res);
       } else if (redop == REDOP_MAX) {
         if (argop_vec_0 > 0) {
-          if (op_res >= ref_result[_i]) {
+          if (op_res > ref_result[_i]) {
             ref_argop_off_vec_0[_i] = j;
           }
         }
         if (argop_vec_1 > 0) {
-          if (op_res >= ref_result[_i]) {
+          if (op_res > ref_result[_i]) {
             ref_argop_off_vec_1[_i] = _j;
           }
         }
@@ -554,6 +619,10 @@ int main(int argc, char* argv[])
   for (k = 0; k < iters; k++) {
     for (jj = 0; jj < n_cols_idx; jj++) {
       float op_res = 0.0f;
+      if (bcast_factor >= 4096) {
+        /* Invalid bcast settings */
+        continue;
+      }
       j = (unsigned int)cols_ind_array[jj];
       if (use_regular_vecin == 1) {
         _j = 0;
@@ -561,9 +630,15 @@ int main(int argc, char* argv[])
         _j = (unsigned int)cols_ind_array2[jj];
       }
       for (_i = 0; _i < m; _i++) {
-        i = _i;
-        if (bcast_factor > 0) {
-          i = _i/bcast_factor;
+        unsigned int i0 = _i;
+        unsigned int i1 = _i;
+        if (bcast_factor > 1) {
+          if (bcast_factor_0 > 1) {
+            i0 = _i/bcast_factor;
+        }
+          if (bcast_factor_1 > 1) {
+            i1 = _i/bcast_factor;
+          }
         }
         if (redop == REDOP_NONE) {
           vec_in = ref_result;
@@ -573,32 +648,32 @@ int main(int argc, char* argv[])
 
         if (op != OP_COPY) {
           if (op == OP_ADD) {
-            op_res = inp_matrix[j * ld_in + i] + vec_in[_j * ld_in + i];
+            op_res = inp_matrix[j * ld_in_0 + i0] + vec_in[_j * ld_in_1 + i1];
           }
           if (op == OP_MUL) {
-            op_res = inp_matrix[j * ld_in + i] * vec_in[_j * ld_in + i];
+            op_res = inp_matrix[j * ld_in_0 + i0] * vec_in[_j * ld_in_1 + i1];
           }
           if (op == OP_SUB) {
             if (op_order == OPORDER_VECIN_VECIDX) {
-              op_res = vec_in[_j * ld_in + i] - inp_matrix[j * ld_in + i];
+              op_res = vec_in[_j * ld_in_1 + i1] - inp_matrix[j * ld_in_0 + i0];
             }
             if (op_order == OPORDER_VECIDX_VECIN) {
-              op_res = inp_matrix[j * ld_in + i] - vec_in[_j * ld_in + i];
+              op_res = inp_matrix[j * ld_in_0 + i0] - vec_in[_j * ld_in_1 + i1];
             }
           }
           if (op == OP_DIV) {
             if (op_order == OPORDER_VECIN_VECIDX) {
-              op_res = vec_in[_j * ld_in + i] / inp_matrix[j * ld_in + i];
+              op_res = vec_in[_j * ld_in_1 + i1] / inp_matrix[j * ld_in_0 + i0];
             }
             if (op_order == OPORDER_VECIDX_VECIN) {
-              op_res = inp_matrix[j * ld_in + i] / vec_in[_j * ld_in + i];
+              op_res = inp_matrix[j * ld_in_0 + i0] / vec_in[_j * ld_in_1 + i1];
             }
           }
         } else {
           if (op_order == OPORDER_VECIDX_VECIN) {
-           op_res = inp_matrix[j * ld_in + i];
+           op_res = inp_matrix[j * ld_in_0 + i0];
           } else {
-           op_res = vec_in[_j * ld_in + i];
+           op_res = vec_in[_j * ld_in_1 + i1];
           }
         }
 

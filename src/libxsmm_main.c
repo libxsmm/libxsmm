@@ -3326,15 +3326,58 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
   libxsmm_descriptor_blob blob;
   libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
   unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
-  unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
-  unsigned short combined_params = argidx_params | bcast_shifted_params;
-  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+  unsigned int vec0_bcast = flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+  unsigned int vec1_bcast = flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+  unsigned short bcast_param_with_bcast_flag = (bcast_param & 0xfff);
+  unsigned short bcast_shifted_params, combined_params;
+  const libxsmm_meltw_descriptor* desc = NULL;
+  static int error_once = 0;
+  /* TODO: move below input sanity checks into code generator */
+  if ( bcast_param >= 4096 ) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: bcast_param = %d, only values < 4096 are supported\n", bcast_param);
+    }
+    return NULL;
+  }
+  if ( bcast_param_with_bcast_flag == 0 ) {
+    if ( vec0_bcast || vec1_bcast ) {
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: bcast_param_with_bcast_flag = %d, but vec0_bcast = %d, vec1_bcast = %d\n",
+          bcast_param_with_bcast_flag, vec0_bcast, vec1_bcast);
+      }
+      return NULL;
+    }
+  } else {
+    if (( vec0_bcast == 0 ) && ( vec1_bcast == 0 )) {
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: bcast_param_with_bcast_flag = %d, but vec0_bcast = %d, vec1_bcast = %d\n",
+          bcast_param_with_bcast_flag, vec0_bcast, vec1_bcast);
+      }
+      return NULL;
+    }
+    if (vec0_bcast) {
+      bcast_param_with_bcast_flag = (1 << 12) + bcast_param_with_bcast_flag;
+    }
+    if (vec1_bcast) {
+      bcast_param_with_bcast_flag = (1 << 13) + bcast_param_with_bcast_flag;
+    }
+  }
+  bcast_shifted_params = (unsigned short) (bcast_param_with_bcast_flag << 2);
+  combined_params = argidx_params | bcast_shifted_params;
+  if (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) > 0) && ((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) > 0)) {
+    ldi = ldo;
+  }
+  desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
     (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
 
-  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
-
-  return result.meltw_opreduce_vecs_idx;
+  return libxsmm_dispatch_meltw(desc).meltw_opreduce_vecs_idx;
 }
 
 
