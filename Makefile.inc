@@ -953,7 +953,7 @@ ifneq (Darwin,$(UNAME))
   endif
   XLNKVERBOSE := --verbose
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1=$(call quote,$2),$1))
-  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
     $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
@@ -967,7 +967,7 @@ else # OSX
   endif
   XLNKVERBOSE := -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
-  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
     $(call linkopt,-rpath,$(call qxdir,$(call qapath,$1)))))
 endif
 ifneq (0,$(ASNEEDED))
@@ -975,7 +975,7 @@ ifneq (0,$(ASNEEDED))
   XLIB_END ?= $(XLIB_END_FORCE)
 endif
 
-absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
   -L$(call qxdir,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
