@@ -5003,6 +5003,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
     if (bcast_vecidx == 1 && bcast_vecin == 0) {
       ldi2 = i_mateltwise_desc->ldi * bcast_param;
     } else if (bcast_vecidx == 0 && bcast_vecin == 1) {
+      LIBXSMM_ASSERT(0 != bcast_param);
       ldi2 = i_mateltwise_desc->ldi / bcast_param;
     }
 
@@ -5074,7 +5075,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
     }
   }
 
-  m                 = i_mateltwise_desc->m;
+  m = i_mateltwise_desc->m;
   if (bcast_param > 0) {
     if (bcast_param > m) {
       bcast_param = m;
@@ -5082,11 +5083,11 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
     m = bcast_param;
     bcast_loops = i_mateltwise_desc->m / bcast_param;
   }
-  use_m_masking     = ( m % vlen == 0 ) ? 0 : 1;
-  m_trips           = (m + vlen - 1) / vlen;
-  m_unroll_factor   = m_trips;
-  m_trips_loop      = 1;
-  peeled_m_trips    = 0;
+  use_m_masking   = ( m % vlen == 0 ) ? 0 : 1;
+  m_trips         = (m + vlen - 1) / vlen;
+  m_unroll_factor = m_trips;
+  m_trips_loop    = 1;
+  peeled_m_trips  = 0;
 
   if (use_m_masking == 1) {
     if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
