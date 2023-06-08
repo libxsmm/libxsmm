@@ -110,27 +110,27 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
-  if ( argc > 1 ) m           = atoi(argv[1]);
-  if ( argc > 2 ) n           = atoi(argv[2]);
-  if ( argc > 3 ) n_cols_idx  = atoi(argv[3]);
-  if ( argc > 4 ) ld_in       = atoi(argv[4]);
-  if ( argc > 5 ) op          = atoi(argv[5]);
-  if ( argc > 6 ) op_order    = atoi(argv[6]);
-  if ( argc > 7 ) scale_op_res= atoi(argv[7]);
-  if ( argc > 8 ) redop       = atoi(argv[8]);
+  if ( argc > 1 ) m                 = atoi(argv[1]);
+  if ( argc > 2 ) n                 = atoi(argv[2]);
+  if ( argc > 3 ) n_cols_idx        = atoi(argv[3]);
+  if ( argc > 4 ) ld_in             = atoi(argv[4]);
+  if ( argc > 5 ) op                = atoi(argv[5]);
+  if ( argc > 6 ) op_order          = atoi(argv[6]);
+  if ( argc > 7 ) scale_op_res      = atoi(argv[7]);
+  if ( argc > 8 ) redop             = atoi(argv[8]);
   if ( argc > 9 ) use_regular_vecin = atoi(argv[9]);
   if ( argc > 10 ) use_implicit_idx = atoi(argv[10]);
-  if ( argc > 11 ) argop_mode      = atoi(argv[11]);
-  if ( argc > 12 ) idx_mode        = atoi(argv[12]);
-  if ( argc > 13 ) iters       = atoi(argv[13]);
-  if ( argc > 14 ) use_bf16    = atoi(argv[14]);
-  if ( argc > 15 ) bcast_factor = (unsigned short)atoi(argv[15]);
+  if ( argc > 11 ) argop_mode       = atoi(argv[11]);
+  if ( argc > 12 ) idx_mode         = atoi(argv[12]);
+  if ( argc > 13 ) iters            = atoi(argv[13]);
+  if ( argc > 14 ) use_bf16         = atoi(argv[14]);
+  if ( argc > 15 ) bcast_factor     = (unsigned short)atoi(argv[15]);
 
   if (op == OP_DIV)  avoid_small_vals = 1;
 
   /* Some basic arg checking... */
   if ((use_regular_vecin > 0) && (argop_mode > 0)) {
-    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop params is meaningless...\n");
+    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop param is meaningless...\n");
     exit(EXIT_FAILURE);
   }
 
