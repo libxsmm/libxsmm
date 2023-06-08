@@ -10,7 +10,7 @@ TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16_F32_F32' 'F32_BF16_BF16_F32' 'BF16_F32_F32_F32' 'BF16_F32_BF16_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_BF16_F32' 'F16_F16_F16_F16' 'F32_F32_F16_F32' 'F32_F16_F32_F32' 'F32_F16_F16_F32' 'F16_F32_F32_F32' 'F16_F32_F16_F32' 'F16_F16_F32_F32' 'F16_F16_F16_F32' 'BF8_BF8_BF8_BF8' 'F32_F32_BF8_F32' 'F32_BF8_F32_F32' 'F32_BF8_BF8_F32' 'BF8_F32_F32_F32' 'BF8_F32_BF8_F32' 'BF8_BF8_F32_F32' 'BF8_BF8_BF8_F32' 'HF8_HF8_HF8_HF8' 'F32_F32_HF8_F32' 'F32_HF8_F32_F32' 'F32_HF8_HF8_F32' 'HF8_F32_F32_F32' 'HF8_F32_HF8_F32' 'HF8_HF8_F32_F32' 'HF8_HF8_HF8_F32' 'F64_F64_F64_F64'; do
-  for TYPE in 1 2 3 4 5; do
+  for TYPE in 1 2 3 4 5 9 10; do
     for ROUND in 'rne' 'stoch'; do
       for LD in 'eqld' 'gtld'; do
         TPPNAME="none"
@@ -34,6 +34,10 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
           TPPNAME="div"
         elif [ "$TYPE" == '5' ] ; then
           TPPNAME="muladd"
+        elif [ "$TYPE" == '9' ] ; then
+          TPPNAME="max"
+        elif [ "$TYPE" == '10' ] ; then
+          TPPNAME="min"
         else
           continue
         fi
