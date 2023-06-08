@@ -103,6 +103,8 @@ do
               #    done
               #  done
               #done
+
+              chmod 755 $NAME
             done
           done
         done
@@ -110,6 +112,3 @@ do
     done
   done
 done
-
-
-
