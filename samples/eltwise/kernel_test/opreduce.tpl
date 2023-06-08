@@ -47,9 +47,9 @@ for i in $(cat ${TESTFILE1}); do
         echo ${M} ${N_ADJ} ${N} ${LDI_ADJ}
         export CHECK_SCALE=${CHECK_SCALE_SIZE}
         if [ ! "${PEXEC_NI}" ]; then
-          ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16}
+          ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16}
         else
-          ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16} &
+          ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16} &
           PEXEC_PID+=("$!")
           if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
             for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID

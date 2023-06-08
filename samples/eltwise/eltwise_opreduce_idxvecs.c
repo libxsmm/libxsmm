@@ -250,57 +250,68 @@ int main(int argc, char* argv[])
     opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX);
   }
 
-  if (op == OP_COPY) {
-    if (op_order == OPORDER_VECIDX_VECIN) {
-      if ((m % ld_in_0) != 0) {
-        fprintf(stderr, "m has to be a multiple of ld_in_0\n");
-        exit(EXIT_FAILURE);
-      }
-      bcast_factor = bcast_factor_0 = (unsigned short)(m / ld_in_0);
-      if (bcast_factor == 1) {
-        bcast_factor = 0;
+  if (0 >= ld_in_0 || 0 >= ld_in_1) {
+    fprintf(stderr, "Invalid leading dimensions or broadcast specification\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (ld_in_0 <= ((libxsmm_blasint)m) || ld_in_1 <= ((libxsmm_blasint)m)) {
+    if (op == OP_COPY) {
+      if (op_order == OPORDER_VECIDX_VECIN) {
+        if ((m % ld_in_0) != 0) {
+          fprintf(stderr, "m has to be a multiple of ld_in_0\n");
+          exit(EXIT_FAILURE);
+        }
+        bcast_factor = bcast_factor_0 = (unsigned short)(m / ld_in_0);
+        if (bcast_factor == 1) {
+          bcast_factor = 0;
+        } else {
+          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+        }
       } else {
-        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+        printf("OPORDER_VECIN_VECIDX\n");
+        if ((m % ld_in_1) != 0) {
+          fprintf(stderr, "m has to be a multiple of ld_in_1\n");
+          exit(EXIT_FAILURE);
+        }
+        bcast_factor = bcast_factor_1 = (unsigned short)(m / ld_in_1);
+        /*ld_in_0 = ld_in_1;*/
+        if (bcast_factor == 1) {
+          bcast_factor = 0;
+        } else {
+          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+        }
       }
     } else {
-      printf("OPORDER_VECIN_VECIDX\n");
-      if ((m % ld_in_1) != 0) {
-        fprintf(stderr, "m has to be a multiple of ld_in_1\n");
+      if (((m % ld_in_0) != 0) || ((m % ld_in_1) != 0)) {
+        fprintf(stderr, "m has to be a multiple of both ld_in_0 and ld_in_1\n");
         exit(EXIT_FAILURE);
       }
-      bcast_factor = bcast_factor_1 = (unsigned short)(m / ld_in_1);
-      /*ld_in_0 = ld_in_1;*/
-      if (bcast_factor == 1) {
-        bcast_factor = 0;
-      } else {
+      bcast_factor_0 = (unsigned short)(m / ld_in_0);
+      bcast_factor_1 = (unsigned short)(m / ld_in_1);
+      if (bcast_factor_0 == bcast_factor_1) {
+        bcast_factor = bcast_factor_0;
+        if (bcast_factor == 1) {
+          bcast_factor = 0;
+        } else {
+          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+        }
+      } else if ((bcast_factor_0 == 1) && (bcast_factor_1 > 1)) {
+        bcast_factor = bcast_factor_1;
         opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
-      }
-    }
-  } else {
-    if (((m % ld_in_0) != 0) || ((m % ld_in_1) != 0)) {
-      fprintf(stderr, "m has to be a multiple of both ld_in_0 and ld_in_1\n");
-      exit(EXIT_FAILURE);
-    }
-    bcast_factor_0 = (unsigned short)(m / ld_in_0);
-    bcast_factor_1 = (unsigned short)(m / ld_in_1);
-    if (bcast_factor_0 == bcast_factor_1) {
-      bcast_factor = bcast_factor_0;
-      if (bcast_factor == 1) {
-        bcast_factor = 0;
-      } else {
+      } else if ((bcast_factor_0 > 1) && (bcast_factor_1 == 1)) {
+        bcast_factor = bcast_factor_0;
         opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
-        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+      } else {
+        fprintf(stderr, "Two broadcast factors are not supported\n");
+        exit(EXIT_FAILURE);
       }
-    } else if ((bcast_factor_0 == 1) && (bcast_factor_1 > 1)) {
-      bcast_factor = bcast_factor_1;
-      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
-    } else if ((bcast_factor_0 > 1) && (bcast_factor_1 == 1)) {
-      bcast_factor = bcast_factor_0;
-      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
-    } else {
-      fprintf(stderr, "Two broadcast factors are not supported\n");
-      exit(EXIT_FAILURE);
     }
+  }
+  else if (ld_in_0 != ld_in_1) {
+    fprintf(stderr, "Invalid leading dimensions or broadcast specification\n");
+    exit(EXIT_FAILURE);
   }
 
   if (use_bf16 == 0) {
