@@ -79,7 +79,7 @@ echo "MATRIX${SEP}GFLOPS${SEP}MEMBW" >"${HERE}/gimmik.csv"
 sort -t"${SEP}" -k1 "${TMPF}" >>"${HERE}/gimmik.csv"
 
 cut -d"${SEP}" -f1,2 "${HERE}/gimmik.csv" | sed "1s/GFLOPS/GIMMIK/" \
-| join --header -t"${SEP}" \
+| join -t"${SEP}" \
   "${HERE}/libxsmm.csv" \
   - \
 >"${HERE}/performance.csv"
