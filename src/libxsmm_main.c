@@ -3634,11 +3634,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
-#if 0
-  if ( (NULL == column_ptr) || (NULL == row_idx) ) {
-    return NULL;
-  }
-#endif
 
   /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
