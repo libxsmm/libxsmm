@@ -503,6 +503,11 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
 
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
+  if ((i_bn/2) == 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
+    return;
+  }
+
   /* Adjust A and C pointers for already processed N/M  */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
     i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, (1ull * i_packed_processed * i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
@@ -973,6 +978,11 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? 0 : 1;
 
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
+
+  if (((i_bn+1)/2) == 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
+    return;
+  }
 
   /* Adjust A and C pointers for already processed N/M  */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
