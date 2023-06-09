@@ -6760,7 +6760,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       }
       if (apply_op == 1) {
         if (bcast_vecin == 0) {
-          libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_invec, ((peeled_m_trips-1) * vlen + m % vlen ) * i_micro_kernel_config->datatype_size_out);
+          libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_invec, LIBXSMM_WIDEN_U32I64(((peeled_m_trips-1) * vlen + m % vlen ) * i_micro_kernel_config->datatype_size_out));
         }
       }
       if (bcast_vecidx == 0) {
@@ -6783,11 +6783,11 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
         }
         if (apply_op == 1) {
           if (bcast_vecin == 0) {
-            libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_invec, m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out);
+            libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_invec, LIBXSMM_WIDEN_U32I64(m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out));
           }
         }
         if (bcast_vecidx == 0) {
-          libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_in_base, m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_in);
+          libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_in_base, LIBXSMM_WIDEN_U32I64(m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_in));
         }
       }
     }
