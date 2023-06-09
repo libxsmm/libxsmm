@@ -112,9 +112,9 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
-  if ( argc > 1 ) m                  = atoi(argv[1]);
-  if ( argc > 2 ) n                  = atoi(argv[2]);
-  if ( argc > 3 ) n_cols_idx         = atoi(argv[3]);
+  if ( argc > 1 ) m                 = atoi(argv[1]);
+  if ( argc > 2 ) n                 = atoi(argv[2]);
+  if ( argc > 3 ) n_cols_idx        = atoi(argv[3]);
   if ( argc > 4 ) ld_in_0            = atoi(argv[4]);
   if ( argc > 5 ) ld_in_1            = atoi(argv[5]);
   if ( argc > 6 ) op                 = atoi(argv[6]);
