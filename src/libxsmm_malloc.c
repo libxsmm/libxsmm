@@ -2306,7 +2306,6 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
             (unsigned int)(((char*)&info->hash) - ((char*)info))));
 #   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
-
 # if defined(__APPLE__) && defined(__arm64__)
           if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
             pthread_jit_write_protect_np(1/*true*/);
