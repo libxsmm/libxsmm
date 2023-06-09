@@ -604,7 +604,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   unsigned int l_max_reg_block = i_bn * i_packed_blocking;
   unsigned int l_n_blocking = 1;
   unsigned int l_n_cols_kernel = l_n_blocking * i_bn;
-  unsigned int l_vec_reg_tmp[5];
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
   unsigned int l_c_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
   char l_c_vname = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 'y' : i_micro_kernel_config->vector_name;
@@ -629,13 +628,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
     l_input_bf16_mask = 15;
     l_output_bf16_mask = 15;
   }
-
-  /* temporary vector registers used to load values to before zipping */
-  l_vec_reg_tmp[0] = l_max_reg_block+0;
-  l_vec_reg_tmp[1] = l_max_reg_block+1;
-  l_vec_reg_tmp[2] = l_max_reg_block+2;
-  l_vec_reg_tmp[3] = l_max_reg_block+3;
-  l_vec_reg_tmp[4] = l_max_reg_block+4;
 
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
@@ -868,7 +860,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
   unsigned int _l_n = 0;
   unsigned int l_n_tile = 0;
   unsigned int l_n_blocking = 1;
-  unsigned int l_vec_reg_tmp[5];
   unsigned int l_vnni_block_size = 2;
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
   unsigned int l_c_tile_offset = ((i_split_tiles > 0) && (i_packed_remainder > 0)) ? 3 : 0;
@@ -888,13 +879,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
   } else {
     l_a_tile_offset = i_a_tile_id_starts[0];
   }
-
-  /* temporary vector registers used to load values to before zipping */
-  l_vec_reg_tmp[0] = l_max_reg_block+0;
-  l_vec_reg_tmp[1] = l_max_reg_block+1;
-  l_vec_reg_tmp[2] = l_max_reg_block+2;
-  l_vec_reg_tmp[3] = l_max_reg_block+3;
-  l_vec_reg_tmp[4] = l_max_reg_block+4;
 
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
