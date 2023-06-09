@@ -866,8 +866,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
   unsigned int l_output_bf16_mask = 1;
   unsigned int l_n_tiles_bn = (i_bn <= 16) ? 1 : 2;
   unsigned int l_a_tile_offset = l_n_blocking * l_n_tiles_bn * i_packed_blocking;
-  unsigned int l_max_reg_block = 2 * l_n_tiles_bn * i_packed_blocking;
-
   unsigned int l_b_tmp_gpr = i_gp_reg_mapping->gp_reg_ldc;
   unsigned int l_row_idx_gpr = i_gp_reg_mapping->gp_reg_help_3;
   unsigned int l_cur_column_gpr = i_gp_reg_mapping->gp_reg_help_4;

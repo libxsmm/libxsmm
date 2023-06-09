@@ -473,7 +473,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   unsigned int l_p = 0;
   unsigned int l_max_reg_block = (i_bn/2) * i_packed_blocking;
   unsigned int l_n_blocking = (i_bn/2);
-  unsigned int l_vec_reg_tmp[5];
+  unsigned int l_vec_reg_tmp[2];
   unsigned int l_n_advancements = 0;
   unsigned int l_i8i32_kernel = (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
   unsigned int l_bf16_kernel = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
@@ -500,9 +500,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   /* temporary vector registers used to load values to before zipping */
   l_vec_reg_tmp[0] = l_max_reg_block+0;
   l_vec_reg_tmp[1] = l_max_reg_block+1;
-  l_vec_reg_tmp[2] = l_max_reg_block+2;
-  l_vec_reg_tmp[3] = l_max_reg_block+3;
-  l_vec_reg_tmp[4] = l_max_reg_block+4;
 
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
@@ -944,7 +941,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   unsigned int l_p = 0;
   unsigned int l_max_reg_block = (i_bn == 1) ? i_packed_blocking : 2 * (i_bn/2) * i_packed_blocking;
   unsigned int l_n_blocking = (i_bn+1)/2;
-  unsigned int l_vec_reg_tmp[5];
   unsigned int l_n_advancements = 0;
   unsigned int l_m_advancements = 0;
   unsigned int l_vnni_block_size = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ? 2 : (( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ? 4 : 1);
@@ -975,13 +971,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   unsigned int l_cur_column_gpr_64bit = l_cur_column_gpr + 32;
   unsigned int l_next_column_gpr = i_gp_reg_mapping->gp_reg_help_6;
   unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? 0 : 1;
-
-  /* temporary vector registers used to load values to before zipping */
-  l_vec_reg_tmp[0] = l_max_reg_block+0;
-  l_vec_reg_tmp[1] = l_max_reg_block+1;
-  l_vec_reg_tmp[2] = l_max_reg_block+2;
-  l_vec_reg_tmp[3] = l_max_reg_block+3;
-  l_vec_reg_tmp[4] = l_max_reg_block+4;
 
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
