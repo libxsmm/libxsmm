@@ -22,7 +22,13 @@
 #endif
 
 #if !defined(LIBXSMM_PAGE_MINSIZE)
-# define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+# if defined(LIBXSMM_PLATFORM_X86)
+#   define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+# elif defined(__APPLE__)
+#   define LIBXSMM_PAGE_MINSIZE 16384 /* 16 KB */
+# else
+#   define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+# endif
 #endif
 
 #if !defined(LIBXSMM_BATCH_CHECK) && !defined(NDEBUG)
