@@ -9,14 +9,13 @@
 ******************************************************************************/
 /* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_gemm_common_aarch64.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
@@ -40,7 +39,7 @@ void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generate
     const unsigned int i_vec_inout,
     const unsigned int i_pred_reg) {
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
-    /* TODO  */
+    /* TODO */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code, i_vec_inout, i_pred_reg );
   }
@@ -51,7 +50,7 @@ void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generate
     const unsigned int i_vec_inout,
     const unsigned int i_pred_reg) {
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
-    /* TODO  */
+    /* TODO */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_vcvt_f32bf16_aarch64_sve( io_generated_code, i_vec_inout, i_pred_reg );
   }
@@ -192,7 +191,7 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
       /* Move position i of src asimd reg to GPR1 */
       libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch1, i_srcdst_vec_reg, LIBXSMM_CAST_USHORT(i), l_data_move_asimd_width);
 
-      /* Store element from GPR1 to GPR0  */
+      /* Store element from GPR1 to GPR0 */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, l_store_move_instr, i_gp_reg_scratch0, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 0x1f & i_gp_reg_scratch1 );
     }
   }
@@ -885,7 +884,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   libxsmm_aarch64_sve_type  l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_D;
   /* vector registers holding C's values */
   unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
-  unsigned int l_is_output_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
+  unsigned int l_is_output_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
   unsigned int l_output_bf16_mask = LIBXSMM_AARCH64_SVE_REG_P2;
   unsigned int l_is_colbias_bf16 = (i_micro_kernel_config->fused_bcolbias > 0) ? 1 : 0;
   unsigned int l_bias_tsize = (i_micro_kernel_config->fused_bcolbias > 0) ? 2 : 4;
@@ -1508,7 +1507,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   unsigned int l_instr_zip[2] = { LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, LIBXSMM_AARCH64_INSTR_SVE_UZP2_V };
   libxsmm_aarch64_sve_type l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_D;
   unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
-  unsigned int l_is_output_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
+  unsigned int l_is_output_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
   unsigned int l_output_bf16_mask = LIBXSMM_AARCH64_SVE_REG_P2;
   unsigned int l_m_total_blocks = 0;
   unsigned char l_pred_reg = 0;

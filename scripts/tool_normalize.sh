@@ -169,7 +169,7 @@ then
     # Check and fix executable flag of file under source control.
     #
     FLAGS=$(${GIT} ls-files -s "${FILE}" | ${CUT} -d' ' -f1)
-    if [ "*.sh" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ] || [ "*.slurm" = "${PATTERN}" ]; then
+    if [ "*.sh" = "${PATTERN}" ] || [ "*.slurm" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ]; then
       if [ "$(${SED} -n '1!b;/#!/p' "${FILE}")" ] && \
          [ "100755" != "${FLAGS}" ];
       then
@@ -181,6 +181,16 @@ then
       ${GIT} update-index --chmod=-x "${FILE}"
       echo -n " : marked non-executable"
       REFORMAT=1
+    fi
+    #
+    # Check (naive) for scripts relying on in-place edit (sed).
+    #
+    if [ "$(basename "${FILE}")" != "$(basename "$0")" ] && \
+       [[ ("*.sh" = "${PATTERN}") || ("*.slurm" = "${PATTERN}") ]] && \
+       [ "$(${SED} -n '/sed[[:space:]][[:space:]]*-i/p' "${FILE}")" ];
+    then
+      echo " : use of sed -i is not portable"
+      exit 1
     fi
     #
     # Reject code calling "exit" directly

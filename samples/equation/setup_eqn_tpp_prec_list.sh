@@ -23,3 +23,7 @@ fi
 if [[ $1 == "equation_split_sgd" ]]; then
   export EQN_PREC_LIST="1";
 fi
+
+if [[ $1 == "equation_bf16_x3_split_f32" ]]; then
+  export EQN_PREC_LIST="1";
+fi

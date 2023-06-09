@@ -8,14 +8,10 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include "equation_common.h"
 
 #define EXPANSION_FACTOR 8
+
 
 LIBXSMM_INLINE
 void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, unsigned int *cols_ind_array, float *out) {
@@ -36,7 +32,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j,it;
   libxsmm_matrix_eqn_param eqn_param;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
   float *out, *eqn_out;

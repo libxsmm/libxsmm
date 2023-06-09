@@ -46,19 +46,20 @@
 int test(libxsmm_blasint /*m*/, libxsmm_blasint /*n*/, libxsmm_blasint /*k*/);
 int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 {
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+    m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
+    LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
+    LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
   const int flags = LIBXSMM_GEMM_FLAG_BETA_0;
-  LIBXSMM_MMFUNCTION_TYPE2(ITYPE,OTYPE) kernel;
+  libxsmm_xmmfunction kernel = { NULL };
   int result = EXIT_FAILURE;
 #if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
 # pragma omp single
 #endif
-  kernel = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(m, n, k,
-    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, &flags);
-  if (NULL != kernel) {
+  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
+  if (NULL != kernel.ptr_const) {
     libxsmm_mmkernel_info info;
-    libxsmm_xmmfunction xmm;
-    xmm.LIBXSMM_TPREFIX2(ITYPE,OTYPE,mm) = kernel;
-    result = libxsmm_get_mmkernel_info(xmm, &info);
+    result = libxsmm_get_mmkernel_info(kernel, &info);
     if (EXIT_SUCCESS == result) {
       const unsigned int um = (unsigned int)m, un = (unsigned int)n, uk = (unsigned int)k;
       if ( um != info.m || un != info.n || uk != info.k
@@ -91,10 +92,12 @@ int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 int main(void)
 {
   libxsmm_xmmfunction f[MAX_NKERNELS];
-  const OTYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
-  const int prefetch = LIBXSMM_PREFETCH_NONE;
   libxsmm_registry_info registry_info;
-  const int max_shape = LIBXSMM_MAX_M, flags = LIBXSMM_FLAGS;
+  const OTYPE beta = LIBXSMM_BETA/*, alpha = LIBXSMM_ALPHA*/;
+  const int flags = LIBXSMM_FLAGS /*| LIBXSMM_GEMM_FLAGS(transa, transb)*/
+    | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  const int max_shape = LIBXSMM_MAX_M;
   int result = EXIT_SUCCESS, nkernels = MAX_NKERNELS, ndup = 0, i;
 #if defined(CHECK_SEPARATE)
   int mnk[3*MAX_NKERNELS] = { 8,8,8, 16,16,8 };
@@ -173,8 +176,11 @@ int main(void)
       const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-      f[i].LIBXSMM_TPREFIX2(ITYPE,OTYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(
-        m, n, k, &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &flags);
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
+        LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
+        LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
+      f[i].gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
     }
   }
 
@@ -187,11 +193,12 @@ int main(void)
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       libxsmm_xmmfunction fi;
-      libxsmm_descriptor_blob blob;
-      const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_DATATYPE2(ITYPE,OTYPE),
-        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags, prefetch);
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
+        LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
+        LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
 
-      fi = libxsmm_xmmdispatch(desc);
+      fi.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
       if (NULL != fi.ptr_const && NULL != f[i].ptr_const) {
         if (fi.ptr_const != f[i].ptr_const) {
           libxsmm_kernel_info a_info, b_info;
@@ -263,4 +270,3 @@ int main(void)
 
   return result;
 }
-

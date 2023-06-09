@@ -36,10 +36,15 @@
 # endif
 #endif
 
+#if !defined(LIBXSMM_BLAS_ERROR_MSG)
+# define LIBXSMM_BLAS_ERROR_MSG(SYMBOL) fprintf(stderr, "LIBXSMM WARNING: application shall be linked against LAPACK/BLAS %s!\n", SYMBOL)
+#endif
+
 #if !defined(LIBXSMM_BLAS_ERROR)
 #define LIBXSMM_BLAS_ERROR(SYMBOL, PCOUNTER) do { \
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(PCOUNTER, 1, LIBXSMM_ATOMIC_RELAXED)) { \
-      fprintf(stderr, "LIBXSMM WARNING: application shall be linked against LAPACK/BLAS %s!\n", SYMBOL); \
+    const int hash = (int)libxsmm_hash32(libxsmm_hash_string(SYMBOL)), old = *(PCOUNTER); \
+    if (LIBXSMM_ATOMIC_CMPSWP(PCOUNTER, old, hash, LIBXSMM_ATOMIC_RELAXED) && old != hash) { \
+      LIBXSMM_BLAS_ERROR_MSG(SYMBOL); \
     } \
   } while(0)
 #endif
@@ -65,13 +70,23 @@
       LIBXSMM_BLAS_FNTYPE(TYPE, KIND) pfout; \
     } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
     dlerror(); /* clear an eventual error status */ \
-    libxsmm_blas_wrapper_dynamic_.chain = NEXT; \
-    libxsmm_blas_wrapper_dynamic_.pfin = ((NULL == libxsmm_blas_wrapper_dynamic_.pfin) ? \
-      dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
-    if (NULL == libxsmm_blas_wrapper_dynamic_.pfout || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain()) { \
-      libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
-      /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pfout, LIBXSMM_ATOMIC_RELAXED);*/ \
-      ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); \
+    libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_DEFAULT, "mkl_blas." LIBXSMM_STRINGIFY(LIBXSMM_CBLAS_SYMBOL(TYPE, KIND))); \
+    if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
+      ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
+    } \
+    else { \
+      /*const*/ LIBXSMM_BLAS_FNTYPE(TYPE, KIND)(*libxsmm_blas_wrapper_dynamic_next_)(void) = NEXT; \
+      libxsmm_blas_wrapper_dynamic_.pfin = (NULL == libxsmm_blas_wrapper_dynamic_next_ ? \
+        dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
+      if  (NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain \
+        || libxsmm_blas_wrapper_dynamic_next_ == libxsmm_blas_wrapper_dynamic_.chain \
+        || NULL == libxsmm_blas_wrapper_dynamic_.chain()) \
+      { \
+        libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
+        if (NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
+          ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); /* LIBXSMM_ATOMIC_STORE */ \
+        } \
+      } \
     } \
   } while(0)
 #else
@@ -83,6 +98,19 @@
   LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL); \
 } while(0)
 
+/** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
+#if (LIBXSMM_PREFETCH_NONE != LIBXSMM_PREFETCH) /* LIBXSMM_GEMM_PREFETCH_NONE is an enumerator! */
+# define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) do { \
+    (ARGS).a.quaternary = ((char*)(ARGS).a.primary) + sizeof(ITYPE) * (M) * (K); \
+    (ARGS).b.quaternary = ((char*)(ARGS).b.primary) + sizeof(ITYPE) * (K) * (N); \
+    (ARGS).c.quaternary = ((char*)(ARGS).c.primary) + sizeof(OTYPE) * (M) * (N); \
+  } while(0)
+#elif !defined(NDEBUG)
+# define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) \
+    (ARGS).a.quaternary = (ARGS).b.quaternary = (ARGS).c.quaternary = NULL
+#else
+# define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS);
+#endif
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_init(void);
@@ -90,8 +118,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(void);
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 
-LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
+/** Translates GEMM-prefetch requests incl. LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
 
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT)
@@ -135,6 +163,19 @@ LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemv);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemv);
 
+/** Helper for tuning the given gemm_flags for batches of SMMs (NTS-hint). */
+LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
+  int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c,
+  /**
+   * If the returned value is larger than zero, the vector-length (in Bytes)
+   * is larger than C's element-width and it can be used to check against a
+   * stride of subsequent C-addresses, i.e., there is sufficient alignment
+   * if 0 == LIBXSMM_MOD2(stride_in_byte, *vlen) and the tuned flag
+   * can be adopted.
+   * The vlen argument can be NULL if no further check is desired.
+   */
+  int* vlen);
+
 LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_blasint index_base,
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, /*unsigned*/int tid, /*unsigned*/int ntasks,
@@ -146,6 +187,8 @@ LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatyp
   const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
   const void* beta, void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
   libxsmm_blasint index_stride, libxsmm_blasint index_base, libxsmm_blasint batchsize);
+
+LIBXSMM_API void libxsmm_sink(const void* arg, ...);
 
 /** Minimum batchsize per thread/task. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_taskgrain);
@@ -160,10 +203,5 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_tasks);
  * - [0]: disabled
  */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
-
-/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
-/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 #endif /*LIBXSMM_GEMM_H*/

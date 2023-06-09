@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_REDUCE_AARCH64_H
 #define GENERATOR_MATELTWISE_REDUCE_AARCH64_H
 

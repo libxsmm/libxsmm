@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_SSE_AVX_AVX512_H
 #define GENERATOR_MATELTWISE_SSE_AVX_AVX512_H
 
@@ -30,7 +29,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
                                               const libxsmm_meltw_descriptor*      i_mateltwise_desc,
                                               libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
-                                              libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) ;
+                                              libxsmm_mateltwise_kernel_config*    i_micro_kernel_config);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,

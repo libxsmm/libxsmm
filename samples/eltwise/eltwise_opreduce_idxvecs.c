@@ -9,10 +9,6 @@
 /* Evangelos Georganas (Intel Corp.), Antonio Noack (FSU Jena)
 *********************************************************************************************/
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 
 #define OP_COPY 0
 #define OP_ADD  1
@@ -29,6 +25,7 @@
 #define REDOP_MAX   2
 #define REDOP_MIN   3
 #define OFFSET 1.0
+
 
 LIBXSMM_INLINE
 void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )
@@ -89,7 +86,7 @@ int main(int argc, char* argv[])
   libxsmm_meltw_opreduce_vecs_flags opredop_flags;
   libxsmm_meltwfunction_opreduce_vecs_idx kernel;
   libxsmm_matdiff_info norms_elts, diff;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   char opname[50];
   char opordername[50];
@@ -271,7 +268,7 @@ int main(int argc, char* argv[])
   _n = (use_regular_vecin > 0) ? 1 : n;
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
 
-  /* Allocate arrays  */
+  /* Allocate arrays */
   inp_matrix              = (float*) malloc(sizeof(float)*ld_in*n);
   result                  = (float*) malloc(sizeof(float)*ld_in);
   ref_result              = (float*) malloc(sizeof(float)*ld_in);
@@ -372,7 +369,7 @@ int main(int argc, char* argv[])
     argop_off_vec_1_i32[i] = 0;
   }
 
-  /* Calculate reference results...  */
+  /* Calculate reference results... */
   for (jj = 0; jj < n_cols_idx; jj++) {
     float op_res = 0.0f;
     j = (unsigned int)cols_ind_array[jj];
@@ -556,7 +553,7 @@ int main(int argc, char* argv[])
   }
 
   l_start = libxsmm_timer_tick();
-  /* Calculate reference results...  */
+  /* Calculate reference results... */
   for (k = 0; k < iters; k++) {
     for (jj = 0; jj < n_cols_idx; jj++) {
       float op_res = 0.0f;

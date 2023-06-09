@@ -8,13 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-#endif
-#include <math.h>
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-#endif
+#include <libxsmm.h>
 
 #if !defined(USE_NOINIT)
 # define USE_NOINIT
@@ -25,12 +19,6 @@
 #endif
 #if !defined(MAX_TOLPERC)
 # define MAX_TOLPERC 12
-#endif
-
-#if defined(_WIN32)
-# include <Windows.h>
-#else
-# include <unistd.h>
 #endif
 
 
@@ -117,4 +105,3 @@ int main(int argc, char* argv[])
 
   return result;
 }
-

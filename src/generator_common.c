@@ -11,7 +11,6 @@
 ******************************************************************************/
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
-#include "libxsmm_main.h"
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511
@@ -172,7 +171,10 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
       libxsmm_strncpy(o_gp_reg_name, "r15", i_gp_reg_name_max_length, 3 );
       break;
     default:
-      LIBXSMM_ASSERT_MSG(0, "GP register number");
+#if !defined(_WIN32) /* TODO: Windows calling convention */
+      LIBXSMM_ASSERT_MSG(0, "GP register number")
+#endif
+      ;
   }
 }
 
@@ -776,7 +778,7 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
   io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
-  /* Auxiliary regs for sparsity in A support  */
+  /* Auxiliary regs for sparsity in A support */
   io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
 }
@@ -811,9 +813,83 @@ void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_map
   io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
-  /* Auxiliary regs for sparsity in A support  */
+  /* Auxiliary regs for sparsity in A support */
   io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = (unsigned char)datatype[0];
+  unsigned char a_prec_bits = uc_first_part & 0x3f;
+  int result = LIBXSMM_GETENUM_INP(a_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = ((unsigned char)datatype[0] & 0xc0) >> 6;
+  unsigned char uc_second_part =((unsigned char)datatype[1] & 0x0f) << 2;
+  unsigned char b_prec_bits = uc_first_part | uc_second_part;
+  int result = LIBXSMM_GETENUM_INP(b_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_C_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = ((unsigned char)datatype[1] & 0xf0) >> 4;
+  unsigned char uc_second_part =((unsigned char)datatype[2] & 0x03) << 4;
+  unsigned char c_prec_bits = uc_first_part | uc_second_part;
+  int result = LIBXSMM_GETENUM_INP(c_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = (unsigned char)datatype[2];
+  unsigned char c_prec_bits = (uc_first_part & 0xfc) >> 2;
+  int result = LIBXSMM_GETENUM_INP(c_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype) {
+  int result = 0;
+  if (LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) {
+    result = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  } else {
+    result = LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char *datatype) {
+  int result = 0;
+  if ((LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) && ((LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_C_PREC(datatype)))) {
+    result = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  } else {
+    result = LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype) {
+  unsigned char uc_a = (unsigned char) a_dt;
+  unsigned char uc_b = (unsigned char) b_dt;
+  unsigned char uc_c = (unsigned char) c_dt;
+  unsigned char uc_comp = (unsigned char) comp_dt;
+  unsigned char first = uc_a & 0xcf; /* 6 bits for a  */
+  unsigned char second = uc_b << 6;  /* Last 2 bits for b */
+  unsigned char third = uc_b >> 2;   /* First 4 bits for b */
+  unsigned char fourth = uc_c << 4;  /* Last 4 bits for c */
+  unsigned char fifth = uc_c >> 4;   /* First 2 bits for c */
+  unsigned char sixth = uc_comp << 2;/* 6 bits for comp */
+
+  out_datatype[0] = first | second;
+  out_datatype[1] = third | fourth;
+  out_datatype[2] = fifth | sixth;
 }
 
 LIBXSMM_API_INTERN
@@ -864,19 +940,19 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
-    if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
-    } else if (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    } else if (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
       }
-    } else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    } else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* A, const short* B, int* C) {\n", i_routine_name);
       } else {
@@ -921,7 +997,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 || io_generated_code->arch == LIBXSMM_X86_AVX2_ADL ) {
+    } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );

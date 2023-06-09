@@ -15,8 +15,12 @@
 # include <omp.h>
 #endif
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
-    (defined(LIBXSMM_PLATFORM_X86)) && 0
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && ( \
+    (defined(__x86_64__) && 0 != (__x86_64__)) || \
+    (defined(__amd64__) && 0 != (__amd64__)) || \
+    (defined(_M_X64) || defined(_M_AMD64)) || \
+    (defined(__i386__) && 0 != (__i386__)) || \
+    (defined(_M_IX86)))
 # include <mkl.h>
 #endif
 #if defined(__INTEL_MKL__) && (110300 <= (10000*__INTEL_MKL__+100*__INTEL_MKL_MINOR__))
@@ -63,7 +67,8 @@ void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT
 
 int main(int argc, char* argv[])
 {
-  int nrepeat = (2 == argc ? atoi(argv[1]) : 500);
+  const int arg1 = (2 == argc ? atoi(argv[1]) : 0);
+  int nrepeat = (0 < arg1 ? arg1 : 500);
   const BLASINT_TYPE m = (2 < argc ? atoi(argv[1]) : 23);
   const BLASINT_TYPE k = (3 < argc ? atoi(argv[3]) : m);
   const BLASINT_TYPE n = (2 < argc ? atoi(argv[2]) : k);
@@ -128,10 +133,11 @@ int main(int argc, char* argv[])
     }
 #endif
 #if defined(GEMM_BATCH) && defined(_OPENMP)
-    printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
+    if (0 < nrepeat) printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
 #else
-    printf("Called %i times.\n", nrepeat);
+    if (0 < nrepeat) printf("Called %i times.\n", nrepeat);
 #endif
+    else fprintf(stderr, "Not executed!\n");
   }
 
   free(pa);

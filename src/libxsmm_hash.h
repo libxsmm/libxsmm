@@ -19,6 +19,8 @@
 #define LIBXSMM_CRCPTR(SEED, PTR) LIBXSMM_CRC32U(LIBXSMM_BITS)(SEED, &(PTR))
 /** Map number of Bytes to number of bits. */
 #define LIBXSMM_CRC32(N) LIBXSMM_CONCATENATE(libxsmm_crc32_b, N)
+#define libxsmm_crc32_b1 libxsmm_crc32_u8
+#define libxsmm_crc32_b2 libxsmm_crc32_u16
 #define libxsmm_crc32_b4 libxsmm_crc32_u32
 #define libxsmm_crc32_b8 libxsmm_crc32_u64
 #define libxsmm_crc32_b16 libxsmm_crc32_u128
@@ -35,6 +37,8 @@ LIBXSMM_EXTERN_C typedef unsigned int (*libxsmm_hash_function)(
 LIBXSMM_API_INTERN void libxsmm_hash_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_hash_finalize(void);
 
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u8(unsigned int seed, const void* value, ...);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u16(unsigned int seed, const void* value, ...);
 LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u32(unsigned int seed, const void* value, ...);
 LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u64(unsigned int seed, const void* value, ...);
 LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u128(unsigned int seed, const void* value, ...);

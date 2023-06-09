@@ -8,17 +8,13 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include "eltwise_common.h"
+
 /*#define FP16_REDUCE_COLSIDX*/
 #ifdef FP16_REDUCE_COLSIDX
 #include <immintrin.h>
 #endif
 
-#include "eltwise_common.h"
 
 LIBXSMM_INLINE
 void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
@@ -438,7 +434,7 @@ int main(int argc, char* argv[])
   libxsmm_meltwfunction_unary kernel2 = NULL;
   libxsmm_meltw_unary_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   unsigned int reduce_on_outputs = 0;
   char* dt = NULL;
@@ -753,18 +749,18 @@ int main(int argc, char* argv[])
   }
 
   if (record_idx > 0) {
-    for (k = 0; k < m; k++) {
-      ref_argop_off_i32[k] = LIBXSMM_CAST_UINT(ref_argop_off[k]);
-    }
-    if (idx_type == 0) {
-      for (k = 0; k < m; k++) {
-        argop_off_i32[k] = LIBXSMM_CAST_UINT(argop_off[k]);
-      }
-    }
     printf("##########################################\n");
     printf("# Arg idx correctness  #\n");
     printf("##########################################\n");
-    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_i32, argop_off_i32, 0, 0);
+    if (idx_type == 0) {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off, argop_off, 0, 0);
+    }
+    else {
+      for (k = 0; k < m; k++) {
+        ref_argop_off_i32[k] = LIBXSMM_CAST_UINT(ref_argop_off[k]);
+      }
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_i32, argop_off_i32, 0, 0);
+    }
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);

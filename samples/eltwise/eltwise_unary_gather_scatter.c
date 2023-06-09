@@ -8,11 +8,7 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include "eltwise_common.h"
 
 #define COLS 0
 #define ROWS 1
@@ -24,6 +20,7 @@
 #define GATHER 0
 #define SCATTER 1
 #define EXPANSION_FACTOR 4
+
 
 LIBXSMM_INLINE
 void create_unique_random_array(unsigned long long *inout_array, int n) {
@@ -477,7 +474,7 @@ int main(int argc, char* argv[])
   libxsmm_meltw_unary_param unary_param;
   int ret = EXIT_FAILURE;
 
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
 
   libxsmm_init();
@@ -505,13 +502,13 @@ int main(int argc, char* argv[])
 
   unique_random_array = (unsigned long long*) malloc(M * N * sizeof(unsigned long long));
 
-  /* Allocate arrays  */
-  /* Gather cols : input has larger N (output mxn)  */
-  /* Scatter cols: output has larger N (input mxn)  */
-  /* Gather rows : input has larger M (output mxn)  */
-  /* Scatter rows: output has larger M (input mxn)  */
-  /* Gather offs : input is larger MxN (output mxn)  */
-  /* Scatter offs: output is larger MxN (input mxn)  */
+  /* Allocate arrays */
+  /* Gather cols : input has larger N (output mxn) */
+  /* Scatter cols: output has larger N (input mxn) */
+  /* Gather rows : input has larger M (output mxn) */
+  /* Scatter rows: output has larger M (input mxn) */
+  /* Gather offs : input is larger MxN (output mxn) */
+  /* Scatter offs: output is larger MxN (input mxn) */
 
   if (use_gather_or_scatter == GATHER) {
     if (use_rows_cols_offs == COLS) {
@@ -639,11 +636,11 @@ int main(int argc, char* argv[])
   reference_gather_scatter(sinp, sout_ref, binp, bout_ref, ind_array_64bit, ind_array_32bit, inp_m, inp_n, inp_ld, out_m, out_n, out_ld,
     use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index);
 
-  /* Setup TPP and param struct  */
+  /* Setup TPP and param struct */
   setup_tpp_kernel_and_param_struct( &kernel, &unary_param, sinp, sout, binp, bout, ind_array_64bit, ind_array_32bit, inp_m, inp_n, inp_ld, out_m, out_n, out_ld,
     use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index);
 
-  /* Call TPP kernel  */
+  /* Call TPP kernel */
   kernel( &unary_param );
 
   /* compare results*/
@@ -653,7 +650,7 @@ int main(int argc, char* argv[])
   reference_gather_scatter(sinp, sout_ref, binp, bout_ref, ind_array_64bit, ind_array_32bit, inp_m, inp_n, inp_ld, out_m, out_n, out_ld,
     use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index);
   l_start = libxsmm_timer_tick();
-  /* Calculate reference results...  */
+  /* Calculate reference results... */
   for (j = 0; j < iters; j++) {
     reference_gather_scatter(sinp, sout_ref, binp, bout_ref, ind_array_64bit, ind_array_32bit, inp_m, inp_n, inp_ld, out_m, out_n, out_ld,
       use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index);

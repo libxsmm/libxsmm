@@ -554,7 +554,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_move( "sve_mov_LD1RD_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,  64 );
   test_sve_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,  64 );
 
-  /* test SVE compute insturctions */
+  /* test SVE compute instructions */
   test_sve_compute( "sve_comp_FMLA_V_P", &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P, 1 );
   test_sve_compute( "sve_comp_TRN1_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_TRN1_V,   0 );
   test_sve_compute( "sve_comp_TRN2_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_TRN2_V,   0 );

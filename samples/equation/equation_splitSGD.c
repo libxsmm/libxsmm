@@ -8,12 +8,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include "equation_common.h"
+
 
 LIBXSMM_INLINE
 void reference_unpack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *in, libxsmm_bfloat16 *out_lo, libxsmm_bfloat16 *out_hi) {
@@ -130,7 +126,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
   int i, j, it = 0;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   int iters = 100;
 
@@ -173,7 +169,7 @@ int main( int argc, char* argv[] ) {
   }
   libxsmm_rne_convert_fp32_bf16( wt, bf16_dwt, ld * N );
 
-  /* Split sgd via equation  */
+  /* Split sgd via equation */
   my_eqn0 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
@@ -200,7 +196,7 @@ int main( int argc, char* argv[] ) {
   eqn_param.output.secondary = (void*)offset;
   func0(&eqn_param);
 
-  /* Run reference split sgd  */
+  /* Run reference split sgd */
   reference_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
 
   reference_pack(M, N, ld, f32_ref_out, wt_lo, wt_hi);

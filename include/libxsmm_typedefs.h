@@ -27,9 +27,11 @@
 # define LIBXSMM_BLASINT int
 #endif
 
-/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO (libxsmm_frontend.h) */
+/** Generic prefetch applicable for all domains. */
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
+/** Attempt to automatically select a strategy. */
+#define LIBXSMM_PREFETCH_AUTO -1
 
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
@@ -75,14 +77,42 @@
   (LIBXSMM_DATATYPE_BF8  == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_HF8  == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I64  == ((int)(ENUM))) ? 8 : ( \
+  (LIBXSMM_DATATYPE_U64  == ((int)(ENUM))) ? 8 : ( \
   (LIBXSMM_DATATYPE_I32  == ((int)(ENUM))) ? 4 : ( \
+  (LIBXSMM_DATATYPE_U32  == ((int)(ENUM))) ? 4 : ( \
   (LIBXSMM_DATATYPE_I16  == ((int)(ENUM))) ? 2 : ( \
+  (LIBXSMM_DATATYPE_U16  == ((int)(ENUM))) ? 2 : ( \
   (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_U8   == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))
+    0/*invalid*/))))))))))))))))
 
-/* Get input or output precision */
-#define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
+/* Get input precision datatype (preserves unsigned datatype) */
+#define LIBXSMM_GETENUM_UNP(SRC) ((SRC) & 0x0F)
+/* Get signed precision datatype regardless of signed or unsigned input */
+#define LIBXSMM_GETENUM_INP(SRC) ( \
+  (LIBXSMM_DATATYPE_F64         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_F64 : ( \
+  (LIBXSMM_DATATYPE_F32         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_F32 : ( \
+  (LIBXSMM_DATATYPE_BF16        == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_BF16 : ( \
+  (LIBXSMM_DATATYPE_F16         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_F16 : ( \
+  (LIBXSMM_DATATYPE_BF8         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_BF8 : ( \
+  (LIBXSMM_DATATYPE_HF8         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_HF8 : ( \
+  (LIBXSMM_DATATYPE_I64         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I64 : ( \
+  (LIBXSMM_DATATYPE_U64         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I64 : ( \
+  (LIBXSMM_DATATYPE_I32         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I32 : ( \
+  (LIBXSMM_DATATYPE_U32         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I32 : ( \
+  (LIBXSMM_DATATYPE_I16         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I16 : ( \
+  (LIBXSMM_DATATYPE_U16         == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I16 : ( \
+  (LIBXSMM_DATATYPE_I8          == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I8 : ( \
+  (LIBXSMM_DATATYPE_U8          == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_I8 : ( \
+  (LIBXSMM_DATATYPE_IMPLICIT    == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_IMPLICIT : ( \
+  (LIBXSMM_DATATYPE_UNSUPPORTED == LIBXSMM_GETENUM_UNP(SRC)) ? LIBXSMM_DATATYPE_UNSUPPORTED : ( \
+  (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
+    0/*invalid*/))))))))))))))))))
+
+/* Get output precision datatype (preserves unsigned datatype) */
+#define LIBXSMM_GETENUM_UOT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_UNP(SRC) : ((SRC) >> 4))
+/* Get signed precision datatype regardless of signed or unsigned output */
 #define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
 /* Get/Set input and output precision */
 #define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) \
@@ -109,10 +139,17 @@
 # endif
 #endif
 
-/* special type for bitfield flags */
+/** Integer type used to represent tick of a high-resolution timer. */
+typedef unsigned long long libxsmm_timer_tickint;
+
+/** Special type for bitfield flags. */
 typedef unsigned int libxsmm_bitfield;
 
-/* Support for Bfloat16 */
+/**
+ * Support for low-precision types.
+ * TODO: rely on struct for proper
+ * overload in C++.
+ */
 typedef unsigned short libxsmm_bfloat16;
 typedef unsigned char  libxsmm_bfloat8;
 typedef unsigned char  libxsmm_hfloat8;
@@ -173,9 +210,14 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DATATYPE_HF8,
   LIBXSMM_DATATYPE_I64,
+  LIBXSMM_DATATYPE_U64,
   LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DATATYPE_U32,
   LIBXSMM_DATATYPE_I16,
+  LIBXSMM_DATATYPE_U16,
   LIBXSMM_DATATYPE_I8,
+  LIBXSMM_DATATYPE_U8,
+  LIBXSMM_DATATYPE_IMPLICIT,
   LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
 
@@ -299,7 +341,11 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4         = 60,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM      = 61,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2     = 62,
-  LIBXSMM_MELTW_TYPE_UNARY_DUMP                         = 63
+  LIBXSMM_MELTW_TYPE_UNARY_DUMP                         = 63,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2        = 64,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3        = 65,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM     = 66,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM     = 67
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -309,34 +355,37 @@ typedef enum libxsmm_meltw_binary_flags {
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0    = 4,
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1    = 8,
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0 = 16,
-  LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1 = 32
+  LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1 = 32,
+  LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND  = 64
 } libxsmm_meltw_binary_flags;
 
 typedef enum libxsmm_meltw_binary_type {
-  LIBXSMM_MELTW_TYPE_BINARY_NONE        =  0,
-  LIBXSMM_MELTW_TYPE_BINARY_ADD         =  1,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL         =  2,
-  LIBXSMM_MELTW_TYPE_BINARY_SUB         =  3,
-  LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
-  LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 7,
-  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  8,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                       =  9,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS               =  10,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS               =  11,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS       =  12,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                =  13,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS        =  14,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS          =  15,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  16,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS               =  17,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS               =  18,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS       =  19,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                =  20,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS        =  21,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS          =  22,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS  =  23
+  LIBXSMM_MELTW_TYPE_BINARY_NONE                            =  0,
+  LIBXSMM_MELTW_TYPE_BINARY_ADD                             =  1,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL                             =  2,
+  LIBXSMM_MELTW_TYPE_BINARY_SUB                             =  3,
+  LIBXSMM_MELTW_TYPE_BINARY_DIV                             =  4,
+  LIBXSMM_MELTW_TYPE_BINARY_MULADD                          =  5,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL                          =  6,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD =  7,
+  LIBXSMM_MELTW_TYPE_BINARY_PACK                            =  8,
+  LIBXSMM_MELTW_TYPE_BINARY_MAX                             =  9,
+  LIBXSMM_MELTW_TYPE_BINARY_MIN                             = 10,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                          = 11,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS                  = 12,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS                  = 13,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS          = 14,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                   = 15,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS           = 16,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS             = 17,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS     = 18,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS                  = 19,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS                  = 20,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS          = 21,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                   = 22,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS           = 23,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS             = 24,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS     = 25
 } libxsmm_meltw_binary_type;
 
 typedef enum libxsmm_meltw_ternary_flags {
@@ -482,7 +531,7 @@ typedef enum libxsmm_gemm_flags {
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
-  /** No prefetching and no prefetch fn. signature. */
+  /** No data-prefetch. */
   LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
   /** Only function prefetch signature. */
   LIBXSMM_GEMM_PREFETCH_SIGONLY            = LIBXSMM_PREFETCH_SIGONLY,
@@ -510,13 +559,6 @@ typedef enum libxsmm_gemm_batch_reduce_type {
   LIBXSMM_GEMM_BATCH_REDUCE_OFFSET  = 2,
   LIBXSMM_GEMM_BATCH_REDUCE_STRIDE  = 4
 } libxsmm_gemm_batch_reduce_type;
-
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_matcopy_flags {
-  LIBXSMM_MATCOPY_FLAG_DEFAULT = 0,
-  /** If set, then use zero matrix as source */
-  LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
-} libxsmm_matcopy_flags;
 
 /** Determines the kernel kind. */
 typedef enum libxsmm_kernel_kind {
@@ -648,7 +690,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_unary_param {
 
 /** argument struct for matrix-eltwise: binary */
 LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_binary_param {
-  libxsmm_matrix_op_arg op;   /* op state & paramters */
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg out;     /* output     */
@@ -748,7 +790,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_unary_argops {
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_binary_postops {
   libxsmm_blasint ldd;                        /* leading dimensions of D */
   libxsmm_datatype d_in_type;                 /* datatype of D */
-  libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+  libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binary( C, D ) */
   libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 
@@ -756,7 +798,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_binary_postops {
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction_ext)( const libxsmm_gemm_ext_param* in_struct );
 
-/** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
+/** Union to convert between different function types or plain pointers (weak-typed). */
 LIBXSMM_EXTERN_C typedef union libxsmm_xmmfunction {
   const void* ptr_const; void* ptr;
   void (*xmm)(const void* a, const void* b, void* c);

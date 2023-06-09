@@ -9,7 +9,6 @@
 ******************************************************************************/
 /* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_AARCH64_INSTRUCTIONS_H
 #define GENERATOR_AARCH64_INSTRUCTIONS_H
 

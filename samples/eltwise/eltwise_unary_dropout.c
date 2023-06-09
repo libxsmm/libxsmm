@@ -8,17 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "eltwise_common.h"
 
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
+
 
 LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
@@ -113,7 +108,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
         const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
         libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi)]), in_values, M );
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
 
       dropout_fwd_f32_f32_gold( M, in_values, out_values, &(mask[(j*mask_ld)]), rng_state, p );
@@ -134,13 +129,13 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
         libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
         libxsmm_rne_convert_fp32_hf8( out_values, &(hf8_out[(j*ldo)]), M );
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
     }
     libxsmm_free( in_values );
     libxsmm_free( out_values );
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -171,7 +166,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
           const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         out_value = ( ( mask[(j*mask_ld) + (i/8)] & (1 << (i%8)) ) != 0 ) ? in_value * pi : 0.0f;
@@ -192,12 +187,12 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -288,12 +283,12 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
     for ( i = 0; i < N; ++i ) {
       for ( j = 0; j < M/8; ++j ) {
         if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-          printf("error at possition i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("error at position i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           s = 1;
         }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %i, %i\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
       }

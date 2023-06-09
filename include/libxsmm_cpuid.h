@@ -11,7 +11,6 @@
 #ifndef LIBXSMM_CPUID_H
 #define LIBXSMM_CPUID_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
 /**
@@ -29,6 +28,8 @@
 #define LIBXSMM_X86_AVX               1005
 #define LIBXSMM_X86_AVX2              1006
 #define LIBXSMM_X86_AVX2_ADL          1007
+#define LIBXSMM_X86_AVX2_SRF          1008
+#define LIBXSMM_X86_AVX512_VL128      1041
 #define LIBXSMM_X86_AVX512_VL256      1051
 #define LIBXSMM_X86_AVX512_VL256_CLX  1052
 #define LIBXSMM_X86_AVX512_VL256_CPX  1053
@@ -39,6 +40,7 @@
 #define LIBXSMM_X86_AVX512_CLX        1105
 #define LIBXSMM_X86_AVX512_CPX        1106
 #define LIBXSMM_X86_AVX512_SPR        1107
+#define LIBXSMM_X86_AVX512_GNR        1108
 #define LIBXSMM_X86_ALLFEAT           1999
 #define LIBXSMM_AARCH64_V81           2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
@@ -60,40 +62,32 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
 } libxsmm_cpuid_info;
 
 /** Returns the target architecture and instruction set extensions. */
-#if defined(__cplusplus) /* note: stay compatible with TF */
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info = NULL);
-LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info = NULL);
-#else
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info);
-LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
-#endif
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
- * TODO: limited lifetime API until we have a fully-fleged ARM CPU flags test.
+ * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
  */
 LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(void);
 
 /**
- * TODO: limited lifetime API until we have a fully-fleged ARM CPU flags test.
+ * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
  * Might be needed to overwrite BFMMLA with BFDOT for performance study.
  */
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
+LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
  * architecture and datatype */
-LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype);
+LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype);
 
 /**
  * Similar to libxsmm_cpuid_x86, but conceptually not arch-specific.
  * The actual code path (as used by LIBXSMM) is determined by
  * libxsmm_[get|set]_target_archid/libxsmm_[get|set]_target_arch.
  */
-#if defined(__cplusplus)
-LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info = NULL);
-#else
-LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info);
-#endif
+LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
  * Names the CPU architecture given by CPUID.

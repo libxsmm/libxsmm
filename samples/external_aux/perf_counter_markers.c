@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Sanchit Misra (Intel Corp), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -410,7 +409,7 @@ void read_core_ctrs( ctrs_core *c ) {
       c->l2_lines_out_ns[core] = readctr(gbl_core_perf_fd.fd_l2_lines_out_ns[core]);
       c->idi_misc_wb_up[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_up[core]);
       c->idi_misc_wb_down[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_down[core]);
-    } else if (  gbl_core_perf_fd.exp == CTRS_EXP_CORE_SNP_RSP ) {
+    } else if ( gbl_core_perf_fd.exp == CTRS_EXP_CORE_SNP_RSP ) {
       c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
       c->instrs[core] = readctr(gbl_core_perf_fd.fd_instrs[core]);
       c->core_snp_rsp_ihiti[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ihiti[core]);

@@ -24,7 +24,6 @@
 # endif
 #endif
 #if defined(_WIN32)
-# include <windows.h>
 # include <malloc.h>
 # include <intrin.h>
 #else
@@ -38,7 +37,6 @@
 # endif
 # include <sys/types.h>
 # include <sys/stat.h>
-# include <unistd.h>
 # include <errno.h>
 # if defined(__MAP_ANONYMOUS)
 #   define LIBXSMM_MAP_ANONYMOUS __MAP_ANONYMOUS
@@ -429,7 +427,8 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result;
   if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_MALLOC_ALIGNMAX) <= size) {
-    result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT) : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_MALLOC_ALIGNMAX);
+    result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT)
+      : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_MALLOC_ALIGNMAX);
   }
   else { /* small-size request */
     if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_ALIGNMENT) <= size) {
@@ -442,23 +441,6 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
       result = sizeof(void*);
     }
   }
-  return result;
-}
-
-
-LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
-{
-  size_t result = 0, size1 = 0;
-  if (0 != ndims && NULL != shape) {
-    size_t i;
-    result = (NULL != offset ? offset[0] : 0);
-    size1 = shape[0];
-    for (i = 1; i < ndims; ++i) {
-      result += (NULL != offset ? offset[i] : 0) * size1;
-      size1 *= shape[i];
-    }
-  }
-  if (NULL != size) *size = size1;
   return result;
 }
 
@@ -497,7 +479,8 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 #if defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE)
         || (result->size_alloc < result->size)
 #endif
-        || (LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max), internal_malloc_private_max) < result->size
+        || (LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max),
+              internal_malloc_private_max) < result->size
             && 0 == (flags_px & result->flags)) || (0 == result->size)
         || (2 > libxsmm_ninit) /* before checksum calculation */
 #if !defined(LIBXSMM_MALLOC_CRC_OFF) /* last check: checksum over info */
@@ -509,6 +492,11 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 # endif
 #endif
       ) { /* mismatch */
+#if !defined(NDEBUG)
+        if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM ERROR: malloc/free mismatch!\n");
+        }
+#endif
         result = NULL;
       }
     }
@@ -2258,7 +2246,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           if (0 > libxsmm_verbosity) { /* avoid dump if just the profiler is enabled */
             LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr,
               /* dump executable code without constant data (apply_size vs info_size) */
-              apply_size, 1/*unique*/));
+              apply_size, 1/*unique*/, 0/*overwrite*/));
           }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {

@@ -11,7 +11,7 @@
 #include "libxsmm_matrixeqn.h"
 
 /* aux struct for matrix equations */
-LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
+LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[LIBXSMM_MAX_EQN_COUNT]);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_init);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_count);
 
@@ -526,7 +526,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_arg_node(libxsmm_matr
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_unary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_unary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
-  /* Assign timestamp and propagate info for n_args/max_tmp_size  */
+  /* Assign timestamp and propagate info for n_args/max_tmp_size */
   cur_node->visit_timestamp = *global_timestamp;
   *global_timestamp = *global_timestamp + 1;
   cur_node->n_args = cur_node->le->n_args;
@@ -551,12 +551,12 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_unary_node(libxsmm_ma
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_binary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_binary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
-  /* Assign timestamp and propagate info for n_args/max_tmp_size  */
+  /* Assign timestamp and propagate info for n_args/max_tmp_size */
   cur_node->visit_timestamp = *global_timestamp;
   *global_timestamp = *global_timestamp + 1;
   cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args;
   cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size);
-  /* Max tmp size has to be adjusted if it is a MATMUL op  */
+  /* Max tmp size has to be adjusted if it is a MATMUL op */
   if ((cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1)) {
     libxsmm_blasint matmul_out_size = cur_node->le->tmp.m * cur_node->ri->tmp.n;
     cur_node->max_tmp_size = LIBXSMM_MAX(matmul_out_size, cur_node->max_tmp_size);
@@ -602,7 +602,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_binary_node(libxsmm_m
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
-  /* Assign timestamp and propagate info for n_args/max_tmp_size  */
+  /* Assign timestamp and propagate info for n_args/max_tmp_size */
   int use_r2_as_output = ((cur_node->info.t_op.flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0) ? 1 : 0;
   cur_node->visit_timestamp = *global_timestamp;
   *global_timestamp = *global_timestamp + 1;
@@ -721,7 +721,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_m
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->ri);
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->r2);
   } else {
-    /* This should not happen  */
+    /* This should not happen */
   }
 }
 
@@ -745,7 +745,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     libxsmm_matrix_eqn_exec_plan_visit_arg_node(cur_node);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-    /* First visit left child tree  */
+    /* First visit left child tree */
     libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
     libxsmm_matrix_eqn_exec_plan_visit_unary_node(cur_node, global_timestamp, n_max_tmp, tmp_storage_pool);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
@@ -789,7 +789,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
     }
     libxsmm_matrix_eqn_exec_plan_visit_ternary_node(cur_node, global_timestamp, n_max_tmp, tmp_storage_pool);
   } else {
-    /* This should not happen  */
+    /* This should not happen */
   }
 }
 
@@ -830,7 +830,8 @@ int libxsmm_matrix_eqn_is_unary_opcode_transform_kernel (unsigned int opcode) {
        (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM)     ||
        (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2)    ||
        (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T)   ||
-       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T)    ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM)    ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM)    ||
        (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) ||
        (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)         ||
        (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)         ||
@@ -934,6 +935,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   assert(NULL != libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation does not exist, nothing to optimize!\n" );
+    return;
   }
   else if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
     fprintf( stderr, "the requested equation is not yet finalized, so cannot optimize!\n" );
@@ -942,6 +944,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   printf("\n");
   printf("Assigning register scores to find optimal traversal plan (i.e. that minimizes tmp storage)... \n");
 #endif
+  assert(NULL != libxsmm_matrix_eqns[idx]);
   libxsmm_matrix_eqn_propagate_tmp_info( libxsmm_matrix_eqns[idx]->eqn_root );
   libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqns[idx]->eqn_root );
   max_reg_score = libxsmm_matrix_eqns[idx]->eqn_root->reg_score;
@@ -957,11 +960,9 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqns[idx]->eqn_root );
   libxsmm_matrix_eqn_reassign_bcast_tmp( libxsmm_matrix_eqns[idx] );
 #if 0
-  printf("Created optimal exexution plan...\n");
+  printf("Created optimal execution plan...\n");
 #endif
-  if (tmp_storage_pool != NULL) {
-    free(tmp_storage_pool);
-  }
+  free(tmp_storage_pool);
 #if 0
   printf("\n\n");
 #endif
@@ -1276,11 +1277,16 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   /* lazy init of helper array */
   if ( libxsmm_matrix_eqns_init == 0 ) {
     libxsmm_blasint i;
-    for ( i = 0; i < 256; ++i ) {
+    for ( i = 0; i < LIBXSMM_MAX_EQN_COUNT; ++i ) {
       libxsmm_matrix_eqns[i] = NULL;
     }
     libxsmm_matrix_eqns_count = 0;
     libxsmm_matrix_eqns_init = 1;
+  }
+
+  if (ret >= LIBXSMM_MAX_EQN_COUNT) {
+    fprintf(stderr, "Exceeded maximum number of equations (%d). Can't create requested equation...\n", LIBXSMM_MAX_EQN_COUNT);
+    return -1;
   }
 
   libxsmm_matrix_eqns_count++;
