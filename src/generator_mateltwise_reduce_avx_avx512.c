@@ -6764,7 +6764,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
         }
       }
       if (bcast_vecidx == 0) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_in_base, ((peeled_m_trips-1) * vlen + m % vlen ) * i_micro_kernel_config->datatype_size_in);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_in_base, LIBXSMM_WIDEN_U32I64(((peeled_m_trips-1) * vlen + m % vlen ) * i_micro_kernel_config->datatype_size_in));
       }
     }
   } else {
