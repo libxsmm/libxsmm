@@ -2195,7 +2195,18 @@ LIBXSMM_API_INTERN int libxsmm_malloc_xattrib(void* buffer, int flags, size_t si
 #if defined(_WIN32)
       /* TODO: implement memory protection under Microsoft Windows */
 #else
-      result = mprotect(buffer, size/*entire memory region*/, PROT_READ);
+      const int result_mprotect = mprotect(buffer, size/*entire memory region*/, PROT_READ);
+#   if (defined(__APPLE__) && defined(__arm64__)) || 1
+      static int error_once = 0;
+      LIBXSMM_UNUSED(result_mprotect);
+      if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: failed to mark executable buffer as read-only!\n");
+      }
+#   else
+      result = result_mprotect;
+#   endif
 #endif
     }
     else { /* executable buffer requested */
