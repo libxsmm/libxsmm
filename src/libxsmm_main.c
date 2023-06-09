@@ -2201,7 +2201,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(request->descriptor.pspgemm_bcsc->gemm->datatype) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC(request->descriptor.pspgemm_bcsc->gemm->datatype) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(request->descriptor.pspgemm_bcsc->gemm->datatype))
       {
         libxsmm_generator_packed_spgemm_bcsc_kernel(&generated_code, request->descriptor.pspgemm_bcsc->gemm,
-          request->descriptor.pspgemm_bcsc->row_idx, request->descriptor.pspgemm_bcsc->column_ptr, request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn);
+            request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -3620,8 +3620,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
 }
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
-  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width, const libxsmm_blasint bk, const libxsmm_blasint bn,
-  const unsigned int* column_ptr, const unsigned int* row_idx )
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width, const libxsmm_blasint bk, const libxsmm_blasint bn)
 {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_pspgemm_bcsc_descriptor pspgemm_bcsc /*= { 0 }*/;
@@ -3652,8 +3651,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
     l_gemm_flags, libxsmm_get_gemm_prefetch(prefetch_flags));
 
   pspgemm_bcsc.gemm = desc;
-  pspgemm_bcsc.column_ptr = column_ptr;
-  pspgemm_bcsc.row_idx = row_idx;
   pspgemm_bcsc.packed_width = packed_width;
   pspgemm_bcsc.bk = bk;
   pspgemm_bcsc.bn = bn;

@@ -16,8 +16,6 @@
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_bcsc_bsparse( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                   const unsigned int*             i_row_idx,
-                                                   const unsigned int*             i_column_idx,
                                                    const unsigned int              i_packed_width,
                                                    const unsigned int              i_bk,
                                                    const unsigned int              i_bn ) {
@@ -25,8 +23,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse( libxsmm_generated_code*      
        (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( io_generated_code,
                                                                       i_xgemm_desc,
-                                                                      i_row_idx,
-                                                                      i_column_idx,
                                                                       i_packed_width,
                                                                       i_bk,
                                                                       i_bn );
@@ -34,8 +30,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse( libxsmm_generated_code*      
               (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( io_generated_code,
                                                           i_xgemm_desc,
-                                                          i_row_idx,
-                                                          i_column_idx,
                                                           i_packed_width,
                                                           i_bk,
                                                           i_bn );

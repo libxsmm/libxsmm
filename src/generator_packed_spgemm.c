@@ -102,8 +102,6 @@ void libxsmm_generator_packed_spgemm_csc_kernel( libxsmm_generated_code*        
 LIBXSMM_API
 void libxsmm_generator_packed_spgemm_bcsc_kernel( libxsmm_generated_code*        io_generated_code,
                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                  const unsigned int*            i_row_idx,
-                                                  const unsigned int*            i_column_idx,
                                                   const unsigned int             i_packed_width,
                                                   const unsigned int             i_bk,
                                                   const unsigned int             i_bn ) {
@@ -119,7 +117,7 @@ void libxsmm_generator_packed_spgemm_bcsc_kernel( libxsmm_generated_code*       
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    libxsmm_generator_packed_spgemm_bcsc_bsparse( io_generated_code, i_xgemm_desc, i_row_idx, i_column_idx, i_packed_width, i_bk, i_bn );
+    libxsmm_generator_packed_spgemm_bcsc_bsparse( io_generated_code, i_xgemm_desc, i_packed_width, i_bk, i_bn );
   } else {
     /* something bad happened... */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );

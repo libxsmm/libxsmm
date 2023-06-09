@@ -18,8 +18,6 @@
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_code*         io_generated_code,
                                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                           const unsigned int*             i_row_idx,
-                                                           const unsigned int*             i_column_idx,
                                                            const unsigned int              i_packed_width,
                                                            const unsigned int              i_bk,
                                                            const unsigned int              i_bn );
@@ -31,9 +29,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                          const unsigned int*                i_row_idx,
-                                                                          const unsigned int*                i_column_idx,
-                                                                          const unsigned int                 i_n_processed,
+                                                                          const unsigned int                 i_packed_processed,
                                                                           const unsigned int                 i_packed_range,
                                                                           const unsigned int                 i_packed_blocking,
                                                                           const unsigned int                 i_packed_remainder,
@@ -49,8 +45,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                          const unsigned int*                i_row_idx,
-                                                                          const unsigned int*                i_column_idx,
                                                                           const unsigned int                 i_packed_processed,
                                                                           const unsigned int                 i_packed_range,
                                                                           const unsigned int                 i_packed_blocking,

@@ -283,8 +283,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csc_descriptor
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_bcsc_descriptor {
   const libxsmm_gemm_descriptor* gemm;
-  const unsigned int* column_ptr;
-  const unsigned int* row_idx;
   unsigned int packed_width;
   unsigned int bk;
   unsigned int bn;
