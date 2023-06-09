@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
+* Copyright (c) Intel Corporation - All rights reserved.                      *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
