@@ -184,7 +184,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    if (io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CLX && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) {
       l_simd_packed_width = 16;
       l_is_amx_kernel = 0;
       if ((i_bk % 4 != 0) || ((i_bn % 2 != 0) && (i_bn != 1))) {
@@ -307,9 +307,9 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   }
 
   if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) &&
-      ((io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_SPR))) {
+      ((io_generated_code->arch <= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_SPR))) {
     unsigned int l_max_m_blocking = 2;
-    if (io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) {
+    if (io_generated_code->arch <= LIBXSMM_X86_AVX512_CPX) {
       l_max_m_blocking = 4;
       /* Set blocking factor decisions...  */
       if (l_simd_packed_iters <= l_max_m_blocking) {
@@ -363,7 +363,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
     }
 
     if (l_emit_compute > 0) {
-      if (io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) {
+      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_CPX) {
         if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
           /* mask for M remainder  */
           if ( l_simd_packed_remainder != 0 ) {
