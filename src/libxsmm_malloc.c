@@ -494,7 +494,10 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
       ) { /* mismatch */
 #if !defined(NDEBUG)
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM ERROR: malloc/free mismatch!\n");
+          static int error_once = 0;
+          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+            fprintf(stderr, "LIBXSMM ERROR: malloc/free mismatch!\n");
+          }
         }
 #endif
         result = NULL;
