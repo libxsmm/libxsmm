@@ -600,11 +600,14 @@ LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char del
 LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
   const size_t* shuffle, const size_t* nrepeat)
 {
-  char elembuf[4096];
-  size_t idxbuf[1024], *const idx = ((count * sizeof(*idxbuf)) <= sizeof(idxbuf) ? idxbuf
-    : (size_t*)malloc(sizeof(size_t) * count));
+  char elembuf[128];
+  unsigned short idxshort[4096];
+  const int idxlong = sizeof(idxshort) < (count * sizeof(*idxshort));
+  size_t *const idx = (0 == idxlong ? NULL : (size_t*)malloc(sizeof(size_t) * count));
   int result;
-  if ((NULL != inout || 0 == elemsize || 0 == count) && elemsize <= sizeof(elembuf) && NULL != idx) {
+  if ((NULL != inout || 0 == elemsize || 0 == count) && elemsize <= sizeof(elembuf)
+    && (0 == idxlong || NULL != idx))
+  {
     unsigned char* const LIBXSMM_RESTRICT data = (unsigned char*)inout;
     const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
     const size_t c = libxsmm_unshuffle(count, &s) - 1;
@@ -612,21 +615,27 @@ LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
     size_t i, j, k;
     for (i = 0; i < count; ++i) {
       for (k = 0, j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
-      idx[i] = j;
+      if (0 == idxlong) idxshort[i] = (unsigned short)j; else idx[i] = j;
     }
     for (i = 0; i < count; ++i) {
-      j = idx[i];
+      j = (0 == idxlong ? idxshort[i] : idx[i]);
       while (i != j) {
         memcpy(elembuf, data + elemsize * i, elemsize);
         memcpy(data + elemsize * i, data + elemsize * j, elemsize);
         memcpy(data + elemsize * j, elembuf, elemsize);
-        k = idx[j]; idx[j] = j; idx[i] = k; j = k;
+        if (0 == idxlong) {
+          k = idxshort[j]; idxshort[j] = (unsigned short)j; idxshort[i] = (unsigned short)k;
+        }
+        else {
+          k = idx[j]; idx[j] = j; idx[i] = k;
+        }
+        j = k;
       }
     }
     result = EXIT_SUCCESS;
   }
   else result = EXIT_FAILURE;
-  if (idxbuf != idx) free(idx);
+  free(idx);
   return result;
 }
 
