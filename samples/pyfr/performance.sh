@@ -20,6 +20,7 @@ export OMP_PROC_BIND=${OMP_PROC_BIND:-TRUE}
 export FSSPMDM_NBLOCK=${FSSPMDM_NBLOCK:-40}
 export PERF_R=${PERF_R:-10000}
 export PERF_N=${PERF_N:-40}
+export LIBXSMM_VERBOSE=0
 
 WAIT=12
 if [[ ! -e "${HERE}/pyfr_driver_asp_reg" || ! -e "${HERE}/gimmik" || ("$(command -v ldd)" \
