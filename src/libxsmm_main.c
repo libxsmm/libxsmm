@@ -1325,12 +1325,10 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           internal_dump(stdout, 1/*urgent*/);
         }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* mid-timing */
-#if defined(LIBXSMM_PLATFORM_X86)
-        libxsmm_cpuid_x86(&internal_cpuid_info);
+        libxsmm_cpuid(&internal_cpuid_info);
         if (0 != internal_cpuid_info.constant_tsc && t0 < t1) {
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
-#endif
         internal_sigentries[0].signal = signal(SIGABRT, internal_libxsmm_signal);
         internal_sigentries[0].signum = SIGABRT;
         internal_sigentries[1].signal = signal(SIGSEGV, internal_libxsmm_signal);
@@ -1361,13 +1359,9 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           if (EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
-          if (0 == libxsmm_timer_scale
-#if defined(LIBXSMM_PLATFORM_X86)
-            && 0 == internal_cpuid_info.constant_tsc
-#endif
+          if (0 == libxsmm_timer_scale && 0 == internal_cpuid_info.constant_tsc
             && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
           {
-            /* ARM: TSC is currently not implemented, hence warning shows up (if verbose) */
             fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
           }
         }

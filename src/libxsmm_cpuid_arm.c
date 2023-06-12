@@ -22,6 +22,13 @@
 #if !defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK) && 1
 # define LIBXSMM_CPUID_ARM_CNTB_FALLBACK
 #endif
+#if !defined(LIBXSMM_CPUID_ARM_MODEL_FALLBACK)
+# if 0
+#   define LIBXSMM_CPUID_ARM_MODEL_FALLBACK
+# elif defined(__APPLE__) && defined(__arm64__)
+#   define LIBXSMM_CPUID_ARM_MODEL_FALLBACK
+# endif
+#endif
 
 #if defined(LIBXSMM_PLATFORM_AARCH64)
 # if defined(_MSC_VER)
@@ -102,9 +109,17 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
   libxsmm_cpuid_info cpuid_info;
-  size_t model_size = sizeof(cpuid_info.model);
-  libxsmm_cpuid_model(cpuid_info.model, &model_size);
-  LIBXSMM_ASSERT(0 != model_size || '\0' == *cpuid_info.model);
+  size_t model_size = 0;
+# if !defined(LIBXSMM_CPUID_ARM_MODEL_FALLBACK)
+  if (NULL != info)
+# endif
+  {
+    size_t cpuinfo_model_size = sizeof(cpuid_info.model);
+    libxsmm_cpuid_model(cpuid_info.model, &cpuinfo_model_size);
+    LIBXSMM_ASSERT(0 != cpuinfo_model_size || '\0' == *cpuid_info.model);
+    model_size = cpuinfo_model_size;
+    cpuid_info.constant_tsc = 1;
+  }
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid re-detecting features */
 # if defined(LIBXSMM_CPUID_ARM_BASELINE)
     result = LIBXSMM_CPUID_ARM_BASELINE;
@@ -178,7 +193,7 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
           }
         }
       }
-#   if defined(__APPLE__) && defined(__arm64__)
+#   if defined(LIBXSMM_CPUID_ARM_MODEL_FALLBACK)
       else if (0 != model_size) { /* determine CPU based on vendor-string (everything else failed) */
         if (LIBXSMM_AARCH64_APPL_M1 > result && 0 == strncmp("Apple M1", cpuid_info.model, model_size)) {
           result = LIBXSMM_AARCH64_APPL_M1;
