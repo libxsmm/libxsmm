@@ -110,9 +110,8 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 #if defined(LIBXSMM_PLATFORM_AARCH64)
   libxsmm_cpuid_info cpuid_info;
   size_t model_size = 0;
-# if defined(LIBXSMM_CPUID_ARM_MODEL_FALLBACK)
+# if !defined(LIBXSMM_CPUID_ARM_MODEL_FALLBACK)
   LIBXSMM_UNUSED(model_size);
-#else
   if (NULL != info)
 # endif
   {
