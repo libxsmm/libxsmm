@@ -36,6 +36,31 @@ then
   fi
 fi
 
+# ensure proper permissions
+if [ "${UMASK}" ]; then
+  UMASK_CMD="umask ${UMASK};"
+  eval "${UMASK_CMD}"
+fi
+
+# optionally enable script debug
+if [ "${PERFORMANCE_DEBUG}" ] && [ "0" != "${PERFORMANCE_DEBUG}" ]; then
+  echo "*** DEBUG ***"
+  if [[ ${PERFORMANCE_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+    set -xv
+  else
+    set "${PERFORMANCE_DEBUG}"
+  fi
+  PYTHON=$(command -v python3)
+  if [ ! "${PYTHON}" ]; then
+    PYTHON=$(command -v python)
+  fi
+  if [ "${PYTHON}" ]; then
+    ${PYTHON} -m site --user-site 2>&1 && echo
+  fi
+  env
+  echo "*** DEBUG ***"
+fi
+
 TMPF=$(mktemp)
 trap 'rm -f ${TMPF}' EXIT
 

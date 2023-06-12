@@ -77,9 +77,10 @@ else
       LOGDIR=${ARTROOT}/artifacts
     elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
-    else  # debug purpose
-      LOGDIR=.
     fi
+  fi
+  if [ ! "${LOGDIR}" ]; then  # debug purpose
+    LOGDIR=.
   fi
 fi
 
@@ -229,7 +230,9 @@ if [ "${LOGDIR}" ]; then
         fi
         # embed figure if report is not exclusive
         if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
-          if ! OUTPUT=$(base64 -w0 "${FIGURE}");
+          BASE64_FLAG=-w0
+          if base64 ${BASE64_FLAG} </dev/null 2>&1 | grep -q invalid; then BASE64_FLAG=""; fi
+          if ! OUTPUT=$(eval "base64 ${BASE64_FLAG} <${FIGURE}");
           then OUTPUT=""; fi
           if [ "${OUTPUT}" ]; then
             if [ "$(command -v mimetype)" ]; then
