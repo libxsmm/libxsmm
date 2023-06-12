@@ -27,19 +27,6 @@
 # if defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable: 4611)
-#   define LIBXSMM_CPUID_ARM_ENC16(OP0, OP1, CRN, CRM, OP2) ( \
-      (((OP0) & 1) << 14) | \
-      (((OP1) & 7) << 11) | \
-      (((CRN) & 15) << 7) | \
-      (((CRM) & 15) << 3) | \
-      (((OP2) & 7) << 0))
-#   define ID_AA64ISAR1_EL1 LIBXSMM_CPUID_ARM_ENC16(0b11, 0b000, 0b0000, 0b0110, 0b001)
-#   define ID_AA64PFR0_EL1  LIBXSMM_CPUID_ARM_ENC16(0b11, 0b000, 0b0000, 0b0100, 0b000)
-#   define MIDR_EL1         LIBXSMM_CPUID_ARM_ENC16(0b11, 0b000, 0b0000, 0b0000, 0b000)
-#   define LIBXSMM_CPUID_ARM_MRS(RESULT, ID) RESULT = _ReadStatusReg(ID)
-# else
-#   define LIBXSMM_CPUID_ARM_MRS(RESULT, ID) __asm__ __volatile__( \
-      "mrs %0," LIBXSMM_STRINGIFY(ID) : "=r"(RESULT))
 # endif
 LIBXSMM_APIVAR_DEFINE(jmp_buf internal_cpuid_arm_jmp_buf);
 LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int /*signum*/);
@@ -68,7 +55,7 @@ LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(void);
 LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(void) {
   uint64_t result = 0;
   if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
-    LIBXSMM_CPUID_ARM_MRS(result, MIDR_EL1);
+    LIBXSMM_ARM_MRS(result, MIDR_EL1);
   }
   return (char)(0xFF & (result >> 24));
 }
@@ -131,16 +118,16 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
     if (SIG_ERR != handler) {
       uint64_t id_aa64isar1_el1 = 0;
       if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
-        LIBXSMM_CPUID_ARM_MRS(id_aa64isar1_el1, ID_AA64ISAR1_EL1);
+        LIBXSMM_ARM_MRS(id_aa64isar1_el1, ID_AA64ISAR1_EL1);
       }
       if (LIBXSMM_AARCH64_V82 <= result
         || /* DPB */ 0 != (0xF & id_aa64isar1_el1))
       {
-        volatile uint64_t id_aa64pfr0_el1 = 0;
-        volatile int no_access = 0; /* try libxsmm_cpuid_arm_svcntb */
+        /*volatile*/ uint64_t id_aa64pfr0_el1 = 0;
+        /*volatile*/ int no_access = 0; /* try libxsmm_cpuid_arm_svcntb */
         if (LIBXSMM_AARCH64_V82 > result) result = LIBXSMM_AARCH64_V82;
         if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
-          LIBXSMM_CPUID_ARM_MRS(id_aa64pfr0_el1, ID_AA64PFR0_EL1);
+          LIBXSMM_ARM_MRS(id_aa64pfr0_el1, ID_AA64PFR0_EL1);
         }
         else no_access = 1;
         if (0 != (0xF & (id_aa64pfr0_el1 >> 32)) || 0 != no_access) { /* SVE */
