@@ -157,7 +157,7 @@
   } while(0)
 #elif (defined(_rdtsc) || defined(_WIN32)) && defined(LIBXSMM_PLATFORM_X86)
 # define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
-#elif defined(LIBXSMM_PLATFORM_AARCH64) && 0
+#elif defined(LIBXSMM_PLATFORM_AARCH64) && 1
 # if defined(ARM64_CNTVCT) /* Windows */
 #   define LIBXSMM_TIMER_RDTSC(CYCLE) LIBXSMM_ARM_MRS(CYCLE, ARM64_CNTVCT)
 # else
