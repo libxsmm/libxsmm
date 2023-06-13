@@ -659,43 +659,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
       }
     }
   } else {
-    for ( l_n_block = 0; l_n_block < l_n_blocking; l_n_block++ ) {
-      for ( l_n_in_block = 0; l_n_in_block < i_bn; l_n_in_block+=2 ) {
-        l_n = l_n_block * i_bn + l_n_in_block;
-        for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
-          unsigned int l_reg0 = ((l_n+0)*i_packed_blocking) + l_p;
-          unsigned int l_reg1 = ((l_n+1)*i_packed_blocking) + l_p;
-          /* load [16m] for even column */
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            l_c_move_instr,
-            i_gp_reg_mapping->gp_reg_c,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            ((1ull * i_packed_processed * i_simd_packed_width) +
-             (1ull * i_packed_width * l_n) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
-            l_c_vname, l_reg0,
-            ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? 1 : 0,
-            ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0 );
-          /* up-convert bf16 to fp32 */
-          if (l_c_bf16 > 0) {
-            libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', l_reg0, l_reg0 );
-          }
-
-          if (i_bn != 1) {
-            /* load [16m] for odd column */
-            libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-              l_c_move_instr,
-              i_gp_reg_mapping->gp_reg_c,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((1ull * i_packed_processed * i_simd_packed_width) +
-               (1ull * i_packed_width * (l_n+1)) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
-              l_c_vname, l_reg1,
-              ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? 1 : 0,
-              ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0 );
-            /* up-convert bf16 to fp32 */
-            if (l_c_bf16 > 0) {
-              libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', l_reg1, l_reg1 );
-            }
-          }
+    for ( l_n = 0; l_n < l_n_cols_kernel; l_n++ ) {
+      for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
+        unsigned int l_reg0 = (l_n*i_packed_blocking) + l_p;
+        /* load [16m] for even column */
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+          l_c_move_instr,
+          i_gp_reg_mapping->gp_reg_c,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          ((1ull * i_packed_processed * i_simd_packed_width) +
+           (1ull * i_packed_width * l_n) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+          l_c_vname, l_reg0,
+          ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? 1 : 0,
+          ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0 );
+        /* up-convert bf16 to fp32 */
+        if (l_c_bf16 > 0) {
+          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', l_reg0, l_reg0 );
         }
       }
     }
@@ -774,42 +753,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   }
 
   /* store C accumulator */
-  for ( l_n_block = 0; l_n_block < l_n_blocking; l_n_block++ ) {
-    for ( l_n_in_block = 0; l_n_in_block < i_bn; l_n_in_block+=2 ) {
-      l_n = l_n_block * i_bn + l_n_in_block;
-      for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
-        unsigned int l_reg0 = ((l_n+0)*i_packed_blocking) + l_p;
-        unsigned int l_reg1 = ((l_n+1)*i_packed_blocking) + l_p;
-        /* Cvt + store --> write even [16m] */
-        if (l_c_bf16 > 0) {
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, l_reg0, l_reg0 );
-        }
-        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-          l_c_move_instr,
-          i_gp_reg_mapping->gp_reg_c,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          ((1ull * i_packed_processed * i_simd_packed_width) +
-           (1ull * i_packed_width * l_n) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
-          l_c_vname, l_reg0,
-          ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? 1 : 0,
-          ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 1 );
-
-        /* Cvt + store --> write odd [16m] */
-        if(i_bn != 1) {
-          if (l_c_bf16 > 0) {
-            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, l_reg1, l_reg1 );
-          }
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            l_c_move_instr,
-            i_gp_reg_mapping->gp_reg_c,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            ((1ull * i_packed_processed * i_simd_packed_width) +
-             (1ull * i_packed_width * (l_n+1)) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
-            l_c_vname, l_reg1,
-            ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? 1 : 0,
-            ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 1 );
-        }
+  for ( l_n = 0; l_n < l_n_cols_kernel; l_n++ ) {
+    for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
+      unsigned int l_reg0 = (l_n*i_packed_blocking) + l_p;
+      /* Cvt + store --> write even [16m] */
+      if (l_c_bf16 > 0) {
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, l_reg0, l_reg0 );
       }
+      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+        l_c_move_instr,
+        i_gp_reg_mapping->gp_reg_c,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        ((1ull * i_packed_processed * i_simd_packed_width) +
+         (1ull * i_packed_width * l_n) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+        l_c_vname, l_reg0,
+        ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? 1 : 0,
+        ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 1 );
     }
   }
 
