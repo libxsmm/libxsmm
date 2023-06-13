@@ -799,6 +799,7 @@ int main(int argc, char* argv []) {
         l_keep_going = 1;
       }
       if ( 5 != sscanf( l_line, "%i %i %i %i %i", &l_m, &l_n, &l_k, &l_bk, &l_bn ) ) exit(EXIT_FAILURE);
+      /*printf("M %d N %d K %d bk %d bn %d\n", l_m, l_n, l_k, l_bk, l_bn );*/
 
       if (l_keep_going == 0) break;
     }

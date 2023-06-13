@@ -140,14 +140,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_config_tiles_amx( libxsmm_gene
          6   A: Rm  x i_bk
          7   B: i_bk x i_bn  */
       libxsmm_spgemm_setup_tile(0, i_simd_packed_remainder, l_tile_bn, &tile_config);
-      libxsmm_spgemm_setup_tile(1, i_simd_packed_remainder, l_tile_bn, &tile_config);
+      libxsmm_spgemm_setup_tile(1, i_simd_packed_remainder, l_tile_bn2, &tile_config);
       libxsmm_spgemm_setup_tile(2, i_simd_packed_remainder, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(3, i_simd_packed_remainder, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(4, i_simd_packed_remainder, l_tile_bn, &tile_config);
-      libxsmm_spgemm_setup_tile(5, i_simd_packed_remainder, l_tile_bn, &tile_config);
-      libxsmm_spgemm_setup_tile(6, i_simd_packed_remainder, l_k_elements, &tile_config);
-      libxsmm_spgemm_setup_tile(7, l_k_elements, l_tile_bn, &tile_config);
-      io_a_tile_id_starts[0] = 6;
+      libxsmm_spgemm_setup_tile(5, i_simd_packed_remainder, l_k_elements, &tile_config);
+      libxsmm_spgemm_setup_tile(6, l_k_elements, l_tile_bn, &tile_config);
+      libxsmm_spgemm_setup_tile(7, l_k_elements, l_tile_bn2, &tile_config);
+      io_a_tile_id_starts[0] = 5;
     }
   }
   if ((((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
