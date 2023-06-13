@@ -9,7 +9,6 @@ else
 fi
 
 TESTFILE1=$(mktemp)
-trap 'rm ${TESTFILE1}' EXIT
 
 ${PYTHON} << END
 import random as rnd
@@ -42,3 +41,5 @@ for i in $(cat ${TESTFILE1}); do
     fi
   fi
 done
+
+rm ${TESTFILE1}
