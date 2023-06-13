@@ -81,7 +81,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_config_tiles_amx( libxsmm_gene
     if (i_packed_reg_block[0] == 2) {
       /* 0-3 C: 16m  x i_bn
          4-5 A: 16m  x i_bk
-         7   B: i_bk x i_bn  */
+         6-7 B: i_bk x i_bn  */
       libxsmm_spgemm_setup_tile(0, 16, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(1, 16, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(2, 16, l_tile_bn2, &tile_config);
@@ -92,9 +92,9 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_config_tiles_amx( libxsmm_gene
       libxsmm_spgemm_setup_tile(7, l_k_elements, l_tile_bn2, &tile_config);
       io_a_tile_id_starts[0] = 4;
     } else {
-      /* 0-5 C: 16m  x i_bn
-         6   A: 16m  x i_bk
-         7   B: i_bk x i_bn  */
+      /* 0-4 C: 16m  x i_bn
+         5   A: 16m  x i_bk
+         6-7 B: i_bk x i_bn  */
       libxsmm_spgemm_setup_tile(0, 16, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(1, 16, l_tile_bn2, &tile_config);
       libxsmm_spgemm_setup_tile(2, 16, l_tile_bn, &tile_config);
@@ -107,9 +107,9 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_config_tiles_amx( libxsmm_gene
     }
   } else {
     if (i_simd_packed_iters == 2) {
-      /* 0-3 C: 16m  x i_bn
+      /* 0-3 C: 16m  x i_bn / Rm x i_bn
          4-5 A: 16m  x i_bk
-         7   B: i_bk x i_bn  */
+         6-7 B: i_bk x i_bn  */
       libxsmm_spgemm_setup_tile(0, 16, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(1, i_simd_packed_remainder, l_tile_bn, &tile_config);
       libxsmm_spgemm_setup_tile(2, 16, l_tile_bn2, &tile_config);
@@ -616,13 +616,11 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
                                                                      const unsigned int                 i_simd_packed_width,
                                                                      const unsigned int                 i_bk,
                                                                      const unsigned int                 i_bn) {
-  unsigned int l_n_block = 0;
   unsigned int l_n_in_block = 0;
   unsigned int l_n = 0;
   unsigned int l_p = 0;
   unsigned int l_max_reg_block = i_bn * i_packed_blocking;
-  unsigned int l_n_blocking = 1;
-  unsigned int l_n_cols_kernel = l_n_blocking * i_bn;
+  unsigned int l_n_cols_kernel = i_bn;
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
   unsigned int l_c_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
   char l_c_vname = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 'y' : i_micro_kernel_config->vector_name;
