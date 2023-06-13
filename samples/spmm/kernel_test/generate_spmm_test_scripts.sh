@@ -41,11 +41,11 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_F32_BF16' 'U8_I8_I32_I32' 'I8_U8_I32_I3
           OUTNAME="spmm_bf16"
           if [[ ("$BVNNI" == '1') && ("$TRB" == '1') ]]; then
             OUTNAME=$OUTNAME"_avnni1_bvnni1_trb1"
-            BN_LIST=(2 4 8 16 32)
+            BN_LIST=(1 2 4 8 16 32)
             BK_LIST=(4 8 16 32)
           else
             OUTNAME=$OUTNAME"_avnni1_bvnni0_trb0"
-            BN_LIST=(2 4 8 16 32)
+            BN_LIST=(1 2 4 8 16 32)
             BK_LIST=(2 4 8 16 32)
           fi
         elif [[ ("$PREC" == 'U8_I8_I32_I32') || ("$PREC" == 'I8_U8_I32_I32') ]] ; then
@@ -57,11 +57,11 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_F32_BF16' 'U8_I8_I32_I32' 'I8_U8_I32_I3
           fi
           if [[ ("$BVNNI" == '1') && ("$TRB" == '1') ]]; then
             OUTNAME=$OUTNAME"_avnni1_bvnni1_trb1"
-            BN_LIST=(8 16 32)
+            BN_LIST=(1 2 4 8 16 32)
             BK_LIST=(8 16 32)
           else
             OUTNAME=$OUTNAME"_avnni1_bvnni0_trb0"
-            BN_LIST=(4 8 16 32)
+            BN_LIST=(1 2 4 8 16 32)
             BK_LIST=(4 8 16 32)
           fi
         fi
