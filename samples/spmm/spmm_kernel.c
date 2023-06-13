@@ -302,7 +302,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   libxsmm_gemm_param gemm_param;
 
   double l_jittime, l_runtime;
-  size_t l_t, l_r;
+  size_t l_t;
   double l_beta = i_spmm_def->beta;
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
@@ -624,7 +624,6 @@ int main(int argc, char* argv []) {
   int l_vnni_a = 1;
   int l_vnni_b = 0;
   int l_vnni_c = 0;
-  double l_alpha = 0;
   double l_beta = 0;
   double l_runtime_libxsmm = 0;
   int l_file_input = 0;
