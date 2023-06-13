@@ -23,7 +23,7 @@ i = 0
 for m in randnumm:
     for n in randnumn:
         for k in randnumk:
-            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' + 'KSTEP' + ' ' + 'NSTEP' + '\n'
+            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' + 'KSTEP' + ' ' + 'NSTEP 1' + '\n'
             if 0 == (i % 2):
                 f1.write(line)
             else:
