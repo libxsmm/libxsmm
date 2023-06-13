@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
