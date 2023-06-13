@@ -84,6 +84,9 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
     for ( l_j = 0; l_j < l_n; l_j++) {
       LIBXSMM_PRAGMA_SIMD
       for ( l_i = 0; l_i < l_m; l_i++) {
+        if ( l_spmm_def.beta == 0 ) {
+          C[l_j * l_m + l_i] = 0.0;
+        }
         for ( l_jj = 0; l_jj < l_k; l_jj++) {
           C[l_j * l_m + l_i] += A[l_jj * l_m + l_i] * B[l_j*l_k + l_jj];
         }
@@ -126,6 +129,9 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
     for ( l_j = 0; l_j < l_n; l_j++) {
       LIBXSMM_PRAGMA_SIMD
       for ( l_i = 0; l_i < l_m; l_i++) {
+        if ( l_spmm_def.beta == 0 ) {
+          C[l_j * l_m + l_i] = 0;
+        }
         for ( l_jj = 0; l_jj < l_k; l_jj++) {
           C[l_j * l_m + l_i] += (int)A[l_jj * l_m + l_i] * (int)B[l_j*l_k + l_jj];
         }
