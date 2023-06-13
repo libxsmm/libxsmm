@@ -16,6 +16,9 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_spgemm_max_mn_blocking_factors_aarch64(libxsmm_generated_code* io_generated_code, unsigned int i_use_mmla, unsigned int i_bn, unsigned int *o_max_m_bf, unsigned int *o_max_n_bf);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_code*         io_generated_code,
                                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                            const unsigned int              i_packed_width,

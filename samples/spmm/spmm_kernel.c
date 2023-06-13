@@ -823,7 +823,7 @@ int main(int argc, char* argv []) {
         l_keep_going = 1;
       }
       if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_bk, &l_bn, &l_m_blocks ) ) exit(EXIT_FAILURE);
-      /*printf("M %d N %d K %d bk %d bn %d l_m_blocks %d\n", l_m, l_n, l_k, l_bk, l_bn, l_m_blocks );*/
+      printf("M %d N %d K %d bk %d bn %d l_m_blocks %d\n", l_m, l_n, l_k, l_bk, l_bn, l_m_blocks );
 
       if (l_keep_going == 0) break;
     }

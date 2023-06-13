@@ -21,6 +21,27 @@
 #endif
 
 LIBXSMM_API_INTERN
+void libxsmm_spgemm_max_mn_blocking_factors_aarch64(libxsmm_generated_code* io_generated_code, unsigned int i_use_mmla, unsigned int i_bn, unsigned int *o_max_m_bf, unsigned int *o_max_n_bf) {
+  unsigned int l_available_vregs = 32;
+  unsigned int l_n_max_unroll = 0;
+  unsigned int l_m_max_unroll = 0;
+  unsigned int n_blocks = (i_use_mmla == 0) ? i_bn : (i_bn+1)/2;
+  l_n_max_unroll = l_available_vregs - 4;
+  while (n_blocks % l_n_max_unroll != 0) {
+    l_n_max_unroll--;
+  }
+  l_m_max_unroll = l_available_vregs;
+  while ((l_m_max_unroll * l_n_max_unroll + l_m_max_unroll + 1) > l_available_vregs) {
+    l_m_max_unroll--;
+  }
+  if (i_use_mmla > 0) {
+    l_m_max_unroll = LIBXSMM_MIN(4, l_m_max_unroll);
+  }
+  *o_max_m_bf = l_m_max_unroll;
+  *o_max_n_bf = l_n_max_unroll;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_code*         io_generated_code,
                                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                            const unsigned int              i_packed_width,
@@ -36,7 +57,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   unsigned int l_packed_reg_range[2] = {0,0};
   unsigned int l_is_mmla_kernel = 0;
   unsigned int l_max_m_blocking = 4;
-
+  unsigned int l_max_n_blocking = 0;
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -74,7 +95,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       if (l_use_bfdot == 0) {
         l_simd_packed_width = 4;
         l_is_mmla_kernel = 1;
-        if ((i_bk % 4 != 0) || ((i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
+        if (i_bk % 4 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
           free(p_jump_label_tracker);
@@ -84,7 +105,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       } else {
         l_simd_packed_width = 8;
         l_is_mmla_kernel = 0;
-        if ((i_bk % 2 != 0) || ((i_bn != 1) && (i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
+        if (i_bk % 2 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
           free(p_jump_label_tracker);
@@ -107,7 +128,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       if (l_use_bfdot == 0) {
         l_simd_packed_width = 4;
         l_is_mmla_kernel = 1;
-        if ((i_bk % 8 != 0) || ((i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
+        if (i_bk % 8 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
           free(p_jump_label_tracker);
@@ -117,7 +138,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       } else {
         l_simd_packed_width = 8;
         l_is_mmla_kernel = 0;
-        if ((i_bk % 4 != 0) || ((i_bn != 1) && (i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
+        if (i_bk % 4 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
           free(p_jump_label_tracker);
@@ -145,8 +166,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   l_simd_packed_remainder = i_packed_width % l_simd_packed_width;
   l_simd_packed_iters_full = i_packed_width/l_simd_packed_width;
   l_simd_packed_iters = ( l_simd_packed_remainder > 0 ) ? l_simd_packed_iters_full+1 : l_simd_packed_iters_full;
-
-  libxsmm_compute_equalized_blocking( l_simd_packed_iters, 32, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
 
   /* define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
@@ -237,6 +256,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   }
 
   /* Set blocking factor decisions...  */
+  libxsmm_spgemm_max_mn_blocking_factors_aarch64(io_generated_code, l_is_mmla_kernel, i_bn, &l_max_m_blocking, &l_max_n_blocking);
   if (l_simd_packed_iters <= l_max_m_blocking) {
     l_packed_reg_range[0] = l_simd_packed_iters;
     l_packed_reg_block[0] = l_simd_packed_iters;
@@ -641,7 +661,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                        i_gp_reg_mapping->gp_reg_c,
                                                        l_gp_reg_scratch,
                                                        i_gp_reg_mapping->gp_reg_c,
-                                                       (3 * i_packed_width - i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
+                                                       ((long long)3 * i_packed_width - i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
       }
       if ((i_packed_width * 4 - i_packed_blocking * i_simd_packed_width) > 0) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
@@ -874,7 +894,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                      i_gp_reg_mapping->gp_reg_c,
                                                      l_gp_reg_scratch,
                                                      i_gp_reg_mapping->gp_reg_c,
-                                                     (3 * i_packed_width - i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
+                                                     ((long long)3 * i_packed_width - i_simd_packed_width) * i_micro_kernel_config->datatype_size_out );
     }
     if ((i_packed_width * 4 - i_packed_blocking * i_simd_packed_width) > 0) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
