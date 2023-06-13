@@ -19,7 +19,7 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
               for IDX_TYPE in 0 1; do
                 for RECORD_IDX in 0 1; do
                   TPPNAME="none"
-                  OUTNAME="unary_reduce_"
+                  OUTNAME="${HERE}/unary_reduce_"
                   PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
                   RED_X=0
                   RED_X2=0
@@ -115,7 +115,7 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                   OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
 
                   # generate script by sed
-                  sed "s/PREC=0/PREC=\"${PREC}\"/g" unary_reduce.tpl \
+                  sed "s/PREC=0/PREC=\"${PREC}\"/g" ${HERE}/unary_reduce.tpl \
                   | sed "s/REDUCE_X=0/REDUCE_X=${RED_X}/g" \
                   | sed "s/REDUCE_X2=0/REDUCE_X2=${RED_X2}/g" \
                   | sed "s/REDUCE_ROWS=0/REDUCE_ROWS=${RED_ROWS}/g" \
