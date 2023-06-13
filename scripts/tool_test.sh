@@ -428,17 +428,22 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           cp -u /opt/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${REPOREMOTE}/licenses" >>"${TESTSCRIPT}"
         fi
-        # setup environment on a per-test basis
-        ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
-        if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${ENVRST} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
-          echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
-        else
-          echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
+        # apply/restore environment on a per-test basis
+        if [ ! "${ENV_APPLY}" ] || [ "0" != "${ENV_APPLY}" ]; then
+          if [ "${HOME_REMOTE}" != "${HOME}" ]; then
+            ENVRST_FLAGS="-s"
+          fi
+          ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
+          if [ "${LAUNCH_CMD}" ]; then
+            echo "  eval ${ENVRST} ${ENVRST_FLAGS} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+            echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+          else
+            echo "  eval ${ENVRST} ${ENVRST_FLAGS} \"${ENVREM}\"" >>"${TESTSCRIPT}"
+          fi
+          echo "fi" >>"${TESTSCRIPT}"
         fi
-        echo "fi" >>"${TESTSCRIPT}"
         if [ "${CONFIGFILE}" ]; then
           echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
