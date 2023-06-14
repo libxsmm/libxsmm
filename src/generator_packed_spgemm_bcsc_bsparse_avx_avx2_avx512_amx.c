@@ -229,8 +229,24 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
 #endif
   libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
 
+  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+    return;
+  }
+  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+    return;
+  }
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      return;
+    }
     if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CLX && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) {
       l_simd_packed_width = 16;
       l_is_amx_kernel = 0;
@@ -250,6 +266,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
       return;
     }
   } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      return;
+    }
     if (io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) {
       l_simd_packed_width = 16;
       l_is_amx_kernel = 0;
@@ -269,6 +293,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
       return;
     }
   } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      return;
+    }
     l_simd_packed_width = 16;
     if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
       l_simd_packed_width = 8;

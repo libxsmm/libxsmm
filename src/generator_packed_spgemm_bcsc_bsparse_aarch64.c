@@ -77,6 +77,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+      return;
+    }
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+      return;
+    }
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      return;
+    }
     if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
       if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
         l_simd_packed_width = 4;
@@ -93,6 +109,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) {
       char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
       if (l_use_bfdot == 0) {
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+          return;
+        }
         l_simd_packed_width = 4;
         l_is_mmla_kernel = 1;
         if (i_bk % 4 != 0) {
@@ -103,6 +135,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
           return;
         }
       } else {
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+          return;
+        }
         l_simd_packed_width = 8;
         l_is_mmla_kernel = 0;
         if (i_bk % 2 != 0) {
@@ -126,6 +174,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) {
       char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
       if (l_use_bfdot == 0) {
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+          return;
+        }
         l_simd_packed_width = 4;
         l_is_mmla_kernel = 1;
         if (i_bk % 8 != 0) {
@@ -136,6 +200,22 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
           return;
         }
       } else {
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+          return;
+        }
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+          return;
+        }
         l_simd_packed_width = 8;
         l_is_mmla_kernel = 0;
         if (i_bk % 4 != 0) {
