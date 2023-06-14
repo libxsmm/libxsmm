@@ -368,10 +368,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
 
   /* loop over packed blocks */
   while ( l_packed_done != l_simd_packed_iters ) {
-    unsigned int l_packed_blocking = l_packed_reg_block[l_packed_count];
+    unsigned int l_packed_blocking;
     unsigned int l_packed_remainder = 0;
+    if (l_packed_count > 1) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+      return;
+    }
+    l_packed_blocking = l_packed_reg_block[l_packed_count];
 
-    /* coverity[dead_error_line] */
     if ( (l_simd_packed_remainder != 0) && (l_packed_count == 0) ) {
       if ( l_packed_reg_block[1] > 0 ) {
         l_packed_remainder = 0;
