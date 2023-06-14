@@ -776,6 +776,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         fprintf(stderr, "\nLIBXSMM: CPU features have been promoted.");
       }
 # endif
+#else
       memset(&info, 0, sizeof(info));
 #endif
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
