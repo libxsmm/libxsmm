@@ -767,13 +767,16 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       char number_format_buffer[32];
       libxsmm_scratch_info scratch_info;
       libxsmm_cpuid_info info;
+#if defined(NDEBUG)
       libxsmm_cpuid(&info);
-#if defined(LIBXSMM_PLATFORM_X86)
+# if defined(LIBXSMM_PLATFORM_X86)
       if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) &&
         0 == internal_cpuid_info.has_context && 0 != info.has_context)
       {
         fprintf(stderr, "\nLIBXSMM: CPU features have been promoted.");
       }
+# endif
+      memset(&info, 0, sizeof(info));
 #endif
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
@@ -1325,10 +1328,12 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           internal_dump(stdout, 1/*urgent*/);
         }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* mid-timing */
+#if defined(NDEBUG)
         libxsmm_cpuid(&internal_cpuid_info);
         if (0 != internal_cpuid_info.constant_tsc && t0 < t1) {
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
+#endif
         internal_sigentries[0].signal = signal(SIGABRT, internal_libxsmm_signal);
         internal_sigentries[0].signum = SIGABRT;
         internal_sigentries[1].signal = signal(SIGSEGV, internal_libxsmm_signal);
