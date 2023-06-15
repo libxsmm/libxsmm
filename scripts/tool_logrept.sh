@@ -223,9 +223,14 @@ if [ "${LOGDIR}" ]; then
             LABEL=${RPTFMT^^}
           fi
           if [ -e "${REPDIR}/${REPFLE}" ]; then
-            if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
-            printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
-              "${ARTDIR}" "${REPFLE}" "${LABEL}"
+            if [[ "${PIPELINE}" != *"libxsmm"*  ]]; then
+              if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
+              printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
+                "${ARTDIR}" "${REPFLE}" "${LABEL}"
+            else
+              printf "\n\033]1339;url=\"artifact://%s\";content=\"%s\"\a\n\n" \
+                "${REPFLE}" "${LABEL}"
+            fi
           fi
         fi
         # embed figure if report is not exclusive

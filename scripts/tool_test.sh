@@ -574,7 +574,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     if [ -d "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
        [ ! -e "${UPLOAD_PATH}/.uploaded" ];
     then
-      buildkite-agent artifact upload "${UPLOAD_PATH}/*"
+      cd "${UPLOAD_PATH}" && buildkite-agent artifact upload "*"
       touch "${UPLOAD_PATH}/.uploaded"
     fi
   fi
