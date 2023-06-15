@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
     l_epsilon = libxsmm_matdiff_epsilon(&diff);
     printf("\tmax error beta=0 (libxsmm vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
     if (EPSILON(REALTYPE) < l_epsilon) {
-      printf(" (%f != %f)\n", diff.v_tst, diff.v_ref);
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
       ret |= 1;
     }
     else printf("\n");
@@ -337,7 +337,7 @@ int main(int argc, char* argv[]) {
     l_epsilon = libxsmm_matdiff_epsilon(&diff);
     printf("\tmax error beta=0 (dense vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
     if (EPSILON(REALTYPE) < l_epsilon) {
-      printf(" (%f != %f)\n", diff.v_tst, diff.v_ref);
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
     }
     else printf("\n");
   }
@@ -347,7 +347,7 @@ int main(int argc, char* argv[]) {
     l_epsilon = libxsmm_matdiff_epsilon(&diff);
     printf("\tmax error beta=1 (libxsmm vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
     if (EPSILON(REALTYPE) < l_epsilon) {
-      printf(" (%f != %f)\n", diff.v_tst, diff.v_ref);
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
       ret |= 2;
     }
     else printf("\n");
@@ -356,7 +356,7 @@ int main(int argc, char* argv[]) {
     l_epsilon = libxsmm_matdiff_epsilon(&diff);
     printf("\tmax error beta=1 (dense vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
     if (EPSILON(REALTYPE) < l_epsilon) {
-      printf(" (%f != %f)\n", diff.v_tst, diff.v_ref);
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
     }
     else printf("\n");
   }
