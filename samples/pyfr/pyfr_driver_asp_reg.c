@@ -205,9 +205,7 @@ int main(int argc, char* argv[]) {
   l_b = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_n, 64);
 
   /* touch B */
-  for ( l_i = 0; l_i < l_k*l_n; l_i++ ) {
-    l_b[l_i] = (REALTYPE)libxsmm_rng_f64();
-  }
+  LIBXSMM_MATINIT(REALTYPE, 0, l_b, l_k, l_n, l_k, 1.0);
 
   /* touch dense A */
   for ( l_i = 0; l_i < l_k*l_m; l_i++ ) {
@@ -228,11 +226,9 @@ int main(int argc, char* argv[]) {
     l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     l_c_dense_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     assert(NULL != l_c_betazero && NULL != l_c_gold_betazero && NULL != l_c_dense_betazero);
-    libxsmm_rng_set_seed(25071975);
     /* touch C */
-    for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
-      l_c_gold_betazero[l_i] = (REALTYPE)libxsmm_rng_f64();
-    }
+    LIBXSMM_MATINIT(REALTYPE, 0, l_c_gold_betazero, l_m, l_n, l_m, 1.0);
+    /* propagate C */
     for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
       l_c_betazero[l_i] = l_c_gold_betazero[l_i];
     }
@@ -252,11 +248,9 @@ int main(int argc, char* argv[]) {
     l_c_gold_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     l_c_dense_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     assert(NULL != l_c_betaone && NULL != l_c_gold_betaone && NULL != l_c_dense_betaone);
-    libxsmm_rng_set_seed(25071975);
     /* touch C */
-    for ( l_i = 0; l_i < l_m * l_n; l_i++ ) {
-      l_c_gold_betaone[l_i] = (REALTYPE)libxsmm_rng_f64();
-    }
+    LIBXSMM_MATINIT(REALTYPE, 0, l_c_gold_betaone, l_m, l_n, l_m, 1.0);
+    /* propagate C */
     for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
       l_c_betaone[l_i] = l_c_gold_betaone[l_i];
     }
