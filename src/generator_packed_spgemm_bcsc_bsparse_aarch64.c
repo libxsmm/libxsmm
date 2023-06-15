@@ -171,6 +171,10 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       return;
     }
   } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+    if (!(((LIBXSMM_GEMM_FLAG_A_UNSIGNED & i_xgemm_desc->flags) > 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & i_xgemm_desc->flags) == 0))) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
     if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) {
       char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
       if (l_use_bfdot == 0) {
@@ -801,7 +805,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
         }
 
         for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
-          unsigned int l_mmla_instruction = (l_bf16_kernel > 0) ? LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V : LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V ;
+          unsigned int l_mmla_instruction = (l_bf16_kernel > 0) ? LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V : LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V ;
           libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                  l_mmla_instruction,
                                                  l_max_reg_block+i_packed_blocking,

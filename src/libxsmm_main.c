@@ -2222,13 +2222,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "abid");
           }
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_bk%u_bn%u_a%i_b%i_tc-%s.pspgemm_bcsc", target_arch, tname,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_mblocks%u_k%u_lda%u_ldc%u_w%u_bk%u_bn%u_a%i_b%i_avvnni%i_bvnni%i_tc-%s.pspgemm_bcsc", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
-            request->descriptor.pspgemm_bcsc->gemm->m,   0,   request->descriptor.pspgemm_bcsc->gemm->k,
-            request->descriptor.pspgemm_bcsc->gemm->lda, 0, request->descriptor.pspgemm_bcsc->gemm->ldc,
+            request->descriptor.pspgemm_bcsc->gemm->m,   request->descriptor.pspgemm_bcsc->gemm->k,
+            request->descriptor.pspgemm_bcsc->gemm->lda, request->descriptor.pspgemm_bcsc->gemm->ldc,
             request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn,
             1, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.pspgemm_bcsc->gemm->flags) ? 0 : 1,
+            0 == (LIBXSMM_GEMM_FLAG_VNNI_A & request->descriptor.pspgemm_bcsc->gemm->flags) ? 0 : 1, 0 == (LIBXSMM_GEMM_FLAG_VNNI_B & request->descriptor.pspgemm_bcsc->gemm->flags) ? 0 : 1,
             tc_option);
         }
       }
