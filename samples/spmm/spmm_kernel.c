@@ -536,7 +536,7 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
           if ( pos_val_only != 0 ) {
             uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (unsigned char) (get_random_pos_p5_num() * 20.0);
           } else {
-            sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) -120;//(get_random_posneg_p5_num() * 40.0);
+            sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char)(get_random_posneg_p5_num() * 40.0);
           }
         } else {
         }
@@ -845,7 +845,9 @@ int main(int argc, char* argv []) {
         l_keep_going = 1;
       }
       if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_bk, &l_bn, &l_m_blocks ) ) exit(EXIT_FAILURE);
-      printf("M %d N %d K %d bk %d bn %d l_m_blocks %d\n", l_m, l_n, l_k, l_bk, l_bn, l_m_blocks );
+      printf("Command line:\n%s %s %s %s %s %i %i %i %i %f %i %i %f %i %i %i %i %i %i %i\n\n",
+          argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
+          l_m, l_n, l_k, l_m_blocks, l_sparsity_frac, l_bk, l_bn, l_beta, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c, l_reps, l_tc_config);
 
       if (l_keep_going == 0) break;
     }
@@ -923,11 +925,6 @@ int main(int argc, char* argv []) {
       printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * l_m_blocks * (double)l_n * (double)l_k) * (double)l_n_threads * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
     } else {
-      if ( l_run_check == 1 ) {
-        printf("%s %s %s %s %i %i %i %i %i %i %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_m, l_k, l_m * l_m_blocks, ((double)((double)l_reps * (double)l_m * l_m_blocks * (double)l_n * (double)l_k * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), error );
-      } else {
-        printf("%s %s %s %s %i %i %i %i %i %i %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_m, l_k, l_m * l_m_blocks, ((double)((double)l_reps * (double)l_m * l_m_blocks * (double)l_n * (double)l_k * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
-      }
       {
         const char *prefetch = NULL;
         switch (l_prefetch) {
@@ -943,8 +940,6 @@ int main(int argc, char* argv []) {
 
         assert(NULL != prefetch);
         l_runtime_libxsmm /= (double)l_n_threads;
-        printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-          l_m, l_n, l_k, l_bk, l_bn, l_m_blocks, l_beta, l_vnni_a, l_reps, l_tc_config);
       }
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * l_m_blocks * (double)l_n * (double)l_k * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
