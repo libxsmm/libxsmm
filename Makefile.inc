@@ -2065,9 +2065,20 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
   else # macOS
-    LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
-    ifneq (,$(LIBSYSTEM))
-      FLDFLAGS += -L$(dir $(LIBSYSTEM))
+    SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr
+    ifneq (,$(wildcard $(SDKROOT)))
+      ifeq (0,$(CLANG))
+        IFLAGS += -I$(SDKROOT)/include
+        LDFLAGS += -L$(SDKROOT)/lib
+      endif
+      ifneq (0,$(FORTRAN))
+        FLDFLAGS += -L$(SDKROOT)/lib
+      endif
+    else  # SDK path not found
+      LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
+      ifneq (,$(LIBSYSTEM))
+        FLDFLAGS += -L$(dir $(LIBSYSTEM))
+      endif
     endif
     ifneq (,$(OMPLIBFILE))
       FLDFLAGS += $(OMPLIBFILE)
@@ -2388,7 +2399,8 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback (END/BEGIN not BEGIN/END)
-      BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      #BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      BLAS_LDFLAGS += -lblas
       BLASREF ?= 1
     endif
     BLASREF ?= 0
