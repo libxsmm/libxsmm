@@ -14,9 +14,9 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnumm = rnd.sample(range(MSTART,101,MSTEP), SAMPLESIZE)
-randnumn = rnd.sample(range(NSTART,101,NSTEP), SAMPLESIZE)
-randnumk = rnd.sample(range(KSTART,101,KSTEP), SAMPLESIZE)
+randnumm = rnd.sample(range(MSTART,199,MSTEP), SAMPLESIZE)
+randnumn = rnd.sample(range(NSTART,199,NSTEP), SAMPLESIZE)
+randnumk = rnd.sample(range(KSTART,199,KSTEP), SAMPLESIZE)
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0

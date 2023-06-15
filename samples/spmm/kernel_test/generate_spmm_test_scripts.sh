@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ -z "${SSIZE}" ]]; then
-  SAMPLESIZE=3
+  SAMPLESIZE=4
 else
   SAMPLESIZE=${SSIZE}
 fi
