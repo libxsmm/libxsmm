@@ -1365,11 +1365,13 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           if (EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
+#if defined(NDEBUG)
           if (0 == libxsmm_timer_scale && 0 == internal_cpuid_info.constant_tsc
             && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
           {
             fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
           }
+#endif
         }
       }
       LIBXSMM_EXPECT(0 < LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST));
