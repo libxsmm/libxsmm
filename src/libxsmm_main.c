@@ -2237,7 +2237,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "abid");
           }
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_mblocks%u_k%u_lda%u_ldc%u_w%u_bk%u_bn%u_a%i_b%i_avvnni%i_bvnni%i_tc-%s.pspgemm_bcsc", target_arch, tname_print,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_mblocks%u_k%u_lda%u_ldc%u_w%u_bk%u_bn%u_a%i_b%i_avnni%i_bvnni%i_tc-%s.pspgemm_bcsc", target_arch, tname_print,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
             request->descriptor.pspgemm_bcsc->gemm->m,   request->descriptor.pspgemm_bcsc->gemm->k,
@@ -3636,9 +3636,13 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
 }
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
-  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width, const libxsmm_blasint bk, const libxsmm_blasint bn)
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_spgemm_config spgemm_config)
 {
   int l_gemm_flags = (int)gemm_flags;
+  const libxsmm_blasint packed_width = spgemm_config.packed_width;
+  const libxsmm_blasint bk = spgemm_config.bk;
+  const libxsmm_blasint bn = spgemm_config.bn;
+
   libxsmm_pspgemm_bcsc_descriptor pspgemm_bcsc /*= { 0 }*/;
   libxsmm_build_request request /*= { 0 }*/;
   libxsmm_descriptor_blob blob;

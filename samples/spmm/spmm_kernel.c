@@ -346,6 +346,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_bitfield l_prefetch_flags = 0;
   libxsmm_gemm_param gemm_param;
+  libxsmm_spgemm_config spgemm_config;
 
   double l_jittime, l_runtime;
   size_t l_t;
@@ -381,15 +382,19 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   /* setting prefetch flags */
   l_prefetch_flags = i_spmm_def->prefetch;
 
+  spgemm_config.packed_width = i_spmm_def->m;
+  spgemm_config.bk = i_spmm_def->bk;
+  spgemm_config.bn = i_spmm_def->bn;
+
   l_start = libxsmm_timer_tick();
   if (i_spmm_def->tc_config) {
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    cfg_tr.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_cfg_flags, l_prefetch_flags, i_spmm_def->m, i_spmm_def->bk, i_spmm_def->bn);
-    rls_tr.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_rls_flags, l_prefetch_flags, i_spmm_def->m, i_spmm_def->bk, i_spmm_def->bn);
+    cfg_tr.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_cfg_flags, l_prefetch_flags, spgemm_config);
+    rls_tr.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_rls_flags, l_prefetch_flags, spgemm_config);
   }
-  l_test_jit.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_flags, l_prefetch_flags, i_spmm_def->m, i_spmm_def->bk, i_spmm_def->bn);
+  l_test_jit.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_flags, l_prefetch_flags, spgemm_config);
 
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == NULL) {
