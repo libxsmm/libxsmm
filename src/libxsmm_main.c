@@ -1803,7 +1803,8 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
   return result;
 }
 
-LIBXSMM_API const char* libxsmm_get_gemm_typename(const unsigned char* datatype)
+
+LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* datatype)
 {
   const int common_dt = (int)LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(datatype);
   switch (common_dt) {
