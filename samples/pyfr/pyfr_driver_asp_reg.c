@@ -215,7 +215,8 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < l_m; l_i++ ) {
     l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
     for ( l_z = 0; l_z < l_elems; l_z++ ) {
-      l_a_dense[(l_i*l_k)+l_colidx[l_rowptr[l_i]+l_z]] = l_a_sp[l_rowptr[l_i]+l_z];
+      const int l_y = l_rowptr[l_i] + l_z;
+      l_a_dense[(l_i*l_k)+l_colidx[l_y]] = l_a_sp[l_y];
     }
   }
 
@@ -272,7 +273,8 @@ int main(int argc, char* argv[]) {
         l_elems = l_rowptr[l_i + 1] - l_rowptr[l_i];
         l_c_gold_betazero[(l_n * l_i) + l_j] = 0;
         for (l_z = 0; l_z < l_elems; l_z++) {
-          l_c_gold_betazero[(l_n * l_i) + l_j] += l_a_sp[l_rowptr[l_i] + l_z] * l_b[(l_n * l_colidx[l_rowptr[l_i] + l_z]) + l_j];
+          const int l_y = l_rowptr[l_i] + l_z;
+          l_c_gold_betazero[(l_n * l_i) + l_j] += l_a_sp[l_y] * l_b[(l_n * l_colidx[l_y]) + l_j];
         }
       }
     }
@@ -282,7 +284,8 @@ int main(int argc, char* argv[]) {
       for (l_i = 0; l_i < l_m; l_i++) {
         l_elems = l_rowptr[l_i + 1] - l_rowptr[l_i];
         for (l_z = 0; l_z < l_elems; l_z++) {
-          l_c_gold_betaone[(l_n * l_i) + l_j] += l_a_sp[l_rowptr[l_i] + l_z] * l_b[(l_n * l_colidx[l_rowptr[l_i] + l_z]) + l_j];
+          const int l_y = l_rowptr[l_i] + l_z;
+          l_c_gold_betaone[(l_n * l_i) + l_j] += l_a_sp[l_y] * l_b[(l_n * l_colidx[l_y]) + l_j];
         }
       }
     }
