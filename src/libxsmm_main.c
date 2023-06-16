@@ -767,13 +767,17 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       char number_format_buffer[32];
       libxsmm_scratch_info scratch_info;
       libxsmm_cpuid_info info;
+#if defined(NDEBUG)
       libxsmm_cpuid(&info);
-#if defined(LIBXSMM_PLATFORM_X86)
+# if defined(LIBXSMM_PLATFORM_X86)
       if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) &&
         0 == internal_cpuid_info.has_context && 0 != info.has_context)
       {
         fprintf(stderr, "\nLIBXSMM: CPU features have been promoted.");
       }
+# endif
+#else
+      memset(&info, 0, sizeof(info));
 #endif
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
@@ -1325,8 +1329,8 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           internal_dump(stdout, 1/*urgent*/);
         }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* mid-timing */
-#if defined(LIBXSMM_PLATFORM_X86)
-        libxsmm_cpuid_x86(&internal_cpuid_info);
+#if defined(NDEBUG)
+        libxsmm_cpuid(&internal_cpuid_info);
         if (0 != internal_cpuid_info.constant_tsc && t0 < t1) {
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
@@ -1361,15 +1365,13 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
           if (EXIT_SUCCESS != result_atexit) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
-          if (0 == libxsmm_timer_scale
-#if defined(LIBXSMM_PLATFORM_X86)
-            && 0 == internal_cpuid_info.constant_tsc
-#endif
+#if defined(NDEBUG)
+          if (0 == libxsmm_timer_scale && 0 == internal_cpuid_info.constant_tsc
             && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
           {
-            /* ARM: TSC is currently not implemented, hence warning shows up (if verbose) */
             fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
           }
+#endif
         }
       }
       LIBXSMM_EXPECT(0 < LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST));
@@ -2094,7 +2096,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
               br, stride_a, stride_b, (unsigned int)request->descriptor.gemm->c3, typesigns, tc_option,
               0 != (LIBXSMM_GEMM_FLAG_VNNI_A  & request->descriptor.gemm->flags) ? 1 : 0,
               0 != (LIBXSMM_GEMM_FLAG_VNNI_B  & request->descriptor.gemm->flags) ? 1 : 0,
-              0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0 );
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0);
           } else if (kernabi == 2) {
             decompress_A = 0;
             sparsity_factor_A = 1;
@@ -2132,7 +2134,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
               (unsigned int)request->descriptor.gemm->eltw_ap_param, (unsigned int)request->descriptor.gemm->eltw_ap_flags, request->descriptor.gemm->ldap,
               (unsigned int)request->descriptor.gemm->eltw_bp_param, (unsigned int)request->descriptor.gemm->eltw_bp_flags, request->descriptor.gemm->ldbp,
               (unsigned int)request->descriptor.gemm->eltw_cp_param, (unsigned int)request->descriptor.gemm->eltw_cp_flags, request->descriptor.gemm->ldcp, (unsigned int)request->descriptor.gemm->internal_flags_2,
-              decompress_A, sparsity_factor_A );
+              decompress_A, sparsity_factor_A);
           } else {
             /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
             LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_abi%i_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i_sa%d_sb%d_uh%u_si%i_tc-%s_avnni%i_bvnni%i_cvnni%i.mxm", kernabi, target_arch, tname,
@@ -2143,7 +2145,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
               br, stride_a, stride_b, (unsigned int)request->descriptor.gemm->c3, typesigns, tc_option,
               0 != (LIBXSMM_GEMM_FLAG_VNNI_A  & request->descriptor.gemm->flags) ? 1 : 0,
               0 != (LIBXSMM_GEMM_FLAG_VNNI_B  & request->descriptor.gemm->flags) ? 1 : 0,
-              0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0 );
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0);
           }
         }
       }
@@ -2324,7 +2326,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.meqn->datatype);
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u_eqn-idx%u.meltw", target_arch, tsizename,
             request->descriptor.meqn->m, request->descriptor.meqn->n, request->descriptor.meqn->ldo,
-            (unsigned int)request->descriptor.meqn->eqn_idx );
+            (unsigned int)request->descriptor.meqn->eqn_idx);
         }
       }
     } break;
@@ -2367,10 +2369,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       result = libxsmm_malloc_attrib((void**)code_buffer_ptr,
         LIBXSMM_MALLOC_FLAG_X, jit_name, &data_size);
       if (EXIT_SUCCESS == result && 0 != data_size) { /* check for success */
-        const size_t data_padding = LIBXSMM_UP( code_size, LIBXSMM_PAGE_MINSIZE ) - code_size;
+        const size_t data_padding = LIBXSMM_UP(code_size, LIBXSMM_PAGE_MINSIZE) - code_size;
         void *const data_buffer = code_buffer + code_size + data_padding;
         /* attribute and protect constant data by setting only necessary flags */
-        result = libxsmm_malloc_xattrib(data_buffer, LIBXSMM_MALLOC_FLAG_R, data_size - data_padding );
+        result = libxsmm_malloc_xattrib(data_buffer, LIBXSMM_MALLOC_FLAG_R, data_size - data_padding);
       }
       if (EXIT_SUCCESS == result) { /* check for success */
         code->ptr = code_buffer; /* commit buffer */
@@ -3511,14 +3513,14 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2(
   const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape ) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meqn_descriptor *const desc = libxsmm_meqn_descriptor_init(&blob,
-    out_shape.type, out_shape.m, out_shape.n, out_shape.ld, (unsigned int)idx );
+    out_shape.type, out_shape.m, out_shape.n, out_shape.ld, (unsigned int)idx);
 
   if (idx >= LIBXSMM_MAX_EQN_COUNT) {
     fprintf(stderr, "Exceeded maximum number of equations (%d). Can't create requested equation...\n", LIBXSMM_MAX_EQN_COUNT);
     return NULL;
   }
 
-  return libxsmm_dispatch_matrix_eqn_desc( desc );
+  return libxsmm_dispatch_matrix_eqn_desc(desc);
 }
 
 
@@ -4029,9 +4031,9 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
 #endif
     {
       /* TODO: fix prefetch */
-      LIBXSMM_UNUSED( pa );
-      LIBXSMM_UNUSED( pb );
-      LIBXSMM_UNUSED( pc );
+      LIBXSMM_UNUSED(pa);
+      LIBXSMM_UNUSED(pb);
+      LIBXSMM_UNUSED(pc);
       fn->xmm(a, b, c/*, pa, pb, pc*/); /* TODO: fix prefetch */
     }
 #if !defined(NDEBUG)

@@ -1853,6 +1853,9 @@ ifeq (undefined,$(origin TARGET))
         CTARGET := -march=armv8.1-a
       endif
       endif
+      ifneq (,$(call ftest,$(FC),-march=armv8.1-a,$(NULL) $(NULL)))
+        FTARGET := -march=armv8.1-a
+      endif
     endif
   endif # DBG
   endif # CTARGET
@@ -1868,8 +1871,8 @@ ifneq (,$(call ftest,$(FC),$(CTARGET),$(NULL) $(NULL)))
   FTARGET := $(CTARGET)
 else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
   FTARGET := $(patsubst -m%,-x%,$(CTARGET))
-else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
-  override CTARGET := $(NULL)
+#else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
+  #override CTARGET := $(NULL)
 endif
 ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
   ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
@@ -2062,8 +2065,20 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
   else # macOS
-    ifneq (,$(wildcard /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib))
-      FLDFLAGS += -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib
+    SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr
+    ifneq (,$(wildcard $(SDKROOT)))
+      ifeq (0,$(CLANG))
+        IFLAGS += -I$(SDKROOT)/include
+        LDFLAGS += -L$(SDKROOT)/lib
+      endif
+      ifneq (0,$(FORTRAN))
+        FLDFLAGS += -L$(SDKROOT)/lib
+      endif
+    else  # SDK path not found
+      LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
+      ifneq (,$(LIBSYSTEM))
+        FLDFLAGS += -L$(dir $(LIBSYSTEM))
+      endif
     endif
     ifneq (,$(OMPLIBFILE))
       FLDFLAGS += $(OMPLIBFILE)
@@ -2384,7 +2399,8 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback (END/BEGIN not BEGIN/END)
-      BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      #BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      BLAS_LDFLAGS += -lblas
       BLASREF ?= 1
     endif
     BLASREF ?= 0

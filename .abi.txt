@@ -326,6 +326,7 @@ libxsmm_sgemm2
 libxsmm_sgemm3
 libxsmm_sgemm_
 libxsmm_shuffle
+libxsmm_shuffle2
 libxsmm_sink
 libxsmm_smmavailable
 libxsmm_smmcall

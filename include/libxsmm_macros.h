@@ -215,7 +215,8 @@
 
 /* Control BLAS dependency */
 #if !defined(LIBXSMM_NO_BLAS)
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (!defined(__BLAS) || (0 != __BLAS)) && \
+      !(defined(LIBXSMM_PLATFORM_AARCH64) && defined(_WIN32))
 #   define LIBXSMM_NO_BLAS 0
 #   define LIBXSMM_BLAS 1
 # else
@@ -452,7 +453,7 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 # define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
-# if defined(_WIN32)
+# if defined(_WIN32) && !defined(LIBXSMM_PLATFORM_AARCH64)
 #   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(selectany)
 # else
 #   define LIBXSMM_ATTRIBUTE_COMMON
@@ -1101,11 +1102,13 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 
-#if !defined(__has_feature) && !defined(__clang__)
+#if !defined(__clang__) || 1
+# if !defined(__has_feature)
 # define __has_feature(A) 0
-#endif
-#if !defined(__has_builtin) && !defined(__clang__)
-# define __has_builtin(A) 0
+# endif
+# if !defined(__has_builtin)
+#   define __has_builtin(A) 0
+# endif
 #endif
 
 #if (0 != LIBXSMM_SYNC) && !defined(_WIN32) && !defined(__CYGWIN__)

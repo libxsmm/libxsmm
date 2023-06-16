@@ -11,7 +11,8 @@
 #ifndef LIBXSMM_UTILS_INTRINSICS_X86_H
 #define LIBXSMM_UTILS_INTRINSICS_X86_H
 
-#include "../libxsmm_cpuid.h"
+/* Avoid "../libxsmm_cpuid.h" vs <libxsmm_cpuid.h> */
+#include <libxsmm_cpuid.h>
 
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)

@@ -111,17 +111,17 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* /
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* ncycles, const libxsmm_timer_tickint* tick0, const libxsmm_timer_tickint* tick1)
 {
 #if !defined(NDEBUG)
-  static int error_once = 0;
   if (NULL != ncycles && NULL != tick0 && NULL != tick1)
 #endif
   {
     *ncycles = libxsmm_timer_ncycles(*tick0, *tick1);
   }
 #if defined(LIBXSMM_TIMER_VERBOSE)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_timer_ncycles specified!\n");
+  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_timer_ncycles specified!\n");
+    }
   }
 #endif
 }

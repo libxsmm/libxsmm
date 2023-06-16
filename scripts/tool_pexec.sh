@@ -12,6 +12,7 @@
 # shellcheck disable=SC2023
 #set -eo pipefail
 
+MKTEMP=$(command -v mktemp)
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
 DATE=$(command -v date)
@@ -24,7 +25,7 @@ if [ "${DATE}" ]; then
 fi
 
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
-if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
+if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
@@ -220,8 +221,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   done
   PEXEC_SCRARG="\$0"
   if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
-    if [ "0" = "${PEXEC_IL}" ] && [ "$(command -v mktemp)" ]; then
-      PEXEC_SCRIPT=$(mktemp)
+    if [ "0" = "${PEXEC_IL}" ]; then
+      PEXEC_SCRIPT=$(${MKTEMP})
       PEXEC_SCRARG="\$*"
     fi
     ATLEAST=${COUNTED}; COUNTED=""; COUNTER=0

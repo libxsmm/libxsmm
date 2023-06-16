@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
@@ -13,7 +15,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
   for TYPE in 0 1; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
-      OUTNAME="unary_"
+      OUTNAME="${HERE}/unary_"
       NUMPREC=10
       PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
 
@@ -42,7 +44,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
       OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
 
       # generate script by sed
-      sed "s/NUMPREC=X/NUMPREC=\"${NUMPREC}\"/g" unary_gather_scatter.tpl \
+      sed "s/NUMPREC=X/NUMPREC=\"${NUMPREC}\"/g" ${HERE}/unary_gather_scatter.tpl \
       | sed "s/GS_OP=X/GS_OP=${TYPE}/g" \
       | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \
       >${OUTNAME}

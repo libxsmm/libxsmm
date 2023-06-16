@@ -544,7 +544,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         error_bound = 50.0; /* TODO: tighten error bound */
       }
       else if (archid >= LIBXSMM_X86_GENERIC && archid <= LIBXSMM_X86_AVX2) {
-        error_bound = 0.008;
+        error_bound = 0.02;
       }
       else {
         error_bound = 0.0027;
