@@ -305,6 +305,9 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_spgemm_config spgemm_config);
+
 /**
  * Code generation routine for row-major format B matrix which is multiplied by a dense packed matrix (each element holds a SIMD-width
  * wide vector) and the result is another packed matrix. The memory layout of the SOA matrix is [row][col][packed].

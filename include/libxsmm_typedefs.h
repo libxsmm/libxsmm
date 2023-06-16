@@ -768,6 +768,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_batch_reduce_config {
   unsigned char br_unroll_hint;            /* optional hint containing the BR count */
 } libxsmm_gemm_batch_reduce_config;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_spgemm_config {
+  libxsmm_blasint packed_width;        /* Packed width for packed spgemm */
+  libxsmm_blasint bk;                  /* Bk size for dense block        */
+  libxsmm_blasint bn;                  /* Bn size for dense block        */
+} libxsmm_spgemm_config;
+
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_unary_argops {
   libxsmm_blasint ldap;                       /* leading dimensions of Ap */
   libxsmm_meltw_unary_type ap_unary_type;     /* op type for Ap = unary( A ) */
