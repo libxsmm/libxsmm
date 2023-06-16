@@ -3349,7 +3349,7 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM ERROR: bcast_param_with_bcast_flag = %d, but vec0_bcast = %d, vec1_bcast = %d\n",
+        fprintf(stderr, "LIBXSMM ERROR: bcast_param_with_bcast_flag = %d, but vec0_bcast = %u, vec1_bcast = %u\n",
           bcast_param_with_bcast_flag, vec0_bcast, vec1_bcast);
       }
       return NULL;
@@ -3359,7 +3359,7 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM ERROR: bcast_param_with_bcast_flag = %d, but vec0_bcast = %d, vec1_bcast = %d\n",
+        fprintf(stderr, "LIBXSMM ERROR: bcast_param_with_bcast_flag = %d, but vec0_bcast = %u, vec1_bcast = %u\n",
           bcast_param_with_bcast_flag, vec0_bcast, vec1_bcast);
       }
       return NULL;
