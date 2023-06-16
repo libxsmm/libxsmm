@@ -625,17 +625,22 @@ def main(args, argd, dbfname):
     dbsize = len(dbkeys)
     # backup database and prune according to retention
     retention = min(args.retention, args.history)
-    if 0 < retention and (retention + args.history) < dbsize:
+    if (0 < retention and outfile) and (
+        retention < args.history or (retention + args.history) < dbsize
+    ):
         nowutc = datetime.datetime.now(datetime.timezone.utc)
         nowstr = nowutc.strftime("%Y%m%d")  # day
         retfile = outfile.with_name(f"{outfile.stem}.{nowstr}{outfile.suffix}")
         if not retfile.exists():
             savedb(retfile, database)  # unpruned
-            for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
-                del database[key]
-            dbkeys = list(database.keys())
-            dbsize = retention
-    savedb(outfile, database, ofmtime, 3)
+        for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
+            del database[key]
+        dbkeys = list(database.keys())
+        dbsize = retention
+        if 0 == nentries:
+            savedb(outfile, database, ofmtime, 3)
+    if 0 != nentries:
+        savedb(outfile, database, ofmtime, 3)
     if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
         print(f"{outfile} database created.")
 
@@ -784,7 +789,7 @@ def main(args, argd, dbfname):
                                 len(yvalue[0]) == len(vals)
                             ):  # same dimensionality
                                 yvalue.append(vals)
-                        elif int(build) == latest:
+                        else:
                             yvalue, legend = [vals], legd
                             if addon == args.branch and detail:
                                 addon = (  # title-addon
@@ -868,9 +873,7 @@ def main(args, argd, dbfname):
                     if not exceeded and bad:
                         exceeded = True
                 # plot values and legend as collected above
-                if (not aunit or aunit == yunit) and (
-                    yvalue and latest == xvalue[0]
-                ):
+                if (not aunit or aunit == yunit) and yvalue:
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
