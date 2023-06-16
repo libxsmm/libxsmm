@@ -139,7 +139,6 @@ libxsmm_generator_spgemm_csr_kernel
 libxsmm_generator_spgemm_csr_reg_kernel
 libxsmm_get_default_allocator
 libxsmm_get_gemm_prefetch
-libxsmm_get_gemm_typename
 libxsmm_get_kernel_info
 libxsmm_get_malloc
 libxsmm_get_malloc_info
