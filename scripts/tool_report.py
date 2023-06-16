@@ -290,7 +290,7 @@ def savedb(filename, database, filetime=None, retry=None):
             else:
                 os.rename(tmpfile[1], filename)
                 break
-    else:
+    elif filename:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
 
@@ -623,24 +623,21 @@ def main(args, argd, dbfname):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
-    if 0 != nentries:
-        # backup database and prune according to retention
-        retention = max(args.retention, args.history)
-        if 0 < retention and (retention + args.history) < dbsize:
-            nowutc = datetime.datetime.now(datetime.timezone.utc)
-            nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_name(
-                f"{outfile.stem}.{nowstr}{outfile.suffix}"
-            )
-            if not retfile.exists():
-                savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
-                    del database[key]
-                dbkeys = list(database.keys())
-                dbsize = retention
-        savedb(outfile, database, ofmtime, 3)
-        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-            print(f"{outfile} database created.")
+    # backup database and prune according to retention
+    retention = min(args.retention, args.history)
+    if 0 < retention and (retention + args.history) < dbsize:
+        nowutc = datetime.datetime.now(datetime.timezone.utc)
+        nowstr = nowutc.strftime("%Y%m%d")  # day
+        retfile = outfile.with_name(f"{outfile.stem}.{nowstr}{outfile.suffix}")
+        if not retfile.exists():
+            savedb(retfile, database)  # unpruned
+            for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
+                del database[key]
+            dbkeys = list(database.keys())
+            dbsize = retention
+    savedb(outfile, database, ofmtime, 3)
+    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
+        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
