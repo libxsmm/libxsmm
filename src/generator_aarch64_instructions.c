@@ -952,6 +952,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1D_V_OFF64:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF_SCALE:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF64_SCALE:
@@ -1215,6 +1216,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H:
@@ -1237,6 +1239,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_USDOT_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
