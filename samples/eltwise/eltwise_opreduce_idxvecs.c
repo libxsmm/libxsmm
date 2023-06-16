@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
         if (bcast_factor == 1) {
           bcast_factor = 0;
         } else {
-          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+          opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0);
         }
       } else {
         printf("OPORDER_VECIN_VECIDX\n");
@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
         if (bcast_factor == 1) {
           bcast_factor = 0;
         } else {
-          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+          opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1);
         }
       }
     } else {
@@ -294,15 +294,15 @@ int main(int argc, char* argv[])
         if (bcast_factor == 1) {
           bcast_factor = 0;
         } else {
-          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
-          opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+          opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0);
+          opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1);
         }
       } else if ((bcast_factor_0 == 1) && (bcast_factor_1 > 1)) {
         bcast_factor = bcast_factor_1;
-        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+        opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1);
       } else if ((bcast_factor_0 > 1) && (bcast_factor_1 == 1)) {
         bcast_factor = bcast_factor_0;
-        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+        opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0);
       } else {
         fprintf(stderr, "Two broadcast factors are not supported\n");
         exit(EXIT_FAILURE);
