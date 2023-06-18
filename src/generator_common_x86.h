@@ -801,6 +801,7 @@ void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_8bit_sse( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_gp_reg_tmp,
+                                            const unsigned int      i_save_gp_reg_tmp_inside,
                                             const unsigned int      i_gp_reg_base,
                                             const unsigned int      i_reg_idx,
                                             const unsigned int      i_scale,
@@ -811,6 +812,7 @@ void libxsmm_generator_maskedload_8bit_sse( libxsmm_generated_code* io_generated
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_8bit_sse( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_save_gp_reg_tmp_inside,
                                              const unsigned int      i_vec_reg_in,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
@@ -821,6 +823,7 @@ void libxsmm_generator_maskedstore_8bit_sse( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_16bit_sse( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_save_gp_reg_tmp_inside,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
                                              const unsigned int      i_scale,
@@ -831,6 +834,7 @@ void libxsmm_generator_maskedload_16bit_sse( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_16bit_sse( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_tmp,
+                                              const unsigned int      i_save_gp_reg_tmp_inside,
                                               const unsigned int      i_vec_reg_in,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_reg_idx,
@@ -841,6 +845,7 @@ void libxsmm_generator_maskedstore_16bit_sse( libxsmm_generated_code* io_generat
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_save_gp_reg_tmp_inside,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
                                              const unsigned int      i_scale,
@@ -851,6 +856,7 @@ void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_tmp,
+                                              const unsigned int      i_save_gp_reg_tmp_inside,
                                               const unsigned int      i_vec_reg_in,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_reg_idx,
@@ -860,7 +866,6 @@ void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generat
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_64bit_sse( libxsmm_generated_code* io_generated_code,
-                                             const unsigned int      i_gp_reg_tmp,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
                                              const unsigned int      i_scale,
@@ -870,7 +875,6 @@ void libxsmm_generator_maskedload_64bit_sse( libxsmm_generated_code* io_generate
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_64bit_sse( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_gp_reg_tmp,
                                               const unsigned int      i_vec_reg_in,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_reg_idx,

@@ -135,26 +135,24 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
 
   if (io_generated_code->arch < LIBXSMM_X86_AVX) {
     if (i_use_masking > 0) {
-      libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
       if ( (i_vmove_instr == LIBXSMM_X86_INSTR_MOVUPS) ||
            (i_vmove_instr == LIBXSMM_X86_INSTR_MOVUPS)    ) {
         if (i_is_store == 0) {
-          libxsmm_generator_maskedload_32bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0, i_mask_reg_number );
+          libxsmm_generator_maskedload_32bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, 1, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0, i_mask_reg_number );
         } else {
-          libxsmm_generator_maskedstore_32bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, i_vec_reg_number_0, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_mask_reg_number );
+          libxsmm_generator_maskedstore_32bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, 1, i_vec_reg_number_0, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_mask_reg_number );
         }
       } else if ( (i_vmove_instr == LIBXSMM_X86_INSTR_MOVUPD) ||
                   (i_vmove_instr == LIBXSMM_X86_INSTR_MOVAPD)    ) {
         if (i_is_store == 0) {
-          libxsmm_generator_maskedload_64bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0, i_mask_reg_number );
+          libxsmm_generator_maskedload_64bit_sse( io_generated_code, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0, i_mask_reg_number );
         } else {
-          libxsmm_generator_maskedstore_64bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, i_vec_reg_number_0, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_mask_reg_number );
+          libxsmm_generator_maskedstore_64bit_sse( io_generated_code, i_vec_reg_number_0, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_mask_reg_number );
         }
       } else {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
       }
-      libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
     } else {
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
                                         i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -3297,6 +3295,7 @@ void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_8bit_sse( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_gp_reg_tmp,
+                                            const unsigned int      i_save_gp_reg_tmp_inside,
                                             const unsigned int      i_gp_reg_base,
                                             const unsigned int      i_reg_idx,
                                             const unsigned int      i_scale,
@@ -3305,6 +3304,8 @@ void libxsmm_generator_maskedload_8bit_sse( libxsmm_generated_code* io_generated
                                             const unsigned int      i_mask_count ) {
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
+
+  LIBXSMM_UNUSED( i_save_gp_reg_tmp_inside );
 
   /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
@@ -3356,6 +3357,7 @@ void libxsmm_generator_maskedload_8bit_sse( libxsmm_generated_code* io_generated
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_8bit_sse( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_save_gp_reg_tmp_inside,
                                              const unsigned int      i_vec_reg_in,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
@@ -3364,6 +3366,8 @@ void libxsmm_generator_maskedstore_8bit_sse( libxsmm_generated_code* io_generate
                                              const unsigned int      i_mask_count ) {
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
+
+  LIBXSMM_UNUSED( i_save_gp_reg_tmp_inside );
 
   /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
@@ -3409,6 +3413,7 @@ void libxsmm_generator_maskedstore_8bit_sse( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_16bit_sse( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_save_gp_reg_tmp_inside,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
                                              const unsigned int      i_scale,
@@ -3417,6 +3422,8 @@ void libxsmm_generator_maskedload_16bit_sse( libxsmm_generated_code* io_generate
                                              const unsigned int      i_mask_count ) {
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
+
+  LIBXSMM_UNUSED( i_save_gp_reg_tmp_inside );
 
   /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
@@ -3462,6 +3469,7 @@ void libxsmm_generator_maskedload_16bit_sse( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_16bit_sse( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_tmp,
+                                              const unsigned int      i_save_gp_reg_tmp_inside,
                                               const unsigned int      i_vec_reg_in,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_reg_idx,
@@ -3470,6 +3478,8 @@ void libxsmm_generator_maskedstore_16bit_sse( libxsmm_generated_code* io_generat
                                               const unsigned int      i_mask_count ) {
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
+
+  LIBXSMM_UNUSED( i_save_gp_reg_tmp_inside );
 
   /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
@@ -3509,6 +3519,7 @@ void libxsmm_generator_maskedstore_16bit_sse( libxsmm_generated_code* io_generat
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_save_gp_reg_tmp_inside,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
                                              const unsigned int      i_scale,
@@ -3520,9 +3531,15 @@ void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generate
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                       'x', i_vec_reg_out, 0, 0, 0 );
   } else if ( i_mask_count == 3 ) {
-    /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
-    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_PXOR, 'x', i_vec_reg_out, i_vec_reg_out);
+    if ( i_save_gp_reg_tmp_inside != 0 ) {
+      /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+      /* save tmp reg to stack */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 1);
+    } else {
+      /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    }
     /* write 0 to this cache line */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -3536,8 +3553,15 @@ void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generate
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
                                       LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
                                       'x', i_vec_reg_out, 0, 0, 0 );
-    /* free stack */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    if ( i_save_gp_reg_tmp_inside != 0 ) {
+      /* restore tmp reg to stack */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 0);
+      /* free stack */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+    } else {
+      /* free stack */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    }
   } else if ( i_mask_count == 2 ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -3552,6 +3576,7 @@ void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_tmp,
+                                              const unsigned int      i_save_gp_reg_tmp_inside,
                                               const unsigned int      i_vec_reg_in,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_reg_idx,
@@ -3563,8 +3588,15 @@ void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generat
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                       'x', i_vec_reg_in, 0, 0, 1 );
   } else if ( i_mask_count == 3 ) {
-    /* allocate 1/24 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    if ( i_save_gp_reg_tmp_inside != 0 ) {
+      /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+      /* save tmp reg to stack */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 1);
+    } else {
+      /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    }
     /* write register into this cache line */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
                                       LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
@@ -3578,8 +3610,15 @@ void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generat
     libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
                                      i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8,
                                      i_gp_reg_tmp, 1);
-    /* free stack */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    if ( i_save_gp_reg_tmp_inside != 0 ) {
+      /* restore tmp reg to stack */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 0);
+      /* free stack */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+    } else {
+      /* free stack */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+    }
   } else if ( i_mask_count == 2 ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -3593,15 +3632,12 @@ void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generat
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_64bit_sse( libxsmm_generated_code* io_generated_code,
-                                             const unsigned int      i_gp_reg_tmp,
                                              const unsigned int      i_gp_reg_base,
                                              const unsigned int      i_reg_idx,
                                              const unsigned int      i_scale,
                                              const int               i_displacement,
                                              const unsigned int      i_vec_reg_out,
                                              const unsigned int      i_mask_count ) {
-  LIBXSMM_UNUSED( i_gp_reg_tmp );
-
   if ( i_mask_count == 2 ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPD,
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -3615,15 +3651,12 @@ void libxsmm_generator_maskedload_64bit_sse( libxsmm_generated_code* io_generate
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_maskedstore_64bit_sse( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_gp_reg_tmp,
                                               const unsigned int      i_vec_reg_in,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_reg_idx,
                                               const unsigned int      i_scale,
                                               const int               i_displacement,
                                               const unsigned int      i_mask_count ) {
-  LIBXSMM_UNUSED( i_gp_reg_tmp );
-
   if ( i_mask_count == 2 ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPD,
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
