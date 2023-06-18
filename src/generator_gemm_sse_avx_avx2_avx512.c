@@ -910,6 +910,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
 LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_initial_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                                                     const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                                                                     const unsigned int              i_arch ) {
+  return libxsmm_generator_gemm_sse_avx_avx2_avx512_update_m_blocking( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+#if 0
   unsigned int l_use_masking_a_c = 0;
   unsigned int l_m_blocking = 0;
 
@@ -1010,41 +1012,20 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
 
   return l_m_blocking;
+#endif
 }
 
 LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_update_m_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                                               const unsigned int             i_arch,
-                                                                                               const unsigned int             i_current_m_blocking ) {
+                                                                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                                              const unsigned int             i_arch,
+                                                                                              const unsigned int             i_current_m_blocking ) {
   unsigned int l_use_masking_a_c = 0;
   unsigned int l_m_blocking = i_current_m_blocking;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE42 ) && ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
-    if (i_current_m_blocking == 4) {
-      l_m_blocking = 1;
-      libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_arch, i_xgemm_desc, 0 );
-    } else if (i_current_m_blocking == 8) {
-      l_m_blocking = 4;
-    } else if (i_current_m_blocking == 12) {
-      l_m_blocking = 8;
-    } else if (i_current_m_blocking == 16) {
-      l_m_blocking = 12;
-    } else {
-      /* we are done with m_blocking */
-    }
+    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 12, 4, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ( i_arch <= LIBXSMM_X86_SSE42 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
-    if (i_current_m_blocking == 2) {
-      l_m_blocking = 1;
-      libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_arch, i_xgemm_desc, 0 );
-    } else if (i_current_m_blocking == 4) {
-      l_m_blocking = 2;
-    } else if (i_current_m_blocking == 6) {
-      l_m_blocking = 4;
-    } else if (i_current_m_blocking == 8) {
-      l_m_blocking = 6;
-    } else {
-      /* we are done with m_blocking */
-    }
+    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 6, 2, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ( i_arch == LIBXSMM_X86_AVX ) && ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 24, 8, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ( i_arch == LIBXSMM_X86_AVX ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
@@ -1133,9 +1114,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
     return 0;*/
   }
 
-  if ( (i_arch >= LIBXSMM_X86_AVX) && (i_arch <= LIBXSMM_X86_ALLFEAT) ) {
-    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
-  }
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
 
   return l_m_blocking;
 }
