@@ -32,8 +32,8 @@ void libxsmm_spgemm_max_mn_blocking_factors_x86(libxsmm_generated_code* io_gener
   while (i_bn % l_n_max_unroll != 0) {
     l_n_max_unroll--;
   }
-  if (l_n_max_unroll > 8) {
-    while (i_bn % l_n_max_unroll != 0 || l_n_max_unroll > 8) {
+  if (l_n_max_unroll > 4) {
+    while (i_bn % l_n_max_unroll != 0 || l_n_max_unroll > 4) {
       l_n_max_unroll--;
     }
   }
@@ -983,7 +983,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
     l_n_tiles_bn = (l_bn_microkernel <= 16) ? 1 : 2;
     l_n_cols0 = (l_n_tiles_bn == 1) ? l_bn_microkernel : 16;
     l_n_cols1 = (l_n_tiles_bn == 2) ? l_bn_microkernel - 16 : 0;
-    l_a_tile_offset = l_n_tiles_bn * i_packed_blocking;
   }
 
   l_bn_iters = i_bn / l_bn_microkernel;
