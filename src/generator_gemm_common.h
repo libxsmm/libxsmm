@@ -202,16 +202,10 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
                                                                 libxsmm_micro_kernel_config*        i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                                 const unsigned int             i_arch,
-                                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                 const unsigned int             i_use_masking_a_c );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                             const unsigned int             i_arch,
-                                                             const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                             const unsigned int             i_use_masking_a_c );
+void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_config*   io_micro_kernel_config,
+                                                      const unsigned int             i_arch,
+                                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                      const unsigned int             i_use_masking_a_c );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_add_flop_counter( libxsmm_generated_code*         io_generated_code,

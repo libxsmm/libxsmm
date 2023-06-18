@@ -1653,7 +1653,7 @@ void libxsmm_generator_gemm_setval_stack_var( libxsmm_generated_code*           
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_config*   io_micro_kernel_config,
                                                       const unsigned int             i_arch,
                                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                       const unsigned int             i_use_masking_a_c ) {

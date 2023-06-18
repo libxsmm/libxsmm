@@ -1981,7 +1981,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   }
 
   /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc, 0 );
 
   /* First stamp out a nice GEMM and the if need be take care of remainder handling */
   if ((l_xgemm_desc->m % 16 == 0) || (l_xgemm_desc->m <= 32) || (l_enforce_Mx1_amx_tile_blocking > 0)) {
