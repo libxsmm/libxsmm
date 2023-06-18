@@ -294,6 +294,15 @@
     <ClInclude Include="..\include\utils\libxsmm_math.h">
       <Filter>include\utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -562,6 +571,15 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_barrier.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.c">
+      <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
