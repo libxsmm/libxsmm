@@ -43,6 +43,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matdiff_info {
  * Utility function to calculate a collection of scalar differences between two matrices (libxsmm_matdiff_info).
  * The location (m, n) of the largest difference (linf_abs) is recorded (also in case of NaN). In case of NaN,
  * differences are set to infinity. If no difference is discovered, the location (m, n) is negative (OOB).
+ * The return value does not judge the difference (norm) between reference and test data, but is about
+ * missing support for the requested data-type or otherwise invalid input.
  */
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,

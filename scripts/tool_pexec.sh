@@ -12,6 +12,7 @@
 # shellcheck disable=SC2023
 #set -eo pipefail
 
+MKTEMP=$(command -v mktemp)
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
 DATE=$(command -v date)
@@ -24,13 +25,14 @@ if [ "${DATE}" ]; then
 fi
 
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
-if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
+if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
   PYTHON=$(command -v python3)
   FLOCK=${HERE}/../.flock.sh
-  LG_DEFAULT="${NAME}.log"
+  #LG_DEFAULT=${NAME}.log
+  LG_DEFAULT=/dev/null
   XF_DEFAULT=1; BL_DEFAULT=1; QT_DEFAULT=0
   SP_DEFAULT=2; MT_DEFAULT=1; CONSUMED=0
   # ensure proper permissions
@@ -72,7 +74,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       echo "       -w|--allow  F  [PEXEC_WL]: allowed failures (filename); default: ${PEXEC_WL:-${ALLOW:--}}"
       echo "       -u|--build  F* [PEXEC_UP]: collect failures (filename); default: ${PEXEC_UP:-${FNAME:--}}"
       echo "       -q|--quiet  -  [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
-      echo "       -o|--log    F  [PEXEC_LG]: logfile combining output to stdout/stderr"
+      echo "       -o|--log    F  [PEXEC_LG]: combined stdout/stderr; default: ${PEXEC_LG:-${LOG:-${LG_DEFAULT}}}"
       echo "       -c|--cut    S  [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
       echo "       -m|--min    N  [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N  [PEXEC_NT]: only every Nth task; randomized selection"
@@ -219,8 +221,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   done
   PEXEC_SCRARG="\$0"
   if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
-    if [ "0" = "${PEXEC_IL}" ] && [ "$(command -v mktemp)" ]; then
-      PEXEC_SCRIPT=$(mktemp)
+    if [ "0" = "${PEXEC_IL}" ]; then
+      PEXEC_SCRIPT=$(${MKTEMP})
       PEXEC_SCRARG="\$*"
     fi
     ATLEAST=${COUNTED}; COUNTED=""; COUNTER=0

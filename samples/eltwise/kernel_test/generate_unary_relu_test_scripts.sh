@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
@@ -11,7 +13,7 @@ trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_F32_F32' 'F16_F16_F16' 'F16_F16_F32' 'F32_F16_F32' 'F16_F32_F32' 'BF8_BF8_BF8' 'BF8_BF8_F32' 'F32_BF8_F32' 'BF8_F32_F32' 'HF8_HF8_HF8' 'HF8_HF8_F32' 'F32_HF8_F32' 'HF8_F32_F32' 'F64_F64_F64'; do
   for LD in 'eqld' 'gtld'; do
-    OUTNAME="unary_relu_"
+    OUTNAME="${HERE}/unary_relu_"
     PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
     CASES="D L E"
 
@@ -27,7 +29,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
     OUTNAME=${OUTNAME}${PRECLC}_${LD}.sh
 
     # generate script by sed
-    sed "s/PREC=0/PREC=\"${PREC}\"/g" unary_relu.tpl \
+    sed "s/PREC=0/PREC=\"${PREC}\"/g" ${HERE}/unary_relu.tpl \
     | sed "s/CASES=0/CASES=\"${CASES}\"/g" \
     | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \
     >${OUTNAME}

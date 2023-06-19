@@ -202,14 +202,18 @@ def fname(extlst, in_main, in_dflt, idetail=""):
             for ext in figext
             if ext in extlst
         ]
-    elif path.suffix[1:] in extlst:
-        result = [path.parent / f"{path.stem}{idetail}{path.suffix}"]
-    elif "." == str(path.parent):
-        figext = f".{path.name}" if path.name in extlst else dflt.suffix
-        result = [path.parent / f"{dflt.stem}{idetail}{figext}"]
     else:
+        if path.suffix[1:] in extlst:
+            if inplst:
+                inplst[0] = path.suffix[1:]
+            else:
+                inplst = [path.suffix[1:]]
         figstm = path.stem if path.stem else dflt.stem
-        result = [path.parent / f"{figstm}{idetail}{dflt.suffix}"]
+        result = [
+            path.parent / f"{figstm}{idetail}.{ext}"
+            for ext in inplst
+            if ext in extlst
+        ]
     return result
 
 
@@ -286,7 +290,7 @@ def savedb(filename, database, filetime=None, retry=None):
             else:
                 os.rename(tmpfile[1], filename)
                 break
-    else:
+    elif filename:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
 
@@ -619,24 +623,26 @@ def main(args, argd, dbfname):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
+    # backup database and prune according to retention
+    retention = min(args.retention, args.history)
+    if (0 < retention and outfile) and (
+        retention < args.history or (retention + args.history) < dbsize
+    ):
+        nowutc = datetime.datetime.now(datetime.timezone.utc)
+        nowstr = nowutc.strftime("%Y%m%d")  # day
+        retfile = outfile.with_name(f"{outfile.stem}.{nowstr}{outfile.suffix}")
+        if not retfile.exists():
+            savedb(retfile, database)  # unpruned
+        for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
+            del database[key]
+        dbkeys = list(database.keys())
+        dbsize = retention
+        if 0 == nentries:
+            savedb(outfile, database, ofmtime, 3)
     if 0 != nentries:
-        # backup database and prune according to retention
-        retention = max(args.retention, args.history)
-        if 0 < retention and (retention + args.history) < dbsize:
-            nowutc = datetime.datetime.now(datetime.timezone.utc)
-            nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_name(
-                f"{outfile.stem}.{nowstr}{outfile.suffix}"
-            )
-            if not retfile.exists():
-                savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
-                    del database[key]
-                dbkeys = list(database.keys())
-                dbsize = retention
         savedb(outfile, database, ofmtime, 3)
-        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-            print(f"{outfile} database created.")
+    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
+        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
@@ -783,7 +789,7 @@ def main(args, argd, dbfname):
                                 len(yvalue[0]) == len(vals)
                             ):  # same dimensionality
                                 yvalue.append(vals)
-                        elif int(build) == latest:
+                        else:
                             yvalue, legend = [vals], legd
                             if addon == args.branch and detail:
                                 addon = (  # title-addon
@@ -867,9 +873,7 @@ def main(args, argd, dbfname):
                     if not exceeded and bad:
                         exceeded = True
                 # plot values and legend as collected above
-                if (not aunit or aunit == yunit) and (
-                    yvalue and latest == xvalue[0]
-                ):
+                if (not aunit or aunit == yunit) and yvalue:
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
@@ -896,13 +900,16 @@ def main(args, argd, dbfname):
     nplots = len(plots)
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
-        if 2 > nplots_untied:  # rebuild plots
-            key, val = next(iter(plots.keys())), list(*list(*plots.values()))
-            nplots_untied = len(val)
-            val[0] = list(zip(*val[0]))
-            val[2] = [val[2]] * nplots_untied
-            val[3] = [val[3]] * nplots_untied
-            plots[key] = list(zip(*val))
+        if 2 > nplots_untied:  # consider rebuilding plots
+            val = list(*list(*plots.values()))
+            if isinstance(val[1], list):
+                nplots_untied = len(set(val[1]))
+                val[0] = list(zip(*val[0]))
+                val[1] = list(val[1])
+                val[2] = [val[2]] * nplots_untied
+                val[3] = [val[3]] * nplots_untied
+                key = next(iter(plots.keys()))
+                plots[key] = list(zip(*val))
 
         # auto-adjust y-resolution according to number of plots
         if args.resolution == argd.resolution:  # resolution not user-defined

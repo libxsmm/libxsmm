@@ -23,10 +23,10 @@
 LIBXSMM_API_INTERN
 void libxsmm_spgemm_max_mn_blocking_factors_aarch64(libxsmm_generated_code* io_generated_code, unsigned int i_use_mmla, unsigned int i_bn, unsigned int *o_max_m_bf, unsigned int *o_max_n_bf) {
   unsigned int l_available_vregs = 32;
-  unsigned int l_n_max_unroll = 0;
+  unsigned int l_n_max_unroll = l_available_vregs - 4;
   unsigned int l_m_max_unroll = 0;
   unsigned int n_blocks = (i_use_mmla == 0) ? i_bn : (i_bn+1)/2;
-  l_n_max_unroll = l_available_vregs - 4;
+  LIBXSMM_UNUSED(io_generated_code);
   while (n_blocks % l_n_max_unroll != 0) {
     l_n_max_unroll--;
   }

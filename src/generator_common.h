@@ -1309,9 +1309,9 @@
 #define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __LINE__, 1)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1)
 
 /* LIBXSMM_EXIT_ERROR(io_generated_code) instead of exit(-1) */
 #if !defined(LIBXSMM_EXIT_HARD)
@@ -2149,7 +2149,9 @@ LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int i_error_code,
                            /** Contextual information (source of error), e.g., function name. */
-                           const char* context,
+                           const char context[],
+                           /** Filename related to source of error (like context). */
+                           const char srcfile[],
                            /** Line number, i.e., not considered if less or equal to zero. */
                            int linenum,
                            /** Whether to emit (non-zero), or suppress (zero) any message. */
