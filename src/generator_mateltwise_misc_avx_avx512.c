@@ -14,10 +14,6 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 
-#if !defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-# define LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC
-#endif
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_generated_code*                        io_generated_code,
@@ -245,13 +241,8 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   unsigned int in_tsize, out_tsize, tsize;
   unsigned int mask_in = 1, mask_out = 1, mask_out_count;
   unsigned int END_LABEL = 1;
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in        = LIBXSMM_X86_GP_REG_R8;
@@ -290,7 +281,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   }
 
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_n, 0);
-  libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JLE, END_LABEL, p_jump_label_tracker);
+  libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JLE, END_LABEL, &l_jump_label_tracker);
 
   libxsmm_x86_instruction_alu_mem( io_generated_code,
       i_micro_kernel_config->alu_mov_instruction,
@@ -318,11 +309,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
     in_tsize = 2;
   } else if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
     in_tsize = 4;
-  } else {
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-    free(p_jump_label_tracker);
-#endif
-    /* This should not happen */
+  } else { /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
@@ -337,11 +324,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
     out_tsize = 2;
   } else if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
     out_tsize = 4;
-  } else {
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-    free(p_jump_label_tracker);
-#endif
-    /* This should not happen */
+  } else { /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
@@ -486,10 +469,5 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   } else if ( (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
     libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code, LIBXSMM_X86_GP_REG_RAX );
   }
-  libxsmm_x86_instruction_register_jump_label(io_generated_code, END_LABEL, p_jump_label_tracker);
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
+  libxsmm_x86_instruction_register_jump_label(io_generated_code, END_LABEL, &l_jump_label_tracker);
 }
-
-
