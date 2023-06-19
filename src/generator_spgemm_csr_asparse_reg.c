@@ -1241,7 +1241,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         /* Issue the moves */
         if ( 1 == l_n_blocking ) {
           libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_stp_insn,
-                                                  l_base_c_gp_reg, 0, l_base_c_reg, l_base_c_reg + 1,
+                                                  l_base_c_gp_reg, 0, 0, l_base_c_reg,
                                                   LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
         } else {
           for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
