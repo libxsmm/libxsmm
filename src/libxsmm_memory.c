@@ -600,42 +600,25 @@ LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char del
 LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
   const size_t* shuffle, const size_t* nrepeat)
 {
-  char elembuf[128];
-  unsigned short idxshort[4096];
-  const int idxlong = sizeof(idxshort) < (count * sizeof(*idxshort));
-  size_t *const idx = (0 == idxlong ? NULL : (size_t*)malloc(sizeof(size_t) * count));
   int result;
-  if ((NULL != inout || 0 == elemsize || 0 == count) && elemsize <= sizeof(elembuf)
-    && (0 == idxlong || NULL != idx))
-  {
-    unsigned char* const LIBXSMM_RESTRICT data = (unsigned char*)inout;
+  if (NULL != inout || 0 == elemsize || 0 == count) {
+    unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)inout;
     const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
-    const size_t c = libxsmm_unshuffle(count, &s) - 1;
-    const size_t n = (NULL == nrepeat ? 1 : *nrepeat) + c;
-    size_t i, j, k;
+    const size_t n = (NULL == nrepeat ? 1 : *nrepeat);
+    size_t i = 0;
     for (i = 0; i < count; ++i) {
-      for (k = 0, j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
-      if (0 == idxlong) idxshort[i] = (unsigned short)j; else idx[i] = j;
-    }
-    for (i = 0; i < count; ++i) {
-      j = (0 == idxlong ? idxshort[i] : idx[i]);
-      while (i != j) {
-        memcpy(elembuf, data + elemsize * i, elemsize);
-        memcpy(data + elemsize * i, data + elemsize * j, elemsize);
-        memcpy(data + elemsize * j, elembuf, elemsize);
-        if (0 == idxlong) {
-          k = idxshort[j]; idxshort[j] = (unsigned short)j; idxshort[i] = (unsigned short)k;
-        }
-        else {
-          k = idx[j]; idx[j] = j; idx[i] = k;
-        }
-        j = k;
+      size_t j = count - ((s * i) % count) - 1, k = 0;
+      for (j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
+      while (j < i) j = count - ((s * j) % count) - 1;
+      for (k = 0; k < elemsize; ++k) {
+        const unsigned char c = data[elemsize*i+k];
+        data[elemsize*i+k] = data[elemsize*j+k];
+        data[elemsize*j+k] = c;
       }
     }
     result = EXIT_SUCCESS;
   }
   else result = EXIT_FAILURE;
-  free(idx);
   return result;
 }
 
