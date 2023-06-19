@@ -299,7 +299,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
       }
     }
   } else {
-    /* shouodn't happen */
+    /* should not happen */
   }
 }
 
@@ -318,6 +318,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
+  double check_norm;
   char opname[256];
 
   set_opname(op, opname);
@@ -432,9 +433,10 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 

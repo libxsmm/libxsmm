@@ -130,7 +130,7 @@
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
 #define LIBXSMM_IS_INTEGER(TYPE, VALUE, LO, HI) ( \
-  ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && (unsigned long long)(VALUE) <= (HI) && \
+  ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && LIBXSMM_MIN(1ULL*(VALUE),HI) <= (HI) && \
   ((0 <= (double)(VALUE) || (0 > (LO) && 0 < (HI)))))
 /** LIBXSMM_IS_TYPE: check value against type-range of TYPE. */
 #define LIBXSMM_IS_ULLONG(VALUE) LIBXSMM_IS_INTEGER(unsigned long long, VALUE, 0, ULLONG_MAX)
@@ -243,7 +243,7 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 # define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
-# if defined(_WIN32)
+# if defined(_WIN32) && !defined(LIBXSMM_PLATFORM_AARCH64)
 #   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(selectany)
 # else
 #   define LIBXSMM_ATTRIBUTE_COMMON
@@ -844,6 +844,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #     define _CMATH_
 #   endif
 # endif
+# if !defined(LIBXSMM_PATH_SEPARATOR)
+#   define LIBXSMM_PATH_SEPARATOR '\\'
+# endif
+#elif !defined(LIBXSMM_PATH_SEPARATOR)
+# define LIBXSMM_PATH_SEPARATOR '/'
 #endif
 #if defined(LIBXSMM_BUILD) && !defined(_WIN32)
 # if !defined(_XOPEN_SOURCE) && 0
@@ -878,11 +883,13 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 
-#if !defined(__has_feature) && !defined(__clang__)
+#if !defined(__clang__) || 1
+# if !defined(__has_feature)
 # define __has_feature(A) 0
-#endif
-#if !defined(__has_builtin) && !defined(__clang__)
-# define __has_builtin(A) 0
+# endif
+# if !defined(__has_builtin)
+#   define __has_builtin(A) 0
+# endif
 #endif
 
 #if (0 != LIBXSMM_SYNC) && !defined(_WIN32) && !defined(__CYGWIN__)

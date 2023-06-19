@@ -20,6 +20,7 @@ export OMP_PROC_BIND=${OMP_PROC_BIND:-TRUE}
 export FSSPMDM_NBLOCK=${FSSPMDM_NBLOCK:-40}
 export PERF_R=${PERF_R:-10000}
 export PERF_N=${PERF_N:-40}
+export LIBXSMM_VERBOSE=0
 
 WAIT=12
 if [[ ! -e "${HERE}/pyfr_driver_asp_reg" || ! -e "${HERE}/gimmik" || ("$(command -v ldd)" \
@@ -33,6 +34,31 @@ then
     echo "Benchmark will start in ${WAIT} seconds. Hit CTRL-C to abort."
     sleep ${WAIT}
   fi
+fi
+
+# ensure proper permissions
+if [ "${UMASK}" ]; then
+  UMASK_CMD="umask ${UMASK};"
+  eval "${UMASK_CMD}"
+fi
+
+# optionally enable script debug
+if [ "${PERFORMANCE_DEBUG}" ] && [ "0" != "${PERFORMANCE_DEBUG}" ]; then
+  echo "*** DEBUG ***"
+  if [[ ${PERFORMANCE_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+    set -xv
+  else
+    set "${PERFORMANCE_DEBUG}"
+  fi
+  PYTHON=$(command -v python3)
+  if [ ! "${PYTHON}" ]; then
+    PYTHON=$(command -v python)
+  fi
+  if [ "${PYTHON}" ]; then
+    ${PYTHON} -m site --user-site 2>&1 && echo
+  fi
+  env
+  echo "*** DEBUG ***"
 fi
 
 TMPF=$(mktemp)
@@ -79,7 +105,7 @@ echo "MATRIX${SEP}GFLOPS${SEP}MEMBW" >"${HERE}/gimmik.csv"
 sort -t"${SEP}" -k1 "${TMPF}" >>"${HERE}/gimmik.csv"
 
 cut -d"${SEP}" -f1,2 "${HERE}/gimmik.csv" | sed "1s/GFLOPS/GIMMIK/" \
-| join --header -t"${SEP}" \
+| join -t"${SEP}" \
   "${HERE}/libxsmm.csv" \
   - \
 >"${HERE}/performance.csv"

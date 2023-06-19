@@ -1067,22 +1067,36 @@ void libxsmm_set_handle_error(int enable)
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
-                           const char* context, int linenum,
+                           const char context[],
+                           const char srcfile[],
+                           int linenum,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
+      const char *const errmsg = libxsmm_strerror(i_error_code);
+#if defined(NDEBUG)
+      LIBXSMM_UNUSED(srcfile); LIBXSMM_UNUSED(linenum);
       LIBXSMM_STDIO_ACQUIRE();
-      if (NULL != context && '\0' != *context) {
-        if (0 < linenum) {
-          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", context, linenum, libxsmm_strerror(i_error_code));
+#else
+      const char *const separator = (NULL != srcfile ? strrchr(srcfile, LIBXSMM_PATH_SEPARATOR) : NULL);
+      const char *const filename = (NULL != separator ? (separator + 1) : NULL);
+      LIBXSMM_STDIO_ACQUIRE();
+      if (NULL != filename && 0 < linenum) {
+        if (NULL != context && '\0' != *context) {
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i - %s): %s\n", filename, linenum, context, errmsg);
         }
         else {
-          fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", filename, linenum, errmsg);
         }
       }
+      else
+#endif
+      if (NULL != context && '\0' != *context) {
+        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, errmsg);
+      }
       else {
-        fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
+        fprintf(stderr, "LIBXSMM ERROR: %s\n", errmsg);
       }
       LIBXSMM_STDIO_RELEASE();
     }
@@ -1378,17 +1392,13 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
   static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
   static int hasBeenInited = 0;
-  if (!hasBeenInited) {
-    char* env = getenv("LIBXSMM_ULP_PRECISION");
-    float p = 0;
-    if (env) {
-      p = (float)atof(env); /* alternatively to atof, we could use strcmp */
-      if (p == 0.5)
-        precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
-      else if (p == 1.0)
-        precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
-      else
-        precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
+  if (0 == hasBeenInited) {
+    const char *const env = getenv("LIBXSMM_ULP_PRECISION");
+    if (NULL != env) {
+      const double p = atof(env); /* alternatively to atof, we could use strcmp */
+      if (0.5 >= p) precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+      else if (1.0 >= p) precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
+      else precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
     }
     hasBeenInited = 1;
   }

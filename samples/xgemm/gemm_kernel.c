@@ -1362,8 +1362,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   printf("L2 rel.error  : %.24f\n", l_diff.l2_rel);
   printf("Linf abs.error: %.24f\n", l_diff.linf_abs);
   printf("Linf rel.error: %.24f\n", l_diff.linf_rel);
-  printf("Check-norm    : %.24f\n", error);
-  printf("\n");
+  printf("Check-norm    : %.24f\n\n", error);
 
   return error;
 }

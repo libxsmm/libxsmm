@@ -20,8 +20,10 @@ elif [ ! "${LOGFILE}" ]; then  # logfile given?
     LOGFILE=/dev/stdin
   fi
 fi
+
 if [ ! -e "${LOGFILE}" ]; then
-  >&2 echo -e "ERROR: logfile \"${LOGFILE}\" does not exist!\n"
+  # keep output in sync, i.e., avoid ">&2 echo"
+  echo -e "ERROR: logfile \"${LOGFILE}\" does not exist!\n"
   exit 1
 fi
 
@@ -75,9 +77,10 @@ else
       LOGDIR=${ARTROOT}/artifacts
     elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
-    else  # debug purpose
-      LOGDIR=.
     fi
+  fi
+  if [ ! "${LOGDIR}" ]; then  # debug purpose
+    LOGDIR=.
   fi
 fi
 
@@ -220,14 +223,21 @@ if [ "${LOGDIR}" ]; then
             LABEL=${RPTFMT^^}
           fi
           if [ -e "${REPDIR}/${REPFLE}" ]; then
-            if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
-            printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
-              "${ARTDIR}" "${REPFLE}" "${LABEL}"
+            if [[ "${PIPELINE}" != *"libxsmm"*  ]]; then
+              if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
+              printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
+                "${ARTDIR}" "${REPFLE}" "${LABEL}"
+            else
+              printf "\n\033]1339;url=\"artifact://%s\";content=\"%s\"\a\n\n" \
+                "${REPFLE}" "${LABEL}"
+            fi
           fi
         fi
         # embed figure if report is not exclusive
         if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
-          if ! OUTPUT=$(base64 -w0 "${FIGURE}");
+          BASE64_FLAG=-w0
+          if base64 ${BASE64_FLAG} </dev/null 2>&1 | grep -q invalid; then BASE64_FLAG=""; fi
+          if ! OUTPUT=$(eval "base64 ${BASE64_FLAG} <${FIGURE}");
           then OUTPUT=""; fi
           if [ "${OUTPUT}" ]; then
             if [ "$(command -v mimetype)" ]; then
@@ -244,18 +254,22 @@ if [ "${LOGDIR}" ]; then
             printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
               "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
           else
-            >&2 echo -e "WARNING: encoding failed (\"${FIGURE}\").\n"
+            # keep output in sync, i.e., avoid ">&2 echo"
+            echo -e "WARNING: encoding failed (\"${FIGURE}\").\n"
           fi
         fi
         if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
-          >&2 echo -e "WARNING: deviation of latest value exceeds margin.\n"
+          # keep output in sync, i.e., avoid ">&2 echo"
+          echo -e "WARNING: deviation of latest value exceeds margin.\n"
           exit "${ERROR}"
         fi
       else
-        >&2 echo -e "WARNING: report not ready (\"${OUTPUT}\").\n"
+        # keep output in sync, i.e., avoid ">&2 echo"
+        echo -e "WARNING: report not ready (\"${OUTPUT}\").\n"
       fi
     else
-      >&2 echo -e "WARNING: missing prerequisites for report.\n"
+      # keep output in sync, i.e., avoid ">&2 echo"
+      echo -e "WARNING: missing prerequisites for report.\n"
     fi
   fi
 fi

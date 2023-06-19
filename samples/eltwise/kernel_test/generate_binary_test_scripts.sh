@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
@@ -14,7 +16,7 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
     for ROUND in 'rne' 'stoch'; do
       for LD in 'eqld' 'gtld'; do
         TPPNAME="none"
-        OUTNAME="binary_"
+        OUTNAME="${HERE}/binary_"
         PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
         RMODE=0
 
@@ -59,7 +61,7 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
         OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
 
         # generate script by sed
-        sed "s/PREC=0/PREC=\"${PREC}\"/g" binary.tpl \
+        sed "s/PREC=0/PREC=\"${PREC}\"/g" ${HERE}/binary.tpl \
         | sed "s/BINARY_OP=0/BINARY_OP=${TYPE}/g" \
         | sed "s/RMODE=0/RMODE=${RMODE}/g" \
         | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \

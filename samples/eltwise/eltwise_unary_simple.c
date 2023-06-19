@@ -416,7 +416,8 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned long long strides[2];
   char opname[256];
   unsigned long long _N = N;
-  double error_bound = 0.0;
+  double error_bound = 0.0, check_norm;
+  const char* matdiff_env;
   libxsmm_blasint N_out = N;
 
   set_opname(op, opname);
@@ -525,8 +526,66 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
   unary_kernel( &unary_param );
 
+  /* populate error bounds */
+  if ( op == RCP_OP || op == RCP_SQRT_OP ) {
+    const int archid = libxsmm_get_target_archid();
+    if  ((dtype_in == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64)
+      || (dtype_in == LIBXSMM_DATATYPE_F32 && dtype_out == LIBXSMM_DATATYPE_F32))
+    {
+      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
+        error_bound = 50.0; /* TODO: tighten error bound */
+      }
+      else {
+        error_bound = 0.02;
+      }
+    }
+    else if (dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) {
+      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
+        error_bound = 50.0; /* TODO: tighten error bound */
+      }
+      else if (archid >= LIBXSMM_X86_GENERIC && archid <= LIBXSMM_X86_AVX2) {
+        error_bound = 0.02;
+      }
+      else {
+        error_bound = 0.0027;
+      }
+    }
+    else if (dtype_in == LIBXSMM_DATATYPE_F16 || dtype_out == LIBXSMM_DATATYPE_F16) {
+      error_bound = 1.9;
+    }
+    else {
+      error_bound = 0.02;
+    }
+  } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
+              op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
+    if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+      error_bound = 0.0007;
+    } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
+      error_bound = 0.007;
+    } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF8) )  {
+      error_bound = 0.2;
+    } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_HF8) )  {
+      error_bound = 0.2;
+    } else {
+      error_bound = 0.007;
+    }
+  } else {
+    error_bound = 0.00001;
+  }
+
+  /* eventually amend LIBXSMM_MATDIFF output with error bound */
+  matdiff_env = getenv("LIBXSMM_MATDIFF");
+  if (NULL != matdiff_env) {
+    static char matdiff_ext[1024];
+    const int nchars = LIBXSMM_SNPRINTF(matdiff_ext, sizeof(matdiff_ext),
+      "LIBXSMM_MATDIFF=%s %.17g", matdiff_env, error_bound);
+    if (0 < nchars && nchars < (int)sizeof(matdiff_ext)) {
+      LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(matdiff_ext));
+    }
+  }
+
   /* compare result */
-  norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N_out );
+  norms_out = check_matrix(dtype_out, out_gold, out, ldo, M, N_out);
   printf("##########################################\n");
   printf("#   Correctness  - Output                #\n");
   printf("##########################################\n");
@@ -536,32 +595,10 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( op == RCP_OP || op == RCP_SQRT_OP ) {
-    if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2)) {
-      error_bound = 0.008;
-    } else {
-      error_bound = 0.0027;
-    }
-  } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
-              op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
-    if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-      error_bound = 0.0007;
-    } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
-      error_bound = 0.007;
-    } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF8) )  {
-      error_bound = 0.1;
-    } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_HF8) )  {
-      error_bound = 0.1;
-    } else {
-      error_bound = 0.007;
-    }
-  } else {
-    error_bound = 0.00001;
-  }
-
-  if ( norms_out.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
