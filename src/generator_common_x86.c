@@ -3531,36 +3531,58 @@ void libxsmm_generator_maskedload_32bit_sse( libxsmm_generated_code* io_generate
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                       'x', i_vec_reg_out, 0, 0, 0 );
   } else if ( i_mask_count == 3 ) {
-    if ( i_save_gp_reg_tmp_inside != 0 ) {
-      /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
-      /* save tmp reg to stack */
-      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 1);
+    /* this SSE2 code, but default is SSE4.1 below */
+    if ( io_generated_code->arch < LIBXSMM_X86_SSE42 ) {
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+        /* save tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 1);
+      } else {
+        /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      }
+      /* write 0 to this cache line */
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        'x', i_vec_reg_out, 0, 0, 0 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
+                                        LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
+                                        'x', i_vec_reg_out, 0, 0, 1 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8, i_gp_reg_tmp, 0);
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, i_gp_reg_tmp, 1);
+      /* load the vector register */
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
+                                        LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
+                                        'x', i_vec_reg_out, 0, 0, 0 );
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* restore tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 0);
+        /* free stack */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+      } else {
+        /* free stack */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      }
     } else {
-      /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
-    }
-    /* write 0 to this cache line */
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
-                                      i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
-                                      'x', i_vec_reg_out, 0, 0, 0 );
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
-                                      LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
-                                      'x', i_vec_reg_out, 0, 0, 1 );
-    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8, i_gp_reg_tmp, 0);
-    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, i_gp_reg_tmp, 1);
-    /* load the vector register */
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
-                                      LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
-                                      'x', i_vec_reg_out, 0, 0, 0 );
-    if ( i_save_gp_reg_tmp_inside != 0 ) {
-      /* restore tmp reg to stack */
-      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 0);
-      /* free stack */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
-    } else {
-      /* free stack */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+        /* save tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_gp_reg_tmp, 1);
+      }
+      /* read elements with sequence */
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        'x', i_vec_reg_out, 0, 0, 0 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8, i_gp_reg_tmp, 0);
+      libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_PINSRD, 'x', i_gp_reg_tmp, i_vec_reg_out, 0x2 );
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* restore tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_gp_reg_tmp, 0);
+        /* free stack */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      }
     }
   } else if ( i_mask_count == 2 ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
@@ -3588,36 +3610,60 @@ void libxsmm_generator_maskedstore_32bit_sse( libxsmm_generated_code* io_generat
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                       'x', i_vec_reg_in, 0, 0, 1 );
   } else if ( i_mask_count == 3 ) {
-    if ( i_save_gp_reg_tmp_inside != 0 ) {
-      /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
-      /* save tmp reg to stack */
-      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 1);
+    /* this SSE2 code, but default is SSE4.1 below */
+    if ( io_generated_code->arch < LIBXSMM_X86_SSE42 ) {
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+        /* save tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 1);
+      } else {
+        /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      }
+      /* write register into this cache line */
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
+                                        LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
+                                        'x', i_vec_reg_in, 0, 0, 1 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        'x', i_vec_reg_in, 0, 0, 1 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
+                                       LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 8,
+                                       i_gp_reg_tmp, 0);
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
+                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8,
+                                       i_gp_reg_tmp, 1);
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* restore tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 0);
+        /* free stack */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+      } else {
+        /* free stack */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      }
     } else {
-      /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
-    }
-    /* write register into this cache line */
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS,
-                                      LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0,
-                                      'x', i_vec_reg_in, 0, 0, 1 );
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
-                                      i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
-                                      'x', i_vec_reg_in, 0, 0, 1 );
-    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
-                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 8,
-                                     i_gp_reg_tmp, 0);
-    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
-                                     i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8,
-                                     i_gp_reg_tmp, 1);
-    if ( i_save_gp_reg_tmp_inside != 0 ) {
-      /* restore tmp reg to stack */
-      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_tmp, 0);
-      /* free stack */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
-    } else {
-      /* free stack */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* allocate 1/4 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+        /* save tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_gp_reg_tmp, 1);
+      }
+      /* write register back with sequence */
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        'x', i_vec_reg_in, 0, 0, 1 );
+      libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_PEXTRD, 'x', i_vec_reg_in, i_gp_reg_tmp, 0x2 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
+                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement+8,
+                                       i_gp_reg_tmp, 1);
+      if ( i_save_gp_reg_tmp_inside != 0 ) {
+        /* restore tmp reg to stack */
+        libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_gp_reg_tmp, 0);
+        /* free stack */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 16 );
+      }
     }
   } else if ( i_mask_count == 2 ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVSD,
