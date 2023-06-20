@@ -93,6 +93,9 @@
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h" />
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse.h" />
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.h" />
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.h" />
@@ -181,6 +184,9 @@
     <ClCompile Include="..\src\generator_packed_gemm_bc_rm_aarch64.c" />
     <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_spgemm.c" />
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse.c" />
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.c" />
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.c" />
     <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse.c" />
     <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse_aarch64.c" />
     <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.c" />

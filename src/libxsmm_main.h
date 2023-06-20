@@ -309,6 +309,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csc_descriptor
   unsigned int packed_width;
 } libxsmm_pspgemm_csc_descriptor;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_bcsc_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+  unsigned int packed_width;
+  unsigned int bk;
+  unsigned int bn;
+} libxsmm_pspgemm_bcsc_descriptor;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   unsigned int packed_width;
@@ -368,6 +375,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_PSPGEMM_CSR,
   LIBXSMM_BUILD_KIND_PSPGEMM_CSC,
+  LIBXSMM_BUILD_KIND_PSPGEMM_BCSC,
   LIBXSMM_BUILD_KIND_SREG
 } libxsmm_build_kind;
 
@@ -398,6 +406,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_build_request {
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_pspgemm_csr_descriptor* pspgemm_csr;
     const libxsmm_pspgemm_csc_descriptor* pspgemm_csc;
+    const libxsmm_pspgemm_bcsc_descriptor* pspgemm_bcsc;
     const libxsmm_pgemm_ac_rm_descriptor* pgemmacrm;
     const libxsmm_pgemm_bc_rm_descriptor* pgemmbcrm;
     const libxsmm_csr_reg_descriptor* sreg;

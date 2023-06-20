@@ -1306,6 +1306,7 @@
 #define LIBXSMM_ERR_BRGEMM_TRANS          90051
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
+#define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -1476,6 +1477,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   /* Auxiliary fields to propagate kernel info */
   unsigned int m_remainder;
   unsigned int br_loop_index;
+  /* TODO: should be by-value, not by-pointer? */
   libxsmm_jump_label_tracker *p_jump_label_tracker;
   unsigned int loop_label_id;
   unsigned int k_amx_microkernel;
@@ -1518,7 +1520,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
-/* Auxiliary regs for sparsity in A support */
+  unsigned int gp_reg_help_6;
+/* Auxiliary regs for sparsity in A support  */
   unsigned int gp_reg_bitmap_a;
   unsigned int gp_reg_decompressed_a;
 } libxsmm_gp_reg_mapping;

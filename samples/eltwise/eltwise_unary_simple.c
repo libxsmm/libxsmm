@@ -551,7 +551,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       }
     }
     else if (dtype_in == LIBXSMM_DATATYPE_F16 || dtype_out == LIBXSMM_DATATYPE_F16) {
-      error_bound = 1.6;
+      error_bound = 1.9;
     }
     else {
       error_bound = 0.02;

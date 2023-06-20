@@ -290,7 +290,7 @@ def savedb(filename, database, filetime=None, retry=None):
             else:
                 os.rename(tmpfile[1], filename)
                 break
-    else:
+    elif filename:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
 
@@ -348,8 +348,8 @@ def bold(s, cond=True):
         return s
 
 
-def conclude(values, base, unit, accuracy, bounds, lowhigh):
-    label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
+def conclude(values, base, unit, prec, bounds, lowhigh, istrend):
+    label, bad = f"{num2fix(values[0], prec)} {unit}", False
     guess, rd, md, cv, avg, med, eqn = trend(values)  # unpack
     blist = base.split()
     if 1 < len(blist):  # category and detail
@@ -359,13 +359,13 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
                 dlist.remove(c)
         base = f"{blist[0]} {'_'.join(dlist)}"
     # combine relative differences (new value vs last/avg value)
-    xd = max(abs(rd if rd else 0), abs(md if md else 0))
+    xd = max(abs(rd if rd else 0), abs(md if md and istrend else 0))
     if xd:
         inum = num2fix(100 * (rd if xd == abs(rd) else md))
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum = num2fix(max(100 * cv, 1))
-            cnum = num2fix(abs(bounds[0]), accuracy)
+            cnum = num2fix(abs(bounds[0]), prec)
             t0 = num2fix(bnum * abs(bounds[0]))
             t1 = num2fix(abs(bounds[1])) if 1 < len(bounds) else 0
             cond = f"min({bnum}%*{num2str(cnum)}, {t1}%)"
@@ -463,7 +463,7 @@ def main(args, argd, dbfname):
     )
     rslt = args.result.lower()
     qlst = rslt.split(",")
-    nerrors, nentries, accuracy = 0, 0, 1
+    nerrors, nentries, prec = 0, 0, 1
     inflight = max(args.inflight, 0)
     info = {"branch": args.branch} if args.branch else {}
     infokey = "INFO"
@@ -623,24 +623,26 @@ def main(args, argd, dbfname):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
+    # backup database and prune according to retention
+    retention = min(args.retention, args.history)
+    if (0 < retention and outfile) and (
+        retention < args.history or (retention + args.history) < dbsize
+    ):
+        nowutc = datetime.datetime.now(datetime.timezone.utc)
+        nowstr = nowutc.strftime("%Y%m%d")  # day
+        retfile = outfile.with_name(f"{outfile.stem}.{nowstr}{outfile.suffix}")
+        if not retfile.exists():
+            savedb(retfile, database)  # unpruned
+        for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
+            del database[key]
+        dbkeys = list(database.keys())
+        dbsize = retention
+        if 0 == nentries:
+            savedb(outfile, database, ofmtime, 3)
     if 0 != nentries:
-        # backup database and prune according to retention
-        retention = max(args.retention, args.history)
-        if 0 < retention and (retention + args.history) < dbsize:
-            nowutc = datetime.datetime.now(datetime.timezone.utc)
-            nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_name(
-                f"{outfile.stem}.{nowstr}{outfile.suffix}"
-            )
-            if not retfile.exists():
-                savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
-                    del database[key]
-                dbkeys = list(database.keys())
-                dbsize = retention
         savedb(outfile, database, ofmtime, 3)
-        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-            print(f"{outfile} database created.")
+    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
+        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
@@ -686,23 +688,25 @@ def main(args, argd, dbfname):
         entries = [entries[-1]]  # assume insertion order is preserved
 
     # parse bounds used to highlight results
-    strbounds = re.split(
-        r"[\s;,]", (args.bounds if args.bounds else argd.bounds).strip()
-    )
+    defbounds = re.split(r"[\s;,]", argd.bounds.strip())
+    if args.bounds:
+        strbounds = re.split(r"[\s;,]", args.bounds.strip())
+    else:
+        strbounds = defbounds
     try:
-        highlight = [float(i) for i in strbounds]
+        bounds = [float(i) for i in strbounds]
     except ValueError:
-        highlight = [float(i) for i in re.split(r"[\s;,]", argd.bounds)]
-    lowhigh = (  # meaning of negative/positive deviation
-        highlight
-        and 0 != highlight[0]
-        and "" != strbounds[0]
-        and "-" == strbounds[0][0],
-        highlight
-        and 0 != highlight[0]
-        and "" != strbounds[0]
-        and "+" == strbounds[0][0],
-    )
+        bounds = [float(i) for i in defbounds]
+    if 0 == bounds[0]:
+        bounds[0] = float(defbounds[0])
+    lowhigh, istrend, s = (False, False), False, strbounds[0]
+    if lowhigh and "" != s:
+        # meaning of negative/positive deviation
+        lowhigh = ("-" == s[0], "+" == s[0])
+        ixtrend = 1 if any(lowhigh) else 0
+        if (ixtrend + 1) < len(s) and "." == s[ixtrend + 1]:
+            ixtrend = ixtrend + 1
+        istrend = "0" == s[ixtrend]
     exceeded = False
 
     # build figure
@@ -787,7 +791,7 @@ def main(args, argd, dbfname):
                                 len(yvalue[0]) == len(vals)
                             ):  # same dimensionality
                                 yvalue.append(vals)
-                        elif int(build) == latest:
+                        else:
                             yvalue, legend = [vals], legd
                             if addon == args.branch and detail:
                                 addon = (  # title-addon
@@ -858,7 +862,7 @@ def main(args, argd, dbfname):
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
                         label, bad, eqn = conclude(
-                            y, z, yunit, accuracy, highlight, lowhigh
+                            y, z, yunit, prec, bounds, lowhigh, istrend
                         )
                         ylabel.append(label)
                         if not exceeded and bad:
@@ -866,14 +870,12 @@ def main(args, argd, dbfname):
                     ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
                 else:
                     ylabel, bad, eqn = conclude(
-                        yvalue, legend, yunit, accuracy, highlight, lowhigh
+                        yvalue, legend, yunit, prec, bounds, lowhigh, istrend
                     )
                     if not exceeded and bad:
                         exceeded = True
                 # plot values and legend as collected above
-                if (not aunit or aunit == yunit) and (
-                    yvalue and latest == xvalue[0]
-                ):
+                if (not aunit or aunit == yunit) and yvalue:
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
@@ -901,13 +903,14 @@ def main(args, argd, dbfname):
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
         if 2 > nplots_untied:  # consider rebuilding plots
-            key, val = next(iter(plots.keys())), list(*list(*plots.values()))
-            if 2 < depth(val):
-                nplots_untied = len(val)
+            val = list(*list(*plots.values()))
+            if isinstance(val[1], list):
+                nplots_untied = len(set(val[1]))
                 val[0] = list(zip(*val[0]))
                 val[1] = list(val[1])
                 val[2] = [val[2]] * nplots_untied
                 val[3] = [val[3]] * nplots_untied
+                key = next(iter(plots.keys()))
                 plots[key] = list(zip(*val))
 
         # auto-adjust y-resolution according to number of plots
