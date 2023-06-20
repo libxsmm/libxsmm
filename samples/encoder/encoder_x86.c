@@ -2403,6 +2403,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_reg( "alu_reg_XORW_R_RM", &mycode, LIBXSMM_X86_INSTR_XORW_R_RM, 0 );
   test_alu_reg( "alu_reg_XORD_R_RM", &mycode, LIBXSMM_X86_INSTR_XORD_R_RM, 0 );
   test_alu_reg( "alu_reg_XORQ_R_RM", &mycode, LIBXSMM_X86_INSTR_XORQ_R_RM, 0 );
+  test_alu_reg( "alu_reg_RDPID", &mycode, LIBXSMM_X86_INSTR_RDPID, 1 );
 
   /* test alu mem */
   test_alu_mem( "alu_mov_MOVB_LD", &mycode, LIBXSMM_X86_INSTR_MOVB, 1 );

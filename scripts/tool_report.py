@@ -202,14 +202,18 @@ def fname(extlst, in_main, in_dflt, idetail=""):
             for ext in figext
             if ext in extlst
         ]
-    elif path.suffix[1:] in extlst:
-        result = [path.parent / f"{path.stem}{idetail}{path.suffix}"]
-    elif "." == str(path.parent):
-        figext = f".{path.name}" if path.name in extlst else dflt.suffix
-        result = [path.parent / f"{dflt.stem}{idetail}{figext}"]
     else:
+        if path.suffix[1:] in extlst:
+            if inplst:
+                inplst[0] = path.suffix[1:]
+            else:
+                inplst = [path.suffix[1:]]
         figstm = path.stem if path.stem else dflt.stem
-        result = [path.parent / f"{figstm}{idetail}{dflt.suffix}"]
+        result = [
+            path.parent / f"{figstm}{idetail}.{ext}"
+            for ext in inplst
+            if ext in extlst
+        ]
     return result
 
 
@@ -286,7 +290,7 @@ def savedb(filename, database, filetime=None, retry=None):
             else:
                 os.rename(tmpfile[1], filename)
                 break
-    else:
+    elif filename:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
 
@@ -311,32 +315,34 @@ def trend(values):
     """
     Calculate the predicted value (linear trend of history),
     the relative difference of lastest and previous value (rd),
-    the relative difference of lastest and average value (ad),
+    the relative difference of lastest and median value (md),
     the standard deviation (cv), the arithmetic average (avg),
-    and the linear trend (equation).
+    the median value (med), and the linear trend (equation).
     """
-    rd, ad, cv, avg, eqn, size = None, None, None, None, None, len(values)
+    rd, md, cv, avg, med, eqn = None, None, None, None, None, None
+    size = len(values)
     a, b = (values[1] if 1 < size else 0), (values[0] if 0 < size else 0)
     if 1 < size:
         avg = numpy.mean(values[1:])
+        med = numpy.median(values[1:])
     if 0 != a:
         rd = (b - a) / a
-    if 0 != avg:
-        ad = (b - avg) / avg
+    if med:  # not zero/none
+        md = (b - med) / med
     if 2 < size:
         # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
-        if 0 != avg:
+        if avg:  # not zero/none
             cv = numpy.std(values[1:]) / avg
-    return (b, rd, ad, cv, avg, eqn)
+    return (b, rd, md, cv, avg, med, eqn)
 
 
 def bold(s, cond=True):
     if cond:
         c, t = s.count("$"), s.replace("%", r"\%")
         a = t.replace("$", "") if 0 == (c % 2) else t
-        b = r"$\bf{" + a.replace(" ", "\ ") + "}$"
+        b = r"$\bf{" + a.replace(" ", r"\ ") + "}$"
         return b
     else:
         return s
@@ -344,7 +350,7 @@ def bold(s, cond=True):
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
     label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
-    guess, rd, ad, cv, avg, eqn = trend(values)  # unpack
+    guess, rd, md, cv, avg, med, eqn = trend(values)  # unpack
     blist = base.split()
     if 1 < len(blist):  # category and detail
         dlist = blist[1].split("_")
@@ -353,9 +359,9 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
                 dlist.remove(c)
         base = f"{blist[0]} {'_'.join(dlist)}"
     # combine relative differences (new value vs last/avg value)
-    xd = max(abs(rd if rd else 0), abs(ad if ad else 0))
+    xd = max(abs(rd if rd else 0), abs(md if md else 0))
     if xd:
-        inum = num2fix(100 * (rd if xd == abs(rd) else ad))
+        inum = num2fix(100 * (rd if xd == abs(rd) else md))
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum = num2fix(max(100 * cv, 1))
@@ -407,6 +413,9 @@ def create_figure(plots, nplots, resint, untied, addon):
         for data in plots[entry]:
             axes[i].step(data[0], ".:", where="mid", label=data[1])
             axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            axes[i].tick_params(left=False, labelleft=False, grid_alpha=0.15)
+            axes[i].tick_params(right=True, labelright=True)
+            axes[i].yaxis.grid(True, linestyle="solid")
             axes[i].xaxis.set_ticks(
                 range(len(data[-1])), data[-1], rotation=45
             )
@@ -518,8 +527,8 @@ def main(args, argd, dbfname):
 
     nbuilds, nbuild = 0, int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
-        next = latest + 1
-        nbld = nbuild if 0 < nbuild else next
+        nnew = latest + 1
+        nbld = nbuild if 0 < nbuild else nnew
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -529,7 +538,7 @@ def main(args, argd, dbfname):
             database, str(nbld), name, infokey, info, txt, nentries, nerrors
         )
         if 0 < nentries:
-            latest = next if 0 == nbuild else nbuild
+            latest = nnew if 0 == nbuild else nbuild
     elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -614,24 +623,26 @@ def main(args, argd, dbfname):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
+    # backup database and prune according to retention
+    retention = min(args.retention, args.history)
+    if (0 < retention and outfile) and (
+        retention < args.history or (retention + args.history) < dbsize
+    ):
+        nowutc = datetime.datetime.now(datetime.timezone.utc)
+        nowstr = nowutc.strftime("%Y%m%d")  # day
+        retfile = outfile.with_name(f"{outfile.stem}.{nowstr}{outfile.suffix}")
+        if not retfile.exists():
+            savedb(retfile, database)  # unpruned
+        for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
+            del database[key]
+        dbkeys = list(database.keys())
+        dbsize = retention
+        if 0 == nentries:
+            savedb(outfile, database, ofmtime, 3)
     if 0 != nentries:
-        # backup database and prune according to retention
-        retention = max(args.retention, args.history)
-        if 0 < retention and (retention + args.history) < dbsize:
-            nowutc = datetime.datetime.now(datetime.timezone.utc)
-            nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_name(
-                f"{outfile.stem}.{nowstr}{outfile.suffix}"
-            )
-            if not retfile.exists():
-                savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
-                    del database[key]
-                dbkeys = list(database.keys())
-                dbsize = retention
         savedb(outfile, database, ofmtime, 3)
-        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-            print(f"{outfile} database created.")
+    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
+        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
@@ -739,7 +750,7 @@ def main(args, argd, dbfname):
             for build in reversed(builds):  # order: latest -> older
                 values, ylabel = database[build][entry][value], None
                 if isinstance(values, dict):  # JSON-format
-                    vals, legd = [], []
+                    vals, legd, detail = [], [], None
                     for key in (k for k in keys if k in values):
                         vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
                         weight = wlist[key] if key in wlist else 1.0
@@ -758,9 +769,19 @@ def main(args, argd, dbfname):
                                 else qlst[2]
                             )
                         lst = key.translate(split).split()
-                        detail = [s for s in lst if s.lower() != qlst[0]]
+                        if lst and all(
+                            lst[0] == s for s in lst if qlst[0] in s.lower()
+                        ):
+                            detail = (
+                                lst[0]
+                                if not detail or detail == lst[0]
+                                else qlst[0]
+                            )
+                        else:
+                            detail = qlst[0]
+                        itm = [s for s in lst if s.lower() != detail]
                         legd.append(
-                            f"{value} {'_'.join(detail)}" if detail else value
+                            f"{value} {'_'.join(itm)}" if itm else value
                         )
                     if vals:
                         if yvalue:
@@ -768,12 +789,12 @@ def main(args, argd, dbfname):
                                 len(yvalue[0]) == len(vals)
                             ):  # same dimensionality
                                 yvalue.append(vals)
-                        elif int(build) == latest:
+                        else:
                             yvalue, legend = [vals], legd
-                            if addon == args.branch:
-                                addon = rslt.split(",")[0] + (
-                                    f"@{addon}" if addon else ""
-                                )  # title-addon
+                            if addon == args.branch and detail:
+                                addon = (  # title-addon
+                                    f"{detail}@{addon}" if addon else detail
+                                )
                         xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
@@ -852,9 +873,7 @@ def main(args, argd, dbfname):
                     if not exceeded and bad:
                         exceeded = True
                 # plot values and legend as collected above
-                if (not aunit or aunit == yunit) and (
-                    yvalue and latest == xvalue[0]
-                ):
+                if (not aunit or aunit == yunit) and yvalue:
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
@@ -881,6 +900,17 @@ def main(args, argd, dbfname):
     nplots = len(plots)
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
+        if 2 > nplots_untied:  # consider rebuilding plots
+            val = list(*list(*plots.values()))
+            if isinstance(val[1], list):
+                nplots_untied = len(set(val[1]))
+                val[0] = list(zip(*val[0]))
+                val[1] = list(val[1])
+                val[2] = [val[2]] * nplots_untied
+                val[3] = [val[3]] * nplots_untied
+                key = next(iter(plots.keys()))
+                plots[key] = list(zip(*val))
+
         # auto-adjust y-resolution according to number of plots
         if args.resolution == argd.resolution:  # resolution not user-defined
             resint_untied = copy.deepcopy(resint)

@@ -818,14 +818,14 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
           } else if ( ((LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) || LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
                LIBXSMM_DATATYPE_BF8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ) {
 
-            unsigned int stochastic_rnd = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0);
+            unsigned int stochastic_rnd = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) ||
+                                             ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0);
             if ( stochastic_rnd == 1 ) {
-              /* draw a random number */
-              libxsmm_generator_xoshiro128p_f32_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+              libxsmm_generator_xoshiro128pp_axv2_avx512 ( io_generated_code, i_micro_kernel_config->vector_name,
                                                        i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
                                                        i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg,
-                                                       i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-                                                       i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_rand);
+                                                       i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_tmp1,
+                                                       i_micro_kernel_config->prng_vreg_rand);
             }
 
             libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
@@ -1804,6 +1804,12 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
     case LIBXSMM_MELTW_TYPE_BINARY_MULADD: {
       binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VFMADD213PS : LIBXSMM_X86_INSTR_VFMADD213PD;
     } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMAXPS : LIBXSMM_X86_INSTR_VMAXPD;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMINPS : LIBXSMM_X86_INSTR_VMINPD;
+    } break;
     default:;
   }
 
@@ -2310,27 +2316,6 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
   }
 
-  /* load prng state into registers for stochastic rounding */
-  if (((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0)) {
-    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
-      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-      reserved_zmms += 6;
-
-      i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
-      i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
-      i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
-      i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
-      i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
-      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 6;
-
-      libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
-                                                    i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
-                                                    i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
-
-      i_micro_kernel_config->reserved_zmms = reserved_zmms;
-    }
-  }
-
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) || (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV)) {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) ) {
       i_micro_kernel_config->dropout_vreg_avxmask = i_micro_kernel_config->reserved_zmms;
@@ -2820,6 +2805,28 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
                                      i_gp_reg_aux0,
                                      0 );
   }
+
+  /* load prng state into registers for stochastic rounding */
+  if ( (flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
+      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+      reserved_zmms += 7;
+
+      i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
+      i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
+      i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
+      i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
+      i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
+      i_micro_kernel_config->prng_vreg_tmp1       = reserved_zmms - 6;
+      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 7;
+
+      libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
+                                                    i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                    i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+
+      i_micro_kernel_config->reserved_zmms = reserved_zmms;
+    }
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -2831,7 +2838,6 @@ void libxsmm_finalize_unary_kernel_vregs_masks( libxsmm_generated_code*         
                                                 const unsigned int                      i_gp_reg_aux0,
                                                 const unsigned int                      i_gp_reg_aux1 ) {
   const char l_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
-  LIBXSMM_UNUSED(flags);
   LIBXSMM_UNUSED(i_gp_reg_tmp);
   LIBXSMM_UNUSED(i_gp_reg_aux1);
 
@@ -2928,6 +2934,29 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
       i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
     }
+
+    /* incase we have stochastic round, we need to load the state */
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
+      if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
+        const char l_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+        unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+        reserved_zmms += 7;
+
+        i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
+        i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
+        i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
+        i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
+        i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
+        i_micro_kernel_config->prng_vreg_tmp1       = reserved_zmms - 6;
+        i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 7;
+
+        libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, l_vname, i_gp_reg_aux0,
+                                                      i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                      i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+
+        i_micro_kernel_config->reserved_zmms = reserved_zmms;
+      }
+    }
   }
 }
 
@@ -2940,6 +2969,16 @@ void libxsmm_finalize_kernel_vregs_masks( libxsmm_generated_code*               
                                                  const unsigned int                      i_gp_reg_aux1) {
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {
     libxsmm_finalize_unary_kernel_vregs_masks( io_generated_code, i_micro_kernel_config, i_mateltwise_desc->param, i_mateltwise_desc->flags, i_gp_reg_tmp, i_gp_reg_aux0, i_gp_reg_aux1);
+  }
+
+  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) {
+    /* incase we have stochastic round, we need to store the state */
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
+      const char l_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+      libxsmm_generator_store_prng_state_avx_avx512( io_generated_code, l_vname, i_gp_reg_aux0,
+                                                     i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                     i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+    }
   }
 
   if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) || LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
@@ -3229,6 +3268,9 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
   i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_X86_GP_REG_RCX;
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) {
     i_gp_reg_mapping->gp_reg_in2  = LIBXSMM_X86_GP_REG_RAX;
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
+      i_gp_reg_mapping->gp_reg_prngstate = LIBXSMM_X86_GP_REG_RDX;
+    }
   } else {
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
       i_gp_reg_mapping->gp_reg_out2 = LIBXSMM_X86_GP_REG_RAX;
@@ -3273,7 +3315,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
     } else {
       i_gp_reg_mapping->gp_reg_quant_sf = LIBXSMM_X86_GP_REG_UNDEF;
     }
-    if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) ) {
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
       i_gp_reg_mapping->gp_reg_prngstate = LIBXSMM_X86_GP_REG_RDX;
     }
   }
@@ -3462,7 +3504,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_gp_reg_mapping->gp_reg_quant_sf,
           0 );
       l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_quant_sf;
-    } else if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) ) {
+    } else if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
@@ -3496,6 +3538,16 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         96,
         i_gp_reg_mapping->gp_reg_out,
         0 );
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          i_gp_reg_mapping->gp_reg_param_struct,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          8,
+          i_gp_reg_mapping->gp_reg_prngstate,
+          0 );
+      l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_prngstate;
+    }
   } else {
     /* This hsould not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );

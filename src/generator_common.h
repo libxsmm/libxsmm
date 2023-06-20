@@ -1218,6 +1218,9 @@
 #define LIBXSMM_X86_INSTR_XORD_R_RM        0xa0040033
 #define LIBXSMM_X86_INSTR_XORQ_R_RM        0xa2840033
 
+/* newer instrutions */
+#define LIBXSMM_X86_INSTR_RDPID            0x9c7610c7
+
 /* Jump instructions */
 #define LIBXSMM_X86_INSTR_JL                 30100
 #define LIBXSMM_X86_INSTR_JE                 30101
@@ -1303,11 +1306,12 @@
 #define LIBXSMM_ERR_BRGEMM_TRANS          90051
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
+#define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __LINE__, 1)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1)
 
 /* LIBXSMM_EXIT_ERROR(io_generated_code) instead of exit(-1) */
 #if !defined(LIBXSMM_EXIT_HARD)
@@ -1516,7 +1520,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
-/* Auxiliary regs for sparsity in A support */
+  unsigned int gp_reg_help_6;
+/* Auxiliary regs for sparsity in A support  */
   unsigned int gp_reg_bitmap_a;
   unsigned int gp_reg_decompressed_a;
 } libxsmm_gp_reg_mapping;
@@ -1717,6 +1722,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
 
   /* aux variable for stochastic rounding */
   unsigned int prng_vreg_tmp0;
+  unsigned int prng_vreg_tmp1;
   unsigned int prng_vreg_rand;
 
   /* aux variable for quantization */
@@ -2144,7 +2150,9 @@ LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int i_error_code,
                            /** Contextual information (source of error), e.g., function name. */
-                           const char* context,
+                           const char context[],
+                           /** Filename related to source of error (like context). */
+                           const char srcfile[],
                            /** Line number, i.e., not considered if less or equal to zero. */
                            int linenum,
                            /** Whether to emit (non-zero), or suppress (zero) any message. */

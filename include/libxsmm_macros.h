@@ -32,6 +32,9 @@
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 
+/* Parameters of matrix equations */
+#define LIBXSMM_MAX_EQN_COUNT LIBXSMM_CONFIG_MAX_EQN_COUNT
+
 /**
  * Use "make PLATFORM=1" to disable platform checks.
  * The platform check is to bail-out with an error
@@ -115,7 +118,7 @@
   (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
 
 /**
- * Macro to check minimum version requiremnts in code, for example:
+ * Macro to check minimum version requirements in code, for example:
  * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
  * // code requiring version 1.17 or later
  * #else
@@ -127,7 +130,7 @@
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
 #define LIBXSMM_IS_INTEGER(TYPE, VALUE, LO, HI) ( \
-  ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && (unsigned long long)(VALUE) <= (HI) && \
+  ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && LIBXSMM_MIN(1ULL*(VALUE),HI) <= (HI) && \
   ((0 <= (double)(VALUE) || (0 > (LO) && 0 < (HI)))))
 /** LIBXSMM_IS_TYPE: check value against type-range of TYPE. */
 #define LIBXSMM_IS_ULLONG(VALUE) LIBXSMM_IS_INTEGER(unsigned long long, VALUE, 0, ULLONG_MAX)
@@ -240,7 +243,7 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 # define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
-# if defined(_WIN32)
+# if defined(_WIN32) && !defined(LIBXSMM_PLATFORM_AARCH64)
 #   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(selectany)
 # else
 #   define LIBXSMM_ATTRIBUTE_COMMON
@@ -272,6 +275,8 @@
 # else
 #   define LIBXSMM_CALLER __FUNCNAME__
 # endif
+/** Function argument with default value (C++). */
+# define LIBXSMM_ARGDEF(ARG, DEF) ARG = DEF
 #else /* C */
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
@@ -293,6 +298,8 @@
 #   define LIBXSMM_INLINE_KEYWORD
 #   define LIBXSMM_INLINE_FIXUP
 # endif
+/** Function argument with default value (C++). */
+# define LIBXSMM_ARGDEF(ARG, DEF) ARG
 /* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
 #endif /*__cplusplus*/
@@ -541,6 +548,8 @@
 #define LIBXSMM_UP(N, MULT) (LIBXSMM_UPDIV(N, MULT) * (MULT))
 #define LIBXSMM_LO2(N, NPOT) ((N) & ~((NPOT) - 1))
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_LO2((N) + ((NPOT) - 1), NPOT)
+/** Examples: N+10%->UPF(N,1,10), N-10%->UPF(N,-1,10), N*90%->UPF(N,-1,10) */
+#define LIBXSMM_UPF(N, NOM, DEN) (((N) * ((DEN) + (NOM))) / (DEN))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
@@ -556,7 +565,7 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
-#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE,((double)(A)/2.0))*2)))
+#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE, ((double)(A) / 2.0)) * 2)))
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 #define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
@@ -835,13 +844,18 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #     define _CMATH_
 #   endif
 # endif
+# if !defined(LIBXSMM_PATH_SEPARATOR)
+#   define LIBXSMM_PATH_SEPARATOR '\\'
+# endif
+#elif !defined(LIBXSMM_PATH_SEPARATOR)
+# define LIBXSMM_PATH_SEPARATOR '/'
 #endif
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(_WIN32)
+# if !defined(_XOPEN_SOURCE) && 0
+#   define _XOPEN_SOURCE 500
+# endif
 # if !defined(_DEFAULT_SOURCE)
 #   define _DEFAULT_SOURCE
-# endif
-# if !defined(_XOPEN_SOURCE)
-#   define _XOPEN_SOURCE
 # endif
 # if !defined(_GNU_SOURCE)
 #   define _GNU_SOURCE
@@ -869,20 +883,22 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 
-#if !defined(__has_feature) && !defined(__clang__)
+#if !defined(__clang__) || 1
+# if !defined(__has_feature)
 # define __has_feature(A) 0
-#endif
-#if !defined(__has_builtin) && !defined(__clang__)
-# define __has_builtin(A) 0
+# endif
+# if !defined(__has_builtin)
+#   define __has_builtin(A) 0
+# endif
 #endif
 
-#if (0 != LIBXSMM_SYNC)
-# if defined(_WIN32) || defined(__CYGWIN__)
-#   include <windows.h>
-# else
-#   include <pthread.h>
-#   include <unistd.h>
-# endif
+#if (0 != LIBXSMM_SYNC) && !defined(_WIN32) && !defined(__CYGWIN__)
+# include <pthread.h>
+#endif
+#if defined(_WIN32) || defined(__CYGWIN__)
+# include <windows.h>
+#else
+# include <unistd.h>
 #endif
 #if !defined(LIBXSMM_ASSERT)
 # include <assert.h>

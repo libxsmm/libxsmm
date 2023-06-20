@@ -28,27 +28,23 @@
 
 
 LIBXSMM_INLINE
-void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )
+void sfill_matrix( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )
 {
   unsigned int i, j;
-  double dtmp;
-
-  if ( ld < m )
-  {
-     fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+  if ( ld < m ) {
+     fprintf(stderr, "Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
-  for ( j = 1; j <= n; j++ )
-  {
+  for ( j = 1; j <= n; j++ ) {
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
      {
-        dtmp = 1.0 - 2.0*libxsmm_rng_f64();
+        double dtmp = 1.0 - 2.0*libxsmm_rng_f64();
         if (avoid_small_vals > 0) {
           if (dtmp < 0.0 && dtmp > -1.0 * OFFSET) {
              dtmp = dtmp - OFFSET;
           }
-          if (dtmp > 0.0 && dtmp <  OFFSET) {
+          if (dtmp > 0.0 && dtmp < OFFSET) {
              dtmp = dtmp + OFFSET;
           }
         }
@@ -59,13 +55,11 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 LIBXSMM_INLINE
 void shuffle_array(unsigned long long *array, int n) {
-  if (n > 1)
-  {
+  if (n > 1) {
     int i;
-    for (i = 0; i < n - 1; i++)
-    {
-      int j = i + rand() / (RAND_MAX / (n - i) + 1);
-      unsigned long long t = array[j];
+    for (i = 0; i < n - 1; i++) {
+      const int j = i + rand() / (RAND_MAX / (n - i) + 1);
+      const unsigned long long t = array[j];
       array[j] = array[i];
       array[i] = t;
     }
@@ -76,18 +70,19 @@ int main(int argc, char* argv[])
 {
   unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0, use_implicit_idx = 0, _j = 0, _i = 0;
   libxsmm_blasint ld_in = 64;
-  float  *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
+  float *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
   libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *inp_matrix_bf162, *scale_vals_bf16;
   unsigned long long *cols_ind_array, *cols_ind_array2, *all_ns;
   unsigned long long *argop_off_vec_0, *argop_off_vec_1, *ref_argop_off_vec_0, *ref_argop_off_vec_1;
-  unsigned int  *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
-  unsigned int  *cols_ind_array_i32, *cols_ind_array2_i32;
+  unsigned int *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
+  unsigned int *cols_ind_array_i32, *cols_ind_array2_i32;
   libxsmm_meltw_opreduce_vecs_idx_param params /*= { 0 }*/;
   libxsmm_meltw_opreduce_vecs_flags opredop_flags;
   libxsmm_meltwfunction_opreduce_vecs_idx kernel;
   libxsmm_matdiff_info norms_elts, diff;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
+  double check_norm;
   char opname[50];
   char opordername[50];
   char scaleopresname[50];
@@ -103,12 +98,10 @@ int main(int argc, char* argv[])
   libxsmm_datatype idx_dtype;
   unsigned int avoid_small_vals = 0;
 
-  const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(NULL == env_check ? 1 : atof(env_check));
-
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&diff);
+  libxsmm_rng_set_seed(1);
 
   if (argc == 1) {
     /* probably help is wanted */
@@ -116,27 +109,27 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
-  if ( argc > 1 ) m           = atoi(argv[1]);
-  if ( argc > 2 ) n           = atoi(argv[2]);
-  if ( argc > 3 ) n_cols_idx  = atoi(argv[3]);
-  if ( argc > 4 ) ld_in       = atoi(argv[4]);
-  if ( argc > 5 ) op          = atoi(argv[5]);
-  if ( argc > 6 ) op_order    = atoi(argv[6]);
-  if ( argc > 7 ) scale_op_res= atoi(argv[7]);
-  if ( argc > 8 ) redop       = atoi(argv[8]);
+  if ( argc > 1 ) m                 = atoi(argv[1]);
+  if ( argc > 2 ) n                 = atoi(argv[2]);
+  if ( argc > 3 ) n_cols_idx        = atoi(argv[3]);
+  if ( argc > 4 ) ld_in             = atoi(argv[4]);
+  if ( argc > 5 ) op                = atoi(argv[5]);
+  if ( argc > 6 ) op_order          = atoi(argv[6]);
+  if ( argc > 7 ) scale_op_res      = atoi(argv[7]);
+  if ( argc > 8 ) redop             = atoi(argv[8]);
   if ( argc > 9 ) use_regular_vecin = atoi(argv[9]);
   if ( argc > 10 ) use_implicit_idx = atoi(argv[10]);
-  if ( argc > 11 ) argop_mode      = atoi(argv[11]);
-  if ( argc > 12 ) idx_mode        = atoi(argv[12]);
-  if ( argc > 13 ) iters       = atoi(argv[13]);
-  if ( argc > 14 ) use_bf16    = atoi(argv[14]);
-  if ( argc > 15 ) bcast_factor = (unsigned short)atoi(argv[15]);
+  if ( argc > 11 ) argop_mode       = atoi(argv[11]);
+  if ( argc > 12 ) idx_mode         = atoi(argv[12]);
+  if ( argc > 13 ) iters            = atoi(argv[13]);
+  if ( argc > 14 ) use_bf16         = atoi(argv[14]);
+  if ( argc > 15 ) bcast_factor     = (unsigned short)atoi(argv[15]);
 
   if (op == OP_DIV)  avoid_small_vals = 1;
 
   /* Some basic arg checking... */
   if ((use_regular_vecin > 0) && (argop_mode > 0)) {
-    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop params is meaningless...\n");
+    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop param is meaningless...\n");
     exit(EXIT_FAILURE);
   }
 
@@ -147,11 +140,11 @@ int main(int argc, char* argv[])
 
   if ((op == 0) && (argop_mode > 0)) {
     if ((op_order == 0) && (argop_mode == 1 || argop_mode == 3)) {
-      fprintf(stderr, "When using COPY OP and and order VECIN_VECIDX the only argop_modes that make sense are 2 or 0...\n");
+      fprintf(stderr, "When using COPY OP and order VECIN_VECIDX the only argop_modes that make sense are 2 or 0...\n");
       exit(EXIT_FAILURE);
     }
     if ((op_order == 1) && (argop_mode == 2 || argop_mode == 3)) {
-      fprintf(stderr, "When using COPY OP and and order VECIDX_VECIN the only argop_modes that make sense are 1 or 0...\n");
+      fprintf(stderr, "When using COPY OP and order VECIDX_VECIN the only argop_modes that make sense are 1 or 0...\n");
       exit(EXIT_FAILURE);
     }
   }
@@ -521,7 +514,8 @@ int main(int argc, char* argv[])
   printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+  printf("Check-norm    : %.24f\n\n", check_norm);
   libxsmm_matdiff_reduce(&diff, &norms_elts);
 
   if (argop_vec_0 > 0) {
@@ -534,7 +528,8 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+    printf("Check-norm    : %.24f\n\n", check_norm);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -548,7 +543,8 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+    printf("Check-norm    : %.24f\n\n", check_norm);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -646,7 +642,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Reference time = %.5g\n", ((double)(l_total)));
+  printf("Reference time = %.5g\n", l_total);
 
   l_start = libxsmm_timer_tick();
   for (k = 0; k < iters; k++) {
@@ -654,8 +650,8 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("Optimized time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup is = %.5g\n", ((double)(l_total/l_total2)));
+  printf("Optimized time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup is = %.5g\n", l_total/l_total2);
 
   free(inp_matrix);
   free(result);
@@ -682,13 +678,10 @@ int main(int argc, char* argv[])
     free(scale_vals_bf16);
   }
 
-  {
-    const char *const env_check_scale = getenv("CHECK_SCALE");
-    const double check_scale = LIBXSMM_ABS(NULL == env_check_scale ? 1.0 : atof(env_check_scale));
-    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
-      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
-      exit(EXIT_FAILURE);
-    }
+  check_norm = libxsmm_matdiff_epsilon(&diff);
+  if (0.02 < check_norm) {
+    fprintf(stderr, "FAILED with an error of %f!\n", check_norm);
+    exit(EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

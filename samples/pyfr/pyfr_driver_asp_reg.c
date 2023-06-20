@@ -76,7 +76,7 @@ LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
           }
 
           /* init column idx */
-          for ( l_i = 0; l_i < (*o_row_count + 1); l_i++)
+          for ( l_i = 0; l_i < (*o_row_count + 1); l_i++ )
             (*o_row_idx)[l_i] = (*o_element_count);
 
           /* init */
@@ -120,7 +120,7 @@ LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
   }
 
   /* let's handle empty rows */
-  for ( l_i = 0; l_i < (*o_row_count); l_i++) {
+  for ( l_i = 0; l_i < (*o_row_count); l_i++ ) {
     assert(NULL != l_row_idx_id);
     if ( l_row_idx_id[l_i] == 0 ) {
       (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
@@ -152,6 +152,10 @@ int main(int argc, char* argv[]) {
   int l_n_block = ((NULL == env_fsspmdm_nblock || '\0' == *env_fsspmdm_nblock)
     ? 48 : atoi(env_fsspmdm_nblock));
 
+  const char* const env_fsspmdm_notune = getenv("FSSPMDM_NOTUNE");
+  int l_notune = ((NULL == env_fsspmdm_notune || '\0' == *env_fsspmdm_notune)
+    ? 0 : atoi(env_fsspmdm_notune));
+
   libxsmm_matdiff_info diff;
   int l_m, l_n, l_k;
   int l_i, l_j, l_z;
@@ -160,7 +164,7 @@ int main(int argc, char* argv[]) {
   int l_beta;
 
   libxsmm_timer_tickint l_start, l_end;
-  double l_total;
+  double l_total, l_epsilon;
 
   REALTYPE alpha = 1;
   REALTYPE beta = 1;
@@ -170,7 +174,7 @@ int main(int argc, char* argv[]) {
   libxsmm_fsspmdm* gemm_op_betaone = NULL;
 
   if (argc < 4) {
-    fprintf( stderr, "need csr-filename N reps [beta=0|1]!\n" );
+    fprintf( stderr, "need CSR-filename N reps [beta=0|1]!\n" );
     exit(-1);
   }
 
@@ -200,19 +204,18 @@ int main(int argc, char* argv[]) {
   l_b = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_n, 64);
 
   /* touch B */
-  for ( l_i = 0; l_i < l_k*l_n; l_i++) {
-    l_b[l_i] = (REALTYPE)libxsmm_rng_f64();
-  }
+  LIBXSMM_MATINIT(REALTYPE, 0, l_b, l_k, l_n, l_k, 1.0);
 
   /* touch dense A */
-  for ( l_i = 0; l_i < l_k*l_m; l_i++) {
+  for ( l_i = 0; l_i < l_k*l_m; l_i++ ) {
     l_a_dense[l_i] = 0;
   }
   /* init dense A using sparse A */
   for ( l_i = 0; l_i < l_m; l_i++ ) {
     l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
     for ( l_z = 0; l_z < l_elems; l_z++ ) {
-      l_a_dense[(l_i*l_k)+l_colidx[l_rowptr[l_i]+l_z]] = l_a_sp[l_rowptr[l_i]+l_z];
+      const int l_y = l_rowptr[l_i] + l_z;
+      l_a_dense[(l_i*l_k)+l_colidx[l_y]] = l_a_sp[l_y];
     }
   }
 
@@ -223,21 +226,20 @@ int main(int argc, char* argv[]) {
     l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     l_c_dense_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     assert(NULL != l_c_betazero && NULL != l_c_gold_betazero && NULL != l_c_dense_betazero);
-    libxsmm_rng_set_seed(25071975);
     /* touch C */
-    for (l_i = 0; l_i < (l_m*l_n); l_i++) {
-      l_c_gold_betazero[l_i] = (REALTYPE)libxsmm_rng_f64();
-    }
-    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+    LIBXSMM_MATINIT(REALTYPE, 0, l_c_gold_betazero, l_m, l_n, l_m, 1.0);
+    /* propagate C */
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
       l_c_betazero[l_i] = l_c_gold_betazero[l_i];
     }
-    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
       l_c_dense_betazero[l_i] = l_c_gold_betazero[l_i];
     }
     /* setting up fsspmdm */
     beta = 0;
     gemm_op_betazero = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta,
-      (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0, l_a_dense);
+      l_a_dense, (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0,
+      l_notune ? NULL : libxsmm_timer_tick);
   }
 
   if (0 > l_beta || 0 < l_beta) {
@@ -246,22 +248,20 @@ int main(int argc, char* argv[]) {
     l_c_gold_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     l_c_dense_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     assert(NULL != l_c_betaone && NULL != l_c_gold_betaone && NULL != l_c_dense_betaone);
-    libxsmm_rng_set_seed(25071975);
     /* touch C */
-    for (l_i = 0; l_i < l_m * l_n; l_i++) {
-      l_c_gold_betaone[l_i] = (REALTYPE)libxsmm_rng_f64();
-    }
-    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+    LIBXSMM_MATINIT(REALTYPE, 0, l_c_gold_betaone, l_m, l_n, l_m, 1.0);
+    /* propagate C */
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
       l_c_betaone[l_i] = l_c_gold_betaone[l_i];
     }
-    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++ ) {
       l_c_dense_betaone[l_i] = l_c_gold_betaone[l_i];
     }
     /* setting up fsspmdm */
     beta = 1;
     gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE),
       l_m, LIBXSMM_MIN(l_n_block, l_n), l_k, l_k, l_n, l_n,
-      &alpha, &beta, 0, l_a_dense);
+      &alpha, &beta, l_a_dense, 0, l_notune ? NULL : libxsmm_timer_tick);
   }
 
   /* compute golden results */
@@ -272,7 +272,8 @@ int main(int argc, char* argv[]) {
         l_elems = l_rowptr[l_i + 1] - l_rowptr[l_i];
         l_c_gold_betazero[(l_n * l_i) + l_j] = 0;
         for (l_z = 0; l_z < l_elems; l_z++) {
-          l_c_gold_betazero[(l_n * l_i) + l_j] += l_a_sp[l_rowptr[l_i] + l_z] * l_b[(l_n * l_colidx[l_rowptr[l_i] + l_z]) + l_j];
+          const int l_y = l_rowptr[l_i] + l_z;
+          l_c_gold_betazero[(l_n * l_i) + l_j] += l_a_sp[l_y] * l_b[(l_n * l_colidx[l_y]) + l_j];
         }
       }
     }
@@ -282,7 +283,8 @@ int main(int argc, char* argv[]) {
       for (l_i = 0; l_i < l_m; l_i++) {
         l_elems = l_rowptr[l_i + 1] - l_rowptr[l_i];
         for (l_z = 0; l_z < l_elems; l_z++) {
-          l_c_gold_betaone[(l_n * l_i) + l_j] += l_a_sp[l_rowptr[l_i] + l_z] * l_b[(l_n * l_colidx[l_rowptr[l_i] + l_z]) + l_j];
+          const int l_y = l_rowptr[l_i] + l_z;
+          l_c_gold_betaone[(l_n * l_i) + l_j] += l_a_sp[l_y] * l_b[(l_n * l_colidx[l_y]) + l_j];
         }
       }
     }
@@ -325,34 +327,38 @@ int main(int argc, char* argv[]) {
   if (0 >= l_beta) {
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betazero, l_c_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=0 (libxmm vs. gold): %f", diff.linf_abs);
-    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
-      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    l_epsilon = libxsmm_matdiff_epsilon(&diff);
+    printf("\tmax error beta=0 (libxsmm vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
+    if (EPSILON(REALTYPE) < l_epsilon) {
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
       ret |= 1;
     }
     else printf("\n");
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betazero, l_c_dense_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=0 (dense vs. gold): %f", diff.linf_abs);
-    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
-      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    l_epsilon = libxsmm_matdiff_epsilon(&diff);
+    printf("\tmax error beta=0 (dense vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
+    if (EPSILON(REALTYPE) < l_epsilon) {
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
     }
     else printf("\n");
   }
   if (0 > l_beta || 0 < l_beta) {
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betaone, l_c_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=1 (libxmm vs. gold): %f", diff.linf_abs);
-    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
-      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
-      ret |= 1;
+    l_epsilon = libxsmm_matdiff_epsilon(&diff);
+    printf("\tmax error beta=1 (libxsmm vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
+    if (EPSILON(REALTYPE) < l_epsilon) {
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
+      ret |= 2;
     }
     else printf("\n");
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betaone, l_c_dense_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=1 (dense vs. gold): %f", diff.linf_abs);
-    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
-      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    l_epsilon = libxsmm_matdiff_epsilon(&diff);
+    printf("\tmax error beta=1 (dense vs. gold): abs=%f eps=%f", diff.linf_abs, l_epsilon);
+    if (EPSILON(REALTYPE) < l_epsilon) {
+      printf(" (%f!=%f @ [%i,%i])\n", diff.v_tst, diff.v_ref, diff.m, diff.n);
     }
     else printf("\n");
   }

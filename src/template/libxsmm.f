@@ -206,18 +206,6 @@
           SUBROUTINE libxsmm_finalize() BIND(C)
           END SUBROUTINE
 
-          !> Get the default prefetch strategy.
-          PURE FUNCTION libxsmm_get_gemm_auto_prefetch() BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_gemm_auto_prefetch
-          END FUNCTION
-
-          !> Set the default prefetch strategy.
-          SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: strategy
-          END SUBROUTINE
-
           !> Returns the architecture and instruction set extension
           !> as determined by the CPUID flags, as set by the
           !> libxsmm_get_target_arch* functions, or as set by

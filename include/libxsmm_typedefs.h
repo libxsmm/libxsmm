@@ -27,7 +27,7 @@
 # define LIBXSMM_BLASINT int
 #endif
 
-/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO */
+/** Generic prefetch applicable for all domains. */
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 /** Attempt to automatically select a strategy. */
@@ -138,6 +138,9 @@
 #   define LIBXSMM_DESCRIPTOR_SIGSIZE 32
 # endif
 #endif
+
+/** Integer type used to represent tick of a high-resolution timer. */
+typedef unsigned long long libxsmm_timer_tickint;
 
 /** Special type for bitfield flags. */
 typedef unsigned int libxsmm_bitfield;
@@ -352,34 +355,37 @@ typedef enum libxsmm_meltw_binary_flags {
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0    = 4,
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1    = 8,
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0 = 16,
-  LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1 = 32
+  LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1 = 32,
+  LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND  = 64
 } libxsmm_meltw_binary_flags;
 
 typedef enum libxsmm_meltw_binary_type {
-  LIBXSMM_MELTW_TYPE_BINARY_NONE        =  0,
-  LIBXSMM_MELTW_TYPE_BINARY_ADD         =  1,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL         =  2,
-  LIBXSMM_MELTW_TYPE_BINARY_SUB         =  3,
-  LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
-  LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 7,
-  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  8,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                       =  9,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS               =  10,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS               =  11,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS       =  12,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                =  13,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS        =  14,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS          =  15,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  16,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS               =  17,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS               =  18,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS       =  19,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                =  20,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS        =  21,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS          =  22,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS  =  23
+  LIBXSMM_MELTW_TYPE_BINARY_NONE                            =  0,
+  LIBXSMM_MELTW_TYPE_BINARY_ADD                             =  1,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL                             =  2,
+  LIBXSMM_MELTW_TYPE_BINARY_SUB                             =  3,
+  LIBXSMM_MELTW_TYPE_BINARY_DIV                             =  4,
+  LIBXSMM_MELTW_TYPE_BINARY_MULADD                          =  5,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL                          =  6,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD =  7,
+  LIBXSMM_MELTW_TYPE_BINARY_PACK                            =  8,
+  LIBXSMM_MELTW_TYPE_BINARY_MAX                             =  9,
+  LIBXSMM_MELTW_TYPE_BINARY_MIN                             = 10,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                          = 11,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS                  = 12,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS                  = 13,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS          = 14,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                   = 15,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS           = 16,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS             = 17,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS     = 18,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS                  = 19,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS                  = 20,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS          = 21,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                   = 22,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS           = 23,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS             = 24,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS     = 25
 } libxsmm_meltw_binary_type;
 
 typedef enum libxsmm_meltw_ternary_flags {
@@ -524,7 +530,7 @@ typedef enum libxsmm_gemm_flags {
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
-  /** No prefetching and no prefetch fn. signature. */
+  /** No data-prefetch. */
   LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
   /** Only function prefetch signature. */
   LIBXSMM_GEMM_PREFETCH_SIGONLY            = LIBXSMM_PREFETCH_SIGONLY,
@@ -683,7 +689,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_unary_param {
 
 /** argument struct for matrix-eltwise: binary */
 LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_binary_param {
-  libxsmm_matrix_op_arg op;   /* op state & paramters */
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg out;     /* output     */
@@ -764,6 +770,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_batch_reduce_config {
   libxsmm_blasint br_stride_b_hint;        /* mandatory hint for strided BRGEMM */
   unsigned char br_unroll_hint;            /* optional hint containing the BR count */
 } libxsmm_gemm_batch_reduce_config;
+
+LIBXSMM_EXTERN_C typedef struct libxsmm_spgemm_config {
+  libxsmm_blasint packed_width;        /* Packed width for packed spgemm */
+  libxsmm_blasint bk;                  /* Bk size for dense block        */
+  libxsmm_blasint bn;                  /* Bn size for dense block        */
+} libxsmm_spgemm_config;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_unary_argops {
   libxsmm_blasint ldap;                       /* leading dimensions of Ap */

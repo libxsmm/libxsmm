@@ -58,7 +58,8 @@ void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT
 
 int main(int argc, char* argv[])
 {
-  int nrepeat = (2 == argc ? atoi(argv[1]) : 500);
+  const int arg1 = (2 == argc ? atoi(argv[1]) : 0);
+  int nrepeat = (0 < arg1 ? arg1 : 500);
   const BLASINT_TYPE m = (2 < argc ? atoi(argv[1]) : 23);
   const BLASINT_TYPE k = (3 < argc ? atoi(argv[3]) : m);
   const BLASINT_TYPE n = (2 < argc ? atoi(argv[2]) : k);
@@ -92,17 +93,18 @@ int main(int argc, char* argv[])
   init( 0, c, m, n, ldc, scale);
 
   { /* Call DGEMM */
-# if defined(_OPENMP)
+#if defined(_OPENMP)
     const double start = omp_get_wtime();
-# endif
+#endif
     for (i = 0; i < nrepeat; ++i) {
       GEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     }
-# if defined(_OPENMP)
-    printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
-# else
-    printf("Called %i times.\n", nrepeat);
-# endif
+#if defined(_OPENMP)
+    if (0 < nrepeat) printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
+#else
+    if (0 < nrepeat) printf("Called %i times.\n", nrepeat);
+#endif
+    else fprintf(stderr, "Not executed!\n");
   }
 
   free(a);

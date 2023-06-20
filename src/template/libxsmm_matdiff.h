@@ -13,14 +13,23 @@ const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_ref = (const LIBXSMM_MATDIF
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_tst = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)tst;
 double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normt = 0;
 double normrc = 0, normtc = 0, compr = 0, compt = 0, compd = 0;
-libxsmm_blasint i, j;
+#if defined(LIBXSMM_MATDIFF_SHUFFLE)
+const size_t size = (size_t)mm * nn, shuffle = libxsmm_coprime2(size);
+#endif
+libxsmm_blasint ii, jj;
 
-for (i = 0; i < nn; ++i) {
+for (ii = 0; ii < nn; ++ii) {
   double comprj = 0, comptj = 0, compij = 0;
   double normrj = 0, normtj = 0, normij = 0;
   double v0, v1;
 
-  for (j = 0; j < mm; ++j) {
+  for (jj = 0; jj < mm; ++jj) {
+#if defined(LIBXSMM_MATDIFF_SHUFFLE)
+    const size_t index = (shuffle * (ii * mm + jj)) % size;
+    const libxsmm_blasint i = (libxsmm_blasint)(index / mm), j = (libxsmm_blasint)(index % mm);
+#else
+    const libxsmm_blasint i = ii, j = jj;
+#endif
     const double ti = (NULL != real_tst ? LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_tst[i*ldt+j]) : 0);
     const double ri = LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_ref[i*ldr+j]);
     const double ta = LIBXSMM_ABS(ti);
@@ -132,11 +141,17 @@ if (0 == result_nan) {
   info->normf_rel = LIBXSMM_MATDIFF_DIV(info->l2_abs, normfr,
     LIBXSMM_MIN(normft * normft, info->l2_abs));
 
-  for (j = 0; j < mm; ++j) {
+  for (jj = 0; jj < mm; ++jj) {
     double compri = 0, compti = 0, comp1 = 0;
     double normri = 0, normti = 0, norm1 = 0;
 
-    for (i = 0; i < nn; ++i) {
+    for (ii = 0; ii < nn; ++ii) {
+#if defined(LIBXSMM_MATDIFF_SHUFFLE)
+      const size_t index = (shuffle * (ii * mm + jj)) % size;
+      const libxsmm_blasint i = (libxsmm_blasint)(index / mm), j = (libxsmm_blasint)(index % mm);
+#else
+      const libxsmm_blasint i = ii, j = jj;
+#endif
       const double ri = LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_ref[i*ldr+j]);
       const double ti = (NULL != real_tst ? LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_tst[i*ldt+j]) : 0);
       const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
