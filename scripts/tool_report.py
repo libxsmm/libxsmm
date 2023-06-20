@@ -348,8 +348,8 @@ def bold(s, cond=True):
         return s
 
 
-def conclude(values, base, unit, accuracy, bounds, lowhigh):
-    label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
+def conclude(values, base, unit, prec, bounds, lowhigh, istrend):
+    label, bad = f"{num2fix(values[0], prec)} {unit}", False
     guess, rd, md, cv, avg, med, eqn = trend(values)  # unpack
     blist = base.split()
     if 1 < len(blist):  # category and detail
@@ -359,13 +359,13 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
                 dlist.remove(c)
         base = f"{blist[0]} {'_'.join(dlist)}"
     # combine relative differences (new value vs last/avg value)
-    xd = max(abs(rd if rd else 0), abs(md if md else 0))
+    xd = max(abs(rd if rd else 0), abs(md if md and istrend else 0))
     if xd:
         inum = num2fix(100 * (rd if xd == abs(rd) else md))
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum = num2fix(max(100 * cv, 1))
-            cnum = num2fix(abs(bounds[0]), accuracy)
+            cnum = num2fix(abs(bounds[0]), prec)
             t0 = num2fix(bnum * abs(bounds[0]))
             t1 = num2fix(abs(bounds[1])) if 1 < len(bounds) else 0
             cond = f"min({bnum}%*{num2str(cnum)}, {t1}%)"
@@ -463,7 +463,7 @@ def main(args, argd, dbfname):
     )
     rslt = args.result.lower()
     qlst = rslt.split(",")
-    nerrors, nentries, accuracy = 0, 0, 1
+    nerrors, nentries, prec = 0, 0, 1
     inflight = max(args.inflight, 0)
     info = {"branch": args.branch} if args.branch else {}
     infokey = "INFO"
@@ -688,23 +688,25 @@ def main(args, argd, dbfname):
         entries = [entries[-1]]  # assume insertion order is preserved
 
     # parse bounds used to highlight results
-    strbounds = re.split(
-        r"[\s;,]", (args.bounds if args.bounds else argd.bounds).strip()
-    )
+    defbounds = re.split(r"[\s;,]", argd.bounds.strip())
+    if args.bounds:
+        strbounds = re.split(r"[\s;,]", args.bounds.strip())
+    else:
+        strbounds = defbounds
     try:
-        highlight = [float(i) for i in strbounds]
+        bounds = [float(i) for i in strbounds]
     except ValueError:
-        highlight = [float(i) for i in re.split(r"[\s;,]", argd.bounds)]
-    lowhigh = (  # meaning of negative/positive deviation
-        highlight
-        and 0 != highlight[0]
-        and "" != strbounds[0]
-        and "-" == strbounds[0][0],
-        highlight
-        and 0 != highlight[0]
-        and "" != strbounds[0]
-        and "+" == strbounds[0][0],
-    )
+        bounds = [float(i) for i in defbounds]
+    if 0 == bounds[0]:
+        bounds[0] = float(defbounds[0])
+    lowhigh, istrend, s = (False, False), False, strbounds[0]
+    if lowhigh and "" != s:
+        # meaning of negative/positive deviation
+        lowhigh = ("-" == s[0], "+" == s[0])
+        ixtrend = 1 if any(lowhigh) else 0
+        if (ixtrend + 1) < len(s) and "." == s[ixtrend + 1]:
+            ixtrend = ixtrend + 1
+        istrend = "0" == s[ixtrend]
     exceeded = False
 
     # build figure
@@ -860,7 +862,7 @@ def main(args, argd, dbfname):
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
                         label, bad, eqn = conclude(
-                            y, z, yunit, accuracy, highlight, lowhigh
+                            y, z, yunit, prec, bounds, lowhigh, istrend
                         )
                         ylabel.append(label)
                         if not exceeded and bad:
@@ -868,7 +870,7 @@ def main(args, argd, dbfname):
                     ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
                 else:
                     ylabel, bad, eqn = conclude(
-                        yvalue, legend, yunit, accuracy, highlight, lowhigh
+                        yvalue, legend, yunit, prec, bounds, lowhigh, istrend
                     )
                     if not exceeded and bad:
                         exceeded = True
