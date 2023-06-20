@@ -39,20 +39,23 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
     for ENV in $(eval "${ENVDIFF}"); do # restore environment
       DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
       if [ "$(echo "${DEF}" | ${SED} -n "/\".*[^\]\"/p")" ]; then
-        if [ "${ENVSRCF}" ]; then
-          VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
-          if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && [ "$(echo "${VAL}" | ${SED} -n "/\//p")" ]; then
-            VAL=""
+        VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
+        if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && [ "$(echo "${VAL}" | ${SED} -n "/\//p")" ]; then
+          VAL=""
+        fi
+        if [ "${VAL}" ]; then
+          if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
+            DECLARE="declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")"
+          else
+            DECLARE="declare -x ${ENV}=${VAL}"
           fi
-          if [ "${VAL}" ]; then
-            if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
-              echo "declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")" >>"${ENVSRCF}"
-            else
-              echo "declare -x ${ENV}=${VAL}" >>"${ENVSRCF}"
-            fi
+          if [ "${ENVSRCF}" ]; then
+            echo "${DECLARE}" >>"${ENVSRCF}"
+          else
+            #eval "${DEF}"
+            eval "${DECLARE}"
           fi
         fi
-        eval "${DEF}"
       else
         unset "${ENV}"
       fi
