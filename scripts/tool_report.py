@@ -706,7 +706,8 @@ def main(args, argd, dbfname):
         ixtrend = 1 if any(lowhigh) else 0
         if (ixtrend + 1) < len(s) and "." == s[ixtrend + 1]:
             ixtrend = ixtrend + 1
-        istrend = "0" == s[ixtrend]
+        if (ixtrend < len(s)):
+            istrend = "0" == s[ixtrend]
     exceeded = False
 
     # build figure
