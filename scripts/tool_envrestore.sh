@@ -39,13 +39,12 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
       if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
         VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
         if [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
-          VALS=""; IFS=':"'
-          for DIR in ${VAL}; do
+          VALS="" && IFS=':"' && for DIR in ${VAL}; do
             if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
               if [ "${VALS}" ]; then VALS="${VALS}:${DIR}";
               else VALS="${DIR}"; fi
             fi
-          done
+          done && unset IFS
           if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
         fi
         if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \

@@ -218,7 +218,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
     if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
     COUNTED="${COUNTED}"$'\n'"${LINE}"
     COUNTER=$((COUNTER+1))
-  done
+  done && unset IFS
   PEXEC_SCRARG="\$0"
   if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
     if [ "0" = "${PEXEC_IL}" ]; then
@@ -230,7 +230,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
       if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
       if [ "${COUNTED}" ]; then COUNTED="${COUNTED}"$'\n'"${LINE}"; else COUNTED=${LINE}; fi
       COUNTER=$((COUNTER+1))
-    done
+    done && unset IFS
   fi
   trap 'rm -f ${NAME}.txt ${PEXEC_SCRIPT}' EXIT
   unset ATLEAST
