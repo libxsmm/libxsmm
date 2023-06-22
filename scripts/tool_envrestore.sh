@@ -29,31 +29,41 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
     shift
     ENVSRCF=$1
     if [ "${ENVSRCF}" ]; then
-      if [ ! "${UNIQ}" ] && [ "$(command -v sort)" ]; then UNIQ="| sort -u"; fi
-      if [ ! "${UNIQ}" ] && [ "$(command -v uniq)" ]; then UNIQ="| uniq"; fi
       echo "#!/usr/bin/env bash" >"${ENVSRCF}"
       shift
     fi
-    # no need to have unique values in ENVDIFF in general
-    ENVDIFF="declare -px | ${DIFF} ${ENVFILE} - | ${SED} -n 's/[<>] \(..*\)/\1/p' | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p' ${UNIQ}"
+    ENVDIFF="declare -px | ${DIFF} --old-line-format='' - ${ENVFILE} \
+           | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p'"
     for ENV in $(eval "${ENVDIFF}"); do # restore environment
       DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
-      if [ "$(echo "${DEF}" | ${SED} -n "/\".*[^\]\"/p")" ]; then
-        VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
-        if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && [ "$(echo "${VAL}" | ${SED} -n "/\//p")" ]; then
+      if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
+        VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
+        if [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
+          VALS=""; IFS=':"'
+          for DIR in ${VAL}; do
+            if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
+              if [ "${VALS}" ]; then VALS="${VALS}:${DIR}";
+              else VALS="${DIR}"; fi
+            fi
+          done
+          if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
+        fi
+        if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \
+           [ "$(${SED} -n "/\//p" <<<"${VAL}")" ] && \
+           [ "$(declare -px | ${SED} -n "/${ENV}/p")" ];
+        then
           VAL=""
         fi
         if [ "${VAL}" ]; then
-          if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
-            DECLARE="declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")"
+          if [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then
+            DEF="declare -x ${ENV}=$(${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/" <<<"${VAL}")"
           else
-            DECLARE="declare -x ${ENV}=${VAL}"
+            DEF="declare -x ${ENV}=${VAL}"
           fi
           if [ "${ENVSRCF}" ]; then
-            echo "${DECLARE}" >>"${ENVSRCF}"
+            echo "${DEF}" >>"${ENVSRCF}"
           else
-            #eval "${DEF}"
-            eval "${DECLARE}"
+            eval "${DEF}"
           fi
         fi
       else
