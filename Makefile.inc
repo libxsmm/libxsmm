@@ -1137,16 +1137,6 @@ else # non-Intel
 endif
 SLDFLAGS ?= $(NULL)
 
-LIBATOMIC ?= 0
-ifneq (0,$(THREADS))
-ifneq (0,$(LIBATOMIC))
-ifneq (,$(call ldclib,$(LD),$(SLDFLAGS),atomic))
-  LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),atomic)
-  DFLAGS += -DLIBXSMM_LIBATOMIC
-endif
-endif
-endif
-
 LIBGFORTRAN := $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
 LIBPTHREAD := $(call ldclib,$(LD),$(SLDFLAGS),pthread)
 QUADMATH := $(call ldclib,$(LD),$(SLDFLAGS),quadmath)
@@ -2137,6 +2127,16 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
   endif
 else ifneq (0,$(PGI))
   LIBATOMIC ?= 1
+endif
+
+LIBATOMIC ?= 0
+ifneq (0,$(THREADS))
+ifneq (0,$(LIBATOMIC))
+ifneq (,$(call ldclib,$(LD),$(SLDFLAGS),atomic))
+  LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),atomic)
+  DFLAGS += -DLIBXSMM_LIBATOMIC
+endif
+endif
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
