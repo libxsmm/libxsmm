@@ -32,26 +32,29 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
       echo "#!/usr/bin/env bash" >"${ENVSRCF}"
       shift
     fi
-    ENVDIFF="declare -px | ${DIFF} --old-line-format='' - ${ENVFILE} \
-           | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p'"
+    # diff --old-line-format='' is not portable
+    ENVDIFF="declare -px \
+           | ${DIFF} - ${ENVFILE} 2>/dev/null \
+           | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p' \
+           | ${SED} -n 's/[>] \(..*\)/\1/p'"
     for ENV in $(eval "${ENVDIFF}"); do # restore environment
       DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
       if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
         VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
-        if [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
-          VALS="" && IFS=':"' && for DIR in ${VAL}; do
-            if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
-              if [ "${VALS}" ]; then VALS="${VALS}:${DIR}";
-              else VALS="${DIR}"; fi
-            fi
-          done && unset IFS
-          if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
-        fi
         if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \
-           [ "$(${SED} -n "/\//p" <<<"${VAL}")" ] && \
-           [ "$(declare -px | ${SED} -n "/${ENV}/p")" ];
+           [ "$(${SED} -n "/\//p" <<<"${VAL}")" ];
         then
-          VAL=""
+          if [ "$(declare -px | ${SED} -n "/${ENV}/p")" ]; then
+            VAL=""
+          elif [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
+            VALS="" && IFS=':"' && for DIR in ${VAL}; do
+              if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
+                if [ "${VALS}" ]; then VALS="${VALS}:${DIR}";
+                else VALS="${DIR}"; fi
+              fi
+            done && unset IFS
+            if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
+          fi
         fi
         if [ "${VAL}" ]; then
           if [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then
