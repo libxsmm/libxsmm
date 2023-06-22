@@ -902,6 +902,13 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_float16 cur_a, cur_b;
     float up_c;
     int l_k_block = 1;
+    const char* env_arch = getenv("LIBXSMM_TARGET");
+    const int is_env_SPR = (
+      env_arch == libxsmm_stristr(env_arch, "spr") ||
+      env_arch == libxsmm_stristr(env_arch, "amx"));
+    int arch_cpuid = libxsmm_cpuid(NULL);
+    int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
+    int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -918,11 +925,17 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               a_use = a_use * i_gemm_def->scf_f32[l_i];
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
-              cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              if (i_gemm_def->trans_b == 0) {
+                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              } else {
+                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+              }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
-              libxsmm_rne_convert_fp32_f16(&ftmp, &c_tmp, 1);
-              libxsmm_convert_f16_f32( &c_tmp, &ftmp, 1 );
+              if (l_use_replacement_fma > 0) {
+                libxsmm_rne_convert_fp32_f16(&ftmp, &c_tmp, 1);
+                libxsmm_convert_f16_f32( &c_tmp, &ftmp, 1 );
+              }
             }
           }
         }
@@ -946,6 +959,13 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_float16 cur_a, cur_b;
     float up_c;
     int l_k_block = 1;
+    const char* env_arch = getenv("LIBXSMM_TARGET");
+    const int is_env_SPR = (
+      env_arch == libxsmm_stristr(env_arch, "spr") ||
+      env_arch == libxsmm_stristr(env_arch, "amx"));
+    int arch_cpuid = libxsmm_cpuid(NULL);
+    int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
+    int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -955,11 +975,17 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               cur_a = f16_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
-              cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              if (i_gemm_def->trans_b == 0) {
+                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              } else {
+                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+              }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
-              libxsmm_rne_convert_fp32_f16(&ftmp, &c_tmp, 1);
-              libxsmm_convert_f16_f32( &c_tmp, &ftmp, 1 );
+              if (l_use_replacement_fma > 0) {
+                libxsmm_rne_convert_fp32_f16(&ftmp, &c_tmp, 1);
+                libxsmm_convert_f16_f32( &c_tmp, &ftmp, 1 );
+              }
             }
           }
         }
@@ -983,6 +1009,13 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     float c_tmp_f32;
     libxsmm_float16 cur_a, cur_b;
     int l_k_block = 1;
+    const char* env_arch = getenv("LIBXSMM_TARGET");
+    const int is_env_SPR = (
+      env_arch == libxsmm_stristr(env_arch, "spr") ||
+      env_arch == libxsmm_stristr(env_arch, "amx"));
+    int arch_cpuid = libxsmm_cpuid(NULL);
+    int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
+    int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -992,11 +1025,17 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               cur_a = f16_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
-              cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              if (i_gemm_def->trans_b == 0) {
+                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              } else {
+                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+              }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
-              libxsmm_rne_convert_fp32_f16(&ftmp, &c_tmp, 1);
-              libxsmm_convert_f16_f32( &c_tmp, &ftmp, 1 );
+              if (l_use_replacement_fma > 0) {
+                libxsmm_rne_convert_fp32_f16(&ftmp, &c_tmp, 1);
+                libxsmm_convert_f16_f32( &c_tmp, &ftmp, 1 );
+              }
             }
           }
         }
