@@ -12,71 +12,119 @@
 
 DIFF=$(command -v diff)
 SED=$(command -v gsed)
+DIRPAT="s/\//\\\\\//g"
+STRICT=0
+FROM=()
+TO=()
 
 # GNU sed is desired (macOS)
 if [ ! "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-if [ "${DIFF}" ] && [ "${SED}" ]; then
-  STRICT=0
-  if [ "-s" = "$1" ] || [ "--strict" = "$1" ]; then
-    STRICT=1
-    shift
-  fi
-  ENVFILE=$1
-  if [ -e "${ENVFILE}" ]; then
-    shift
-    ENVSRCF=$1
-    if [ "${ENVSRCF}" ]; then
-      echo "#!/usr/bin/env bash" >"${ENVSRCF}"
-      shift
-    fi
-    # diff --old-line-format='' is not portable
-    ENVDIFF="declare -px \
-           | ${DIFF} - ${ENVFILE} 2>/dev/null \
-           | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p' \
-           | ${SED} -n 's/[>] \(..*\)/\1/p'"
-    for ENV in $(eval "${ENVDIFF}"); do # restore environment
-      DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
-      if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
-        VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
-        if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \
-           [ "$(${SED} -n "/\//p" <<<"${VAL}")" ];
-        then
-          if [ "$(declare -px | ${SED} -n "/${ENV}/p")" ]; then
-            VAL=""
-          elif [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
-            VALS="" && IFS=':"' && for DIR in ${VAL}; do
-              if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
-                if [ "${VALS}" ]; then VALS="${VALS}:${DIR}";
-                else VALS="${DIR}"; fi
-              fi
-            done && unset IFS
-            if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
-          fi
-        fi
-        if [ "${VAL}" ]; then
-          if [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then
-            DEF="declare -x ${ENV}=$(${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/" <<<"${VAL}")"
-          else
-            DEF="declare -x ${ENV}=${VAL}"
-          fi
-          if [ "${ENVSRCF}" ]; then
-            echo "${DEF}" >>"${ENVSRCF}"
-          else
-            eval "${DEF}"
-          fi
-        fi
-      else
-        unset "${ENV}"
-      fi
-    done
-  else
-    >&2 echo "ERROR: missing name of backup-file generated with \"declare -px\"!"
-    exit 1
-  fi
-else
+if [ ! "${DIFF}" ] || [ ! "${SED}" ]; then
   >&2 echo "ERROR: missing prerequisites!"
+  exit 1
+fi
+
+# ensure proper permissions
+if [ "${UMASK}" ]; then
+  UMASK_CMD="umask ${UMASK};"
+  eval "${UMASK_CMD}"
+fi
+
+while test $# -gt 0; do
+  case "$1" in
+  -h|--help)
+    HELP=1
+    shift $#;;
+  -i|-f|--envfile)
+    IFILE=$2
+    shift 2;;
+  -o|--srcfile)
+    OFILE=$2
+    shift 2;;
+  -s|--strict)
+    STRICT=1
+    shift 1;;
+  -t|--fromto)
+    shift && for ARG in "$@"; do
+      if [[ "${ARG}" = *":"* ]]; then
+        IFS=':' read -ra PAIR <<<"${ARG}" && unset IFS
+        FROM+=("$(${SED} "${DIRPAT}" <<<"${PAIR[0]}")")
+        TO+=("$(${SED} "${DIRPAT}" <<<"${PAIR[1]}")")
+        shift 1
+      fi
+    done;;
+  *)  # positional arguments and rest
+    if [ ! "${IFILE}" ]; then IFILE=$1;
+    elif [ ! "${OFILE}" ]; then OFILE=$1; fi
+    shift 1;;
+  esac
+done
+
+if [ "${HELP}" ] && [ "0" != "${HELP}" ]; then
+  echo "Usage: $0 [options] IFILE [OFILE]"
+  echo "       -i|-f|--envfile file: filename of environment file generated with \"declare -px\""
+  echo "       -o|--srcfile file: filename of script to be generated (can be source'd)"
+  echo "       -s|--strict: keep existing environment variables with paths"
+  echo "                    only keep paths where parent directory exists"
+  echo "       -t|--fromto a:b [b:c [...]]: replace \"a\" with \"b\", etc."
+  echo
+  echo "Examples: source $0 -s my.env || true"
+  echo "          $0 -t /data/nfs_home:/Users my.env /dev/stdout"
+  echo "          $0 -t /data/nfs_home:/Users -s my.env myenv.sh"
+  echo
+  exit 0
+fi
+
+if [ -e "${IFILE}" ]; then
+  if [ "${OFILE}" ]; then echo "#!/usr/bin/env bash" >"${OFILE}"; fi
+  # diff --old-line-format='' is not portable
+  ENVDIFF="declare -px \
+         | ${DIFF} - ${IFILE} 2>/dev/null \
+         | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p' \
+         | ${SED} -n 's/[>] \(..*\)/\1/p'"
+  for ENV in $(eval "${ENVDIFF}"); do # restore environment
+    DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${IFILE}")
+    if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
+      VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
+      if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \
+         [ "$(${SED} -n "/\//p" <<<"${VAL}")" ];
+      then
+        if [ "$(declare -px | ${SED} -n "/${ENV}/p")" ]; then
+          VAL=""  # drop path values with existing key
+        elif [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
+          # filter paths and ensure existing parent directory
+          VALS="" && IFS=':"' && for DIR in ${VAL}; do
+            if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
+              if [ "${VALS}" ]; then VALS="${VALS}:${DIR}";
+              else VALS="${DIR}"; fi
+            fi
+          done && unset IFS
+          if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
+        fi
+      fi
+      if [ "0" != "${#FROM[@]}" ]; then  # perform from-to translation
+        for I in $(seq ${#FROM[@]}); do
+          VAL=$(${SED} "s/${FROM[I-1]}/${TO[I-1]}/g" <<<"${VAL}" 2>/dev/null)
+        done
+      fi
+      if [ "${VAL}" ]; then
+        if [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then  # append paths and preserve existing values
+          DEF="declare -x ${ENV}=$(${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/" <<<"${VAL}")"
+        else  # introduce or replace values
+          DEF="declare -x ${ENV}=${VAL}"
+        fi
+        if [ "${OFILE}" ]; then  # write source'able script
+          echo "${DEF}" >>"${OFILE}"
+        else  # evaluate definition directly
+          eval "${DEF}"
+        fi
+      fi
+    fi
+  done
+else
+  >&2 echo "ERROR: environment-file generated with \"declare -px\" not specified!"
   exit 1
 fi
