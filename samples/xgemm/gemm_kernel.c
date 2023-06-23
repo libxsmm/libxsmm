@@ -918,11 +918,16 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
+              int int_a = (int) char_a;
               /* Convert a to float16 and scale  */
-              a_use = (float) short_a;
+              a_use = (l_use_replacement_fma > 0) ? (float) short_a : (float) int_a;
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               a_use = a_use * i_gemm_def->scf_f32[l_i];
+              if (l_use_replacement_fma > 0) {
+                libxsmm_rne_convert_fp32_f16(&a_use, &c_tmp, 1);
+                libxsmm_convert_f16_f32( &c_tmp, &a_use, 1 );
+              }
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               if (i_gemm_def->trans_b == 0) {
@@ -976,11 +981,16 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
+              int int_a = (int) char_a;
               /* Convert a to float16 and scale  */
-              a_use = (float) short_a;
+              a_use = (l_use_replacement_fma > 0) ? (float) short_a : (float) int_a;
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               a_use = a_use * i_gemm_def->scf_f32[l_i];
+              if (l_use_replacement_fma > 0) {
+                libxsmm_rne_convert_fp32_f16(&a_use, &c_tmp, 1);
+                libxsmm_convert_f16_f32( &c_tmp, &a_use, 1 );
+              }
               libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               if (i_gemm_def->trans_b == 0) {

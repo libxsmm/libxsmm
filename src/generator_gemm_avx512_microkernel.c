@@ -143,7 +143,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
 
   /* load column vectors of A upfront */
   for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-    char l_a_vname = (l_is_Ai8_Bf16_gemm == 0) ? i_micro_kernel_config->vector_name : ( i_micro_kernel_config->vector_name == 'z' ? 'y' : 'x');
+    char l_a_vname = (l_is_Ai8_Bf16_gemm == 0) ? i_micro_kernel_config->vector_name : ((l_use_f32_compute_with_f16_inp) ? (i_micro_kernel_config->vector_name == 'z' ? 'x' : 'x') : ((l_use_f16_replacement_fma > 0) ? (i_micro_kernel_config->vector_name == 'z' ? 'x' : 'x') : (i_micro_kernel_config->vector_name == 'z' ? 'y' : 'x')));
     unsigned int l_a_vmove_instruction = ((l_is_Ai8_Bf16_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && (l_m != (l_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->a_vmove_instruction;
 
     if (l_is_Af16_Bf16_gemm > 0) {
@@ -502,7 +502,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
   }
 
   for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-    char l_a_vname = (l_is_Ai8_Bf16_gemm == 0) ? i_micro_kernel_config->vector_name : ( i_micro_kernel_config->vector_name == 'z' ? 'y' : 'x');
+    char l_a_vname = (l_is_Ai8_Bf16_gemm == 0) ? i_micro_kernel_config->vector_name : ((l_use_f32_compute_with_f16_inp) ? (i_micro_kernel_config->vector_name == 'z' ? 'x' : 'x') : ((l_use_f16_replacement_fma > 0) ? (i_micro_kernel_config->vector_name == 'z' ? 'x' : 'x') : (i_micro_kernel_config->vector_name == 'z' ? 'y' : 'x')));
     unsigned int l_a_vmove_instruction = ((l_is_Ai8_Bf16_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && (l_m != (l_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->a_vmove_instruction;
 
     if (l_is_Af16_Bf16_gemm > 0) {
@@ -1594,7 +1594,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   }
 
   if (l_is_Ai8_Bf16_gemm > 0) {
-    l_vec_name_ld_a = 'y';
+    l_vec_name_ld_a = (l_use_f32_compute_with_f16_inp > 0) ? 'x' : ( l_use_f16_replacement_fma > 0 ? 'x' : 'y');
     if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
       l_vec_name_ld_a = 'x';
     }
