@@ -9,7 +9,6 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-
 DIFF=$(command -v diff)
 SED=$(command -v gsed)
 DIRPAT="s/\//\\\\\//g"
@@ -63,22 +62,7 @@ while test $# -gt 0; do
   esac
 done
 
-if [ "${HELP}" ] && [ "0" != "${HELP}" ]; then
-  echo "Usage: $0 [options] IFILE [OFILE]"
-  echo "       -i|-f|--envfile file: filename of environment file generated with \"declare -px\""
-  echo "       -o|--srcfile file: filename of script to be generated (can be source'd)"
-  echo "       -s|--strict: keep existing environment variables with paths"
-  echo "                    only keep paths where parent directory exists"
-  echo "       -t|--fromto a:b [b:c [...]]: replace \"a\" with \"b\", etc."
-  echo
-  echo "Examples: source $0 -s my.env || true"
-  echo "          $0 -t /data/nfs_home:/Users my.env /dev/stdout"
-  echo "          $0 -t /data/nfs_home:/Users -s my.env myenv.sh"
-  echo
-  exit 0
-fi
-
-if [ -e "${IFILE}" ]; then
+if [[ (! "${HELP}") || ("0" = "${HELP}") ]] && [ -e "${IFILE}" ]; then
   if [ "${OFILE}" ]; then echo "#!/usr/bin/env bash" >"${OFILE}"; fi
   # diff --old-line-format='' is not portable
   ENVDIFF="declare -px \
@@ -89,10 +73,11 @@ if [ -e "${IFILE}" ]; then
     DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${IFILE}")
     if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
       VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
+      KEY=$(declare -px | ${SED} -n "/${ENV}/p")
       if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \
          [ "$(${SED} -n "/\//p" <<<"${VAL}")" ];
       then
-        if [ "$(declare -px | ${SED} -n "/${ENV}/p")" ]; then
+        if [ "${KEY}" ]; then
           VAL=""  # drop path values with existing key
         elif [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
           # filter paths and ensure existing parent directory
@@ -111,7 +96,7 @@ if [ -e "${IFILE}" ]; then
         done
       fi
       if [ "${VAL}" ]; then
-        if [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then  # append paths and preserve existing values
+        if [ "${KEY}" ] && [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then  # append to existing values
           DEF="declare -x ${ENV}=$(${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/" <<<"${VAL}")"
         else  # introduce or replace values
           DEF="declare -x ${ENV}=${VAL}"
@@ -125,6 +110,21 @@ if [ -e "${IFILE}" ]; then
     fi
   done
 else
-  >&2 echo "ERROR: environment-file generated with \"declare -px\" not specified!"
-  exit 1
+  echo "Usage: $0 [options] IFILE [OFILE]"
+  echo "       -i|-f|--envfile file: filename of environment file generated with \"declare -px\""
+  echo "       -o|--srcfile file: filename of script to be generated (can be source'd)"
+  echo "       -s|--strict: keep existing environment variables with paths"
+  echo "                    only keep paths where parent directory exists"
+  echo "       -t|--fromto a:b [b:c [...]]: replace \"a\" with \"b\", etc."
+  echo
+  echo "Examples: source $0 -s my.env || true"
+  echo "          $0 -t /data/nfs_home:/Users my.env /dev/stdout"
+  echo "          $0 -t /data/nfs_home:/Users -s my.env myenv.sh"
+  echo
+  if [ "${HELP}" ] && [ "0" != "${HELP}" ]; then
+    exit 0
+  else
+    >&2 echo "ERROR: environment-file generated with \"declare -px\" not specified!"
+    exit 1
+  fi
 fi
