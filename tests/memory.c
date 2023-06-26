@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
       libxsmm_rng_seq(data, elemsize * count);
 
       for (; i < ntests; ++i) {
-        const libxsmm_blasint j = (libxsmm_blasint)libxsmm_rng_u32(count);
+        const size_t j = libxsmm_rng_u32((unsigned int)count);
         const size_t s = libxsmm_rng_u32((unsigned int)elemsize) + 1;
         size_t k = s;
         libxsmm_rng_seq(item, s);
