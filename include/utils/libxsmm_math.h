@@ -23,7 +23,7 @@
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n);
 
 /** Sequence of random data based on libxsmm_rng_u32. */
-LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint nbytes);
+LIBXSMM_API void libxsmm_rng_seq(void* data, size_t nbytes);
 
 /**
  * Similar to libxsmm_rng_u32, but returns a DP-value in the interval [0, 1).
