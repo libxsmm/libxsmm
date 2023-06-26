@@ -610,11 +610,7 @@ LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
       size_t j = count - ((s * i) % count) - 1, k = 0;
       for (j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
       while (j < i) j = count - ((s * j) % count) - 1;
-      for (k = 0; k < elemsize; ++k) {
-        const unsigned char c = data[elemsize*i+k];
-        data[elemsize*i+k] = data[elemsize*j+k];
-        data[elemsize*j+k] = c;
-      }
+      if (i != j) LIBXSMM_MEMSWP127(data + i * elemsize, data + j * elemsize, elemsize);
     }
     result = EXIT_SUCCESS;
   }

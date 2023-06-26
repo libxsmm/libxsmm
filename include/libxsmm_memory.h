@@ -45,9 +45,11 @@
 
 #define LIBXSMM_MEMSWP127_RHS(TYPE, DST, SRC, IDX) \
   LIBXSMM_ISWAP((DST)[IDX], ((TYPE*)(SRC))[IDX])
-#define LIBXSMM_MEMSWP127(DST, SRC, SIZE) \
+#define LIBXSMM_MEMSWP127(DST, SRC, SIZE) do { \
+  LIBXSMM_ASSERT((DST) != (SRC)); \
   LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
-  LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS)
+  LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS); \
+} while (0)
 
 
 /** Returns the type-size of data-type (can be also libxsmm_datatype). */
