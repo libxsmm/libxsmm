@@ -2208,7 +2208,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                           l_scale,
                                                           l_disp,
                                                           1,
-                                                          l_k%2,
+                                                          l_k%2 + l_vreg_ab_offset,
                                                           i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
           }
         } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
