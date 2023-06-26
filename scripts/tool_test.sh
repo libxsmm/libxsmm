@@ -438,7 +438,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "fi" >>"${TESTSCRIPT}"
         fi
         if [ "${CONFIGFILE}" ]; then
-          echo "  source \"$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${CONFIGFILE}")\" \"\"" >>"${TESTSCRIPT}"
+          echo "source \"$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${CONFIGFILE}")\" \"\"" >>"${TESTSCRIPT}"
+        fi
+        # install requested Python packages
+        if ! [[ ${ENV_PYTHON} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+          echo "if [ \"\${PYTHON}\" ]; then" >>"${TESTSCRIPT}"
+          echo "  eval \"\${PYTHON} -m pip install --upgrade --user \${ENV_PYTHON} >/dev/null\"" >>"${TESTSCRIPT}"
+          echo "fi" >>"${TESTSCRIPT}"
         fi
         # record the current test case
         if [ "${ABSDIR}" ]; then
@@ -492,6 +498,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
         fi
         source "${CONFIGFILE}" ""
+        # install requested Python packages
+        if ! [[ ${ENV_PYTHON} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] && [ "${PYTHON}" ]; then
+          eval "${PYTHON} -m pip install --upgrade --user ${ENV_PYTHON} >/dev/null"
+        fi
       fi
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
