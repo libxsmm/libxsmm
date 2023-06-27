@@ -72,14 +72,22 @@ if [[ (! "${HELP}") || ("0" = "${HELP}") ]] && [ -e "${IFILE}" ]; then
   for ENV in $(eval "${ENVDIFF}"); do # restore environment
     DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${IFILE}")
     if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
-      VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
+      IS_PATH=$(${SED} -n "/PATH$/p" <<<"${ENV}")
       KEY=$(declare -px | ${SED} -n "/${ENV}/p")
+      VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
+      # perform from-to translation before checking path-existence
+      if [ "0" != "${#FROM[@]}" ]; then
+        for I in $(seq ${#FROM[@]}); do
+          VAL=$(${SED} "s/${FROM[I-1]}/${TO[I-1]}/g" <<<"${VAL}" 2>/dev/null)
+        done
+      fi
+      # handle path strictly, i.e., filter for existing parent
       if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && \
-         [ "$(${SED} -n "/\//p" <<<"${VAL}")" ];
+         [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ];
       then
-        if [ "${KEY}" ]; then
+        if [ "${KEY}" ] && [ ! "${IS_PATH}" ]; then
           VAL=""  # drop path values with existing key
-        elif [ "$(${SED} -n "/^\"\//p" <<<"${VAL}")" ]; then
+        else
           # filter paths and ensure existing parent directory
           VALS="" && IFS=':"' && for DIR in ${VAL}; do
             if [ "${DIR}" ] && [ -d "$(dirname "${DIR}")" ]; then
@@ -90,13 +98,8 @@ if [[ (! "${HELP}") || ("0" = "${HELP}") ]] && [ -e "${IFILE}" ]; then
           if [ "${VALS}" ]; then VAL="\"${VALS}\""; else VAL=""; fi
         fi
       fi
-      if [ "0" != "${#FROM[@]}" ]; then  # perform from-to translation
-        for I in $(seq ${#FROM[@]}); do
-          VAL=$(${SED} "s/${FROM[I-1]}/${TO[I-1]}/g" <<<"${VAL}" 2>/dev/null)
-        done
-      fi
       if [ "${VAL}" ]; then
-        if [ "${KEY}" ] && [ "$(${SED} -n "/PATH$/p" <<<"${ENV}")" ]; then  # append to existing values
+        if [ "${KEY}" ] && [ "${IS_PATH}" ]; then  # append to existing values
           DEF="declare -x ${ENV}=$(${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/" <<<"${VAL}")"
         else  # introduce or replace values
           DEF="declare -x ${ENV}=${VAL}"
