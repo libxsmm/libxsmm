@@ -73,7 +73,7 @@ if [[ (! "${HELP}") || ("0" = "${HELP}") ]] && [ -e "${IFILE}" ]; then
     DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${IFILE}")
     if [ "$(${SED} -n "/\".*[^\]\"/p" <<<"${DEF}")" ]; then
       IS_PATH=$(${SED} -n "/PATH$/p" <<<"${ENV}")
-      KEY=$(declare -px | ${SED} -n "/${ENV}/p")
+      KEY=$(declare -px | ${SED} -n "/${ENV}=/p")
       VAL=$(${SED} "s/declare -x ${ENV}=\(..*\)/\1/" <<<"${DEF}")
       # perform from-to translation before checking path-existence
       if [ "0" != "${#FROM[@]}" ]; then
