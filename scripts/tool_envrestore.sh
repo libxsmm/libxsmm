@@ -99,8 +99,9 @@ if [[ (! "${HELP}") || ("0" = "${HELP}") ]] && [ -e "${IFILE}" ]; then
         fi
       fi
       if [ "${VAL}" ]; then
-        if [ "${KEY}" ] && [ "${IS_PATH}" ]; then  # append to existing values
-          DEF="declare -x ${ENV}=$(${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/" <<<"${VAL}")"
+        if [ "${KEY}" ] && [ "${IS_PATH}" ]; then  # prepend to existing values
+          VALEXT=$(${SED} -e "s/:*\"$/:\${${ENV}}\"/" -e "s/::*\"$/\"/" <<<"${VAL}")
+          DEF="declare -x ${ENV}=${VALEXT}"
         else  # introduce or replace values
           DEF="declare -x ${ENV}=${VAL}"
         fi
