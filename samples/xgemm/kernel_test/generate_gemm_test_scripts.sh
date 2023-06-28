@@ -88,6 +88,11 @@ for BINARY_POSTOP in 0 1; do
                       continue
                     fi
 
+                    # low precision has no transpose support
+                    if [[ ( "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'F16_F16_F32_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32' || "$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'I8_F16_F32_F32') && ( "$TRA" == '1' ) ]]; then
+                      continue
+                    fi
+
                     # only FP8 has stack tansforms for data prep
                     if [[ ( "$PREC" != 'BF8_BF8_F32_F32' && "$PREC" != 'BF8_BF8_F32_BF8' && "$PREC" != 'HF8_HF8_F32_F32' && "$PREC" != 'HF8_HF8_F32_HF8' ) && ( "$STACK" == '1' ) ]]; then
                       continue

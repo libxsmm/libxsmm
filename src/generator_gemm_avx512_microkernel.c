@@ -247,6 +247,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       }
   } else {
       if ( (l_m_blocking < 1) || (l_m_blocking > 4) ) {
+        printf("l_ is %d\n", l_m_blocking);
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
         return;
       }
