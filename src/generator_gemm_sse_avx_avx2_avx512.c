@@ -420,12 +420,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0) {
-    unsigned short l_bf16_zip_512[32] = { 0, 32, 1, 33, 2, 34, 3, 35, 4, 36, 5, 37, 6, 38, 7, 39, 8, 40, 9, 41, 10, 42, 11, 43, 12, 44, 13, 45, 14, 46, 15, 47 };
-    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
-                                                         (const unsigned char *) l_bf16_zip_512,
-                                                         "my_bf16_zip",
-                                                         l_micro_kernel_config.vector_name,
-                                                         0 );
+    unsigned int l_is_Ai8_Bbf16_gemm_bf16fma = (l_micro_kernel_config.vmul_instruction == LIBXSMM_X86_INSTR_VDPBF16PS) ? 1 : 0;
+    if (l_is_Ai8_Bbf16_gemm_bf16fma > 0) {
+      unsigned short l_bf16_zip_512[32] = { 0, 32, 1, 33, 2, 34, 3, 35, 4, 36, 5, 37, 6, 38, 7, 39, 8, 40, 9, 41, 10, 42, 11, 43, 12, 44, 13, 45, 14, 46, 15, 47 };
+      unsigned short l_bf16_zip_256[16] = { 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23 };
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) ( (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? l_bf16_zip_512 : l_bf16_zip_256 ),
+                                                           "my_bf16_zip",
+                                                           l_micro_kernel_config.vector_name,
+                                                           0 );
+    }
   }
 
   /* generated hoisted helpers for BF8 emulation */
@@ -804,6 +808,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   unsigned int l_k_threshold = 0;
   unsigned int l_k_pack_factor = 1;
   unsigned int l_is_Ai8_Bbf16_gemm = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
+  unsigned int l_is_Ai8_Bbf16_gemm_bf16fma = (i_micro_kernel_config->vmul_instruction == LIBXSMM_X86_INSTR_VDPBF16PS) ? 1 : 0;
 
   /* a very simple k unrolling model */
   if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) ) {
@@ -826,8 +831,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0) {
-    l_k_blocking = 8;
-    l_k_threshold = 24;
+    if (l_is_Ai8_Bbf16_gemm_bf16fma > 0) {
+      l_k_blocking = 4;
+      l_k_threshold = 12;
+    } else {
+      l_k_blocking = 2;
+      l_k_threshold = 6;
+    }
   }
 
   /* set up architecture dependent compute micro kernel generator */
@@ -849,7 +859,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
 
   /* apply multiple k_blocking strategies */
   /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
-  if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k) && (l_is_Ai8_Bbf16_gemm == 0)) {
+  if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k) && (l_is_Ai8_Bbf16_gemm == 0 || l_is_Ai8_Bbf16_gemm_bf16fma == 0)) {
     libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_m_blocking, l_k_blocking);
 
     l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
