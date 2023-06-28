@@ -1382,6 +1382,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int vector_reg_count;
   unsigned int vector_length;
   unsigned int datatype_size_in;
+  unsigned int datatype_size_in2;
   unsigned int datatype_size_out;
   unsigned int a_vmove_instruction;
   unsigned int b_vmove_instruction;
