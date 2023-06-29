@@ -91,7 +91,11 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
             C[l_j * l_m + l_i] = 0.0;
           }
           for ( l_jj = 0; l_jj < l_k; l_jj++) {
-            C[l_j * l_m + l_i] += A[l_jj * l_m + l_i] * B[l_j*l_k + l_jj];
+            if (i_spmm_def->trans_a > 0) {
+              C[l_j + l_i * l_n] += A[l_jj + l_i * l_k] * B[l_j*l_k + l_jj];
+            } else {
+              C[l_j * l_m + l_i] += A[l_jj * l_m + l_i] * B[l_j*l_k + l_jj];
+            }
           }
         }
       }
@@ -370,6 +374,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   l_flags |= (0 != i_spmm_def->trans_b ? LIBXSMM_GEMM_FLAG_TRANS_B : 0);
   l_flags |= (0 != i_spmm_def->vnni_a ? LIBXSMM_GEMM_FLAG_VNNI_A : 0);
+  l_flags |= (0 != i_spmm_def->trans_a ? LIBXSMM_GEMM_FLAG_TRANS_A : 0);
   l_flags |= (0 != i_spmm_def->vnni_b ? LIBXSMM_GEMM_FLAG_VNNI_B : 0);
 
   l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;

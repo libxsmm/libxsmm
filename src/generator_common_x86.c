@@ -2001,11 +2001,13 @@ void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                 
 
   char vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
 
+#if 0
   if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
     /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
+#endif
 
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
     libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
