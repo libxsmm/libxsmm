@@ -276,17 +276,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
           l_max_n_blocking--;
         }
       }
-    } if (l_is_Ai8_Bbf16_gemm > 0) {
+    } else if (l_is_Ai8_Bbf16_gemm > 0) {
       int l_m_scf_vregs = ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) == 0) ? 1 : init_m_blocks;
       /* In this case we need m vec regs for the scaling factors... */
-      if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
-        while ((init_m_blocks * l_max_n_blocking + l_max_n_blocking + 2 + l_m_scf_vregs) > l_micro_kernel_config.vector_reg_count) {
-          l_max_n_blocking--;
-        }
-      } else {
-        while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 2 + l_m_scf_vregs) > l_micro_kernel_config.vector_reg_count) {
-          l_max_n_blocking--;
-        }
+      while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1 + l_m_scf_vregs) > l_micro_kernel_config.vector_reg_count) {
+        l_max_n_blocking--;
       }
     } else {
       if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
