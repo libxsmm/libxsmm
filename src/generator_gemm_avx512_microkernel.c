@@ -248,9 +248,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   }
 
   if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 && io_generated_code->arch < LIBXSMM_X86_AVX512 ) {
-      if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-        return;
+      if (l_is_Ai8_Bbf16_gemm > 0) {
+        if ( ((l_m_blocking*i_n_blocking) + l_m_blocking + 1) > 32 ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+          return;
+        }
+      } else {
+        if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+          return;
+        }
       }
       if ( (l_m_blocking < 1) || (l_m_blocking > 8) ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
