@@ -857,6 +857,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     return;
   }
 
+  if (l_is_Ai8_Bbf16_gemm > 0 && l_is_Ai8_Bbf16_gemm_bf16fma == 0) {
+    libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
+  }
+
   /* apply multiple k_blocking strategies */
   /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
   if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k) && (l_is_Ai8_Bbf16_gemm == 0 || l_is_Ai8_Bbf16_gemm_bf16fma == 0)) {
@@ -909,6 +913,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
         i_gp_reg_mapping->gp_reg_b, l_b_offset );
     }
+  }
+
+  if (l_is_Ai8_Bbf16_gemm > 0 && l_is_Ai8_Bbf16_gemm_bf16fma == 0) {
+    libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
   }
 }
 

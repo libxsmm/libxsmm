@@ -4082,6 +4082,13 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         }
       }
     } else {
+      unsigned int l_bf16cvt_replacement = 0;
+      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype)) {
+        if (i_micro_kernel_config->vmul_instruction != LIBXSMM_X86_INSTR_VDPBF16PS) {
+          l_bf16cvt_replacement = 1;
+          libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
+        }
+      }
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
         for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
@@ -4121,7 +4128,11 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype)) {
             vname_store = (vname_store == 'z') ? 'y' : 'x';
-            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, reg_X, reg_X );
+            if (l_bf16cvt_replacement == 0) {
+              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, reg_X, reg_X );
+            } else {
+              libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name, reg_X, reg_X, l_vec_reg_acc_start-2, l_vec_reg_acc_start-1, 6, 7, 0 );
+            }
           }
 
           libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_vstore,
@@ -4146,6 +4157,9 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
             }
           }
         }
+      }
+      if (l_bf16cvt_replacement > 0) {
+        libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
       }
     }
 

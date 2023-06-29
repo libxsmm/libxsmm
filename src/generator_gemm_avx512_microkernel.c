@@ -124,7 +124,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_loadNinterleav
 
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, i_micro_kernel_config->vector_name, io_A_vreg, io_A_vreg );
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name, io_A_vreg, l_vec_scf_a, io_A_vreg);
-  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, io_A_vreg, io_A_vreg );
+  if (l_is_Ai8_Bbf16_gemm_bf16fma > 0) {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, io_A_vreg, io_A_vreg );
+  } else {
+    libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name, io_A_vreg, io_A_vreg, i_tmp_vreg, i_interleave_vreg, 6, 7, 0 );
+  }
 
   if (l_is_Ai8_Bbf16_gemm_bf16fma > 0) {
     if (!((i_micro_kernel_config->is_last_k_microkernel == 1) && (i_xgemm_desc->k % 2 != 0))) {
@@ -247,7 +251,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       }
   } else {
       if ( (l_m_blocking < 1) || (l_m_blocking > 4) ) {
-        printf("l_ is %d\n", l_m_blocking);
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
         return;
       }
