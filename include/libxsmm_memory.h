@@ -117,7 +117,7 @@ LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
 LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count,
   /** Shall be co-prime to count-argument; uses libxsmm_coprime2(count) if shuffle=NULL. */
   const size_t* shuffle,
-  /** If NULL, the default value is one. */
+  /** If NULL, the default value is one. If zero, an ordinary copy is performed. */
   const size_t* nrepeat);
 
 /** Determines the number of calls to restore the original data (libxsmm_shuffle2). */

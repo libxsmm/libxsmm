@@ -31,11 +31,7 @@ int main(int argc, char* argv[])
   const int insize = (2 < argc ? atoi(argv[2]) : 0);
   const int niters = (3 < argc ? atoi(argv[3]) : 3);
   const int elsize = (0 >= insize ? 8 : insize);
-#if 0
-  const size_t n = (0 >= nelems ? (((size_t)2 << 30/*2 GB*/) / elsize) : ((size_t)nelems));
-#else
-  const size_t n = (0 >= nelems ? (16384) : ((size_t)nelems));
-#endif
+  const size_t n = (0 >= nelems ? (((size_t)64 << 20/*64 MB*/) / elsize) : ((size_t)nelems));
   const size_t nbytes = n * elsize;
   void* data = malloc(nbytes);
   int result = EXIT_SUCCESS;
@@ -46,7 +42,7 @@ int main(int argc, char* argv[])
     double d0, d1 = 0, d2 = 0;
     int i = 0;
     size_t j;
-    for (; i < niters; ++i) {
+    for (; i <= niters; ++i) {
       printf("---------------------------------------\n");
       /* initialize the data */
       for (j = 0; j < nbytes; j += sizeof(int)) {
@@ -61,7 +57,7 @@ int main(int argc, char* argv[])
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < d0) printf("RNG-shuffle:\t%.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
-        d1 += d0;
+        if (0 < i) d1 += d0; /* ignore first iteration */
       }
 
       { /* benchmark RNG-based shuffle routine */
@@ -70,7 +66,7 @@ int main(int argc, char* argv[])
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < d0) printf("COP-shuffle:\t%.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
-        d2 += d0;
+        if (0 < i) d2 += d0; /* ignore first iteration */
       }
     }
 
