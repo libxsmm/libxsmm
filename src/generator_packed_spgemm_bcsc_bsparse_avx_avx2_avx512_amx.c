@@ -791,6 +791,10 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   unsigned int l_is_AT_CT_kernel = 0;
   unsigned int l_simd_packed_remainder = 0;
 
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+    l_scalar_mask = 14;
+  }
+
   if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     l_vnni_block_size = 1;
   } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
@@ -1041,7 +1045,12 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
         for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
           unsigned int l_reg0 = (l_n*i_packed_blocking) + l_p;
           unsigned int l_reduction_instr = (LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_X86_INSTR_VPADDD : LIBXSMM_X86_INSTR_VADDPS  ;
-          libxsmm_generator_hinstrps_avx512( io_generated_code, l_reduction_instr, l_reg0, l_max_reg_block+1, l_max_reg_block);
+
+          if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+            libxsmm_generator_hinstrps_avx( io_generated_code, l_reduction_instr, l_reg0, l_max_reg_block+1, l_max_reg_block);
+          } else {
+            libxsmm_generator_hinstrps_avx512( io_generated_code, l_reduction_instr, l_reg0, l_max_reg_block+1, l_max_reg_block);
+          }
 
           if (l_beta_0 == 0) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
