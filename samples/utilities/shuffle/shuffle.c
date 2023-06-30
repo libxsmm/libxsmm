@@ -66,11 +66,11 @@ int main(int argc, char* argv[])
         if (0 < i) d1 += d0; /* ignore first iteration */
       }
 
-      { /* benchmark COP-based shuffle routine */
+      { /* benchmark CO1-based shuffle routine */
         const libxsmm_timer_tickint start = libxsmm_timer_tick();
         libxsmm_shuffle(data1, elsize, n, NULL, &m);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < d0) printf("COP-shuffle:\t%.8f s (%i MB/s)\n", d0,
+        if (0 < d0) printf("CO1-shuffle:\t%.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
         if (0 < i) d2 += d0; /* ignore first iteration */
       }
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
         const libxsmm_timer_tickint start = libxsmm_timer_tick();
         libxsmm_shuffle2(data2, data1, elsize, n, NULL, &m);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < d0) printf("COP-shuffle:\t%.8f s (%i MB/s)\n", d0,
+        if (0 < d0) printf("CO2-shuffle:\t%.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
         if (0 < i) d3 += d0; /* ignore first iteration */
       }
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
       d1 /= niters; d2 /= niters; d3 /= niters;
       if (0 < d1) printf("RNG-shuffle:\t%.8f s (%i MB/s)\n", d1,
         (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d1)));
-      if (0 < d2) printf("COP-shuffle:\t%.8f s (%i MB/s)\n", d2,
+      if (0 < d2) printf("CO1-shuffle:\t%.8f s (%i MB/s)\n", d2,
         (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d2)));
       if (0 < d3) printf("CO2-shuffle:\t%.8f s (%i MB/s)\n", d3,
         (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d3)));
