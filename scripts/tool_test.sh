@@ -51,8 +51,8 @@ fi
 
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ] && [ "${TR}" ]; then
   DIRPAT="s/\//\\\\\//g"
-  REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
-  REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
+  REMPAT=$(${SED} "${DIRPAT}" <<<"${REPOREMOTE}")
+  REPPAT=$(${SED} "${DIRPAT}" <<<"${REPOROOT}")
   # ensure proper permissions
   if [ "${UMASK}" ]; then
     UMASK_CMD="umask ${UMASK};"
@@ -107,13 +107,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     export TRAVIS_OS_NAME
   fi
   if [ "${HOSTNAME}" ]; then
-    HOSTNAME=$(echo "${HOSTNAME}" | cut -d. -f1 2>/dev/null)
+    HOSTNAME=$(cut -d. -f1 2>/dev/null <<<"${HOSTNAME}")
   fi
   if [ ! "${HOSTNAME}" ]; then
     HOSTNAME=$(hostname -s 2>/dev/null)
   fi
   HOSTDELIMCHAR="-"
-  HOSTPREFIX=$(echo "${HOSTNAME}" | cut -d${HOSTDELIMCHAR} -f1 2>/dev/null)
+  HOSTPREFIX=$(cut -d${HOSTDELIMCHAR} -f1 2>/dev/null <<<"${HOSTNAME}")
   if [ "${HOSTPREFIX}" ]; then
     HOSTPREFIX="${HOSTPREFIX}${HOSTDELIMCHAR}"
   fi
@@ -207,8 +207,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${STEPNAME}" ]; then
-      LABEL=$(echo "${STEPNAME}" \
-        | ${TR} -s "[:punct:][:space:]" "-" \
+      LABEL=$(${TR} -s "[:punct:][:space:]" "-" <<<"${STEPNAME}" \
         | ${SED} "s/^-//;s/-$//" \
         | ${SED} "s/[^A-Za-z0-9._-]//g")
     fi
@@ -242,7 +241,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
          (("${SLURMSCRIPT}") && ("0" != "${SLURMSCRIPT}")) ]];
   then
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
-    REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+    REMSCRIPT=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${TESTSCRIPT}")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${*:2}"
   else # avoid temporary script in case of non-batch execution
@@ -303,9 +302,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
        [ "$(command -v date)" ];
     then
       NOW=$(date +%s)
-      LIMITFILE=$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]")
+      LIMITFILE=$(${TR} "[:upper:]" "[:lower:]" <<<"${LABEL}")
       if [ ! "${LIMITFILE}" ]; then
-        LIMITFILE=$(echo "${TESTID}" | ${SED} "s/[^A-Za-z0-9._-]//g")
+        LIMITFILE=$(${SED} "s/[^A-Za-z0-9._-]//g" <<<"${TESTID}")
       fi
       if [ "${LIMITFILE}" ]; then
         if [ "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
@@ -341,7 +340,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         CONFIGFILES=($(ls -1 "${ROOTENV}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
       fi
       if [[ "${CONFIGFILES[*]}" ]]; then
-        CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
+        CONFIGPAT=$(${SED} "s/[[:space:]][[:space:]]*/\\\|/g" <<<"${CONFIGEX}" | ${SED} "s/\\\|$//")
         if [ "${CONFIGPAT}" ]; then
           CONFIGFILES=($(printf "%s\n" "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
         fi
@@ -370,7 +369,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     # iterate over all given environments
     COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
-        ENVVAL=$(echo "${ENV}" | cut -d= -f2)
+        ENVVAL=$(cut -d= -f2 <<<"${ENV}")
         ENVSTR=${ENV}
       fi
       # print some header if all tests are selected or in case of multi-tests
@@ -378,10 +377,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then HEADER="${PARTITION}"; fi
       if [ "none" != "${CONFIG}" ]; then HEADER="${HEADER} ${CONFIG}"; fi
       if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
-      HEADER=$(echo "${HEADER}" \
-        | ${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" \
+      HEADER=$(${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" <<<"${HEADER}" \
         | ${TR} "[:lower:]" "[:upper:]" | ${TR} -s " " "/")
-      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | ${TR} "[:upper:]" "[:lower:]")" ]; then
+      if [ "${TESTID}" ] && [ "test" != "$(${TR} "[:upper:]" "[:lower:]" <<<"${TESTID}")" ]; then
         if [ "${HEADER}" ]; then
           CAPTION="${TESTID} (${HEADER})"
         else
@@ -406,9 +404,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         else
           RUNFILE=$(touch "${TESTSCRIPT}.run" && chmod +rx "${TESTSCRIPT}.run" && readlink -f "${TESTSCRIPT}.run")
         fi
-        RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        RUNREM=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${RUNFILE}")
         # exact/real name of run-file is not known yet
-        EXIT_TRAP="rm -f ${REPOREMOTE}/.env.sh ${RUNREM}"
+        EXIT_TRAP="rm -f ${RUNREM}"
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
           EXIT_TRAP="(${EXIT_TRAP}); (chmod -Rf g+u,o=u-w ${REPOREMOTE} || true)"
         fi
@@ -417,8 +415,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >>"${TESTSCRIPT}"; fi
-        REMINFO=$(echo "${CPUINFO}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REMINFO} -nc)\"; fi" >>"${TESTSCRIPT}"
+        REMINFO=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${CPUINFO}")
+        echo "if [ ! \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REMINFO} -nc)\"; fi" >>"${TESTSCRIPT}"
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
@@ -433,19 +431,20 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           if [ "${HOME_REMOTE}" != "${HOME}" ]; then
             ENVRST_FLAGS="-s"
           fi
-          ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          ENVREM=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${ENVFILE}")
+          ENVRST=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${HERE}/tool_envrestore.sh")
           echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
-          if [ "${LAUNCH_CMD}" ]; then
-            echo "  eval ${ENVRST} ${ENVRST_FLAGS} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
-            echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
-          else
-            echo "  eval ${ENVRST} ${ENVRST_FLAGS} \"${ENVREM}\"" >>"${TESTSCRIPT}"
-          fi
+          echo "  source ${ENVRST} ${ENVRST_FLAGS} ${ENVREM} || true" >>"${TESTSCRIPT}"
           echo "fi" >>"${TESTSCRIPT}"
         fi
         if [ "${CONFIGFILE}" ]; then
-          echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
+          echo "source \"$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${CONFIGFILE}")\" \"\"" >>"${TESTSCRIPT}"
+        fi
+        # install requested Python packages
+        if ! [[ ${ENV_PYTHON} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+          echo "if [ \"\${PYTHON}\" ]; then" >>"${TESTSCRIPT}"
+          echo "  eval \"\${PYTHON} -m pip install --upgrade --user \${ENV_PYTHON} >/dev/null\"" >>"${TESTSCRIPT}"
+          echo "fi" >>"${TESTSCRIPT}"
         fi
         # record the current test case
         if [ "${ABSDIR}" ]; then
@@ -453,7 +452,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             ABSDIR=${ABSDIR}/..
           fi
           ABSDIR=$(cd "${ABSDIR}" && pwd -P)
-          ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          ABSREM=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${ABSDIR}")
           echo "cd ${REPOREMOTE} && make -e \${MAKEJ} ${MAKETGT}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           if [ "${REPOREMOTE}" != "${ABSREM}" ]; then
@@ -466,7 +465,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             echo "echo -n \"--- \"" >>"${TESTSCRIPT}"
           fi
           SLURMREM=$(readlink -f "${SLURMFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
+          DIRSED=$(${SED} "${DIRPAT}" <<<"${ABSREM}")
           echo "\${SED} \
             -e \"s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/\" \
             -e \"s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//\" \
@@ -475,7 +474,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             -e \"s/^srun[[:space:]]//\" \
             \"${SLURMREM}\" >>\"${RUNREM}\"" >>"${TESTSCRIPT}"
           if [ "${TOOL_COMMAND}" ]; then # inject TOOL_COMMAND
-            CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+            CMDREM=$(${SED} "s/${REPPAT}/${REMPAT}/" <<<"${TOOL_COMMAND}")
             echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
           else
             echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
@@ -499,6 +498,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
         fi
         source "${CONFIGFILE}" ""
+        # install requested Python packages
+        if ! [[ ${ENV_PYTHON} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] && [ "${PYTHON}" ]; then
+          eval "${PYTHON} -m pip install --upgrade --user ${ENV_PYTHON} >/dev/null"
+        fi
       fi
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
@@ -509,7 +512,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             LOGFILE=${PWD}/${LOGFILE_INIT}
           fi
         elif [ "${LABEL}" ]; then
-          LOGFILE=${PWD}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
+          LOGFILE=${PWD}/.test-$(${TR} "[:upper:]" "[:lower:]" <<<"${LABEL}").log
         else
           LOGFILE=${PWD}/.test.log
         fi

@@ -48,7 +48,7 @@ LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 }
 
 
-LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint nbytes)
+LIBXSMM_API void libxsmm_rng_seq(void* data, size_t nbytes)
 {
   unsigned char* dst = (unsigned char*)data;
   unsigned char* end = dst + (nbytes & 0xFFFFFFFFFFFFFFFC);

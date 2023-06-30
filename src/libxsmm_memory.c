@@ -14,6 +14,9 @@
 #include "libxsmm_diff.h"
 #include <ctype.h>
 
+#if !defined(LIBXSMM_MEMORY_SHUFFLE_QUICK) && 1
+# define LIBXSMM_MEMORY_SHUFFLE_QUICK
+#endif
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0
 # define LIBXSMM_MEMORY_STDLIB
 #endif
@@ -605,17 +608,32 @@ LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
     unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)inout;
     const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
     const size_t n = (NULL == nrepeat ? 1 : *nrepeat);
-    size_t i = 0;
-    for (i = 0; i < count; ++i) {
-      size_t j = count - ((s * i) % count) - 1, k = 0;
-      for (j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
-      while (j < i) j = count - ((s * j) % count) - 1;
-      for (k = 0; k < elemsize; ++k) {
-        const unsigned char c = data[elemsize*i+k];
-        data[elemsize*i+k] = data[elemsize*j+k];
-        data[elemsize*j+k] = c;
-      }
+    const size_t c = count - 1, c2 = count / 2;
+    size_t i;
+    for (i = (0 != n ? 0 : count); i < count; ++i) {
+      size_t j = i, k = 0;
+#if defined(LIBXSMM_MEMORY_SHUFFLE_QUICK)
+      for (; k < n || j < i; ++k) j = (s * j) % count;
+      if (i < j) LIBXSMM_MEMSWP127(
+        data + elemsize * (c - j),
+        data + elemsize * (c - i),
+        elemsize);
+#else
+      for (; k < n || j < i; ++k) j = c - ((s * j) % count);
+      if (i < j) LIBXSMM_MEMSWP127(
+        data + elemsize * i,
+        data + elemsize * j,
+        elemsize);
+#endif
     }
+#if defined(LIBXSMM_MEMORY_SHUFFLE_QUICK)
+    for (i = (0 != n ? 0 : count); i < c2; ++i) {
+      LIBXSMM_MEMSWP127(
+        data + elemsize * (c - i),
+        data + elemsize * i,
+        elemsize);
+    }
+#endif
     result = EXIT_SUCCESS;
   }
   else result = EXIT_FAILURE;
@@ -665,7 +683,7 @@ LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, si
         }
       }
     }
-    else /*if (0 < count)*/ { /* generic path */
+    else if (0 != *nrepeat) { /* generic path */
       const size_t c = count - 1;
       for (; i < count; ++i) {
         size_t k = 0;
@@ -673,6 +691,9 @@ LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, si
         for (j = i; k < *nrepeat; ++k) j = c - ((s * j) % count);
         memcpy(out + elemsize * i, inp + elemsize * j, elemsize);
       }
+    }
+    else { /* ordinary copy */
+      memcpy(out, inp, size);
     }
     result = EXIT_SUCCESS;
   }
