@@ -14,15 +14,32 @@
 #include "libxsmm_diff.h"
 #include <ctype.h>
 
-#if !defined(LIBXSMM_MEMORY_SHUFFLE_QUICK) && 1
-# define LIBXSMM_MEMORY_SHUFFLE_QUICK
-#endif
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0
 # define LIBXSMM_MEMORY_STDLIB
 #endif
 #if !defined(LIBXSMM_MEMORY_SW) && 0
 # define LIBXSMM_MEMORY_SW
 #endif
+
+#define LIBXSMM_MEMORY_SHUFFLE(INOUT, ELEMSIZE, COUNT, SHUFFLE, NREPEAT) do { \
+  unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)(INOUT); \
+  const size_t c = (COUNT) - 1, c2 = (COUNT) / 2; \
+  size_t i; \
+  for (i = (0 != (NREPEAT) ? 0 : (COUNT)); i < (COUNT); ++i) { \
+    size_t j = i, k = 0; \
+    for (; k < (NREPEAT) || j < i; ++k) j = ((SHUFFLE) * j) % (COUNT); \
+    if (i < j) LIBXSMM_MEMSWP127( \
+      data + (ELEMSIZE) * (c - j), \
+      data + (ELEMSIZE) * (c - i), \
+      ELEMSIZE); \
+  } \
+  for (i = (0 != (NREPEAT) ? 0 : (COUNT)); i < c2; ++i) { \
+    LIBXSMM_MEMSWP127( \
+      data + (ELEMSIZE) * (c - i), \
+      data + (ELEMSIZE) * i, \
+      ELEMSIZE); \
+  } \
+} while(0)
 
 
 #if !defined(LIBXSMM_MEMORY_SW)
@@ -605,35 +622,15 @@ LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
 {
   int result;
   if (NULL != inout || 0 == elemsize || 0 == count) {
-    unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)inout;
     const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
     const size_t n = (NULL == nrepeat ? 1 : *nrepeat);
-    const size_t c = count - 1, c2 = count / 2;
-    size_t i;
-    for (i = (0 != n ? 0 : count); i < count; ++i) {
-      size_t j = i, k = 0;
-#if defined(LIBXSMM_MEMORY_SHUFFLE_QUICK)
-      for (; k < n || j < i; ++k) j = (s * j) % count;
-      if (i < j) LIBXSMM_MEMSWP127(
-        data + elemsize * (c - j),
-        data + elemsize * (c - i),
-        elemsize);
-#else
-      for (; k < n || j < i; ++k) j = c - ((s * j) % count);
-      if (i < j) LIBXSMM_MEMSWP127(
-        data + elemsize * i,
-        data + elemsize * j,
-        elemsize);
-#endif
+    switch (elemsize) {
+      case 8:   LIBXSMM_MEMORY_SHUFFLE(inout, 8, count, s, n); break;
+      case 4:   LIBXSMM_MEMORY_SHUFFLE(inout, 4, count, s, n); break;
+      case 2:   LIBXSMM_MEMORY_SHUFFLE(inout, 2, count, s, n); break;
+      case 1:   LIBXSMM_MEMORY_SHUFFLE(inout, 1, count, s, n); break;
+      default:  LIBXSMM_MEMORY_SHUFFLE(inout, elemsize, count, s, n);
     }
-#if defined(LIBXSMM_MEMORY_SHUFFLE_QUICK)
-    for (i = (0 != n ? 0 : count); i < c2; ++i) {
-      LIBXSMM_MEMSWP127(
-        data + elemsize * (c - i),
-        data + elemsize * i,
-        elemsize);
-    }
-#endif
     result = EXIT_SUCCESS;
   }
   else result = EXIT_FAILURE;
