@@ -1453,7 +1453,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int mask_m_bf16;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
-  int is_last_k_microkernel;
   int use_paired_tilestores;
   int m_tiles;
   int n_tiles;

@@ -791,11 +791,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsmm_generated_code*            io_generated_code,
                                                                            libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                                            const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                           libxsmm_micro_kernel_config*       i_micro_kernel_config,
+                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                            const unsigned int                 i_m_blocking,
                                                                            const unsigned int                 i_n_blocking ) {
-  void (*l_generator_kloop_kernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*,
+  void (*l_generator_kloop_kernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                                    const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const unsigned int);
   /* some hard coded parameters for k-blocking */
   unsigned int l_k_blocking = 0;
@@ -827,10 +827,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   if (l_is_Ai8_Bbf16_gemm > 0) {
     if (l_is_Ai8_Bbf16_gemm_bf16fma > 0) {
       l_k_blocking = 4;
-      l_k_threshold = 12;
+      l_k_threshold = 13;
     } else {
       l_k_blocking = 2;
-      l_k_threshold = 6;
+      l_k_threshold = 5;
     }
   }
 
@@ -857,7 +857,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
 
   /* apply multiple k_blocking strategies */
   /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
-  if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k) && (l_is_Ai8_Bbf16_gemm == 0 || l_is_Ai8_Bbf16_gemm_bf16fma == 0)) {
+  if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k)) {
     libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_m_blocking, l_k_blocking);
 
     l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
@@ -868,19 +868,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   } else {
     /* 2. we want to fully unroll below the threshold */
     if ((unsigned int)i_xgemm_desc->k <= l_k_threshold) {
-      i_micro_kernel_config->is_last_k_microkernel = 1;
       l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
         i_xgemm_desc, i_m_blocking, i_n_blocking, (unsigned int)i_xgemm_desc->k);
     /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
       unsigned int l_max_blocked_k = ((i_xgemm_desc->k)/l_k_blocking)*l_k_blocking;
       int l_b_offset = 0;
-      i_micro_kernel_config->is_last_k_microkernel = 0;
-      if (l_is_Ai8_Bbf16_gemm > 0) {
-        if (i_xgemm_desc->k == l_max_blocked_k) {
-          l_max_blocked_k -= l_k_blocking;
-        }
-      }
+
       /* we can block as k is large enough */
       if ( l_max_blocked_k > 0 ) {
         libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_m_blocking, l_k_blocking);
@@ -892,7 +886,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
           i_xgemm_desc, i_m_blocking, l_max_blocked_k, 0 );
       }
 
-      i_micro_kernel_config->is_last_k_microkernel = 1;
       /* now we handle the remainder handling */
       l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
         i_xgemm_desc, i_m_blocking, i_n_blocking, ((unsigned int)i_xgemm_desc->k) - l_max_blocked_k );

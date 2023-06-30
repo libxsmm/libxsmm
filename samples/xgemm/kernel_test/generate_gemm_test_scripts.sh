@@ -108,8 +108,12 @@ for BINARY_POSTOP in 0 1; do
                       KSTEP=2
                     elif [ "$PREC" == 'I8_BF16_F32_F32' ] ; then
                       OUTNAME="i8bf16f32gemm_"
+                      KSTART=2
+                      KSTEP=2
                     elif [ "$PREC" == 'I8_BF16_F32_BF16' ] ; then
                       OUTNAME="i8bf16bf16gemm_"
+                      KSTART=2
+                      KSTEP=2
                     elif [ "$PREC" == 'F16_F16_IMPLICIT_F16' ] ; then
                       OUTNAME="f16f16implicitf16gemm_"
                     elif [ "$PREC" == 'I8_F16_IMPLICIT_F16' ] ; then
