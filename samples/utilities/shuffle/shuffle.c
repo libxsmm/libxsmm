@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
       printf("-----------------------------------------\n");
       printf("Arithmetic average of %i iterations\n", niters);
       printf("-----------------------------------------\n");
-      d1 /= niters; d2 /= niters;
+      d1 /= niters; d2 /= niters; d3 /= niters;
       if (0 < d1) printf("RNG-shuffle:\t%.8f s (%i MB/s)\n", d1,
         (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d1)));
       if (0 < d2) printf("COP-shuffle:\t%.8f s (%i MB/s)\n", d2,
