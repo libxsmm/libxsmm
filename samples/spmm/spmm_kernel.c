@@ -117,20 +117,32 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
           } else {
             libxsmm_bfloat16_f32 tmp/* = { 0 }*/;
             tmp.i[0] = 0;
-            tmp.i[1] = C[l_j * l_m + l_i];
+            if (i_spmm_def->trans_a > 0) {
+              tmp.i[1] = C[l_j + l_i * l_n];
+            } else {
+              tmp.i[1] = C[l_j * l_m + l_i];
+            }
             acc = tmp.f;
           }
           for ( l_jj = 0; l_jj < l_k; l_jj++) {
             union libxsmm_bfloat16_f32 tmp_a_f;
             union libxsmm_bfloat16_f32 tmp_b_f;
             tmp_a_f.i[0] = 0;
-            tmp_a_f.i[1] = A[l_jj * l_m + l_i];
+            if (i_spmm_def->trans_a > 0) {
+              tmp_a_f.i[1] = A[l_jj + l_i * l_k];
+            } else {
+              tmp_a_f.i[1] = A[l_jj * l_m + l_i];
+            }
             tmp_b_f.i[0] = 0;
             tmp_b_f.i[1] = B[l_j*l_k + l_jj];
             acc += tmp_a_f.f * tmp_b_f.f;
           }
           libxsmm_rne_convert_fp32_bf16( &acc, &h_acc, 1 );
-          C[l_j * l_m + l_i] = h_acc;
+          if (i_spmm_def->trans_a > 0) {
+            C[l_j + l_i * l_n] = h_acc;
+          } else {
+            C[l_j * l_m + l_i] = h_acc;
+          }
         }
       }
       A = A + l_k * l_m;
@@ -146,10 +158,18 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
           LIBXSMM_PRAGMA_SIMD
           for ( l_i = 0; l_i < l_m; l_i++) {
             if ( l_spmm_def.beta == 0 ) {
-              C[l_j * l_m + l_i] = 0;
+              if (i_spmm_def->trans_a > 0) {
+                C[l_j + l_i * l_n] = 0;
+              } else {
+                C[l_j * l_m + l_i] = 0;
+              }
             }
             for ( l_jj = 0; l_jj < l_k; l_jj++) {
-              C[l_j * l_m + l_i] += (unsigned char)A[l_jj * l_m + l_i] * (int)B[l_j*l_k + l_jj];
+              if (i_spmm_def->trans_a > 0) {
+                C[l_j + l_i * l_n] += (unsigned char)A[l_jj + l_i * l_k] * (int)B[l_j*l_k + l_jj];
+              } else {
+                C[l_j * l_m + l_i] += (unsigned char)A[l_jj * l_m + l_i] * (int)B[l_j*l_k + l_jj];
+              }
             }
           }
         }
@@ -165,10 +185,18 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
           LIBXSMM_PRAGMA_SIMD
           for ( l_i = 0; l_i < l_m; l_i++) {
             if ( l_spmm_def.beta == 0 ) {
-              C[l_j * l_m + l_i] = 0;
+              if (i_spmm_def->trans_a > 0) {
+                C[l_j + l_i * l_n] = 0;
+              } else {
+                C[l_j * l_m + l_i] = 0;
+              }
             }
             for ( l_jj = 0; l_jj < l_k; l_jj++) {
-              C[l_j * l_m + l_i] += (int)A[l_jj * l_m + l_i] * (unsigned char)B[l_j*l_k + l_jj];
+              if (i_spmm_def->trans_a > 0) {
+                C[l_j + l_i * l_n] += (int)A[l_jj + l_i * l_k] * (unsigned char)B[l_j*l_k + l_jj];
+              } else {
+                C[l_j * l_m + l_i] += (int)A[l_jj * l_m + l_i] * (unsigned char)B[l_j*l_k + l_jj];
+              }
             }
           }
         }
@@ -213,11 +241,19 @@ void create_spmm_inputs(spmm_def *i_spmm_def, double l_sparsity_frac, char *l_a,
             if (l_spmm_def.a_type == LIBXSMM_DATATYPE_BF16) {
               libxsmm_bfloat16 *l_a_bf16 = (libxsmm_bfloat16*)l_a + l_m_block_id * l_k * l_m;
               libxsmm_bfloat16 *l_a_spmm_bf16 = (libxsmm_bfloat16*)l_a_spmm + l_m_block_id * l_k * l_m;
-              l_a_spmm_bf16[l_j * (l_m*l_a_vnni_factor) + l_i * l_a_vnni_factor + l_jj] = l_a_bf16[(l_j * l_a_vnni_factor + l_jj) * l_m + l_i];
+              if (i_spmm_def->trans_a > 0) {
+                l_a_spmm_bf16[(l_j * l_a_vnni_factor + l_jj) + l_i * l_k] = l_a_bf16[(l_j * l_a_vnni_factor + l_jj) + l_i * l_k];
+              } else {
+                l_a_spmm_bf16[l_j * (l_m*l_a_vnni_factor) + l_i * l_a_vnni_factor + l_jj] = l_a_bf16[(l_j * l_a_vnni_factor + l_jj) * l_m + l_i];
+              }
             } else if (l_spmm_def.a_type == LIBXSMM_DATATYPE_I8) {
               char *l_a_i8 = (char*)l_a + l_m_block_id * l_k * l_m;
               char *l_a_spmm_i8 = (char*)l_a_spmm + l_m_block_id * l_k * l_m;
-              l_a_spmm_i8[l_j * (l_m*l_a_vnni_factor) + l_i * l_a_vnni_factor + l_jj] = l_a_i8[(l_j * l_a_vnni_factor + l_jj) * l_m + l_i];
+              if (i_spmm_def->trans_a > 0) {
+                l_a_spmm_i8[(l_j * l_a_vnni_factor + l_jj) + l_i * l_k] = l_a_i8[(l_j * l_a_vnni_factor + l_jj) + l_i * l_k];
+              } else {
+                l_a_spmm_i8[l_j * (l_m*l_a_vnni_factor) + l_i * l_a_vnni_factor + l_jj] = l_a_i8[(l_j * l_a_vnni_factor + l_jj) * l_m + l_i];
+              }
             } else {
               /* Should not happen  */
             }
