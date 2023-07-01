@@ -125,22 +125,22 @@ CHECK=0
 
 if [ ${TESTFUSED} == 0 ]; then
   (trap 'kill 0' SIGINT; 
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE0} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE0}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE1}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE2}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE3}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE4}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE5}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE6}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE7}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE8}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE9} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE9}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEA} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEA}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEB} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEB}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEC} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEC}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILED} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILED}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEE} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEE}.out &
-  taskset -c 2 ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEF} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEF}.out )
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE0} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE0}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE1}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE2}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE3}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE4}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE5}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE6}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE7}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE8}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILE9} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILE9}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEA} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEA}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEB} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEB}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEC} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEC}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILED} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILED}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEE} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEE}.out &
+  ./gemm_kernel ${PREC_A} ${PREC_B} ${PREC_COMP} ${PREC_C} ${TESTFILEF} 1 1 0 0 ${TRA} ${TRB} ${AVNNI} ${BVNNI} ${CVNNI} ${BRTYPE} ${BRCOUNT} 1 ${ITERS} ${CHECK} | tee ${TESTFILEF}.out )
   wait
 else
   (trap 'kill 0' SIGINT; 
