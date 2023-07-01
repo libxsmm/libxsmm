@@ -1012,7 +1012,6 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_float16 c_tmp;
     float c_tmp_f32;
     libxsmm_float16 cur_a, cur_b;
-    float up_c;
     int l_k_block = 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
