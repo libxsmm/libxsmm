@@ -11,15 +11,28 @@
 #include <utils/libxsmm_utils.h>
 #include <libxsmm.h>
 
+#define SHUFFLE(INOUT, ELEMSIZE, COUNT) do { \
+  char *const data = (char*)(INOUT); \
+  size_t i = 0; \
+  for (; i < ((COUNT) - 1); ++i) { \
+    const size_t j = i + rand() / (RAND_MAX / ((COUNT) - i) + 1); \
+    if (i != j) LIBXSMM_MEMSWP127( \
+      data + (ELEMSIZE) * i, \
+      data + (ELEMSIZE) * j, \
+      ELEMSIZE); \
+  } \
+} while(0)
+
 
 LIBXSMM_INLINE
 void shuffle(void* inout, size_t elemsize, size_t count) {
   if (1 < count) {
-    char *const data = (char*)inout;
-    size_t i = 0;
-    for (; i < (count - 1); ++i) {
-      const size_t j = i + rand() / (RAND_MAX / (count - i) + 1);
-      if (i != j) LIBXSMM_MEMSWP127(data + i * elemsize, data + j * elemsize, elemsize);
+    switch (elemsize) {
+      case 8:   SHUFFLE(inout, 8, count); break;
+      case 4:   SHUFFLE(inout, 4, count); break;
+      case 2:   SHUFFLE(inout, 2, count); break;
+      case 1:   SHUFFLE(inout, 1, count); break;
+      default:  SHUFFLE(inout, elemsize, count);
     }
   }
 }
@@ -29,10 +42,10 @@ int main(int argc, char* argv[])
 {
   const int nelems = (1 < argc ? atoi(argv[1]) : 0);
   const int insize = (2 < argc ? atoi(argv[2]) : 0);
-  const int repeat = (3 < argc ? atoi(argv[3]) : 1);
-  const int niters = (4 < argc ? atoi(argv[4]) : 3);
+  const int niters = (3 < argc ? atoi(argv[3]) : 1);
+  const int repeat = (4 < argc ? atoi(argv[4]) : 3);
   const int elsize = (0 >= insize ? 8 : insize);
-  const size_t m = (0 <= repeat ? repeat : 1);
+  const size_t m = (0 <= niters ? niters : 1);
   const size_t n = (0 >= nelems
     ? (((size_t)64 << 20/*64 MB*/) / elsize)
     : ((size_t)nelems));
@@ -48,7 +61,7 @@ int main(int argc, char* argv[])
     int i = 0;
     size_t j;
 
-    for (; i <= niters; ++i) {
+    for (; i <= repeat; ++i) {
       printf("-----------------------------------------\n");
       /* initialize the data */
       for (j = 0; j < nbytes; j += sizeof(int)) {
@@ -85,11 +98,11 @@ int main(int argc, char* argv[])
       }
     }
 
-    if (1 < niters) {
+    if (1 < repeat) {
       printf("-----------------------------------------\n");
-      printf("Arithmetic average of %i iterations\n", niters);
+      printf("Arithmetic average of %i iterations\n", repeat);
       printf("-----------------------------------------\n");
-      d1 /= niters; d2 /= niters; d3 /= niters;
+      d1 /= repeat; d2 /= repeat; d3 /= repeat;
       if (0 < d1) printf("RNG-shuffle:\t%.8f s (%i MB/s)\n", d1,
         (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d1)));
       if (0 < d2) printf("CO1-shuffle:\t%.8f s (%i MB/s)\n", d2,
@@ -97,7 +110,7 @@ int main(int argc, char* argv[])
       if (0 < d3) printf("CO2-shuffle:\t%.8f s (%i MB/s)\n", d3,
         (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d3)));
     }
-    if (0 < niters) {
+    if (0 < repeat) {
       printf("-----------------------------------------\n");
     }
   }

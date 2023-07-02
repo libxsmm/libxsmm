@@ -23,7 +23,7 @@
 
 #define LIBXSMM_MEMORY_SHUFFLE(INOUT, ELEMSIZE, COUNT, SHUFFLE, NREPEAT) do { \
   unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)(INOUT); \
-  const size_t c = (COUNT) - 1, c2 = (COUNT) / 2; \
+  const size_t c = (COUNT) - 1, c2 = ((COUNT) + 1) / 2; \
   size_t i; \
   for (i = (0 != (NREPEAT) ? 0 : (COUNT)); i < (COUNT); ++i) { \
     size_t j = i, k = 0; \
@@ -32,9 +32,7 @@
       data + (ELEMSIZE) * (c - j), \
       data + (ELEMSIZE) * (c - i), \
       ELEMSIZE); \
-  } \
-  for (i = (0 != (NREPEAT) ? 0 : (COUNT)); i < c2; ++i) { \
-    LIBXSMM_MEMSWP127( \
+    if (c2 <= i) LIBXSMM_MEMSWP127( \
       data + (ELEMSIZE) * (c - i), \
       data + (ELEMSIZE) * i, \
       ELEMSIZE); \

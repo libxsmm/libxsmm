@@ -140,23 +140,25 @@ int main(int argc, char* argv[])
   if (EXIT_SUCCESS == result) { /* check libxsmm_shuffle */
     char a[sizeof(init)] = { 0 }, b[sizeof(init)] = { 0 };
     const size_t size = sizeof(init);
+    size_t i = 1, j;
     memcpy(a, init, size);
-    LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle(a, 1, size - 1, NULL, NULL));
-    LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, init, 1, size - 1, NULL, NULL));
-    if (0 == strcmp(a, b)) {
-      const size_t r = libxsmm_unshuffle(size - 1, NULL);
-      size_t i = 0;
-      for (; i < r; ++i) {
-        libxsmm_shuffle(a, 1, size - 1, NULL, NULL);
+    for (; i < size; ++i) {
+      LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle(a, 1, size - i, NULL, NULL));
+      LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, init, 1, size - i, NULL, NULL));
+      if (0 == strncmp(a, b, size - i)) {
+        const size_t r = libxsmm_unshuffle(size - i, NULL);
+        for (j = 0; j < r; ++j) {
+          libxsmm_shuffle(a, 1, size - i, NULL, NULL);
+        }
+        if (0 != strcmp(a, init)) {
+          FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
+          result = EXIT_FAILURE; break;
+        }
       }
-      if (0 != strcmp(a, init)) {
-        FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
-        result = EXIT_FAILURE;
+      else {
+        FPRINTF(stderr, "libxsmm_shuffle: result does not match libxsmm_shuffle2!\n");
+        result = EXIT_FAILURE; break;
       }
-    }
-    else {
-      FPRINTF(stderr, "libxsmm_shuffle: result does not match libxsmm_shuffle2!\n");
-      result = EXIT_FAILURE;
     }
   }
 
