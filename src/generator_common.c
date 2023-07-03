@@ -350,6 +350,30 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_ADDSS:
       libxsmm_strncpy(o_instr_name, "addss", i_instr_name_max_length, 5 );
       break;
+    case LIBXSMM_X86_INSTR_PEXTRB:
+      libxsmm_strncpy(o_instr_name, "pextrb", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PEXTRW:
+      libxsmm_strncpy(o_instr_name, "pextrw", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PEXTRD:
+      libxsmm_strncpy(o_instr_name, "pextrd", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PEXTRQ:
+      libxsmm_strncpy(o_instr_name, "pextrq", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRB:
+      libxsmm_strncpy(o_instr_name, "pinsrb", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRW:
+      libxsmm_strncpy(o_instr_name, "pinsrw", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRD:
+      libxsmm_strncpy(o_instr_name, "pinsrd", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRQ:
+      libxsmm_strncpy(o_instr_name, "pinsrq", i_instr_name_max_length, 6 );
+      break;
     /* XOR AVX512F */
     case LIBXSMM_X86_INSTR_VPXORD:
       libxsmm_strncpy(o_instr_name, "vpxord", i_instr_name_max_length, 6 );
