@@ -422,9 +422,9 @@ def create_figure(plots, nplots, resint, untied, addon):
             if 1 < len(data[-1]):
                 axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
             axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
-            if untied:
+            if False != untied:  # False vs None
                 i = i + 1
-        if not untied:
+        if False == untied:  # False vs None
             i = i + 1
     if 0 < nplots:
         axes[-1].set_xlabel("Build Number")
@@ -903,6 +903,7 @@ def main(args, argd, dbfname):
     nplots = len(plots)
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
+        # make_untied = (False != args.untied and args.untied)
         if 2 > nplots_untied:  # consider rebuilding plots
             val = list(*list(*plots.values()))
             if isinstance(val[1], list):
@@ -924,7 +925,7 @@ def main(args, argd, dbfname):
             resint_untied = resint
 
         # setup primary figure
-        if args.untied:
+        if False != args.untied:  # False vs None
             nplots_primry, resint_primry = nplots_untied, resint_untied
         else:
             nplots_primry, resint_primry = nplots, resint
@@ -947,7 +948,7 @@ def main(args, argd, dbfname):
         )
 
         # setup untied figure
-        if 1 < len(figout) and not args.untied:
+        if 1 < len(figout) and False != args.untied:  # False vs None
             figure_untied = create_figure(
                 plots, nplots_untied, resint_untied, True, addon
             )
@@ -1124,7 +1125,9 @@ if __name__ == "__main__":
     argparser.add_argument(
         "-u",
         "--untied",
-        action="store_true",
+        type=str,
+        default=False,
+        nargs="?",
         help="Separate plot per query",
     )
     argparser.add_argument(
@@ -1150,7 +1153,7 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
-    if args.untied:
+    if False != args.untied:  # False vs None
         figtype = "pdf"
         argparser.set_defaults(figure=f"{base}.{figtype}")
         args = argparser.parse_args()  # reparse
