@@ -793,6 +793,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
           /* Load bias vector */
           const unsigned int aux_vreg = i_micro_kernel_config->use_masking_a_c;
           const unsigned int mask_gpr = i_gp_reg_mapping->gp_reg_help_0;
+          const unsigned int l_mask_reg_or_val = ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX ) ? 1 : i_m_remain;
 
           /* in case of AVX/AVX2 we need to load the mask into an ymm */
           if ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX) && (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256) &&
@@ -805,9 +806,10 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
               i_gp_reg_mapping->gp_reg_help_2, LIBXSMM_X86_GP_REG_UNDEF, 0,
               ((l_m * (i_micro_kernel_config->vector_length))) * 4,
               i_micro_kernel_config->vector_name,
-              l_vec_reg_acc_start + l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+              l_vec_reg_acc_start + l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, l_mask_reg_or_val, 0 );
         } else {
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          unsigned int l_mov_instr = ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX ) ? LIBXSMM_X86_INSTR_MOVUPS: LIBXSMM_X86_INSTR_VMOVUPS;
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, l_mov_instr, i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       } else {
         /* should not happen */
@@ -948,6 +950,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
     } else if (colbias_precision == LIBXSMM_DATATYPE_F32) {
       const unsigned int aux_vreg = i_micro_kernel_config->use_masking_a_c;
       const unsigned int mask_gpr = i_gp_reg_mapping->gp_reg_help_0;
+      const unsigned int l_mask_reg_or_val = ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX ) ? 1 : i_m_remain;
 
       /* in case of AVX/AVX2 we need to load the mask into an ymm */
       if ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX) && (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256) &&
@@ -961,7 +964,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
           i_gp_reg_mapping->gp_reg_help_2, LIBXSMM_X86_GP_REG_UNDEF, 0,
           ((l_m * (i_micro_kernel_config->vector_length))) * 4,
           i_micro_kernel_config->vector_name,
-          0, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+          0, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, l_mask_reg_or_val, 0 );
     } else {
       /* should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
@@ -970,8 +973,13 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
 
     /* Add colbias */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
-          l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+      if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX ) {
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_ADDPS, i_micro_kernel_config->vector_name,
+            0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+      } else {
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
+            l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+      }
     }
   }
 

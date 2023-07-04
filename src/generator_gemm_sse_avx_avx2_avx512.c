@@ -360,15 +360,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ||
        (l_micro_kernel_config.vnni_format_C > 0) ) {
-    /* For now disable fusion for < AVX archs */
-    if ( (io_generated_code->arch < LIBXSMM_X86_AVX) &&
-         ((l_xgemm_desc->meltw_operation != LIBXSMM_MELTW_OPERATION_NONE) ||
-          (l_xgemm_desc->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
-          (l_xgemm_desc->eltw_bp_op != LIBXSMM_MELTW_OPERATION_NONE) ||
-          (l_xgemm_desc->eltw_cp_op != LIBXSMM_MELTW_OPERATION_NONE) ) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
-      return;
-    }
     /* Illegal ext_abi when precision is not fp32 or bf16 */
     if (!(LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ) ||
           LIBXSMM_DATATYPE_BF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ) ||
