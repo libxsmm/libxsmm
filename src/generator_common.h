@@ -1420,6 +1420,15 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int vnni_cvt_output_ext_buf;
   unsigned int norm_to_normT_B_ext_buf;
   unsigned int has_colbias_act_fused;
+  unsigned int current_m; /* this is a hack, it's for tracking in SSE relubit
+                             mask fusion the logical M start as we only get 4
+                             mask bits, but can only read and write at 8 bits
+                             granularity */
+  unsigned int m_bitmask_advance; /* this is a hack, it's for tracking in SSE relubit
+                             mask fusion the logical M start as we only get 4
+                             mask bits, but can only read and write at 8 bits
+                             granularity */
+
 
   /* Register names/logistics for fusion boo-keeping */
   unsigned int reserved_zmms;
