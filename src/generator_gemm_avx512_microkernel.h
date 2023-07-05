@@ -99,6 +99,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
                                                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                                   char                               i_vname_cvt,
                                                                                   unsigned int                       i_is_Ai8_Bf16_gemm,
+                                                                                  unsigned int                       i_is_Abf8_Bf16_gemm,
                                                                                   unsigned int                       i_is_Af16_Bf16_gemm,
                                                                                   unsigned int                       i_use_f16_replacement_fma,
                                                                                   unsigned int                       i_use_f32_compute_with_f16_inp,
