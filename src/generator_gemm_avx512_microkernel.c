@@ -1717,7 +1717,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
       l_vec_name_ld_a = 'x';
     }
-    l_vreg_ab_offset = 1;
+    if (l_is_Ai8_Bf16_gemm > 0) {
+      l_vreg_ab_offset = 1;
+    }
   }
 
   if (l_is_Af16_Bf16_gemm > 0) {
