@@ -2015,7 +2015,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
       for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
         if (i_gemm_def->trans_a == 0) {
-          l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
+          l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
         } else {
           l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->m * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
         }
