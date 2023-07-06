@@ -104,6 +104,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
                                                                                   unsigned int                       i_use_f16_replacement_fma,
                                                                                   unsigned int                       i_use_f32_compute_with_f16_inp,
                                                                                   unsigned int                       i_m,
+                                                                                  unsigned int                       i_m_blocking,
                                                                                   unsigned int                       io_A_vreg );
 #endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_H */
 
