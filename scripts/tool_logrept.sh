@@ -170,7 +170,7 @@ if [ "${LOGDIR}" ]; then
       EXACT="-e"
     fi
     if [ "${LOGRPTSEP}" ] && [ "0" != "${LOGRPTSEP}" ]; then
-      UNTIED="-u"
+      UNTIED="-u ${LOGRPTSEP}"
     fi
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1

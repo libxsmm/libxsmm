@@ -422,9 +422,9 @@ def create_figure(plots, nplots, resint, untied, addon):
             if 1 < len(data[-1]):
                 axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
             axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
-            if False != untied:  # False vs None
+            if None == untied or 0 != untied:
                 i = i + 1
-        if False == untied:  # False vs None
+        if None != untied and 0 == untied:
             i = i + 1
     if 0 < nplots:
         axes[-1].set_xlabel("Build Number")
@@ -922,6 +922,20 @@ def main(args, argd, dbfname):
                 )
                 key = next(iter(plots.keys()))
                 plots[key] = list(v)
+        if args.untied and (1 < args.untied or 0 > args.untied):
+            plots_untied, nplots_untied = {}, 0
+            for key, vals in plots.items():
+                plots_untied[key] = []
+                for v in vals:
+                    if 4 <= len(v) and isinstance(v[1], list):
+                        for i in range(len(v[1])):
+                            v0, v1 = list(list(zip(*v[0]))[i]), v[1][i]
+                            plots_untied[key].append([v0, v1, v[2], v[3]])
+                            nplots_untied = nplots_untied + 1
+                    else:
+                        plots_untied[key].append(v)
+                        nplots_untied = nplots_untied + 1
+            plots = plots_untied
 
         # auto-adjust y-resolution according to number of plots
         if args.resolution == argd.resolution:  # resolution not user-defined
@@ -933,7 +947,7 @@ def main(args, argd, dbfname):
             resint_untied = resint
 
         # setup primary figure
-        if False != args.untied:  # False vs None
+        if None == args.untied or 0 != args.untied:
             nplots_primry, resint_primry = nplots_untied, resint_untied
         else:
             nplots_primry, resint_primry = nplots, resint
@@ -956,7 +970,7 @@ def main(args, argd, dbfname):
         )
 
         # setup untied figure
-        if 1 < len(figout) and False != args.untied:  # False vs None
+        if 1 < len(figout) and (None == args.untied or 0 != args.untied):
             figure_untied = create_figure(
                 plots, nplots_untied, resint_untied, True, addon
             )
@@ -1133,8 +1147,8 @@ if __name__ == "__main__":
     argparser.add_argument(
         "-u",
         "--untied",
-        type=str,
-        default=False,
+        type=int,
+        default=0,
         nargs="?",
         help="Separate plot per query",
     )
