@@ -422,9 +422,9 @@ def create_figure(plots, nplots, resint, untied, addon):
             if 1 < len(data[-1]):
                 axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
             axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
-            if None == untied or 0 != untied:
+            if untied is None or 0 != untied:
                 i = i + 1
-        if None != untied and 0 == untied:
+        if untied is not None and 0 == untied:
             i = i + 1
     if 0 < nplots:
         axes[-1].set_xlabel("Build Number")
@@ -947,7 +947,7 @@ def main(args, argd, dbfname):
             resint_untied = resint
 
         # setup primary figure
-        if None == args.untied or 0 != args.untied:
+        if args.untied is None or 0 != args.untied:
             nplots_primry, resint_primry = nplots_untied, resint_untied
         else:
             nplots_primry, resint_primry = nplots, resint
@@ -970,7 +970,7 @@ def main(args, argd, dbfname):
         )
 
         # setup untied figure
-        if 1 < len(figout) and (None == args.untied or 0 != args.untied):
+        if 1 < len(figout) and (args.untied is None or 0 != args.untied):
             figure_untied = create_figure(
                 plots, nplots_untied, resint_untied, True, addon
             )
@@ -1175,7 +1175,7 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
-    if False != args.untied:  # False vs None
+    if args.untied is None or 0 != args.untied:
         figtype = "pdf"
         argparser.set_defaults(figure=f"{base}.{figtype}")
         args = argparser.parse_args()  # reparse
