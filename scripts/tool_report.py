@@ -755,37 +755,44 @@ def main(args, argd, dbfname):
                 if isinstance(values, dict):  # JSON-format
                     vals, legd, detail = [], [], None
                     for key in (k for k in keys if k in values):
-                        vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
-                        weight = wlist[key] if key in wlist else 1.0
-                        strval = str(values[key])  # ensure string
-                        parsed = parseval(strval)
-                        unit = (
-                            strval[parsed.end(3) :].strip()  # noqa: E203
-                            if parsed
-                            else ""
-                        )
-                        vals.append(float(strval.split()[0]) * vscale * weight)
-                        if not ylabel:
-                            ylabel = (
-                                (unit if unit else key)
-                                if 3 > len(qlst)
-                                else qlst[2]
+                        try:
+                            vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                            weight = wlist[key] if key in wlist else 1.0
+                            strval = str(values[key])  # ensure string
+                            parsed = parseval(strval)
+                            unit = (
+                                strval[parsed.end(3) :].strip()  # noqa: E203
+                                if parsed
+                                else ""
                             )
-                        lst = key.translate(split).split()
-                        if lst and all(
-                            lst[0] == s for s in lst if qlst[0] in s.lower()
-                        ):
-                            detail = (
-                                lst[0]
-                                if not detail or detail == lst[0]
-                                else qlst[0]
+                            if not ylabel:
+                                ylabel = (
+                                    (unit if unit else key)
+                                    if 3 > len(qlst)
+                                    else qlst[2]
+                                )
+                            lst = key.translate(split).split()
+                            if lst and all(
+                                lst[0] == s
+                                for s in lst
+                                if qlst[0] in s.lower()
+                            ):
+                                detail = (
+                                    lst[0]
+                                    if not detail or detail == lst[0]
+                                    else qlst[0]
+                                )
+                            else:
+                                detail = qlst[0]
+                            itm = [s for s in lst if s.lower() != detail]
+                            vals.append(
+                                float(strval.split()[0]) * vscale * weight
                             )
-                        else:
-                            detail = qlst[0]
-                        itm = [s for s in lst if s.lower() != detail]
-                        legd.append(
-                            f"{value} {'_'.join(itm)}" if itm else value
-                        )
+                            legd.append(
+                                f"{value} {'_'.join(itm)}" if itm else value
+                            )
+                        except:  # noqa: E722
+                            pass
                     if vals:
                         if yvalue:
                             if not isinstance(yvalue[0], list) or (
@@ -903,17 +910,18 @@ def main(args, argd, dbfname):
     nplots = len(plots)
     if 0 < nplots:
         nplots_untied = sum(len(v) for v in plots.values())
-        # make_untied = (False != args.untied and args.untied)
         if 2 > nplots_untied:  # consider rebuilding plots
-            val = list(*list(*plots.values()))
-            if isinstance(val[1], list):
-                nplots_untied = len(set(val[1]))
-                val[0] = list(zip(*val[0]))
-                val[1] = list(val[1])
-                val[2] = [val[2]] * nplots_untied
-                val[3] = [val[3]] * nplots_untied
+            v = list(*list(*plots.values()))
+            if 4 <= len(v) and isinstance(v[1], list):
+                nplots_untied = len(set(v[1]))
+                v = zip(
+                    list(zip(*v[0])),
+                    list(v[1]),
+                    [v[2]] * nplots_untied,
+                    [v[3]] * nplots_untied,
+                )
                 key = next(iter(plots.keys()))
-                plots[key] = list(zip(*val))
+                plots[key] = list(v)
 
         # auto-adjust y-resolution according to number of plots
         if args.resolution == argd.resolution:  # resolution not user-defined
