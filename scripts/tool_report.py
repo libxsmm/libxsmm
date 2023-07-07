@@ -422,9 +422,9 @@ def create_figure(plots, nplots, resint, untied, addon):
             if 1 < len(data[-1]):
                 axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
             axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
-            if untied is None or 0 != untied:
+            if untied:
                 i = i + 1
-        if untied is not None and 0 == untied:
+        if not untied:
             i = i + 1
     if 0 < nplots:
         axes[-1].set_xlabel("Build Number")
@@ -755,7 +755,7 @@ def main(args, argd, dbfname):
                 if isinstance(values, dict):  # JSON-format
                     vals, legd, detail = [], [], None
                     for key in (k for k in keys if k in values):
-                        try:
+                        try:  # skip key in case of an error
                             vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
                             weight = wlist[key] if key in wlist else 1.0
                             strval = str(values[key])  # ensure string
@@ -909,52 +909,6 @@ def main(args, argd, dbfname):
 
     nplots = len(plots)
     if 0 < nplots:
-        nplots_untied = sum(len(v) for v in plots.values())
-        if 2 > nplots_untied:  # consider rebuilding plots
-            v = list(*list(*plots.values()))
-            if 4 <= len(v) and isinstance(v[1], list):
-                nplots_untied = len(set(v[1]))
-                v = zip(
-                    list(zip(*v[0])),
-                    list(v[1]),
-                    [v[2]] * nplots_untied,
-                    [v[3]] * nplots_untied,
-                )
-                key = next(iter(plots.keys()))
-                plots[key] = list(v)
-        if args.untied and (1 < args.untied or 0 > args.untied):
-            plots_untied, nplots_untied = {}, 0
-            for key, vals in plots.items():
-                plots_untied[key] = []
-                for v in vals:
-                    if 4 <= len(v) and isinstance(v[1], list):
-                        for i in range(len(v[1])):
-                            v0, v1 = list(list(zip(*v[0]))[i]), v[1][i]
-                            plots_untied[key].append([v0, v1, v[2], v[3]])
-                            nplots_untied = nplots_untied + 1
-                    else:
-                        plots_untied[key].append(v)
-                        nplots_untied = nplots_untied + 1
-            plots = plots_untied
-
-        # auto-adjust y-resolution according to number of plots
-        if args.resolution == argd.resolution:  # resolution not user-defined
-            resint_untied = copy.deepcopy(resint)
-            resint_untied[1] = resint[2] * divup(
-                resint[1] * math.sqrt(nplots_untied), resint[2]
-            )
-        else:  # alias
-            resint_untied = resint
-
-        # setup primary figure
-        if args.untied is None or 0 != args.untied:
-            nplots_primry, resint_primry = nplots_untied, resint_untied
-        else:
-            nplots_primry, resint_primry = nplots, resint
-        figure_primry = create_figure(
-            plots, nplots_primry, resint_primry, args.untied, addon
-        )
-
         # supported file types and filename components
         figcat = (
             ""  # eventually add details about category
@@ -962,31 +916,100 @@ def main(args, argd, dbfname):
             else f"-{entries[0].translate(clean)}"
         )
         figdet = re.sub(r"[ ,;]+", "_", figcat)
+        figure = plot.subplots(1)  # dummy
         figout = fname(
-            extlst=figure_primry.canvas.get_supported_filetypes().keys(),
+            extlst=figure[0].canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
             idetail=f"-{latest}{figdet}" if 0 < latest else figdet,
         )
 
-        # setup untied figure
-        if 1 < len(figout) and (args.untied is None or 0 != args.untied):
-            figure_untied = create_figure(
-                plots, nplots_untied, resint_untied, True, addon
+        # automatically flatten multi-value plots into groups
+        ntieds = sum(len(v) for v in plots.values())
+        if 2 > ntieds:  # consider rebuilding plots
+            v = list(*list(*plots.values()))
+            if 4 <= len(v) and isinstance(v[1], list):
+                ntieds = len(set(v[1]))
+                v = zip(
+                    list(zip(*v[0])),
+                    list(v[1]),
+                    [v[2]] * ntieds,
+                    [v[3]] * ntieds,
+                )
+                key = next(iter(plots.keys()))
+                plots[key] = list(v)
+
+        # fully flatten multi-value plots (no groups are kept)
+        pflat, nflat = {}, 0
+        if args.untied is None or 0 != args.untied:
+            for key, vals in plots.items():
+                pflat[key] = []
+                for v in vals:
+                    if 4 <= len(v) and isinstance(v[1], list):
+                        for i in range(len(v[1])):
+                            v0, v1 = list(list(zip(*v[0]))[i]), v[1][i]
+                            pflat[key].append([v0, v1, v[2], v[3]])
+                            nflat = nflat + 1
+                    else:
+                        nflat = nflat + 1
+                        pflat[key].append(v)
+
+        # auto-adjust y-resolution according to number of plots
+        if args.resolution == argd.resolution:  # resolution not user-defined
+            untres = copy.deepcopy(resint)
+            untres[1] = resint[2] * divup(
+                resint[1] * math.sqrt(ntieds), resint[2]
             )
-        else:  # alias
-            resint_untied = resint_primry
-            figure_untied = figure_primry
+            rflat = copy.deepcopy(resint)
+            rflat[1] = resint[2] * divup(
+                resint[1] * math.sqrt(nflat), resint[2]
+            )
+        else:  # respect user-defined resolution
+            untres = resint  # alias
+            rflat = resint  # alias
+
+        # setup figures
+        if 1 < len(figout):
+            if args.untied is None or 0 != args.untied:
+                figuntd = create_figure(pflat, nflat, rflat, True, addon)
+                if args.untied is not None and 1 < args.untied:
+                    figprim = figuntd  # alias
+                elif args.untied is not None and 0 > args.untied:
+                    figprim = create_figure(
+                        plots, nplots, resint, False, addon
+                    )
+                else:
+                    figprim = create_figure(plots, ntieds, untres, True, addon)
+            else:
+                figprim = create_figure(plots, nplots, resint, False, addon)
+                figuntd = create_figure(plots, ntieds, untres, True, addon)
+        else:
+            if args.untied is None or 0 <= args.untied:
+                if args.untied is None or 0 != args.untied:
+                    if args.untied is not None and 1 < args.untied:
+                        figprim = create_figure(
+                            pflat, nflat, rflat, True, addon
+                        )
+                    else:
+                        figprim = create_figure(
+                            plots, ntieds, untres, True, addon
+                        )
+                else:
+                    figprim = create_figure(
+                        plots, nplots, resint, False, addon
+                    )
+            else:  # negative
+                figprim = create_figure(pflat, nflat, rflat, True, addon)
 
         # save figure(s) for all requested formats
         for i in range(len(figout)):
-            figure = figure_primry if 0 == i else figure_untied
-            figres = resint_primry if 0 == i else resint_untied
+            figure = figprim if 0 == i else figuntd
             # reduce file size (png) and save figure
             if ".png" == figout[i].suffix.lower():
                 figure.canvas.draw()  # otherwise the image is empty
                 imageraw = figure.canvas.tostring_rgb()
-                image = PIL.Image.frombytes("RGB", figres[0:2], imageraw)
+                imageres = map(int, figure.get_size_inches() * figure.dpi)
+                image = PIL.Image.frombytes("RGB", tuple(imageres), imageraw)
                 # avoid Palette.ADAPTIVE, consider back/foreground color
                 image = image.convert("P", colors=ngraphs + 2)
                 image.save(figout[i], "PNG", optimize=True)
