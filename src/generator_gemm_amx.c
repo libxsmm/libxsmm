@@ -2280,7 +2280,6 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int code_block_index = 0;
   long long A_offs = 0, B_offs = 0;
   unsigned int unroll_factor = 1;
-  unsigned int brgemm_assm_loop_iters = 1;
   unsigned int peeled_iters = 0;
   int pf_dist = 0;
   const char *const env_pf_dist = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_DIST");
