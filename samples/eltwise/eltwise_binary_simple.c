@@ -27,7 +27,7 @@
 #define SUB_OP     3
 #define DIV_OP     4
 #define MULADD_OP  5
-#define ZIP_OP 6
+#define ZIP_OP     6
 #define MAX_OP     9
 #define MIN_OP    10
 
