@@ -524,7 +524,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype dtype) {
-  const int datatype = LIBXSMM_GETENUM_INP(dtype);
+  const int datatype = LIBXSMM_GETENUM_UNP(dtype);
   if ( LIBXSMM_DATATYPE_F64 == datatype ) {
     return  LIBXSMM_X86_INSTR_VMOVUPD;
   } else if ( (LIBXSMM_DATATYPE_F32 == datatype) || (LIBXSMM_DATATYPE_I32 == datatype) || (LIBXSMM_DATATYPE_U32 == datatype) ) {
