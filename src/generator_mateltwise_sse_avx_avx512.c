@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
@@ -19,7 +18,7 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "generator_mateltwise_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {
@@ -176,6 +175,10 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+#if defined(_WIN32) || defined(__CYGWIN__)
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+#endif
   }
 }
 
@@ -186,6 +189,10 @@ void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*       
 
   LIBXSMM_UNUSED(i_mateltwise_desc);
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
+#if defined(_WIN32) || defined(__CYGWIN__)
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+#endif
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );

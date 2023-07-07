@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_COMMON_X86_H
 #define GENERATOR_COMMON_X86_H
 

@@ -9,18 +9,21 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012,SC2153
+# shellcheck disable=SC2012,SC2153,SC2206
 
-# check if logfile is given
-if [ ! "${LOGFILE}" ]; then
+if [ "$1" ]; then  # argument takes precedence
+  LOGFILE=$1
+elif [ ! "${LOGFILE}" ]; then  # logfile given?
   if [ "$1" ]; then
     LOGFILE=$1
   else
     LOGFILE=/dev/stdin
   fi
 fi
+
 if [ ! -e "${LOGFILE}" ]; then
-  >&2 echo "ERROR: logfile \"${LOGFILE}\" does not exist!"
+  # keep output in sync, i.e., avoid ">&2 echo"
+  echo -e "ERROR: logfile \"${LOGFILE}\" does not exist!\n"
   exit 1
 fi
 
@@ -67,16 +70,17 @@ else
   elif [ "${HOME_REMOTE}" ] && [ -d "${HOME_REMOTE}/artifacts" ]; then
     LOGDIR=${HOME_REMOTE}/artifacts
   elif [ "$(command -v cut)" ] && [ "$(command -v getent)" ]; then
-    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3) # group
+    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3)  # group
     ARTROOT=$(getent passwd "${ARTUSER}" 2>/dev/null | cut -d: -f6 2>/dev/null)
     if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
     if [ -d "${ARTROOT}/artifacts" ]; then
       LOGDIR=${ARTROOT}/artifacts
     elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
-    else # debug purpose
-      LOGDIR=.
     fi
+  fi
+  if [ ! "${LOGDIR}" ]; then  # debug purpose
+    LOGDIR=.
   fi
 fi
 
@@ -88,9 +92,7 @@ then
   PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
-  if [ ! "${PIPELINE}" ] && \
-     [ "$(pwd -P)" = "$(cd "$(dirname "${LOGDIR}")" && pwd -P)" ];
-  then
+  if [ ! "${PIPELINE}" ]; then
     PIPELINE="debug"
   fi
   if [ "${PIPELINE}" ]; then
@@ -126,14 +128,14 @@ then
             WEIGHTS=${PARENT_DIR}/../weights.json
           fi
         fi
-        if [ "${WEIGHTS}" ]; then # break
+        if [ "${WEIGHTS}" ]; then  # break
           DBSCRT="${DBSCRT} -w ${WEIGHTS}"
           PARENT_PID=""
         fi
-      else # break
+      else  # break
         PARENT_PID=""
       fi
-    else # break
+    else  # break
       PARENT_PID=""
     fi
   done
@@ -142,18 +144,19 @@ fi
 # process logfile and generate report
 if [ "${LOGDIR}" ]; then
   SYNC=$(command -v sync)
-  ${SYNC} # optional
+  ${SYNC}  # optional
   ERROR=""
 
   # extract data from log (tool_logperf.sh)
   if [ ! "${LOGRPTSUM}" ] || \
      [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
-  then # "telegram" format
+  then  # "telegram" format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" ${LOGFILE});
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
     RESULT="ms"
-  else # JSON-format
+  fi
+  if [ ! "${FINPUT}" ]; then  # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
@@ -166,20 +169,24 @@ if [ "${LOGDIR}" ]; then
     if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
       EXACT="-e"
     fi
+    if [ "${LOGRPTSEP}" ] && [ "0" != "${LOGRPTSEP}" ]; then
+      UNTIED="-u"
+    fi
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1
     else
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | "${DBSCRT}" \
+    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
       -f "${LOGDIR}/${PIPELINE}.json" \
       -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
       -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" -v ${VERBOSITY} \
-      -t "${LOGRPTBND}");
+      -q "${LOGRPTQOP}" ${UNTIED} \
+      -t "${LOGRPTBND}" \
+      -v ${VERBOSITY});
     then  # ERROR=$?
       ERROR=1
     fi
@@ -201,37 +208,68 @@ if [ "${LOGDIR}" ]; then
     then
       FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-        if ! OUTPUT=$(base64 -w0 "${FIGURE}");
-        then OUTPUT=""; fi
-        if [ "${OUTPUT}" ]; then
-          if [ "$(command -v mimetype)" ]; then
-            MIMETYPE=$(mimetype -b "${FIGURE}")
-          elif [ "${LOGRPTFMT}" ]; then
-            if [ "svgz" = "${LOGRPTFMT}" ]; then
-              MIMETYPE="image/svg+xml-compressed"
-            elif [ "svg" = "${LOGRPTFMT}" ]; then
-              MIMETYPE="image/svg+xml"
-            else  # fallback
-              MIMETYPE="image/${LOGRPTFMT}"
+        RPTFMT=${LOGRPTDOC:-pdf}
+        FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
+        REPORT=${FIGURE%."${FORMAT[0]}"}.${RPTFMT}
+        # echo parsed/captured JSON
+        if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+        if [ -e "${REPORT}" ]; then  # print after summary
+          # normalize path to report file (buildkite-agent)
+          REPDIR="$(cd "$(dirname "${REPORT}")" && pwd -P)"
+          REPFLE=$(basename "${REPORT}")
+          if [ "$(command -v tr)" ]; then
+            LABEL=$(tr "[:lower:]" "[:upper:]" <<<"${RPTFMT}")
+          else
+            LABEL=${RPTFMT^^}
+          fi
+          if [ -e "${REPDIR}/${REPFLE}" ]; then
+            if [[ "${PIPELINE}" != *"libxsmm"*  ]]; then
+              if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
+              printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
+                "${ARTDIR}" "${REPFLE}" "${LABEL}"
+            else
+              printf "\n\033]1339;url=\"artifact://%s\";content=\"%s\"\a\n\n" \
+                "${REPFLE}" "${LABEL}"
             fi
-          else  # fallback
-            MIMETYPE="image/${FIGURE##*.}"
           fi
-          if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-          printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
-            "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
-          if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
-            >&2 echo "WARNING: deviation of latest value exceeds margin."
-            exit "${ERROR}"
+        fi
+        # embed figure if report is not exclusive
+        if [ -e "${FIGURE}" ] && [ "${FIGURE}" != "${REPORT}" ]; then
+          BASE64_FLAG=-w0
+          if base64 ${BASE64_FLAG} </dev/null 2>&1 | grep -q invalid; then BASE64_FLAG=""; fi
+          if ! OUTPUT=$(eval "base64 ${BASE64_FLAG} <${FIGURE}");
+          then OUTPUT=""; fi
+          if [ "${OUTPUT}" ]; then
+            if [ "$(command -v mimetype)" ]; then
+              MIMETYPE=$(mimetype -b "${FIGURE}")
+            else
+              if [ "svgz" = "${FORMAT[0]}" ]; then
+                MIMETYPE="image/svg+xml-compressed"
+              elif [ "svg" = "${FORMAT[0]}" ]; then
+                MIMETYPE="image/svg+xml"
+              else  # fallback
+                MIMETYPE="image/${FORMAT[0]}"
+              fi
+            fi
+            printf "\n\033]1338;url=\"data:%s;base64,%s\";alt=\"%s\"\a\n" \
+              "${MIMETYPE}" "${OUTPUT}" "${STEPNAME:-${RESULT}}"
+          else
+            # keep output in sync, i.e., avoid ">&2 echo"
+            echo -e "WARNING: encoding failed (\"${FIGURE}\").\n"
           fi
-        else
-          >&2 echo "WARNING: encoding failed (\"${FIGURE}\")."
+        fi
+        if [ "${ERROR}" ] && [ "0" != "${ERROR}" ]; then
+          # keep output in sync, i.e., avoid ">&2 echo"
+          echo -e "WARNING: deviation of latest value exceeds margin.\n"
+          exit "${ERROR}"
         fi
       else
-        >&2 echo "WARNING: report not ready (\"${OUTPUT}\")."
+        # keep output in sync, i.e., avoid ">&2 echo"
+        echo -e "WARNING: report not ready (\"${OUTPUT}\").\n"
       fi
     else
-      >&2 echo "WARNING: missing prerequisites for report."
+      # keep output in sync, i.e., avoid ">&2 echo"
+      echo -e "WARNING: missing prerequisites for report.\n"
     fi
   fi
 fi

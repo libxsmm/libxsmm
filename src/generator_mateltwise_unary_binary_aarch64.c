@@ -9,18 +9,17 @@
 ******************************************************************************/
 /* Deepti Aggarwal, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-
 #include "generator_aarch64_instructions.h"
 #include "generator_mateltwise_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
-#include "libxsmm_main.h"
 
 #define MN_LOOP_ORDER 0
 #define NM_LOOP_ORDER 1
 #define LOOP_TYPE_M 0
 #define LOOP_TYPE_N 1
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*                 io_generated_code,
@@ -2179,7 +2178,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
 
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD);
+  unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MAX) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MIN);
   unsigned char l_pred_reg = LIBXSMM_CAST_UCHAR(i_mask_reg);
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_TYPESIZE(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)));
 
@@ -2198,6 +2197,12 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
     } break;
     case LIBXSMM_MELTW_TYPE_BINARY_MULADD: {
       binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+      binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+      binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V;
     } break;
     default:;
   }
@@ -2569,7 +2574,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
       libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_micro_kernel_config->mask_helper0_vreg), i_gp_reg_tmp0,
                                                                 LIBXSMM_AARCH64_SVE_TYPE_S, l_pred_reg, l_fp32_lsb_mak );
     } else {
-      /* nothing todo */
+      /* nothing to do */
     }
 
     /* load offsets */

@@ -12,9 +12,8 @@
 #define GENERATOR_COMMON_H
 
 #include <libxsmm_generator.h>
-#include <libxsmm_cpuid.h>
-#include "libxsmm_main.h"
 #include "libxsmm_matrixeqn.h"
+#include "libxsmm_main.h"
 
 /* TODO: check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
@@ -57,7 +56,7 @@
  * 29 #operands (2 bits=0-3)
  * 28 #operands (2 bits=0-3)
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
- * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
+ * 26 Op code extension in ModRM Regfiles (extension is bits 20-22)
  * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX, in REX only -> force REX prefix
  * 24 used for pure/base REX/IA32 encodings to signal that the instructions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
  * 3rd byte:
@@ -251,7 +250,14 @@
 #define LIBXSMM_X86_INSTR_VEXTRACTI64X2    0xe88d3c39
 #define LIBXSMM_X86_INSTR_VEXTRACTI32X8    0xe80d3d3b
 #define LIBXSMM_X86_INSTR_VEXTRACTI64X4    0xe88d3d3b
+#define LIBXSMM_X86_INSTR_VINSERTF32X4     0xf00d3c18
+#define LIBXSMM_X86_INSTR_VINSERTF64X2     0xf08d3c18
+#define LIBXSMM_X86_INSTR_VINSERTF32X8     0xf00d3d1a
+#define LIBXSMM_X86_INSTR_VINSERTF64X4     0xf08d3d1a
 #define LIBXSMM_X86_INSTR_VINSERTI32X4     0xf00d3c38
+#define LIBXSMM_X86_INSTR_VINSERTI64X2     0xf08d3c38
+#define LIBXSMM_X86_INSTR_VINSERTI32X8     0xf00d3d3a
+#define LIBXSMM_X86_INSTR_VINSERTI64X4     0xf08d3d3a
 #define LIBXSMM_X86_INSTR_VBLENDMPS        0xf0052665
 #define LIBXSMM_X86_INSTR_VBLENDMPD        0xf0852665
 #define LIBXSMM_X86_INSTR_VPBLENDMB        0xf0052666
@@ -571,6 +577,7 @@
 #define LIBXSMM_X86_INSTR_VSQRTSH          0xf0065951
 #define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
 #define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
+#define LIBXSMM_X86_INSTR_VCVTW2PH         0xe106567d
 
 /* AVX512 Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
@@ -646,7 +653,7 @@
 #define LIBXSMM_X86_INSTR_VCVTNEEPH2PS     0x600520b0
 #define LIBXSMM_X86_INSTR_VCVTNEOBF162PS   0x600720b0
 #define LIBXSMM_X86_INSTR_VCVTNEOPH2PS     0x600420b0
-/* #define LIBXSMM_X86_INSTR_VCVTNEPS2BF16 is not needed as the encdding overlaps with EVEX */
+/* #define LIBXSMM_X86_INSTR_VCVTNEPS2BF16 is not needed as the encoding overlaps with EVEX */
 
 /* AVX2 Int8 VNNI will all sign combinations, AVX-VNNI-INT8 */
 #define LIBXSMM_X86_INSTR_VPDPBSUD         0x70062050
@@ -1211,6 +1218,9 @@
 #define LIBXSMM_X86_INSTR_XORD_R_RM        0xa0040033
 #define LIBXSMM_X86_INSTR_XORQ_R_RM        0xa2840033
 
+/* newer instrutions */
+#define LIBXSMM_X86_INSTR_RDPID            0x9c7610c7
+
 /* Jump instructions */
 #define LIBXSMM_X86_INSTR_JL                 30100
 #define LIBXSMM_X86_INSTR_JE                 30101
@@ -1296,11 +1306,12 @@
 #define LIBXSMM_ERR_BRGEMM_TRANS          90051
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
+#define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __LINE__, 1)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1)
 
 /* LIBXSMM_EXIT_ERROR(io_generated_code) instead of exit(-1) */
 #if !defined(LIBXSMM_EXIT_HARD)
@@ -1371,6 +1382,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int vector_reg_count;
   unsigned int vector_length;
   unsigned int datatype_size_in;
+  unsigned int datatype_size_in2;
   unsigned int datatype_size_out;
   unsigned int a_vmove_instruction;
   unsigned int b_vmove_instruction;
@@ -1453,11 +1465,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
-  unsigned int emulation_scratch_offset;
   unsigned int gemm_scratch_ld;
-  unsigned int lda_emu;
-  unsigned int ldb_emu;
-  unsigned int ldc_emu;
   unsigned int emulate_cvt2bf16fp32;
   unsigned int emulate_cvt2bf16fp32_vperm;
   unsigned int emulate_cvt2bf16fp32_vaux;
@@ -1514,7 +1522,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
-/* Auxiliary regs for sparsity in A support */
+  unsigned int gp_reg_help_6;
+/* Auxiliary regs for sparsity in A support  */
   unsigned int gp_reg_bitmap_a;
   unsigned int gp_reg_decompressed_a;
 } libxsmm_gp_reg_mapping;
@@ -1611,7 +1620,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int ldi_mask;
   unsigned int ldo_mask;
 
-  /* Auxiliary varialiables for vreg management */
+  /* Auxiliary variables for vreg management */
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int use_fp32bf16_cvt_replacement;
@@ -1715,6 +1724,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
 
   /* aux variable for stochastic rounding */
   unsigned int prng_vreg_tmp0;
+  unsigned int prng_vreg_tmp1;
   unsigned int prng_vreg_rand;
 
   /* aux variable for quantization */
@@ -2037,7 +2047,7 @@ typedef enum libxsmm_meltw_comp_scal_flags {
   LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS_COLS = 26
 } libxsmm_meltw_comp_scal_flags;
 
-/* compressed metlw cvta strcuture */
+/* compressed metlw cvta structure */
 typedef enum libxsmm_meltw_comp_cvta_flags {
   LIBXSMM_MELTW_COMP_FLAG_CVTA_NONE           = 0,
   LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_RELU      = 1,
@@ -2052,7 +2062,7 @@ typedef enum libxsmm_meltw_comp_acvt_flags {
   LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_SIGM      = 2
 } libxsmm_meltw_comp_acvt_flags;
 
-/* compressed meltw cbiasact strcuture */
+/* compressed meltw cbiasact structure */
 typedef enum libxsmm_meltw_comp_flags {
   LIBXSMM_MELTW_COMP_FLAG_NONE                         =  0,
   LIBXSMM_MELTW_COMP_FLAG_COLBIAS                      =  1,
@@ -2142,7 +2152,9 @@ LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int i_error_code,
                            /** Contextual information (source of error), e.g., function name. */
-                           const char* context,
+                           const char context[],
+                           /** Filename related to source of error (like context). */
+                           const char srcfile[],
                            /** Line number, i.e., not considered if less or equal to zero. */
                            int linenum,
                            /** Whether to emit (non-zero), or suppress (zero) any message. */
@@ -2164,5 +2176,12 @@ typedef enum libxsmm_ulp_precision {
  */
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void);
 
-#endif /* GENERATOR_COMMON_H */
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_C_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype);
+LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
 
+#endif /* GENERATOR_COMMON_H */

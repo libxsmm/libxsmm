@@ -16,12 +16,13 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 #include "generator_common_aarch64.h"
 #include "generator_matequation_scratch_aarch64.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
+
 
 #if 0
 LIBXSMM_API_INTERN
@@ -207,7 +208,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR1, LIBXSMM_X86_GP_REG_RAX);
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR2, LIBXSMM_X86_GP_REG_R9);
 
-      xgemm_desc = (libxsmm_gemm_descriptor*) libxsmm_sgemm_descriptor_init(&blob, m, n, k, lda, ldb, ldc, alpha, beta, gemm_flags, libxsmm_get_gemm_xprefetch(&prefetch));
+      xgemm_desc = (libxsmm_gemm_descriptor*) libxsmm_sgemm_descriptor_init(&blob, m, n, k, lda, ldb, ldc, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(prefetch));
 
       libxsmm_generator_gemm_striped_sse_avx_avx2_avx512_kernel( io_generated_code, io_loop_label_tracker, xgemm_desc);
 #endif
@@ -471,4 +472,3 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     }
   }
 }
-

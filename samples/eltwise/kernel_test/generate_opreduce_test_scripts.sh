@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 for op in 0 1 2 3 4
 do
   for redop in 0 1 2 3
@@ -82,7 +84,7 @@ do
 
               echo $NAME
 
-              sed "s/OP=0/OP=${op}/g" opreduce.tpl \
+              sed "s/OP=0/OP=${op}/g" ${HERE}/opreduce.tpl \
               | sed "s/OPRED=1/OPRED=${redop}/g" \
               | sed "s/OPORDER=1/OPORDER=${oporder}/g" \
               | sed "s/REGVECIN=1/REGVECIN=${regvecin}/g" \
@@ -103,6 +105,8 @@ do
               #    done
               #  done
               #done
+
+              chmod 755 $NAME
             done
           done
         done
@@ -110,6 +114,3 @@ do
     done
   done
 done
-
-
-

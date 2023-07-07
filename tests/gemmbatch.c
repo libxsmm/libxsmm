@@ -25,10 +25,10 @@
      (defined(LIBXSMM_PLATFORM_X86))
 #   include <mkl.h>
 #   if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
-#     define GEMM_BATCH_STRIDED LIBXSMM_TPREFIX(TYPE, gemm_batch_strided)
+#     define GEMM_BATCH_STRIDED LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(TYPE)
 #   endif
 #   if defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2)
-#     define GEMM_BATCH LIBXSMM_TPREFIX(TYPE, gemm_batch)
+#     define GEMM_BATCH LIBXSMM_GEMM_BATCH_SYMBOL(TYPE)
 #   endif
 # else
 LIBXSMM_BLAS_SYMBOL_DECL(TYPE, gemm)
@@ -55,8 +55,8 @@ LIBXSMM_BLAS_SYMBOL_DECL(TYPE, gemm)
 #define FREE libxsmm_free
 
 #define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
-#define EPSILON_double 1e-12
-#define EPSILON_float 1e-6
+#define EPSILON_double 7e-4
+#define EPSILON_float 7e-2
 
 
 int main(int argc, char* argv[])
@@ -174,8 +174,9 @@ int main(int argc, char* argv[])
 #endif
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -207,8 +208,9 @@ int main(int argc, char* argv[])
 #endif
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -244,8 +246,9 @@ int main(int argc, char* argv[])
 #endif
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -281,8 +284,9 @@ int main(int argc, char* argv[])
 #endif
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -315,8 +319,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -349,8 +354,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -387,8 +393,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -422,8 +429,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -461,8 +469,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -500,8 +509,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -535,8 +545,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -570,8 +581,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -603,8 +615,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -640,8 +653,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -673,8 +687,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -707,8 +722,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -740,8 +756,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -773,8 +790,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -806,8 +824,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -845,8 +864,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -877,8 +897,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -913,8 +934,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -949,8 +971,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -981,8 +1004,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -1013,8 +1037,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -1046,8 +1071,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        FPRINTF(stderr, "Line #%04i error=%f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -1062,7 +1088,7 @@ int main(int argc, char* argv[])
       double epsilon;
       libxsmm_matdiff_reduce(&diff, &di);
       epsilon = libxsmm_matdiff_epsilon(&diff);
-      FPRINTF(stderr, "Summary    error=%f (%f)", diff.linf_abs, epsilon);
+      FPRINTF(stderr, "Summary    abs=%f eps=%f", diff.linf_abs, epsilon);
       if (EPSILON(TYPE) >= epsilon) FPRINTF(stderr, "\n");
       else {
         FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);

@@ -9,16 +9,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "eltwise_common.h"
+
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
+
 
 LIBXSMM_INLINE
 void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint ldo_mask, const void *in, void *out, const float alpha, unsigned char *out_mask, const unsigned char type, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
@@ -44,7 +40,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
@@ -74,7 +70,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -86,13 +82,13 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           const libxsmm_bfloat16* bf16_in = (const libxsmm_bfloat16*)in;
           libxsmm_convert_bf16_f32( &(bf16_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
           out_value = ( in_value <= 0.0f ) ? 0.0f : in_value;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in_value <= 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -102,12 +98,12 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
           libxsmm_rne_convert_fp32_bf16(&out_value, &(bf16_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -145,7 +141,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
           libxsmm_convert_hf8_f32( &(hf8_fwd_out[(j*ldi) + i]), &out_fwd_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
@@ -153,7 +149,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           out_value = ( mask[(j*ldi) + i] == 0 ) ? in_value : alpha*in_value;
         } else if ( type == 2 ) {
-          out_value = ( out_fwd_value > 0 ) ? in_value : in_value * (out_fwd_value + alpha) ;
+          out_value = ( out_fwd_value > 0 ) ? in_value : in_value * (out_fwd_value + alpha);
         }
 
         if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
@@ -172,7 +168,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -186,20 +182,20 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
           libxsmm_convert_bf16_f32( &(bf16_in[(j*ldi) + i]), &in_value, 1 );
           libxsmm_convert_bf16_f32( &(bf16_fwd_out[(j*ldi) + i]), &out_fwd_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( type == 0 ) {
           out_value = ( mask[(j*ldi) + i] == 0 ) ? in_value : 0.0f;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
           libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
           libxsmm_rne_convert_fp32_bf16(&out_value, &(bf16_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -217,6 +213,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   libxsmm_blasint i, j;
   unsigned int s;
   float alpha = 0.1f;
+  double check_norm;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
@@ -288,9 +285,10 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 5e-6 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -300,12 +298,12 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < LIBXSMM_UPDIV(M, 8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at position i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
         }
@@ -345,6 +343,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned char *mask_bit;
   unsigned char *mask_gold;
   float alpha = 0.1f;
+  double check_norm;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint i, j;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
@@ -433,9 +432,10 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -488,7 +488,7 @@ int main( int argc, char* argv[] ) {
   ldi       = atoi(argv[9]);
   ldo       = atoi(argv[10]);
 
-  if (  op == 'B' && bitm == 0 && (type == 'D' || type == 'L') ) {
+  if ( op == 'B' && bitm == 0 && (type == 'D' || type == 'L') ) {
     printf("Backward needs masks!\n");
     return ret;
   }
@@ -529,10 +529,10 @@ int main( int argc, char* argv[] ) {
        ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
        ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
        ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
-    if (  op == 'F' ) {
+    if ( op == 'F' ) {
       printf("in: %s out: %s comp: %s forward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
-    } else if (  op == 'B' ) {
+    } else if ( op == 'B' ) {
       printf("in: %s out: %s comp: %s backward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_bwd( M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
     } else {
@@ -540,10 +540,10 @@ int main( int argc, char* argv[] ) {
       exit(-1);
     }
   } else if ( ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_BF16 ) ) && ( itype == 0 ) ) {
-    if (  op == 'F' ) {
+    if ( op == 'F' ) {
       printf("in: %s out: %s comp: %s forward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
-    } else if (  op == 'B' ) {
+    } else if ( op == 'B' ) {
       printf("in: %s out: %s comp: %s backward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_relu_bwd( M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
     } else {

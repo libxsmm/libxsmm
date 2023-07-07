@@ -9,25 +9,22 @@
 /* Kirill Voronin (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+
 
 int main(int argc, char* argv[]) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0000005;
+  double error_bound = 0.0000005, check_norm;
   long M = 31;
   long N = 15;
   libxsmm_blasint ld = N + 5;
   long i;
   long j;
-  libxsmm_matdiff_info norms, diff;
+  libxsmm_matdiff_info norms;
 
   libxsmm_blasint ld_dump;
 
-  libxsmm_meqn_arg_shape  arg_shape_out;
-  libxsmm_matrix_eqn_op_metadata  op_metadata;
+  libxsmm_meqn_arg_shape arg_shape_out;
+  libxsmm_matrix_eqn_op_metadata op_metadata;
   libxsmm_bitfield unary_flags;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
@@ -166,7 +163,6 @@ int main(int argc, char* argv[]) {
   }
 
   libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
 
   printf("##########################################\n");
   printf("#   Correctness [naive vs naive split]   #\n");
@@ -178,15 +174,13 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
+  check_norm = libxsmm_matdiff_epsilon(&norms);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms.normf_rel > error_bound ) {
+  if (check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("#   Correctness [naive vs libxsmm split] #\n");
   printf("##########################################\n");
@@ -197,15 +191,13 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
+  check_norm = libxsmm_matdiff_epsilon(&norms);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms.normf_rel > error_bound ) {
+  if (check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("# Correctness [naive0 vs libxsmm0 split] #\n");
   printf("##########################################\n");
@@ -216,15 +208,13 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
+  check_norm = libxsmm_matdiff_epsilon(&norms);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("# Correctness [naive1 vs libxsmm1 split] #\n");
   printf("##########################################\n");
@@ -235,15 +225,13 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
+  check_norm = libxsmm_matdiff_epsilon(&norms);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("# Correctness [naive2 vs libxsmm2 split] #\n");
   printf("##########################################\n");
@@ -254,10 +242,10 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
+  check_norm = libxsmm_matdiff_epsilon(&norms);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 

@@ -10,8 +10,9 @@
 ******************************************************************************/
 #ifndef GENERATOR_MATEQUATION_SCRATCH_AARCH64_H
 #define GENERATOR_MATEQUATION_SCRATCH_AARCH64_H
+
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( libxsmm_generated_code*   io_generated_code,

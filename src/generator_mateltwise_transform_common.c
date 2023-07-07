@@ -9,7 +9,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_transform_sse.h"

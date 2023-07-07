@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
@@ -7,16 +9,14 @@ else
 fi
 
 TMPFILE=$(mktemp)
-trap 'rm ${TMPFILE}' EXIT
-
 TMPFILE2=$(mktemp)
-trap 'rm ${TMPFILE2}' EXIT
+trap 'rm -f ${TMPFILE} ${TMPFILE2}' EXIT
 
 for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
   for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'N' 'M' 'X' 'Y' 'Z' 'B' 'C' 'D'; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
-      OUTNAME="unary_transform_"
+      OUTNAME="${HERE}/unary_transform_"
       PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
       MSTART=1
       MSTEP=1
@@ -98,7 +98,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
       OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
 
       # generate script by sed
-      sed "s/PREC=0/PREC=\"${PREC}\"/g" unary_transform.tpl \
+      sed "s/PREC=0/PREC=\"${PREC}\"/g" ${HERE}/unary_transform.tpl \
       | sed "s/TRANS_OP=0/TRANS_OP=${TYPE}/g" \
       | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \
       | sed "s/MSTART/${MSTART}/g" \

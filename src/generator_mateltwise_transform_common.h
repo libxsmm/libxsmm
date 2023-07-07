@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_TRANSFORM_COMMON_H
 #define GENERATOR_MATELTWISE_TRANSFORM_COMMON_H
 

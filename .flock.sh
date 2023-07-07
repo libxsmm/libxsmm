@@ -24,6 +24,6 @@ cd "${ABSDIR}" || true
 if [ "${FLOCK}" ]; then
   ${FLOCK} "${ABSDIR}" -c "$@"
 else
-  eval "$@"
+  eval "$*"
 fi
 

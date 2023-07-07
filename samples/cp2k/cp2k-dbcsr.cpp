@@ -24,8 +24,13 @@
 # include <omp.h>
 #endif
 
-#if !defined(ITYPE)
-# define ITYPE double
+#if !defined(REALTYPE)
+# define REALTYPE double
+#endif
+
+#if (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double)) \
+  && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
 #endif
 
 #if !defined(MAX_SIZE)
@@ -102,7 +107,7 @@ int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
-    typedef ITYPE T;
+    typedef REALTYPE T;
     const libxsmm_blasint m = 1 < argc ? std::atoi(argv[1]) : 23;
     const libxsmm_blasint q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
     const libxsmm_blasint r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
@@ -114,7 +119,7 @@ int main(int argc, char* argv[])
     const libxsmm_blasint k = 5 < argc ? std::atoi(argv[5]) : m;
     const libxsmm_blasint n = 4 < argc ? std::atoi(argv[4]) : k;
     const char transa = 'N', transb = 'N';
-    const ITYPE alpha = 1, beta = 1;
+    const REALTYPE alpha = 1, beta = 1;
 
     const libxsmm_blasint csize = m * n;
     if ((MAX_SIZE) < csize) {
@@ -145,15 +150,12 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
-      LIBXSMM_MATINIT(ITYPE, 42 + i, a + i * asize, m, k, m, scale);
-      LIBXSMM_MATINIT(ITYPE, 24 + i, b + i * bsize, k, n, k, scale);
+      LIBXSMM_MATINIT(REALTYPE, 42 + i, a + i * asize, m, k, m, scale);
+      LIBXSMM_MATINIT(REALTYPE, 24 + i, b + i * bsize, k, n, k, scale);
     }
 
     // initialize LIBXSMM
     libxsmm_init();
-    // some more setup similar to CP2K/intel branch
-    libxsmm_set_gemm_auto_prefetch(LIBXSMM_X86_AVX512_MIC != libxsmm_get_target_archid() ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C);
-    //libxsmm_set_dispatch_trylock(1);
 
     fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
       static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
@@ -169,7 +171,7 @@ int main(int argc, char* argv[])
     const T zero = 0;
 
     // eventually JIT-compile the requested kernel
-    const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
+    const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k);
 
     libxsmm_matdiff_clear(&diff);
     { // LAPACK/BLAS3 (warmup BLAS Library)
@@ -182,7 +184,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          libxsmm_blas_gemm(&transa, &transb, m, n, k,
+          LIBXSMM_GEMM_SYMBOL(REALTYPE)(&transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
@@ -194,7 +196,7 @@ int main(int argc, char* argv[])
     { // LAPACK/BLAS3 (reference)
       fprintf(stdout, "LAPACK/BLAS...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -203,7 +205,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          libxsmm_blas_gemm(&transa, &transb, &m, &n, &k,
+          LIBXSMM_GEMM_SYMBOL(REALTYPE)(&transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
@@ -217,7 +219,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(REALTYPE), m, n, expect, c, 0, 0)) {
         fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
         libxsmm_matdiff_reduce(&diff, &d);
       }
@@ -226,7 +228,7 @@ int main(int argc, char* argv[])
     { // inline an optimized implementation
       fprintf(stdout, "Inlined...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -235,7 +237,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+          LIBXSMM_INLINE_XGEMM(REALTYPE, REALTYPE, &transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
@@ -249,7 +251,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(REALTYPE), m, n, expect, c, 0, 0)) {
         fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
         libxsmm_matdiff_reduce(&diff, &d);
       }
@@ -258,7 +260,7 @@ int main(int argc, char* argv[])
     { // auto-dispatched
       fprintf(stdout, "Dispatched...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -281,7 +283,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(REALTYPE), m, n, expect, c, 0, 0)) {
         fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
         libxsmm_matdiff_reduce(&diff, &d);
       }
@@ -290,7 +292,7 @@ int main(int argc, char* argv[])
     if (xmm) { // specialized routine
       fprintf(stdout, "Specialized...\n");
       std::fill_n(c, csize, zero);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #     pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -299,14 +301,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, tmp,
-            LIBXSMM_GEMM_PREFETCH_A(aij + asize),
-            LIBXSMM_GEMM_PREFETCH_B(bij + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(tmp));
-#else
-          xmm(ai, bi, tmp);
-#endif
+          xmm(ai, bi, tmp, aij + asize, bij + bsize, tmp);
           ai = aij;
           bi = bij;
         }
@@ -319,7 +314,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(REALTYPE), m, n, expect, c, 0, 0)) {
         fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
         libxsmm_matdiff_reduce(&diff, &d);
       }

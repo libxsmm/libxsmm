@@ -15,15 +15,15 @@
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
-
-#if 0
-#define USE_ENV_TUNING
-#endif
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC
 #endif
+#if 0
+#define USE_ENV_TUNING
+#endif
+
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,
     libxsmm_loop_label_tracker*                    io_loop_label_tracker,

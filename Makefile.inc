@@ -953,7 +953,7 @@ ifneq (Darwin,$(UNAME))
   endif
   XLNKVERBOSE := --verbose
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1=$(call quote,$2),$1))
-  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
     $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
@@ -967,7 +967,7 @@ else # OSX
   endif
   XLNKVERBOSE := -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
-  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
     $(call linkopt,-rpath,$(call qxdir,$(call qapath,$1)))))
 endif
 ifneq (0,$(ASNEEDED))
@@ -975,7 +975,7 @@ ifneq (0,$(ASNEEDED))
   XLIB_END ?= $(XLIB_END_FORCE)
 endif
 
-absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
   -L$(call qxdir,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
@@ -1040,9 +1040,11 @@ ifeq (,$(strip $(GFC)))
 endif
 endif
 ifneq (0,$(FREEFORM))
-ifeq (0,$(PGI))
-  FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
-endif
+  ifneq (,$(strip $(GFC)))
+    FFORM_FLAG ?= -ffree-form
+  else ifeq (0,$(PGI))
+    FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
+  endif
 endif
 
 # CCE: resolve linker issue
@@ -1116,11 +1118,11 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(STATIC))
     SLDFLAGS += -static
   endif
-else
+else # non-Intel
   ifeq (1,$(STATIC))
     ifeq (0,$(PGI))
       SLDFLAGS += -Bstatic
-      ifeq (0,$(CLANG))
+      ifeq (3,$(XSMM_GCC))
         #SLDFLAGS += -static-libstdc++
         ifneq (Darwin,$(UNAME))
           SLDFLAGS += -static-libgcc
@@ -1677,7 +1679,7 @@ else # GCC assumed
           endif
           CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
           CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
-        else
+        else # macOS
           CXXLDFLAGS += $(call abslib,$(OMPLIBFILE))
           CLDFLAGS += $(call abslib,$(OMPLIBFILE))
         endif
@@ -1851,6 +1853,9 @@ ifeq (undefined,$(origin TARGET))
         CTARGET := -march=armv8.1-a
       endif
       endif
+      ifneq (,$(call ftest,$(FC),-march=armv8.1-a,$(NULL) $(NULL)))
+        FTARGET := -march=armv8.1-a
+      endif
     endif
   endif # DBG
   endif # CTARGET
@@ -1866,8 +1871,8 @@ ifneq (,$(call ftest,$(FC),$(CTARGET),$(NULL) $(NULL)))
   FTARGET := $(CTARGET)
 else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
   FTARGET := $(patsubst -m%,-x%,$(CTARGET))
-else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
-  override CTARGET := $(NULL)
+#else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
+  #override CTARGET := $(NULL)
 endif
 ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
   ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
@@ -2058,6 +2063,25 @@ ifeq (0,$(COMPATIBLE))
         CFLAGS += -fvisibility=hidden
       endif
     endif
+    endif
+  else # macOS
+    SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr
+    ifneq (,$(wildcard $(SDKROOT)))
+      ifeq (0,$(CLANG))
+        IFLAGS += -I$(SDKROOT)/include
+        LDFLAGS += -L$(SDKROOT)/lib
+      endif
+      ifneq (0,$(FORTRAN))
+        FLDFLAGS += -L$(SDKROOT)/lib
+      endif
+    else  # SDK path not found
+      LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
+      ifneq (,$(LIBSYSTEM))
+        FLDFLAGS += -L$(dir $(LIBSYSTEM))
+      endif
+    endif
+    ifneq (,$(OMPLIBFILE))
+      FLDFLAGS += $(OMPLIBFILE)
     endif
   endif
   ifeq (0,$(EXP))
@@ -2375,7 +2399,8 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback (END/BEGIN not BEGIN/END)
-      BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      #BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      BLAS_LDFLAGS += -lblas
       BLASREF ?= 1
     endif
     BLASREF ?= 0

@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include <libxsmm_timer.h>
 #include <libxsmm_sync.h>
-#include <math.h>
 
 #if defined(_OPENMP)
 # include <omp.h>

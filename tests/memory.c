@@ -61,11 +61,17 @@ int main(int argc, char* argv[])
       "The lazy brown dog jumps over the quick fox", /* match */
       "The hazy fog crawls over the lazy crocodile"
     };
-    int match = 0, i = 0, j = 0;
-    for (; i < (sizeof(sample) / sizeof(*sample)); ++i) {
+    int match = 0, i = 0;
+#if defined(PRINT)
+    int j = 0;
+#endif
+    for (; i < ((int)sizeof(sample) / (int)sizeof(*sample)); ++i) {
       const int score = libxsmm_strimatch(init, sample[i], NULL);
       if (match < score) {
-        match = score; j = i;
+        match = score;
+#if defined(PRINT)
+        j = i;
+#endif
       }
       else if (0 > score) result = EXIT_FAILURE;
     }
@@ -111,6 +117,29 @@ int main(int argc, char* argv[])
   }
 
   if (EXIT_SUCCESS == result) { /* check libxsmm_shuffle */
+    char a[sizeof(init)] = { 0 }, b[sizeof(init)] = { 0 };
+    const size_t size = sizeof(init);
+    memcpy(a, init, size);
+    LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle(a, 1, size - 1, NULL, NULL));
+    LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, init, 1, size - 1, NULL, NULL));
+    if (0 == strcmp(a, b)) {
+      const size_t r = libxsmm_unshuffle(size - 1, NULL);
+      size_t i = 0;
+      for (; i < r; ++i) {
+        libxsmm_shuffle(a, 1, size - 1, NULL, NULL);
+      }
+      if (0 != strcmp(a, init)) {
+        FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
+        result = EXIT_FAILURE;
+      }
+    }
+    else {
+      FPRINTF(stderr, "libxsmm_shuffle: result does not match libxsmm_shuffle2!\n");
+      result = EXIT_FAILURE;
+    }
+  }
+
+  if (EXIT_SUCCESS == result) { /* check libxsmm_shuffle2 */
     char a[sizeof(init)], b[sizeof(init)];
     const size_t size = sizeof(init);
     size_t s = 0, i;
@@ -121,35 +150,35 @@ int main(int argc, char* argv[])
         const size_t r = libxsmm_unshuffle(s, &shuffle);
         int cmp;
         memset(a, 0, size); /* clear */
-        libxsmm_shuffle(a, init, 1, s, &shuffle, NULL);
+        LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(a, init, 1, s, &shuffle, NULL));
         cmp = memcmp(a, init, s);
         if ((1 >= s || 0 == cmp) && (1 < s || 0 != cmp)) {
-          FPRINTF(stderr, "libxsmm_shuffle: data not shuffled or copy failed!\n");
+          FPRINTF(stderr, "libxsmm_shuffle2: data not shuffled or copy failed!\n");
           result = EXIT_FAILURE; break;
         }
         /* shuffle restores initial input */
         for (i = 0; i < r; ++i) {
           memset(b, 0, size); /* clear */
-          libxsmm_shuffle(b, a, 1, s, &shuffle, NULL);
+          LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, a, 1, s, &shuffle, NULL));
           /* every shuffle is different from input */
           if (1 < s && 0 == memcmp(a, b, s)) {
-            FPRINTF(stderr, "libxsmm_shuffle: data not shuffled!\n");
+            FPRINTF(stderr, "libxsmm_shuffle2: data not shuffled!\n");
             result = EXIT_FAILURE; break;
           }
           if (0 == memcmp(b, init, s)) break; /* restored */
           else if (r == (i + 1)) {
-            FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
+            FPRINTF(stderr, "libxsmm_shuffle2: data not restored!\n");
             result = EXIT_FAILURE;
           }
           memcpy(a, b, s);
         }
         if (EXIT_SUCCESS == result) {
           memset(a, 0, size); /* clear */
-          libxsmm_shuffle(a, init, 1, s, &shuffle, NULL);
+          LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(a, init, 1, s, &shuffle, NULL));
           memset(b, 0, size); /* clear */
-          libxsmm_shuffle(b, a, 1, s, &shuffle, &r);
+          LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, a, 1, s, &shuffle, &r));
           if (0 != memcmp(b, init, s)) {
-            FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
+            FPRINTF(stderr, "libxsmm_shuffle2: data not restored!\n");
             result = EXIT_FAILURE;
             break;
           }
@@ -157,7 +186,7 @@ int main(int argc, char* argv[])
         else break; /* previous error */
       }
       else {
-        FPRINTF(stderr, "libxsmm_shuffle: shuffle argument not coprime!\n");
+        FPRINTF(stderr, "libxsmm_shuffle2: shuffle argument not coprime!\n");
         result = EXIT_FAILURE;
         break;
       }

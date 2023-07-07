@@ -13,11 +13,11 @@
 #include "generator_mateltwise_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_matequation_regblocks_avx_avx512.h"
 #include "generator_matequation_regblocks_aarch64.h"
 #include "generator_matequation_avx_avx512.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_copy_opargs_aarch64(libxsmm_generated_code*        io_generated_code,
@@ -1112,6 +1112,12 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block_aarch64( libxsmm_ge
     } break;
     case LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD: {
       binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+      binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+      binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V;
     } break;
     default:;
   }

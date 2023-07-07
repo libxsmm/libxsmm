@@ -8,13 +8,12 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_AMX_MICROKERNEL_H
 #define GENERATOR_GEMM_AMX_MICROKERNEL_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_header_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,

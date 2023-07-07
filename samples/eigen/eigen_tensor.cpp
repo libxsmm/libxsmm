@@ -45,13 +45,13 @@
 #include <cstdlib>
 #include <cstdio>
 
-#if !defined(ITYPE)
-# define ITYPE float
+#if !defined(REALTYPE)
+# define REALTYPE float
 #endif
 
-#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+#if !defined(CHECK) && (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double))
 # if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
+LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
 # endif
 # define CHECK
 #endif
@@ -80,11 +80,11 @@ int main(int argc, char* argv[])
 
     Eigen::ThreadPool threadpool(nthreads);
     Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-    typedef Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> tensor_type;
+    typedef Eigen::Tensor<REALTYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> tensor_type;
     tensor_type ta(m, k), tb(k, n), tc(m, n);
     LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
-    LIBXSMM_BLAS_CONST ITYPE alpha(1), beta(0);
-    unsigned long long start;
+    LIBXSMM_BLAS_CONST REALTYPE alpha(1), beta(0);
+    libxsmm_timer_tickint start
     double d1;
     {
       std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {
@@ -98,16 +98,16 @@ int main(int argc, char* argv[])
       }
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
-    libxsmm_gemm_print(stdout, libxsmm_datatype_enum<ITYPE>::value, &transa, &transb,
+    libxsmm_gemm_print(stdout, libxsmm_datatype_enum<REALTYPE>::value, &transa, &transb,
       &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
     fprintf(stdout, "\n\n");
 # if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
-    Eigen::Tensor<ITYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
+    Eigen::Tensor<REALTYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
     double d2;
     {
       start = libxsmm_timer_tick();
       for (int i = 0; i < nrepeat; ++i) {
-        LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k,
+        LIBXSMM_GEMM_SYMBOL(REALTYPE)(&transa, &transb, &m, &n, &k,
           &alpha, ta.data(), &m, tb.data(), &k,
             &beta, td.data(), &m);
       }
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
       fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
     }
     libxsmm_matdiff_info diff;
-    result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m);
+    result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), m, n, td.data(), tc.data(), &m, &m);
     if (EXIT_SUCCESS == result) {
       fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
       if (check < diff.l2_rel) {
