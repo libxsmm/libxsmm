@@ -25,8 +25,6 @@ LIBXSMM_INLINE void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mma
 #endif
 
 
-LIBXSMM_PRAGMA_OPTIMIZE_OFF
-
 LIBXSMM_INLINE
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
   int s1, s2, s3;
@@ -403,8 +401,6 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
 #endif
 }
 
-LIBXSMM_PRAGMA_OPTIMIZE_ON
-
 LIBXSMM_INLINE
 void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
   int s2;
@@ -597,7 +593,7 @@ void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, 
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0002;
+  double error_bound = 0.0003;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
@@ -607,12 +603,14 @@ int main( int argc, char* argv[] ) {
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it, ld, tmp_ld, tmp_ld2;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   double t_vec = 0, t_tpp = 0;
   libxsmm_matdiff_info norms_out;
   float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
+  const char *matdiff_env;
+  double check_norm;
 #if defined(USE_SUM)
   float sum = 0.0;
 #endif
@@ -622,8 +620,8 @@ int main( int argc, char* argv[] ) {
   int iters = 100;
   int datatype_mode = 0;
   int pass = FWD_BWD_LNORM;
-  libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
-  libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_datatype in_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_datatype out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meqn_arg_shape arg_shape_out;
 
   libxsmm_init();
@@ -640,14 +638,25 @@ int main( int argc, char* argv[] ) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
     if ((1 == S1 || 1 == S2 || 1 == S3) && (16 < S1 || 16 < S2 || 16 < S3)) {
-      error_bound = LIBXSMM_MAX(0.005, error_bound);
+      error_bound = LIBXSMM_MAX(0.002, error_bound);
     }
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_BF16;
-    error_bound = LIBXSMM_MAX(0.006, error_bound);
+    error_bound = LIBXSMM_MAX(0.001, error_bound);
   } else {
     printf("ERROR: Supporting only FP32 and BF16 precisions...\n");
+  }
+
+  /* eventually amend LIBXSMM_MATDIFF output with error bound */
+  matdiff_env = getenv("LIBXSMM_MATDIFF");
+  if (NULL != matdiff_env) {
+    static char matdiff_ext[1024];
+    const int nchars = LIBXSMM_SNPRINTF(matdiff_ext, sizeof(matdiff_ext),
+      "LIBXSMM_MATDIFF=%s %.17g", matdiff_env, error_bound);
+    if (0 < nchars && nchars < (int)sizeof(matdiff_ext)) {
+      LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(matdiff_ext));
+    }
   }
 
   inp = (float*) libxsmm_aligned_malloc( sizeof(float)*S1*S2*S3,   2097152);
@@ -781,9 +790,10 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
-    if ( norms_out.normf_rel > error_bound ) {
+    if ( check_norm > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -801,7 +811,7 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
-        printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+        printf("Intrinsics layernorm time FWD = %.5g\n", l_total);
 #if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
@@ -814,8 +824,8 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total2 = libxsmm_timer_duration(l_start, l_end);
-        printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
-        printf("Speedup FWD is %.5g\n", l_total/l_total2);
+        printf("TPP layernorm time FWD = %.5g\n", l_total2);
+        if (0 < l_total2) printf("Speedup FWD is = %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
 #if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
@@ -829,7 +839,7 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
-        printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+        printf("Intrinsics layernorm time FWD = %.5g\n", l_total);
 #if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
@@ -842,8 +852,8 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total2 = libxsmm_timer_duration(l_start, l_end);
-        printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
-        printf("Speedup FWD is %.5g\n", l_total/l_total2);
+        printf("TPP layernorm time FWD = %.5g\n", l_total2);
+        if (0 < l_total2) printf("Speedup FWD is = %.5g\n", l_total/l_total2);
       }
     }
   }
@@ -987,9 +997,10 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
-    if ( norms_out.normf_rel > error_bound ) {
+    if ( check_norm > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -1007,9 +1018,10 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
-    if ( norms_out.normf_rel > error_bound ) {
+    if ( check_norm > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -1027,9 +1039,10 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
-    if ( norms_out.normf_rel > error_bound ) {
+    if ( check_norm > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -1047,7 +1060,7 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
-        printf("Intrinsics layernorm time BWD = %.5g\n", ((double)(l_total)));
+        printf("Intrinsics layernorm time BWD = %.5g\n", l_total);
 #if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
@@ -1060,8 +1073,8 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total2 = libxsmm_timer_duration(l_start, l_end);
-        printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
-        printf("Speedup BWD is %.5g\n", l_total/l_total2);
+        printf("TPP layernorm time BWD = %.5g\n", l_total2);
+        if (0 < l_total2) printf("Speedup BWD is = %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
 #if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
@@ -1075,7 +1088,7 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
-        printf("Intrinsics layernorm time BWD  = %.5g\n", ((double)(l_total)));
+        printf("Intrinsics layernorm time BWD = %.5g\n", l_total);
 #if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
@@ -1088,8 +1101,8 @@ int main( int argc, char* argv[] ) {
         }
         l_end = libxsmm_timer_tick();
         l_total2 = libxsmm_timer_duration(l_start, l_end);
-        printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
-        printf("Speedup BWD is %.5g\n", l_total/l_total2);
+        printf("TPP layernorm time BWD = %.5g\n", l_total2);
+        if (0 < l_total2) printf("Speedup BWD is = %.5g\n", l_total/l_total2);
       }
     }
   }

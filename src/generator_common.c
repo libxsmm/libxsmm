@@ -819,6 +819,80 @@ void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_map
 }
 
 LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = (unsigned char)datatype[0];
+  unsigned char a_prec_bits = uc_first_part & 0x3f;
+  int result = LIBXSMM_GETENUM_INP(a_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = ((unsigned char)datatype[0] & 0xc0) >> 6;
+  unsigned char uc_second_part =((unsigned char)datatype[1] & 0x0f) << 2;
+  unsigned char b_prec_bits = uc_first_part | uc_second_part;
+  int result = LIBXSMM_GETENUM_INP(b_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_C_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = ((unsigned char)datatype[1] & 0xf0) >> 4;
+  unsigned char uc_second_part =((unsigned char)datatype[2] & 0x03) << 4;
+  unsigned char c_prec_bits = uc_first_part | uc_second_part;
+  int result = LIBXSMM_GETENUM_INP(c_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype) {
+  unsigned char uc_first_part = (unsigned char)datatype[2];
+  unsigned char c_prec_bits = (uc_first_part & 0xfc) >> 2;
+  int result = LIBXSMM_GETENUM_INP(c_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype) {
+  int result = 0;
+  if (LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) {
+    result = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  } else {
+    result = LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char *datatype) {
+  int result = 0;
+  if ((LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) && ((LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_C_PREC(datatype)))) {
+    result = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  } else {
+    result = LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype) {
+  unsigned char uc_a = (unsigned char) a_dt;
+  unsigned char uc_b = (unsigned char) b_dt;
+  unsigned char uc_c = (unsigned char) c_dt;
+  unsigned char uc_comp = (unsigned char) comp_dt;
+  unsigned char first = uc_a & 0xcf; /* 6 bits for a  */
+  unsigned char second = uc_b << 6;  /* Last 2 bits for b */
+  unsigned char third = uc_b >> 2;   /* First 4 bits for b */
+  unsigned char fourth = uc_c << 4;  /* Last 4 bits for c */
+  unsigned char fifth = uc_c >> 4;   /* First 2 bits for c */
+  unsigned char sixth = uc_comp << 2;/* 6 bits for comp */
+
+  out_datatype[0] = first | second;
+  out_datatype[1] = third | fourth;
+  out_datatype[2] = fifth | sixth;
+}
+
+LIBXSMM_API_INTERN
 int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwise_desc,
                                      libxsmm_meltw_field_type        type) {
   int result = 0;
@@ -866,19 +940,19 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
-    if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
-    } else if (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    } else if (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
       }
-    } else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    } else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* A, const short* B, int* C) {\n", i_routine_name);
       } else {
@@ -993,22 +1067,36 @@ void libxsmm_set_handle_error(int enable)
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
-                           const char* context, int linenum,
+                           const char context[],
+                           const char srcfile[],
+                           int linenum,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
+      const char *const errmsg = libxsmm_strerror(i_error_code);
+#if defined(NDEBUG)
+      LIBXSMM_UNUSED(srcfile); LIBXSMM_UNUSED(linenum);
       LIBXSMM_STDIO_ACQUIRE();
-      if (NULL != context && '\0' != *context) {
-        if (0 < linenum) {
-          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", context, linenum, libxsmm_strerror(i_error_code));
+#else
+      const char *const separator = (NULL != srcfile ? strrchr(srcfile, LIBXSMM_PATH_SEPARATOR) : NULL);
+      const char *const filename = (NULL != separator ? (separator + 1) : NULL);
+      LIBXSMM_STDIO_ACQUIRE();
+      if (NULL != filename && 0 < linenum) {
+        if (NULL != context && '\0' != *context) {
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i - %s): %s\n", filename, linenum, context, errmsg);
         }
         else {
-          fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", filename, linenum, errmsg);
         }
       }
+      else
+#endif
+      if (NULL != context && '\0' != *context) {
+        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, errmsg);
+      }
       else {
-        fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
+        fprintf(stderr, "LIBXSMM ERROR: %s\n", errmsg);
       }
       LIBXSMM_STDIO_RELEASE();
     }
@@ -1235,6 +1323,10 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "encoding for out-of-bound regnumber was requested (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_BCSC_BLOCK_SIZE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "Block dimensions for BCSC format are invalid (error #%u)!", i_error_code );
+      break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "an unknown error occurred (error #%u)!", i_error_code );
@@ -1300,17 +1392,13 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
   static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
   static int hasBeenInited = 0;
-  if (!hasBeenInited) {
-    char* env = getenv("LIBXSMM_ULP_PRECISION");
-    float p = 0;
-    if (env) {
-      p = (float)atof(env); /* alternatively to atof, we could use strcmp */
-      if (p == 0.5)
-        precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
-      else if (p == 1.0)
-        precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
-      else
-        precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
+  if (0 == hasBeenInited) {
+    const char *const env = getenv("LIBXSMM_ULP_PRECISION");
+    if (NULL != env) {
+      const double p = atof(env); /* alternatively to atof, we could use strcmp */
+      if (0.5 >= p) precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+      else if (1.0 >= p) precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
+      else precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
     }
     hasBeenInited = 1;
   }

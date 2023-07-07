@@ -27,12 +27,12 @@ void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0001;
+  double error_bound = 0.0001, check_norm;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j,it;
   libxsmm_matrix_eqn_param eqn_param;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
   float *out, *eqn_out;
@@ -271,9 +271,10 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -285,7 +286,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+    printf("Compiler equation time = %.5g\n", l_total);
 
     func0(&eqn_param);
     l_start = libxsmm_timer_tick();
@@ -294,9 +295,8 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-
-    printf("Speedup is %.5g\n", l_total/l_total2);
+    printf("JITed TPP equation time = %.5g\n", l_total2);
+    if (0 < l_total2) printf("Speedup is = %.5g\n", l_total/l_total2);
   }
 
   libxsmm_free(out);

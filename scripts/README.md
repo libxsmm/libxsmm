@@ -132,12 +132,16 @@ The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progr
   `scripts/tool_report.sh -p tpp-plaidml -i "" -r "duration_per_example,1000,ms"`
 * Plot "GFLOP/s" for "conv2d_odd_med" from CI-pipeline "tpp-plaidml":  
   `scripts/tool_report.sh -p tpp-plaidml -i "" -y "conv2d_odd_med" -r "gflop"`
-* Plot "tpp-mlir" pipeline (reference benchmarks):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "ref"`
-* Plot "tpp-mlir" pipeline (MLIR benchmarks, main-branch):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "mlir" -b "main"`
-* Plot "tpp-mlir" pipeline (MLIR benchmarks without "simple_copy"):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -q "not" -y "simple_copy" -r "mlir"`
+* Plot "tpp-benchmark" pipeline (MLIR benchmarks, main-branch):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -y "" -r "mlir" -b "main"`
+* Plot "tpp-benchmark" pipeline (MLIR benchmarks, main-branch, untied plots):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -y "" -r "mlir" -b "main" -u`
+* Plot "tpp-benchmark" pipeline (reference benchmarks; selected entries `-y`):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -q "any" -y "gemm matmul" -r "dnn"`
+* Plot "tpp-benchmark" pipeline (MLIR benchmarks without "single", untied plots):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -q "not" -y "single" -r "mlir" -u`
+* Plot "tpp-performance" pipeline (MLIR benchmarks only "mlp", untied plots):  
+  `scripts/tool_report.sh -p tpp-performance -i "" -y "mlp" -r "mlir" -u`
 
 The exit code of the script is non-zero in case of an error, or if the latest value deviates and exceeds the margin (`--bounds`). For the latter, the meaning of the values must be given (like "higher is better"). The first argument of the bounds is a factor such that the standard deviation of historic values is amplified to act as margin of the relative deviation (latest versus previous value). The second argument of the bounds determines the accepted percentage of deviation (latest versus previous value).
 

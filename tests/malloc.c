@@ -15,7 +15,9 @@
 # define CHECK_SETUP
 #endif
 #if !defined(CHECK_REALLOC) && 1
-# define CHECK_REALLOC
+# if !defined(_WIN32)
+#   define CHECK_REALLOC
+# endif
 #endif
 #if !defined(CHECK_SCRATCH) && 1
 # define CHECK_SCRATCH

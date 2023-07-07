@@ -1208,6 +1208,12 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block( libxsmm_generated_
     case LIBXSMM_MELTW_TYPE_BINARY_DIV: {
       binary_op_instr = (use_fp64_compute > 0) ? LIBXSMM_X86_INSTR_VDIVPD : LIBXSMM_X86_INSTR_VDIVPS;
     } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+      binary_op_instr = (use_fp64_compute > 0) ? LIBXSMM_X86_INSTR_VMAXPD : LIBXSMM_X86_INSTR_VMAXPS;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+      binary_op_instr = (use_fp64_compute > 0) ? LIBXSMM_X86_INSTR_VMINPD : LIBXSMM_X86_INSTR_VMINPS;
+    } break;
     case LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD: {
       binary_op_instr = (use_fp64_compute > 0) ? LIBXSMM_X86_INSTR_VFMADD231PD : LIBXSMM_X86_INSTR_VFMADD231PS;
     } break;
