@@ -2656,7 +2656,7 @@ int main(int argc, char* argv []) {
       if (l_is_Ai4Bf16_gemm > 0) {
         /* We create a new tensor of i4 in vnni2 format from A... */
         char *l_a_i4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)(l_k/2) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
-        unsigned int l_ar = 0, l_am = 0, l_ak = 0;
+        libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
         unsigned char *uc_a = (unsigned char*) l_a;
         unsigned char *uc_ai4 = (unsigned char*) l_a_i4;
         for (l_ar = 0; l_ar < l_br; l_ar++) {
