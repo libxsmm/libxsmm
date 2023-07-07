@@ -2274,9 +2274,9 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_START = 2;
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_END = 3;
   unsigned int i;
-  const int CODE_BLOCK_UNROLLED = 0;
-  const int CODE_BLOCK_DEGENERATE_UNROLLED = 1;
-  const int CODE_BLOCK_PEELED = 2;
+  const unsigned int CODE_BLOCK_UNROLLED = 0;
+  const unsigned int CODE_BLOCK_DEGENERATE_UNROLLED = 1;
+  const unsigned int CODE_BLOCK_PEELED = 2;
   unsigned int code_block_index = 0;
   long long A_offs = 0, B_offs = 0;
   unsigned int unroll_factor = 1;
