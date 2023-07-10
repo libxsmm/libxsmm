@@ -565,6 +565,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_compute( "sve_comp_UUNPKHI_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V,   0 );
   test_sve_compute( "sve_comp_FMLA_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,   1 );
   test_sve_compute( "sve_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,    0 );
+  test_sve_compute( "sve_comp_FRINTI_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P,   1 );
+  test_sve_compute( "sve_comp_SCVTF_V_P_SS",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS,   1 );
   /* TODO (MMLA): Fix SVE tests which set size specifiers (not relevant for MMLA-instructions) */
   test_sve_compute( "sve_comp_BFMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V, 0 );
   test_sve_compute( "sve_comp_FMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V, 0 );
