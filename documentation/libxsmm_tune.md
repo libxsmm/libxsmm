@@ -2,7 +2,7 @@
 
 ### Intercepted Allocations<a name="scalable_malloc"></a>
 
-To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This facility is built into LIBXSMM's main library, but disabled at compile-time (by default); build with `make MALLOC=1` to permanently enable, or build with `make MALLOC=-1` to even require an environment variable `LIBXSMM_MALLOC=1` or an API-call (`libxsmm_set_malloc`). Both runtime settings allow an optional lower and/or an upper bound to select malloc-calls based on the size of the allocation. For the environment option, an extra variable is introduced, e.g., use `LIBXSMM_MALLOC=1 LIBXSMM_MALLOC_LIMIT=4m:1g`.
+To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This facility is built into LIBXSMM's main library but disabled at compile-time (by default); build with `make MALLOC=1` to permanently enable or build with `make MALLOC=-1` to even require an environment variable `LIBXSMM_MALLOC=1` or an API-call (`libxsmm_set_malloc`). Both runtime settings allow an optional lower and/or an upper bound to select malloc-calls based on the size of the allocation. For the environment option, an extra variable is introduced, e.g., use `LIBXSMM_MALLOC=1 LIBXSMM_MALLOC_LIMIT=4m:1g`.
 
 ```C
 void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi);
@@ -20,7 +20,7 @@ gcc [...] -Wl,--export-dynamic \
   /path/to/libxsmm.a
 ```
 
-The main library causes a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries).
+The main library causes a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other, i.e., a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries).
 
 **Note**: The Intel Compiler may need "libirc", i.e., `-lirc` in front of `libxsmm.a`. Linking LIBXSMM's static library may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced; check with `nm application | grep libxsmm`). Linking the static library by using the GNU compiler does not strictly need special flags when linking the application.
 
@@ -94,7 +94,7 @@ Each group of the above indexes is combined into all possible triplets generatin
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
-Of course, both mechanisms (M/N/K and MNK based) can be combined by using the same command line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend).
+Of course, both mechanisms (M/N/K and MNK based) can be combined by using the same command-line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend).
 
 ### User-Data Dispatch
 

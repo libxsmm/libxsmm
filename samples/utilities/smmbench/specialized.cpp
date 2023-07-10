@@ -52,7 +52,8 @@ int main(int argc, char* argv[])
     const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
     const libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
     const libxsmm_blasint q = (5 < argc ? std::atoi(argv[5]) : 0/*auto*/);
-    const libxsmm_blasint nrepeat = (6 < argc ? std::atoi(argv[6]) : (0 >= q ? 13 : 1));
+    const libxsmm_blasint nrepeat = ((6 < argc && 0 < std::atoi(argv[6]))
+      ? std::atoi(argv[6]) : (0 >= q ? 13 : 1));
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
@@ -121,8 +122,7 @@ int main(int argc, char* argv[])
       1.0 * (s * ((static_cast<size_t>(asize) + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE))) / (1ULL << 20),
       LIBXSMM_TYPENAME(ITYPE), LIBXSMM_TYPENAME(OTYPE));
 
-    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb),
-      m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH);
+    const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
     if (!xmm) throw "no specialized routine found!";
 
     // arrays needed for the batch interface (indirect)
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
     switch (benchmark) {
     case 0: { // batched
       fprintf(stdout, "Batched (A,B,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for num_threads(nthreads) schedule(static)
@@ -143,17 +143,10 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, ci,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize),
-            LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
-#else
           xmm(ai, bi, ci);
-#endif
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -171,13 +164,13 @@ int main(int argc, char* argv[])
         c_array[i] = d + static_cast<size_t>(csize) * i;
       }
       const libxsmm_blasint ptrsize = sizeof(void*);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
         USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
           &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
           0/*index_stride*/, 0/*index_base*/, s, 0/*batchcheck*/);
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -204,7 +197,7 @@ int main(int argc, char* argv[])
 
     case 2: { // streaming A and C
       fprintf(stdout, "Streamed (A,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for num_threads(nthreads) schedule(static)
@@ -212,16 +205,10 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, b, ci,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(b),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
-#else
           xmm(ai, b, ci);
-#endif
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -239,13 +226,13 @@ int main(int argc, char* argv[])
         c_array[i] = d + static_cast<size_t>(csize) * i;
       }
       const libxsmm_blasint ptrsize = sizeof(void*);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
         USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
           &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
           0/*index_stride*/, 0/*index_base*/, s, 0/*batchcheck*/);
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -272,7 +259,7 @@ int main(int argc, char* argv[])
 
     case 4: { // streaming B and C
       fprintf(stdout, "Streamed (B,C)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for num_threads(nthreads) schedule(static)
@@ -280,16 +267,10 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           const ITYPE *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
           OTYPE *const ci = c + static_cast<size_t>(csize) * i;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(a, bi, ci,
-            LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(ci + csize));
-#else
           xmm(a, bi, ci);
-#endif
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -307,13 +288,13 @@ int main(int argc, char* argv[])
         c_array[i] = d + static_cast<size_t>(csize) * i;
       }
       const libxsmm_blasint ptrsize = sizeof(void*);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
         USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
           &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
           0/*index_stride*/, 0/*index_base*/, s, 0/*batchcheck*/);
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -340,7 +321,7 @@ int main(int argc, char* argv[])
 
     case 6: { // streaming A and B
       fprintf(stdout, "Streamed (A,B)...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
@@ -351,17 +332,10 @@ int main(int argc, char* argv[])
           if (0 == check) j = omp_get_thread_num() * chunksize * csize;
 #endif
           const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, c + j,
-            LIBXSMM_GEMM_PREFETCH_A(ai + asize),
-            LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_GEMM_PREFETCH_C(c + j));
-#else
           xmm(ai, bi, c + j);
-#endif
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -388,13 +362,13 @@ int main(int argc, char* argv[])
         c_array[i] = d;
       }
       const libxsmm_blasint ptrsize = sizeof(void*);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
         USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
           &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
           0/*index_stride*/, 0/*index_base*/, 0 == check ? -s : s, 0/*batchcheck*/);
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -415,7 +389,7 @@ int main(int argc, char* argv[])
 
     case 8: { // cached
       fprintf(stdout, "Cached...\n");
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
 #       pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
@@ -425,17 +399,10 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
           if (0 == check) j = omp_get_thread_num() * chunksize * csize;
 #endif
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(a, b, c + j,
-            LIBXSMM_GEMM_PREFETCH_A(a),
-            LIBXSMM_GEMM_PREFETCH_B(b),
-            LIBXSMM_GEMM_PREFETCH_C(c + j));
-#else
           xmm(a, b, c + j);
-#endif
         }
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -460,13 +427,13 @@ int main(int argc, char* argv[])
         c_array[i] = d;
       }
       const libxsmm_blasint ptrsize = sizeof(void*);
-      const unsigned long long start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
         USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
           &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
           0/*index_stride*/, 0/*index_base*/, 0 == check ? -s : s, 0/*batchcheck*/);
       }
-      const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
+      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
       if (0 < duration && 0 != ncycles) {
         fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);

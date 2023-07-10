@@ -122,13 +122,13 @@ if __name__ == "__main__":
                     substitute["MNK_PREPROCESSOR_LIST"] += "\n"
                 if 2 != precision:
                     substitute["MNK_PREPROCESSOR_LIST"] += (
-                        "#define LIBXSMM_SMM_" + mnkstr
+                        "# define LIBXSMM_SMM_" + mnkstr
                     )
                 if mnk != first or 0 == precision:
                     substitute["MNK_PREPROCESSOR_LIST"] += "\n"
                 if 1 != precision:
                     substitute["MNK_PREPROCESSOR_LIST"] += (
-                        "#define LIBXSMM_DMM_" + mnkstr
+                        "# define LIBXSMM_DMM_" + mnkstr
                     )
 
             print(template.substitute(substitute))

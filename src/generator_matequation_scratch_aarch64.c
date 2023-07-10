@@ -16,12 +16,13 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 #include "generator_common_aarch64.h"
 #include "generator_matequation_scratch_aarch64.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
+
 
 #if 0
 LIBXSMM_API_INTERN
@@ -172,7 +173,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     } else {
       out_precision = cur_op->tmp.dtype;
     }
-    /* Adjust the tmp precision in the tree  */
+    /* Adjust the tmp precision in the tree */
     /* printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision)); */
 #endif
 #if 0
@@ -207,7 +208,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR1, LIBXSMM_X86_GP_REG_RAX);
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR2, LIBXSMM_X86_GP_REG_R9);
 
-      xgemm_desc = (libxsmm_gemm_descriptor*) libxsmm_sgemm_descriptor_init(&blob, m, n, k, lda, ldb, ldc, alpha, beta, gemm_flags, libxsmm_get_gemm_xprefetch(&prefetch));
+      xgemm_desc = (libxsmm_gemm_descriptor*) libxsmm_sgemm_descriptor_init(&blob, m, n, k, lda, ldb, ldc, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(prefetch));
 
       libxsmm_generator_gemm_striped_sse_avx_avx2_avx512_kernel( io_generated_code, io_loop_label_tracker, xgemm_desc);
 #endif
@@ -308,7 +309,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
           libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
           libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
         } else {
-          /* This should not happen  */
+          /* This should not happen */
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }
@@ -382,7 +383,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
           libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
         }
 
-        /* If need, be set properly the offset param from scratch...  */
+        /* If need, be set properly the offset param from scratch... */
         if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) && (timestamp == last_timestamp)) {
           libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
           libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
@@ -395,7 +396,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
           libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
         }
 
-        /* Prepare descriptor  */
+        /* Prepare descriptor */
         libxsmm_generator_matequation_create_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision);
       } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
         libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le,
@@ -406,14 +407,14 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
             temp_reg, (timestamp == last_timestamp) );
         libxsmm_generator_matequation_create_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision);
       } else {
-        /* This should not happen  */
+        /* This should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
       }
       /* Configure the unary-binary microkernel */
       libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
 #if 0
-      /* If GELU or GELU inv and architecture < AVX512, set the priper rbp offsets of stack...  */
+      /* If GELU or GELU inv and architecture < AVX512, set the priper rbp offsets of stack... */
       if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV))  ) {
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_thres = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_0);
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_signmask = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_1);
@@ -431,7 +432,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
         } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
           libxsmm_generator_reduce_cols_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
         } else {
-          /* This should not happen  */
+          /* This should not happen */
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }
@@ -452,7 +453,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
       } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
         libxsmm_generator_reduce_cols_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       } else {
-        /* This should not happen  */
+        /* This should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
       }
@@ -471,4 +472,3 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     }
   }
 }
-

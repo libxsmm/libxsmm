@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_matequation_avx_avx512.h"
 #include "generator_matequation_scratch_avx_avx512.h"
 #include "generator_matequation_regblocks_avx_avx512.h"
@@ -16,9 +15,9 @@
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_common_x86.h"
 #include "libxsmm_matrixeqn.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -284,7 +283,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     unsigned int scratch_size = 0;
     unsigned int addr_scratch_size = 0;
 
-    /* Now align RSP to 64 byte boundary  */
+    /* Now align RSP to 64 byte boundary */
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, 0xFFFFFFFFFFFFFFC0 );
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
 
@@ -340,16 +339,20 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     }
   }
 
-  /* Now push to RSP the callee-save registers  */
+  /* Now push to RSP the callee-save registers */
   if (skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+#if defined(_WIN32) || defined(__CYGWIN__)
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+#endif
   }
 
-  /* Store the out ptr in stack  */
+  /* Store the out ptr in stack */
   if (i_strategy == JIT_STRATEGY_HYBRID) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
@@ -360,7 +363,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
         0 );
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg );
 
-    /* If head of equaiton is unpack_to_blocks, then make sure we store the block ofset in the stack */
+    /* If head of equation is unpack_to_blocks, then make sure we store the block ofset in the stack */
     if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
@@ -382,6 +385,10 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_strategy);
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
+#if defined(_WIN32) || defined(__CYGWIN__)
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+#endif
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
@@ -510,7 +517,7 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
         }
       }
     } else {
-      /* Do nothing  */
+      /* Do nothing */
     }
   }
 
@@ -658,7 +665,7 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_
         result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_UNARY;
       }
     } else {
-      /* Do nothing...  */
+      /* Do nothing... */
     }
   }
   return result;
@@ -800,7 +807,7 @@ void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(lib
       }
     }
   } else {
-    /* Should not happen  */
+    /* Should not happen */
   }
 }
 
@@ -840,7 +847,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
         fprintf( stderr, "Fusing GATHER-COLS with MAX-REDUCE-COLS\n");
       }
     } else {
-      /* Should not happen  */
+      /* Should not happen */
     }
     /* Update tmp size of new pseudo-arg */
     new_arg_node->tmp.n = 1;
@@ -857,7 +864,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
       }
     }
   } else {
-    /* Should not happen  */
+    /* Should not happen */
   }
 }
 
@@ -959,7 +966,7 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
   unsigned int all_args_fp64 = libxsmm_generator_matequation_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
   unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
 
-  /* Unary not supported for fp64  */
+  /* Unary not supported for fp64 */
   libxsmm_meltw_unary_type non_fp64_unary[21] = { LIBXSMM_MELTW_TYPE_UNARY_RELU,
                                                   LIBXSMM_MELTW_TYPE_UNARY_RELU_INV,
                                                   LIBXSMM_MELTW_TYPE_UNARY_TANH,
@@ -982,14 +989,14 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
                                                   LIBXSMM_MELTW_TYPE_UNARY_GATHER,
                                                   LIBXSMM_MELTW_TYPE_UNARY_SCATTER };
 
-  /* Binary not supported for fp64  */
+  /* Binary not supported for fp64 */
   libxsmm_meltw_binary_type non_fp64_binary[2] = { LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD,
                                                    LIBXSMM_MELTW_TYPE_BINARY_PACK };
 
   if (io_generated_code->arch < LIBXSMM_X86_AVX) {
     is_valid_arch_prec = 0;
   }
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch <= LIBXSMM_X86_AVX2_ADL)) {
+  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128)) {
     is_valid_arch_prec = 0;
   }
   if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
@@ -1079,7 +1086,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
 
-  /* Turn on fusion knobs given arch  */
+  /* Turn on fusion knobs given arch */
   if (io_generated_code->arch >= LIBXSMM_X86_AVX) {
     fusion_knobs.may_fuse_xgemm = 1;
   }
@@ -1130,8 +1137,8 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         1 );
 
     if (libxsmm_generator_matequation_is_eqn_node_breaking_point(cur_eqn->eqn_root, &fusion_knobs) > 0) {
-      /* For these nodes use strategy via scratch  */
-      /* Re assign visit_stamps to current equation tree  */
+      /* For these nodes use strategy via scratch */
+      /* Re assign visit_stamps to current equation tree */
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
       if (eqn_tree_id < queue_size - 1) {
         if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) &&
@@ -1148,8 +1155,8 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
-      /* For these nodes use strategy via regblocks  */
-      /* Re-optimize current tree  */
+      /* For these nodes use strategy via regblocks */
+      /* Re-optimize current tree */
       if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
           ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_matrix_eqn_is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
         copy_mateqn_desc.m = cur_eqn->eqn_root->le->tmp.m;
@@ -1161,7 +1168,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       if (eqn_tree_id < queue_size - 1) {
         copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
       }
-      /* If head of equaiton is unpack_to_blocks, then make sure we load the block offset from the stack */
+      /* If head of equation is unpack_to_blocks, then make sure we load the block offset from the stack */
       if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
         libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, l_gp_reg_mapping.gp_reg_offset);
       }
@@ -1185,4 +1192,3 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
   free(jiting_queue);
 }
-

@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_PACKED_GEMM_BC_RM_AVX_AVX2_AVX512_H
 #define GENERATOR_PACKED_GEMM_BC_RM_AVX_AVX2_AVX512_H
 

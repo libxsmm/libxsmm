@@ -12,16 +12,15 @@
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC
 #endif
-
 #if 0
 #define USE_ENV_TUNING
 #endif
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,
@@ -152,15 +151,15 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MUL, l_gp_idx_mat_reg, l_gp_reg_ld, l_gp_idx_mat_reg, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, l_gp_idx_mat_reg, l_gp_idx_mat_base_reg, l_gp_idx_mat_reg, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
 
-  /* Iterate over full indexed column / reg. matrix column  */
+  /* Iterate over full indexed column / reg. matrix column */
   if (l_m_trips_loop >= 1) {
     libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, l_m_trips_loop);
     for (l_im = 0; l_im < l_m_unroll_factor; l_im++) {
       unsigned int aux_vreg = l_aux_vreg_start + l_im;
       if (l_is_gather == 1) {
-        /* Load gather vector  */
+        /* Load gather vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 0, 0 );
-        /* Store gathered vector  */
+        /* Store gathered vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 1, 0 );
       } else {
         /* Load vector to be scattered */
@@ -178,9 +177,9 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
       unsigned int l_l_mask_reg = ((l_im == l_peeled_m_trips - 1) && (l_m_remainder_elements > 0)) ? l_mask_reg : 0;
       unsigned int aux_vreg = l_aux_vreg_start + l_im;
       if (l_is_gather == 1) {
-        /* Load gather vector  */
+        /* Load gather vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_l_mask_reg) );
-        /* Store gathered vector  */
+        /* Store gathered vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_l_mask_reg) );
       } else {
         /* Load vector to be scattered */
@@ -255,7 +254,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_gen
           libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
               l_idx_vreg_id, i_idx_tsize, l_aux_vreg, i_dtype_size_reg_mat, l_idx_masked_elements, i_is_gather);
         }
-        /* Store gathered vector  */
+        /* Store gathered vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_aux_vreg,
                                                           i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
       } else {
@@ -394,7 +393,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
   if (l_is_sve > 0) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
     if (i_micro_kernel_config->datatype_size_in == 2 || l_idx_tsize == 8) {
-      /* Mask for full fractional vlen load/store  */
+      /* Mask for full fractional vlen load/store */
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_mask_reg_full_frac_vlen, l_vlen * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
     }
   }
@@ -561,7 +560,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
           libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
               l_idx_vreg_id, i_idx_tsize, l_aux_vreg, i_dtype_size_reg_mat, l_idx_masked_elements, i_is_gather);
         }
-        /* Store gathered vector  */
+        /* Store gathered vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_aux_vreg,
                                                           i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
       } else {
@@ -699,7 +698,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
   if (l_is_sve > 0) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
     if (i_micro_kernel_config->datatype_size_in == 2 || l_idx_tsize == 8) {
-      /* Mask for full fractional vlen load/store  */
+      /* Mask for full fractional vlen load/store */
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_mask_reg_full_frac_vlen, l_vlen * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
     }
   }
@@ -800,6 +799,6 @@ void libxsmm_generator_gather_scatter_aarch64_microkernel( libxsmm_generated_cod
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS ) > 0 ) {
     libxsmm_generator_gather_scatter_offs_aarch64_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else {
-    /* SHOULD NOT HAPPEN  */
+    /* SHOULD NOT HAPPEN */
   }
 }

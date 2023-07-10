@@ -8,13 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_packed_spgemm_csr_asparse.h"
 #include "generator_packed_spgemm_csr_asparse_avx_avx2_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_gemm_common.h"
 #include "generator_common_x86.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_generated_code*         io_generated_code,
@@ -65,7 +64,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* select packed width */
-  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
@@ -104,7 +103,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
 
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
+    /* RDI holds the pointer to the struct, so lets first move this one into R15 */
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1 );
     /* A pointer */
     libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
@@ -119,7 +118,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
       /* A prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 56, l_gp_reg_mapping.gp_reg_a_prefetch, 0 );
-      /* B preftech pointer */
+      /* B prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 88, l_gp_reg_mapping.gp_reg_b_prefetch, 0 );
     }
@@ -178,14 +177,14 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
   if ( l_simd_packed_remainder > 0 ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       /* load k1 with mask */
-      libxsmm_generator_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_micro_kernel_config.vector_length-l_simd_packed_remainder, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_micro_kernel_config.vector_length-l_simd_packed_remainder, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
     } else {
       /* load register 15 with the mask */
       char l_id = LIBXSMM_CAST_CHAR(13);
       unsigned char l_data[32];
       unsigned int l_count;
 
-      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
         unsigned long long* l_i64_ptr = (unsigned long long*)l_data;
         for ( l_count = 0; l_count < 4; ++l_count ) {
           if ( l_count < l_simd_packed_remainder ) {
@@ -323,7 +322,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
 
   LIBXSMM_UNUSED(i_values);
 
-  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     l_avx_mask_instr = LIBXSMM_X86_INSTR_VMASKMOVPD;
   } else {
     l_avx_mask_instr = LIBXSMM_X86_INSTR_VMASKMOVPS;

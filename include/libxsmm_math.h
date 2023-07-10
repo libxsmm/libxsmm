@@ -43,12 +43,19 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matdiff_info {
  * Utility function to calculate a collection of scalar differences between two matrices (libxsmm_matdiff_info).
  * The location (m, n) of the largest difference (linf_abs) is recorded (also in case of NaN). In case of NaN,
  * differences are set to infinity. If no difference is discovered, the location (m, n) is negative (OOB).
+ * The return value does not judge the difference (norm) between reference and test data, but is about
+ * missing support for the requested data-type or otherwise invalid input.
  */
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst);
 
-/** Combine absolute and relative norms into a value which can be used to check against a margin. */
+/**
+ * Combine absolute and relative norms into a value which can be used to check against a margin.
+ * A file or directory path given per environment variable LIBXSMM_MATDIFF=/path/to/file stores
+ * the epsilon (followed by a line-break), which can be used to calibrate margins of a test case.
+ * LIBXSMM_MATDIFF can carry optional space-separated arguments used to amend the file entry.
+ */
 LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input);
 /**
  * Reduces input into output such that the difference is maintained or increased (max function).
@@ -124,7 +131,7 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
 /**
 * Exponential function (base 2), which is limited to signed 8-bit input values.
 * This function reproduces bit-accurate results (single-precision).
-*/
+ */
 LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 
 /** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */

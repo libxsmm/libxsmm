@@ -8,14 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-#include <float.h>
-
 #include "eltwise_common.h"
+
 
 LIBXSMM_INLINE
 int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
@@ -253,7 +247,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( short_data_gold[(i*ldo)+j] != short_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(i*ldo)+j], short_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(i*ldo)+j], short_data[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -268,7 +262,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( f32_short_data_gold[(i*ldo)+j] != f32_short_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(i*ldo)+j], f32_short_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(i*ldo)+j], f32_short_data[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -387,7 +381,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( int_data_gold[(i*ldo)+j] != int_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(i*ldo)+j], int_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(i*ldo)+j], int_data[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -402,7 +396,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( f32_int_data_gold[(i*ldo)+j] != f32_int_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(i*ldo)+j], f32_int_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(i*ldo)+j], f32_int_data[(i*ldo)+j]);
         s = 1;
       }
     }

@@ -185,8 +185,8 @@ TESTSIZE ?= 1
 # Delay for user-interaction (sleep)
 WAIT ?= 12
 
-# Prefer static or shared dependencies
-STATIC ?= 0
+# Prefer static or shared library/dependencies
+STATIC ?= 1
 
 # PIC: PIC or pic
 PIC ?= pic
@@ -418,17 +418,6 @@ ICX ?= 0
 # linker setup
 LD := $(CC)
 XLD := $(CXX)
-
-# Secondary static
-ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
-  DEPSTATIC ?= $(STATIC)
-else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)*)) # prefer static (library exists)
-  DEPSTATIC ?= 1
-else ifneq (0,$(STATIC))
-  DEPSTATIC ?= $(STATIC)
-else
-  DEPSTATIC ?= 0
-endif
 
 LNKSOFT ?= 1
 ifeq (0,$(STATIC))
@@ -738,7 +727,7 @@ endif
 MINGW ?= 0
 
 # Library extension
-ifneq (0,$(DEPSTATIC))
+ifneq (0,$(STATIC))
   LIBEXT ?= $(SLIBEXT)
   #ABSLIBS := 0
 else
@@ -753,7 +742,7 @@ else # MinGW
 endif
 
 # Separate control on how to link against the BLAS library
-BLAS_STATIC ?= $(DEPSTATIC)
+BLAS_STATIC ?= $(STATIC)
 
 # PGI: ignore env. variable (same name)
 override PGI := 0
@@ -919,7 +908,7 @@ else
 endif
 endif
 
-ifneq (0,$(DEPSTATIC))
+ifneq (0,$(STATIC))
   ifeq (0,$(COMPATIBLE))
   ifneq (Darwin,$(UNAME))
   ifneq (Windows_NT,$(UNAME))
@@ -964,7 +953,7 @@ ifneq (Darwin,$(UNAME))
   endif
   XLNKVERBOSE := --verbose
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1=$(call quote,$2),$1))
-  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
     $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
@@ -978,7 +967,7 @@ else # OSX
   endif
   XLNKVERBOSE := -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
-  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
     $(call linkopt,-rpath,$(call qxdir,$(call qapath,$1)))))
 endif
 ifneq (0,$(ASNEEDED))
@@ -986,7 +975,7 @@ ifneq (0,$(ASNEEDED))
   XLIB_END ?= $(XLIB_END_FORCE)
 endif
 
-absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(if $1,$(wildcard $1/)), \
   -L$(call qxdir,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
@@ -1001,7 +990,7 @@ libpath = $(call qapath,$(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call link
   | grep "lib$3" | tr " " "\n" | $(SED) -n "/\//p" | $(SED) "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
   | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
 
-ifneq (Windows_NT1,$(UNAME)$(DEPSTATIC))
+ifneq (Windows_NT1,$(UNAME)$(STATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
     $(if $(findstring .$(ILIBEXT).,$1),-l:$(call qndir,$1), \
@@ -1016,7 +1005,7 @@ endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 LIB_SOLD := $(LD) -shared $(PICFLAG)
-ifeq (0,$(DEPSTATIC))
+ifeq (0,$(STATIC))
   LIB_XLD := $(XLD) -shared $(PICFLAG)
   LIB_LD := $(LIB_SOLD)
 else
@@ -1028,7 +1017,7 @@ ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
   FLD := $(FC) $(XLIB_END)
   LIB_SFLD := $(FLD) -shared $(PICFLAG)
-  ifeq (0,$(DEPSTATIC))
+  ifeq (0,$(STATIC))
     LIB_FLD := $(LIB_SFLD)
   else
     LIB_FLD := $(FLD)
@@ -1051,9 +1040,11 @@ ifeq (,$(strip $(GFC)))
 endif
 endif
 ifneq (0,$(FREEFORM))
-ifeq (0,$(PGI))
-  FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
-endif
+  ifneq (,$(strip $(GFC)))
+    FFORM_FLAG ?= -ffree-form
+  else ifeq (0,$(PGI))
+    FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
+  endif
 endif
 
 # CCE: resolve linker issue
@@ -1116,8 +1107,10 @@ endif
 
 ifneq (0,$(INTEL))
   ifeq (1,$(STATIC))
+    #SLDFLAGS += -Bstatic
     ifeq (0,$(ICX))
-      SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+      SLDFLAGS += -no-intel-extensions -static-intel
+      #SLDFLAGS += -static-libstdc++
     endif
     ifneq (Darwin,$(UNAME))
       SLDFLAGS += -static-libgcc
@@ -1125,12 +1118,12 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(STATIC))
     SLDFLAGS += -static
   endif
-else
+else # non-Intel
   ifeq (1,$(STATIC))
     ifeq (0,$(PGI))
       SLDFLAGS += -Bstatic
-      ifeq (0,$(CLANG))
-        SLDFLAGS += -static-libstdc++
+      ifeq (3,$(XSMM_GCC))
+        #SLDFLAGS += -static-libstdc++
         ifneq (Darwin,$(UNAME))
           SLDFLAGS += -static-libgcc
         endif
@@ -1686,7 +1679,7 @@ else # GCC assumed
           endif
           CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
           CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
-        else
+        else # macOS
           CXXLDFLAGS += $(call abslib,$(OMPLIBFILE))
           CLDFLAGS += $(call abslib,$(OMPLIBFILE))
         endif
@@ -1860,6 +1853,9 @@ ifeq (undefined,$(origin TARGET))
         CTARGET := -march=armv8.1-a
       endif
       endif
+      ifneq (,$(call ftest,$(FC),-march=armv8.1-a,$(NULL) $(NULL)))
+        FTARGET := -march=armv8.1-a
+      endif
     endif
   endif # DBG
   endif # CTARGET
@@ -1875,8 +1871,8 @@ ifneq (,$(call ftest,$(FC),$(CTARGET),$(NULL) $(NULL)))
   FTARGET := $(CTARGET)
 else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
   FTARGET := $(patsubst -m%,-x%,$(CTARGET))
-else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
-  override CTARGET := $(NULL)
+#else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
+  #override CTARGET := $(NULL)
 endif
 ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
   ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
@@ -2034,7 +2030,7 @@ ifeq (0,$(COMPATIBLE))
     endif
     ifneq (ld,$(call qndir,$(LD)))
     ifneq (Windows_NT,$(UNAME))
-      ifneq (,$(filter-out 0,$(DEPSTATIC) $(DYNAMIC)))
+      ifneq (,$(filter-out 0,$(STATIC) $(DYNAMIC)))
         EXCLUDE_VALUE += $(call linkopt,--export-dynamic)
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
@@ -2067,6 +2063,25 @@ ifeq (0,$(COMPATIBLE))
         CFLAGS += -fvisibility=hidden
       endif
     endif
+    endif
+  else # macOS
+    SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr
+    ifneq (,$(wildcard $(SDKROOT)))
+      ifeq (0,$(CLANG))
+        IFLAGS += -I$(SDKROOT)/include
+        LDFLAGS += -L$(SDKROOT)/lib
+      endif
+      ifneq (0,$(FORTRAN))
+        FLDFLAGS += -L$(SDKROOT)/lib
+      endif
+    else  # SDK path not found
+      LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
+      ifneq (,$(LIBSYSTEM))
+        FLDFLAGS += -L$(dir $(LIBSYSTEM))
+      endif
+    endif
+    ifneq (,$(OMPLIBFILE))
+      FLDFLAGS += $(OMPLIBFILE)
     endif
   endif
   ifeq (0,$(EXP))
@@ -2384,7 +2399,8 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback (END/BEGIN not BEGIN/END)
-      BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      #BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
+      BLAS_LDFLAGS += -lblas
       BLASREF ?= 1
     endif
     BLASREF ?= 0
@@ -2417,21 +2433,21 @@ endif
 ifneq (0,$(BLAS))
 ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
   ifneq (,$(LIBGFORTRAN))
-    ifneq (0,$(DEPSTATIC))
+    ifneq (0,$(STATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) $(XLIB_END)
     else
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBGFORTRAN))
     endif
   endif
   ifneq (,$(QUADMATH))
-    ifneq (0,$(DEPSTATIC))
+    ifneq (0,$(STATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(QUADMATH) $(XLIB_END)
     else
       BLAS_LDFLAGS += $(call abslibrpath,$(QUADMATH))
     endif
   endif
   ifneq (,$(LIBM))
-    ifneq (0,$(DEPSTATIC))
+    ifneq (0,$(STATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBM) $(XLIB_END)
     else
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
@@ -2509,7 +2525,7 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR FINFO ENVBIN FSTD GINFO XDG_DATA_DIRS ONEVERSION \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
-  $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
+  $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
   $(if $(filter 0,$(MKL)),MKL_%), \
   $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))

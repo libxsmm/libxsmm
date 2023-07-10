@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     { 1, 1, 0 },
     { 1, 1, 1 }
   };
-  /*const*/ char* value[] = {
+  const char* value[] = {
     "hello", "world", "libxsmm",
     "hello world", "hello libxsmm",
     "value", "next", "last"

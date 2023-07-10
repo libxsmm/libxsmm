@@ -15,10 +15,10 @@ Configuration scripts are usually automatically invoked by LIBXSMM's Makefile ba
 
 * `libxsmm_config.py`, `libxsmm_interface.py`, and `libxsmm_specialized.py`: Configures LIBXSMM and instantiates `libxsmm_version.h` (format is suitable for C/C++ and Fortran), `libxsmm_config.h`, `libxsmm.h`, and `libxsmm.f`. The [templates](https://github.com/libxsmm/libxsmm/blob/main/src/template) contain certain placeholders which are filled with actual values. Beside of the version header, the configuration considers special needs and rarely needs to deviate from the default. The default for instance allows a 3rd party build system to ease building LIBXSMM. The configuration does not consider the platform, compiler, or build system related choices but is rather about generating application specific implementations and interfaces.
 * `libxsmm_dispatch.py`: Makes application specific implementations available for LIBXSMM's code registry, i.e., registers functions generated at the time of configuring and building the library.
-* `libxsmm_utilities.py`: Utility functions used by other Python scripts ("library"). The script also exposes a private command line interface to allows accessing some services, e.g., determining the name (mnemonic) of the target architecture used by LIBXSMM when JIT-generating code.
+* `libxsmm_utilities.py`: Utility functions used by other Python scripts ("library"). The script also exposes a private command-line interface to allows accessing some services, e.g., determining the name (mnemonic) of the target architecture used by LIBXSMM when JIT-generating code.
 * `libxsmm_source.py`: Collects source code file names and includes these implementations when using LIBXSMM as header-only library.
 
-Although `libxsmm_utilities.py` command line interface is private (can change without notices), it is supposed to provide the following information:
+Although `libxsmm_utilities.py` command-line interface is private (can change without notices), it is supposed to provide the following information:
 
 * `libxsmm_utilities`: outputs LIBXSMM's target architecture as used by JIT code generation. For this functionality, LIBXSMM must be built since the script binds against `libxsmm_get_target_arch()`.
 * `libxsmm_utilities 0`: outputs LIBXSMM's version string (preprocessor symbol `LIBXSMM_VERSION`).
@@ -107,7 +107,7 @@ fi
 2. Populate an entry (JSON-block or telegram) under a "build number", "category", and "case".
 3. Plot "execution time" over the history of build numbers.
 
-There are several command line options to customize each of the above steps (`--help` or `-h`):
+There are several command-line options to customize each of the above steps (`--help` or `-h`):
 
 * To only plot data (already collected), use `-i ""` to omit a network connection.
 * To query, e.g., ResNet-50 results, use `-y resnet-50` (case-insensitive).
@@ -118,7 +118,7 @@ There are several command line options to customize each of the above steps (`--
 * Create a PDF (vector graphics have infinite resolution), use `-g myreport.pdf`.
 * Adjust pixel resolution, aspect ratio, or density, use `-d 1200x800`.
 
-The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progress). Default verbosity shows progress (downloading results) whereas "automation" allows to further automate reports, e.g., get the filename of the generated plot (errors are generally printed to `stderr`). Loading a logfile into the database directly can serve two purposes: <span>(1)&#160;debugging</span> the supported format like "telegram" or JSON, and <span>(2)&#160;offline</span> operation. The latter can be also useful if for instance a CI-agents produces a log, i.e., it can load into the database right away. Command line options also allow for "exact placement" (`-j`) by specifying the build number supposed to take the loaded data (data is appended by default, i.e., it is assumed to be a new build or the build number is incremented). In general, data is not duplicated underneath a build of the category or the actual data matches an existing entry.
+The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progress). Default verbosity shows progress (downloading results) whereas "automation" allows to further automate reports, e.g., get the filename of the generated plot (errors are generally printed to `stderr`). Loading a logfile into the database directly can serve two purposes: <span>(1)&#160;debugging</span> the supported format like "telegram" or JSON, and <span>(2)&#160;offline</span> operation. The latter can be also useful if for instance a CI-agents produces a log, i.e., it can load into the database right away. Command-line options also allow for "exact placement" (`-j`) by specifying the build number supposed to take the loaded data (data is appended by default, i.e., it is assumed to be a new build, or the build number is incremented).
 
 <a name="performance-report-examples"></a>Examples (omit `-i ""` if downloading results is desired):
 
@@ -132,9 +132,17 @@ The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progr
   `scripts/tool_report.sh -p tpp-plaidml -i "" -r "duration_per_example,1000,ms"`
 * Plot "GFLOP/s" for "conv2d_odd_med" from CI-pipeline "tpp-plaidml":  
   `scripts/tool_report.sh -p tpp-plaidml -i "" -y "conv2d_odd_med" -r "gflop"`
-* Plot "tpp-mlir" pipeline (reference benchmarks):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "ref"`
-* Plot "tpp-mlir" pipeline (MLIR benchmarks):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "mlir"`
-* Plot "tpp-mlir" pipeline (MLIR benchmarks without "simple_copy"):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -u "not" -y "simple_copy" -r "mlir"`
+* Plot "tpp-benchmark" pipeline (MLIR benchmarks, main-branch):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -y "" -r "mlir" -b "main"`
+* Plot "tpp-benchmark" pipeline (MLIR benchmarks, main-branch, untied plots):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -y "" -r "mlir" -b "main" -u`
+* Plot "tpp-benchmark" pipeline (reference benchmarks; selected entries `-y`):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -q "any" -y "gemm matmul" -r "dnn"`
+* Plot "tpp-benchmark" pipeline (MLIR benchmarks without "single", untied plots):  
+  `scripts/tool_report.sh -p tpp-benchmark -i "" -q "not" -y "single" -r "mlir" -u`
+* Plot "tpp-performance" pipeline (MLIR benchmarks only "mlp", untied plots):  
+  `scripts/tool_report.sh -p tpp-performance -i "" -y "mlp" -r "mlir" -u`
+
+The exit code of the script is non-zero in case of an error, or if the latest value deviates and exceeds the margin (`--bounds`). For the latter, the meaning of the values must be given (like "higher is better"). The first argument of the bounds is a factor such that the standard deviation of historic values is amplified to act as margin of the relative deviation (latest versus previous value). The second argument of the bounds determines the accepted percentage of deviation (latest versus previous value).
+
+The exit code is only impacted if an explicit sign is given determining bad values (`+` or `-`). For example, `2.0` gives a factor of two over standard deviation (no impact for the exit code), `2.0 10` is likewise but also caps the deviation to 10% at most, `+3.0` gives a factor of three over standard deviation and treats positive deviation as regression (like for timing values) and thereby impact the exit code. Also, it is possible to just determine the meaning and keep default bounds like `-` determining negative deviation as regression (like for higher-is-better values).

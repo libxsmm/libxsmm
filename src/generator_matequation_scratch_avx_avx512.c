@@ -13,7 +13,6 @@
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_common_x86.h"
 #include "generator_matequation_scratch_avx_avx512.h"
 #include "generator_mateltwise_reduce_avx_avx512.h"
@@ -21,7 +20,6 @@
 #include "generator_mateltwise_transform_common.h"
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
-#include "generator_gemm_amx_emu.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
@@ -62,7 +60,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
   libxsmm_gemm_batch_reduce_config br_config;
   libxsmm_blasint m = 0, n = 0, k = 0, lda = 0, ldb = 0, ldc = 0;
   libxsmm_datatype a_in_type;
-  /*libxsmm_datatype b_in_type;*/
+  libxsmm_datatype b_in_type;
 
   m = cur_op->tmp.m;
   n = cur_op->tmp.n;
@@ -77,10 +75,10 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
   }
   if (cur_op->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     ldb = cur_op->ri->info.arg.ld;
-    /*b_in_type = cur_op->ri->info.arg.dtype;*/
+    b_in_type = cur_op->ri->info.arg.dtype;
   } else {
     ldb = cur_op->ri->tmp.ld;
-    /*b_in_type = cur_op->ri->tmp.dtype;*/
+    b_in_type = cur_op->ri->tmp.dtype;
   }
   ldc = cur_op->tmp.ld;
   memset(&br_config, 0, sizeof(libxsmm_gemm_batch_reduce_config));
@@ -174,10 +172,9 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
     gemm_flags = (gemm_flags & remove_flag) | LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
   }
 
-  desc = libxsmm_gemm_descriptor_dinit2(blob, a_in_type, cur_op->tmp.dtype,
-    m, n, k, lda, ldb, ldc,
-    LIBXSMM_ALPHA, !((gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
-    gemm_flags, 0);
+  desc = libxsmm_gemm_descriptor_init(blob, a_in_type, b_in_type,
+    cur_op->tmp.dtype, LIBXSMM_DATATYPE_F32,
+    m, n, k, lda, ldb, ldc, gemm_flags, 0);
 
   /* Enforce overwrite C flag */
   desc->internal_flags_2 = desc->internal_flags_2 & 0xfb;
@@ -232,7 +229,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-  if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+  if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
     l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
@@ -241,13 +238,13 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
   }
-  /* If we are generating the batchreduce kernel, then we rename the registers  */
+  /* If we are generating the batchreduce kernel, then we rename the registers */
   if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
     l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
     l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
-    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_R8;
       l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R9;
       l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
@@ -265,7 +262,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_X86_GP_REG_R9;
-    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RAX;
     } else {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
@@ -297,7 +294,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping_amx( libxsmm_gemm_descri
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-  /* If we are generating the batchreduce kernel, then we rename the registers  */
+  /* If we are generating the batchreduce kernel, then we rename the registers */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
     l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RAX;
     l_gp_reg_mapping.gp_reg_a_ptrs = LIBXSMM_X86_GP_REG_RDI;
@@ -513,12 +510,6 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   unsigned int timestamp = 0;
   unsigned int last_timestamp;
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
-  int l_emu_amx = 0;
-  const char *const l_env_emu_amx = getenv("EMULATE_AMX");
-  if ( 0 == l_env_emu_amx ) {
-  } else {
-    l_emu_amx = atoi(l_env_emu_amx);
-  }
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
@@ -557,7 +548,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     } else {
       out_precision = cur_op->tmp.dtype;
     }
-    /* Adjust the tmp precision in the tree  */
+    /* Adjust the tmp precision in the tree */
     /* printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision)); */
 #endif
 
@@ -568,14 +559,14 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       libxsmm_gemm_descriptor *desc = NULL;
       libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-      /* Setup GEMM descriptor and register mapping  */
+      /* Setup GEMM descriptor and register mapping */
       libxsmm_generator_matequation_gemm_set_descriptor( io_generated_code, cur_op, &blob, &desc);
 
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le, temp_reg, 0);
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->ri, temp_reg, 1);
       libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op, temp_reg, (timestamp == last_timestamp) );
 
-      /* If BRGEMM, set br count address in struct  */
+      /* If BRGEMM, set br count address in struct */
       if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.is_brgemm == 1)) ||
           ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
         libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -605,7 +596,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR2, temp_reg);
       }
 
-      /* Setup stack for fusion related params  */
+      /* Setup stack for fusion related params */
       if (cur_op->fusion_info.xgemm.fused_colbias_add_op == 1) {
         if (cur_op->fusion_info.xgemm.colbias_pos_in_arg >= 0) {
           libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -628,32 +619,27 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg);
       }
 
-      if ( (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) || (l_emu_amx > 0)) &&
+      if ( (((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT))) &&
            ( ( LIBXSMM_DATATYPE_BF16 == cur_op->le->tmp.dtype ) ||
              ( LIBXSMM_DATATYPE_I8 == cur_op->le->tmp.dtype ) ) &&
            ((desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
         libxsmm_generator_matequation_gemm_set_reg_mapping_amx( desc, &l_gp_reg_mapping );
-        /* Since this is a GEMM, store calle-save regs  */
+        /* Since this is a GEMM, store calle-save regs */
         libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
         libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
-        /* Call GEMM JITer  */
-        if (l_emu_amx > 0) {
-          desc->c3 = 0;
-          libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
-        } else {
-          libxsmm_generator_gemm_amx_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
-        }
-        /* Since this is a GEMM, restore calle-save regs  */
+        /* Call GEMM JITer */
+        libxsmm_generator_gemm_amx_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
+        /* Since this is a GEMM, restore calle-save regs */
         libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
         libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
       } else {
         libxsmm_generator_matequation_gemm_set_reg_mapping( desc, &l_gp_reg_mapping );
-        /* Since this is a GEMM, store calle-save regs  */
+        /* Since this is a GEMM, store calle-save regs */
         libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
         libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
-        /* Call GEMM JITer  */
+        /* Call GEMM JITer */
         libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
-        /* Since this is a GEMM, restore calle-save regs  */
+        /* Since this is a GEMM, restore calle-save regs */
         libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
         libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
       }
@@ -676,7 +662,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
           libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6, temp_reg );
         }
 
-        /* If need, be set properly the offset param from scratch...  */
+        /* If need, be set properly the offset param from scratch... */
         if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) && (timestamp == last_timestamp)) {
           libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
           libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg );
@@ -701,7 +687,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
            libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg);
         }
 
-        /* Prepare descriptor  */
+        /* Prepare descriptor */
         libxsmm_generator_matequation_create_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
         libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le,
@@ -712,13 +698,13 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
             temp_reg, (timestamp == last_timestamp) );
         libxsmm_generator_matequation_create_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else {
-        /* This should not happen  */
+        /* This should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
       }
       /* Configure the unary-binary microkernel */
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
-      /* If GELU or GELU inv and architecture < AVX512, set the priper rbp offsets of stack...  */
+      /* If GELU or GELU inv and architecture < AVX512, set the priper rbp offsets of stack... */
       if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV))  ) {
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_thres = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_0);
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_signmask = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_1);
@@ -736,7 +722,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
           libxsmm_generator_reduce_cols_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
         } else {
-          /* This should not happen  */
+          /* This should not happen */
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }

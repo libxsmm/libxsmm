@@ -8,12 +8,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include "equation_common.h"
+
 
 LIBXSMM_INLINE
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, unsigned char* relu_mask, float *out) {
@@ -29,7 +25,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       res = 1.0f + (Arg0 - Arg1) + Arg2;
       /* Set relu mask */
       relu_mask[(i*mask_ld) + j/8] |= (unsigned char)(( res <= 0.0f ) ? 0x0 : (1 << (j%8)) );
-      /* Apply relu  */
+      /* Apply relu */
       res = (res < 0.0f) ? 0.0f : res;
       out[(i*ld)+j] = res;
     }
@@ -38,7 +34,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.00001;
+  double error_bound = 0.00001, check_norm;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j, s;
@@ -300,7 +296,8 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   s = 0;
   for ( i = 0; i < N; ++i ) {
@@ -308,7 +305,7 @@ int main( int argc, char* argv[] ) {
       unsigned int gold_val = (mask_ref[(i*mask_ld)+j/8]) & (1 << (j%8));
       unsigned int comp_val = (mask_eqn[(i*mask_ld)+j/8]) & (1 << (j%8));
       if ( gold_val != comp_val ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j,
+        printf("error at position i=%i, j=%i, %u, %u\n", i, j,
           (unsigned int)mask_ref[(i*mask_ld)+j/8],
           (unsigned int)mask_eqn[(i*mask_ld)+j/8]);
         s = 1;
@@ -331,9 +328,10 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 

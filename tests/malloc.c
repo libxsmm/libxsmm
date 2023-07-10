@@ -8,14 +8,16 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm.h>
 
 #if !defined(CHECK_SETUP) && 1
 # define CHECK_SETUP
 #endif
 #if !defined(CHECK_REALLOC) && 1
-# define CHECK_REALLOC
+# if !defined(_WIN32)
+#   define CHECK_REALLOC
+# endif
 #endif
 #if !defined(CHECK_SCRATCH) && 1
 # define CHECK_SCRATCH

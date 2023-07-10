@@ -10,8 +10,9 @@
 ******************************************************************************/
 #ifndef GENERATOR_MATEQUATION_REGBLOCKS_AVX_AVX512_H
 #define GENERATOR_MATEQUATION_REGBLOCKS_AVX_AVX512_H
+
 #include "generator_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id);
@@ -100,7 +101,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
                                                  unsigned int*                           i_mask_reg_out);
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype  dtype);
+unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype dtype);
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_generated_code* io_generated_code,  libxsmm_datatype  dtype);

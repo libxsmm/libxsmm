@@ -9,7 +9,6 @@
 ******************************************************************************/
 /* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_COMMON_AARCH64_H
 #define GENERATOR_COMMON_AARCH64_H
 

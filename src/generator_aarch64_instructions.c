@@ -9,8 +9,8 @@
 ******************************************************************************/
 /* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_aarch64_instructions.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
@@ -952,6 +952,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1D_V_OFF64:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF_SCALE:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF64_SCALE:
@@ -1217,6 +1218,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H:
@@ -1688,7 +1690,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
                                                 const unsigned int       i_gp_reg_dst,
                                                 const unsigned long long i_imm64 ) {
-  if (        i_imm64 <=         0xffff ) {
+  if ( i_imm64 <=         0xffff ) {
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 i_gp_reg_dst, 0, (unsigned short)i_imm64 );
   } else if ( i_imm64 <=     0xffffffff ) {

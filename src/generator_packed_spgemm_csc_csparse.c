@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_packed_spgemm_csc_csparse.h"
 #include "generator_packed_spgemm_csc_csparse_avx_avx2_avx512.h"
 

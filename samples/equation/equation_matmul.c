@@ -11,13 +11,10 @@
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+
 
 LIBXSMM_INLINE
 float fsigmoid(float x) {
@@ -257,8 +254,8 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_blasint i, j, k, l, it, i2;
   libxsmm_matrix_eqn_param eqn_param;
-  unsigned long long l_start, l_end;
-  double l_total = 0, l_total2 = 0;
+  libxsmm_timer_tickint l_start, l_end;
+  double l_total = 0, l_total2 = 0, check_norm;
   libxsmm_matdiff_info norms_out;
   int datatype_mode = 0, iters = 100;
   libxsmm_datatype in_dt = LIBXSMM_DATATYPE_F32;
@@ -384,7 +381,7 @@ int main( int argc, char* argv[] ) {
     bf16_arg_array[k].primary = bf16_arg[k];
   }
 
-  /* Result = gelu(A+B) * tanh(C x D)  */
+  /* Result = gelu(A+B) * tanh(C x D) */
   arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
   my_eqn0 = libxsmm_matrix_eqn_create();
@@ -460,7 +457,8 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   /* Now benchmarking the equations */
   if (datatype_mode == 0 || datatype_mode == 1) {
@@ -486,7 +484,7 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+  printf("Compiler equation time = %.5g\n", l_total);
 
   func0(&eqn_param);
   l_start = libxsmm_timer_tick();
@@ -495,12 +493,12 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+  printf("JITed TPP equation time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
   printf("\n\nNow testing equation 1...\n\n");
 
-  /* Create copy of B since this is now Inout  */
+  /* Create copy of B since this is now Inout */
   copy_B = (float*) libxsmm_aligned_malloc( sizeof(float)*n_i[1]*ld_i[1]*blocks_i[1],   64);
   orig_B = arg[1];
   for ( i = 0; i < n_i[1]; i++ ) {
@@ -557,7 +555,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
   func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape[n_tensors-1] );
   func1(&eqn_param);
-  /* Recover type of arg1  */
+  /* Recover type of arg1 */
   arg_shape[1].type = in_dt;
 
   if (datatype_mode == 0 || datatype_mode == 1) {
@@ -585,7 +583,8 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
   /* Now benchmarking the equations */
   if (datatype_mode == 0 || datatype_mode == 1) {
@@ -611,7 +610,7 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+  printf("Compiler equation time = %.5g\n", l_total);
 
   func1(&eqn_param);
   l_start = libxsmm_timer_tick();
@@ -620,8 +619,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+  printf("JITed TPP equation time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
   if (datatype_mode == 0) {
     /* sigmoid( Sum(Ci x Di) + colbias + 1.0) */
@@ -643,7 +642,7 @@ int main( int argc, char* argv[] ) {
     arg_metadata[42].in_arg_pos = 42;
 
     if (relu_sigmoid_fusion_mode == 0) {
-      /* Do nothing  */
+      /* Do nothing */
     } else if (relu_sigmoid_fusion_mode == 1) {
       libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     } else if (relu_sigmoid_fusion_mode == 2) {
@@ -680,7 +679,8 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -708,7 +708,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+    printf("Compiler equation time = %.5g\n", l_total);
 
     func5(&eqn_param);
     l_start = libxsmm_timer_tick();
@@ -717,8 +717,8 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-    printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+    printf("JITed TPP equation time = %.5g\n", l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
   }
 
   if ((datatype_mode == 1) && (n_i[2] % 2 == 0)) {
@@ -791,7 +791,8 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -817,7 +818,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+    printf("Compiler equation time = %.5g\n", l_total);
 
     func2(&eqn_param);
     l_start = libxsmm_timer_tick();
@@ -826,8 +827,8 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-    printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+    printf("JITed TPP equation time = %.5g\n", l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
 
     printf("\n\nNow testing equation 3...\n\n");
@@ -886,7 +887,8 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -912,7 +914,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+    printf("Compiler equation time = %.5g\n", l_total);
 
     func3(&eqn_param);
     l_start = libxsmm_timer_tick();
@@ -921,8 +923,8 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-    printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+    printf("JITed TPP equation time = %.5g\n", l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
 
 
     printf("\n\nNow testing equation 4...\n\n");
@@ -948,7 +950,7 @@ int main( int argc, char* argv[] ) {
     op_metadata[1].eqn_idx      = my_eqn4;
 
     if (relu_sigmoid_fusion_mode == 0) {
-      /* Do nothing  */
+      /* Do nothing */
     } else if (relu_sigmoid_fusion_mode == 1) {
       libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     } else if (relu_sigmoid_fusion_mode == 2) {
@@ -987,7 +989,8 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_out);
+    printf("Check-norm    : %.24f\n\n", check_norm);
 
     /* Now benchmarking the equations */
     if (datatype_mode == 0 || datatype_mode == 1) {
@@ -1015,7 +1018,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+    printf("Compiler equation time = %.5g\n", l_total);
 
     func4(&eqn_param);
     l_start = libxsmm_timer_tick();
@@ -1024,8 +1027,8 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-    printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+    printf("JITed TPP equation time = %.5g\n", l_total2);
+    if (0 < l_total2) printf("Speedup (%d iters) is = %.5g\n", iters, l_total/l_total2);
   }
 
   for (i = 0; i < n_tensors; i++) {

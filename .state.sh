@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-
+# shellcheck disable=SC2086
 MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
 UNIQ=$(command -v uniq)

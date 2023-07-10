@@ -8,12 +8,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include "equation_common.h"
+
 
 LIBXSMM_INLINE
 void reference_unpack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *in, libxsmm_bfloat16 *out_lo, libxsmm_bfloat16 *out_hi) {
@@ -110,7 +106,7 @@ void vec_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.00001;
+  double error_bound = 0.00001, check_norm;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   float *wt;
@@ -130,7 +126,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
   int i, j, it = 0;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   int iters = 100;
 
@@ -173,7 +169,7 @@ int main( int argc, char* argv[] ) {
   }
   libxsmm_rne_convert_fp32_bf16( wt, bf16_dwt, ld * N );
 
-  /* Split sgd via equation  */
+  /* Split sgd via equation */
   my_eqn0 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
@@ -200,7 +196,7 @@ int main( int argc, char* argv[] ) {
   eqn_param.output.secondary = (void*)offset;
   func0(&eqn_param);
 
-  /* Run reference split sgd  */
+  /* Run reference split sgd */
   reference_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
 
   reference_pack(M, N, ld, f32_ref_out, wt_lo, wt_hi);
@@ -217,9 +213,10 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -230,7 +227,7 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+  printf("Compiler equation time = %.5g\n", l_total);
 
   func0(&eqn_param);
   l_start = libxsmm_timer_tick();
@@ -239,8 +236,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup over compiler is %.5g\n", l_total/l_total2);
+  printf("JITed TPP equation time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup over compiler is = %.5g\n", l_total/l_total2);
 
 #if 0
   vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
@@ -250,8 +247,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Vectorized equation time  = %.5g\n", ((double)(l_total)));
-  printf("Speedup over vectorized code is %.5g\n", l_total/l_total2);
+  printf("Vectorized equation time = %.5g\n", l_total);
+  if (0 < l_total2) printf("Speedup over vectorized code is = %.5g\n", l_total/l_total2);
 #endif
 
   libxsmm_free(wt);

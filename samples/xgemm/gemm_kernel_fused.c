@@ -11,8 +11,7 @@
 
 #define USE_GEMM_EXT_FRONTEND
 #if defined(_OPENMP)
-#include "omp.h"
+#include <omp.h>
 #endif
 #include "gemm_kernel.c"
 #undef USE_GEMM_EXT_FRONTEND
-
