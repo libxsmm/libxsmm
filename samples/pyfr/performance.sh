@@ -67,28 +67,28 @@ trap 'rm -f ${TMPF}' EXIT
 SEP=";"
 POSTFX="-sp"
 PERF_B=1
-MATX=$(echo "${MATS}" | sed 's/\//\\\//g')
+MATX=$(sed 's/\//\\\//g' <<<"${MATS}")
 echo "------------------------------------------------------------------"
 echo "LIBXSMM"
 echo "------------------------------------------------------------------"
 echo "MATRIX${SEP}N${SEP}NREP${SEP}BETA${SEP}SPARSE${SEP}DENSE${SEP}BLAS"
 for MTX in "${MATS}"/p*/{pri,hex}/m{3,6}"${POSTFX}".mtx; do
-  MAT=$(echo "${MTX}" | sed "s/^${MATX}\///" | sed 's/\(.*\)\..*/\1/' | sed "s/${POSTFX}$//")
+  MAT=$(sed "s/^${MATX}\///" <<<"${MTX}" | sed 's/\(.*\)\..*/\1/' | sed "s/${POSTFX}$//")
   RESULT=$("${HERE}/pyfr_driver_asp_reg" "${MTX}" "${PERF_N}" "${PERF_R}" "${PERF_B}")
-  SPARSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (sparse)/\1/p")
-  DENSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p")
-  BLAS=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*BLAS GFLOPS    : \(..*\)/\1/p")
+  SPARSE=$(sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (sparse)/\1/p" <<<"${RESULT}")
+  DENSE=$(sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p" <<<"${RESULT}")
+  BLAS=$(sed -n "s/[[:space:]][[:space:]]*BLAS GFLOPS    : \(..*\)/\1/p" <<<"${RESULT}")
   echo "${MAT}${SEP}${PERF_N}${SEP}${PERF_R}${SEP}${PERF_B}${SEP}${SPARSE}${SEP}${DENSE}${SEP}${BLAS}"
 done | tee -a "${TMPF}"
 
 PERF_B=0
 export FSSPMDM_NTS=0
 for MTX in "${MATS}"/p*/{pri,hex}/m{0,132,460}"${POSTFX}".mtx; do
-  MAT=$(echo "${MTX}" | sed "s/^${MATX}\///" | sed 's/\(.*\)\..*/\1/' | sed "s/${POSTFX}$//")
+  MAT=$(sed "s/^${MATX}\///" <<<"${MTX}" | sed 's/\(.*\)\..*/\1/' | sed "s/${POSTFX}$//")
   RESULT=$("${HERE}/pyfr_driver_asp_reg" "${MTX}" "${PERF_N}" "${PERF_R}" "${PERF_B}")
-  SPARSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (sparse)/\1/p")
-  DENSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p")
-  BLAS=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*BLAS GFLOPS    : \(..*\)/\1/p")
+  SPARSE=$(sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (sparse)/\1/p" <<<"${RESULT}")
+  DENSE=$(sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p" <<<"${RESULT}")
+  BLAS=$(sed -n "s/[[:space:]][[:space:]]*BLAS GFLOPS    : \(..*\)/\1/p" <<<"${RESULT}")
   echo "${MAT}${SEP}${PERF_N}${SEP}${PERF_R}${SEP}${PERF_B}${SEP}${SPARSE}${SEP}${DENSE}${SEP}${BLAS}"
 done | tee -a "${TMPF}"
 
