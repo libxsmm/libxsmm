@@ -20,8 +20,6 @@
 #define RELU_BITMASK    2
 #define SIGMOID         3
 
-unsigned int l_is_Ai4Bf16_gemm = 0;
-
 typedef struct gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -57,6 +55,7 @@ typedef struct gemm_def {
   libxsmm_float16 *scf_f16;
   int binary_postop;
   int unary_postop;
+  unsigned int is_Ai4Bf16_gemm;
 } gemm_def;
 
 typedef struct fusion_args {
@@ -563,7 +562,7 @@ void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const l
 }
 
 LIBXSMM_INLINE
-void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint pos_val_only ) {
+void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint pos_val_only ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
   libxsmm_bfloat16* bf16_data = (libxsmm_bfloat16*) data;
@@ -602,7 +601,7 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
         } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
           s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(get_random_posneg_p5_num() * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-          if (l_is_Ai4Bf16_gemm > 0) {
+          if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
             if ( pos_val_only != 0 ) {
               uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%8;
             } else {
@@ -1775,7 +1774,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     return EXIT_FAILURE;
   }
 
-  if (l_is_Ai4Bf16_gemm > 0) {
+  if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
     l_asize_divide_factor = 2;
   }
 
@@ -1808,7 +1807,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   if ( (i_gemm_def->a_type == LIBXSMM_DATATYPE_I8) && (i_gemm_def->b_type == LIBXSMM_DATATYPE_BF16) && ((i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16) || (i_gemm_def->c_type == LIBXSMM_DATATYPE_F32)) ) {
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF;
   }
-  if (l_is_Ai4Bf16_gemm > 0) {
+  if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
     l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2;
   }
 
@@ -2180,6 +2179,7 @@ int main(int argc, char* argv []) {
 #  endif
 # endif
 
+  l_gemm_def.is_Ai4Bf16_gemm = 0;
   /* check argument count for a valid range */
   if ( argc == 25 || argc == 26 || argc == 27 || argc == 28 ) {
     /* datatypes */
@@ -2188,7 +2188,7 @@ int main(int argc, char* argv []) {
     l_comp_dt = argv[3];
     l_c_dt = argv[4];
     if (strcmp(argv[1], "I4") == 0) {
-      l_is_Ai4Bf16_gemm = 1;
+      l_gemm_def.is_Ai4Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_I8;
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
@@ -2288,7 +2288,7 @@ int main(int argc, char* argv []) {
     l_comp_dt = argv[3];
     l_c_dt = argv[4];
     if (strcmp(argv[1], "I4") == 0) {
-      l_is_Ai4Bf16_gemm = 1;
+      l_gemm_def.is_Ai4Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_I8;
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
@@ -2587,7 +2587,7 @@ int main(int argc, char* argv []) {
       if (l_gemm_def.binary_postop == COLBIAS_ADD) {
         l_gemm_def.bop_ld = l_ldc;
         l_colbias = (char*)libxsmm_aligned_malloc((size_t)l_gemm_def.bop_ld * LIBXSMM_TYPESIZE(l_gemm_def.c_type), 64);
-        init_random_matrix( l_gemm_def.c_type, l_colbias, 1, l_gemm_def.bop_ld, 1, 0 );
+        init_random_matrix( &l_gemm_def, l_gemm_def.c_type, l_colbias, 1, l_gemm_def.bop_ld, 1, 0 );
         fusion_arguments.colbias = l_colbias;
         ref_fusion_arguments.colbias = l_colbias;
       }
@@ -2604,17 +2604,17 @@ int main(int argc, char* argv []) {
       }
 
       if (l_gemm_def.trans_a == 0) {
-        init_random_matrix( l_gemm_def.a_type, l_a, l_br, l_lda, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
+        init_random_matrix( &l_gemm_def, l_gemm_def.a_type, l_a, l_br, l_lda, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
       } else {
-        init_random_matrix( l_gemm_def.a_type, l_a, l_br, l_lda, l_m, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
+        init_random_matrix( &l_gemm_def, l_gemm_def.a_type, l_a, l_br, l_lda, l_m, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
       }
       if (l_gemm_def.trans_b == 0) {
-        init_random_matrix( l_gemm_def.b_type, l_b, l_br, l_ldb, l_n, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
+        init_random_matrix( &l_gemm_def, l_gemm_def.b_type, l_b, l_br, l_ldb, l_n, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
         if (l_gemm_def.unary_postop == RELU_BITMASK) {
           negate_random_cols_rows( l_gemm_def.b_type, l_b, l_br, l_ldb, l_n, 0 );
         }
       } else {
-        init_random_matrix( l_gemm_def.b_type, l_b, l_br, l_ldb, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
+        init_random_matrix( &l_gemm_def, l_gemm_def.b_type, l_b, l_br, l_ldb, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
         if (l_gemm_def.unary_postop == RELU_BITMASK) {
           negate_random_cols_rows( l_gemm_def.b_type, l_b, l_br, l_ldb, l_k, 1 );
         }
@@ -2653,7 +2653,7 @@ int main(int argc, char* argv []) {
       }
 
       /* run LIBXSMM solution */
-      if (l_is_Ai4Bf16_gemm > 0) {
+      if (l_gemm_def.is_Ai4Bf16_gemm > 0) {
         /* We create a new tensor of i4 in vnni2 format from A... */
         char *l_a_i4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)(l_k/2) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
         libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
