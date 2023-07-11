@@ -470,15 +470,11 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   _in       = in;
 
   /* init in */
+  init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
+  init_zero_matrix(   dtype_out, out,      1, ldo, N_out );
+  init_zero_matrix(   dtype_out, out_gold, 1, ldo, N_out );
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
-    init_random_matrix( dtype_out, in,       1, ldi*2, N, 0 );
-    init_zero_matrix(   dtype_out, out,      1, ldo*2, N );
-    init_zero_matrix(   dtype_out, out_gold, 1, ldo*2, N );
     offset = (long long) LIBXSMM_TYPESIZE(dtype_out)*N*ldo;
-  } else {
-    init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
-    init_zero_matrix(   dtype_out, out,      1, ldo, N_out );
-    init_zero_matrix(   dtype_out, out_gold, 1, ldo, N_out );
   }
 
   if (((op == RCP_OP) || (op == RCP_SQRT_OP)) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8) )) {
