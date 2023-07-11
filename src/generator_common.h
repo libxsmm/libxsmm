@@ -1478,6 +1478,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   /* Auxiliary fields to propagate kernel info */
   unsigned int m_remainder;
   unsigned int br_loop_index;
+  unsigned int cur_unroll_factor;
+  unsigned int is_peeled_br_loop;
   libxsmm_jump_label_tracker *p_jump_label_tracker;
   unsigned int loop_label_id;
   unsigned int k_amx_microkernel;
