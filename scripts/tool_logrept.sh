@@ -116,8 +116,9 @@ then
   PARENT_PID=${PPID}
   while [ "${PARENT_PID}" ]; do
     if PSOUT=$(ps -o args= ${PARENT_PID} 2>/dev/null); then
-      PARENT=$(echo "${PSOUT}" \
-        | sed -n "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p")
+      PARENT=$(sed -n \
+          "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p" \
+        <<<"${PSOUT}")
       if [ "${PARENT}" ]; then
         PARENT_PID=$(ps -oppid ${PARENT_PID} | tail -n1)
         if [ -e "${PARENT}.weights.json" ]; then
@@ -178,22 +179,22 @@ if [ "${LOGDIR}" ]; then
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
-      -p "${PIPELINE}" -b "${LOGRPTBRN}" \
-      -f "${LOGDIR}/${PIPELINE}.json" \
-      -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
-      -i /dev/stdin -j "${JOBID}" ${EXACT} \
-      -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" ${UNTIED} \
-      -t "${LOGRPTBND}" \
-      -v ${VERBOSITY});
+    if ! OUTPUT=$(eval "${DBSCRT} \
+      -p ${PIPELINE} -b \"${LOGRPTBRN}\" \
+      -f ${LOGDIR}/${PIPELINE}.json \
+      -g \"${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}\" \
+      -i /dev/stdin -j ${JOBID} ${EXACT} \
+      -x -y \"${QUERY}\" -r \"${RESULT}\" -z \
+      -q \"${LOGRPTQOP}\" ${UNTIED} \
+      -t \"${LOGRPTBND}\" \
+      -v ${VERBOSITY} <<<${FINPUT}");
     then  # ERROR=$?
       ERROR=1
     fi
     FIGPAT="[[:space:]][[:space:]]*created\."
-    FIGURE=$(echo "${OUTPUT}" | sed -n "/${FIGPAT}/p" | sed '$!d')
+    FIGURE=$(sed -n "/${FIGPAT}/p" | sed '$!d' <<<"${OUTPUT}")
     if [ "${FIGURE}" ]; then
-      OUTPUT=$(echo "${OUTPUT}" | sed "/${FIGPAT}/d")
+      OUTPUT=$(sed "/${FIGPAT}/d" <<<"${OUTPUT}")
     fi
     if [ "${OUTPUT}" ] && [[ ("${ERROR}") || ("0" != "$((0>VERBOSITY))") ]]; then
       echo "${OUTPUT}"
@@ -206,7 +207,7 @@ if [ "${LOGDIR}" ]; then
     if [ "$(command -v base64)" ] && \
        [ "$(command -v cut)" ];
     then
-      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
+      FIGURE=$(cut -d' ' -f1 <<<"${OUTPUT}")  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         RPTFMT=${LOGRPTDOC:-pdf}
         FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
