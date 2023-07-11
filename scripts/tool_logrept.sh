@@ -179,20 +179,20 @@ if [ "${LOGDIR}" ]; then
       VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(eval "${DBSCRT} \
-      -p ${PIPELINE} -b \"${LOGRPTBRN}\" \
-      -f ${LOGDIR}/${PIPELINE}.json \
-      -g \"${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}\" \
-      -i /dev/stdin -j ${JOBID} ${EXACT} \
-      -x -y \"${QUERY}\" -r \"${RESULT}\" -z \
-      -q \"${LOGRPTQOP}\" ${UNTIED} \
-      -t \"${LOGRPTBND}\" \
-      -v ${VERBOSITY} <<<${FINPUT}");
+    if ! OUTPUT=$(${DBSCRT} \
+      -p "${PIPELINE}" -b "${LOGRPTBRN}" \
+      -f "${LOGDIR}/${PIPELINE}.json" \
+      -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
+      -i /dev/stdin -j "${JOBID}" ${EXACT} \
+      -x -y "${QUERY}" -r "${RESULT}" -z \
+      -q "${LOGRPTQOP}" ${UNTIED} \
+      -t "${LOGRPTBND}" \
+      -v ${VERBOSITY} <<<"${FINPUT}");
     then  # ERROR=$?
       ERROR=1
     fi
     FIGPAT="[[:space:]][[:space:]]*created\."
-    FIGURE=$(sed -n "/${FIGPAT}/p" | sed '$!d' <<<"${OUTPUT}")
+    FIGURE=$(sed -n "/${FIGPAT}/p" <<<"${OUTPUT}" | sed '$!d')
     if [ "${FIGURE}" ]; then
       OUTPUT=$(sed "/${FIGPAT}/d" <<<"${OUTPUT}")
     fi
