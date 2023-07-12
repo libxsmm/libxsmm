@@ -165,8 +165,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
   # setup ENVS (multiple environments)
   if [ ! "${ENVS}" ]; then
-    if [ "${ENV}" ]; then
-      ENVS=${ENV}
+    if [ "${ENVI}" ]; then
+      ENVS=${ENVI}
     else
       ENVS=none
     fi
@@ -367,16 +367,16 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       CONFIG="none"
     fi
     # iterate over all given environments
-    COUNT_ENV=0; for ENV in ${ENVS}; do
-      if [ "none" != "${ENV}" ]; then
-        ENVVAL=$(cut -d= -f2 <<<"${ENV}")
-        ENVSTR=${ENV}
+    COUNT_ENV=0; for ENVI in ${ENVS}; do
+      if [ "none" != "${ENVI}" ]; then
+        ENVVAL=$(cut -d= -f2 <<<"${ENVI}")
+        ENVSTR=${ENVI}
       fi
       # print some header if all tests are selected or in case of multi-tests
       HEADER=""
       if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then HEADER="${PARTITION}"; fi
       if [ "none" != "${CONFIG}" ]; then HEADER="${HEADER} ${CONFIG}"; fi
-      if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
+      if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENVI}"; fi
       HEADER=$(${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" <<<"${HEADER}" \
         | ${TR} "[:lower:]" "[:upper:]" | ${TR} -s " " "/")
       if [ "${TESTID}" ] && [ "test" != "$(${TR} "[:upper:]" "[:lower:]" <<<"${TESTID}")" ]; then
