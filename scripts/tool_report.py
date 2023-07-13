@@ -641,8 +641,6 @@ def main(args, argd, dbfname):
             savedb(outfile, database, ofmtime, 3)
     if 0 != nentries:
         savedb(outfile, database, ofmtime, 3)
-    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
@@ -652,13 +650,16 @@ def main(args, argd, dbfname):
                 f"WARNING: ignored {nerrors} erroneous entr{y}!",
                 file=sys.stderr,
             )
-        y = "ies" if 1 != nentries else "y"
-        print(f"Database consists of {dbsize} builds.", end="")
-        if 0 < nentries:
-            s = "s" if 1 != nbuilds else ""
-            print(f" Found {nentries} new entr{y} in {nbuilds} build{s}.")
-        else:
-            print(f" Found {nentries} new entr{y}.")
+        if outfile and outfile.exists():
+            print(f"Database consists of {dbsize} builds.", end="")
+            y = "ies" if 1 != nentries else "y"
+            if 0 < nentries:
+                s = "s" if 1 != nbuilds else ""
+                print(f" Found {nentries} new entr{y} in {nbuilds} build{s}.")
+            else:
+                print(f" Found {nentries} new entr{y}.")
+        elif 0 != nentries:
+            print(f"{outfile} database created.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
