@@ -189,6 +189,21 @@ def parselog(
     return nentries + m, nerrors + n
 
 
+def purify(text):
+    """
+    Remove for instance Escape sequences from given text.
+    """
+    result, skip = "", False
+    for c in text:
+        if 27 == ord(c):
+            skip = True
+        elif 7 == ord(c):
+            skip = False
+        elif not skip:
+            result = result + c
+    return result
+
+
 def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
@@ -473,7 +488,7 @@ def main(args, argd, dbfname):
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         try:
             with open(args.infile, "r") as file:
-                txt = file.read()
+                txt = purify(file.read())
             if 0 > args.verbosity:
                 print(txt)
         except:  # noqa: E722
@@ -590,15 +605,16 @@ def main(args, argd, dbfname):
                         if "log_url" in job
                         else ""
                     )
-                    txt = json.loads(log) if log else {}
-                    if txt and "content" in txt:
+                    raw = json.loads(log) if log else {}
+                    if raw and "content" in raw:
+                        txt = purify(raw["content"])
                         nentries, nerrors = parselog(
                             database,
                             strbuild,
                             job["name"],
                             infokey,
                             infocpy,
-                            txt["content"],
+                            txt,
                             nentries,
                             nerrors,
                         )
