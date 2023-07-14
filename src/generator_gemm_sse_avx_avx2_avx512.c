@@ -497,7 +497,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
     /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
     l_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch, 0 );
-    l_micro_kernel_config.m_bitmask_advance = 0; /* @TODO: FOR SSE ONLY */
+    l_micro_kernel_config.m_bitmask_advance = 0; /* @TODO: FOR SSE ONLY and relumask */
 
     /* apply m_blocking */
     while (l_m_done != (unsigned int)l_xgemm_desc_opa->m) {
@@ -511,7 +511,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       LIBXSMM_ASSERT(0 != l_m_blocking);
       /* coverity[divide_by_zero] */
       l_m_done = l_m_done + (((l_xgemm_desc_opa->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
-      l_micro_kernel_config.m_bitmask_advance += ((l_m_blocking+3)/8); /* @TODO: FOR SSE ONLY */
+      l_micro_kernel_config.m_bitmask_advance += ((l_m_done-l_m_done_old+3)/8); /* @TODO: FOR SSE ONLY and relumask */
+      /*printf(" advance: %i %i %i\n", l_m_done, l_m_blocking, l_micro_kernel_config.m_bitmask_advance);*/
 
       if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
         /* when on AVX512, load mask, if needed */
@@ -909,9 +910,17 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
   unsigned int l_m_blocking = i_current_m_blocking;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE42 ) && ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
-    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 12, 4, &l_m_blocking, &l_use_masking_a_c );
+    if ( io_micro_kernel_config->fused_relu == 1 ) {
+      libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 8, 4, &l_m_blocking, &l_use_masking_a_c );
+    } else {
+      libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 12, 4, &l_m_blocking, &l_use_masking_a_c );
+    }
   } else if ( ( i_arch <= LIBXSMM_X86_SSE42 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
-    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 6, 2, &l_m_blocking, &l_use_masking_a_c );
+    if ( io_micro_kernel_config->fused_relu == 1 ) {
+      libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 4, 2, &l_m_blocking, &l_use_masking_a_c );
+    } else {
+      libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 6, 2, &l_m_blocking, &l_use_masking_a_c );
+    }
   } else if ( ( i_arch == LIBXSMM_X86_AVX ) && ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 24, 8, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ( i_arch == LIBXSMM_X86_AVX ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
