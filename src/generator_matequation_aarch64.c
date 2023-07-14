@@ -352,7 +352,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, temp_reg );
   libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
 
-  if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+  if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 24, temp_reg );
     libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
   }
@@ -402,7 +402,7 @@ libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libx
                                                   LIBXSMM_MELTW_TYPE_UNARY_EXP,
                                                   LIBXSMM_MELTW_TYPE_UNARY_DROPOUT,
                                                   LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV,
-                                                  LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_UNZIP,
                                                   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU,
                                                   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV,
                                                   LIBXSMM_MELTW_TYPE_UNARY_ELU,
@@ -415,9 +415,9 @@ libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libx
 
   /* Binary not supported for fp64 */
   libxsmm_meltw_binary_type non_fp64_binary[2] = { LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD,
-                                                   LIBXSMM_MELTW_TYPE_BINARY_PACK };
+                                                   LIBXSMM_MELTW_TYPE_BINARY_ZIP };
 
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
+  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
     is_valid_arch_prec = 0;
   }
   if ((has_inp_or_out_bf16 > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
@@ -511,7 +511,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   l_kernel_config.gpr_pool[16] = LIBXSMM_AARCH64_GP_REG_X26; l_kernel_config.gpr_pool[17] = LIBXSMM_AARCH64_GP_REG_X27;
   l_kernel_config.gpr_pool[18] = LIBXSMM_AARCH64_GP_REG_X28;
 
-  if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+  if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
     l_kernel_config.n_avail_gpr = l_kernel_config.n_avail_gpr - 1;
     l_gp_reg_mapping.gp_reg_offset = LIBXSMM_AARCH64_GP_REG_X28;
   }
@@ -578,9 +578,10 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       if (eqn_tree_id < queue_size - 1) {
         copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
       }
-      /* If head of equation is unpack_to_blocks, then make sure we load the block offset from the stack */
-      if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+      /* If head of equaiton is unpack_to_blocks, then make sure we load the block offset from the stack */
+      if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
         libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, l_gp_reg_mapping.gp_reg_offset );
+        libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, l_gp_reg_mapping.gp_reg_offset, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_gp_reg_mapping.gp_reg_offset );
       }
       libxsmm_generator_reoptimize_eqn(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
