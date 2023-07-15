@@ -106,7 +106,6 @@ unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_d
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_generated_code* io_generated_code,  libxsmm_datatype  dtype);
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code*          io_generated_code,
                                                  libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
