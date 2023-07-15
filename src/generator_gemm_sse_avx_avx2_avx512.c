@@ -1010,6 +1010,13 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
   }
 
   io_micro_kernel_config->use_masking_a_c = l_use_masking_a_c;
+  if ( l_use_masking_a_c != 0 ) {
+    io_micro_kernel_config->c_vmove_nts_instruction = ( io_micro_kernel_config->c_vmove_nts_instruction == LIBXSMM_X86_INSTR_VMOVNTPS ) ? LIBXSMM_X86_INSTR_VMOVAPS : io_micro_kernel_config->c_vmove_nts_instruction;
+    io_micro_kernel_config->c_vmove_nts_instruction = ( io_micro_kernel_config->c_vmove_nts_instruction == LIBXSMM_X86_INSTR_VMOVNTPD ) ? LIBXSMM_X86_INSTR_VMOVAPD : io_micro_kernel_config->c_vmove_nts_instruction;
+  } else {
+    io_micro_kernel_config->c_vmove_nts_instruction = ( io_micro_kernel_config->c_vmove_nts_instruction == LIBXSMM_X86_INSTR_VMOVAPS ) ? LIBXSMM_X86_INSTR_VMOVNTPS : io_micro_kernel_config->c_vmove_nts_instruction;
+    io_micro_kernel_config->c_vmove_nts_instruction = ( io_micro_kernel_config->c_vmove_nts_instruction == LIBXSMM_X86_INSTR_VMOVAPD ) ? LIBXSMM_X86_INSTR_VMOVNTPD : io_micro_kernel_config->c_vmove_nts_instruction;
+  }
 
   return l_m_blocking;
 }
