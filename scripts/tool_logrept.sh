@@ -100,6 +100,8 @@ then
       DBSCRT=${LOGDIR}/tool_report.sh
     elif [ -e "${HERE}/tool_report.sh" ]; then
       DBSCRT=${HERE}/tool_report.sh
+    elif [ -e "${HERE}/tool_report.py" ]; then
+      DBSCRT=${HERE}/tool_report.py
     fi
   fi
   if [ ! "${DBSCRT}" ]; then
