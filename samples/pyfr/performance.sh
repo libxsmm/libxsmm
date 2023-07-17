@@ -112,10 +112,12 @@ cut -d"${SEP}" -f1,2 "${HERE}/gimmik.csv" | sed "1s/GFLOPS/GIMMIK/" \
 
 RESULT=$?
 if [ "$(command -v datamash)" ]; then
-  if datamash geomean 2>&1 | grep -q invalid; then
-    datamash --headers -t"${SEP}"    mean 5-8 <"${HERE}/performance.csv" >"${TMPF}"
-  else
-    datamash --headers -t"${SEP}" geomean 5-8 <"${HERE}/performance.csv" >"${TMPF}"
+  if ! datamash --headers -t"${SEP}" geomean 5-8 \
+      <"${HERE}/performance.csv" >"${TMPF}" 2>/dev/null \
+    || [ ! -s "${TMPF}" ];
+  then
+    datamash --headers -t"${SEP}" mean 5-8 \
+      <"${HERE}/performance.csv" >"${TMPF}"
   fi
   if [ "-r" != "$1" ] && [ "--report" != "$1" ]; then
     echo
