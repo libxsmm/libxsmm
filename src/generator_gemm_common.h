@@ -172,7 +172,14 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
     const unsigned int                 i_m_remain );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_sse_avx_avx512( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_micro_kernel_config*        i_micro_kernel_config,
+    unsigned int                        reserved_zmms,
+    unsigned int                        reserved_mask_regs,
+    unsigned int                        temp_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_sse( libxsmm_generated_code*                        io_generated_code,
     libxsmm_micro_kernel_config*        i_micro_kernel_config,
     unsigned int                        reserved_zmms,
     unsigned int                        reserved_mask_regs,
