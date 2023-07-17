@@ -45,20 +45,20 @@ fi
 # optionally enable script debug
 if [ "${PERFORMANCE_DEBUG}" ] && [ "0" != "${PERFORMANCE_DEBUG}" ]; then
   echo "*** DEBUG ***"
-  if [[ ${PERFORMANCE_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
-    set -xv
-  else
-    set "${PERFORMANCE_DEBUG}"
-  fi
-  PYTHON=$(command -v python3)
+  PYTHON=$(command -v python3 || true)
   if [ ! "${PYTHON}" ]; then
-    PYTHON=$(command -v python)
+    PYTHON=$(command -v python || true)
   fi
   if [ "${PYTHON}" ]; then
     ${PYTHON} -m site --user-site 2>&1 && echo
   fi
   env
   echo "*** DEBUG ***"
+  if [[ ${PERFORMANCE_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+    set -xv
+  else
+    set "${PERFORMANCE_DEBUG}"
+  fi
 fi
 
 TMPF=$(mktemp)

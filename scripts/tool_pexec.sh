@@ -29,7 +29,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
-  PYTHON=$(command -v python3)
+  PYTHON=$(command -v python3 || true)
   FLOCK=${HERE}/../.flock.sh
   #LG_DEFAULT=${NAME}.log
   LG_DEFAULT=/dev/null
@@ -46,7 +46,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
   fi
   # ensure consistent sort
   export LC_ALL=C
-  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
+  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python || true); fi
   if [ "${PYTHON}" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
     TARGET=$(${PYTHON} "${HERE}/libxsmm_utilities.py")
   fi

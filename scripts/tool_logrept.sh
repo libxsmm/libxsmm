@@ -45,20 +45,20 @@ fi
 # optionally enable script debug
 if [ "${LOGRPT_DEBUG}" ] && [ "0" != "${LOGRPT_DEBUG}" ]; then
   echo "*** DEBUG ***"
-  if [[ ${LOGRPT_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
-    set -xv
-  else
-    set "${LOGRPT_DEBUG}"
-  fi
-  PYTHON=$(command -v python3)
+  PYTHON=$(command -v python3 || true)
   if [ ! "${PYTHON}" ]; then
-    PYTHON=$(command -v python)
+    PYTHON=$(command -v python || true)
   fi
   if [ "${PYTHON}" ]; then
     ${PYTHON} -m site --user-site 2>&1 && echo
   fi
   env
   echo "*** DEBUG ***"
+  if [[ ${LOGRPT_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+    set -xv
+  else
+    set "${LOGRPT_DEBUG}"
+  fi
 fi
 
 # determine artifact directory

@@ -40,13 +40,13 @@ RUN_CMD="--session-command"
 # optionally enable script debug
 if [ "${DEBUG_TEST}" ] && [ "0" != "${DEBUG_TEST}" ]; then
   echo "*** DEBUG ***"
+  env
+  echo "*** DEBUG ***"
   if [[ ${DEBUG_TEST} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
     set -xv
   else
     set "${DEBUG_TEST}"
   fi
-  env
-  echo "*** DEBUG ***"
 fi
 
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ] && [ "${TR}" ]; then
