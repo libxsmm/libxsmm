@@ -1040,7 +1040,7 @@ void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_sse_avx_avx512
     unsigned int                        reserved_mask_regs,
     unsigned int                        temp_reg ) {
   if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
-    return libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_sse( io_generated_code, i_micro_kernel_config, reserved_zmms, reserved_mask_regs, temp_reg );
+    libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_sse( io_generated_code, i_micro_kernel_config, reserved_zmms, reserved_mask_regs, temp_reg );
   } else {
     float pade78_sigm_array[16] = { 2027025.0f, 270270.0f, 6930.0f, 36.0f, 945945.0f, 51975.0f,  630.0f, 4.97f, -4.97f,  1.0f, -1.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f };
 
