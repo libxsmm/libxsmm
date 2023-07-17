@@ -574,7 +574,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   # upload artifacts
   if [ "$(command -v buildkite-agent)" ]; then
     UPLOAD_PATH=$(eval "${ARTIFACT_PATH}")
-    if [ -d "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
+    if [ ! -d "${UPLOAD_PATH}" ]; then
+      if [ "${PIPELINE}" ] && [ "${JOBID}" ] && [ -d "/tmp/${PIPELINE}/${JOBID}" ]; then
+        UPLOAD_PATH=/tmp/${PIPELINE}/${JOBID}
+      else  # nothing to upload
+        UPLOAD_PATH=""
+      fi
+    fi
+    if [ "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
        [ ! -e "${UPLOAD_PATH}/.uploaded" ];
     then
       cd "${UPLOAD_PATH}" && buildkite-agent artifact upload "*"
@@ -582,6 +589,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
   fi
 
+  # return captured status
   exit "${RESULT}"
 else
   >&2 echo "ERROR: missing prerequisites!"
