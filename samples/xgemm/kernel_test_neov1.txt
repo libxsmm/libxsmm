@@ -394,10 +394,6 @@ i16i32gemm_nn_eqld
 i16i32gemm_nn_gtld
 qvnni_i16i32gemm_nn_eqld
 qvnni_i16i32gemm_nn_gtld
-sui8f32gemm_nn_eqld
-sui8f32gemm_nn_gtld
-sui8i32gemm_nn_eqld
-sui8i32gemm_nn_gtld
 usi8f32gemm_nn_eqld
 usi8f32gemm_nn_gtld
 usi8i32gemm_nn_eqld
