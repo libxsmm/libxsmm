@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012,SC2153,SC2206
+# shellcheck disable=SC2012,SC2086,SC2153,SC2206
 
 if [ "$1" ]; then  # argument takes precedence
   LOGFILE=$1
@@ -187,12 +187,12 @@ if [ "${LOGDIR}" ]; then
       DATABASE=${LOGDIR}/${PIPELINE}.json
       mkdir -p "${ARTDIR}"
     fi
-    if ! OUTPUT=$(${DBSCRT} "${UNTIED}" -v "${VERBOSITY}" \
+    if ! OUTPUT=$(${DBSCRT} -v "${VERBOSITY}" \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" -t "${LOGRPTBND}" \
       -f "${DATABASE}" -g "${ARTDIR} ${LOGRPTFMT}" \
-      -i /dev/stdin -j "${JOBID}" ${EXACT} \
+      -i /dev/stdin -j "${JOBID}" -q "${LOGRPTQOP}" \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" \
+      ${EXACT} ${UNTIED} \
       <<<"${FINPUT}");
     then  # ERROR=$?
       ERROR=1
