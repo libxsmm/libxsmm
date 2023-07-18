@@ -583,24 +583,24 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
   # artifact upload
   if [ "${CI_AGENT}" ] && [ "${ARTIFACT_ROOT}" ] && [ -d "${ARTIFACT_ROOT}" ] && [ "${PIPELINE}" ]; then
-    if [ "${JOBID}" ] && [ -d "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}" ]; then
-      # upload regular artifacts
-      if [ "$(ls -1 "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}")" ] && \
-         [ ! -e "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}/.uploaded" ];
-      then
-      ( # subshell
-        cd "${UPLOAD_PATH}" && ${CI_AGENT} artifact upload "*"
-        touch ./.uploaded
-      )
-      fi
-      # upload database
-      if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ] && \
-         [ -e "${ARTIFACT_ROOT}/${PIPELINE}.json" ];
-      then
-      ( # subshell
-        cd "${ARTIFACT_ROOT}" && ${CI_AGENT} artifact upload "${PIPELINE}*.json"
-      )
-      fi
+    # upload regular artifacts
+    if [ "${JOBID}" ] && [ -d "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}" ] && \
+       [ ! -e "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}/.uploaded" ] && \
+       [ "$(ls -1 "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}")" ];
+    then
+    ( # subshell
+      cd "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}" || exit 1
+      ${CI_AGENT} artifact upload "*"
+      touch ./.uploaded
+    )
+    fi
+    # upload database
+    if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ] && \
+       [ -e "${ARTIFACT_ROOT}/${PIPELINE}.json" ];
+    then
+    ( # subshell
+      cd "${ARTIFACT_ROOT}" && ${CI_AGENT} artifact upload "${PIPELINE}*.json"
+    )
     fi
   fi
 
