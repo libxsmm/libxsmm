@@ -180,8 +180,8 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
-    ARTDIR=${LOGDIR}/${PIPELINE}/${JOBID}
-    if [ -e "${ARTDIR}/${PIPELINE}.json" ]; then
+    ARTDIR=${LOGDIR}/${PIPELINE}
+    if [ -d "${ARTDIR}" ]; then
       DATABASE=${ARTDIR}/${PIPELINE}.json
     else
       DATABASE=${LOGDIR}/${PIPELINE}.json

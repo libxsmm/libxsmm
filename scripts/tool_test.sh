@@ -19,6 +19,7 @@ ROOT=${HERE}/..
 # TODO: map to CI-provider (abstract environment)
 source "${ROOTENV}/buildkite.env" ""
 
+CI_AGENT=$(command -v buildkite-agent)
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
@@ -269,6 +270,17 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     trap 'rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)' EXIT
   else
     trap 'rm ${TESTSCRIPT} ${ENVFILE}' EXIT
+  fi
+
+  # artifact download (ARTIFACT_UPLOAD_DB=1)
+  if [ "${CI_AGENT}" ] && [ "${PIPELINE}" ]; then
+    ARTDIR=/tmp/${PIPELINE}
+    if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ]; then
+    ( # subshell
+      ${MKDIR} -p "${ARTDIR}"
+      cd "${ARTDIR}" && ${CI_AGENT} artifact download "${PIPELINE}.json" .
+    )
+    fi
   fi
 
   RESULT=0
@@ -571,12 +583,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     RESULT=${RESULTCODE}
   fi
 
-  # upload artifacts
-  if [ "$(command -v buildkite-agent)" ]; then
+  # artifact upload
+  if [ "${CI_AGENT}" ]; then
     UPLOAD_PATH=$(eval "${ARTIFACT_PATH}")
     if [ ! -d "${UPLOAD_PATH}" ]; then
-      if [ "${PIPELINE}" ] && [ "${JOBID}" ] && [ -d "/tmp/${PIPELINE}/${JOBID}" ]; then
-        UPLOAD_PATH=/tmp/${PIPELINE}/${JOBID}
+      if [ "${ARTDIR}" ] && [ -d "${ARTDIR}" ]; then
+        UPLOAD_PATH=${ARTDIR}
       else  # nothing to upload
         UPLOAD_PATH=""
       fi
@@ -584,8 +596,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     if [ "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
        [ ! -e "${UPLOAD_PATH}/.uploaded" ];
     then
-      cd "${UPLOAD_PATH}" && buildkite-agent artifact upload "*"
-      touch "${UPLOAD_PATH}/.uploaded"
+    ( # subshell
+      cd "${UPLOAD_PATH}" && ${CI_AGENT} artifact upload "*"
+      touch ./.uploaded
+    )
     fi
   fi
 
