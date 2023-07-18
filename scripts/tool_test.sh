@@ -597,7 +597,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
        [ ! -e "${UPLOAD_PATH}/.uploaded" ];
     then
     ( # subshell
-      cd "${UPLOAD_PATH}" && ${CI_AGENT} artifact upload "*"
+      ARTIFACT_UPLOAD_PATTERN="${ARTIFACT_UPLOAD_PATTERN:-*.png;*.svg;*.pdf}"
+      if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ]; then
+        if [ "1" = "${ARTIFACT_UPLOAD_DB}" ]; then
+          ARTIFACT_UPLOAD_PATTERN+=";*.json"
+        else
+          ARTIFACT_UPLOAD_PATTERN="*"
+        fi
+      fi
+      cd "${UPLOAD_PATH}" && ${CI_AGENT} artifact upload "${ARTIFACT_UPLOAD_PATTERN}"
       touch ./.uploaded
     )
     fi
