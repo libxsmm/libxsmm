@@ -136,7 +136,7 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
   if (io_generated_code->arch < LIBXSMM_X86_AVX) {
     if (i_use_masking > 0) {
       if ( (i_vmove_instr == LIBXSMM_X86_INSTR_MOVUPS) ||
-           (i_vmove_instr == LIBXSMM_X86_INSTR_MOVUPS)    ) {
+           (i_vmove_instr == LIBXSMM_X86_INSTR_MOVAPS)    ) {
         if (i_is_store == 0) {
           libxsmm_generator_maskedload_32bit_sse( io_generated_code, LIBXSMM_X86_GP_REG_RCX, 1, i_gp_reg_base, i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0, i_mask_reg_number );
         } else {
@@ -1421,17 +1421,17 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_sse( libxsmm_generated
   float ones_array[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
   float neg_ones_array[4] = { -1.0f, -1.0f, -1.0f, -1.0f };
 
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c0_array, "c0_array_", 'y', i_vec_c0);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_array, "c1_array_", 'y', i_vec_c1);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array_", 'y', i_vec_c2);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_array, "c3_array_", 'y', i_vec_c3);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_d_array, "c1_d_array_", 'y', i_vec_c1_d);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_d_array, "c2_d_array_", 'y', i_vec_c2_d);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_d_array, "c3_d_array_", 'y', i_vec_c3_d);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) hi_b_array, "hi_b_array_", 'y', i_vec_hi_bound);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) lo_b_array, "lo_b_array_", 'y', i_vec_lo_bound);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) ones_array, "ones_array_", 'y', i_vec_ones);
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) neg_ones_array, "neg_ones_array_", 'y', i_vec_neg_ones);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c0_array, "c0_array_", 'x', i_vec_c0);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_array, "c1_array_", 'x', i_vec_c1);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array_", 'x', i_vec_c2);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_array, "c3_array_", 'x', i_vec_c3);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_d_array, "c1_d_array_", 'x', i_vec_c1_d);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_d_array, "c2_d_array_", 'x', i_vec_c2_d);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_d_array, "c3_d_array_", 'x', i_vec_c3_d);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) hi_b_array, "hi_b_array_", 'x', i_vec_hi_bound);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) lo_b_array, "lo_b_array_", 'x', i_vec_lo_bound);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) ones_array, "ones_array_", 'x', i_vec_ones);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) neg_ones_array, "neg_ones_array_", 'x', i_vec_neg_ones);
 }
 
 LIBXSMM_API_INTERN
