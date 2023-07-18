@@ -277,7 +277,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
      [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ];
   then
   ( # subshell
-    cd "${ARTIFACT_ROOT}" && ${CI_AGENT} artifact download "${PIPELINE}*.json" .
+    cd "${ARTIFACT_ROOT}" || exit 1
+    ${CI_AGENT} artifact download "${PIPELINE}.json;${PIPELINE}.weights.json" .
   )
   fi
 
@@ -599,7 +600,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
        [ -e "${ARTIFACT_ROOT}/${PIPELINE}.json" ];
     then
     ( # subshell
-      cd "${ARTIFACT_ROOT}" && ${CI_AGENT} artifact upload "${PIPELINE}*.json"
+      cd "${ARTIFACT_ROOT}" || exit 1
+      ${CI_AGENT} artifact upload "${PIPELINE}.json;${PIPELINE}.weights.json"
     )
     fi
   fi
