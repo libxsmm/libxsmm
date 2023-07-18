@@ -180,16 +180,11 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
-    ARTDIR=${LOGDIR}/${PIPELINE}
-    if [ -d "${ARTDIR}" ]; then
-      DATABASE=${ARTDIR}/${PIPELINE}.json
-    else
-      DATABASE=${LOGDIR}/${PIPELINE}.json
-      mkdir -p "${ARTDIR}"
-    fi
+    ARTDIR=${LOGDIR}/${PIPELINE}/${JOBID}
+    mkdir -p "${ARTDIR}"
     if ! OUTPUT=$(${DBSCRT} -v "${VERBOSITY}" \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" -t "${LOGRPTBND}" \
-      -f "${DATABASE}" -g "${ARTDIR} ${LOGRPTFMT}" \
+      -f "${LOGDIR}/${PIPELINE}.json" -g "${ARTDIR} ${LOGRPTFMT}" \
       -i /dev/stdin -j "${JOBID}" -q "${LOGRPTQOP}" \
       -x -y "${QUERY}" -r "${RESULT}" -z \
       ${EXACT} ${UNTIED} \

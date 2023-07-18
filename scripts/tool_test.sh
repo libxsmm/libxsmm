@@ -273,14 +273,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   fi
 
   # artifact download (ARTIFACT_UPLOAD_DB=1)
-  if [ "${CI_AGENT}" ] && [ "${PIPELINE}" ]; then
-    ARTDIR=/tmp/${PIPELINE}
-    if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ]; then
-    ( # subshell
-      ${MKDIR} -p "${ARTDIR}"
-      cd "${ARTDIR}" && ${CI_AGENT} artifact download "${PIPELINE}.json" .
-    )
-    fi
+  if [ "${CI_AGENT}" ] && [ "${ARTIFACT_ROOT}" ] && [ -d "${ARTIFACT_ROOT}" ] && [ "${PIPELINE}" ] && \
+     [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ];
+  then
+  ( # subshell
+    cd "${ARTIFACT_ROOT}" && ${CI_AGENT} artifact download "${PIPELINE}*.json" .
+  )
   fi
 
   RESULT=0
@@ -584,30 +582,25 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   fi
 
   # artifact upload
-  if [ "${CI_AGENT}" ]; then
-    UPLOAD_PATH=$(eval "${ARTIFACT_PATH}")
-    if [ ! -d "${UPLOAD_PATH}" ]; then
-      if [ "${ARTDIR}" ] && [ -d "${ARTDIR}" ]; then
-        UPLOAD_PATH=${ARTDIR}
-      else  # nothing to upload
-        UPLOAD_PATH=""
+  if [ "${CI_AGENT}" ] && [ "${ARTIFACT_ROOT}" ] && [ -d "${ARTIFACT_ROOT}" ] && [ "${PIPELINE}" ]; then
+    if [ "${JOBID}" ] && [ -d "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}" ]; then
+      # upload regular artifacts
+      if [ "$(ls -1 "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}")" ] && \
+         [ ! -e "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}/.uploaded" ];
+      then
+      ( # subshell
+        cd "${UPLOAD_PATH}" && ${CI_AGENT} artifact upload "*"
+        touch ./.uploaded
+      )
       fi
-    fi
-    if [ "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
-       [ ! -e "${UPLOAD_PATH}/.uploaded" ];
-    then
-    ( # subshell
-      ARTIFACT_UPLOAD_PATTERN="${ARTIFACT_UPLOAD_PATTERN:-*.png;*.svg;*.pdf}"
-      if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ]; then
-        if [ "1" = "${ARTIFACT_UPLOAD_DB}" ]; then
-          ARTIFACT_UPLOAD_PATTERN+=";*.json"
-        else
-          ARTIFACT_UPLOAD_PATTERN="*"
-        fi
+      # upload database
+      if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ] && \
+         [ -e "${ARTIFACT_ROOT}/${PIPELINE}.json" ];
+      then
+      ( # subshell
+        cd "${ARTIFACT_ROOT}" && ${CI_AGENT} artifact upload "${PIPELINE}*.json"
+      )
       fi
-      cd "${UPLOAD_PATH}" && ${CI_AGENT} artifact upload "${ARTIFACT_UPLOAD_PATTERN}"
-      touch ./.uploaded
-    )
     fi
   fi
 
