@@ -37,6 +37,18 @@ void libxsmm_generator_vcvt_f32bf16_aarch64_sve( libxsmm_generated_code* io_gene
     const unsigned int i_vec_inout,
     const unsigned int i_pred_reg);
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32i8_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_scf_vec_reg,
+    const unsigned int i_pred_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_i8f32_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_scf_vec_reg,
+    const unsigned int i_pred_reg);
+
 /**
  * Sets the given predicate register.
  *
@@ -230,7 +242,10 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
                                                      const unsigned int      i_vec_reg_count,
                                                      const unsigned int      i_m_blocking,
                                                      const unsigned int      i_n_blocking,
-                                                     const unsigned int      i_ld );
+                                                     const unsigned int      i_ld,
+                                                     const libxsmm_datatype  i_inp_datatype,
+                                                     const unsigned int      i_aux_gp_reg,
+                                                     const unsigned int      i_reduce_on_output  );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io_generated_code,

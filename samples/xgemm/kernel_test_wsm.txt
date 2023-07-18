@@ -1,3 +1,7 @@
+mmla_sui8f32gemm_nn_eqld
+mmla_sui8f32gemm_nn_gtld
+mmla_sui8i32gemm_nn_eqld
+mmla_sui8i32gemm_nn_gtld
 i4f16f16f16gemm_nn_eqld
 i4f16f16f16gemm_nn_gtld
 i4f16f16f16gemm_nt_eqld
