@@ -41,6 +41,7 @@ libxsmm_cpuid
 libxsmm_cpuid_arm
 libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack
 libxsmm_cpuid_arm_use_bfdot
+libxsmm_cpuid_arm_use_i8dot
 libxsmm_cpuid_dot_pack_factor
 libxsmm_cpuid_name
 libxsmm_cpuid_vlen32

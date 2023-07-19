@@ -319,12 +319,6 @@ for BINARY_POSTOP in 0 1; do
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
-                    # remove env variable
-                    if [ "$STACK" == '0' ] ; then
-                      sed "/export LIBXSMM_ENV_VAR=1/d" ${HERE}/${OUTNAME} >${TMPFILE}
-                      cp ${TMPFILE} ${HERE}/${OUTNAME}
-                    fi
-
                     # stack exports
                     if [[ ( "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'BF8_BF8_F32_F32' ) && ( "$STACK" == '1' ) ]]; then
                       sed 's/LIBXSMM_ENV_VAR/LIBXSMM_BF8_GEMM_VIA_STACK/g' ${HERE}/${OUTNAME} >${TMPFILE}
@@ -343,8 +337,6 @@ for BINARY_POSTOP in 0 1; do
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
-                    chmod 755 ${HERE}/${OUTNAME}
-
                     # for certain prericsion we are adding some special scripts for more restricted hardware
                     # QVNNI for I16I32
                     if [ "$PREC" == 'I16_I16_I32_I32' ] ; then
@@ -354,10 +346,24 @@ for BINARY_POSTOP in 0 1; do
                       chmod 755 ${HERE}/qvnni_${OUTNAME}
                     fi
 
+                    # Export BFDOT variable
+                    if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
+                      sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_BFDOT/g' ${HERE}/${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${OUTNAME}
+                    fi
+
+                    # Export IDOT variable
+                    if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
+                      sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_I8DOT/g' ${HERE}/${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${OUTNAME}
+                    fi
+
                     # MMLA for BF16
                     if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
                       cp ${HERE}/${OUTNAME} ${HERE}/mmla_${OUTNAME}
                       sed 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(4,101,4)/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
+                      sed 's/LIBXSMM_AARCH64_USE_BFDOT=1/LIBXSMM_AARCH64_USE_BFDOT=0/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
                       if [ "$CVNNI" == '1' ] ; then
                         sed 's/randnumn = rnd.sample(range(2,101,2)/randnumn = rnd.sample(range(4,101,4)/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
@@ -376,6 +382,20 @@ for BINARY_POSTOP in 0 1; do
                       chmod 755 ${HERE}/${NEWNAME}
                     fi
 
+                    # MMLA for I8
+                    if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
+                      cp ${HERE}/${OUTNAME} ${HERE}/mmla_${OUTNAME}
+                      sed 's/randnumk = rnd.sample(range(4,101,4)/randnumk = rnd.sample(range(8,201,8)/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
+                      if [ "$LD" == 'gtld' ] ; then
+                        sed "s/+ '100 100 100'/+ '100 200 100'/g" ${HERE}/mmla_${OUTNAME} >${TMPFILE}
+                        cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
+                      fi
+                      sed 's/LIBXSMM_AARCH64_USE_I8DOT=1/LIBXSMM_AARCH64_USE_I8DOT=0/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
+                      chmod 755 ${HERE}/mmla_${OUTNAME}
+                    fi
+
                     # BFDOT for BF16 wth B in VNNIT
                     if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
                       # create BFDOT scripts with B in VNNIT
@@ -388,6 +408,15 @@ for BINARY_POSTOP in 0 1; do
                         ${HERE}/${OUTNAME} >${HERE}/${NEWNAME}
                       chmod 755 ${HERE}/${NEWNAME}
                     fi
+
+                    # remove env variable
+                    if [ "$STACK" == '0' ] ; then
+                      sed "/export LIBXSMM_ENV_VAR=1/d" ${HERE}/${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${OUTNAME}
+                    fi
+
+                    chmod 755 ${HERE}/${OUTNAME}
+
                   done
                 done
               done

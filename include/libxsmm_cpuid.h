@@ -77,6 +77,8 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 
+LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
+
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
  * architecture and datatype */
