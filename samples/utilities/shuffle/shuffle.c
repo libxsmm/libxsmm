@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     }
 
     for (; i <= repeat; ++i) {
-      printf("--------------------------------------------------\n");
+      printf("---------------------------------------------------\n");
 
       { /* benchmark RNG-based shuffle routine */
         const libxsmm_timer_tickint start = libxsmm_timer_tick();
@@ -144,15 +144,15 @@ int main(int argc, char* argv[])
     }
 
     if (1 < repeat) {
-      printf("--------------------------------------------------\n");
+      printf("---------------------------------------------------\n");
       printf("Arithmetic average of %i iterations\n", repeat);
-      printf("--------------------------------------------------\n");
+      printf("---------------------------------------------------\n");
       d1 /= repeat; d2 /= repeat; d3 /= repeat;
       if (0 < d1) {
         printf("RNG-shuffle: %.8f s (%i MB/s", d1,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d1)));
         if (0 != n1) {
-          const size_t en = (n * n - n + 3) / 4, em = LIBXSMM_MIN(n1, en);
+          const unsigned long long en = (n * n - n + 3) / 4, em = LIBXSMM_MIN(n1, en);
           printf(", entropy=%llu%%)\n", (em * 100 + en - 1) / en);
         }
         else printf(")\n");
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
         printf("DS1-shuffle: %.8f s (%i MB/s", d2,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d2)));
         if (0 != n2) {
-          const size_t en = (n * n - n + 3) / 4, em = LIBXSMM_MIN(n2, en);
+          const unsigned long long en = (n * n - n + 3) / 4, em = LIBXSMM_MIN(n2, en);
           printf(", entropy=%llu%%)\n", (em * 100 + en - 1) / en);
         }
         else printf(")\n");
@@ -170,14 +170,14 @@ int main(int argc, char* argv[])
         printf("DS2-shuffle: %.8f s (%i MB/s", d3,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d3)));
         if (0 != n3) {
-          const size_t en = (n * n - n + 3) / 4, em = LIBXSMM_MIN(n3, en);
+          const unsigned long long en = (n * n - n + 3) / 4, em = LIBXSMM_MIN(n3, en);
           printf(", entropy=%llu%%)\n", (em * 100 + en - 1) / en);
         }
         else printf(")\n");
       }
     }
     if (0 < repeat) {
-      printf("--------------------------------------------------\n");
+      printf("---------------------------------------------------\n");
     }
   }
   else {
