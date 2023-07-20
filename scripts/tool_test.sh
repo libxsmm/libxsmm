@@ -278,7 +278,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   then
   ( # subshell
     cd "${ARTIFACT_ROOT}" || exit 1
-    artifact_download ${PIPELINE} "json" 1
+    artifact_download "${PIPELINE}" "json" 1
   )
   fi
 
