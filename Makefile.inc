@@ -356,6 +356,8 @@ ifeq (0,$(GNU))
       CC := icx
     endif
   endif
+else ifneq (,$(filter-out default undefined,$(origin CC) $(origin CXX) $(origin FC)))
+  $(info WARNING: GNU=$(GNU) was given but CC, CXX, or FC was specified!)
 endif
 
 # adopt extra flags from C if not set individually
