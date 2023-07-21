@@ -135,8 +135,8 @@ int main(int argc, char* argv[])
         if (0 != random) {
           printf("             rand=%llu%% imb%i=%llu%% imb%i=%llu%%\n",
             (LIBXSMM_MIN(n1, nn) * 100 + nn - 1) / nn,
-            split * 2, (b1 * 100 + n - 1) / n,
-            split, (a1 * 100 + n - 1) / n);
+            split * 2, (100ULL * b1 + n - 1) / n,
+            split, (100ULL * a1 + n - 1) / n);
         }
       }
       if (0 < d2) {
@@ -145,8 +145,8 @@ int main(int argc, char* argv[])
         if (0 != random) {
           printf("             rand=%llu%% imb%i=%llu%% imb%i=%llu%%\n",
             (LIBXSMM_MIN(n2, nn) * 100 + nn - 1) / nn,
-            split * 2, (b2 * 100 + n - 1) / n,
-            split, (a2 * 100 + n - 1) / n);
+            split * 2, (100ULL * b2 + n - 1) / n,
+            split, (100ULL * a2 + n - 1) / n);
         }
       }
       if (0 < d3) {
@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
         if (0 != random) {
           printf("             rand=%llu%% imb%i=%llu%% imb%i=%llu%%\n",
             (LIBXSMM_MIN(n3, nn) * 100 + nn - 1) / nn,
-            split * 2, (b3 * 100 + n - 1) / n,
-            split, (a3 * 100 + n - 1) / n);
+            split * 2, (100ULL * b3 + n - 1) / n,
+            split, (100ULL * a3 + n - 1) / n);
         }
       }
     }
