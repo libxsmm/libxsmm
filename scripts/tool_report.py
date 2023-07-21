@@ -1181,7 +1181,7 @@ if __name__ == "__main__":
         "-t",
         "--bounds",
         type=str,
-        default="5.0 15",
+        default="7.0 15",
         help="Highlight if exceeding max(A*Stdev%%,B%%)",
     )
     argparser.add_argument(
