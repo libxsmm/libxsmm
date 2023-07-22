@@ -1,7 +1,5 @@
 mmla_sui8f32gemm_nn_eqld
 mmla_sui8f32gemm_nn_gtld
-mmla_sui8i32gemm_nn_eqld
-mmla_sui8i32gemm_nn_gtld
 i4f16f16f16gemm_nn_eqld
 i4f16f16f16gemm_nn_gtld
 i4f16f16f16gemm_nt_eqld
@@ -476,8 +474,6 @@ hf8gemm_via_stack_nn_gtld_bop1_uop0_cvnni0
 hf8gemm_via_stack_nn_gtld_bop1_uop1_cvnni0
 hf8gemm_via_stack_nn_gtld_bop1_uop2_cvnni0
 hf8gemm_via_stack_nn_gtld_bop1_uop3_cvnni0
-i16i32gemm_nn_eqld
-i16i32gemm_nn_gtld
 mmla_bvnni_bf16f32gemm_nt_eqld_bop0_uop1_cvnni0
 mmla_bvnni_bf16f32gemm_nt_eqld_bop0_uop2_cvnni0
 mmla_bvnni_bf16f32gemm_nt_eqld_bop0_uop3_cvnni0
@@ -546,8 +542,6 @@ mmla_bf16gemm_nn_gtld_bop1_uop0_cvnni0
 mmla_bf16gemm_nn_gtld_bop1_uop1_cvnni0
 mmla_bf16gemm_nn_gtld_bop1_uop2_cvnni0
 mmla_bf16gemm_nn_gtld_bop1_uop3_cvnni0
-qvnni_i16i32gemm_nn_eqld
-qvnni_i16i32gemm_nn_gtld
 sgemm_tn_eqld_bop0_uop1_cvnni0
 sgemm_tn_eqld_bop0_uop2_cvnni0
 sgemm_tn_eqld_bop0_uop3_cvnni0
@@ -568,9 +562,5 @@ dgemm_tn_gtld
 sgemm_tn_gtld
 sui8f32gemm_nn_eqld
 sui8f32gemm_nn_gtld
-sui8i32gemm_nn_eqld
-sui8i32gemm_nn_gtld
 usi8f32gemm_nn_eqld
 usi8f32gemm_nn_gtld
-usi8i32gemm_nn_eqld
-usi8i32gemm_nn_gtld

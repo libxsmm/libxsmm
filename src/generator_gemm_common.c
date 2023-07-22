@@ -1340,12 +1340,19 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
   gemm_scratch_size += scratch_pad_size;
 
+  if ( (io_generated_code->arch <= LIBXSMM_X86_SSE42) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, avx2_ones_size );
+    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, LIBXSMM_X86_GP_REG_RSP );
+
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)sixteen_ones, "sixteen_short_ones", 'x', 0);
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'x', 0, 0, 0, 1 );
+  }
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, avx2_mask_size );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, LIBXSMM_X86_GP_REG_RSP );
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, avx2_ones_size );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, LIBXSMM_X86_GP_REG_RSP );
+    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, LIBXSMM_X86_GP_REG_RSP );
   }
   if ( (io_generated_code->arch == LIBXSMM_X86_AVX2) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) {
     libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)sixteen_ones, "sixteen_short_ones", 'y', 0);
@@ -1478,7 +1485,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Batch-reduce count                        <-- RBP-88,
    *      Transpose A ptr                           <-- RBP-96,
    *      AVX2 Mask                                 <-- RBP-104,
-   *      AVX2 low precision helper                 <-- RBP-112,
+   *      SSE/AVX2 low precision helper             <-- RBP-112,
    *      FP32 A EMULATION PTR                      <-- RBP-120,
    *      FP32 B EMULATION PTR                      <-- RBP-128,
    *      MELTW STRUCT PTR                          <-- RBP-136,
@@ -1528,7 +1535,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Batch-reduce count                    <-- RBP-88
    *      Transpose A ptr                       <-- RBP-96
    *      AVX2 Mask                             <-- RBP-104
-   *      AVX2 low precision helper             <-- RBP-112,
+   *      SSE/AVX2 low precision helper         <-- RBP-112,
    *      FP32 A EMULATION PTR                  <-- RBP-120,
    *      FP32 B EMULATION PTR                  <-- RBP-128,
    *      MELTW STRUCT PTR                      <-- RBP-136,
@@ -1538,8 +1545,8 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      BIAS SCRATCH PTR                      <-- RBP-168, RSP
    *
    *      [ Potential pad for 64b align ]
-   *      AV2 mask, 64b aligned                 <-- (RBP-104) contains this address
-   *      AV2 low precision helper, 64b aligned <-- (RBP-112) contains this address
+   *      AVX2 mask, 64b aligned                <-- (RBP-104) contains this address
+   *      SSE/AVX2 low precision helper, 64b aligned <-- (RBP-112) contains this address
    *      GEMM scratch, 64b aligned             <-- (RBP-48) contains this address
    */
 }
@@ -1710,7 +1717,7 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      Batch-reduce count                        <-- RBP-88
    *      Transpose A ptr                           <-- RBP-96
    *      AVX2 Mask PTR                             <-- RBP-104
-   *      AVX2 Low precision helper PTR             <-- RBP-112
+   *      SSE/AVX2 Low precision helper PTR         <-- RBP-112
    *      FP32 A EMULATION PTR                      <-- RBP-120
    *      FP32 B EMULATION PTR                      <-- RBP-128
    *      MELTW STRUCT PTR                          <-- RBP-136
@@ -1767,7 +1774,7 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -96;
     case LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR:
       return -104;
-    case LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR:
+    case LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR:
       return -112;
     case LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR:
       return -120;
@@ -1872,7 +1879,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPD;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDPD;
-    } else {
+    } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_in2 = 4;
@@ -1896,6 +1903,71 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDPS;
+    } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+      io_micro_kernel_config->vector_length = 4;
+      io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->datatype_size_in2 = 1;
+      io_micro_kernel_config->datatype_size_out = 4;
+      if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
+        assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+      }
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_SHUFPS;
+      if ( (LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
+        assert(0 == (i_xgemm_desc->ldc % io_micro_kernel_config->vector_length));
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+        io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+        io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+      }
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_PXOR;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_PMADDUBSW;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_PADDD;
+    } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+      io_micro_kernel_config->vector_length = 4;
+      io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->datatype_size_in2 = 2;
+      io_micro_kernel_config->datatype_size_out = 4;
+      if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
+        assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+      }
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_SHUFPS;
+      if ( (LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
+        assert(0 == (i_xgemm_desc->ldc % io_micro_kernel_config->vector_length));
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+        io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+        io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+      }
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_PXOR;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_PMADDWD;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_PADDD;
+    } else {
+      /* should not happen as we caught this case earlier */
+      io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
+      io_micro_kernel_config->vector_reg_count = 0;
+      io_micro_kernel_config->use_masking_a_c = 0;
+      io_micro_kernel_config->vector_name = 'a';
+      io_micro_kernel_config->vector_length = 0;
+      io_micro_kernel_config->datatype_size_in = 0;
+      io_micro_kernel_config->datatype_size_in2 = 0;
+      io_micro_kernel_config->datatype_size_out = 0;
+      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
     }
   } else if ( i_arch < LIBXSMM_X86_AVX512_VL128 ) {
     io_micro_kernel_config->instruction_set = i_arch;

@@ -1674,6 +1674,17 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     free( data_f );
     free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
+#if 0
+    int* data_gold_f = (int*)data_gold;
+    int* data_f      = (int*)data;
+    libxsmm_blasint l_i, l_j;
+
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %i, computed: %i, diff: %i\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i], data_gold_f[(l_j * ld) + l_i]-data_f[(l_j * ld) + l_i] );
+      }
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {

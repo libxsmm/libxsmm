@@ -191,6 +191,18 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_vector_length = 2;
   } else if ( ( io_generated_code->arch < LIBXSMM_X86_AVX ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 4;
+  } else if ( ( io_generated_code->arch < LIBXSMM_X86_AVX ) && LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )  ) {
+    l_vector_length = 4;
+    if (l_xgemm_desc_mod.k % 4 != 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
+  } else if ( ( io_generated_code->arch < LIBXSMM_X86_AVX ) && LIBXSMM_DATATYPE_I16  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+    l_vector_length = 4;
+    if (l_xgemm_desc_mod.k % 2 != 0) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
   } else if ( ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 4;
   } else if ( ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128 ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
