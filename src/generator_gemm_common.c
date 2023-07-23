@@ -4179,6 +4179,58 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                                   i_micro_kernel_config->vector_name, reg_X, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, aux_vreg, 1);
       }
     }
+  } else if ( (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX) &&
+              ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) ) {
+    unsigned int l_mask_reg_or_val = i_m_blocking%i_micro_kernel_config->vector_length;
+
+    /* loading scf into register 3 */
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+        i_micro_kernel_config->instruction_set,
+        LIBXSMM_X86_INSTR_MOVSS,
+        i_gp_reg_mapping->gp_reg_scf,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+        i_micro_kernel_config->vector_name,
+        3, 0, 1, 0 );
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_SHUFPS,
+                                                   i_micro_kernel_config->vector_name, 3, 3, 0 );
+
+    /* storing downconverted and rounded C accumulator */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+        unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
+        /* Convert result to F32 */
+        libxsmm_x86_instruction_vec_compute_2reg(  io_generated_code,
+            LIBXSMM_X86_INSTR_CVTDQ2PS,
+            i_micro_kernel_config->vector_name,
+            reg_X,
+            reg_X );
+
+        /* Multiply with scaling factor */
+        libxsmm_x86_instruction_vec_compute_2reg(  io_generated_code,
+            LIBXSMM_X86_INSTR_MULPS,
+            i_micro_kernel_config->vector_name,
+            3,
+            reg_X );
+
+        if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) {
+          libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_vstore,
+                                                    i_gp_reg_mapping->gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                    ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
+                                                    i_micro_kernel_config->vector_name, 2, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, l_mask_reg_or_val, 0);
+
+          libxsmm_x86_instruction_vec_compute_2reg(  io_generated_code,
+              LIBXSMM_X86_INSTR_ADDPS,
+              i_micro_kernel_config->vector_name,
+              2,
+              reg_X );
+        }
+
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_vstore,
+                                                  i_gp_reg_mapping->gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                  ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
+                                                  i_micro_kernel_config->vector_name, reg_X, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, l_mask_reg_or_val, 1);
+      }
+    }
   } else {
     /* storing C accumulator */
     const unsigned int relu_bitmask_gpr = i_gp_reg_mapping->gp_reg_help_2;
