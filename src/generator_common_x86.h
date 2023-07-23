@@ -681,10 +681,10 @@ void libxsmm_generator_maskedstore_16bit_avx2( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_count );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_cvtbf16ps_avx2_avx512( libxsmm_generated_code* io_generated_code,
-                                              const char              i_vname,
-                                              const unsigned int      i_vec_reg,
-                                              const unsigned int      o_vec_reg );
+void libxsmm_generator_cvtbf16ps_sse_avx2_avx512( libxsmm_generated_code* io_generated_code,
+                                                  const char              i_vname,
+                                                  const unsigned int      i_vec_reg,
+                                                  const unsigned int      o_vec_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf16_avx2_prep_stack( libxsmm_generated_code* io_generated_code,

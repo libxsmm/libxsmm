@@ -764,7 +764,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
                 l_vec_reg_acc_start + l_m, 0, 1, 0 );
           }
           /* up-convert bf16 to fp32 */
-          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+          libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                    l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m );
         } else {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS,
@@ -916,7 +916,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
             0, 0, 1, 0 );
       }
       /* up-convert bf16 to fp32 */
-      libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                0, 0 );
     } else if (colbias_precision == LIBXSMM_DATATYPE_BF8) {
       /* load 16 bit values into xmm portion of the register */
@@ -3476,7 +3476,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 'x', 0, 0, 1, 0 );
           }
           /* up-convert bf16 to fp32 */
-          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'y', 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, 'y', 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       }
       /* Check if we have to add bias */
@@ -3512,7 +3512,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 l_vec_reg_acc_start-1, 0, 1, 0 );
           }
           /* up-convert bf16 to fp32 */
-          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+          libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
                                                    l_vec_reg_acc_start-1, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       }
