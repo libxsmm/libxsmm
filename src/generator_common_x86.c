@@ -2757,7 +2757,7 @@ void libxsmm_generator_cvtbf16ps_sse_avx2_avx512( libxsmm_generated_code* io_gen
                                                   const unsigned int      i_vec_reg,
                                                   const unsigned int      o_vec_reg ) {
   const unsigned int l_cvt_instr = ( io_generated_code->arch < LIBXSMM_X86_AVX ) ? LIBXSMM_X86_INSTR_PMOVSXWD : LIBXSMM_X86_INSTR_VPMOVSXWD;
-  const unsigned int l_shift_instr = ( io_generated_code->arch < LIBXSMM_X86_AVX ) ? LIBXSMM_X86_INSTR_VPSLLD_I : LIBXSMM_X86_INSTR_PSLLD_I;
+  const unsigned int l_shift_instr = ( io_generated_code->arch < LIBXSMM_X86_AVX ) ? LIBXSMM_X86_INSTR_PSLLD_I : LIBXSMM_X86_INSTR_VPSLLD_I;
   /* TODO: check for valid i_vnames */
   /* convert 16 bit values into 32 bit (integer convert) */
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, l_cvt_instr, i_vname,
