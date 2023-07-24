@@ -274,6 +274,13 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned int      i_reg_number_dst,
                                                     const unsigned int      i_imm8 );
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_1reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_imm8 );
+
 /**
  * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
  * it provides a commin interface for REX/VEX/EVEX vector compute instructions

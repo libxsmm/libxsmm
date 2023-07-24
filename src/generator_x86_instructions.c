@@ -2170,6 +2170,17 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_1reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                           LIBXSMM_X86_VEC_REG_UNDEF, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                           0, 0, 0, i_imm8 );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_code* io_generated_code,
                                                              const unsigned int      i_vec_instr,
                                                              const char              i_vector_name,
