@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
             split * 2, (100ULL * b1 + n - 1) / n,
             split, (100ULL * a1 + n - 1) / n);
           printf("             imb%i=%llu%% imb%i=%llu%%\n",
-            split * 2, (100ULL * g1 + n - 1) / n,
+            split * 2, (100ULL * h1 + n - 1) / n,
             split, (100ULL * g1 + n - 1) / n);
           printf("             rand=%llu%%\n",
             (LIBXSMM_MIN(n1, nn) * 100 + nn - 1) / nn);
