@@ -622,7 +622,7 @@ void libxsmm_generator_gemm_sse_microkernel_bf16_flat_emu( libxsmm_generated_cod
   for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-                                   i_micro_kernel_config->a_vmove_instruction,
+                                   (( l_m == (l_m_blocking - 1) ) && (i_micro_kernel_config->use_masking_a_c != 0 )) ? LIBXSMM_X86_INSTR_VMOVDQU16 : LIBXSMM_X86_INSTR_MOVSD/* @TODO this is a hack to signal 16bit element load */,
                                    i_gp_reg_mapping->gp_reg_a,
                                    LIBXSMM_X86_GP_REG_UNDEF, 0,
                                    (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
