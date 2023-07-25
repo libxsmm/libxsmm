@@ -25,18 +25,23 @@
   } \
 } while(0)
 
-#define REDUCE_ADD(TYPE, INPUT, COUNT, LO, HI) do { \
+#define REDUCE_ADD(TYPE, INPUT, M, N, LO, HI) do { \
   const TYPE *const data = (const TYPE*)(INPUT); \
-  const size_t locount = (COUNT) / 2 + ((COUNT) & 1); \
-  size_t i = 0; \
-  for ((LO) = 0ULL; i < locount; ++i) (LO) += data[i]; \
-  for ((HI) = 0ULL; i < (COUNT); ++i) (HI) += data[i]; \
+  size_t i = 0; LIBXSMM_ASSERT((M) < (N)); \
+  for ((LO) = 0ULL; i < (M); ++i) (LO) += data[i]; \
+  for ((HI) = 0ULL; i < (N); ++i) (HI) += data[i]; \
 } while(0)
 
+typedef enum redop_enum {
+  redop_imbalance,
+  redop_mdistance
+} redop_enum;
 
 void shuffle(void* inout, size_t elemsize, size_t count);
-size_t imbalance_uint(const void* input, size_t elemsize, size_t count, size_t split);
-size_t bsort_uint_asc(void* inout, size_t elemsize, size_t count);
+/** Compares the sum of values between the left and the right partition. */
+size_t uint_reduce_op(const void* input, size_t elemsize, size_t count, redop_enum redop, size_t split);
+/** Bubble-Sort the given data and return the number of swap operations. */
+size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count);
 
 
 int main(int argc, char* argv[])
@@ -63,6 +68,7 @@ int main(int argc, char* argv[])
 
   if (NULL != data1 && NULL != data2) {
     size_t a1 = 0, a2 = 0, a3 = 0, b1 = 0, b2 = 0, b3 = 0;
+    size_t g1 = 0, g2 = 0, g3 = 0, h1 = 0, h2 = 0, h3 = 0;
     size_t n1 = 0, n2 = 0, n3 = 0, j;
     double d0, d1 = 0, d2 = 0, d3 = 0;
     libxsmm_timer_tickint start;
@@ -83,10 +89,12 @@ int main(int argc, char* argv[])
         start = libxsmm_timer_tick();
         for (j = 0; j < m; ++j) shuffle(data2, elsize, n);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
-        if (0 != random && i == repeat) {
-          a1 = imbalance_uint(data2, elsize, n, split);
-          b1 = imbalance_uint(data2, elsize, n, split * 2);
-          n1 = bsort_uint_asc(data2, elsize, n);
+        if (0 != random && i == repeat) { /* only last iteration */
+          a1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
+          b1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
+          g1 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
+          h1 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
+          n1 = uint_bsort_asc(data2, elsize, n);
         }
         if (0 < d0) printf("RNG-shuffle: %.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
@@ -98,10 +106,12 @@ int main(int argc, char* argv[])
         start = libxsmm_timer_tick();
         libxsmm_shuffle(data2, elsize, n, NULL, &m);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
-        if (0 != random && i == repeat) {
-          a2 = imbalance_uint(data2, elsize, n, split);
-          b2 = imbalance_uint(data2, elsize, n, split * 2);
-          n2 = bsort_uint_asc(data2, elsize, n);
+        if (0 != random && i == repeat) { /* only last iteration */
+          a2 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
+          b2 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
+          g2 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
+          h2 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
+          n2 = uint_bsort_asc(data2, elsize, n);
         }
         if (0 < d0) printf("DS1-shuffle: %.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
@@ -112,10 +122,12 @@ int main(int argc, char* argv[])
         start = libxsmm_timer_tick();
         libxsmm_shuffle2(data2, data1, elsize, n, NULL, &m);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
-        if (0 != random && i == repeat) {
-          a3 = imbalance_uint(data2, elsize, n, split);
-          b3 = imbalance_uint(data2, elsize, n, split * 2);
-          n3 = bsort_uint_asc(data2, elsize, n);
+        if (0 != random && i == repeat) { /* only last iteration */
+          a3 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
+          b3 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
+          g3 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
+          h3 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
+          n3 = uint_bsort_asc(data2, elsize, n);
         }
         if (0 < d0) printf("DS2-shuffle: %.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
@@ -133,30 +145,42 @@ int main(int argc, char* argv[])
         printf("RNG-shuffle: %.8f s (%i MB/s)\n", d1,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d1)));
         if (0 != random) {
-          printf("             rand=%llu%% imb%i=%llu%% imb%i=%llu%%\n",
-            (LIBXSMM_MIN(n1, nn) * 100 + nn - 1) / nn,
+          printf("             dst%i=%llu%% dst%i=%llu%%\n",
             split * 2, (100ULL * b1 + n - 1) / n,
             split, (100ULL * a1 + n - 1) / n);
+          printf("             imb%i=%llu%% imb%i=%llu%%\n",
+            split * 2, (100ULL * g1 + n - 1) / n,
+            split, (100ULL * g1 + n - 1) / n);
+          printf("             rand=%llu%%\n",
+            (LIBXSMM_MIN(n1, nn) * 100 + nn - 1) / nn);
         }
       }
       if (0 < d2) {
         printf("DS1-shuffle: %.8f s (%i MB/s)\n", d2,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d2)));
         if (0 != random) {
-          printf("             rand=%llu%% imb%i=%llu%% imb%i=%llu%%\n",
-            (LIBXSMM_MIN(n2, nn) * 100 + nn - 1) / nn,
+          printf("             dst%i=%llu%% dst%i=%llu%%\n",
             split * 2, (100ULL * b2 + n - 1) / n,
             split, (100ULL * a2 + n - 1) / n);
+          printf("             imb%i=%llu%% imb%i=%llu%%\n",
+            split * 2, (100ULL * h2 + n - 1) / n,
+            split, (100ULL * g2 + n - 1) / n);
+          printf("             rand=%llu%%\n",
+            (LIBXSMM_MIN(n2, nn) * 100 + nn - 1) / nn);
         }
       }
       if (0 < d3) {
         printf("DS2-shuffle: %.8f s (%i MB/s)\n", d3,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d3)));
         if (0 != random) {
-          printf("             rand=%llu%% imb%i=%llu%% imb%i=%llu%%\n",
-            (LIBXSMM_MIN(n3, nn) * 100 + nn - 1) / nn,
+          printf("             dst%i=%llu%% dst%i=%llu%%\n",
             split * 2, (100ULL * b3 + n - 1) / n,
             split, (100ULL * a3 + n - 1) / n);
+          printf("             imb%i=%llu%% imb%i=%llu%%\n",
+            split * 2, (100ULL * h3 + n - 1) / n,
+            split, (100ULL * g3 + n - 1) / n);
+          printf("             rand=%llu%%\n",
+            (LIBXSMM_MIN(n3, nn) * 100 + nn - 1) / nn);
         }
       }
     }
@@ -188,49 +212,53 @@ void shuffle(void* inout, size_t elemsize, size_t count) {
 }
 
 
-size_t imbalance_uint_aux(const void* input, size_t elemsize, size_t count, size_t split);
-size_t imbalance_uint_aux(const void* input, size_t elemsize, size_t count, size_t split)
+size_t uint_reduce_op(const void* input, size_t elemsize, size_t count, redop_enum redop, size_t split)
 {
-  const size_t s = count / 2 + (count & 1);
-  unsigned long long n, lo, hi;
-  switch (elemsize) {
-    case 8: {
-      REDUCE_ADD(unsigned long long, input, s, lo, hi);
-    } break;
-    case 4: {
-      REDUCE_ADD(unsigned int, input, s, lo, hi);
-    } break;
-    case 2: {
-      REDUCE_ADD(unsigned short, input, s, lo, hi);
-    } break;
-    default: {
-      REDUCE_ADD(unsigned char, input, elemsize * s, lo, hi);
-    }
-  }
+  const size_t middle = count / 2 + (count & 1);
+  unsigned long long lo, hi, result;
   if (1 < split) {
-    unsigned long long a, b;
-    a = imbalance_uint_aux(input, elemsize, s, split - 1);
-    b = imbalance_uint_aux((const char*)input + elemsize * s, elemsize, count - s, split - 1);
-    n = a + b;
+    lo = uint_reduce_op(input, elemsize, middle, redop, split - 1);
+    hi = uint_reduce_op((const char*)input + elemsize * middle,
+      elemsize, count - middle, redop, split - 1);
+    result = (lo + hi + 1) / 2; /* average */
   }
   else {
-    n = lo + hi;
-    if (0 < split && 0 != n) {
-      n = (LIBXSMM_DELTA(lo, hi) * count + n - 1) / n;
+    switch (elemsize) {
+      case 8: {
+        REDUCE_ADD(unsigned long long, input, middle, count, lo, hi);
+      } break;
+      case 4: {
+        REDUCE_ADD(unsigned int, input, middle, count, lo, hi);
+      } break;
+      case 2: {
+        REDUCE_ADD(unsigned short, input, middle, count, lo, hi);
+      } break;
+      default: {
+        REDUCE_ADD(unsigned char, input, elemsize * middle,
+          elemsize * count, lo, hi);
+      }
+    }
+    result = lo + hi;
+    if (0 < split) {
+      unsigned long long n;
+      switch (redop) {
+        case redop_imbalance: {
+          n = LIBXSMM_DELTA(lo, hi);
+        } break;
+        case redop_mdistance: { /* C.F. Gauss */
+          n = result - count * (count - 1) / 2;
+        } break;
+        default: n = result;
+      }
+      /* normalize result relative to length of input */
+      if (0 != result) result = (n * count + result - 1) / result;
     }
   }
-  return (size_t)n;
+  return (size_t)result;
 }
 
 
-size_t imbalance_uint(const void* input, size_t elemsize, size_t count, size_t split)
-{
-  const size_t result = imbalance_uint_aux(input, elemsize, count, split);
-  return (result + split - 1) / split;
-}
-
-
-size_t bsort_uint_asc(void* inout, size_t elemsize, size_t count) {
+size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count) {
   size_t result = 0; /* count number of swaps */
   if (0 != count) {
     unsigned char *const data = (unsigned char*)inout;
