@@ -12,24 +12,27 @@
 #include <libxsmm.h>
 
 /* Fisher-Yates shuffle */
-#define SHUFFLE(INOUT, ELEMSIZE, COUNT) do { \
+#define SHUFFLE(INOUT, ELEMSIZE, COUNT, NSWAPS) do { \
   char *const data = (char*)(INOUT); \
   size_t i = 0; \
   for (; i < ((COUNT) - 1); ++i) { \
     const size_t j = i + libxsmm_rng_u32((unsigned int)((COUNT) - i)); \
     LIBXSMM_ASSERT(i <= j && j < (COUNT)); \
-    if (i != j) LIBXSMM_MEMSWP127( \
-      data + (ELEMSIZE) * i, \
-      data + (ELEMSIZE) * j, \
-      ELEMSIZE); \
+    if (i != j) { \
+      LIBXSMM_MEMSWP127( \
+        data + (ELEMSIZE) * i, \
+        data + (ELEMSIZE) * j, \
+        ELEMSIZE); \
+      ++(NSWAPS); \
+     } \
   } \
 } while(0)
 
 #define REDUCE_ADD(TYPE, INPUT, M, N, LO, HI) do { \
   const TYPE *const data = (const TYPE*)(INPUT); \
   size_t i = 0; LIBXSMM_ASSERT((M) < (N)); \
-  for ((LO) = 0ULL; i < (M); ++i) (LO) += data[i]; \
-  for ((HI) = 0ULL; i < (N); ++i) (HI) += data[i]; \
+  for (; i < (M); ++i) (LO) += data[i]; \
+  for (; i < (N); ++i) (HI) += data[i]; \
 } while(0)
 
 typedef enum redop_enum {
@@ -37,9 +40,10 @@ typedef enum redop_enum {
   redop_mdistance
 } redop_enum;
 
-void shuffle(void* inout, size_t elemsize, size_t count);
+size_t shuffle(void* inout, size_t elemsize, size_t count);
 /** Compares the sum of values between the left and the right partition. */
-size_t uint_reduce_op(const void* input, size_t elemsize, size_t count, redop_enum redop, size_t split);
+size_t uint_reduce_op(const void* input, size_t elemsize, size_t count,
+  redop_enum redop, size_t split);
 /** Bubble-Sort the given data and return the number of swap operations. */
 size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count);
 
@@ -69,7 +73,7 @@ int main(int argc, char* argv[])
   if (NULL != data1 && NULL != data2) {
     size_t a1 = 0, a2 = 0, a3 = 0, b1 = 0, b2 = 0, b3 = 0;
     size_t g1 = 0, g2 = 0, g3 = 0, h1 = 0, h2 = 0, h3 = 0;
-    size_t n1 = 0, n2 = 0, n3 = 0, j;
+    size_t n0 = 0, n1 = 0, n2 = 0, n3 = 0, j;
     double d0, d1 = 0, d2 = 0, d3 = 0;
     libxsmm_timer_tickint start;
     int i = 0;
@@ -85,9 +89,9 @@ int main(int argc, char* argv[])
       printf("---------------------------------------\n");
 
       { /* benchmark RNG-based shuffle routine */
-        memcpy(data2, data1, nbytes);
+        memcpy(data2, data1, nbytes); n0 = 0;
         start = libxsmm_timer_tick();
-        for (j = 0; j < m; ++j) shuffle(data2, elsize, n);
+        for (j = 0; j < m; ++j) n0 += shuffle(data2, elsize, n);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
         if (0 != random && i == repeat) { /* only last iteration */
           a1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
@@ -151,8 +155,9 @@ int main(int argc, char* argv[])
           printf("             imb%i=%llu%% imb%i=%llu%%\n",
             split * 2, (100ULL * h1 + n - 1) / n,
             split, (100ULL * g1 + n - 1) / n);
-          printf("             rand=%llu%%\n",
-            (LIBXSMM_MIN(n1, nn) * 100 + nn - 1) / nn);
+          n0 = LIBXSMM_MIN((100ULL * LIBXSMM_MIN(n1, nn) + nn - 1) / nn,
+            (100ULL * n0 + n - 1) / n);
+          printf("             rand=%llu%%\n", n0);
         }
       }
       if (0 < d2) {
@@ -166,7 +171,7 @@ int main(int argc, char* argv[])
             split * 2, (100ULL * h2 + n - 1) / n,
             split, (100ULL * g2 + n - 1) / n);
           printf("             rand=%llu%%\n",
-            (LIBXSMM_MIN(n2, nn) * 100 + nn - 1) / nn);
+            (100ULL * LIBXSMM_MIN(n2, nn) + nn - 1) / nn);
         }
       }
       if (0 < d3) {
@@ -180,7 +185,7 @@ int main(int argc, char* argv[])
             split * 2, (100ULL * h3 + n - 1) / n,
             split, (100ULL * g3 + n - 1) / n);
           printf("             rand=%llu%%\n",
-            (LIBXSMM_MIN(n3, nn) * 100 + nn - 1) / nn);
+            (100ULL * LIBXSMM_MIN(n3, nn) + nn - 1) / nn);
         }
       }
     }
@@ -199,42 +204,45 @@ int main(int argc, char* argv[])
 }
 
 
-void shuffle(void* inout, size_t elemsize, size_t count) {
+size_t shuffle(void* inout, size_t elemsize, size_t count) {
+  size_t result = 0;
   if (1 < count) {
     switch (elemsize) {
-      case 8:   SHUFFLE(inout, 8, count); break;
-      case 4:   SHUFFLE(inout, 4, count); break;
-      case 2:   SHUFFLE(inout, 2, count); break;
-      case 1:   SHUFFLE(inout, 1, count); break;
-      default:  SHUFFLE(inout, elemsize, count);
+      case 8:   SHUFFLE(inout, 8, count, result); break;
+      case 4:   SHUFFLE(inout, 4, count, result); break;
+      case 2:   SHUFFLE(inout, 2, count, result); break;
+      case 1:   SHUFFLE(inout, 1, count, result); break;
+      default:  SHUFFLE(inout, elemsize, count, result);
     }
   }
+  return result;
 }
 
 
-size_t uint_reduce_op(const void* input, size_t elemsize, size_t count, redop_enum redop, size_t split)
+size_t uint_reduce_op(const void* input, size_t elemsize, size_t count,
+  redop_enum redop, size_t split)
 {
-  const size_t middle = count / 2 + (count & 1);
-  unsigned long long lo, hi, result;
+  const size_t inner = count / 2 + (count & 1);
+  unsigned long long lo = 0, hi = 0, result;
   if (1 < split) {
-    lo = uint_reduce_op(input, elemsize, middle, redop, split - 1);
-    hi = uint_reduce_op((const char*)input + elemsize * middle,
-      elemsize, count - middle, redop, split - 1);
+    lo = uint_reduce_op(input, elemsize, inner, redop, split - 1);
+    hi = uint_reduce_op((const char*)input + elemsize * inner,
+      elemsize, count - inner, redop, split - 1);
     result = (lo + hi + 1) / 2; /* average */
   }
   else {
     switch (elemsize) {
       case 8: {
-        REDUCE_ADD(unsigned long long, input, middle, count, lo, hi);
+        REDUCE_ADD(unsigned long long, input, inner, count, lo, hi);
       } break;
       case 4: {
-        REDUCE_ADD(unsigned int, input, middle, count, lo, hi);
+        REDUCE_ADD(unsigned int, input, inner, count, lo, hi);
       } break;
       case 2: {
-        REDUCE_ADD(unsigned short, input, middle, count, lo, hi);
+        REDUCE_ADD(unsigned short, input, inner, count, lo, hi);
       } break;
       default: {
-        REDUCE_ADD(unsigned char, input, elemsize * middle,
+        REDUCE_ADD(unsigned char, input, elemsize * inner,
           elemsize * count, lo, hi);
       }
     }
@@ -243,10 +251,10 @@ size_t uint_reduce_op(const void* input, size_t elemsize, size_t count, redop_en
       unsigned long long n;
       switch (redop) {
         case redop_imbalance: {
-          n = LIBXSMM_DELTA(lo, hi);
+          n = (LIBXSMM_DELTA(lo, hi) * count + result - 1) / result;
         } break;
-        case redop_mdistance: { /* C.F. Gauss */
-          n = result - count * (count - 1) / 2;
+        case redop_mdistance: {
+          n = (result * 2 - count * (count - 1)) / 2;
         } break;
         default: n = result;
       }
@@ -259,7 +267,7 @@ size_t uint_reduce_op(const void* input, size_t elemsize, size_t count, redop_en
 
 
 size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count) {
-  size_t result = 0; /* count number of swaps */
+  size_t nswaps = 0; /* count number of swaps */
   if (0 != count) {
     unsigned char *const data = (unsigned char*)inout;
     int swap = 1;
@@ -271,7 +279,7 @@ size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count) {
           if (x != y) {
             if (x > y) {
               LIBXSMM_MEMSWP127(data + i, data + j, elemsize);
-              swap = 1; ++result;
+              swap = 1; ++nswaps;
             }
             break;
           }
@@ -279,5 +287,5 @@ size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count) {
       }
     }
   }
-  return result;
+  return nswaps;
 }
