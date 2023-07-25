@@ -2764,8 +2764,13 @@ void libxsmm_generator_cvtbf16ps_sse_avx2_avx512( libxsmm_generated_code* io_gen
                                             i_vec_reg, o_vec_reg );
 
   /* shift 16 bits to the left to generate valid FP32 numbers */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, l_shift_instr, i_vname,
-                                                 o_vec_reg, o_vec_reg, 16 );
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    libxsmm_x86_instruction_vec_compute_1reg_imm8( io_generated_code, l_shift_instr, i_vname,
+                                                   o_vec_reg, 16 );
+  } else {
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, l_shift_instr, i_vname,
+                                                   o_vec_reg, o_vec_reg, 16 );
+  }
 }
 
 LIBXSMM_API_INTERN
