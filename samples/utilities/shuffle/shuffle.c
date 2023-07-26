@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
             split, (100ULL * g1 + n - 1) / n);
           n0 = LIBXSMM_MIN((100ULL * LIBXSMM_MIN(n1, nn) + nn - 1) / nn,
             (100ULL * n0 + n - 1) / n);
-          printf("             rand=%llu%%\n", n0);
+          printf("             rand=%llu%%\n", (unsigned long long)n0);
         }
       }
       if (0 < d2) {
