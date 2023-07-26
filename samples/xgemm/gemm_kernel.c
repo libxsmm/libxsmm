@@ -1623,9 +1623,20 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
     float* data_gold_f = (float*)malloc( sizeof(float) * ld * n );
     float* data_f      = (float*)malloc( sizeof(float) * ld * n );
+#if 0
+    libxsmm_blasint l_i, l_j;
+#endif
 
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data_gold, data_gold_f, ld*n );
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data,      data_f,      ld*n );
+#if 0
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %10.10f, computed: %10.10f, diff: %10.10f\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i], data_gold_f[(l_j * ld) + l_i]-data_f[(l_j * ld) + l_i] );
+      }
+      printf("\n");
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
 
