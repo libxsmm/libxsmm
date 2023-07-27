@@ -69,7 +69,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* calculate the chunk size of current columns to work on */
   if ( libxsmm_compute_equalized_blocking( i_xgemm_desc->n, l_max_reg_block, &l_n1_range, &l_n1_block, &l_n2_range, &l_n2_block ) ) {

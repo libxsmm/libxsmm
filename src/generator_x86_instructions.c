@@ -2170,6 +2170,17 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_1reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                           LIBXSMM_X86_VEC_REG_UNDEF, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                           0, 0, 0, i_imm8 );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_code* io_generated_code,
                                                              const unsigned int      i_vec_instr,
                                                              const char              i_vector_name,
@@ -4289,15 +4300,28 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       buf[i+3] = vlen_encoding;
       i += 4;
     } else {
-      buf[i] = 0xc5;
-      if ( i_vec_reg_number <= 7 ) {
-        buf[i+1] = (unsigned char)(0xfc + l_regsize_adjustment);
-        vecval = i_vec_reg_number;
+      if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
+        buf[i] = 0xc5;
+        if ( i_vec_reg_number <= 7 ) {
+          buf[i+1] = (unsigned char)(0xfc + l_regsize_adjustment);
+          vecval = i_vec_reg_number;
+        } else {
+          buf[i+1] = (unsigned char)(0x7c + l_regsize_adjustment);
+          vecval = i_vec_reg_number - 8;
+        }
+        i += 2;
       } else {
-        buf[i+1] = (unsigned char)(0x7c + l_regsize_adjustment);
-        vecval = i_vec_reg_number - 8;
+        if ( i_vec_reg_number <= 7 ) {
+          buf[i] = 0x0f;
+          vecval = i_vec_reg_number;
+          i += 1;
+        } else {
+          buf[i] = 0x44;
+          buf[i+1] = 0x0f;
+          vecval = i_vec_reg_number - 8;
+          i += 2;
+        }
       }
-      i += 2;
     }
 
     buf[ i ] = 0x10;
