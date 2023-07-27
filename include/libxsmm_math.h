@@ -157,7 +157,9 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
  */
 LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[]);
 
-/** Calculate co-prime number <= n/2 (libxsmm_coprime2(0|1) == 0). */
+/** Co-prime R of N such that R <= MinCo (libxsmm_coprime2(0|1) == 0). */
+LIBXSMM_API size_t libxsmm_coprime(size_t n, size_t minco);
+/** Co-prime R of N such that R <= N/2 (libxsmm_coprime2(0|1) == 0). */
 LIBXSMM_API size_t libxsmm_coprime2(size_t n);
 
 /**

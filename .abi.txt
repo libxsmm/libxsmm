@@ -35,6 +35,7 @@ libxsmm_convert_f32_to_f16
 libxsmm_convert_f32_to_hf8_rne
 libxsmm_convert_hf8_f32
 libxsmm_convert_hf8_to_f32
+libxsmm_coprime
 libxsmm_coprime2
 libxsmm_coprime2_
 libxsmm_cpuid

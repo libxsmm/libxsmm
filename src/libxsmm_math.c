@@ -489,28 +489,36 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 }
 
 
-LIBXSMM_API size_t libxsmm_coprime2(size_t n)
+LIBXSMM_API size_t libxsmm_coprime(size_t n, size_t minco)
 {
-  const size_t s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
+  const size_t s = (0 != (n & 1) ? ((LIBXSMM_MAX(minco, 1) - 1) | 1) : (minco & ~1));
   const size_t d = (0 != (n & 1) ? 1 : 2);
   size_t result = (1 < n ? 1 : 0), i;
   for (i = (d < n ? (n - 1) : 0); d < i; i -= d) {
     const size_t c = LIBXSMM_DELTA(s, i);
     size_t a = n, b = c;
+    assert(i != s);
     do {
       const size_t r = a % b;
       a = b; b = r;
     } while (0 != b);
     if (1 == a) {
       result = c;
-      if ((c * 2) <= n) {
+      if (c <= minco) {
         i = d; /* break */
       }
     }
   }
+  if (minco < result) result = 1;
   assert((0 == result && 1 >= n) || (result < n && 1 == libxsmm_gcd(result, n)));
-  assert(result <= (n / 2));
+  assert(0 == minco || (result <= minco));
   return result;
+}
+
+
+LIBXSMM_API size_t libxsmm_coprime2(size_t n)
+{
+  return libxsmm_coprime(n, n / 2);
 }
 
 
