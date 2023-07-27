@@ -101,10 +101,8 @@ libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
 }
 
 
-#if 0
 LIBXSMM_INLINE
 float ftanh_rational_78(float x) {
-#if 0
   float x2, nom, denom, result;
   if (x > 4.97f) {
     return 1.0f;
@@ -123,63 +121,29 @@ float ftanh_rational_78(float x) {
   denom = denom * x2 + 2027025.0f;
   result = nom * (1.0f/denom);
   return result;
-#else
-  float x2, nom, denom, result;
-  libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  libxsmm_meltw_unary_param unary_param;
-  unary_param.in.primary  = (void*)&denom;
-  unary_param.out.primary = (void*)&denom;
-
-  if (x > 4.97f) {
-    return 1.0f;
-  }
-  if (x < -4.97f) {
-    return -1.0f;
-  }
-  x2 = x * x;
-  nom = 36.0f * x2 + 6930.0f;
-  nom = nom * x2 + 270270.0f;
-  nom = nom * x2 + 2027025.0f;
-  nom = nom * x;
-  denom = x2 + 630.0f;
-  denom = denom * x2 + 51975.0f;
-  denom = denom * x2 + 945945.0f;
-  denom = denom * x2 + 2027025.0f;
-#if 0
-  unary_kernel( &unary_param );
-#else
-  denom = (float)(1.0f/denom);
-#endif
-  result = nom * denom;
-  return result;
-#endif
 }
 
-float fsigmoid(float x) {
-#if 0
-  return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
-#else
-  return (ftanh_rational_78(x/2.0f) + 1.0f)/2.0f;
-#endif
-}
-#else
 LIBXSMM_INLINE
 float fsigmoid(float x) {
-  libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  libxsmm_meltw_unary_param unary_param;
-  float in = x, out;
-  if( unary_kernel == NULL ) {
-    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
-    exit(-1);
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_SSE42 ||
+       libxsmm_get_target_archid() == LIBXSMM_X86_SSE3 ||
+       libxsmm_get_target_archid() == LIBXSMM_X86_GENERIC ) {
+    return (ftanh_rational_78(x/2.0f) + 1.0f)/2.0f;
+  } else {
+    libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    libxsmm_meltw_unary_param unary_param;
+    float in = x, out;
+    if( unary_kernel == NULL ) {
+      printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+      exit(-1);
+    }
+    unary_param.in.primary  = (void*)&in;
+    unary_param.out.primary = (void*)&out;
+    unary_kernel( &unary_param );
+    return out;
   }
-  unary_param.in.primary  = (void*)&in;
-  unary_param.out.primary = (void*)&out;
-  unary_kernel( &unary_param );
-  return out;
 }
-#endif
 
 LIBXSMM_INLINE
 void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
@@ -1660,9 +1624,20 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
     float* data_gold_f = (float*)malloc( sizeof(float) * ld * n );
     float* data_f      = (float*)malloc( sizeof(float) * ld * n );
+#if 0
+    libxsmm_blasint l_i, l_j;
+#endif
 
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data_gold, data_gold_f, ld*n );
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data,      data_f,      ld*n );
+#if 0
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %10.10f, computed: %10.10f, diff: %10.10f\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i], data_gold_f[(l_j * ld) + l_i]-data_f[(l_j * ld) + l_i] );
+      }
+      printf("\n");
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
 
@@ -1711,6 +1686,17 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     free( data_f );
     free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
+#if 0
+    int* data_gold_f = (int*)data_gold;
+    int* data_f      = (int*)data;
+    libxsmm_blasint l_i, l_j;
+
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %i, computed: %i, diff: %i\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i], data_gold_f[(l_j * ld) + l_i]-data_f[(l_j * ld) + l_i] );
+      }
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {

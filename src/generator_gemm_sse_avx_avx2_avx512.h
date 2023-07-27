@@ -30,14 +30,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
                                                                            const unsigned int                 i_m_blocking,
                                                                            const unsigned int                 i_n_blocking );
 
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_initial_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                                                                    const unsigned int              i_arch );
-
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_update_m_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                                               const unsigned int             i_arch,
-                                                                                               const unsigned int             i_current_m_blocking );
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
+                                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                                           const unsigned int             i_arch,
+                                                                                           const unsigned int             i_current_m_blocking );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                                                                 const libxsmm_gemm_descriptor*      i_xgemm_desc,

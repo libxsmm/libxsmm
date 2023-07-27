@@ -151,7 +151,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
         0 );
 
       if (upconvert_input_bf16f32 > 0) {
-        libxsmm_generator_cvtbf16ps_avx2_avx512(io_generated_code, i_micro_kernel_config->vector_name, im, im);
+        libxsmm_generator_cvtbf16ps_sse_avx2_avx512(io_generated_code, i_micro_kernel_config->vector_name, im, im);
       } else if (upconvert_input_f16f32 > 0) {
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, i_micro_kernel_config->vector_name, im, im );
       } else if (upconvert_input_bf8f32 > 0) {
