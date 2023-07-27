@@ -8,11 +8,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_memory.h>
+#include <libxsmm.h>
+#include "libxsmm_main.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
-#include "libxsmm_main.h"
-
 #include <ctype.h>
 
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0
@@ -27,6 +26,40 @@
 LIBXSMM_APIVAR_DEFINE(unsigned char (*internal_diff_function)(const void*, const void*, unsigned char));
 LIBXSMM_APIVAR_DEFINE(int (*internal_memcmp_function)(const void*, const void*, size_t));
 #endif
+
+
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
+{
+  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
+  if (0 != result) {
+    return result;
+  }
+  else {
+    static int error_once = 0;
+    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
+    }
+    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
+  }
+}
+
+
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
+{
+  size_t result = 0, size1 = 0;
+  if (0 != ndims && NULL != shape) {
+    size_t i;
+    result = (NULL != offset ? offset[0] : 0);
+    size1 = shape[0];
+    for (i = 1; i < ndims; ++i) {
+      result += (NULL != offset ? offset[i] : 0) * size1;
+      size1 *= shape[i];
+    }
+  }
+  if (NULL != size) *size = size1;
+  return result;
+}
 
 
 LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
@@ -458,26 +491,32 @@ LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
 }
 
 
+LIBXSMM_API unsigned int libxsmm_hash32(unsigned long long data)
+{
+  return libxsmm_crc32_u32(data >> 32, &data) & 0xFFFFFFFF;
+}
+
+
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
 {
   unsigned long long result;
   const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
-    const size_t length2 = length / 2;
+    const size_t length2 = LIBXSMM_MAX(length / 2, sizeof(result));
     unsigned int hash32, seed32 = 0; /* seed=0: match else-optimization */
     LIBXSMM_INIT
     seed32 = libxsmm_crc32(seed32, string, length2);
     hash32 = libxsmm_crc32(seed32, string + length2, length - length2);
     result = hash32; result = (result << 32) | seed32;
   }
-  else { /* reinterpret directly as hash value */
-#if 1
-    result = (unsigned long long)string;
-#else
+  else if (sizeof(result) != length) {
     char *const s = (char*)&result; signed char i;
     for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
     for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
-#endif
+  }
+  else { /* reinterpret directly as hash value */
+    LIBXSMM_ASSERT(NULL != string);
+    result = *(unsigned long long*)string;
   }
   return result;
 }
@@ -558,6 +597,107 @@ LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char del
 }
 
 
+LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
+  const size_t* shuffle, const size_t* nrepeat)
+{
+  char elembuf[128];
+  unsigned short idxshort[4096];
+  const int idxlong = sizeof(idxshort) < (count * sizeof(*idxshort));
+  size_t *const idx = (0 == idxlong ? NULL : (size_t*)malloc(sizeof(size_t) * count));
+  int result;
+  if ((NULL != inout || 0 == elemsize || 0 == count) && elemsize <= sizeof(elembuf)
+    && (0 == idxlong || NULL != idx))
+  {
+    unsigned char* const LIBXSMM_RESTRICT data = (unsigned char*)inout;
+    const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
+    const size_t c = libxsmm_unshuffle(count, &s) - 1;
+    const size_t n = (NULL == nrepeat ? 1 : *nrepeat) + c;
+    size_t i, j, k;
+    for (i = 0; i < count; ++i) {
+      for (k = 0, j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
+      if (0 == idxlong) idxshort[i] = (unsigned short)j; else idx[i] = j;
+    }
+    for (i = 0; i < count; ++i) {
+      j = (0 == idxlong ? idxshort[i] : idx[i]);
+      while (i != j) {
+        memcpy(elembuf, data + elemsize * i, elemsize);
+        memcpy(data + elemsize * i, data + elemsize * j, elemsize);
+        memcpy(data + elemsize * j, elembuf, elemsize);
+        if (0 == idxlong) {
+          k = idxshort[j]; idxshort[j] = (unsigned short)j; idxshort[i] = (unsigned short)k;
+        }
+        else {
+          k = idx[j]; idx[j] = j; idx[i] = k;
+        }
+        j = k;
+      }
+    }
+    result = EXIT_SUCCESS;
+  }
+  else result = EXIT_FAILURE;
+  free(idx);
+  return result;
+}
+
+
+LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count,
+  const size_t* shuffle, const size_t* nrepeat)
+{
+  const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
+  unsigned char *const LIBXSMM_RESTRICT out = (unsigned char*)dst;
+  const size_t size = elemsize * count;
+  int result;
+  if ((NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out)) || 0 == size) {
+    const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
+    size_t i = 0, j = 1;
+    if (NULL == nrepeat || 1 == *nrepeat) {
+      if (elemsize < 128) {
+        switch (elemsize) {
+          case 8: for (; i < size; i += 8, j += s) {
+            if (count < j) j -= count;
+            *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - 8 * j);
+          } break;
+          case 4: for (; i < size; i += 4, j += s) {
+            if (count < j) j -= count;
+            *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - 4 * j);
+          } break;
+          case 2: for (; i < size; i += 2, j += s) {
+            if (count < j) j -= count;
+            *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - 2 * j);
+          } break;
+          case 1: for (; i < size; ++i, j += s) {
+            if (count < j) j -= count;
+            out[i] = inp[size-j];
+          } break;
+          default: for (; i < size; i += elemsize, j += s) {
+            if (count < j) j -= count;
+            LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
+          }
+        }
+      }
+      else { /* generic path */
+        for (; i < size; i += elemsize, j += s) {
+          if (count < j) j -= count;
+          memcpy(out + i, inp + size - elemsize * j, elemsize);
+        }
+      }
+    }
+    else /*if (0 < count)*/ { /* generic path */
+      const size_t c = count - 1;
+      for (; i < count; ++i) {
+        size_t k = 0;
+        LIBXSMM_ASSERT(NULL != inp && NULL != out);
+        for (j = i; k < *nrepeat; ++k) j = c - ((s * j) % count);
+        memcpy(out + elemsize * i, inp + elemsize * j, elemsize);
+      }
+    }
+    result = EXIT_SUCCESS;
+  }
+  else result = EXIT_FAILURE;
+  return result;
+}
+
+
 LIBXSMM_API size_t libxsmm_unshuffle(size_t count, const size_t* shuffle)
 {
   size_t result = 0;
@@ -571,80 +711,6 @@ LIBXSMM_API size_t libxsmm_unshuffle(size_t count, const size_t* shuffle)
   }
   assert(result <= count);
   return result;
-}
-
-
-LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count,
-  const size_t* shuffle, const size_t* nrepeat)
-{
-  const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
-  unsigned char *const LIBXSMM_RESTRICT out = (unsigned char*)dst;
-  const size_t size = elemsize * count;
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out))
-#endif
-  {
-    const size_t n = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
-    size_t i = 0, j = 1;
-    if (NULL == nrepeat || 1 == *nrepeat) {
-      if (elemsize < 128) {
-        switch (elemsize) {
-          case 8: {
-            for (; i < size; i += elemsize, j += n) {
-              if (count < j) j -= count;
-              *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - elemsize * j);
-            }
-          } break;
-          case 4: {
-            for (; i < size; i += elemsize, j += n) {
-              if (count < j) j -= count;
-              *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - elemsize * j);
-            }
-          } break;
-          case 2: {
-            for (; i < size; i += elemsize, j += n) {
-              if (count < j) j -= count;
-              *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - elemsize * j);
-            }
-          } break;
-          case 1: {
-            for (; i < size; i += elemsize, j += n) {
-              if (count < j) j -= count;
-              out[i] = inp[size-elemsize*j];
-            }
-          } break;
-          default: {
-            for (; i < size; i += elemsize, j += n) {
-              if (count < j) j -= count;
-              LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
-            }
-          }
-        }
-      }
-      else { /* generic path */
-        for (; i < size; i += elemsize, j += n) {
-          if (count < j) j -= count;
-          memcpy(out + i, inp + size - elemsize * j, elemsize);
-        }
-      }
-    }
-    else if (0 < count) { /* generic path */
-      size_t c = count - 1, k;
-      for (j = i; i < count; ++i, j = i) {
-        for (k = 0; k < *nrepeat; ++k) j = c - (n * j) % count;
-        memcpy(out + elemsize * i, inp + elemsize * j, elemsize);
-      }
-    }
-  }
-#if !defined(NDEBUG)
-  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    LIBXSMM_INIT
-    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
-    }
-  }
-#endif
 }
 
 

@@ -22,6 +22,9 @@ IF %VS_COMNTOOLS%=="" (
 
 IF EXIST %ONEAPI_ROOT%setvars-vcvarsall.bat (
   CALL "%ONEAPI_ROOT%setvars-vcvarsall.bat"
+  IF EXIST %ONEAPI_ROOT%setvars.bat (
+    CALL "%ONEAPI_ROOT%setvars.bat"
+  )
   GOTO START_VISUAL_STUDIO
 )
 

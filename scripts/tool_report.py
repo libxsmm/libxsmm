@@ -17,6 +17,7 @@ import tempfile
 import pathlib
 import pickle
 import numpy
+import math
 import copy
 import json
 import stat
@@ -169,7 +170,10 @@ def parselog(
                     for i in values:
                         if i not in database[strbuild][category]:
                             m = m + 1
-                        database[strbuild][category][i] = values[i]
+                        if values[i]:
+                            database[strbuild][category][i] = values[i]
+                        else:  # error (empty value)
+                            n = n + 1
                 else:
                     if jobname not in database[strbuild][category]:
                         m = m + 1
@@ -189,21 +193,28 @@ def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
     """
-    dflt, plst = pathlib.Path(in_dflt), str(in_main).strip().split()
-    path = pathlib.Path(plst[0] if plst else in_main)
+    dflt, inplst = pathlib.Path(in_dflt), str(in_main).strip().split()
+    path, result = pathlib.Path(inplst[0] if inplst else in_main), []
     if path.is_dir():
-        figloc, figstm = path, dflt.stem
-        figext = f".{plst[1]}" if 1 < len(plst) else dflt.suffix
-    elif path.suffix[1:] in extlst:
-        figloc, figstm = path.parent, path.stem
-        figext = path.suffix
-    elif "." == str(path.parent):
-        figloc, figstm = path.parent, dflt.stem
-        figext = f".{path.name}" if path.name in extlst else dflt.suffix
+        figext = [dflt.suffix[1:]] if 1 >= len(inplst) else inplst[1:]
+        result = [
+            path / f"{dflt.stem}{idetail}.{ext}"
+            for ext in figext
+            if ext in extlst
+        ]
     else:
-        figloc, figext = path.parent, dflt.suffix
+        if path.suffix[1:] in extlst:
+            if inplst:
+                inplst[0] = path.suffix[1:]
+            else:
+                inplst = [path.suffix[1:]]
         figstm = path.stem if path.stem else dflt.stem
-    return figloc / f"{figstm}{idetail}{figext}"
+        result = [
+            path.parent / f"{figstm}{idetail}.{ext}"
+            for ext in inplst
+            if ext in extlst
+        ]
+    return result
 
 
 def mtime(filename):
@@ -279,7 +290,7 @@ def savedb(filename, database, filetime=None, retry=None):
             else:
                 os.rename(tmpfile[1], filename)
                 break
-    else:
+    elif filename:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
 
@@ -304,36 +315,53 @@ def trend(values):
     """
     Calculate the predicted value (linear trend of history),
     the relative difference of lastest and previous value (rd),
-    the standard deviation (cv), and the linear trend (equation).
+    the relative difference of lastest and median value (md),
+    the standard deviation (cv), the arithmetic average (avg),
+    the median value (med), and the linear trend (equation).
     """
-    rd, cv, eqn, size = None, None, None, len(values)
-    b, a = values[0:2] if values else (0, 0)
+    rd, md, cv, avg, med, eqn = None, None, None, None, None, None
+    size = len(values)
+    a, b = (values[1] if 1 < size else 0), (values[0] if 0 < size else 0)
+    if 1 < size:
+        avg = numpy.mean(values[1:])
+        med = numpy.median(values[1:])
     if 0 != a:
         rd = (b - a) / a
+    if med:  # not zero/none
+        md = (b - med) / med
     if 2 < size:
         # b: predicted value for x=0 (a * x + b)
         a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
         eqn = numpy.poly1d((a, b))
-        avg = numpy.mean(values[1:])
-        if 0 != avg:
+        if avg:  # not zero/none
             cv = numpy.std(values[1:]) / avg
-    return (b, rd, cv, eqn)
+    return (b, rd, md, cv, avg, med, eqn)
 
 
 def bold(s, cond=True):
     if cond:
         c, t = s.count("$"), s.replace("%", r"\%")
-        return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+        a = t.replace("$", "") if 0 == (c % 2) else t
+        b = r"$\bf{" + a.replace(" ", r"\ ") + "}$"
+        return b
     else:
         return s
 
 
 def conclude(values, base, unit, accuracy, bounds, lowhigh):
-    guess, rd, cv, eqn = trend(values)
-    label = f"{num2fix(values[0], accuracy)} {unit}"
-    bad = False
-    if rd:
-        inum = num2fix(100 * rd)
+    label, bad = f"{num2fix(values[0], accuracy)} {unit}", False
+    guess, rd, md, cv, avg, med, eqn = trend(values)  # unpack
+    blist = base.split()
+    if 1 < len(blist):  # category and detail
+        dlist = blist[1].split("_")
+        for c in blist[0].split("_"):
+            while c in dlist:  # no redundancy
+                dlist.remove(c)
+        base = f"{blist[0]} {'_'.join(dlist)}"
+    # combine relative differences (new value vs last/avg value)
+    xd = max(abs(rd if rd else 0), abs(md if md else 0))
+    if xd:
+        inum = num2fix(100 * (rd if xd == abs(rd) else md))
         if cv and bounds and 0 != bounds[0]:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum = num2fix(max(100 * cv, 1))
@@ -367,6 +395,46 @@ def conclude(values, base, unit, accuracy, bounds, lowhigh):
     else:
         label = f"{base} = {label}"
     return label, bad, eqn
+
+
+def create_figure(plots, nplots, resint, untied, addon):
+    figsize = (divup(resint[0], resint[2]), divup(resint[1], resint[2]))
+    subplots = plot.subplots(
+        max(nplots, 1),
+        sharex=True,
+        figsize=figsize,
+        dpi=resint[2],
+    )
+    figure, axes = subplots  # unpack
+    if 2 > nplots:  # ensure axes object is always a list
+        axes = [axes]
+    i = 0
+    for entry in plots:
+        for data in plots[entry]:
+            axes[i].step(data[0], ".:", where="mid", label=data[1])
+            axes[i].set_ylabel(f"{entry.upper()} [{data[2]}]")
+            axes[i].tick_params(left=False, labelleft=False, grid_alpha=0.15)
+            axes[i].tick_params(right=True, labelright=True)
+            axes[i].yaxis.grid(True, linestyle="solid")
+            axes[i].xaxis.set_ticks(
+                range(len(data[-1])), data[-1], rotation=45
+            )
+            if 1 < len(data[-1]):
+                axes[i].set_xlim(0, len(data[-1]) - 1)  # tighter bounds
+            axes[i].legend(loc="upper left", fontsize="small")  # ncol=2
+            if untied:
+                i = i + 1
+        if not untied:
+            i = i + 1
+    if 0 < nplots:
+        axes[-1].set_xlabel("Build Number")
+        title = "Performance History"
+        suptitle = f"{title} ({addon.lower()})" if addon else title
+        figure.suptitle(f"\n{suptitle}", fontsize="x-large", y=1.0)
+        figure.tight_layout()  # before subplots_adjust
+        figure.subplots_adjust(hspace=0.0)
+        figure.gca().invert_xaxis()
+    return figure
 
 
 def main(args, argd, dbfname):
@@ -459,8 +527,8 @@ def main(args, argd, dbfname):
 
     nbuilds, nbuild = 0, int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
-        next = latest + 1
-        nbld = nbuild if 0 < nbuild else next
+        nnew = latest + 1
+        nbld = nbuild if 0 < nbuild else nnew
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -470,7 +538,7 @@ def main(args, argd, dbfname):
             database, str(nbld), name, infokey, info, txt, nentries, nerrors
         )
         if 0 < nentries:
-            latest = next
+            latest = nnew if 0 == nbuild else nbuild
     elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -555,24 +623,26 @@ def main(args, argd, dbfname):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
+    # backup database and prune according to retention
+    retention = min(args.retention, args.history)
+    if (0 < retention and outfile) and (
+        retention < args.history or (retention + args.history) < dbsize
+    ):
+        nowutc = datetime.datetime.now(datetime.timezone.utc)
+        nowstr = nowutc.strftime("%Y%m%d")  # day
+        retfile = outfile.with_name(f"{outfile.stem}.{nowstr}{outfile.suffix}")
+        if not retfile.exists():
+            savedb(retfile, database)  # unpruned
+        for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
+            del database[key]
+        dbkeys = list(database.keys())
+        dbsize = retention
+        if 0 == nentries:
+            savedb(outfile, database, ofmtime, 3)
     if 0 != nentries:
-        # backup database and prune according to retention
-        retention = max(args.retention, args.history)
-        if 0 < retention and (retention + args.history) < dbsize:
-            nowutc = datetime.datetime.now(datetime.timezone.utc)
-            nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_name(
-                f"{outfile.stem}.{nowstr}{outfile.suffix}"
-            )
-            if not retfile.exists():
-                savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
-                    del database[key]
-                dbkeys = list(database.keys())
-                dbsize = retention
         savedb(outfile, database, ofmtime, 3)
-        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-            print(f"{outfile} database created.")
+    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
+        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
@@ -583,12 +653,12 @@ def main(args, argd, dbfname):
                 file=sys.stderr,
             )
         y = "ies" if 1 != nentries else "y"
-        print(f"Database consists of {dbsize} builds.")
+        print(f"Database consists of {dbsize} builds.", end="")
         if 0 < nentries:
             s = "s" if 1 != nbuilds else ""
-            print(f"Found {nentries} new entr{y} in {nbuilds} build{s}.")
+            print(f" Found {nentries} new entr{y} in {nbuilds} build{s}.")
         else:
-            print(f"Found {nentries} new entr{y}.")
+            print(f" Found {nentries} new entr{y}.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
@@ -608,7 +678,7 @@ def main(args, argd, dbfname):
     else:
         template = dict()
 
-    entries = [
+    entries = [  # collect all categories
         e  # category (one level below build number)
         for e in template
         if (e != infokey or (select and infokey in select))
@@ -616,29 +686,6 @@ def main(args, argd, dbfname):
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
-
-    # determine image resolution
-    rdef = [int(r) for r in argd.resolution.split("x")]
-    if 2 == len(rdef):
-        rdef.append(100)
-    rstr = args.resolution.split("x")
-    rint = []
-    for i in range(len(rdef)):
-        try:
-            rint.append(int(rstr[i]))
-        except:  # noqa: E722
-            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            rint.append(r)
-
-    # setup figure
-    figure, axes = plot.subplots(
-        max(len(entries), 1),
-        sharex=True,
-        figsize=(divup(rint[0], rint[2]), divup(rint[1], rint[2])),
-        dpi=rint[2],
-    )
-    if 2 > len(entries):
-        axes = [axes]
 
     # parse bounds used to highlight results
     strbounds = re.split(
@@ -665,8 +712,8 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    sval, yunit, addon = None, None, args.branch
-    ngraphs = span = i = 0
+    plots, sval, yunit, addon = {}, None, None, args.branch
+    ngraphs = span = 0
     for entry in entries:
         n = 0
         for value in (
@@ -703,13 +750,17 @@ def main(args, argd, dbfname):
             for build in reversed(builds):  # order: latest -> older
                 values, ylabel = database[build][entry][value], None
                 if isinstance(values, dict):  # JSON-format
-                    vals, legd = [], []
+                    vals, legd, detail = [], [], None
                     for key in (k for k in keys if k in values):
                         vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
                         weight = wlist[key] if key in wlist else 1.0
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
-                        unit = strval[parsed.end(3) :].strip()  # noqa: E203
+                        unit = (
+                            strval[parsed.end(3) :].strip()  # noqa: E203
+                            if parsed
+                            else ""
+                        )
                         vals.append(float(strval.split()[0]) * vscale * weight)
                         if not ylabel:
                             ylabel = (
@@ -718,9 +769,19 @@ def main(args, argd, dbfname):
                                 else qlst[2]
                             )
                         lst = key.translate(split).split()
-                        detail = [s for s in lst if s.lower() != qlst[0]]
+                        if lst and all(
+                            lst[0] == s for s in lst if qlst[0] in s.lower()
+                        ):
+                            detail = (
+                                lst[0]
+                                if not detail or detail == lst[0]
+                                else qlst[0]
+                            )
+                        else:
+                            detail = qlst[0]
+                        itm = [s for s in lst if s.lower() != detail]
                         legd.append(
-                            f"{value} {'_'.join(detail)}" if detail else value
+                            f"{value} {'_'.join(itm)}" if itm else value
                         )
                     if vals:
                         if yvalue:
@@ -728,12 +789,12 @@ def main(args, argd, dbfname):
                                 len(yvalue[0]) == len(vals)
                             ):  # same dimensionality
                                 yvalue.append(vals)
-                        elif int(build) == latest:
+                        else:
                             yvalue, legend = [vals], legd
-                            if addon == args.branch:
-                                addon = rslt.split(",")[0] + (
-                                    f"@{addon}" if addon else ""
-                                )  # title-addon
+                            if addon == args.branch and detail:
+                                addon = (  # title-addon
+                                    f"{detail}@{addon}" if addon else detail
+                                )
                         xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
@@ -781,8 +842,8 @@ def main(args, argd, dbfname):
                 else:  # unit-weight
                     layers[a] = [y[k] for k in range(s)]
                 j = j + 1
-            if not yunit and (ylabel or args.result):
-                yunit = (ylabel if ylabel else args.result).split()[0]
+            if not yunit and ylabel:
+                yunit = ylabel
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
                 yvalue = [sum(y) for y in zip(*layers.values())]
@@ -812,67 +873,105 @@ def main(args, argd, dbfname):
                     if not exceeded and bad:
                         exceeded = True
                 # plot values and legend as collected above
-                if (not aunit or aunit == yunit) and (
-                    yvalue and latest == xvalue[0]
-                ):
+                if (not aunit or aunit == yunit) and yvalue:
                     ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
                     if span < ispan:
                         sval, span = xvalue, ispan
-                    axes[i].step(  # xvalue,
-                        yvalue, ".:", where="mid", label=ylabel
-                    )
-                    axes[i].set_ylabel(yunit)
+                    # collect plot data
+                    if entry not in plots:
+                        plots[entry] = []
+                    plots[entry].append([yvalue, ylabel, yunit, sval])
                     n = n + 1
+        # maximum number of graphs discovered over all plot-areas
         ngraphs = max(ngraphs, n)
-        if 0 < n:
-            axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
-            axes[i].set_xlim(0, len(sval) - 1)  # tighter bounds
-            axes[i].set_title(entry.upper())
-            axes[i].legend(loc="upper left")  # ncol=2
-        i = i + 1
-    axes[-1].set_xlabel("Build Number")
-    title = "Performance History"
-    figure.suptitle(
-        f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
-    )
-    figure.gca().invert_xaxis()
-    figure.tight_layout()
 
-    if 0 < ngraphs:
+    # determine image resolution
+    rdef = [int(r) for r in argd.resolution.split("x")]
+    if 2 == len(rdef):
+        rdef.append(100)
+    rstr, resint = args.resolution.split("x"), []
+    for i in range(len(rdef)):
+        try:
+            resint.append(int(rstr[i]))
+        except:  # noqa: E722
+            r = rdef[i] if 1 != i else round(resint[0] * rdef[1] / rdef[0])
+            resint.append(r)
+
+    nplots = len(plots)
+    if 0 < nplots:
+        nplots_untied = sum(len(v) for v in plots.values())
+        if 2 > nplots_untied:  # consider rebuilding plots
+            val = list(*list(*plots.values()))
+            if isinstance(val[1], list):
+                nplots_untied = len(set(val[1]))
+                val[0] = list(zip(*val[0]))
+                val[1] = list(val[1])
+                val[2] = [val[2]] * nplots_untied
+                val[3] = [val[3]] * nplots_untied
+                key = next(iter(plots.keys()))
+                plots[key] = list(zip(*val))
+
+        # auto-adjust y-resolution according to number of plots
+        if args.resolution == argd.resolution:  # resolution not user-defined
+            resint_untied = copy.deepcopy(resint)
+            resint_untied[1] = resint[2] * divup(
+                resint[1] * math.sqrt(nplots_untied), resint[2]
+            )
+        else:  # alias
+            resint_untied = resint
+
+        # setup primary figure
+        if args.untied:
+            nplots_primry, resint_primry = nplots_untied, resint_untied
+        else:
+            nplots_primry, resint_primry = nplots, resint
+        figure_primry = create_figure(
+            plots, nplots_primry, resint_primry, args.untied, addon
+        )
+
         # supported file types and filename components
-        figdet = (
+        figcat = (
             ""  # eventually add details about category
             if 1 < len(entries) or 0 == len(entries)
             else f"-{entries[0].translate(clean)}"
         )
-        figcat = re.sub(r"[ ,;]+", "_", figdet)
-        if 0 < len(match):
-            match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
-            parts = [s.lower() for c in match for s in c.split("_")]
-            figqry = f"-{'_'.join(dict.fromkeys(parts))}{figcat}"
-        else:
-            figqry = figcat
-        figcanvas = figure.canvas
+        figdet = re.sub(r"[ ,;]+", "_", figcat)
         figout = fname(
-            extlst=figcanvas.get_supported_filetypes().keys(),
+            extlst=figure_primry.canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
-            idetail=figqry,
+            idetail=f"-{latest}{figdet}" if 0 < latest else figdet,
         )
-        # reduce file size (png) and save figure
-        if ".png" == figout.suffix.lower():
-            figcanvas.draw()  # otherwise the image is empty
-            imageraw = figcanvas.tostring_rgb()
-            image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
-            # avoid Palette.ADAPTIVE, consider back/foreground color
-            image = image.convert("P", colors=ngraphs + 2)
-            image.save(figout, "PNG", optimize=True)
-        else:
-            figure.savefig(figout)  # save graphics file
-        if 1 == abs(args.verbosity):
-            print(f"{figout} created.")
 
-        return exceeded
+        # setup untied figure
+        if 1 < len(figout) and not args.untied:
+            figure_untied = create_figure(
+                plots, nplots_untied, resint_untied, True, addon
+            )
+        else:  # alias
+            resint_untied = resint_primry
+            figure_untied = figure_primry
+
+        # save figure(s) for all requested formats
+        for i in range(len(figout)):
+            figure = figure_primry if 0 == i else figure_untied
+            figres = resint_primry if 0 == i else resint_untied
+            # reduce file size (png) and save figure
+            if ".png" == figout[i].suffix.lower():
+                figure.canvas.draw()  # otherwise the image is empty
+                imageraw = figure.canvas.tostring_rgb()
+                image = PIL.Image.frombytes("RGB", figres[0:2], imageraw)
+                # avoid Palette.ADAPTIVE, consider back/foreground color
+                image = image.convert("P", colors=ngraphs + 2)
+                image.save(figout[i], "PNG", optimize=True)
+            else:
+                figure.savefig(figout[i])  # save graphics file
+            if (1 == abs(args.verbosity) and 0 == i) or 2 <= abs(
+                args.verbosity
+            ):  # print only one/first filepath if verbosity=automation
+                print(f"{figout[i]} created.")
+
+    return exceeded
 
 
 if __name__ == "__main__":
@@ -1016,8 +1115,14 @@ if __name__ == "__main__":
         "-t",
         "--bounds",
         type=str,
-        default="2.0 10",
-        help="Highlight if exceeding max(A*Stdev%,B%)",
+        default="4.0 15",
+        help="Highlight if exceeding max(A*Stdev%%,B%%)",
+    )
+    argparser.add_argument(
+        "-u",
+        "--untied",
+        action="store_true",
+        help="Separate plot per query",
     )
     argparser.add_argument(
         "-m",
@@ -1042,24 +1147,31 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
+    if args.untied:
+        figtype = "pdf"
+        argparser.set_defaults(figure=f"{base}.{figtype}")
+        args = argparser.parse_args()  # reparse
     if args.pipeline:
         filepath = rdir / f"{args.pipeline}.json"
         figure = f"{args.pipeline}.{figtype}"
         argparser.set_defaults(filepath=filepath, figure=figure)
-        args = argparser.parse_args()  # 2nd pass
-    argd = argparser.parse_args([])
+        args = argparser.parse_args()  # reparse
+    argd = argparser.parse_args([])  # final defaults
+
     dbfname = fname(  # database filename
         ["json", "pickle", "pkl", "db"],
         in_main=args.filepath,
         in_dflt=argd.filepath,
     )
-    if dbfname.name:
-        weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
+    if dbfname and dbfname[0].name:
+        weights = dbfname[0].with_name(
+            f"{dbfname[0].stem}.weights{dbfname[0].suffix}"
+        )
         argparser.set_defaults(weights=weights)
-        args = argparser.parse_args()  # 3rd pass
+        args = argparser.parse_args()  # reparse
     argd = argparser.parse_args([])
 
-    exceeded = main(args, argd, dbfname)
+    exceeded = main(args, argd, dbfname[0] if dbfname else None)
     if exceeded:
         if 2 <= abs(args.verbosity):
             print(

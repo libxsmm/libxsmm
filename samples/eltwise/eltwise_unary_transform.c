@@ -319,7 +319,7 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
@@ -629,7 +629,7 @@ int test_norm_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T;
@@ -727,7 +727,7 @@ int test_vnni4T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM;
@@ -825,7 +825,7 @@ int test_vnni2T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM;
@@ -924,7 +924,7 @@ int test_norm_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T;
@@ -1026,7 +1026,7 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   if ( N % 4 != 0 ) {

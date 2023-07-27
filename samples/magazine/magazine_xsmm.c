@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
 #if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_coprime2((unsigned int)size);
+  const size_t shuffle = libxsmm_coprime2((size_t)size);
 #endif
   /* allocate A, B, and C matrix buffers */
   TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
     LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
     LIBXSMM_DATATYPE(TYPE));
-  int prefetch = LIBXSMM_PREFETCH_NONE;
+  int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_gemm_param gemm_param;
 # if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(gemm_param));

@@ -50,7 +50,7 @@ The library generates acceptable code when using `M=1` or `N=1`. For example, bu
 ## What about complex and mixed types?
 This question refers to the following kind of element type of the GEMM interface of LIBXSMM:
 * Complex types: complex numbers in single and double-precision,
-* Mixed types: e.g. real double-precision and complex double-precision
+* Mixed types: e.g., real double-precision and complex double-precision
 There are no (immediate) plans to support more types for the GEMM part. Please note, that LIBXSMM indeed supports lower precision GEMM (wgemm).
 
 ## What about voting for features?

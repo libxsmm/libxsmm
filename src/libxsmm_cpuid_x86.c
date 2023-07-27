@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include <libxsmm_cpuid.h>
 #include <libxsmm_generator.h>
-#include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 #include <ctype.h>
@@ -77,7 +76,6 @@
 LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void);
 # if defined(__linux__)
 #  include <sys/syscall.h>
-#  include <unistd.h>
 #  if !defined(LIBXSMM_BUILD) || (1 >= (LIBXSMM_BUILD))
 LIBXSMM_EXTERN long syscall(long number, ...) LIBXSMM_NOTHROW;
 #  endif
@@ -95,7 +93,7 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
   /* setup failed */
   if (0 != status || !(bitmask & (1<<18))) return -1;
 
-  /* setup successfull */
+  /* setup successful */
   return 0;
 }
 # else
@@ -537,6 +535,17 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
     result = 1;
   }
 # else
+  if ( (type == LIBXSMM_DATATYPE_BF16) ||
+       (type == LIBXSMM_DATATYPE_F16)  ||
+       (type == LIBXSMM_DATATYPE_I16)     ) {
+    result = 4;
+  } else if ( (type == LIBXSMM_DATATYPE_BF8) ||
+              (type == LIBXSMM_DATATYPE_HF8) ||
+              (type == LIBXSMM_DATATYPE_I8)     ) {
+    result = 8;
+  } else {
+    result = 1;
+  }
   if ( libxsmm_cpuid_arm_use_bfdot() != 0 ) {
     if ( (type == LIBXSMM_DATATYPE_BF16) ||
          (type == LIBXSMM_DATATYPE_F16)  ||
@@ -546,8 +555,13 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
                 (type == LIBXSMM_DATATYPE_HF8) ||
                 (type == LIBXSMM_DATATYPE_I8)     ) {
       result = 4;
-    } else {
-      result = 1;
+    }
+  } else if ( libxsmm_cpuid_arm_use_i8dot() != 0 ) {
+    if ( type == LIBXSMM_DATATYPE_I16 ) {
+      result = 2;
+    } else if ( (type == LIBXSMM_DATATYPE_BF8) ||
+                (type == LIBXSMM_DATATYPE_I8)     ) {
+      result = 4;
     }
   } else {
     if ( (type == LIBXSMM_DATATYPE_BF16) ||

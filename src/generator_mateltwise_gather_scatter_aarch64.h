@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_H
 #define GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_H
 

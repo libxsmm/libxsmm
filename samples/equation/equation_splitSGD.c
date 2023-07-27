@@ -106,7 +106,7 @@ void vec_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.00001;
+  double error_bound = 0.00001, check_norm;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   float *wt;
@@ -126,7 +126,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
   int i, j, it = 0;
-  unsigned long long l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   int iters = 100;
 
@@ -171,16 +171,16 @@ int main( int argc, char* argv[] ) {
 
   /* Split sgd via equation */
   my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_IMPLICIT );
   libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
     (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT),
     LIBXSMM_DATATYPE_F32);
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 3, 0, LIBXSMM_DATATYPE_BF16 ); /* This is the "gradient" weights   */
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );   /* This is the scalar learning rate */
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_I16 );  /* This is the tensor with lo bits  */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_I16 );  /* This is the tensor with hi bits  */
-  arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_I16 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_IMPLICIT );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with lo bits  */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with hi bits  */
+  arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_U16 );
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
@@ -193,7 +193,7 @@ int main( int argc, char* argv[] ) {
   eqn_param.inputs = arg_array;
   eqn_param.output.primary = (void*)eqn_wt_lo;
   offset = (long long) ((char*)eqn_wt_hi - (char*)eqn_wt_lo);
-  eqn_param.output.secondary = (void*)offset;
+  eqn_param.output.secondary = (void*)&offset;
   func0(&eqn_param);
 
   /* Run reference split sgd */
@@ -213,9 +213,10 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > error_bound ) {
+  if ( check_norm > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -226,7 +227,7 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+  printf("Compiler equation time = %.5g\n", l_total);
 
   func0(&eqn_param);
   l_start = libxsmm_timer_tick();
@@ -235,8 +236,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup over compiler is %.5g\n", l_total/l_total2);
+  printf("JITed TPP equation time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup over compiler is = %.5g\n", l_total/l_total2);
 
 #if 0
   vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
@@ -246,8 +247,8 @@ int main( int argc, char* argv[] ) {
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Vectorized equation time  = %.5g\n", ((double)(l_total)));
-  printf("Speedup over vectorized code is %.5g\n", l_total/l_total2);
+  printf("Vectorized equation time = %.5g\n", l_total);
+  if (0 < l_total2) printf("Speedup over vectorized code is = %.5g\n", l_total/l_total2);
 #endif
 
   libxsmm_free(wt);

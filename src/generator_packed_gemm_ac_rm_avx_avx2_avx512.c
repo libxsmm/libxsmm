@@ -8,12 +8,11 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_common_x86.h"
 #include "generator_packed_gemm_ac_rm_avx_avx2_avx512.h"
 #include "generator_gemm_common.h"
 #include "generator_x86_instructions.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( libxsmm_generated_code*         io_generated_code,
                                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
@@ -29,7 +28,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select accumulator blocking */
-  /* TODO: we could do more agressive blockings if needed */
+  /* TODO: we could do more aggressive blockings if needed */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     l_max_reg_block = 28;
   } else {
@@ -70,7 +69,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* calculate the chunk size of current columns to work on */
   if ( libxsmm_compute_equalized_blocking( i_xgemm_desc->n, l_max_reg_block, &l_n1_range, &l_n1_block, &l_n2_range, &l_n2_block ) ) {
@@ -83,7 +82,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
 
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
+    /* RDI holds the pointer to the struct, so lets first move this one into R15 */
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1 );
     /* A pointer */
     libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
@@ -98,7 +97,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
       /* A prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 56, l_gp_reg_mapping.gp_reg_a_prefetch, 0 );
-      /* B preftech pointer */
+      /* B prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 88, l_gp_reg_mapping.gp_reg_b_prefetch, 0 );
     }
@@ -215,7 +214,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   unsigned int l_simd_packed_width = 0;
 
   /* select simd packing width and accumulator blocking */
-  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
@@ -238,7 +237,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                                            i_packed_width, l_simd_packed_width, l_simd_packed_width, i_n_blocking );
   /* check if we have a perfect SIMD divisor */
   } else if ( l_simd_packed_remainder == 0 ) {
-    /* initilize packed loop */
+    /* initialize packed loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, 0 );
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, l_simd_packed_width );
@@ -281,7 +280,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                                            i_packed_width, l_simd_packed_width, l_simd_packed_remainder, i_n_blocking );
   /* we need the general case */
   } else {
-    /* initilize packed loop */
+    /* initialize packed loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, 0 );
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, l_simd_packed_width );
@@ -361,13 +360,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   if ( i_simd_packed_width > i_simd_packed_valid ) {
     /* on AVX512 we can use mask registers */
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-      libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_simd_packed_width - i_simd_packed_valid, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_simd_packed_width - i_simd_packed_valid, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
     } else {
       const char l_id = LIBXSMM_CAST_CHAR(128 > i_n_blocking ? ((int)i_n_blocking) : 127);
       unsigned char l_data[32] = { 0 };
       unsigned int l_count;
 
-      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
         unsigned long long* l_i64_ptr = (unsigned long long*)l_data;
         for ( l_count = 0; l_count < 4; ++l_count ) {
           if ( l_count < i_simd_packed_valid ) {

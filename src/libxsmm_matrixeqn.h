@@ -11,17 +11,12 @@
 #ifndef LIBXSMM_MATRIXEQN_H
 #define LIBXSMM_MATRIXEQN_H
 
+#include <libxsmm.h>
+
 #define LEFT 0
 #define RIGHT 1
 #define RIGHT2 2
 
-#include <libxsmm.h>
-/**
- * TF includes src/libxsmm_main.h and uses LIBXSMM's sync primitives
- * without including libxsmm_sync. However, libxsmm_sync.h shall be
- * an explicit include separate from including libxsmm.h.
- */
-#include "libxsmm_sync.h"
 
 LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_node_type {
   LIBXSMM_MATRIX_EQN_NODE_NONE    = 0,

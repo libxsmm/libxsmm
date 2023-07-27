@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_MATEQUATION_AVX_AVX512_H
 #define GENERATOR_MATEQUATION_AVX_AVX512_H
 

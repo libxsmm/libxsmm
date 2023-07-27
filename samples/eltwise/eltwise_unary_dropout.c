@@ -108,7 +108,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
         const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
         libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi)]), in_values, M );
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
 
       dropout_fwd_f32_f32_gold( M, in_values, out_values, &(mask[(j*mask_ld)]), rng_state, p );
@@ -129,13 +129,13 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
         libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
         libxsmm_rne_convert_fp32_hf8( out_values, &(hf8_out[(j*ldo)]), M );
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
     }
     libxsmm_free( in_values );
     libxsmm_free( out_values );
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -166,7 +166,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
           const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
           libxsmm_convert_hf8_f32( &(hf8_in[(j*ldi) + i]), &in_value, 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         out_value = ( ( mask[(j*mask_ld) + (i/8)] & (1 << (i%8)) ) != 0 ) ? in_value * pi : 0.0f;
@@ -187,12 +187,12 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
           libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
           libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -206,6 +206,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   libxsmm_blasint i, j;
   unsigned int s;
   float p = 0.3f;
+  double check_norm;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
@@ -272,9 +273,10 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -328,6 +330,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unsigned char *mask_gold;
   libxsmm_blasint i;
   float p = 0.3f;
+  double check_norm;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
@@ -390,9 +393,10 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
+  if ( check_norm > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 

@@ -19,14 +19,19 @@ if [ ! "${SED}" ]; then
 fi
 
 if [ "${DIFF}" ] && [ "${SED}" ]; then
+  STRICT=0
+  if [ "-s" = "$1" ] || [ "--strict" = "$1" ]; then
+    STRICT=1
+    shift
+  fi
   ENVFILE=$1
   if [ -e "${ENVFILE}" ]; then
     shift
     ENVSRCF=$1
     if [ "${ENVSRCF}" ]; then
-      if [ -e "${ENVSRCF}" ]; then truncate -s0 "${ENVSRCF}"; fi
       if [ ! "${UNIQ}" ] && [ "$(command -v sort)" ]; then UNIQ="| sort -u"; fi
       if [ ! "${UNIQ}" ] && [ "$(command -v uniq)" ]; then UNIQ="| uniq"; fi
+      echo "#!/usr/bin/env bash" >"${ENVSRCF}"
       shift
     fi
     # no need to have unique values in ENVDIFF in general
@@ -36,10 +41,15 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
       if [ "$(echo "${DEF}" | ${SED} -n "/\".*[^\]\"/p")" ]; then
         if [ "${ENVSRCF}" ]; then
           VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
-          if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
-            echo "declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")" >>"${ENVSRCF}"
-          else
-            echo "declare -x ${ENV}=${VAL}" >>"${ENVSRCF}"
+          if [ "${STRICT}" ] && [ "0" != "${STRICT}" ] && [ "$(echo "${VAL}" | ${SED} -n "/\//p")" ]; then
+            VAL=""
+          fi
+          if [ "${VAL}" ]; then
+            if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
+              echo "declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")" >>"${ENVSRCF}"
+            else
+              echo "declare -x ${ENV}=${VAL}" >>"${ENVSRCF}"
+            fi
           fi
         fi
         eval "${DEF}"

@@ -52,8 +52,6 @@ LIBXSMM_APIVAR_DEFINE(volatile int internal_trace_initialized);
 # else
 #   include <sys/stat.h>
 #   include <sys/mman.h>
-#   include <unistd.h>
-#   include <pthread.h>
 #   include <fcntl.h>
 #   if (0 != LIBXSMM_SYNC)
 LIBXSMM_APIVAR_DEFINE(LIBXSMM_TLS_TYPE internal_trace_key);

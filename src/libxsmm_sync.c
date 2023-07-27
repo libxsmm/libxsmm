@@ -8,6 +8,7 @@
 ******************************************************************************/
 /*  Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(__USE_GNU)
@@ -21,7 +22,6 @@
 # if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(__USE_GNU)
 #   include <linux/futex.h>
 # endif
-# include <unistd.h>
 # include <time.h>
 #endif
 
