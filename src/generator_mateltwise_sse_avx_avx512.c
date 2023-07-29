@@ -724,6 +724,9 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
       is_valid_arch_prec = 0;
     }
   }
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
+    is_valid_arch_prec = 0;
+  }
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1)) ) {
     is_valid_arch_prec = 0;
   }
