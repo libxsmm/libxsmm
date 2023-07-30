@@ -365,7 +365,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
            ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0))) {
         i_mask_reg = i_mateltwise_desc->m % i_vlen;
       }
-    } else {
+    } else if (io_generated_code->arch < LIBXSMM_X86_AVX) {
       i_mask_reg = i_mateltwise_desc->m % i_vlen;
     }
   }
@@ -701,7 +701,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
            ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT))) {
         i_mask_reg = i_mateltwise_desc->m % i_vlen;
       }
-    } else {
+    } else if (io_generated_code->arch < LIBXSMM_X86_AVX) {
       i_mask_reg = i_mateltwise_desc->m % i_vlen;
     }
   }
