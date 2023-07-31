@@ -73,6 +73,31 @@ void eqn_kv_cache_one_f32_tpp2( const libxsmm_blasint M,
                            float* i_tmp_mat,
                            float* o_vec_out,
                            const long long* i_idx,
+                           libxsmm_matrix_eqn_function i_eqn ) {
+  libxsmm_matrix_eqn_param l_eqn_param;
+  libxsmm_matrix_arg l_arg_array[2];
+  libxsmm_blasint i;
+
+  /* look up from kv-cache */
+  l_arg_array[0].primary = (void*)i_vec_in;
+  for ( i = 0; i < idxblk; ++i ) {
+    l_arg_array[1].primary = (void*)&(i_kvcache[(i_idx[i]*M)]);
+    l_eqn_param.inputs = l_arg_array;
+    l_eqn_param.output.primary = (void*)&(o_vec_out[i]);
+
+    i_eqn( &l_eqn_param );
+  }
+}
+
+LIBXSMM_INLINE
+void eqn_kv_cache_one_f32_tpp3( const libxsmm_blasint M,
+                           const libxsmm_blasint cols,
+                           const libxsmm_blasint idxblk,
+                           const float* i_kvcache,
+                           const float* i_vec_in,
+                           float* i_tmp_mat,
+                           float* o_vec_out,
+                           const long long* i_idx,
                            libxsmm_meltwfunction_unary i_gather_func,
                            libxsmm_xmmfunction         i_gemm_func ) {
   libxsmm_meltw_unary_param l_gather_param;
@@ -101,6 +126,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   float* l_vec_out_gold;
   float* l_vec_out_tpp1;
   float* l_vec_out_tpp2;
+  float* l_vec_out_tpp3;
   long long* l_idx;
   double check_norm = 0.0;
   double pass_norm = 0.00001;
@@ -113,6 +139,10 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   libxsmm_meltw_binary_shape   l_mul_shape = libxsmm_create_meltw_binary_shape( M, 1, M, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
   libxsmm_meltwfunction_unary  l_addreduce = NULL;
   libxsmm_meltw_unary_shape    l_addreduce_shape = libxsmm_create_meltw_unary_shape( M, 1, M, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  /* equation for mul + reduce add TPP */
+  libxsmm_blasint l_eqn_0_idx = 0;
+  libxsmm_meqn_arg_shape l_eqn_0_shape_out;
+  libxsmm_matrix_eqn_function l_eqn_0 = NULL;
   /* gather + GEMM TPP */
   libxsmm_meltwfunction_unary l_gather = NULL;
   libxsmm_meltw_unary_shape   l_gahter_shape = libxsmm_create_meltw_unary_shape( M, idxblk_gemm, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -127,6 +157,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_vec_out_gold = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
   l_vec_out_tpp1 = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
   l_vec_out_tpp2 = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
+  l_vec_out_tpp3 = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
   l_idx          = (long long*) libxsmm_aligned_malloc( sizeof(long long)*numidx, 64);
 
   /* init kv cache */
@@ -153,12 +184,26 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
     l_vec_out_gold[j] = (float)libxsmm_rng_f64();
     l_vec_out_tpp1[j] = (float)libxsmm_rng_f64();
     l_vec_out_tpp2[j] = (float)libxsmm_rng_f64();
+    l_vec_out_tpp3[j] = (float)libxsmm_rng_f64();
     l_idx[j]          = libxsmm_rng_u32(cols-1);
   }
 
   /* first TPP implementation we just run a reduce muladd */
   l_mul = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
   l_addreduce = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+
+  /* equation for reduce muladd */
+  l_eqn_0_idx = libxsmm_matrix_eqn_create();
+  libxsmm_matrix_eqn_push_back_unary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
+                                         LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_BINARY_MUL,
+                                          LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 0, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 1, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_tree_print( l_eqn_0_idx );
+  libxsmm_matrix_eqn_rpn_print( l_eqn_0_idx );
+  l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
+  l_eqn_0 = libxsmm_dispatch_matrix_eqn_v2( l_eqn_0_idx, l_eqn_0_shape_out );
 
   /* second TPP implementation we run gather and than matmul */
   l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
@@ -177,8 +222,11 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   for ( i = 0; i < numidx; i += idxblk ) {
     eqn_kv_cache_one_f32_tpp1( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp1+i, l_idx+i, l_mul, l_addreduce );
   }
+  for ( i = 0; i < numidx; i += idxblk ) {
+    eqn_kv_cache_one_f32_tpp2( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
+  }
   for ( i = 0; i < numidx; i += idxblk_gemm ) {
-    eqn_kv_cache_one_f32_tpp2( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_gather, l_gather_gemm );
+    eqn_kv_cache_one_f32_tpp3( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
   }
 
   printf("##########################################\n");
@@ -197,8 +245,21 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   if ( check_norm > pass_norm ) {
     ret = EXIT_FAILURE;
   }
-  printf("gather + gemm\n");
+  printf("equation mul + reduce\n");
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, numidx, 1, l_vec_out_gold, l_vec_out_tpp2, 0, 0);
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  check_norm = libxsmm_matdiff_epsilon(&norms_out);
+  printf("Check-norm    : %.24f\n\n", check_norm);
+  if ( check_norm > pass_norm ) {
+    ret = EXIT_FAILURE;
+  }
+  printf("gather + gemm\n");
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, numidx, 1, l_vec_out_gold, l_vec_out_tpp3, 0, 0);
   printf("L1 reference  : %.25g\n", norms_out.l1_ref);
   printf("L1 test       : %.25g\n", norms_out.l1_tst);
   printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
@@ -218,12 +279,21 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  printf("TPP Mul Reduce\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
+  printf("TPP mul + reduce\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
+
+  l_start = libxsmm_timer_tick();
+  for ( j = 0; j < iters; ++j ) {
+    for ( i = 0; i < numidx; i += idxblk ) {
+      eqn_kv_cache_one_f32_tpp2( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
+    }
+  }
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+  printf("TPP equation mul + reduce\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
 
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk_gemm ) {
-      eqn_kv_cache_one_f32_tpp2( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_gather, l_gather_gemm );
+      eqn_kv_cache_one_f32_tpp3( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -235,6 +305,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   libxsmm_free( l_vec_out_gold );
   libxsmm_free( l_vec_out_tpp1 );
   libxsmm_free( l_vec_out_tpp2 );
+  libxsmm_free( l_vec_out_tpp3 );
   libxsmm_free( l_idx );
 
   return ret;
