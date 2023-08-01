@@ -13,13 +13,15 @@
 
 int main(int argc, char* argv[]) {
   typedef double T;
-  int batchsize = 1000, m = 13, n = 5, k = 7;
-  std::vector<T> a(batchsize * m * k), b(batchsize * k * n), c(m * n, 0);
+  const char transa = 'N', transb = 'N';
+  const libxsmm_blasint batchsize = 1000, m = 13, n = 5, k = 7;
+  std::vector<T> a(batchsize * m * k), b(batchsize * k * n), c(m * n, 0 /*init*/);
   /* C/C++ and Fortran interfaces are available */
   typedef libxsmm_mmfunction<T> kernel_type;
   /* generates and dispatches a matrix multiplication kernel (C++ functor) */
-  kernel_type kernel(LIBXSMM_GEMM_FLAG_NONE, m, n, k, 1.0 /*alpha*/, 1.0 /*beta*/);
-  LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
+  const kernel_type kernel(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, 1.0 /*alpha*/, 1.0 /*beta*/);
+  LIBXSMM_UNUSED(argc);
+  LIBXSMM_UNUSED(argv);
   assert(kernel);
   for (int i = 0; i < batchsize; ++i) { /* initialize input */
     for (int ki = 0; ki < k; ++ki) {

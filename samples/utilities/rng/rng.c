@@ -9,7 +9,6 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <stdio.h>
 #include <time.h>
 
 

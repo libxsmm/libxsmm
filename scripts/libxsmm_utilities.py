@@ -365,6 +365,8 @@ if __name__ == "__main__":
                 print(update)
             elif 4 == arg1:
                 print(patch)
+            elif 5 == arg1:
+                print(realversion)
             elif "" != branch:
                 print("{0}-{1}".format(branch, realversion))
             else:

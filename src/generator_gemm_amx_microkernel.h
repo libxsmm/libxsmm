@@ -8,13 +8,12 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_AMX_MICROKERNEL_H
 #define GENERATOR_GEMM_AMX_MICROKERNEL_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_header_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,
@@ -47,6 +46,14 @@ void libxsmm_x86_cvtstore_tile_from_I32_to_F32( libxsmm_generated_code*         
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int tile_cols,
+    unsigned int LD,
+    unsigned int base_reg,
+    long long    offset);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_prefetch_tile_in_L1(libxsmm_generated_code*     io_generated_code,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     unsigned int tile_cols,
     unsigned int LD,

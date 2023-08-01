@@ -9,9 +9,7 @@
 /* Xing Liu (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 
 void BlockSpMatStep1(int K, int C, int KB, int CB, unsigned int *colptr,
                      unsigned int *rowidx, unsigned int *b_colptr[],
@@ -264,7 +262,7 @@ int main(int argc, char **argv) {
     }
     printf("max error = %f\n", l_max_error);
     /* check performace */
-    unsigned long long l_start = libxsmm_timer_tick();
+    libxsmm_timer_tickint l_start = libxsmm_timer_tick();
     for (i = 0; i < (int)REPS; ++i) {
 #ifdef _OPENMP
 #       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c,gemm_param)
@@ -281,7 +279,7 @@ int main(int argc, char **argv) {
             }
         }
     }
-    unsigned long long l_end = libxsmm_timer_tick();
+    libxsmm_timer_tickint l_end = libxsmm_timer_tick();
     double l_total = libxsmm_timer_duration(l_start, l_end);
     printf("%fs for sparse (asm)\n", l_total);
     printf("%f GFLOPS for sparse (asm)\n",

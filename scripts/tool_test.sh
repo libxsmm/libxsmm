@@ -212,14 +212,26 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         | ${SED} "s/^-//;s/-$//" \
         | ${SED} "s/[^A-Za-z0-9._-]//g")
     fi
+    SRUN_LABEL=""
     if [ "${PIPELINE}" ] && [ "${JOBID}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} -J ${PIPELINE}/${JOBID}"
+      SRUN_LABEL="${PIPELINE}/${JOBID}"
     elif [ "${LABEL}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
+      SRUN_LABEL="${LABEL}"
+    fi
+    if [ "${SRUN_LABEL}" ]; then
+      if [ "${BUILD_USER}" ]; then
+        SRUN_LABEL="${SRUN_LABEL}/${BUILD_USER}"
+      fi
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${SRUN_LABEL}"
+    elif [ "${BUILD_USER}" ]; then
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${BUILD_USER}"
     fi
     if [ "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
       # convert: seconds -> minutes
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
+    fi
+    if [ "${SRUN_NODE}" ]; then  # request specific node
+      SRUN_FLAGS="${SRUN_FLAGS} -w ${SRUN_NODE}"
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
@@ -416,17 +428,22 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           cp -u /opt/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${REPOREMOTE}/licenses" >>"${TESTSCRIPT}"
         fi
-        # setup environment on a per-test basis
-        ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
-        if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${ENVRST} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
-          echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
-        else
-          echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
+        # apply/restore environment on a per-test basis
+        if [ ! "${ENV_APPLY}" ] || [ "0" != "${ENV_APPLY}" ]; then
+          if [ "${HOME_REMOTE}" != "${HOME}" ]; then
+            ENVRST_FLAGS="-s"
+          fi
+          ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
+          if [ "${LAUNCH_CMD}" ]; then
+            echo "  eval ${ENVRST} ${ENVRST_FLAGS} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+            echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+          else
+            echo "  eval ${ENVRST} ${ENVRST_FLAGS} \"${ENVREM}\"" >>"${TESTSCRIPT}"
+          fi
+          echo "fi" >>"${TESTSCRIPT}"
         fi
-        echo "fi" >>"${TESTSCRIPT}"
         if [ "${CONFIGFILE}" ]; then
           echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
@@ -437,10 +454,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           ABSDIR=$(cd "${ABSDIR}" && pwd -P)
           ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} ${MAKETGT}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           if [ "${REPOREMOTE}" != "${ABSREM}" ]; then
-            echo "cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+            echo "cd ${ABSREM} && make -e \${MAKEJ} ${MAKETGT}" >>"${TESTSCRIPT}"
             echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           fi
           if [ "none" != "${PARTITION}" ]; then
@@ -549,6 +566,17 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   # override result code (alternative outcome)
   if [ "${RESULTCODE}" ]; then
     RESULT=${RESULTCODE}
+  fi
+
+  # upload artifacts
+  if [ "$(command -v buildkite-agent)" ]; then
+    UPLOAD_PATH=$(eval "${ARTIFACT_PATH}")
+    if [ -d "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
+       [ ! -e "${UPLOAD_PATH}/.uploaded" ];
+    then
+      cd "${UPLOAD_PATH}" && buildkite-agent artifact upload "*"
+      touch "${UPLOAD_PATH}/.uploaded"
+    fi
   fi
 
   exit "${RESULT}"

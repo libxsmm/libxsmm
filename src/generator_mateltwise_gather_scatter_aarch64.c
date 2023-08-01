@@ -12,16 +12,15 @@
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC
 #endif
-
 #if 0
 #define USE_ENV_TUNING
 #endif
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,

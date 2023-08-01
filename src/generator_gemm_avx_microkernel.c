@@ -11,7 +11,7 @@
 #include "generator_gemm_avx_microkernel.h"
 #include "generator_common_x86.h"
 #include "generator_x86_instructions.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx_kloop_kernel( libxsmm_generated_code*            io_generated_code,
@@ -26,7 +26,7 @@ void libxsmm_generator_gemm_avx_kloop_kernel( libxsmm_generated_code*           
   unsigned int l_k_pack_factor = 1;
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
   }
 
   for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {

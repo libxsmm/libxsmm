@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_PACKED_SPGEMM_CSR_ASPARSE_AARCH64_H
 #define GENERATOR_PACKED_SPGEMM_CSR_ASPARSE_AARCH64_H
 

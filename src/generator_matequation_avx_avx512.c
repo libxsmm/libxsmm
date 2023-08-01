@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_matequation_avx_avx512.h"
 #include "generator_matequation_scratch_avx_avx512.h"
 #include "generator_matequation_regblocks_avx_avx512.h"
@@ -16,9 +15,9 @@
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include "libxsmm_main.h"
 #include "generator_common_x86.h"
 #include "libxsmm_matrixeqn.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -347,6 +346,10 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+#if defined(_WIN32) || defined(__CYGWIN__)
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+#endif
   }
 
   /* Store the out ptr in stack */
@@ -361,7 +364,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg );
 
     /* If head of equaiton is unpack_to_blocks, then make sure we store the block ofset in the stack */
-    if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+    if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
@@ -382,6 +385,10 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_strategy);
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
+#if defined(_WIN32) || defined(__CYGWIN__)
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+#endif
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
@@ -971,7 +978,7 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
                                                   LIBXSMM_MELTW_TYPE_UNARY_EXP,
                                                   LIBXSMM_MELTW_TYPE_UNARY_DROPOUT,
                                                   LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV,
-                                                  LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_UNZIP,
                                                   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU,
                                                   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV,
                                                   LIBXSMM_MELTW_TYPE_UNARY_ELU,
@@ -984,12 +991,12 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
 
   /* Binary not supported for fp64 */
   libxsmm_meltw_binary_type non_fp64_binary[2] = { LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD,
-                                                   LIBXSMM_MELTW_TYPE_BINARY_PACK };
+                                                   LIBXSMM_MELTW_TYPE_BINARY_ZIP };
 
   if (io_generated_code->arch < LIBXSMM_X86_AVX) {
     is_valid_arch_prec = 0;
   }
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128)) {
+  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128)) {
     is_valid_arch_prec = 0;
   }
   if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
@@ -1072,7 +1079,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   l_kernel_config.gpr_pool[0] = LIBXSMM_X86_GP_REG_RSI; l_kernel_config.gpr_pool[1] = LIBXSMM_X86_GP_REG_RDX; l_kernel_config.gpr_pool[2] = LIBXSMM_X86_GP_REG_R8; l_kernel_config.gpr_pool[3] = LIBXSMM_X86_GP_REG_R9;
   l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13;
 
-  if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+  if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
     l_kernel_config.n_avail_gpr = l_kernel_config.n_avail_gpr - 1;
     l_gp_reg_mapping.gp_reg_offset = LIBXSMM_X86_GP_REG_R13;
   }
@@ -1162,8 +1169,9 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
       }
       /* If head of equaiton is unpack_to_blocks, then make sure we load the block offset from the stack */
-      if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+      if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
         libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, l_gp_reg_mapping.gp_reg_offset);
+        libxsmm_x86_instruction_alu_mem( io_generated_code, l_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_offset, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_reg_mapping.gp_reg_offset, 0 );
       }
 
       libxsmm_generator_reoptimize_eqn(cur_eqn);
@@ -1185,4 +1193,3 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
   free(jiting_queue);
 }
-

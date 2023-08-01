@@ -11,7 +11,7 @@
 #include "generator_gemm_avx2_microkernel.h"
 #include "generator_common_x86.h"
 #include "generator_x86_instructions.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx2_kloop_kernel( libxsmm_generated_code*            io_generated_code,
@@ -28,17 +28,17 @@ void libxsmm_generator_gemm_avx2_kloop_kernel( libxsmm_generated_code*          
                                   const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const int);
 
   /* select correct micro kernel */
-  if ( ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) &&
+  if ( ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) &&
        (io_generated_code->arch < LIBXSMM_X86_AVX2_ADL) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu;
-  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
               ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) > 0) &&
               (io_generated_code->arch < LIBXSMM_X86_AVX2_SRF) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu;
-  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
               ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) == 0) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_bf16_flat_emu;
-  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
               ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_srf;
   } else {
@@ -46,7 +46,7 @@ void libxsmm_generator_gemm_avx2_kloop_kernel( libxsmm_generated_code*          
   }
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
   }
 
   for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
@@ -84,7 +84,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
 
   /* for VNNI we are stepping through to pack ks */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
   }
 
   if (l_m_blocking == 1) {
@@ -158,7 +158,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
         }
       }
       /* issue fma */
-      if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                     LIBXSMM_X86_INSTR_VPDPBUSD,
@@ -261,7 +261,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                          (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in * l_k_pack_factor);
           }
           /* issue fma */
-          if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
             if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                         LIBXSMM_X86_INSTR_VPDPBUSD,
@@ -315,7 +315,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                          (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
           }
           /* issue fma */
-          if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
             if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                         LIBXSMM_X86_INSTR_VPDPBUSD,
@@ -377,14 +377,14 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( libxsmm_genera
 
   /* for VNNI we are stepping through to pack ks */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
   }
 
   if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
 
   /* broadcast from B -> into vec registers 0 to i_n_blocking */
   if ( i_offset != (-1) ) {
@@ -461,7 +461,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( libxsmm_genera
       }
 
       /* issue fma */
-      if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                     LIBXSMM_X86_INSTR_VPMADDUBSW,
@@ -486,7 +486,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( libxsmm_genera
                                                       i_gp_reg_mapping->gp_reg_help_1,
                                                       LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 0,
                                                       i_n_blocking, i_n_blocking );
-      } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                   LIBXSMM_X86_INSTR_VPMADDWD,
                                                   i_micro_kernel_config->vector_name,
@@ -537,14 +537,14 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu( libxsmm_generated_co
 
   /* for VNNI we are stepping through to pack ks */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
   }
 
   if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
 
   for ( l_pass = 0; l_pass < 2; ++l_pass ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
@@ -906,14 +906,14 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_srf( libxsmm_generated_co
 
     /* for VNNI we are stepping through to pack ks */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
   }
 
   if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
 
   for ( l_pass = 0; l_pass < 2; ++l_pass ) {
     /* broadcast from B -> into vec registers 0 to i_n_blocking */

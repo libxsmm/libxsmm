@@ -13,7 +13,7 @@ DOCDIR := documentation
 
 # subdirectories (relative) to PREFIX (install targets)
 PINCDIR ?= $(INCDIR)
-PSRCDIR ?= $(PINCDIR)/libxsmm
+PSRCDIR ?= libxsmm
 POUTDIR ?= $(OUTDIR)
 PPKGDIR ?= $(OUTDIR)
 PMODDIR ?= $(OUTDIR)
@@ -329,26 +329,35 @@ NINDICES := $(words $(INDICES))
 SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 
-HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
-          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
-          $(ROOTDIR)/include/libxsmm_cpuid.h \
-          $(ROOTDIR)/include/libxsmm_rng.h \
-          $(ROOTDIR)/include/libxsmm_lpflt_quant.h \
-          $(ROOTDIR)/include/libxsmm_frontend.h \
-          $(ROOTDIR)/include/libxsmm_fsspmdm.h \
-          $(ROOTDIR)/include/libxsmm_generator.h \
+HEADERS_UTILS := \
           $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
-          $(ROOTDIR)/include/libxsmm_macros.h \
-          $(ROOTDIR)/include/libxsmm_malloc.h \
-          $(ROOTDIR)/include/libxsmm_math.h \
-          $(ROOTDIR)/include/libxsmm_memory.h \
-          $(ROOTDIR)/include/libxsmm_mhd.h \
-          $(ROOTDIR)/include/libxsmm_sync.h \
+          $(ROOTDIR)/include/libxsmm_lpflt_quant.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
-          $(ROOTDIR)/include/libxsmm_typedefs.h
+          $(ROOTDIR)/include/libxsmm_frontend.h \
+          $(ROOTDIR)/include/libxsmm_math.h \
+          $(ROOTDIR)/include/libxsmm_mhd.h \
+          $(NULL)
+HEADERS_MAIN := \
+          $(ROOTDIR)/include/libxsmm_generator.h \
+          $(ROOTDIR)/include/libxsmm_typedefs.h \
+          $(ROOTDIR)/include/libxsmm_fsspmdm.h \
+          $(ROOTDIR)/include/libxsmm_macros.h \
+          $(ROOTDIR)/include/libxsmm_memory.h \
+          $(ROOTDIR)/include/libxsmm_malloc.h \
+          $(ROOTDIR)/include/libxsmm_cpuid.h \
+          $(ROOTDIR)/include/libxsmm_math.h \
+          $(ROOTDIR)/include/libxsmm_sync.h \
+          $(NULL)
+HEADERS := \
+          $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) \
+          $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
+          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
+          $(HEADERS_MAIN) $(HEADERS_UTILS)
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c \
-          libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c libxsmm_fsspmdm.c libxsmm_rng.c libxsmm_lpflt_quant.c)
+          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
+          libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
+          libxsmm_lpflt_quant.c libxsmm_timer.c \
+          libxsmm_rng.c libxsmm_mhd.c)
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 
@@ -363,7 +372,7 @@ NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_LIB) \
-          $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
+           $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o
 endif
@@ -592,7 +601,8 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(ROOTDIR)/$(SRCDIR)/template/libxsm
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
 		$(ROOTDIR)/.github/install.sh 2>/dev/null; \
 	fi
-	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
+	@$(CP) $(HEADERS_UTILS) $(INCDIR) 2>/dev/null || true
+	@$(CP) $(HEADERS_MAIN) $(INCDIR) 2>/dev/null || true
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
@@ -662,16 +672,16 @@ endif
 	@echo >>$@
 	@echo >>$@
 ifneq (2,$(PRECISION))
-#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
-#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
-#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
-#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
-#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
-#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
-#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
 endif
 endif # target
 else # noarch
@@ -684,10 +694,10 @@ endif
 	@echo >>$@
 	@echo >>$@
 ifneq (2,$(PRECISION))
-#	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-#	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 endif # noarch
 	$(eval TMPFILE = $(shell $(MKTEMP) /tmp/.libxsmm_XXXXXX.mak))
@@ -1361,15 +1371,15 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing libraries..."
 	@$(MKDIR) -p $(PREFIX)/$(POUTDIR)
-	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmnoblas*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmgen*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -va $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmext*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -va $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmf*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -va $(OUTDIR)/libxsmm.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmm*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing pkg-config and module files..."
@@ -1381,19 +1391,29 @@ ifneq ($(PREFIX),$(ABSDIR))
 	fi
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)
-	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/utils
+	@$(CP) -v $(HEADERS_MAIN) $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(HEADERS_UTILS) $(PREFIX)/$(PINCDIR)/utils 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm_version.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm_config.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
-	@$(MKDIR) -p $(PREFIX)/$(PSRCDIR)
-	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
+	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/$(PSRCDIR)
+	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PINCDIR)/$(PSRCDIR) >/dev/null 2>/dev/null || true
+# regenerate libxsmm_source.h
+	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(PSRCDIR) >$(PREFIX)/$(PINCDIR)/libxsmm_source.h
 endif
 
 .PHONY: install
 install: install-minimal
 ifneq ($(PREFIX),$(ABSDIR))
+	@echo
+	@echo "LIBXSMM installing stand-alone generator..."
+	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@$(MKDIR) -p $(PREFIX)/$(PDOCDIR)
@@ -1412,17 +1432,13 @@ endif
 install-all: install build-tests
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
-	@echo "LIBXSMM installing stand-alone generators..."
-	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@echo
 	@echo "LIBXSMM installing tests..."
 	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(PTSTDIR)
 	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PSHRDIR)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
-install-dev: install-all
+install-dev: install
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "================================================================================"
@@ -1452,7 +1468,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 endif
 
 .PHONY: install-realall
-install-realall: install-dev samples
+install-realall: install-all install-dev samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
@@ -1697,8 +1713,8 @@ $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 .PHONY: deb
 deb:
 	@if [ "$$(command -v git)" ]; then \
-		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
-		VERSION_ARCHIVE_SONAME=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $${VERSION_ARCHIVE}); \
+		VERSION_ARCHIVE_SONAME=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1); \
+		VERSION_ARCHIVE=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 5); \
 	fi; \
 	if [ "$${VERSION_ARCHIVE}" ] && [ "$${VERSION_ARCHIVE_SONAME}" ]; then \
 		ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
@@ -1728,7 +1744,7 @@ deb:
 		echo "Vcs-Git: https://github.com/libxsmm/libxsmm/libxsmm.git" >>control; \
 		echo "Maintainer: $${ARCHIVE_AUTHOR}" >>control; \
 		echo "Priority: optional" >>control; \
-		echo "Build-Depends: debhelper (>= 9)" >>control; \
+		echo "Build-Depends: debhelper (>= 13)" >>control; \
 		echo "Standards-Version: 3.9.8" >>control; \
 		echo >>control; \
 		echo "Package: $${ARCHIVE_NAME}" >>control; \
@@ -1736,7 +1752,7 @@ deb:
 		echo "Architecture: amd64" >>control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >>control; \
 		echo "Description: Specialized tensor operations" >>control; \
-		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm/" \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm" \
 		| $(SED) -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | $(SED) -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >>control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" >changelog; \
@@ -1757,7 +1773,7 @@ deb:
 		echo "override_dh_auto_install:" >>rules; \
 		$$(which echo) -e "\tdh_auto_install -- prefix=/usr" >>rules; \
 		echo >>rules; \
-		echo "9" >compat; \
+		echo "13" >compat; \
 		$(CP) ../LICENSE.md copyright; \
 		rm -f ../$(TSTDIR)/mhd_test.mhd; \
 		chmod +x rules; \

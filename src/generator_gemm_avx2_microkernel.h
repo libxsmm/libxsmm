@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_GEMM_AVX2_MICROKERNEL_H
 #define GENERATOR_GEMM_AVX2_MICROKERNEL_H
 

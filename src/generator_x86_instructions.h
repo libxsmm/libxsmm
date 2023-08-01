@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-
 #ifndef GENERATOR_X86_INSTRUCTIONS_H
 #define GENERATOR_X86_INSTRUCTIONS_H
 
@@ -272,6 +271,13 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_instr,
                                                     const char              i_vector_name,
                                                     const unsigned int      i_reg_number_src0,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_imm8 );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_1reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
                                                     const unsigned int      i_reg_number_dst,
                                                     const unsigned int      i_imm8 );
 

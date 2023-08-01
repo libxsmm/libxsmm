@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_rng.h"
-#include "libxsmm_main.h"
+#include <libxsmm.h>
+#include <libxsmm_memory.h>
 
 #if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))
 # define LIBXSMM_RNG_DRAND48
@@ -202,7 +202,7 @@ LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ s
 
 LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size(void)
 {
-  return (unsigned int)(64*sizeof(unsigned int));
+  return (unsigned int)(sizeof(unsigned int)*64);
 }
 
 

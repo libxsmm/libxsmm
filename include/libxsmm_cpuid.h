@@ -11,7 +11,6 @@
 #ifndef LIBXSMM_CPUID_H
 #define LIBXSMM_CPUID_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
 /**
@@ -51,26 +50,22 @@
 #define LIBXSMM_AARCH64_NEOV1         2302 /* Neoverse V1, Graviton 3 */
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
-#define LIBXSMM_RISCV                 3001 /* RISCV All */
-#define LIBXSMM_AARCH64_ALLFEAT       3999
+#define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_RV64                  3001 /* RISCV All */
+#define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
   char model[1024]; /** CPU-name (OS-specific implementation). */
-#if defined(LIBXSMM_PLATFORM_X86)
   int constant_tsc; /** Timer stamp counter is monotonic. */
+#if defined(LIBXSMM_PLATFORM_X86)
   int has_context;  /** Context switches are permitted. */
 #endif
 } libxsmm_cpuid_info;
 
 /** Returns the target architecture and instruction set extensions. */
-#if defined(__cplusplus) /* note: stay compatible with TF */
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info = NULL);
-LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info = NULL);
-#else
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info);
-LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
-#endif
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
  * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
@@ -84,6 +79,8 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 
+LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
+
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
  * architecture and datatype */
@@ -94,11 +91,7 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype);
  * The actual code path (as used by LIBXSMM) is determined by
  * libxsmm_[get|set]_target_archid/libxsmm_[get|set]_target_arch.
  */
-#if defined(__cplusplus)
-LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info = NULL);
-#else
-LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info);
-#endif
+LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
  * Names the CPU architecture given by CPUID.

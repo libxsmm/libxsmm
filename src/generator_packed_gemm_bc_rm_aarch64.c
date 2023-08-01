@@ -8,12 +8,11 @@
 ******************************************************************************/
 /* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_packed_gemm_bc_rm_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_gemm_common_aarch64.h"
-#include "libxsmm_main.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_gemm_bc_rm_aarch64( libxsmm_generated_code*         io_generated_code,
@@ -30,7 +29,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64( libxsmm_generated_code*       
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select accumulator blocking */
-  /* TODO: we could do more agressive blocking if needed */
+  /* TODO: we could do more aggressive blocking if needed */
   l_max_reg_block = 28;
 
   /* define gp register mapping */
@@ -70,7 +69,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64( libxsmm_generated_code*       
 
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
+    /* RDI holds the pointer to the struct, so lets first move this one into R15 */
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR,
                                                          l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1,
                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
@@ -87,7 +86,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64( libxsmm_generated_code*       
       /* A prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 56, l_gp_reg_mapping.gp_reg_a_prefetch );
-      /* B preftech pointer */
+      /* B prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                        l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 88, l_gp_reg_mapping.gp_reg_b_prefetch );
     }
@@ -197,7 +196,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
 
   /* select simd packing width */
   /* select simd packing width and accumulator blocking */
-  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
       if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
         l_simd_packed_width = 2;
@@ -250,7 +249,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
     if ( l_simd_packed_remainder == 0 )
 #endif
   {
-    /* initilize packed loop */
+    /* initialize packed loop */
     libxsmm_generator_loop_header_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_help_3, i_packed_width );
 
     /* run inner compute kernel */
