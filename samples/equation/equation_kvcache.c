@@ -9,6 +9,9 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "equation_common.h"
+#if defined(__x86_64__)
+#include <x86intrin.h>
+#endif
 
 LIBXSMM_INLINE
 void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
@@ -20,6 +23,48 @@ void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
                             float* o_vec_out,
                             const long long* i_idx ) {
   libxsmm_blasint i, j;
+#ifdef __AVX512F__
+  if ( M % 16 != 0 ) {
+    printf("Using intrinsic version, M mod 16 is required\n");
+    exit(-1);
+  }
+
+  /* look up from kv-cache */
+#if 0
+  for ( i = 0; i < idxblk; i += 1 ) {
+    __m512 reg0 = _mm512_setzero_ps();
+    for ( j = 0; j < M; j += 16 ) {
+      __m512 a = _mm512_load_ps( &(i_vec_in[j]) );
+      __m512 b0 = _mm512_load_ps( &(i_kvcache[(i_idx[i+0]*M)+j]) );
+
+      reg0 = _mm512_fmadd_ps( a, b0, reg0 );
+    }
+    o_vec_out[i+0] = _mm512_reduce_add_ps( reg0 );
+  }
+#else
+  for ( i = 0; i < idxblk; i += 4 ) {
+    __m512 reg0 = _mm512_setzero_ps();
+    __m512 reg1 = _mm512_setzero_ps();
+    __m512 reg2 = _mm512_setzero_ps();
+    __m512 reg3 = _mm512_setzero_ps();
+    for ( j = 0; j < M; j += 16 ) {
+      __m512 a = _mm512_load_ps( &(i_vec_in[j]) );
+      __m512 b0 = _mm512_load_ps( &(i_kvcache[(i_idx[i+0]*M)+j]) );
+      __m512 b1 = _mm512_load_ps( &(i_kvcache[(i_idx[i+1]*M)+j]) );
+      __m512 b2 = _mm512_load_ps( &(i_kvcache[(i_idx[i+2]*M)+j]) );
+      __m512 b3 = _mm512_load_ps( &(i_kvcache[(i_idx[i+3]*M)+j]) );
+      reg0 = _mm512_fmadd_ps( a, b0, reg0 );
+      reg1 = _mm512_fmadd_ps( a, b1, reg1 );
+      reg2 = _mm512_fmadd_ps( a, b2, reg2 );
+      reg3 = _mm512_fmadd_ps( a, b3, reg3 );
+    }
+    o_vec_out[i+0] = _mm512_reduce_add_ps( reg0 );
+    o_vec_out[i+1] = _mm512_reduce_add_ps( reg1 );
+    o_vec_out[i+2] = _mm512_reduce_add_ps( reg2 );
+    o_vec_out[i+3] = _mm512_reduce_add_ps( reg3 );
+  }
+#endif
+#else
   /* look up from kv-cache */
   for ( i = 0; i < idxblk; ++i ) {
     for ( j = 0; j < M; ++j ) {
@@ -34,6 +79,7 @@ void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
     }
     o_vec_out[i] = tmp;
   }
+#endif
 }
 
 LIBXSMM_INLINE
