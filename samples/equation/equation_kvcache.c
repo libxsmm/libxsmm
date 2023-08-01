@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include "equation_common.h"
 #if defined(__x86_64__)
-#include <x86intrin.h>
+#include <immintrin.h>
 #endif
 
 LIBXSMM_INLINE
