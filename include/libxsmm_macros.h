@@ -61,11 +61,15 @@
     (defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64))
 # define LIBXSMM_PLATFORM_AARCH64
 #endif
+#if !defined(LIBXSMM_PLATFORM_RV64) && \
+    (defined(__riscv) && 64 == (__riscv_xlen))
+# define LIBXSMM_PLATFORM_RV64
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_RV64)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error LIBXSMM requires X86_64, AArch64, or compatible CPUs!
+#   error LIBXSMM requires X86_64, AArch64, RV64 or compatible CPUs!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)

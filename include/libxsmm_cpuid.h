@@ -51,6 +51,8 @@
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_RV64                  3001 /* RISCV All */
+#define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {

@@ -1575,7 +1575,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_SVE256:
     case LIBXSMM_AARCH64_NEOV1:
     case LIBXSMM_AARCH64_SVE512:
-    case LIBXSMM_AARCH64_A64FX: {
+    case LIBXSMM_AARCH64_A64FX:
+    case LIBXSMM_RV64: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1584,6 +1585,9 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
       break;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
       target_archid = LIBXSMM_AARCH64_V81;
+      break;
+#elif defined(LIBXSMM_PLATFORM_RV64)
+      target_archid = LIBXSMM_RV64;
       break;
 #endif
     default: target_archid = libxsmm_cpuid(NULL);
@@ -1730,12 +1734,28 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
     }
 #endif
+#if defined(LIBXSMM_PLATFORM_RV64) || defined(LIBXSMM_PLATFORM_FORCE)
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_RV64 + jit;
+      }
+      else
+# endif
+      if  (arch == libxsmm_stristr(arch, "riscv") || arch == libxsmm_stristr(arch, "rv64"))
+      {
+        target_archid = LIBXSMM_RV64;
+      }
+    }
+#endif
+     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
       if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
         target_archid = LIBXSMM_X86_GENERIC;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
         target_archid = LIBXSMM_AARCH64_V81;
+#elif defined(LIBXSMM_PLATFORM_RV64)
+        target_archid = LIBXSMM_RV64;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
