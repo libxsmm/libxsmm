@@ -339,6 +339,15 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk ) {
+      eqn_kv_cache_one_f32_gold( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_gold+i, l_idx+i );
+    }
+  }
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+  printf("Compiler Optimized\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
+
+  l_start = libxsmm_timer_tick();
+  for ( j = 0; j < iters; ++j ) {
+    for ( i = 0; i < numidx; i += idxblk ) {
       eqn_kv_cache_one_f32_tpp1( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp1+i, l_idx+i, l_mul, l_addreduce );
     }
   }
