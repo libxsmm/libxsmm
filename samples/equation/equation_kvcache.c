@@ -9,8 +9,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "equation_common.h"
-#if defined(__x86_64__)
-#include <immintrin.h>
+#if defined(__AVX512F__)
+#include <libxsmm_intrinsics_x86.h>
 #endif
 
 LIBXSMM_INLINE
