@@ -14,10 +14,10 @@
 #endif
 
 LIBXSMM_INLINE
-void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
+void eqn_gather_dot_one_f32_gold( const libxsmm_blasint M,
                             const libxsmm_blasint cols,
                             const libxsmm_blasint idxblk,
-                            const float* i_kvcache,
+                            const float* i_gather_dot,
                             const float* i_vec_in,
                             float* i_tmp_mat,
                             float* o_vec_out,
@@ -35,7 +35,7 @@ void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
     __m512 reg0 = _mm512_setzero_ps();
     for ( j = 0; j < M; j += 16 ) {
       __m512 a = _mm512_load_ps( &(i_vec_in[j]) );
-      __m512 b0 = _mm512_load_ps( &(i_kvcache[(i_idx[i+0]*M)+j]) );
+      __m512 b0 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+0]*M)+j]) );
 
       reg0 = _mm512_fmadd_ps( a, b0, reg0 );
     }
@@ -49,10 +49,10 @@ void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
     __m512 reg3 = _mm512_setzero_ps();
     for ( j = 0; j < M; j += 16 ) {
       __m512 a = _mm512_load_ps( &(i_vec_in[j]) );
-      __m512 b0 = _mm512_load_ps( &(i_kvcache[(i_idx[i+0]*M)+j]) );
-      __m512 b1 = _mm512_load_ps( &(i_kvcache[(i_idx[i+1]*M)+j]) );
-      __m512 b2 = _mm512_load_ps( &(i_kvcache[(i_idx[i+2]*M)+j]) );
-      __m512 b3 = _mm512_load_ps( &(i_kvcache[(i_idx[i+3]*M)+j]) );
+      __m512 b0 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+0]*M)+j]) );
+      __m512 b1 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+1]*M)+j]) );
+      __m512 b2 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+2]*M)+j]) );
+      __m512 b3 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+3]*M)+j]) );
       reg0 = _mm512_fmadd_ps( a, b0, reg0 );
       reg1 = _mm512_fmadd_ps( a, b1, reg1 );
       reg2 = _mm512_fmadd_ps( a, b2, reg2 );
@@ -68,7 +68,7 @@ void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
   /* look up from kv-cache */
   for ( i = 0; i < idxblk; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      i_tmp_mat[(i*M)+j] = i_kvcache[(i_idx[i]*M)+j];
+      i_tmp_mat[(i*M)+j] = i_gather_dot[(i_idx[i]*M)+j];
     }
   }
   /* matrix multiplication between transpose i_vec_in, i_tmp_mat, i_vec_out */
@@ -83,10 +83,10 @@ void eqn_kv_cache_one_f32_gold( const libxsmm_blasint M,
 }
 
 LIBXSMM_INLINE
-void eqn_kv_cache_one_f32_tpp1( const libxsmm_blasint M,
+void eqn_gather_dot_one_f32_tpp1( const libxsmm_blasint M,
                            const libxsmm_blasint cols,
                            const libxsmm_blasint idxblk,
-                           const float* i_kvcache,
+                           const float* i_gather_dot,
                            const float* i_vec_in,
                            float* i_tmp_mat,
                            float* o_vec_out,
@@ -100,7 +100,7 @@ void eqn_kv_cache_one_f32_tpp1( const libxsmm_blasint M,
   /* look up from kv-cache */
   l_mul_param.in0.primary = (void*)i_vec_in;
   for ( i = 0; i < idxblk; ++i ) {
-    l_mul_param.in1.primary = (void*)&(i_kvcache[(i_idx[i]*M)]);
+    l_mul_param.in1.primary = (void*)&(i_gather_dot[(i_idx[i]*M)]);
     l_mul_param.out.primary = (void*)i_tmp_mat;
     i_mul( &l_mul_param );
 
@@ -111,10 +111,10 @@ void eqn_kv_cache_one_f32_tpp1( const libxsmm_blasint M,
 }
 
 LIBXSMM_INLINE
-void eqn_kv_cache_one_f32_tpp2( const libxsmm_blasint M,
+void eqn_gather_dot_one_f32_tpp2( const libxsmm_blasint M,
                            const libxsmm_blasint cols,
                            const libxsmm_blasint idxblk,
-                           const float* i_kvcache,
+                           const float* i_gather_dot,
                            const float* i_vec_in,
                            float* i_tmp_mat,
                            float* o_vec_out,
@@ -127,7 +127,7 @@ void eqn_kv_cache_one_f32_tpp2( const libxsmm_blasint M,
   /* look up from kv-cache */
   l_arg_array[0].primary = (void*)i_vec_in;
   for ( i = 0; i < idxblk; ++i ) {
-    l_arg_array[1].primary = (void*)&(i_kvcache[(i_idx[i]*M)]);
+    l_arg_array[1].primary = (void*)&(i_gather_dot[(i_idx[i]*M)]);
     l_eqn_param.inputs = l_arg_array;
     l_eqn_param.output.primary = (void*)&(o_vec_out[i]);
 
@@ -136,10 +136,10 @@ void eqn_kv_cache_one_f32_tpp2( const libxsmm_blasint M,
 }
 
 LIBXSMM_INLINE
-void eqn_kv_cache_one_f32_tpp3( const libxsmm_blasint M,
+void eqn_gather_dot_one_f32_tpp3( const libxsmm_blasint M,
                            const libxsmm_blasint cols,
                            const libxsmm_blasint idxblk,
-                           const float* i_kvcache,
+                           const float* i_gather_dot,
                            const float* i_vec_in,
                            float* i_tmp_mat,
                            float* o_vec_out,
@@ -149,7 +149,7 @@ void eqn_kv_cache_one_f32_tpp3( const libxsmm_blasint M,
   libxsmm_meltw_unary_param l_gather_param;
   libxsmm_gemm_param l_gemm_param;
 
-  l_gather_param.in.primary = (void*)i_kvcache;
+  l_gather_param.in.primary = (void*)i_gather_dot;
   l_gather_param.in.secondary = (void*)i_idx;
   l_gather_param.out.primary = (void*)i_tmp_mat;
 
@@ -162,10 +162,10 @@ void eqn_kv_cache_one_f32_tpp3( const libxsmm_blasint M,
 }
 
 LIBXSMM_INLINE
-void eqn_kv_cache_one_f32_tpp4( const libxsmm_blasint M,
+void eqn_gather_dot_one_f32_tpp4( const libxsmm_blasint M,
                            const libxsmm_blasint cols,
                            const libxsmm_blasint idxblk,
-                           const float* i_kvcache,
+                           const float* i_gather_dot,
                            const float* i_vec_in,
                            float* i_tmp_mat,
                            float* o_vec_out,
@@ -177,7 +177,7 @@ void eqn_kv_cache_one_f32_tpp4( const libxsmm_blasint M,
   libxsmm_meltw_binary_param l_mul_param;
   libxsmm_meltw_unary_param l_addreduce_param;
 
-  l_gather_param.in.primary = (void*)i_kvcache;
+  l_gather_param.in.primary = (void*)i_gather_dot;
   l_gather_param.in.secondary = (void*)i_idx;
   l_gather_param.out.primary = (void*)i_tmp_mat;
 
@@ -194,11 +194,11 @@ void eqn_kv_cache_one_f32_tpp4( const libxsmm_blasint M,
 }
 
 LIBXSMM_INLINE
-int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, const libxsmm_blasint idxblk, const libxsmm_blasint numidx, const libxsmm_blasint iters) {
+int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, const libxsmm_blasint idxblk, const libxsmm_blasint numidx, const libxsmm_blasint iters) {
   int ret = EXIT_SUCCESS;
   libxsmm_blasint i, j;
   libxsmm_matdiff_info norms_out;
-  float* l_kvcache;
+  float* l_gather_dot;
   float* l_vec_in;
   float* l_tmp_mat;
   float* l_vec_out_gold;
@@ -238,7 +238,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   libxsmm_meltwfunction_unary  l_addreduce_2 = NULL;
   libxsmm_meltw_unary_shape    l_addreduce_2_shape = libxsmm_create_meltw_unary_shape( M, idxblk_mulred, M, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 
-  l_kvcache      = (float*)     libxsmm_aligned_malloc( sizeof(float)*cols*M,     64);
+  l_gather_dot      = (float*)     libxsmm_aligned_malloc( sizeof(float)*cols*M,     64);
   l_vec_in       = (float*)     libxsmm_aligned_malloc( sizeof(float)*M,          64);
   l_tmp_mat      = (float*)     libxsmm_aligned_malloc( sizeof(float)*idxblk*M,   64);
   l_vec_out_gold = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
@@ -251,7 +251,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   /* init kv cache */
   for ( i = 0; i < cols; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      l_kvcache[(i*M)+j] = (float)libxsmm_rng_f64();
+      l_gather_dot[(i*M)+j] = (float)libxsmm_rng_f64();
     }
   }
 
@@ -310,20 +310,20 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
 
   /* run gold */
   for ( i = 0; i < numidx; i += idxblk ) {
-    eqn_kv_cache_one_f32_gold( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_gold+i, l_idx+i );
+    eqn_gather_dot_one_f32_gold( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_gold+i, l_idx+i );
   }
   /* run tpp */
   for ( i = 0; i < numidx; i += idxblk ) {
-    eqn_kv_cache_one_f32_tpp1( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp1+i, l_idx+i, l_mul, l_addreduce );
+    eqn_gather_dot_one_f32_tpp1( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp1+i, l_idx+i, l_mul, l_addreduce );
   }
   for ( i = 0; i < numidx; i += idxblk ) {
-    eqn_kv_cache_one_f32_tpp2( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
+    eqn_gather_dot_one_f32_tpp2( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
   }
   for ( i = 0; i < numidx; i += idxblk_gemm ) {
-    eqn_kv_cache_one_f32_tpp3( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
+    eqn_gather_dot_one_f32_tpp3( M, cols, idxblk_gemm, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
   }
   for ( i = 0; i < numidx; i += idxblk_mulred ) {
-    eqn_kv_cache_one_f32_tpp4( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp4+i, l_idx+i, l_gather_2, l_mul_2, l_addreduce_2 );
+    eqn_gather_dot_one_f32_tpp4( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp4+i, l_idx+i, l_gather_2, l_mul_2, l_addreduce_2 );
   }
 
   printf("##########################################\n");
@@ -385,7 +385,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk ) {
-      eqn_kv_cache_one_f32_gold( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_gold+i, l_idx+i );
+      eqn_gather_dot_one_f32_gold( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_gold+i, l_idx+i );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -394,7 +394,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk ) {
-      eqn_kv_cache_one_f32_tpp1( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp1+i, l_idx+i, l_mul, l_addreduce );
+      eqn_gather_dot_one_f32_tpp1( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp1+i, l_idx+i, l_mul, l_addreduce );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -403,7 +403,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk ) {
-      eqn_kv_cache_one_f32_tpp2( M, cols, idxblk, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
+      eqn_gather_dot_one_f32_tpp2( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -412,7 +412,7 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk_gemm ) {
-      eqn_kv_cache_one_f32_tpp3( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
+      eqn_gather_dot_one_f32_tpp3( M, cols, idxblk_gemm, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -421,13 +421,13 @@ int eqn_kv_cache_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, co
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk_mulred ) {
-      eqn_kv_cache_one_f32_tpp4( M, cols, idxblk_gemm, l_kvcache, l_vec_in, l_tmp_mat, l_vec_out_tpp4+i, l_idx+i, l_gather_2, l_mul_2, l_addreduce_2 );
+      eqn_gather_dot_one_f32_tpp4( M, cols, idxblk_gemm, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp4+i, l_idx+i, l_gather_2, l_mul_2, l_addreduce_2 );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("TPP gather + mul + reduce\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
 
-  libxsmm_free( l_kvcache );
+  libxsmm_free( l_gather_dot );
   libxsmm_free( l_vec_in );
   libxsmm_free( l_tmp_mat );
   libxsmm_free( l_vec_out_gold );
@@ -465,7 +465,7 @@ int main( int argc, char* argv[] ) {
   }
 
   if ( (in_dt == LIBXSMM_DATATYPE_F32) && (out_dt == LIBXSMM_DATATYPE_F32) && (compute_dt == LIBXSMM_DATATYPE_F32) ) {
-    ret = eqn_kv_cache_one_f32(cols, M, idxblk, numidx, iters);
+    ret = eqn_gather_dot_one_f32(cols, M, idxblk, numidx, iters);
   }
 
   return ret;
