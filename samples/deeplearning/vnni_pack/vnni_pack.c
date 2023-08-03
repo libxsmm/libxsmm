@@ -42,9 +42,9 @@ void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, con
 }
 
 void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  int k1, k2, c1, c2;
-  int kBlocks = K/bk;
-  int cBlocks = C/bc;
+  unsigned int k1, k2, c1, c2;
+  unsigned int kBlocks = K/bk;
+  unsigned int cBlocks = C/bc;
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_dst, dst, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
@@ -63,22 +63,32 @@ void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned
   }
 }
 
+void unpack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
+  unpack_c( src, dst, C, K, bc, bk, vnni_pack );
+}
+
+void unpack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
+  unpack_c( src, dst, C, K, bc, bk, vnni_pack );
+}
+
 int main(int argc, char* argv[]) {
-  libxsmm_blasint L =  ( argc > 1 ) ? atoi(argv[1]) : 20;
-  libxsmm_blasint K =  ( argc > 2 ) ? atoi(argv[2]) : 1024;
-  libxsmm_blasint C =  ( argc > 3 ) ? atoi(argv[3]) : 1024;
-  libxsmm_blasint bk = ( argc > 4 ) ? atoi(argv[4]) : 32;
-  libxsmm_blasint bc = ( argc > 5 ) ? atoi(argv[5]) : 32;
+  libxsmm_blasint L =  ( argc > 1 ) ? atoi(argv[1]) :   20;
+  libxsmm_blasint C =  ( argc > 2 ) ? atoi(argv[2]) : 1024;
+  libxsmm_blasint K =  ( argc > 3 ) ? atoi(argv[3]) : 2048;
+  libxsmm_blasint bc = ( argc > 4 ) ? atoi(argv[4]) :   32;
+  libxsmm_blasint bk = ( argc > 5 ) ? atoi(argv[5]) :   32;
+  libxsmm_blasint it = ( argc > 6 ) ? atoi(argv[6]) :   10;
   libxsmm_blasint l_l, l_c, l_k;
   unsigned int vnni_pack = libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16);
   libxsmm_matdiff_info l_diff;
   double error = 0.0;
-
+  double l_datasize = ((double)it * (double)L * (double)K * (double)C * (double)sizeof(libxsmm_bfloat16))/(1024.0*1024.0*1024.0);
+  libxsmm_timer_tickint l_start;
+  libxsmm_timer_tickint l_end;
+  double l_total;
   libxsmm_bfloat16* l_wt_gold       = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
   float* l_wt_gold_f32              = (float*)           libxsmm_aligned_malloc(sizeof(float)            * L * C * K, 64);
-  libxsmm_bfloat16* l_wt_packed_c   = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
-  libxsmm_bfloat16* l_wt_packed_1   = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
-  libxsmm_bfloat16* l_wt_packed_2   = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
+  libxsmm_bfloat16* l_wt_packed     = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
   libxsmm_bfloat16* l_wt_unpack     = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
   float* l_wt_unpack_f32            = (float*)           libxsmm_aligned_malloc(sizeof(float)            * L * C * K, 64);
 
@@ -86,6 +96,8 @@ int main(int argc, char* argv[]) {
 
   libxsmm_matdiff_clear(&l_diff);
 
+  printf("Configuration:\n");
+  printf("L:%i C:%i K:%i bc:%i bk:%i vnni_pack:%i cBlocks:%i kBlocks:%i\n", L, C, K, bc, bk, vnni_pack, C/bc, K/bk );
   /* touch weights */
   for ( l_l = 0; l_l < L; l_l++) {
     for ( l_c = 0; l_c < C; l_c++) {
@@ -95,15 +107,17 @@ int main(int argc, char* argv[]) {
     }
   }
   libxsmm_rne_convert_fp32_bf16( l_wt_gold_f32, l_wt_gold, L*C*K );
+  libxsmm_convert_bf16_f32( l_wt_gold, l_wt_gold_f32, L*C*K );
 
   /* test dense packed */
   for ( l_l = 0; l_l < L; l_l++) {
-    pack_c( l_wt_gold+l_l*C*K, l_wt_packed_c+l_l*C*K, C, K, bc, bk, vnni_pack );
+    pack_c( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack );
   }
   for ( l_l = 0; l_l < L; l_l++) {
-    unpack_c( l_wt_packed_c+l_l*C*K, l_wt_unpack+l_l*C+K, C, K, bc, bk, vnni_pack );
+    unpack_c( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
   }
   libxsmm_convert_bf16_f32( l_wt_unpack, l_wt_unpack_f32, L*C*K );
+  libxsmm_matdiff_clear(&l_diff);
   libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, K, L*C, l_wt_unpack_f32, l_wt_gold_f32, &K, &K);
   error = libxsmm_matdiff_epsilon(&l_diff);
   printf("C Pack\n");
@@ -115,14 +129,15 @@ int main(int argc, char* argv[]) {
   printf("Linf rel.error: %.24f\n", l_diff.linf_rel);
   printf("Check-norm    : %.24f\n\n", error);
 
-  /* test dense packed */
+  /* test tpp identity pack */
   for ( l_l = 0; l_l < L; l_l++) {
-    pack_c( l_wt_gold+l_l*C*K, l_wt_packed_1+l_l*C*K, C, K, bc, bk, vnni_pack );
+    pack_tpp_identity( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack );
   }
   for ( l_l = 0; l_l < L; l_l++) {
-    unpack_c( l_wt_packed_1+l_l*C*K, l_wt_unpack+l_l*C+K, C, K, bc, bk, vnni_pack );
+    unpack_tpp_identity( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
   }
   libxsmm_convert_bf16_f32( l_wt_unpack, l_wt_unpack_f32, L*C*K );
+  libxsmm_matdiff_clear(&l_diff);
   libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, K, L*C, l_wt_unpack_f32, l_wt_gold_f32, &K, &K);
   error = libxsmm_matdiff_epsilon(&l_diff);
   printf("LIBXSMM identity\n");
@@ -134,14 +149,15 @@ int main(int argc, char* argv[]) {
   printf("Linf rel.error: %.24f\n", l_diff.linf_rel);
   printf("Check-norm    : %.24f\n\n", error);
 
-  /* test dense packed */
+  /* test tpp normtovnni pack */
   for ( l_l = 0; l_l < L; l_l++) {
-    pack_c( l_wt_gold+l_l*C*K, l_wt_packed_2+l_l*C*K, C, K, bc, bk, vnni_pack );
+    pack_tpp_normtovnni( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack );
   }
   for ( l_l = 0; l_l < L; l_l++) {
-    unpack_c( l_wt_packed_2+l_l*C*K, l_wt_unpack+l_l*C+K, C, K, bc, bk, vnni_pack );
+    unpack_tpp_normtovnni( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
   }
   libxsmm_convert_bf16_f32( l_wt_unpack, l_wt_unpack_f32, L*C*K );
+  libxsmm_matdiff_clear(&l_diff);
   libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, K, L*C, l_wt_unpack_f32, l_wt_gold_f32, &K, &K);
   error = libxsmm_matdiff_epsilon(&l_diff);
   printf("LIBXSMM norm->vnni\n");
@@ -153,23 +169,31 @@ int main(int argc, char* argv[]) {
   printf("Linf rel.error: %.24f\n", l_diff.linf_rel);
   printf("Check-norm    : %.24f\n\n", error);
 
-#if 0
   /* dense routine */
   l_start = libxsmm_timer_tick();
-  for ( l_l = 0; l_l < L; l_l++) {
-    pack_c( l_wt_gold, l_wt_packed_c, C, K, bc, bk, vnni_pack );
+  for ( l_k = 0; l_k < it; l_k++ ) {
+    for ( l_l = 0; l_l < L; l_l++ ) {
+      pack_c( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack );
+    }
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for pack_c\n", l_total);
-  printf("%f GiB/s for pack_c\n", ((double)((double)L * (double)C * (double)C * 2.0) / (l_total * 1024 * 1024 * 1024));
-#endif
+  printf("Perf. for C Pack: %fs; %f GiB/s\n", l_total, l_datasize/l_total);
+  l_start = libxsmm_timer_tick();
+  for ( l_k = 0; l_k < it; l_k++ ) {
+    for ( l_l = 0; l_l < L; l_l++ ) {
+      unpack_c( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Perf. for C unpack: %fs; %f GiB/s\n\n", l_total, l_datasize/l_total);
+
+
 
   libxsmm_free( l_wt_unpack_f32 );
   libxsmm_free( l_wt_unpack );
-  libxsmm_free( l_wt_packed_2 );
-  libxsmm_free( l_wt_packed_1 );
-  libxsmm_free( l_wt_packed_c );
+  libxsmm_free( l_wt_packed );
   libxsmm_free( l_wt_gold_f32 );
   libxsmm_free( l_wt_gold );
 
