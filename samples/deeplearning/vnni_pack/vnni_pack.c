@@ -19,7 +19,7 @@ void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned i
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1,c2,k2)
+# pragma omp parallel for private(k1,c1,c2,k2) collapse(2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -33,12 +33,52 @@ void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned i
   }
 }
 
-void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  pack_c( src, dst, C, K, bc, bk, vnni_pack );
+void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack, libxsmm_meltwfunction_unary kernel) {
+  unsigned int k1, k2, c1, c2;
+  unsigned int kBlocks = K/bk;
+  unsigned int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_src, src, K);
+  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1,c1,c2,k2) collapse(2)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      libxsmm_bfloat16 tmp[bc*bk];
+      LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, real_tmp, tmp, bk, vnni_pack);
+      libxsmm_meltw_unary_param unary_param;
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(3, real_tmp, c2/vnni_pack, k2, c2%vnni_pack, bk, vnni_pack) =
+            LIBXSMM_VLA_ACCESS(2, real_src, c1*bc+c2, k1*bk+k2, K);
+        }
+      }
+      unary_param.in.primary = (void*)&(LIBXSMM_VLA_ACCESS(3, real_tmp, 0, 0, 0, bk, vnni_pack));
+      unary_param.out.primary = (void*)&(LIBXSMM_VLA_ACCESS(5, real_dst, k1, c1, 0, 0, 0, cBlocks, bc/vnni_pack, bk, vnni_pack));
+      kernel( &unary_param );
+    }
+  }
 }
 
-void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  pack_c( src, dst, C, K, bc, bk, vnni_pack );
+void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack, libxsmm_meltwfunction_unary kernel) {
+  unsigned int k1, c1;
+  unsigned int kBlocks = K/bk;
+  unsigned int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_src, src, K);
+  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1,c1) collapse(2)
+#endif
+  for (c1 = 0; c1 < cBlocks; c1++) {
+    for (k1 = 0; k1 < kBlocks; k1++) {
+      libxsmm_meltw_unary_param unary_param;
+      unary_param.in.primary = (void*)&(LIBXSMM_VLA_ACCESS(2, real_src, c1*bc, k1*bk, K));
+      unary_param.out.primary = (void*)&(LIBXSMM_VLA_ACCESS(5, real_dst, k1, c1, 0, 0, 0, cBlocks, bc/vnni_pack, bk, vnni_pack));
+      kernel( &unary_param );
+    }
+  }
 }
 
 void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
@@ -49,7 +89,7 @@ void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1,c2,k2)
+# pragma omp parallel for private(k1,c1,c2,k2) collapse(2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -77,7 +117,7 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint K =  ( argc > 3 ) ? atoi(argv[3]) : 2048;
   libxsmm_blasint bc = ( argc > 4 ) ? atoi(argv[4]) :   32;
   libxsmm_blasint bk = ( argc > 5 ) ? atoi(argv[5]) :   32;
-  libxsmm_blasint it = ( argc > 6 ) ? atoi(argv[6]) :   10;
+  libxsmm_blasint it = ( argc > 6 ) ? atoi(argv[6]) :   1000;
   libxsmm_blasint l_l, l_c, l_k;
   unsigned int vnni_pack = libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16);
   libxsmm_matdiff_info l_diff;
@@ -91,8 +131,12 @@ int main(int argc, char* argv[]) {
   libxsmm_bfloat16* l_wt_packed     = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
   libxsmm_bfloat16* l_wt_unpack     = (libxsmm_bfloat16*)libxsmm_aligned_malloc(sizeof(libxsmm_bfloat16) * L * C * K, 64);
   float* l_wt_unpack_f32            = (float*)           libxsmm_aligned_malloc(sizeof(float)            * L * C * K, 64);
-
   LIBXSMM_VLA_DECL(3, float, l_wt_f32, l_wt_gold_f32, C, K);
+  const libxsmm_meltw_unary_shape norm_to_vnni_shape = libxsmm_create_meltw_unary_shape( bk, bc, K, bk, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+  libxsmm_meltwfunction_unary norm_to_vnni_kernel;
+  const libxsmm_meltw_unary_shape copy_shape = libxsmm_create_meltw_unary_shape( bk, bc, bk, bk, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+  libxsmm_meltwfunction_unary copy_kernel;
+
 
   libxsmm_matdiff_clear(&l_diff);
 
@@ -108,6 +152,10 @@ int main(int argc, char* argv[]) {
   }
   libxsmm_rne_convert_fp32_bf16( l_wt_gold_f32, l_wt_gold, L*C*K );
   libxsmm_convert_bf16_f32( l_wt_gold, l_wt_gold_f32, L*C*K );
+
+  /* JITing kernels */
+  norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, norm_to_vnni_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  copy_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, copy_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
 
   /* test dense packed */
   for ( l_l = 0; l_l < L; l_l++) {
@@ -131,7 +179,7 @@ int main(int argc, char* argv[]) {
 
   /* test tpp identity pack */
   for ( l_l = 0; l_l < L; l_l++) {
-    pack_tpp_identity( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack );
+    pack_tpp_identity( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack, copy_kernel );
   }
   for ( l_l = 0; l_l < L; l_l++) {
     unpack_tpp_identity( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
@@ -151,7 +199,7 @@ int main(int argc, char* argv[]) {
 
   /* test tpp normtovnni pack */
   for ( l_l = 0; l_l < L; l_l++) {
-    pack_tpp_normtovnni( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack );
+    pack_tpp_normtovnni( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack, norm_to_vnni_kernel );
   }
   for ( l_l = 0; l_l < L; l_l++) {
     unpack_tpp_normtovnni( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
@@ -189,7 +237,45 @@ int main(int argc, char* argv[]) {
   l_total = libxsmm_timer_duration(l_start, l_end);
   printf("Perf. for C unpack: %fs; %f GiB/s\n\n", l_total, l_datasize/l_total);
 
+  /* test tpp identity pack */
+  l_start = libxsmm_timer_tick();
+  for ( l_k = 0; l_k < it; l_k++ ) {
+    for ( l_l = 0; l_l < L; l_l++ ) {
+      pack_tpp_identity( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack, copy_kernel );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Perf. for LIBXSMM identity Pack: %fs; %f GiB/s\n", l_total, l_datasize/l_total);
+  l_start = libxsmm_timer_tick();
+  for ( l_k = 0; l_k < it; l_k++ ) {
+    for ( l_l = 0; l_l < L; l_l++ ) {
+      unpack_tpp_identity( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Perf. for LIBXSMM identity unpack: %fs; %f GiB/s\n\n", l_total, l_datasize/l_total);
 
+  /* test tpp normtovnni pack */
+  l_start = libxsmm_timer_tick();
+  for ( l_k = 0; l_k < it; l_k++ ) {
+    for ( l_l = 0; l_l < L; l_l++ ) {
+      pack_tpp_normtovnni( l_wt_gold+(l_l*C*K), l_wt_packed+(l_l*C*K), C, K, bc, bk, vnni_pack, norm_to_vnni_kernel );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Perf. for LIBXSMM norm->vnni Pack: %fs; %f GiB/s\n", l_total, l_datasize/l_total);
+  l_start = libxsmm_timer_tick();
+  for ( l_k = 0; l_k < it; l_k++ ) {
+    for ( l_l = 0; l_l < L; l_l++ ) {
+      unpack_tpp_normtovnni( l_wt_packed+(l_l*C*K), l_wt_unpack+(l_l*C*K), C, K, bc, bk, vnni_pack );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Perf. for LIBXSMM norm->vnni unpack: %fs; %f GiB/s\n\n", l_total, l_datasize/l_total);
 
   libxsmm_free( l_wt_unpack_f32 );
   libxsmm_free( l_wt_unpack );
