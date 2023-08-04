@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_gather_reduce  $(OUTDIR)/equation_relu $(OUTDIR)/equation_simple_layernorm $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD $(OUTDIR)/equation_bf16_x3_split_f32 $(OUTDIR)/equation_gather_dot
+XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_gather_reduce  $(OUTDIR)/equation_relu $(OUTDIR)/equation_simple_layernorm $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD $(OUTDIR)/equation_bf16_x3_split_f32 $(OUTDIR)/equation_gather_dot $(OUTDIR)/equation_gather_bcst_mul_reduce
 .PHONY: all
 all: $(XFILES)
 
@@ -73,6 +73,9 @@ $(OUTDIR)/equation_bf16_x3_split_f32: $(OUTDIR)/.make $(BLDDIR)/equation_bf16_x3
 
 $(OUTDIR)/equation_gather_dot: $(OUTDIR)/.make $(BLDDIR)/equation_gather_dot-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_gather_dot-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_gather_bcst_mul_reduce: $(OUTDIR)/.make $(BLDDIR)/equation_gather_bcst_mul_reduce-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_gather_bcst_mul_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
