@@ -201,15 +201,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, i_micro_kernel_config->vector_name, tmp_lo_vreg, tmp_lo_vreg);
         }
       } else {
-        unsigned int l_i8toi32_cvt_instr = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) ? LIBXSMM_X86_INSTR_VPMOVZXBW : LIBXSMM_X86_INSTR_VPMOVSXBW;
+        unsigned int l_i8toi16_cvt_instr = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) ? LIBXSMM_X86_INSTR_VPMOVZXBW : LIBXSMM_X86_INSTR_VPMOVSXBW;
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,  LIBXSMM_X86_INSTR_VPANDD, l_vname_cvt, io_A_vreg, l_vreg_mask_f0, tmp_hi_vreg);
-        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, l_i8toi32_cvt_instr, i_micro_kernel_config->vector_name, tmp_hi_vreg, tmp_hi_vreg);
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, l_i8toi16_cvt_instr, i_micro_kernel_config->vector_name, tmp_hi_vreg, tmp_hi_vreg);
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_micro_kernel_config->vector_name, tmp_hi_vreg, tmp_hi_vreg, 4);
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, tmp_hi_vreg, tmp_hi_vreg );
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPH, i_micro_kernel_config->vector_name, tmp_hi_vreg, l_vec_scf_a, tmp_hi_vreg);
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,  LIBXSMM_X86_INSTR_VPANDD, l_vname_cvt, io_A_vreg, l_vreg_mask_0f, tmp_lo_vreg);
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, l_vname_cvt, tmp_lo_vreg, tmp_lo_vreg, 4);
-        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, l_i8toi32_cvt_instr, i_micro_kernel_config->vector_name, tmp_lo_vreg, tmp_lo_vreg);
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, l_i8toi16_cvt_instr, i_micro_kernel_config->vector_name, tmp_lo_vreg, tmp_lo_vreg);
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_micro_kernel_config->vector_name, tmp_lo_vreg, tmp_lo_vreg, 4);
         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTW2PH, i_micro_kernel_config->vector_name, tmp_lo_vreg, tmp_lo_vreg );
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPH, i_micro_kernel_config->vector_name, tmp_lo_vreg, l_vec_scf_a, tmp_lo_vreg);
