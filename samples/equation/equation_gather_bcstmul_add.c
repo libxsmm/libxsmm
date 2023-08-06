@@ -31,30 +31,30 @@ void eqn_gather_bcstmul_add_f32_gold( const libxsmm_blasint M,
   /* look up from kv-cache */
 #if 1
   for ( i = 0; i < idxblk; i += 1 ) {
-    __m512 bcst0 = _mm512_set1_ps(&(i_vecin[i]));
+    __m512 bcst0 = _mm512_set1_ps(i_vec_in[i]);
     for ( j = 0; j < M; j += 16 ) {
       __m512 rego = _mm512_load_ps( &(o_vec_out[j]) );
       __m512 b0   = _mm512_load_ps( &(i_gather_dot[(i_idx[i+0]*M)+j]) );
-      rego = _mm512_madd_ps( bcst0, b0, rego );
+      rego = _mm512_fmadd_ps( bcst0, b0, rego );
       _mm512_store_ps( &(o_vec_out[j]), rego );
     }
   }
 #else
   for ( i = 0; i < idxblk; i += 4 ) {
-    __m512 bcst0 = _mm512_set1_ps(&(i_vecin[i+0]));
-    __m512 bcst1 = _mm512_set1_ps(&(i_vecin[i+1]));
-    __m512 bcst2 = _mm512_set1_ps(&(i_vecin[i+2]));
-    __m512 bcst3 = _mm512_set1_ps(&(i_vecin[i+3]));
+    __m512 bcst0 = _mm512_set1_ps(i_vec_in[i+0]);
+    __m512 bcst1 = _mm512_set1_ps(i_vec_in[i+1]);
+    __m512 bcst2 = _mm512_set1_ps(i_vec_in[i+2]);
+    __m512 bcst3 = _mm512_set1_ps(i_vec_in[i+3]);
     for ( j = 0; j < M; j += 16 ) {
       __m512 rego = _mm512_load_ps( &(o_vec_out[j]) );
       __m512 b0 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+0]*M)+j]) );
       __m512 b1 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+1]*M)+j]) );
       __m512 b2 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+2]*M)+j]) );
       __m512 b3 = _mm512_load_ps( &(i_gather_dot[(i_idx[i+3]*M)+j]) );
-      reg0 = _mm512_fmadd_ps( bcst0, b0, rego );
-      rego = _mm512_fmadd_ps( bcst0, b1, rego );
-      rego = _mm512_fmadd_ps( bcst0, b2, rego );
-      rego = _mm512_fmadd_ps( bcst0, b3, rego );
+      rego = _mm512_fmadd_ps( bcst0, b0, rego );
+      rego = _mm512_fmadd_ps( bcst1, b1, rego );
+      rego = _mm512_fmadd_ps( bcst2, b2, rego );
+      rego = _mm512_fmadd_ps( bcst3, b3, rego );
       _mm512_store_ps( &(o_vec_out[j]), rego );
     }
   }
