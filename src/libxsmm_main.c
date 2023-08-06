@@ -2338,6 +2338,32 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
+    case LIBXSMM_BUILD_KIND_PGEMM: { /* packed GEMM */
+      LIBXSMM_ASSERT(NULL != request->descriptor.pgemm && 0 != request->descriptor.pgemm->gemm);
+      /* only floating point */
+      if (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(request->descriptor.pgemmacrm->gemm->datatype) ||
+          LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(request->descriptor.pgemmacrm->gemm->datatype))
+      {
+        extra.nflops = 2 * request->descriptor.pgemm->packed_width * request->descriptor.pgemm->gemm->m * request->descriptor.pgemm->gemm->n * request->descriptor.pgemm->gemm->k;
+        libxsmm_generator_packed_gemm(&generated_code, request->descriptor.pgemm->gemm, request->descriptor.pgemm->packed_width);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const int uid = request->descriptor.pgemm->gemm->prefetch;
+          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.pgemm->gemm->datatype);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_a%i_b%i_p%i.pgemm", target_arch, tname,
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pgemm->gemm->flags) ? 'n' : 't',
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.pgemm->gemm->flags) ? 'n' : 't',
+            request->descriptor.pgemm->gemm->m,   request->descriptor.pgemm->gemm->n,   request->descriptor.pgemm->gemm->k,
+            request->descriptor.pgemm->gemm->lda, request->descriptor.pgemm->gemm->ldb, request->descriptor.pgemm->gemm->ldc,
+            request->descriptor.pgemm->packed_width,
+            1, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.pgemm->gemm->flags) ? 0 : 1,
+            uid);
+        }
+      }
+    } break;
     case LIBXSMM_BUILD_KIND_PGEMMRMAC: { /* packed GEMM, B regular matrix, row-major */
       LIBXSMM_ASSERT(NULL != request->descriptor.pgemmacrm && 0 != request->descriptor.pgemmacrm->gemm);
       /* only floating point */
@@ -3765,6 +3791,41 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   return result.xgemm.gemm;
 }
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm( const libxsmm_gemm_shape gemm_shape,
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_pgemm_descriptor pgemm /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* TODO: some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utilizes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_init(&blob, gemm_shape.a_in_type,
+    gemm_shape.b_in_type, gemm_shape.comp_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    gemm_shape.lda, gemm_shape.ldb, gemm_shape.ldc,
+    l_gemm_flags, libxsmm_get_gemm_prefetch(prefetch_flags));
+
+  pgemm.gemm = desc;
+  pgemm.packed_width = packed_width;
+  request.descriptor.pgemm = &pgemm;
+  request.kind = LIBXSMM_BUILD_KIND_PGEMM;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
+}
+
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )
 {
@@ -3799,7 +3860,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
 
   return result.xgemm.gemm;
 }
-
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )

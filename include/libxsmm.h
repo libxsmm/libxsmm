@@ -315,6 +315,14 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_spgemm_config spgemm_config);
 
 /**
+ * Code generation routine for packed GEMM. In this case A is [K][M][packed], B is [K][N][packed] and C is [N][M][packed],
+ * that mans the  memory layout of the matricis is in SOA [row][col][packed].
+ * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
+ */
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm( const libxsmm_gemm_shape gemm_shape,
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width );
+
+/**
  * Code generation routine for row-major format B matrix which is multiplied by a dense packed matrix (each element holds a SIMD-width
  * wide vector) and the result is another packed matrix. The memory layout of the SOA matrix is [row][col][packed].
  * here is no code cache, and user code has to manage the code pointers.
