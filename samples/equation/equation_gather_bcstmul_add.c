@@ -90,73 +90,24 @@ void eqn_gather_bcstmul_add_f32_tpp1( const libxsmm_blasint M,
   }
 }
 
-#if 0
 LIBXSMM_INLINE
-void eqn_gather_dot_one_f32_tpp2( const libxsmm_blasint M,
-                           const libxsmm_blasint cols,
-                           const libxsmm_blasint idxblk,
-                           const float* i_gather_dot,
-                           const float* i_vec_in,
-                           float* i_tmp_mat,
-                           float* o_vec_out,
-                           const long long* i_idx,
-                           libxsmm_matrix_eqn_function i_eqn ) {
-  libxsmm_matrix_eqn_param l_eqn_param;
-  libxsmm_matrix_arg l_arg_array[2];
-  libxsmm_blasint i;
-
-  /* look up from kv-cache */
-  l_arg_array[0].primary = (void*)i_vec_in;
-  for ( i = 0; i < idxblk; ++i ) {
-    l_arg_array[1].primary = (void*)&(i_gather_dot[(i_idx[i]*M)]);
-    l_eqn_param.inputs = l_arg_array;
-    l_eqn_param.output.primary = (void*)&(o_vec_out[i]);
-
-    i_eqn( &l_eqn_param );
-  }
-}
-
-LIBXSMM_INLINE
-void eqn_gather_dot_one_f32_tpp3( const libxsmm_blasint M,
-                           const libxsmm_blasint cols,
-                           const libxsmm_blasint idxblk,
-                           const float* i_gather_dot,
-                           const float* i_vec_in,
-                           float* i_tmp_mat,
-                           float* o_vec_out,
-                           const long long* i_idx,
-                           libxsmm_meltwfunction_unary i_gather_func,
-                           libxsmm_xmmfunction         i_gemm_func ) {
-  libxsmm_meltw_unary_param l_gather_param;
-  libxsmm_gemm_param l_gemm_param;
-
-  l_gather_param.in.primary = (void*)i_gather_dot;
-  l_gather_param.in.secondary = (void*)i_idx;
-  l_gather_param.out.primary = (void*)i_tmp_mat;
-
-  l_gemm_param.a.primary = (void*)i_vec_in;
-  l_gemm_param.b.primary = (void*)i_tmp_mat;
-  l_gemm_param.c.primary = (void*)o_vec_out;
-
-  i_gather_func( &l_gather_param );
-  i_gemm_func.gemm( &l_gemm_param );
-}
-
-LIBXSMM_INLINE
-void eqn_gather_dot_one_f32_tpp4( const libxsmm_blasint M,
-                           const libxsmm_blasint cols,
-                           const libxsmm_blasint idxblk,
-                           const float* i_gather_dot,
-                           const float* i_vec_in,
-                           float* i_tmp_mat,
-                           float* o_vec_out,
-                           const long long* i_idx,
-                           libxsmm_meltwfunction_unary  i_gather_func,
-                           libxsmm_meltwfunction_binary i_mul,
-                           libxsmm_meltwfunction_unary  i_addreduce ) {
+void eqn_gather_bcstmul_add_f32_tpp2( const libxsmm_blasint M,
+                                      const libxsmm_blasint cols,
+                                      const libxsmm_blasint idxblk,
+                                      float* i_tmp_mat,
+                                      float* i_tmp_vec,
+                                      const float* i_gather_dot,
+                                      const float* i_vec_in,
+                                      float* o_vec_out,
+                                      const long long* i_idx,
+                                      libxsmm_meltwfunction_unary  i_gather_func,
+                                      libxsmm_meltwfunction_binary i_mul,
+                                      libxsmm_meltwfunction_unary  i_addreduce,
+                                      libxsmm_meltwfunction_binary i_add ) {
   libxsmm_meltw_unary_param l_gather_param;
   libxsmm_meltw_binary_param l_mul_param;
   libxsmm_meltw_unary_param l_addreduce_param;
+  libxsmm_meltw_binary_param l_add_param;
 
   l_gather_param.in.primary = (void*)i_gather_dot;
   l_gather_param.in.secondary = (void*)i_idx;
@@ -167,13 +118,17 @@ void eqn_gather_dot_one_f32_tpp4( const libxsmm_blasint M,
   l_mul_param.out.primary = (void*)i_tmp_mat;
 
   l_addreduce_param.in.primary = (void*)i_tmp_mat;
-  l_addreduce_param.out.primary = (void*)o_vec_out;
+  l_addreduce_param.out.primary = (void*)i_tmp_vec;
+
+  l_add_param.in0.primary = (void*)i_tmp_vec;
+  l_add_param.in1.primary = (void*)o_vec_out;
+  l_add_param.out.primary = (void*)o_vec_out;
 
   i_gather_func( &l_gather_param );
   i_mul( &l_mul_param );
   i_addreduce( &l_addreduce_param );
+  i_add( &l_add_param );
 }
-#endif
 
 LIBXSMM_INLINE
 int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint M, const libxsmm_blasint idxblk, const libxsmm_blasint numidx, const libxsmm_blasint iters) {
@@ -182,61 +137,39 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   libxsmm_matdiff_info norms_out;
   float* l_gather_dot;
   float* l_vec_in;
-#if 0
   float* l_tmp_mat;
-#endif
+  float* l_tmp_vec;
   float* l_vec_out_gold;
   float* l_vec_out_tpp1;
-#if 0
   float* l_vec_out_tpp2;
-  float* l_vec_out_tpp3;
-  float* l_vec_out_tpp4;
-#endif
   long long* l_idx;
   double check_norm = 0.0;
   double pass_norm = 0.00001;
   double l_bytes = ((M * numidx * 4) + (numidx * 4) + (M * 4));
   libxsmm_timer_tickint l_start;
   double l_runtime;
-#if 0
-  libxsmm_blasint idxblk_gemm = idxblk/4;
-  libxsmm_blasint idxblk_mulred = idxblk;
-#endif
-  /* binary mul + binary add TPP */
+
+  /* binary muladd TPP */
   libxsmm_meltwfunction_binary l_muladd = NULL;
   libxsmm_meltw_binary_shape   l_muladd_shape = libxsmm_create_meltw_binary_shape( M, 1, M, 1, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-#if 0
-  /* equation for mul + reduce add TPP */
-  libxsmm_blasint l_eqn_0_idx = 0;
-  libxsmm_meqn_arg_shape l_eqn_0_shape_out;
-  libxsmm_matrix_eqn_function l_eqn_0 = NULL;
-  /* gather + GEMM TPP */
-  libxsmm_meltwfunction_unary l_gather = NULL;
-  libxsmm_meltw_unary_shape   l_gahter_shape = libxsmm_create_meltw_unary_shape( M, idxblk_gemm, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  libxsmm_xmmfunction l_gather_gemm;
-  libxsmm_gemm_shape  l_gather_gemm_shape = libxsmm_create_gemm_shape( 1, idxblk_gemm, M, 1, M, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  libxsmm_bitfield l_gather_gemm_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_BETA_0;
-  libxsmm_bitfield l_gather_gemm_prefetch_flags = 0;
-  /* gather + mul + reduce */
-  libxsmm_meltwfunction_unary  l_gather_2 = NULL;
-  libxsmm_meltw_unary_shape    l_gahter_2_shape = libxsmm_create_meltw_unary_shape( M, idxblk_mulred, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meltwfunction_binary l_mul_2 = NULL;
-  libxsmm_meltw_binary_shape   l_mul_2_shape = libxsmm_create_meltw_binary_shape( M, idxblk_mulred, M, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meltwfunction_unary  l_addreduce_2 = NULL;
-  libxsmm_meltw_unary_shape    l_addreduce_2_shape = libxsmm_create_meltw_unary_shape( M, idxblk_mulred, M, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-#endif
+
+  /* gather + binary mul + addreduce + add TPP */
+  libxsmm_meltwfunction_unary  l_gather = NULL;
+  libxsmm_meltw_unary_shape    l_gather_shape = libxsmm_create_meltw_unary_shape( M, idxblk, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meltwfunction_binary l_mul = NULL;
+  libxsmm_meltw_binary_shape   l_mul_shape = libxsmm_create_meltw_binary_shape( M, idxblk, M, 1, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meltwfunction_unary  l_addreduce = NULL;
+  libxsmm_meltw_unary_shape    l_addreduce_shape = libxsmm_create_meltw_unary_shape( M, idxblk, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meltwfunction_binary l_add = NULL;
+  libxsmm_meltw_binary_shape   l_add_shape = libxsmm_create_meltw_binary_shape( M, 1, M, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+
   l_gather_dot   = (float*)     libxsmm_aligned_malloc( sizeof(float)*cols*M,     64);
   l_vec_in       = (float*)     libxsmm_aligned_malloc( sizeof(float)*cols,       64);
-#if 0
   l_tmp_mat      = (float*)     libxsmm_aligned_malloc( sizeof(float)*idxblk*M,   64);
-#endif
   l_vec_out_gold = (float*)     libxsmm_aligned_malloc( sizeof(float)*M,          64);
+  l_tmp_vec      = (float*)     libxsmm_aligned_malloc( sizeof(float)*M,          64);
   l_vec_out_tpp1 = (float*)     libxsmm_aligned_malloc( sizeof(float)*M,          64);
-#if 0
-  l_vec_out_tpp2 = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
-  l_vec_out_tpp3 = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
-  l_vec_out_tpp4 = (float*)     libxsmm_aligned_malloc( sizeof(float)*numidx,     64);
-#endif
+  l_vec_out_tpp2 = (float*)     libxsmm_aligned_malloc( sizeof(float)*M,          64);
   l_idx          = (long long*) libxsmm_aligned_malloc( sizeof(long long)*numidx, 64);
 
   /* init kv cache */
@@ -252,23 +185,18 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   }
 
   /* init temp gather matix */
-#if 0
   for ( i = 0; i < idxblk; ++i ) {
     for ( j = 0; j < M; ++j ) {
       l_tmp_mat[(i*M)+j] = (float)libxsmm_rng_f64();
     }
   }
-#endif
 
   /* init output */
   for ( j = 0; j < M; ++j ) {
+    l_tmp_vec[j]      = 0.0f;
     l_vec_out_gold[j] = 0.0f;
     l_vec_out_tpp1[j] = 0.0f;
-#if 0
     l_vec_out_tpp2[j] = 0.0f;
-    l_vec_out_tpp3[j] = 0.0f;
-    l_vec_out_tpp4[j] = 0.0f;
-#endif
   }
 
   /* init lookup idx */
@@ -284,34 +212,15 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
     exit(-1);
   }
 
-#if 0
-  /* second TPP implementation equation for reduce muladd */
-  l_eqn_0_idx = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
-                                         LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_BINARY_MUL,
-                                          LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_tree_print( l_eqn_0_idx );
-  libxsmm_matrix_eqn_rpn_print( l_eqn_0_idx );
-  l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
-  l_eqn_0 = libxsmm_dispatch_matrix_eqn_v2( l_eqn_0_idx, l_eqn_0_shape_out );
-
-  /* third TPP implementation we run gather and than matmul */
-  l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_gather_gemm.gemm = libxsmm_dispatch_gemm_v2( l_gather_gemm_shape, l_gather_gemm_flags, l_gather_gemm_prefetch_flags );
-
-  /* forth TPP implementation we run gather and reduce muladd */
-  l_gather_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_2_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_mul_2 = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_2_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 );
-  l_addreduce_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_2_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
-
-  if ( (l_gather == NULL) || (l_gather_gemm.xmm == NULL) ) {
-    printf("JIT failed for gather+gemm, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+  /* second TPP implementation we run gather + binary mul + addreduce + add */
+  l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gather_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
+  l_mul = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
+  l_addreduce = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS );
+  l_add = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_ADD, l_add_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  if ( (l_gather == NULL) || (l_mul == NULL) || (l_addreduce == NULL) || (l_add == NULL) ) {
+    printf("JIT failed for gather+muladd+addreduce+add, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
     exit(-1);
   }
-#endif
 
   /* run gold */
   for ( i = 0; i < numidx; i += idxblk ) {
@@ -321,22 +230,14 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   for ( i = 0; i < numidx; i += idxblk ) {
     eqn_gather_bcstmul_add_f32_tpp1( M, cols, idxblk, l_gather_dot, l_vec_in+i, l_vec_out_tpp1, l_idx+i, l_muladd );
   }
-#if 0
   for ( i = 0; i < numidx; i += idxblk ) {
-    eqn_gather_dot_one_f32_tpp2( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
+    eqn_gather_bcstmul_add_f32_tpp2( M, cols, idxblk, l_tmp_mat, l_tmp_vec, l_gather_dot, l_vec_in+i, l_vec_out_tpp2, l_idx+i, l_gather, l_mul, l_addreduce, l_add );
   }
-  for ( i = 0; i < numidx; i += idxblk_gemm ) {
-    eqn_gather_dot_one_f32_tpp3( M, cols, idxblk_gemm, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
-  }
-  for ( i = 0; i < numidx; i += idxblk_mulred ) {
-    eqn_gather_dot_one_f32_tpp4( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp4+i, l_idx+i, l_gather_2, l_mul_2, l_addreduce_2 );
-  }
-#endif
 
   printf("##########################################\n");
   printf("#   Equ. gather+bcstmul+add - Output     #\n");
   printf("##########################################\n");
-  printf("mul + reduce\n");
+  printf("muladd\n");
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, M, 1, l_vec_out_gold, l_vec_out_tpp1, 0, 0);
   printf("L1 reference  : %.25g\n", norms_out.l1_ref);
   printf("L1 test       : %.25g\n", norms_out.l1_tst);
@@ -349,9 +250,8 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   if ( check_norm > pass_norm ) {
     ret = EXIT_FAILURE;
   }
-#if 0
-  printf("equation mul + reduce\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, numidx, 1, l_vec_out_gold, l_vec_out_tpp2, 0, 0);
+  printf("gather + binary mul + addreduce + add\n");
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, M, 1, l_vec_out_gold, l_vec_out_tpp2, 0, 0);
   printf("L1 reference  : %.25g\n", norms_out.l1_ref);
   printf("L1 test       : %.25g\n", norms_out.l1_tst);
   printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
@@ -363,33 +263,6 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   if ( check_norm > pass_norm ) {
     ret = EXIT_FAILURE;
   }
-  printf("gather + gemm\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, numidx, 1, l_vec_out_gold, l_vec_out_tpp3, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
-  if ( check_norm > pass_norm ) {
-    ret = EXIT_FAILURE;
-  }
-  printf("gather + mul + reduce\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, numidx, 1, l_vec_out_gold, l_vec_out_tpp4, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
-  if ( check_norm > pass_norm ) {
-    ret = EXIT_FAILURE;
-  }
-#endif
 
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
@@ -409,47 +282,22 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("TPP muladd\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
 
-#if 0
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < iters; ++j ) {
     for ( i = 0; i < numidx; i += idxblk ) {
-      eqn_gather_dot_one_f32_tpp2( M, cols, idxblk, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp2+i, l_idx+i, l_eqn_0 );
+      eqn_gather_bcstmul_add_f32_tpp2( M, cols, idxblk, l_tmp_mat, l_tmp_vec, l_gather_dot, l_vec_in+i, l_vec_out_tpp2, l_idx+i, l_gather, l_mul, l_addreduce, l_add );
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  printf("TPP equation mul + reduce\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
-
-  l_start = libxsmm_timer_tick();
-  for ( j = 0; j < iters; ++j ) {
-    for ( i = 0; i < numidx; i += idxblk_gemm ) {
-      eqn_gather_dot_one_f32_tpp3( M, cols, idxblk_gemm, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp3+i, l_idx+i, l_gather, l_gather_gemm );
-    }
-  }
-  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  printf("TPP Gather GEMM\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
-
-  l_start = libxsmm_timer_tick();
-  for ( j = 0; j < iters; ++j ) {
-    for ( i = 0; i < numidx; i += idxblk_mulred ) {
-      eqn_gather_dot_one_f32_tpp4( M, cols, idxblk_gemm, l_gather_dot, l_vec_in, l_tmp_mat, l_vec_out_tpp4+i, l_idx+i, l_gather_2, l_mul_2, l_addreduce_2 );
-    }
-  }
-  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  printf("TPP gather + mul + reduce\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
-#endif
+  printf("TPP gather + binary mul + addreduce + add\nRuntime: %f; GiB/s: %f\n", l_runtime, (l_bytes/(1024.0*1024.0*1024.0))/(l_runtime/(double)iters));
 
   libxsmm_free( l_gather_dot );
   libxsmm_free( l_vec_in );
-#if 0
   libxsmm_free( l_tmp_mat );
-#endif
+  libxsmm_free( l_tmp_vec );
   libxsmm_free( l_vec_out_gold );
   libxsmm_free( l_vec_out_tpp1 );
-#if 0
   libxsmm_free( l_vec_out_tpp2 );
-  libxsmm_free( l_vec_out_tpp3 );
-  libxsmm_free( l_vec_out_tpp4 );
-#endif
   libxsmm_free( l_idx );
 
   return ret;
@@ -461,7 +309,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint cols = 2048;
   libxsmm_blasint M = 256;
   libxsmm_blasint numidx = 512;
-  libxsmm_blasint idxblk = 32;
+  libxsmm_blasint idxblk = 4;
   libxsmm_blasint iters = 1000000;
   libxsmm_datatype in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype out_dt = LIBXSMM_DATATYPE_F32;
