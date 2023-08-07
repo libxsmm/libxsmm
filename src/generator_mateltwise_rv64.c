@@ -165,7 +165,7 @@ LIBXSMM_API_INTERN
 libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
                                                                         const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
 #if 1
-  libxsmm_blasint is_valid_arch_prec = 0;
+  libxsmm_blasint is_valid_arch_prec = 1;
   LIBXSMM_UNUSED( io_generated_code );
   LIBXSMM_UNUSED( i_mateltwise_desc );
 #else
@@ -291,6 +291,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
     }
   }
 #endif
+
   return is_valid_arch_prec;
 }
 
@@ -317,10 +318,12 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   /* define mateltwise kernel config */
   libxsmm_generator_mateltwise_rv64_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, i_mateltwise_desc );
 
-#if 0
   /* open asm */
   libxsmm_rv64_instruction_open_stream( io_generated_code, 0xe0f );
 
+  libxsmm_generator_meltw_setup_stack_frame_rv64( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
+
+#if 0
   /* being BLAS aligned, for empty kernels, do nothing */
   if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param)) ) {
     /* Stack management for melt kernel */
@@ -376,8 +379,15 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
     /* Stack management for melt kernel */
     libxsmm_generator_meltw_destroy_stack_frame_rv64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
   }
+#endif
+
+  libxsmm_generator_unary_binary_rv64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+
+  libxsmm_generator_meltw_destroy_stack_frame_rv64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
+
+  printf("Generated RV64 kernels\n");
+  fflush(stdout);
 
   /* close asm */
   libxsmm_rv64_instruction_close_stream( io_generated_code, 0xe0f );
-#endif
 }

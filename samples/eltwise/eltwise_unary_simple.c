@@ -557,7 +557,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
   }
-  unary_kernel( &unary_param );
+  //unary_kernel( &unary_param );
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {

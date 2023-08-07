@@ -91,7 +91,6 @@
 #include "../src/generator_packed_spgemm_csr_bsparse.c"
 #include "../src/generator_packed_spgemm_csr_bsparse_aarch64.c"
 #include "../src/generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.c"
-#include "../src/generator_riscv_instructions.c"
 #include "../src/generator_spgemm.c"
 #include "../src/generator_spgemm_csc_asparse.c"
 #include "../src/generator_spgemm_csc_bsparse.c"

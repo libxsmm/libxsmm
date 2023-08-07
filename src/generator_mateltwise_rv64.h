@@ -13,9 +13,7 @@
 #define GENERATOR_MATELTWISE_RV64_H
 
 #include "generator_common.h"
-#if 0
 #include "generator_rv64_instructions.h"
-#endif
 
 LIBXSMM_API_INTERN
 libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
