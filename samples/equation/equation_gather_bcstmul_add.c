@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include "equation_common.h"
 #if defined(__AVX512F__)
-#include <libxsmm_intrinsics_x86.h>
+#include <utils/libxsmm_intrinsics_x86.h>
 #endif
 
 LIBXSMM_INLINE
