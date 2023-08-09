@@ -570,7 +570,7 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
             if ( pos_val_only != 0 ) {
               uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%8;
             } else {
-              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%8;
+              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%16;
             }
           } else {
             if ( pos_val_only != 0 ) {
@@ -2177,6 +2177,9 @@ int main(int argc, char* argv []) {
     if (strcmp(argv[1], "I4") == 0) {
       l_gemm_def.is_Ai4Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_I8;
+    } else if (strcmp(argv[1], "U4") == 0) {
+      l_gemm_def.is_Ai4Bf16_gemm = 1;
+      l_dtype_a    = LIBXSMM_DATATYPE_U8;
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
     }
@@ -2274,6 +2277,9 @@ int main(int argc, char* argv []) {
     if (strcmp(argv[1], "I4") == 0) {
       l_gemm_def.is_Ai4Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_I8;
+    } else if (strcmp(argv[1], "U4") == 0) {
+      l_gemm_def.is_Ai4Bf16_gemm = 1;
+      l_dtype_a    = LIBXSMM_DATATYPE_U8;
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
     }
@@ -2385,6 +2391,8 @@ int main(int argc, char* argv []) {
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_U8)   && (l_dtype_comp == LIBXSMM_DATATYPE_I32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_BF16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_BF16))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_BF16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_BF16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_BF16))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_BF16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_BF8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F16) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_BF8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_BF8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
@@ -2397,6 +2405,12 @@ int main(int argc, char* argv []) {
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F16) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F16) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F16) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_F16)  && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F16) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_F16)  && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_F16)  && (l_dtype_b == LIBXSMM_DATATYPE_F16)  && (l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT) && (l_dtype_c == LIBXSMM_DATATYPE_F16))  ||
