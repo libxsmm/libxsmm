@@ -336,6 +336,7 @@ HEADERS_UTILS := \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_math.h \
           $(ROOTDIR)/include/libxsmm_mhd.h \
+          $(ROOTDIR)/include/libxsmm_rng.h \
           $(NULL)
 HEADERS_MAIN := \
           $(ROOTDIR)/include/libxsmm_generator.h \
