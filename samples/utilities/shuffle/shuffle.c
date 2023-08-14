@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
           printf("             imb%i=%llu%% imb%i=%llu%%\n",
             split * 2, (100ULL * h1 + n - 1) / n,
             split, (100ULL * g1 + n - 1) / n);
-          n0 = LIBXSMM_MIN((100ULL * LIBXSMM_MIN(n1, nn) + nn - 1) / nn,
-            (100ULL * n0 + n - 1) / n);
+          n0 = (nn * n - 1 + LIBXSMM_MIN(LIBXSMM_MIN(n1, nn) * n, n0 * nn)
+            * 100ULL) / (nn * n);
           printf("             rand=%llu%%\n", (unsigned long long)n0);
         }
       }
