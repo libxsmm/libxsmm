@@ -498,15 +498,13 @@ LIBXSMM_API size_t libxsmm_coprime(size_t n, size_t minco)
     const size_t c = LIBXSMM_DELTA(s, i);
     size_t a = n, b = c;
     assert(i != s);
-    do {
+    do { /* GCD of initial A and initial B (result is in A) */
       const size_t r = a % b;
       a = b; b = r;
     } while (0 != b);
     if (1 == a) {
       result = c;
-      if (c <= minco) {
-        i = d; /* break */
-      }
+      if (c <= minco) i = d; /* break */
     }
   }
   if (minco < result) result = 1;
