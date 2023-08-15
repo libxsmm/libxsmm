@@ -51,7 +51,8 @@ XFILES := $(OUTDIR)/asparse_packed_csr_f64 $(OUTDIR)/bsparse_packed_csr_f64 \
 	$(OUTDIR)/asparse_packed_csr_f32 $(OUTDIR)/bsparse_packed_csr_f32 \
 	$(OUTDIR)/bsparse_packed_csc_f64 $(OUTDIR)/bsparse_packed_csc_f32 \
 	$(OUTDIR)/dense_packedacrm_f64 $(OUTDIR)/dense_packedacrm_f32 \
-	$(OUTDIR)/dense_packedbcrm_f64 $(OUTDIR)/dense_packedbcrm_f32
+	$(OUTDIR)/dense_packedbcrm_f64 $(OUTDIR)/dense_packedbcrm_f32 \
+	$(OUTDIR)/dense_packed_f64 $(OUTDIR)/dense_packed_f32
 
 .PHONY: all
 all: $(XFILES)
@@ -88,6 +89,12 @@ $(OUTDIR)/dense_packedbcrm_f64: $(OUTDIR)/.make $(BLDDIR)/dense_packedbcrm-c.o $
 
 $(OUTDIR)/dense_packedbcrm_f32: $(OUTDIR)/.make $(BLDDIR)/dense_packedbcrm-c-f32.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/dense_packedbcrm-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/dense_packed_f64: $(OUTDIR)/.make $(BLDDIR)/dense_packed-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/dense_packed-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/dense_packed_f32: $(OUTDIR)/.make $(BLDDIR)/dense_packed-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/dense_packed-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

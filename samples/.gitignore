@@ -11,6 +11,7 @@ edge/bsparse_packed_csc_*
 edge/bsparse_packed_csr_*
 edge/dense_packedacrm_*
 edge/dense_packedbcrm_*
+edge/dense_packed_*
 edge/edge_vol_int
 eigen/eigen_smm
 eigen/eigen_tensor
