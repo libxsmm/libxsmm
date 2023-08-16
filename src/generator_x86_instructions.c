@@ -98,14 +98,14 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   /* The jmp instruction better be somewhere valid in the code */
   if ( i_src_location < 0 )
   {
-     fprintf(stderr,"Bogus source location for internal jumping routine: %i\n", i_src_location);
+     fprintf(stderr, "Bogus source location for internal jumping routine: %i\n", i_src_location);
      LIBXSMM_EXIT_ERROR(io_generated_code);
      return 0;
   }
   /* Make sure i_src_location is no bigger than the end of the code */
   if ( (unsigned int)i_src_location > io_generated_code->code_size )
   {
-     fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%i loc=%u\n", i_src_location, io_generated_code->code_size);
+     fprintf(stderr, "How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%i loc=%u\n", i_src_location, io_generated_code->code_size);
      LIBXSMM_EXIT_ERROR(io_generated_code);
      return 0;
   }
@@ -136,7 +136,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   /* Make sure we are not trying to jump to the same location as the original jump instruction */
   if ( i_src_location==i_dest_location || (i_src_location==i_dest_location+1) )
   {
-     fprintf(stderr,"i_src_location=%i is physically too close to i_dest_location=%i\n",i_src_location,i_dest_location);
+     fprintf(stderr, "i_src_location=%i is physically too close to i_dest_location=%i\n",i_src_location,i_dest_location);
      LIBXSMM_EXIT_ERROR(io_generated_code);
      return 0;
   }
@@ -3637,13 +3637,13 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
         l_regbas0 = 0;
         break;
       default:
-        fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_control. This is bad\n");
+        fprintf(stderr, "Unknown instruction in libxsmm_x86_instruction_tile_control. This is bad\n");
         break;
     }
 #if 0
     if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
     {
-       fprintf(stderr,"libxsmm_x86_instruction_tile_control is using a bogus i_gp_reg_idx\n");
+       fprintf(stderr, "libxsmm_x86_instruction_tile_control is using a bogus i_gp_reg_idx\n");
        LIBXSMM_EXIT_ERROR(io_generated_code);
        return;
     }
