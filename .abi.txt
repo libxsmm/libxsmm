@@ -91,6 +91,7 @@ libxsmm_dmmcall
 libxsmm_dmmcall_abc
 libxsmm_dmmcall_prf
 libxsmm_dmmdispatch
+libxsmm_dmmdispatch_v2
 libxsmm_dsqrt
 libxsmm_dvalue
 libxsmm_finalize
@@ -329,6 +330,7 @@ libxsmm_smmcall
 libxsmm_smmcall_abc
 libxsmm_smmcall_prf
 libxsmm_smmdispatch
+libxsmm_smmdispatch_v2
 libxsmm_ssqrt
 libxsmm_stdio_acquire
 libxsmm_stdio_release

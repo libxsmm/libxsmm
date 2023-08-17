@@ -42,7 +42,7 @@
 
 #if !defined(LIBXSMM_BLAS_ERROR)
 #define LIBXSMM_BLAS_ERROR(SYMBOL, PCOUNTER) do { \
-    const int hash = (int)libxsmm_hash32(libxsmm_hash_string(SYMBOL)), old = *(PCOUNTER); \
+    /*const*/ int hash = (int)libxsmm_hash32(libxsmm_hash_string(SYMBOL)), old = *(PCOUNTER); \
     if (LIBXSMM_ATOMIC_CMPSWP(PCOUNTER, old, hash, LIBXSMM_ATOMIC_RELAXED) && old != hash) { \
       LIBXSMM_BLAS_ERROR_MSG(SYMBOL); \
     } \

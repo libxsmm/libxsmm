@@ -1229,6 +1229,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
   assert(NULL !=libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation does not exist!\n" );
+    return;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
     fprintf( stderr, "the requested equation is already finalized!\n" );

@@ -23,15 +23,11 @@
 int main(int argc, char* argv[])
 {
   char item[LIBXSMM_DESCRIPTOR_MAXSIZE];
-  const libxsmm_blasint elemsize = sizeof(item);
+  const size_t elemsize = sizeof(item);
   const libxsmm_blasint count = 1000, ntests = 1000;
-  char *const data = (char*)malloc((size_t)elemsize * count);
   const char init[] = "The quick brown fox jumps over the lazy dog";
   int result = EXIT_SUCCESS;
   LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
-
-  /* check if buffers are allocated (prerequisite) */
-  if (EXIT_SUCCESS == result && NULL == data) result = EXIT_FAILURE;
 
   /* check libxsmm_stristr */
   if (EXIT_SUCCESS == result && NULL != libxsmm_stristr("ends with b", "Begins with b")) result = EXIT_FAILURE;
@@ -88,28 +84,53 @@ int main(int argc, char* argv[])
 
   /* check LIBXSMM_MEMCPY127 and libxsmm_diff_n */
   if (EXIT_SUCCESS == result) {
-    libxsmm_blasint i = 0;
-    libxsmm_rng_seq(data, elemsize * count);
+    char *const data = (char*)malloc(elemsize * count);
+    if (NULL != data) { /* check if buffer was allocated */
+      libxsmm_blasint i = 0;
+      libxsmm_rng_seq(data, elemsize * count);
 
-    for (; i < ntests; ++i) {
-      const libxsmm_blasint j = (libxsmm_blasint)libxsmm_rng_u32(count);
-      const libxsmm_blasint s = libxsmm_rng_u32(elemsize) + 1;
-      libxsmm_blasint k = s;
-      libxsmm_rng_seq(item, s);
-      for (; k < elemsize; ++k) item[k] = 0;
-      LIBXSMM_MEMCPY127(data + (j * elemsize), item, elemsize);
-      k = libxsmm_diff_n(item, data,
-        (unsigned char)s, (unsigned char)elemsize,
-        0, count);
-      while (k < j) {
+      for (; i < ntests; ++i) {
+        const size_t j = libxsmm_rng_u32((unsigned int)count);
+        const size_t s = libxsmm_rng_u32((unsigned int)elemsize) + 1;
+        size_t k = s;
+        libxsmm_rng_seq(item, s);
+        for (; k < elemsize; ++k) item[k] = 0;
+        LIBXSMM_MEMCPY127(data + elemsize * j, item, elemsize);
         k = libxsmm_diff_n(item, data,
           (unsigned char)s, (unsigned char)elemsize,
-          k + 1, count);
+          0, count);
+        while (k < j) {
+          k = libxsmm_diff_n(item, data,
+            (unsigned char)s, (unsigned char)elemsize,
+            LIBXSMM_CAST_UINT(k + 1), count);
+        }
+        if (k == j) continue;
+        else {
+          result = EXIT_FAILURE;
+          break;
+        }
       }
-      if (k == j) {
-        continue;
+      free(data);
+    }
+    else result = EXIT_FAILURE;
+  }
+
+  /* check LIBXSMM_MEMSWP127 */
+  if (EXIT_SUCCESS == result) {
+    char a[sizeof(init)] = { 0 };
+    const size_t size = sizeof(init);
+    size_t i, j, k;
+    memcpy(a, init, size);
+
+    for (k = 1; k <= 8; ++k) {
+      const size_t s = (size - 1) / k;
+      for (j = 0; j < s; ++j) {
+        for (i = 0; i < (s - 1); ++i) {
+          LIBXSMM_MEMSWP127(a + k * i, a + k * i + k, k);
+        }
       }
-      else {
+      if (0 != strcmp(a, init)) {
+        FPRINTF(stderr, "LIBXSMM_MEMSWP127: incorrect result!\n");
         result = EXIT_FAILURE;
         break;
       }
@@ -119,23 +140,25 @@ int main(int argc, char* argv[])
   if (EXIT_SUCCESS == result) { /* check libxsmm_shuffle */
     char a[sizeof(init)] = { 0 }, b[sizeof(init)] = { 0 };
     const size_t size = sizeof(init);
+    size_t i = 1, j;
     memcpy(a, init, size);
-    LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle(a, 1, size - 1, NULL, NULL));
-    LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, init, 1, size - 1, NULL, NULL));
-    if (0 == strcmp(a, b)) {
-      const size_t r = libxsmm_unshuffle(size - 1, NULL);
-      size_t i = 0;
-      for (; i < r; ++i) {
-        libxsmm_shuffle(a, 1, size - 1, NULL, NULL);
+    for (; i < size; ++i) {
+      LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle(a, 1, size - i, NULL, NULL));
+      LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, init, 1, size - i, NULL, NULL));
+      if (0 == strncmp(a, b, size - i)) {
+        const size_t r = libxsmm_unshuffle(size - i, NULL);
+        for (j = 0; j < r; ++j) {
+          libxsmm_shuffle(a, 1, size - i, NULL, NULL);
+        }
+        if (0 != strcmp(a, init)) {
+          FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
+          result = EXIT_FAILURE; break;
+        }
       }
-      if (0 != strcmp(a, init)) {
-        FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
-        result = EXIT_FAILURE;
+      else {
+        FPRINTF(stderr, "libxsmm_shuffle: result does not match libxsmm_shuffle2!\n");
+        result = EXIT_FAILURE; break;
       }
-    }
-    else {
-      FPRINTF(stderr, "libxsmm_shuffle: result does not match libxsmm_shuffle2!\n");
-      result = EXIT_FAILURE;
     }
   }
 
@@ -192,7 +215,6 @@ int main(int argc, char* argv[])
       }
     }
   }
-  free(data);
 
   return result;
 }
