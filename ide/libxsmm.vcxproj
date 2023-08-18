@@ -124,6 +124,7 @@
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
+    <ClInclude Include="..\src\libxsmm_matdiff.h" />
     <ClInclude Include="..\src\libxsmm_matrixeqn.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
@@ -131,7 +132,6 @@
     <ClInclude Include="..\src\perf_jitdump.h" />
     <ClInclude Include="..\src\template\libxsmm.h" />
     <ClInclude Include="..\src\template\libxsmm_config.h" />
-    <ClInclude Include="..\src\template\libxsmm_matdiff.h" />
     <ClInclude Include="..\src\template\libxsmm_version.h" />
   </ItemGroup>
   <ItemGroup>

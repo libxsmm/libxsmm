@@ -349,11 +349,10 @@ HEADERS_MAIN := \
           $(ROOTDIR)/include/libxsmm_math.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(NULL)
+HEADERS_SRC := $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h)
 HEADERS := \
           $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) \
-          $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
-          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
-          $(HEADERS_MAIN) $(HEADERS_UTILS)
+          $(HEADERS_SRC) $(HEADERS_MAIN) $(HEADERS_UTILS)
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
           libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
@@ -361,6 +360,7 @@ SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_rng.c libxsmm_mhd.c)
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
+SRCFILES := $(SRCFILES_LIB) $(SRCFILES_GEN_LIB) $(SRCFILES_KERNELS)
 
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
@@ -596,14 +596,21 @@ $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_con
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h $(INCDIR)/libxsmm_version.h
 
-$(INCDIR)/libxsmm_config.h: $(INCDIR)/utils/.make $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(DIRSTATE)/.state
+$(INCDIR)/libxsmm_config.h: $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(DIRSTATE)/.state \
+                            $(INCDIR)/utils/.make $(SRCDIR)/.make $(SCRDIR)/.make
 	$(information)
 	$(info --- LIBXSMM build log)
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
 		$(ROOTDIR)/.github/install.sh 2>/dev/null; \
 	fi
-	@$(CP) $(HEADERS_UTILS) $(INCDIR)/utils 2>/dev/null || true
+	@$(CP) -r $(ROOTDIR)/$(SCRDIR) . 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/Makefile.inc . 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/.mktmp.sh . 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/.flock.sh . 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/.state.sh . 2>/dev/null || true
 	@$(CP) $(HEADERS_MAIN) $(INCDIR) 2>/dev/null || true
+	@$(CP) $(HEADERS_UTILS) $(INCDIR)/utils 2>/dev/null || true
+	@$(CP) $(SRCFILES) $(HEADERS_SRC) $(SRCDIR) 2>/dev/null || true
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
