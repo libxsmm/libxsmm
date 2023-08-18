@@ -1381,9 +1381,9 @@ install-minimal: libxsmm
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 ifneq (0,$(CLEAN))
-ifneq (,$(findstring ?$(HOMEDIR),?$(call qapath,$(PREFIX))))
+#ifneq (,$(findstring ?$(HOMEDIR),?$(call qapath,$(PREFIX))))
 	@if [ -d $(PREFIX) ]; then echo "LIBXSMM removing $(PREFIX)..." && rm -rf $(PREFIX) || true; fi
-endif
+#endif
 endif
 	@echo "LIBXSMM installing libraries..."
 	@$(MKDIR) -p $(PREFIX)/$(POUTDIR)
