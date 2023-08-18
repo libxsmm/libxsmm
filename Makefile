@@ -1373,10 +1373,18 @@ ifneq ($(ALIAS_PREFIX),$(PREFIX))
   PMODDIR := $(PSHRDIR)
 endif
 
+# remove existing PREFIX
+CLEAN ?= 0
+
 .PHONY: install-minimal
 install-minimal: libxsmm
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
+ifneq (0,$(CLEAN))
+ifneq (,$(findstring ?$(HOMEDIR),?$(call qapath,$(PREFIX))))
+	@if [ -d $(PREFIX) ]; then echo "LIBXSMM removing $(PREFIX)..." && rm -rf $(PREFIX) || true; fi
+endif
+endif
 	@echo "LIBXSMM installing libraries..."
 	@$(MKDIR) -p $(PREFIX)/$(POUTDIR)
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
@@ -1392,7 +1400,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
-	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
 		$(MKDIR) -p $(PREFIX)/$(PMODDIR); \
 		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
@@ -1400,13 +1408,13 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing interface..."
 	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/utils
-	@$(CP) -v $(HEADERS_MAIN) $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(HEADERS_UTILS) $(PREFIX)/$(PINCDIR)/utils 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm_version.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm_config.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v  $(HEADERS_MAIN) $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v  $(HEADERS_UTILS) $(PREFIX)/$(PINCDIR)/utils 2>/dev/null || true
+	@$(CP) -v  $(INCDIR)/libxsmm_version.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v  $(INCDIR)/libxsmm_config.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v  $(INCDIR)/libxsmm.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v  $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -va $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
 	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/$(PSRCDIR)
@@ -1421,14 +1429,14 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing stand-alone generator..."
 	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -va $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@$(MKDIR) -p $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
+	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
+	@$(CP) -v  $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
+	@$(CP) -v  $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
 	@$(SED) "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state >$(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
 	@$(MKDIR) -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
@@ -1448,14 +1456,16 @@ endif
 .PHONY: install-dev
 install-dev: install
 ifneq ($(PREFIX),$(ABSDIR))
-	@echo
-	@echo "================================================================================"
-	@echo "Installing development tools does not respect a common PREFIX, e.g., /usr/local."
-	@echo "For development, consider checking out https://github.com/libxsmm/libxsmm,"
-	@echo "or perform plain \"install\" (or \"install-all\")."
-	@echo "Hit CTRL-C to abort, or wait $(WAIT) seconds to continue."
-	@echo "--------------------------------------------------------------------------------"
-	@sleep $(WAIT)
+	@if test -t 0; then \
+		echo; \
+		echo "================================================================================"; \
+		echo "Installing development tools does not respect a common PREFIX, e.g., /usr/local."; \
+		echo "For development, consider checking out https://github.com/libxsmm/libxsmm,"; \
+		echo "or perform plain \"install\" (or \"install-all\")."; \
+		echo "Hit CTRL-C to abort, or wait $(WAIT) seconds to continue."; \
+		echo "--------------------------------------------------------------------------------"; \
+		sleep $(WAIT); \
+	fi
 	@echo
 	@echo "LIBXSMM installing utilities..."
 	@$(MKDIR) -p $(PREFIX)
