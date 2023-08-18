@@ -313,7 +313,8 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
 
   /* define gp register mapping */
   memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
-  l_gp_reg_mapping.gp_reg_param_struct = 0 /*LIBXSMM_RV64_GP_REG_R0*/;
+  //l_gp_reg_mapping.gp_reg_param_struct = 0 /*LIBXSMM_RV64_GP_REG_R0*/;
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_RV64_GP_REG_X10; /*LIBXSMM_RV64_GP_REG_R0*/;
 
   /* define mateltwise kernel config */
   libxsmm_generator_mateltwise_rv64_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, i_mateltwise_desc );
