@@ -12,6 +12,7 @@ ${QEMU_INSTALLDIR}/qemu-system-riscv64 \
     -machine virt \
     -smp 4 \
     -m 4G \
+    -cpu rv64,v=true,vlen=512,elen=64,vext_spec=v1.0\
     -virtfs local,path=shared_folder,mount_tag=host0,security_model=passthrough,id=host0 \
     -kernel Fedora-Developer-Rawhide-20200108.n.0-fw_payload-uboot-qemu-virt-smode.elf \
     -nographic\
