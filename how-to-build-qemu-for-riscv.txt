@@ -7,6 +7,12 @@ Install Qemu version qemu-8.1.0-rc1 as follows:
 make
 make install
 
+prebuild Kernel and disk image can be downloaded from:
+  https://fedoraproject.org/wiki/Architectures/RISC-V/Installing
+
+Local image at pcl-epyc01 is availble at:
+  /home/raisiddh/tools/riscv-vm
+
 Run VM:
 ${QEMU_INSTALLDIR}/qemu-system-riscv64 \
     -machine virt \
@@ -14,12 +20,12 @@ ${QEMU_INSTALLDIR}/qemu-system-riscv64 \
     -m 4G \
     -cpu rv64,v=true,vlen=512,elen=64,vext_spec=v1.0\
     -virtfs local,path=shared_folder,mount_tag=host0,security_model=passthrough,id=host0 \
-    -kernel Fedora-Developer-Rawhide-20200108.n.0-fw_payload-uboot-qemu-virt-smode.elf \
+    -kernel fw_payload-uboot-qemu-virt-smode.bin
     -nographic\
     -object rng-random,filename=/dev/urandom,id=rng0 \
     -device virtio-rng-device,rng=rng0 \
     -device virtio-blk-device,drive=hd0 \
-    -drive file=Fedora-Developer-Rawhide-20200108.n.0-sda.raw,format=raw,id=hd0 \
+    -drive file=Fedora-Developer-Rawhide-20210421.n.0-sda.raw,format=raw,id=hd0\
     -device virtio-net-device,netdev=usernet \
     -netdev user,id=usernet,hostfwd=tcp::10000-:22
 
