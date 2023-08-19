@@ -488,9 +488,7 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
   libxsmm_gemm_prefetch_type result;
   if (0 > prefetch) {
     LIBXSMM_INIT /* load configuration */
-    result = ((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid)
-      ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C
-      : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C/*KNx*/);
+    result = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
   }
   else {
     result = (libxsmm_gemm_prefetch_type)prefetch;

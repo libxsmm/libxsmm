@@ -376,15 +376,6 @@ for BINARY_POSTOP in 0 1; do
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
-                    # for certain prericsion we are adding some special scripts for more restricted hardware
-                    # QVNNI for I16I32
-                    if [ "$PREC" == 'I16_I16_I32_I32' ] ; then
-                      cp ${HERE}/${OUTNAME} ${HERE}/qvnni_${OUTNAME}
-                      sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 8)/g' ${HERE}/qvnni_${OUTNAME} >${TMPFILE}
-                      cp ${TMPFILE} ${HERE}/qvnni_${OUTNAME}
-                      chmod 755 ${HERE}/qvnni_${OUTNAME}
-                    fi
-
                     # Export BFDOT variable
                     if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
                       sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_BFDOT/g' ${HERE}/${OUTNAME} >${TMPFILE}

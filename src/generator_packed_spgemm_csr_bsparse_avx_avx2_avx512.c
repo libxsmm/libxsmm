@@ -42,7 +42,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )  ) {
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
       l_max_reg_block = 28;
     } else {
@@ -50,7 +50,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
       l_max_reg_block = 14;
     }
   } else {
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 16;
       l_max_reg_block = 28;
     } else {
@@ -71,7 +71,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   l_max_cols++;
 
   /* when we have remainder on lower than AVX512 we need one spare register for a mask */
-  if ( ( io_generated_code->arch < LIBXSMM_X86_AVX512 ) && ( l_simd_packed_remainder != 0 ) ) {
+  if ( ( io_generated_code->arch < LIBXSMM_X86_AVX512_SKX ) && ( l_simd_packed_remainder != 0 ) ) {
     l_max_reg_block = 13;
   }
 
@@ -86,7 +86,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
 #endif
 
   /* adjust max reg_blocking to allow for 2d blocking */
-  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     if ( l_packed_reg_block[0] == 2 ) {
       l_max_reg_block = 20;
     }
@@ -279,7 +279,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
   /* load k if packed remainder is non-zero */
   if ( i_packed_remainder != 0 ) {
     /* on AVX512 we can use mask registers */
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_micro_kernel_config->vector_length-i_packed_remainder, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
     } else {
       const char l_id = LIBXSMM_CAST_CHAR(128 > l_n_blocking ? ((int)l_n_blocking) : 127);
@@ -413,7 +413,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
           if ( (i_column_idx[i_row_idx[l_k] + l_n] < (unsigned int)i_xgemm_desc->n) &&
                (i_column_idx[i_row_idx[l_k] + l_n] >= i_n_processed)                &&
                (i_column_idx[i_row_idx[l_k] + l_n] < i_n_limit) )                        {
-            if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+            if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
               libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
                                                             i_micro_kernel_config->vmul_instruction,
                                                             i_micro_kernel_config->vector_name,
