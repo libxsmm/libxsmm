@@ -561,33 +561,10 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
-    const int archid = libxsmm_get_target_archid();
-    if  ((dtype_in == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64)
-      || (dtype_in == LIBXSMM_DATATYPE_F32 && dtype_out == LIBXSMM_DATATYPE_F32))
-    {
-      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
-        error_bound = 50.0; /* TODO: tighten error bound */
-      }
-      else {
-        error_bound = 0.02;
-      }
-    }
-    else if (dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) {
-      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
-        error_bound = 50.0; /* TODO: tighten error bound */
-      }
-      else if (archid >= LIBXSMM_X86_GENERIC && archid <= LIBXSMM_X86_AVX2) {
-        error_bound = 0.02;
-      }
-      else {
-        error_bound = 0.0027;
-      }
-    }
-    else if (dtype_in == LIBXSMM_DATATYPE_F16 || dtype_out == LIBXSMM_DATATYPE_F16) {
-      error_bound = 1.9;
-    }
-    else {
-      error_bound = 0.02;
+    if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2)) {
+      error_bound = 0.008;
+    } else {
+      error_bound = 0.0027;
     }
   } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
               op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
@@ -596,9 +573,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
       error_bound = 0.007;
     } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF8) )  {
-      error_bound = 0.2;
+      error_bound = 0.1;
     } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_HF8) )  {
-      error_bound = 0.2;
+      error_bound = 0.1;
     } else {
       error_bound = 0.007;
     }
