@@ -1071,7 +1071,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
     return;
   }
 
-  if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX ||io_generated_code->arch == LIBXSMM_X86_AVX512_VL256
+  if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_SKX ||io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX
        || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) {
       if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
@@ -1548,7 +1548,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nof
     return;
   }
 
-  if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX ||io_generated_code->arch == LIBXSMM_X86_AVX512_VL256
+  if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_SKX ||io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX
        || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) {
       if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
