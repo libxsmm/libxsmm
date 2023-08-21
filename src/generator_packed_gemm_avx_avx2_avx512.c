@@ -579,7 +579,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd
                                                            i_gp_reg_mapping->gp_reg_b,
                                                            LIBXSMM_X86_GP_REG_UNDEF,
                                                            0,
-                                                           l_n * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in, 1,
+                                                           l_n * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in, 0,
                                                            i_n_blocking,
                                                            l_n, l_use_masking, 1 );
       } else {
@@ -589,7 +589,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd
                                                       i_gp_reg_mapping->gp_reg_b,
                                                       LIBXSMM_X86_GP_REG_UNDEF,
                                                       0,
-                                                      l_n * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in, 1,
+                                                      l_n * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in, 0,
                                                       i_n_blocking,
                                                       l_n );
       }
