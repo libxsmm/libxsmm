@@ -21,6 +21,25 @@
 # define LIBXSMM_MEMORY_SW
 #endif
 
+#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime2(N)
+#define LIBXSMM_MEMORY_SHUFFLE(INOUT, ELEMSIZE, COUNT, SHUFFLE, NREPEAT) do { \
+  unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)(INOUT); \
+  const size_t c = (COUNT) - 1, c2 = ((COUNT) + 1) / 2; \
+  size_t i; \
+  for (i = (0 != (NREPEAT) ? 0 : (COUNT)); i < (COUNT); ++i) { \
+    size_t j = i, k = 0; \
+    for (; k < (NREPEAT) || j < i; ++k) j = ((SHUFFLE) * j) % (COUNT); \
+    if (i < j) LIBXSMM_MEMSWP127( \
+      data + (ELEMSIZE) * (c - j), \
+      data + (ELEMSIZE) * (c - i), \
+      ELEMSIZE); \
+    if (c2 <= i) LIBXSMM_MEMSWP127( \
+      data + (ELEMSIZE) * (c - i), \
+      data + (ELEMSIZE) * i, \
+      ELEMSIZE); \
+  } \
+} while(0)
+
 
 #if !defined(LIBXSMM_MEMORY_SW)
 LIBXSMM_APIVAR_DEFINE(unsigned char (*internal_diff_function)(const void*, const void*, unsigned char));
@@ -600,42 +619,20 @@ LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char del
 LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
   const size_t* shuffle, const size_t* nrepeat)
 {
-  char elembuf[128];
-  unsigned short idxshort[4096];
-  const int idxlong = sizeof(idxshort) < (count * sizeof(*idxshort));
-  size_t *const idx = (0 == idxlong ? NULL : (size_t*)malloc(sizeof(size_t) * count));
   int result;
-  if ((NULL != inout || 0 == elemsize || 0 == count) && elemsize <= sizeof(elembuf)
-    && (0 == idxlong || NULL != idx))
-  {
-    unsigned char* const LIBXSMM_RESTRICT data = (unsigned char*)inout;
-    const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
-    const size_t c = libxsmm_unshuffle(count, &s) - 1;
-    const size_t n = (NULL == nrepeat ? 1 : *nrepeat) + c;
-    size_t i, j, k;
-    for (i = 0; i < count; ++i) {
-      for (k = 0, j = i; k < n; ++k) j = count - ((s * j) % count) - 1;
-      if (0 == idxlong) idxshort[i] = (unsigned short)j; else idx[i] = j;
-    }
-    for (i = 0; i < count; ++i) {
-      j = (0 == idxlong ? idxshort[i] : idx[i]);
-      while (i != j) {
-        memcpy(elembuf, data + elemsize * i, elemsize);
-        memcpy(data + elemsize * i, data + elemsize * j, elemsize);
-        memcpy(data + elemsize * j, elembuf, elemsize);
-        if (0 == idxlong) {
-          k = idxshort[j]; idxshort[j] = (unsigned short)j; idxshort[i] = (unsigned short)k;
-        }
-        else {
-          k = idx[j]; idx[j] = j; idx[i] = k;
-        }
-        j = k;
-      }
+  if (NULL != inout || 0 == elemsize || 0 == count) {
+    const size_t s = (NULL == shuffle ? LIBXSMM_MEMORY_SHUFFLE_COPRIME(count) : *shuffle);
+    const size_t n = (NULL == nrepeat ? 1 : *nrepeat);
+    switch (elemsize) {
+      case 8:   LIBXSMM_MEMORY_SHUFFLE(inout, 8, count, s, n); break;
+      case 4:   LIBXSMM_MEMORY_SHUFFLE(inout, 4, count, s, n); break;
+      case 2:   LIBXSMM_MEMORY_SHUFFLE(inout, 2, count, s, n); break;
+      case 1:   LIBXSMM_MEMORY_SHUFFLE(inout, 1, count, s, n); break;
+      default:  LIBXSMM_MEMORY_SHUFFLE(inout, elemsize, count, s, n);
     }
     result = EXIT_SUCCESS;
   }
   else result = EXIT_FAILURE;
-  free(idx);
   return result;
 }
 
@@ -648,7 +645,7 @@ LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, si
   const size_t size = elemsize * count;
   int result;
   if ((NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out)) || 0 == size) {
-    const size_t s = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
+    const size_t s = (NULL == shuffle ? LIBXSMM_MEMORY_SHUFFLE_COPRIME(count) : *shuffle);
     size_t i = 0, j = 1;
     if (NULL == nrepeat || 1 == *nrepeat) {
       if (elemsize < 128) {
@@ -682,7 +679,7 @@ LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, si
         }
       }
     }
-    else /*if (0 < count)*/ { /* generic path */
+    else if (0 != *nrepeat) { /* generic path */
       const size_t c = count - 1;
       for (; i < count; ++i) {
         size_t k = 0;
@@ -690,6 +687,9 @@ LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, si
         for (j = i; k < *nrepeat; ++k) j = c - ((s * j) % count);
         memcpy(out + elemsize * i, inp + elemsize * j, elemsize);
       }
+    }
+    else { /* ordinary copy */
+      memcpy(out, inp, size);
     }
     result = EXIT_SUCCESS;
   }
@@ -702,7 +702,7 @@ LIBXSMM_API size_t libxsmm_unshuffle(size_t count, const size_t* shuffle)
 {
   size_t result = 0;
   if (0 < count) {
-    const size_t n = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
+    const size_t n = (NULL == shuffle ? LIBXSMM_MEMORY_SHUFFLE_COPRIME(count) : *shuffle);
     size_t c = count - 1, j = c, d = 0;
     for (; result < count; ++result, j = c - d) {
       d = (j * n) % count;

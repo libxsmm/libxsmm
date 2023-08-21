@@ -17,7 +17,7 @@ SIZE=1000
 
 export CHECK=1
 
-cd ${HERE}/../samples/utilities/dispatch
+cd "${HERE}/../samples/utilities/dispatch"
 cat <<EOM | ${EXEC} -o /dev/null "$@"
 ./dispatch $((SIZE*1)) 1
 ./dispatch $((SIZE*2)) 1

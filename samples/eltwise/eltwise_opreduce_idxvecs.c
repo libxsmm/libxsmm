@@ -679,7 +679,7 @@ int main(int argc, char* argv[])
   }
 
   check_norm = libxsmm_matdiff_epsilon(&diff);
-  if (0.02 < check_norm) {
+  if (0.01 < check_norm) {
     fprintf(stderr, "FAILED with an error of %f!\n", check_norm);
     exit(EXIT_FAILURE);
   }
