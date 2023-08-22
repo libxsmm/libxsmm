@@ -677,7 +677,7 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_gather
   if ((gather_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
     if (gather_node->up != NULL) {
       if (gather_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
-        if (gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
+        if (gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) {
           if ((gather_node->up->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
             result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS;
           }
@@ -845,6 +845,18 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
       }
       if (libxsmm_verbosity < 0) {
         fprintf( stderr, "Fusing GATHER-COLS with MAX-REDUCE-COLS\n");
+      }
+    } else if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) {
+      cur_node->fusion_info.gather.fused_reduce_cols_max = 1;
+      cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN;
+      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_POS_INF_ACC;
+      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
+      } else {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+      }
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing GATHER-COLS with MIN-REDUCE-COLS\n");
       }
     } else {
       /* Should not happen */
