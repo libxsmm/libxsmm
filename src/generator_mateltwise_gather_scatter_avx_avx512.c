@@ -1565,14 +1565,14 @@ void libxsmm_generator_gather_scatter_avx_avx512_microkernel( libxsmm_generated_
     libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS ) > 0 ) {
     if ( (i_micro_kernel_config->datatype_size_in == 4) && (i_micro_kernel_config->datatype_size_out == 4) &&
-         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
+         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
       libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     }
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS ) > 0 ) {
     if ( (i_micro_kernel_config->datatype_size_in == 4) && (i_micro_kernel_config->datatype_size_out == 4) &&
-         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
+         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
       libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
