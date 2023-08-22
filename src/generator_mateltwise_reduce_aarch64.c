@@ -2850,10 +2850,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
     free(p_jump_label_tracker);
 #endif
     new_config.opreduce_use_unary_arg_reading = 1;
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC) > 0 && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX)) {
-      new_config.opreduce_avoid_acc_load = 1;
-    }
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_POS_INF_ACC) > 0 && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN)) {
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC) > 0) {
       new_config.opreduce_avoid_acc_load = 1;
     }
     libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( io_generated_code,io_loop_label_tracker, i_gp_reg_mapping, &new_config, new_desc );
