@@ -101,17 +101,35 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
           }
         }
       } else {
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = -FLT_MAX;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
-            if (record_idx > 0) {
-              if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
-                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
-                ref_argop_off[i] = j;
+        if (reduce_op == 1) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = -FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
               }
-            } else {
-              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
+        }
+        if (reduce_op == 2) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] < ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+              }
             }
           }
         }
@@ -226,17 +244,35 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
           }
         }
       } else {
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = -FLT_MAX;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
-            if (record_idx > 0) {
-              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
-                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
-                ref_argop_off[i] = j;
+        if (reduce_op == 1) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = -FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
               }
-            } else {
-              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
+        }
+        if (reduce_op == 2) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] <= ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+              }
             }
           }
         }
@@ -315,8 +351,15 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
     }
   } else {
-    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+    if (reduce_op == 1) {
+      if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+        unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+      }
+    }
+    if (reduce_op == 2) {
+      if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+        unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN;
+      }
     }
   }
 
@@ -361,19 +404,37 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
         exit(-1);
       }
     } else {
-      unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC);
-      if (record_idx > 0) {
-        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
-        if (idx_type == 0) {
-          params2.out.secondary = argop_off;
-        } else {
-          params2.out.secondary = argop_off_i32;
+      if (reduce_op == 1) {
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC);
+        if (record_idx > 0) {
+          unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
+          if (idx_type == 0) {
+            params2.out.secondary = argop_off;
+          } else {
+            params2.out.secondary = argop_off_i32;
+          }
+        }
+        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+        if ( kernel2 == NULL ) {
+          fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+          exit(-1);
         }
       }
-      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
-      if ( kernel2 == NULL ) {
-        fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
-        exit(-1);
+      if (reduce_op == 2) {
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC);
+        if (record_idx > 0) {
+          unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
+          if (idx_type == 0) {
+            params2.out.secondary = argop_off;
+          } else {
+            params2.out.secondary = argop_off_i32;
+          }
+        }
+        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN, unary_shape, unary_flags );
+        if ( kernel2 == NULL ) {
+          fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+          exit(-1);
+        }
       }
     }
   }
