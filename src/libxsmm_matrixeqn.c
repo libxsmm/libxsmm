@@ -797,7 +797,8 @@ LIBXSMM_API_INTERN
 int libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX)) {
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN)) {
     result = 1;
   }
   return result;
@@ -808,6 +809,7 @@ int libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MUL) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT) ||
