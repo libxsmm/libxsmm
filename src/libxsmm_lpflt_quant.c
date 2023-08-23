@@ -164,7 +164,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
     maxexp -= (15/*LIBXSMM_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
@@ -182,7 +182,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
         const float f = LIBXSMM_ROUNDF(in_buffer[i] * scfq);
         out_buffer[i] = (short)f;
       }
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
