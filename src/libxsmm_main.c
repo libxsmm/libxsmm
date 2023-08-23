@@ -1555,11 +1555,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_SPR:
     case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
-    case LIBXSMM_X86_AVX512_CORE:
-    case LIBXSMM_X86_AVX512_KNM:
-    case LIBXSMM_X86_AVX512_MIC:
-    case LIBXSMM_X86_AVX512:
-    case LIBXSMM_X86_AVX512_VL256:
+    case LIBXSMM_X86_AVX512_SKX:
+    case LIBXSMM_X86_AVX512_VL256_SKX:
     case LIBXSMM_X86_AVX512_VL256_CLX:
     case LIBXSMM_X86_AVX512_VL256_CPX:
     case LIBXSMM_X86_AVX2_ADL:
@@ -1639,7 +1636,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_X86_AVX512_VL256_CLX;
     }
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
-      target_archid = LIBXSMM_X86_AVX512_VL256;
+      target_archid = LIBXSMM_X86_AVX512_VL256_SKX;
     }
     else if (arch == libxsmm_stristr(arch, "gnr")) {
       target_archid = LIBXSMM_X86_AVX512_GNR;
@@ -1654,16 +1651,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_X86_AVX512_CLX;
     }
     else if (arch == libxsmm_stristr(arch, "skx") || arch == libxsmm_stristr(arch, "skl")
-          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512 */
+          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512_SKX */
           || arch == libxsmm_stristr(arch, "avx3") || arch == libxsmm_stristr(arch, "avx512"))
     {
-      target_archid = LIBXSMM_X86_AVX512_CORE;
-    }
-    else if (arch == libxsmm_stristr(arch, "knm")) {
-      target_archid = LIBXSMM_X86_AVX512_KNM;
-    }
-    else if (arch == libxsmm_stristr(arch, "knl") || arch == libxsmm_stristr(arch, "mic")) {
-      target_archid = LIBXSMM_X86_AVX512_MIC;
+      target_archid = LIBXSMM_X86_AVX512_SKX;
     }
     else if (arch == libxsmm_stristr(arch, "srf")) {
       target_archid = LIBXSMM_X86_AVX2_SRF;
@@ -2093,10 +2084,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           /* TODO: shall we update variable "target_arch" (name)? */
-          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE ) {
-            generated_code.arch = LIBXSMM_X86_AVX512_VL256;
-          } else {
-            generated_code.arch = LIBXSMM_X86_AVX2;
+          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_SKX ) {
+            generated_code.arch = LIBXSMM_X86_AVX512_VL256_SKX;
           }
         }
 # endif

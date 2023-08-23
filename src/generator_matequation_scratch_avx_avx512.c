@@ -146,7 +146,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
       ldb = ldb/2;
     }
   } else if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
-              ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && ((LIBXSMM_DATATYPE_BF8 == a_in_type) || (LIBXSMM_DATATYPE_HF8 == a_in_type)) ) {
+              ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ((LIBXSMM_DATATYPE_BF8 == a_in_type) || (LIBXSMM_DATATYPE_HF8 == a_in_type)) ) {
     /* some checks as we cannot mask everything */
     if ( (k % 4 != 0) && ((gemm_flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -708,7 +708,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       /* Configure the unary-binary microkernel */
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       /* If GELU or GELU inv and architecture < AVX512, set the priper rbp offsets of stack... */
-      if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV))  ) {
+      if ((io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) && (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV))  ) {
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_thres = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_0);
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_signmask = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_1);
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_absmask = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_2);

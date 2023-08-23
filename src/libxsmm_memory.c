@@ -159,10 +159,10 @@ unsigned char internal_diff_avx2(const void* a, const void* b, unsigned char siz
 }
 
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_SKX)
 unsigned char internal_diff_avx512(const void* a, const void* b, unsigned char size)
 {
-#if defined(LIBXSMM_INTRINSICS_AVX512) && !defined(LIBXSMM_MEMORY_SW)
+#if defined(LIBXSMM_INTRINSICS_AVX512_SKX) && !defined(LIBXSMM_MEMORY_SW)
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
   LIBXSMM_PRAGMA_UNROLL/*_N(2)*/
@@ -239,10 +239,10 @@ int internal_memcmp_avx2(const void* a, const void* b, size_t size)
 }
 
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_SKX)
 int internal_memcmp_avx512(const void* a, const void* b, size_t size)
 {
-#if defined(LIBXSMM_INTRINSICS_AVX512) && !defined(LIBXSMM_MEMORY_SW)
+#if defined(LIBXSMM_INTRINSICS_AVX512_SKX) && !defined(LIBXSMM_MEMORY_SW)
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   size_t i;
   LIBXSMM_DIFF_AVX512_DECL(aa);
@@ -264,7 +264,7 @@ LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch)
 #if defined(LIBXSMM_MEMORY_SW)
   LIBXSMM_UNUSED(target_arch);
 #else
-  if (LIBXSMM_X86_AVX512 <= target_arch) {
+  if (LIBXSMM_X86_AVX512_SKX <= target_arch) {
 # if defined(LIBXSMM_DIFF_AVX512_ENABLED)
     internal_diff_function = internal_diff_avx512;
 # else
@@ -382,7 +382,7 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
 #else
 # if defined(LIBXSMM_MEMORY_STDLIB)
   return 0 != memcmp(a, b, size);
-# elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_DIFF_AVX512_ENABLED)
+# elif (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_DIFF_AVX512_ENABLED)
   return internal_diff_avx512(a, b, size);
 # elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_diff_avx2(a, b, size);
@@ -466,7 +466,7 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size)
 #else
 # if defined(LIBXSMM_MEMORY_STDLIB)
   return memcmp(a, b, size);
-# elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_DIFF_AVX512_ENABLED)
+# elif (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_DIFF_AVX512_ENABLED)
   return internal_memcmp_avx512(a, b, size);
 # elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_memcmp_avx2(a, b, size);

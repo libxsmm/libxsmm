@@ -267,7 +267,7 @@ VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
 # explicitly target all objects
-ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
+ifneq (,$(strip $(SSE)$(AVX)))
   TGT ?= 1
 endif
 TGT ?= 0
@@ -296,15 +296,7 @@ ifeq (1,$(AVX_STATIC))
 else ifeq (2,$(AVX_STATIC))
   GENTARGET := hsw
 else ifeq (3,$(AVX_STATIC))
-  ifneq (0,$(MIC))
-    ifeq (2,$(MIC))
-      GENTARGET := knm
-    else
-      GENTARGET := knl
-    endif
-  else
-    GENTARGET := skx
-  endif
+  GENTARGET := skx
 else ifneq (0,$(SSE))
   GENTARGET := wsm
 else
