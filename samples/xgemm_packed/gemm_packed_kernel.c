@@ -10,8 +10,6 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#define REALTYPE float
-
 LIBXSMM_INLINE
 void matMulpacked(             libxsmm_blasint  i_r,
                                libxsmm_blasint  i_m,
@@ -270,6 +268,9 @@ int main(int argc, char* argv[]) {
   int l_reps;
   char* l_file_name;
   int result = EXIT_SUCCESS;
+  unsigned int l_keep_going = 0;
+  FILE *l_file_handle = NULL;
+  unsigned int l_file_input = 0;
 
   if ( argc == 17 ) {
     l_a_dt = argv[1];
@@ -289,6 +290,7 @@ int main(int argc, char* argv[]) {
     l_trans_b = atoi(argv[15]);
     l_reps = atoi(argv[16]);
   } else if ( argc == 11 ) {
+    l_file_input = 1;
     l_a_dt = argv[1];
     l_b_dt = argv[2];
     l_comp_dt = argv[3];
@@ -323,90 +325,120 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  {
-    /* calculate flops */
-    double l_flops = 2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
-    /* allocate data */
-    char* a  = (char*) libxsmm_aligned_malloc( l_lda*l_k*l_r*LIBXSMM_TYPESIZE(l_dtype_a), 64 );
-    char* b  = (char*) libxsmm_aligned_malloc( l_ldb*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_b), 64 );
-    char* c1 = (char*) libxsmm_aligned_malloc( l_ldc*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_c), 64 );
-    char* c2 = (char*) libxsmm_aligned_malloc( l_ldc*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_c), 64 );
-    /* init libxsmm kernel */
-    libxsmm_gemmfunction mykernel = NULL;
-    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-      l_m, l_n, l_k, l_lda, l_ldb, l_lda, LIBXSMM_DATATYPE(REALTYPE),
-      LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
-    const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
-    const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
-    unsigned long long l_libxsmmflops;
-    libxsmm_kernel_info l_kinfo;
-    libxsmm_gemm_param gemm_param;
-    libxsmm_timer_tickint l_start, l_end;
-    double l_total_opt;
-    double l_max_error = 0.0;
-    double l_gflops_opt = 0.0;
-    double l_gflops_opt2 = 0.0;
-    libxsmm_blasint i = 0;
-
-    /* init data */
-    init_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1 );
-    copy_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1, c2 );
-    init_data( l_r, l_m, l_k, l_lda, l_dtype_a, a  );
-    init_data( l_r, l_k, l_n, l_ldb, l_dtype_b, b  );
-
-    /* JIT code */
-    mykernel = libxsmm_create_packed_gemm(gemm_shape, l_flags, l_prefetch_flags, l_r);
-
-    /* run reference */
-    matMulpacked(l_r,
-      l_m, l_n, l_k,
-      l_lda,
-      l_ldb,
-      l_ldc,
-      l_beta,
-      l_dtype_a,
-      l_dtype_b,
-      l_dtype_c,
-      l_dtype_comp,
-      a,
-      b,
-      c1);
-
-    /* run optimized */
-    memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
-    gemm_param.a.primary = (void*)a;
-    gemm_param.b.primary = (void*)b;
-    gemm_param.c.primary = (void*)c2;
-    mykernel(&gemm_param);
-
-    /* check correctness */
-    l_max_error = check_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1, c2 );
-    if ( l_max_error > 0.00001 ) {
-      result = EXIT_FAILURE;
+  if ( l_file_input != 0 ) {
+    l_file_handle = fopen( l_file_name, "r" );
+  } else {
+    if ( l_trans_b == 0 ) {
+      printf("------------------------------------------------\n");
+      printf("RUNNING (%ix%iX%i) X (%ix%iX%i) = (%ix%iX%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_r, l_k, l_n, l_r, l_m, l_n, l_r, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+      printf("------------------------------------------------\n");
+    } else {
+      printf("------------------------------------------------\n");
+      printf("RUNNING (%ix%iX%i) X (%ix%iX%i)^T = (%ix%iX%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_r, l_k, l_n, l_r, l_m, l_n, l_r, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+      printf("------------------------------------------------\n");
     }
-
-    l_start = libxsmm_timer_tick();
-    for (i = 0; i < l_reps; ++i) {
-      /* run optimized */
-      mykernel(&gemm_param);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total_opt = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info(LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
-    l_libxsmmflops = l_kinfo.nflops;
-
-    l_gflops_opt = (l_flops / l_total_opt) / 1e9;
-    l_gflops_opt2 = (((double)l_libxsmmflops * l_reps) / l_total_opt) / 1e9;
-
-    printf("max. error: %f\n", l_max_error);
-    printf("GFLOPS opt, calculated: %f\n", l_gflops_opt);
-    printf("GFLOPS opt, libxsmm:    %f\n", l_gflops_opt2);
-
-    libxsmm_free( a );
-    libxsmm_free( b );
-    libxsmm_free( c1 );
-    libxsmm_free( c2 );
   }
+
+  l_keep_going = 0;
+  do {
+    if ( l_file_input != 0 ) {
+      char l_line[512];
+      if ( fgets( l_line, 512, l_file_handle) == NULL ) {
+        l_keep_going = 0;
+        break;
+      } else {
+        l_keep_going = 1;
+      }
+      if ( 7 != sscanf( l_line, "%i %i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_r, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
+
+      if (l_keep_going == 0) break;
+    }
+
+    {
+      /* calculate flops */
+      double l_flops = 2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
+      /* allocate data */
+      char* a  = (char*) libxsmm_aligned_malloc( l_lda*l_k*l_r*LIBXSMM_TYPESIZE(l_dtype_a), 64 );
+      char* b  = (char*) libxsmm_aligned_malloc( l_ldb*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_b), 64 );
+      char* c1 = (char*) libxsmm_aligned_malloc( l_ldc*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_c), 64 );
+      char* c2 = (char*) libxsmm_aligned_malloc( l_ldc*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_c), 64 );
+      /* init libxsmm kernel */
+      libxsmm_gemmfunction mykernel = NULL;
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        l_m, l_n, l_k, l_lda, l_ldb, l_lda, l_dtype_a,
+        l_dtype_b, l_dtype_c, l_dtype_comp );
+      const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
+      const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+      unsigned long long l_libxsmmflops;
+      libxsmm_kernel_info l_kinfo;
+      libxsmm_gemm_param gemm_param;
+      libxsmm_timer_tickint l_start, l_end;
+      double l_total_opt;
+      double l_max_error = 0.0;
+      double l_gflops_opt = 0.0;
+      double l_gflops_opt2 = 0.0;
+      libxsmm_blasint i = 0;
+
+      /* init data */
+      init_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1 );
+      copy_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1, c2 );
+      init_data( l_r, l_m, l_k, l_lda, l_dtype_a, a  );
+      init_data( l_r, l_k, l_n, l_ldb, l_dtype_b, b  );
+
+      /* JIT code */
+      mykernel = libxsmm_create_packed_gemm(gemm_shape, l_flags, l_prefetch_flags, l_r);
+
+      /* run reference */
+      matMulpacked(l_r,
+        l_m, l_n, l_k,
+        l_lda,
+        l_ldb,
+        l_ldc,
+        l_beta,
+        l_dtype_a,
+        l_dtype_b,
+        l_dtype_c,
+        l_dtype_comp,
+        a,
+        b,
+        c1);
+
+      /* run optimized */
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+      gemm_param.a.primary = (void*)a;
+      gemm_param.b.primary = (void*)b;
+      gemm_param.c.primary = (void*)c2;
+      mykernel(&gemm_param);
+
+      /* check correctness */
+      l_max_error = check_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1, c2 );
+      if ( l_max_error > 0.00001 ) {
+        result = EXIT_FAILURE;
+      }
+
+      l_start = libxsmm_timer_tick();
+      for (i = 0; i < l_reps; ++i) {
+        /* run optimized */
+        mykernel(&gemm_param);
+      }
+      l_end = libxsmm_timer_tick();
+      l_total_opt = libxsmm_timer_duration(l_start, l_end);
+      libxsmm_get_kernel_info(LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
+      l_libxsmmflops = l_kinfo.nflops;
+
+      l_gflops_opt = (l_flops / l_total_opt) / 1e9;
+      l_gflops_opt2 = (((double)l_libxsmmflops * l_reps) / l_total_opt) / 1e9;
+
+      printf("max. error: %f\n", l_max_error);
+      printf("GFLOPS opt, calculated: %f\n", l_gflops_opt);
+      printf("GFLOPS opt, libxsmm:    %f\n", l_gflops_opt2);
+
+      libxsmm_free( a );
+      libxsmm_free( b );
+      libxsmm_free( c1 );
+      libxsmm_free( c2 );
+    }
+  } while ( l_keep_going );
 
   return result;
 }
