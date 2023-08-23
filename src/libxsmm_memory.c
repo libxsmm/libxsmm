@@ -21,7 +21,7 @@
 # define LIBXSMM_MEMORY_SW
 #endif
 
-#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime2(N)
+#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime(N, (N) / 2)
 #define LIBXSMM_MEMORY_SHUFFLE(INOUT, ELEMSIZE, COUNT, SHUFFLE, NREPEAT) do { \
   unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)(INOUT); \
   const size_t c = (COUNT) - 1, c2 = ((COUNT) + 1) / 2; \
