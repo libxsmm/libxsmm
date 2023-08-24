@@ -1619,6 +1619,10 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_gpr, (long long)0xff800000);
         libxsmm_generator_setval_stack_var_aarch64( io_generated_code, rbp_offset_neg_inf, temp_gpr, scratch_gpr);
       }
+      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) > 0) {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_gpr, (long long)0x7f800000);
+        libxsmm_generator_setval_stack_var_aarch64( io_generated_code, rbp_offset_neg_inf, temp_gpr, scratch_gpr);
+      }
     }
   }
 
@@ -1635,7 +1639,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       /* Load output for reduction */
       if (apply_redop == 1) {
         if (load_acc == 0) {
-          if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
+          if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0 || (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) > 0) {
             if (im == 0) {
               libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_X29, i_gp_reg_mapping->gp_reg_scratch_0, pos_rbp_offset_neg_inf, 0 );
               if (is_sve){
@@ -2164,7 +2168,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       /* Load output for reduction */
       if (apply_redop == 1) {
         if (load_acc == 0) {
-          if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
+          if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0 || (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) > 0) {
             if (im == 0) {
               libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_X29, i_gp_reg_mapping->gp_reg_scratch_0, pos_rbp_offset_neg_inf, 0 );
               if (is_sve){
@@ -2796,12 +2800,14 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   /* intercept codegen and call specialized opreduce kernel */
-  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX) {
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN) {
     libxsmm_descriptor_blob blob;
     libxsmm_mateltwise_kernel_config new_config = *i_micro_kernel_config;
     libxsmm_blasint idx_dtype_size = idx_tsize;
     unsigned short bcast_param = 0;
-    libxsmm_meltw_opreduce_vecs_flags flags = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP) > 0) ? LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS_ARGOP : LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS;
+    libxsmm_meltw_opreduce_vecs_flags flags = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX) ?
+      (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP) > 0) ? LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS_ARGOP : LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS) :
+      (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP) > 0) ? LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MIN_IDX_COLS_ARGOP : LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MIN_IDX_COLS) ;
     unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
     unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
     unsigned short combined_params = argidx_params | bcast_shifted_params;
@@ -2809,7 +2815,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
         i_mateltwise_desc->m, idx_dtype_size, i_mateltwise_desc->ldi, i_mateltwise_desc->ldo, (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
 
     new_config.opreduce_use_unary_arg_reading = 1;
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC) > 0 ) {
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC) > 0) {
       new_config.opreduce_avoid_acc_load = 1;
     }
     libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( io_generated_code,io_loop_label_tracker, i_gp_reg_mapping, &new_config, new_desc );

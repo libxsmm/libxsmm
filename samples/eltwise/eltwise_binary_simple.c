@@ -27,6 +27,7 @@
 #define SUB_OP     3
 #define DIV_OP     4
 #define MULADD_OP  5
+#define ZIP_OP     6
 #define MAX_OP     9
 #define MIN_OP    10
 
@@ -148,6 +149,8 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "div");
   } else if ( op == MULADD_OP ) {
     sprintf(opname, "muladd");
+  } else if ( op == ZIP_OP ) {
+    sprintf(opname, "zip");
   } else if ( op == MAX_OP ) {
     sprintf(opname, "max");
   } else if ( op == MIN_OP ) {
@@ -172,6 +175,8 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
   } else if ( op == MULADD_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
+  } else if ( op == ZIP_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ZIP;
   } else if ( op == MAX_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MAX;
   } else if ( op == MIN_OP ) {
@@ -182,6 +187,22 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
   }
 
   *type = binary_type;
+}
+
+LIBXSMM_INLINE
+void reference_pack_2x16bit_blocks_to_32bit(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi0, libxsmm_blasint ldi1, libxsmm_blasint ldo, char *in_lo_char, char *in_hi_char, char *out_char) {
+  float *out = (float*)out_char;
+  libxsmm_bfloat16 *in_lo = (libxsmm_bfloat16*)in_lo_char;
+  libxsmm_bfloat16 *in_hi = (libxsmm_bfloat16*)in_hi_char;
+  libxsmm_blasint i, j;
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < M; i++) {
+      libxsmm_bfloat16_f32 bf16_hp;
+      bf16_hp.i[0] = in_lo[j * ldi0 + i];
+      bf16_hp.i[1] = in_hi[j * ldi1 + i];
+      out[j * ldo + i] = bf16_hp.f;
+    }
+  }
 }
 
 LIBXSMM_INLINE
@@ -387,7 +408,11 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   }
 
   /* compute out_gold */
-  binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp, binary_flags, rng_state_gold );
+  if (op == ZIP_OP) {
+    reference_pack_2x16bit_blocks_to_32bit(M, N, ldi, ldi, ldo, in, in2, out_gold);
+  } else {
+    binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp, binary_flags, rng_state_gold );
+  }
 
   /* use jited transpose */
   binary_param.in0.primary  = (void*)_in;
@@ -508,7 +533,7 @@ int main( int argc, char* argv[] ) {
 
   set_opname(op, opname);
 
-  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP || op == MAX_OP || op == MIN_OP ) ? 1 : 0;
+  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP || op == ZIP_OP || op == MAX_OP || op == MIN_OP ) ? 1 : 0;
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
@@ -532,7 +557,8 @@ int main( int argc, char* argv[] ) {
   }
 
   if ( valid_op > 0 ) {
-    if ( ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+    if ( op != ZIP_OP && (
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_F64 ) && (dtype_in1 == LIBXSMM_DATATYPE_F64 ) && (dtype_out == LIBXSMM_DATATYPE_F64 ) && (dtype_comp == LIBXSMM_DATATYPE_F64 ) ) ||
          /* BF16 */
          ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
@@ -565,7 +591,11 @@ int main( int argc, char* argv[] ) {
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
-         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) ){
+      printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
+        libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
+      res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp, rnd_mode);
+    } else if ( op == ZIP_OP && ( (dtype_in0 == LIBXSMM_DATATYPE_U16 ) && (dtype_in1 == LIBXSMM_DATATYPE_U16 ) && ((dtype_out == LIBXSMM_DATATYPE_F32) || (dtype_out == LIBXSMM_DATATYPE_I32) || (dtype_out == LIBXSMM_DATATYPE_U32)) && (dtype_comp == LIBXSMM_DATATYPE_IMPLICIT ) )  ) {
       printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
         libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
       res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp, rnd_mode);

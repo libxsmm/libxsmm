@@ -1,5 +1,13 @@
 # Compatibility
 
+It is desirable to exercise portability and reliability of LIBXSMM's source code even on Non-Intel Architecture by the means of compilation, linkage, and generic tests. This section is *not* about Intel Architecture (or compatible). Successful compilation (or even running some of the tests successfully) does not mean LIBXSMM is valuable on that platform.
+
+Make sure to rely on `PLATFORM=1`, otherwise a compilation error should occur _Intel Architecture or compatible CPU required!_ This error avoids (automated) attempts to upstream LIBXSMM to an unsupported platform. LIBXSMM is upstreamed for Intel Architecture on all major Linux distributions, FreeBSD, and others. If compilation fails with "_LIBXSMM is only supported on a 64-bit platform!_", `make PLATFORM=1 DBG=1` can be used to exercise compilation.
+
+If platform support is forced (`PLATFORM=1`), runtime code generation is disabled at compile-time (`JIT=0`). Runtime code generation can be also enabled (`PLATFORM=1 JIT=1`) but code-dispatch will still return NULL-kernels. However, some tests will start failing as missing JIT-support it is not signaled at compile-time as with `JIT=0`.
+
+**Note**: JIT-support normally guarantees a non-NULL code pointer ("kernel") if the request is according to the [limitations](https://github.com/libxsmm/libxsmm/wiki/Q&A#what-is-a-small-matrix-multiplication) (user-code is not asked to check for a NULL-kernel), which does not hold true if JIT is enabled on a platform that does not implement it.
+
 ## LIBXSMM 2.x
 
 For new developments prior to LIBXSMM 2.0 release, e.g., the integration of LIBXSMM into an application or a library, it is advisable to rely on `main` branch (`main` may not be the default branch temporarily, i.e., a fresh clone of LIBXSMM can be based on `main_stable` rather than `main`). Any functions carrying `_v2` as a postfix is encouraged (`_v2` is when development approaches LIBXSMM v2.0).
@@ -69,9 +77,33 @@ make
 
 LIBXSMM can be built as a static library as well as a dynamic link library (`STATIC=0`).
 
+## ARM
+
+### AArch64
+
+LIBXSMM 2.0 is the initial version supporting AArch64 (baseline is v8.1), which practically covers ARM 64-bit architecture from embedded and mobile to supercomputers. The build and installation process of LIBXSMM is the same as for Intel Architecture (IA) and the library can be natively compiled or cross-compiled. The latter for instance looks like:
+
+```bash
+make PLATFORM=1 AR=aarch64-linux-gnu-ar \
+  FC=aarch64-linux-gnu-gfortran \
+  CXX=aarch64-linux-gnu-g++ \
+  CC=aarch64-linux-gnu-gcc
+```
+
+### Cross-compilation
+
+ARM AArch64 is regularly [supported](https://github.com/libxsmm/libxsmm/wiki/Compatibility#arm-aarch64). However, 32-bit ARM requires `PLATFORM=1` to unlock compilation (like 32-bit Intel Architecture). Unlocking compilation for 32-bit ARM is not confused with supporting 32-bit ARM architectures.
+
+```bash
+make PLATFORM=1 AR=arm-linux-gnueabi-ar \
+  FC=arm-linux-gnueabi-gfortran \
+  CXX=arm-linux-gnueabi-g++ \
+  CC=arm-linux-gnueabi-gcc
+```
+
 ## Apple macOS
 
-LIBXSMM for macOS (OSX) is fully supported (i.e., it qualifies a release). The default is to rely on Apple's Clang based (platform-)compiler ("gcc"). However, the actual GCC as well as the Intel Compiler for macOS can be used.
+LIBXSMM for macOS is supported (i.e., qualifying a release) including AArch64 or Apple Silicon. The default is to rely on Apple's Clang based (platform-)compiler ("gcc"). However, GNU GCC in general as well as the Intel Compiler for macOS (only x86-64) can be used.
 
 ## FreeBSD
 
@@ -91,13 +123,18 @@ The PGI Compiler&#160;2019 (and later) is supported. Earlier versions were only 
 make CXX=pgc++ CC=pgcc FC=pgfortran
 ```
 
-### ARM AArch64
+## IBM XL Compiler for Linux (POWER)
 
-LIBXSMM 2.0 is the initial version supporting AArch64 (baseline is v8.1), which practically covers ARM 64-bit architecture from embedded and mobile to supercomputers. The build and installation process of LIBXSMM is the same as for Intel Architecture (IA) and the library can be natively compiled or cross-compiled. The latter for instance looks like:
+The POWER platform requires `PLATFORM=1` to unlock compilation.
 
 ```bash
-make PLATFORM=1 AR=aarch64-linux-gnu-ar \
-  FC=aarch64-linux-gnu-gfortran \
-  CXX=aarch64-linux-gnu-g++ \
-  CC=aarch64-linux-gnu-gcc
+make PLATFORM=1 CC=xlc CXX=xlc++ FC=xlf
+```
+
+## TinyCC
+
+The Tiny C Compiler (TinyCC) supports Intel Architecture but lacks at least support for thread-local storage (TLS).
+
+```bash
+make CC=tcc THREADS=0 INTRINSICS=0 VLA=0 ASNEEDED=0 BLAS=0 FORCE_CXX=0
 ```

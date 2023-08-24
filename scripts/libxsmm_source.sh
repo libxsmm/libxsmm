@@ -5,11 +5,11 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 GREP=$(command -v grep)
 GIT=$(command -v git)
 
-if [ "" = "${GREP}" ]; then
+if [ ! "${GREP}" ]; then
   >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi
-if [ "${GIT}" ] && [ "" = "$(${GIT} ls-files "${HERE}/${SRCDIR}/libxsmm_main.c" 2>/dev/null)" ]; then
+if [ "${GIT}" ] && [ ! "$(${GIT} ls-files "${HERE}/${SRCDIR}/libxsmm_main.c" 2>/dev/null)" ]; then
   GIT=""
 fi
 cat << EOM
@@ -43,10 +43,10 @@ cat << EOM
  */
 EOM
 
-if [ "" = "$1" ]; then
-  DSTDIR=${SRCDIR}
-else
+if [ "$1" ]; then
   DSTDIR=$1
+else
+  DSTDIR=${SRCDIR}
 fi
 
 # determine order of filenames in directory list
@@ -55,7 +55,7 @@ export LC_ALL=C
 # good-enough pattern to match a main function, and to exclude this translation unit
 for FILE in $(cd "${HERE}/${SRCDIR}" && ${GREP} -L "main[[:space:]]*(.*)" ./*.c); do
   BASENAME=$(basename "${FILE}")
-  if [ "" = "${GIT}" ] || [ "$(${GIT} ls-files "${HERE}/${SRCDIR}/${BASENAME}" 2>/dev/null)" ]; then
+  if [ ! "${GIT}" ] || [ "$(${GIT} ls-files "${HERE}/${SRCDIR}/${BASENAME}" 2>/dev/null)" ]; then
     echo "#include \"${DSTDIR}/${BASENAME}\""
   fi
 done

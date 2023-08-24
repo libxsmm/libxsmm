@@ -189,6 +189,21 @@ def parselog(
     return nentries + m, nerrors + n
 
 
+def purify(text):
+    """
+    Remove for instance Escape sequences from given text.
+    """
+    result, skip = "", False
+    for c in text:
+        if 27 == ord(c):
+            skip = True
+        elif 7 == ord(c):
+            skip = False
+        elif not skip:
+            result = result + c
+    return result
+
+
 def fname(extlst, in_main, in_dflt, idetail=""):
     """
     Build filename from components and list of file-extensions.
@@ -473,7 +488,7 @@ def main(args, argd, dbfname):
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         try:
             with open(args.infile, "r") as file:
-                txt = file.read()
+                txt = purify(file.read())
             if 0 > args.verbosity:
                 print(txt)
         except:  # noqa: E722
@@ -590,15 +605,16 @@ def main(args, argd, dbfname):
                         if "log_url" in job
                         else ""
                     )
-                    txt = json.loads(log) if log else {}
-                    if txt and "content" in txt:
+                    raw = json.loads(log) if log else {}
+                    if raw and "content" in raw:
+                        txt = purify(raw["content"])
                         nentries, nerrors = parselog(
                             database,
                             strbuild,
                             job["name"],
                             infokey,
                             infocpy,
-                            txt["content"],
+                            txt,
                             nentries,
                             nerrors,
                         )
@@ -641,8 +657,6 @@ def main(args, argd, dbfname):
             savedb(outfile, database, ofmtime, 3)
     if 0 != nentries:
         savedb(outfile, database, ofmtime, 3)
-    if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
-        print(f"{outfile} database created.")
 
     # conclude loading data from latest CI
     if 2 <= abs(args.verbosity):
@@ -652,13 +666,16 @@ def main(args, argd, dbfname):
                 f"WARNING: ignored {nerrors} erroneous entr{y}!",
                 file=sys.stderr,
             )
-        y = "ies" if 1 != nentries else "y"
-        print(f"Database consists of {dbsize} builds.", end="")
-        if 0 < nentries:
-            s = "s" if 1 != nbuilds else ""
-            print(f" Found {nentries} new entr{y} in {nbuilds} build{s}.")
-        else:
-            print(f" Found {nentries} new entr{y}.")
+        if outfile and outfile.exists():
+            print(f"Database consists of {dbsize} builds.", end="")
+            y = "ies" if 1 != nentries else "y"
+            if 0 < nentries:
+                s = "s" if 1 != nbuilds else ""
+                print(f" Found {nentries} new entr{y} in {nbuilds} build{s}.")
+            else:
+                print(f" Found {nentries} new entr{y}.")
+        elif 0 != nentries:
+            print(f"{outfile} database created.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
@@ -755,37 +772,44 @@ def main(args, argd, dbfname):
                 if isinstance(values, dict):  # JSON-format
                     vals, legd, detail = [], [], None
                     for key in (k for k in keys if k in values):
-                        vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
-                        weight = wlist[key] if key in wlist else 1.0
-                        strval = str(values[key])  # ensure string
-                        parsed = parseval(strval)
-                        unit = (
-                            strval[parsed.end(3) :].strip()  # noqa: E203
-                            if parsed
-                            else ""
-                        )
-                        vals.append(float(strval.split()[0]) * vscale * weight)
-                        if not ylabel:
-                            ylabel = (
-                                (unit if unit else key)
-                                if 3 > len(qlst)
-                                else qlst[2]
+                        try:  # skip key in case of an error
+                            vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                            weight = wlist[key] if key in wlist else 1.0
+                            strval = str(values[key])  # ensure string
+                            parsed = parseval(strval)
+                            unit = (
+                                strval[parsed.end(3) :].strip()  # noqa: E203
+                                if parsed
+                                else ""
                             )
-                        lst = key.translate(split).split()
-                        if lst and all(
-                            lst[0] == s for s in lst if qlst[0] in s.lower()
-                        ):
-                            detail = (
-                                lst[0]
-                                if not detail or detail == lst[0]
-                                else qlst[0]
+                            if not ylabel:
+                                ylabel = (
+                                    (unit if unit else key)
+                                    if 3 > len(qlst)
+                                    else qlst[2]
+                                )
+                            lst = key.translate(split).split()
+                            if lst and all(
+                                lst[0] == s
+                                for s in lst
+                                if qlst[0] in s.lower()
+                            ):
+                                detail = (
+                                    lst[0]
+                                    if not detail or detail == lst[0]
+                                    else qlst[0]
+                                )
+                            else:
+                                detail = qlst[0]
+                            itm = [s for s in lst if s.lower() != detail]
+                            vals.append(
+                                float(strval.split()[0]) * vscale * weight
                             )
-                        else:
-                            detail = qlst[0]
-                        itm = [s for s in lst if s.lower() != detail]
-                        legd.append(
-                            f"{value} {'_'.join(itm)}" if itm else value
-                        )
+                            legd.append(
+                                f"{value} {'_'.join(itm)}" if itm else value
+                            )
+                        except:  # noqa: E722
+                            pass
                     if vals:
                         if yvalue:
                             if not isinstance(yvalue[0], list) or (
@@ -902,36 +926,6 @@ def main(args, argd, dbfname):
 
     nplots = len(plots)
     if 0 < nplots:
-        nplots_untied = sum(len(v) for v in plots.values())
-        if 2 > nplots_untied:  # consider rebuilding plots
-            val = list(*list(*plots.values()))
-            if isinstance(val[1], list):
-                nplots_untied = len(set(val[1]))
-                val[0] = list(zip(*val[0]))
-                val[1] = list(val[1])
-                val[2] = [val[2]] * nplots_untied
-                val[3] = [val[3]] * nplots_untied
-                key = next(iter(plots.keys()))
-                plots[key] = list(zip(*val))
-
-        # auto-adjust y-resolution according to number of plots
-        if args.resolution == argd.resolution:  # resolution not user-defined
-            resint_untied = copy.deepcopy(resint)
-            resint_untied[1] = resint[2] * divup(
-                resint[1] * math.sqrt(nplots_untied), resint[2]
-            )
-        else:  # alias
-            resint_untied = resint
-
-        # setup primary figure
-        if args.untied:
-            nplots_primry, resint_primry = nplots_untied, resint_untied
-        else:
-            nplots_primry, resint_primry = nplots, resint
-        figure_primry = create_figure(
-            plots, nplots_primry, resint_primry, args.untied, addon
-        )
-
         # supported file types and filename components
         figcat = (
             ""  # eventually add details about category
@@ -939,31 +933,100 @@ def main(args, argd, dbfname):
             else f"-{entries[0].translate(clean)}"
         )
         figdet = re.sub(r"[ ,;]+", "_", figcat)
+        figure = plot.subplots(1)  # dummy
         figout = fname(
-            extlst=figure_primry.canvas.get_supported_filetypes().keys(),
+            extlst=figure[0].canvas.get_supported_filetypes().keys(),
             in_main=args.figure,
             in_dflt=argd.figure,
             idetail=f"-{latest}{figdet}" if 0 < latest else figdet,
         )
 
-        # setup untied figure
-        if 1 < len(figout) and not args.untied:
-            figure_untied = create_figure(
-                plots, nplots_untied, resint_untied, True, addon
+        # automatically flatten multi-value plots into groups
+        ntieds = sum(len(v) for v in plots.values())
+        if 2 > ntieds:  # consider rebuilding plots
+            v = list(*list(*plots.values()))
+            if 4 <= len(v) and isinstance(v[1], list):
+                ntieds = len(set(v[1]))
+                v = zip(
+                    list(zip(*v[0])),
+                    list(v[1]),
+                    [v[2]] * ntieds,
+                    [v[3]] * ntieds,
+                )
+                key = next(iter(plots.keys()))
+                plots[key] = list(v)
+
+        # fully flatten multi-value plots (no groups are kept)
+        pflat, nflat = {}, 0
+        if args.untied is None or 0 != args.untied:
+            for key, vals in plots.items():
+                pflat[key] = []
+                for v in vals:
+                    if 4 <= len(v) and isinstance(v[1], list):
+                        for i in range(len(v[1])):
+                            v0, v1 = list(list(zip(*v[0]))[i]), v[1][i]
+                            pflat[key].append([v0, v1, v[2], v[3]])
+                            nflat = nflat + 1
+                    else:
+                        nflat = nflat + 1
+                        pflat[key].append(v)
+
+        # auto-adjust y-resolution according to number of plots
+        if args.resolution == argd.resolution:  # resolution not user-defined
+            untres = copy.deepcopy(resint)
+            untres[1] = resint[2] * divup(
+                resint[1] * math.sqrt(ntieds), resint[2]
             )
-        else:  # alias
-            resint_untied = resint_primry
-            figure_untied = figure_primry
+            rflat = copy.deepcopy(resint)
+            rflat[1] = resint[2] * divup(
+                resint[1] * math.sqrt(nflat), resint[2]
+            )
+        else:  # respect user-defined resolution
+            untres = resint  # alias
+            rflat = resint  # alias
+
+        # setup figures
+        if 1 < len(figout):
+            if args.untied is None or 0 != args.untied:
+                figuntd = create_figure(pflat, nflat, rflat, True, addon)
+                if args.untied is not None and 1 < args.untied:
+                    figprim = figuntd  # alias
+                elif args.untied is not None and 0 > args.untied:
+                    figprim = create_figure(
+                        plots, nplots, resint, False, addon
+                    )
+                else:
+                    figprim = create_figure(plots, ntieds, untres, True, addon)
+            else:
+                figprim = create_figure(plots, nplots, resint, False, addon)
+                figuntd = create_figure(plots, ntieds, untres, True, addon)
+        else:
+            if args.untied is None or 0 <= args.untied:
+                if args.untied is None or 0 != args.untied:
+                    if args.untied is not None and 1 < args.untied:
+                        figprim = create_figure(
+                            pflat, nflat, rflat, True, addon
+                        )
+                    else:
+                        figprim = create_figure(
+                            plots, ntieds, untres, True, addon
+                        )
+                else:
+                    figprim = create_figure(
+                        plots, nplots, resint, False, addon
+                    )
+            else:  # negative
+                figprim = create_figure(pflat, nflat, rflat, True, addon)
 
         # save figure(s) for all requested formats
         for i in range(len(figout)):
-            figure = figure_primry if 0 == i else figure_untied
-            figres = resint_primry if 0 == i else resint_untied
+            figure = figprim if 0 == i else figuntd
             # reduce file size (png) and save figure
             if ".png" == figout[i].suffix.lower():
                 figure.canvas.draw()  # otherwise the image is empty
                 imageraw = figure.canvas.tostring_rgb()
-                image = PIL.Image.frombytes("RGB", figres[0:2], imageraw)
+                imageres = map(int, figure.get_size_inches() * figure.dpi)
+                image = PIL.Image.frombytes("RGB", tuple(imageres), imageraw)
                 # avoid Palette.ADAPTIVE, consider back/foreground color
                 image = image.convert("P", colors=ngraphs + 2)
                 image.save(figout[i], "PNG", optimize=True)
@@ -1118,13 +1181,15 @@ if __name__ == "__main__":
         "-t",
         "--bounds",
         type=str,
-        default="4.0 15",
+        default="7.0 15",
         help="Highlight if exceeding max(A*Stdev%%,B%%)",
     )
     argparser.add_argument(
         "-u",
         "--untied",
-        action="store_true",
+        type=int,
+        default=0,
+        nargs="?",
         help="Separate plot per query",
     )
     argparser.add_argument(
@@ -1150,7 +1215,7 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
-    if args.untied:
+    if args.untied is None or 0 != args.untied:
         figtype = "pdf"
         argparser.set_defaults(figure=f"{base}.{figtype}")
         args = argparser.parse_args()  # reparse

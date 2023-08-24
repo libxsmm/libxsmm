@@ -121,7 +121,7 @@ There are several command-line options to customize each of the above steps (`--
 * Multiple results can be combined, i.e., use `-y` (space-separated words).
 * To exactly match (single results) use `-x` in addition to `-y`.
 * To limit and select a specific "category" (instead of all), use `-s`.
-* Select exactly using `-z`, e.g., `-z -s "clx"` (omits, e.g., "clxap").
+* Select exactly using `-z`, e.g., `-z -s "clx"` (omits, e.g., "clxtrb").
 * Create a PDF (vector graphics have infinite resolution), use `-g myreport.pdf`.
 * Adjust pixel resolution, aspect ratio, or density, use `-d 1200x800`.
 

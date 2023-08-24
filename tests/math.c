@@ -272,11 +272,12 @@ int main(int argc, char* argv[])
 
   { /* check GCD */
     const size_t a[] = { 0, 1, 0, 100, 10 };
-    const size_t b[] = { 0, 0, 1, 10, 100 };
-    const size_t c[] = { 1, 1, 1, 10,  10 };
+    const size_t b[] = { 0, 0, 2, 10, 100 };
+    const size_t c[] = { 1, 1, 2, 10,  10 };
     const int n = sizeof(a) / sizeof(*a);
     for (i = 0; i < n; ++i) {
       if (libxsmm_gcd(a[i], b[i]) != c[i]) exit(EXIT_FAILURE);
+      if (libxsmm_gcd(b[i], a[i]) != c[i]) exit(EXIT_FAILURE);
     }
   }
 
@@ -293,17 +294,26 @@ int main(int argc, char* argv[])
     }
   }
 
-  { /* check coprime2 routine */
-    const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997 };
+  { /* check coprime/2 routine */
+    const size_t test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997, 1024 };
     const int n = sizeof(test) / sizeof(*test);
     for (i = 0; i < n; ++i) {
-      const size_t coprime = libxsmm_coprime2(test[i]);
-      const unsigned int gcd = (unsigned int)libxsmm_gcd(coprime, test[i]);
-      if ((0 != coprime || 1 < test[i]) && (test[i] <= coprime || 1 != gcd)) {
-        exit(EXIT_FAILURE);
+      for (j = 0; j <= test[i]; ++j) {
+        const size_t coprime = libxsmm_coprime(test[i], j);
+        const size_t gcd = libxsmm_gcd(coprime, test[i]);
+        if ((0 != coprime || 1 < test[i]) && (test[i] <= coprime || 1 != gcd)) {
+          exit(EXIT_FAILURE);
+        }
       }
     }
     if (libxsmm_coprime2(65423) != 32711) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1030) != 513) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1029) != 514) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1028) != 513) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1027) != 513) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1026) != 511) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1025) != 512) exit(EXIT_FAILURE);
+    if (libxsmm_coprime2(1024) != 511) exit(EXIT_FAILURE);
     if (libxsmm_coprime2(1000) != 499) exit(EXIT_FAILURE);
     if (libxsmm_coprime2(997) != 498) exit(EXIT_FAILURE);
     if (libxsmm_coprime2(24) != 11) exit(EXIT_FAILURE);

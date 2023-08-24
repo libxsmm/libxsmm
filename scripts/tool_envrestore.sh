@@ -12,7 +12,7 @@
 DIFF=$(command -v diff)
 SED=$(command -v gsed)
 DIRPAT="s/\//\\\\\//g"
-STRICT=0
+STRICT=1
 FROM=()
 TO=()
 
@@ -43,6 +43,9 @@ while test $# -gt 0; do
   -o|--srcfile)
     OFILE=$2
     shift 2;;
+  -u|--unrestricted)
+    STRICT=0
+    shift 1;;
   -s|--strict)
     STRICT=1
     shift 1;;
@@ -117,6 +120,7 @@ else
   echo "Usage: $0 [options] IFILE [OFILE]"
   echo "       -i|-f|--envfile file: filename of environment file generated with \"declare -px\""
   echo "       -o|--srcfile file: filename of script to be generated (can be source'd)"
+  echo "       -r|--replace: replace environment (as opposed to --strict environment)"
   echo "       -s|--strict: keep existing environment variables with paths"
   echo "                    only keep paths where parent directory exists"
   echo "       -t|--fromto a:b [b:c [...]]: replace \"a\" with \"b\", etc."

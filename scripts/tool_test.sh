@@ -19,6 +19,7 @@ ROOT=${HERE}/..
 # TODO: map to CI-provider (abstract environment)
 source "${ROOTENV}/buildkite.env" ""
 
+CI_AGENT=$(command -v buildkite-agent)
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
@@ -40,13 +41,13 @@ RUN_CMD="--session-command"
 # optionally enable script debug
 if [ "${DEBUG_TEST}" ] && [ "0" != "${DEBUG_TEST}" ]; then
   echo "*** DEBUG ***"
+  env
+  echo "*** DEBUG ***"
   if [[ ${DEBUG_TEST} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
     set -xv
   else
     set "${DEBUG_TEST}"
   fi
-  env
-  echo "*** DEBUG ***"
 fi
 
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ] && [ "${TR}" ]; then
@@ -165,8 +166,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
   # setup ENVS (multiple environments)
   if [ ! "${ENVS}" ]; then
-    if [ "${ENV}" ]; then
-      ENVS=${ENV}
+    if [ "${ENVI}" ]; then
+      ENVS=${ENVI}
     else
       ENVS=none
     fi
@@ -271,6 +272,16 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     trap 'rm ${TESTSCRIPT} ${ENVFILE}' EXIT
   fi
 
+  # artifact download (ARTIFACT_UPLOAD_DB=1)
+  if [ "${CI_AGENT}" ] && [ "${ARTIFACT_ROOT}" ] && [ -d "${ARTIFACT_ROOT}" ] && [ "${PIPELINE}" ] && \
+     [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ];
+  then
+  ( # subshell
+    cd "${ARTIFACT_ROOT}" || exit 1
+    artifact_download "${PIPELINE}" "json" 1
+  )
+  fi
+
   RESULT=0
   LOGFILE_INIT=${LOGFILE}
   while [ "${TEST}" ] || TEST=$(eval " \
@@ -367,16 +378,16 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       CONFIG="none"
     fi
     # iterate over all given environments
-    COUNT_ENV=0; for ENV in ${ENVS}; do
-      if [ "none" != "${ENV}" ]; then
-        ENVVAL=$(cut -d= -f2 <<<"${ENV}")
-        ENVSTR=${ENV}
+    COUNT_ENV=0; for ENVI in ${ENVS}; do
+      if [ "none" != "${ENVI}" ]; then
+        ENVVAL=$(cut -d= -f2 <<<"${ENVI}")
+        ENVSTR=${ENVI}
       fi
       # print some header if all tests are selected or in case of multi-tests
       HEADER=""
       if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then HEADER="${PARTITION}"; fi
       if [ "none" != "${CONFIG}" ]; then HEADER="${HEADER} ${CONFIG}"; fi
-      if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
+      if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENVI}"; fi
       HEADER=$(${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" <<<"${HEADER}" \
         | ${TR} "[:lower:]" "[:upper:]" | ${TR} -s " " "/")
       if [ "${TESTID}" ] && [ "test" != "$(${TR} "[:upper:]" "[:lower:]" <<<"${TESTID}")" ]; then
@@ -571,17 +582,31 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     RESULT=${RESULTCODE}
   fi
 
-  # upload artifacts
-  if [ "$(command -v buildkite-agent)" ]; then
-    UPLOAD_PATH=$(eval "${ARTIFACT_PATH}")
-    if [ -d "${UPLOAD_PATH}" ] && [ "$(ls -1 "${UPLOAD_PATH}")" ] && \
-       [ ! -e "${UPLOAD_PATH}/.uploaded" ];
+  # artifact upload
+  if [ "${CI_AGENT}" ] && [ "${ARTIFACT_ROOT}" ] && [ -d "${ARTIFACT_ROOT}" ] && [ "${PIPELINE}" ]; then
+    # upload regular artifacts
+    if [ "${JOBID}" ] && [ -d "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}" ] && \
+       [ ! -e "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}/.uploaded" ] && \
+       [ "$(ls -1 "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}")" ];
     then
-      cd "${UPLOAD_PATH}" && buildkite-agent artifact upload "*"
-      touch "${UPLOAD_PATH}/.uploaded"
+    ( # subshell
+      cd "${ARTIFACT_ROOT}/${PIPELINE}/${JOBID}" || exit 1
+      ${CI_AGENT} artifact upload "*"
+      touch ./.uploaded
+    )
+    fi
+    # upload database
+    if [ "${ARTIFACT_UPLOAD_DB}" ] && [ "0" != "${ARTIFACT_UPLOAD_DB}" ] && \
+       [ -e "${ARTIFACT_ROOT}/${PIPELINE}.json" ];
+    then
+    ( # subshell
+      cd "${ARTIFACT_ROOT}" || exit 1
+      ${CI_AGENT} artifact upload "${PIPELINE}.json;${PIPELINE}.weights.json"
+    )
     fi
   fi
 
+  # return captured status
   exit "${RESULT}"
 else
   >&2 echo "ERROR: missing prerequisites!"

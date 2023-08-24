@@ -483,13 +483,7 @@
 #define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
 
-/* QUAD MADD, QUAD VNNI and VNNI */
-#define LIBXSMM_X86_INSTR_V4FMADDPS        0xf0072c9a
-#define LIBXSMM_X86_INSTR_V4FNMADDPS       0xf0072caa
-#define LIBXSMM_X86_INSTR_V4FMADDSS        0xf0072c9b
-#define LIBXSMM_X86_INSTR_V4FNMADDSS       0xf0072cab
-#define LIBXSMM_X86_INSTR_VP4DPWSSDS       0xf0072c53
-#define LIBXSMM_X86_INSTR_VP4DPWSSD        0xf0072c52
+/* AVX512 VNNI */
 #define LIBXSMM_X86_INSTR_VPDPBUSD         0x30052650
 #define LIBXSMM_X86_INSTR_VPDPBUSDS        0x30052651
 #define LIBXSMM_X86_INSTR_VPDPWSSD         0x30052652
@@ -906,9 +900,9 @@
 #define LIBXSMM_X86_INSTR_PMOVZXWD         0xa0052033
 #define LIBXSMM_X86_INSTR_PMOVZXWQ         0xa0052034
 #define LIBXSMM_X86_INSTR_PMOVZXDQ         0xa0052035
-#define LIBXSMM_X86_INSTR_PEXTRB           0xa00d3014
-#define LIBXSMM_X86_INSTR_PEXTRD           0xa00d3016
-#define LIBXSMM_X86_INSTR_PEXTRQ           0xa28d3016
+#define LIBXSMM_X86_INSTR_PEXTRB           0xa80d3014
+#define LIBXSMM_X86_INSTR_PEXTRD           0xa80d3016
+#define LIBXSMM_X86_INSTR_PEXTRQ           0xaa8d3016
 #define LIBXSMM_X86_INSTR_PHMINPOSUW       0xa0052041
 #define LIBXSMM_X86_INSTR_PINSRB           0xa00d3020
 #define LIBXSMM_X86_INSTR_PINSRD           0xa00d3022
@@ -1420,6 +1414,15 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int vnni_cvt_output_ext_buf;
   unsigned int norm_to_normT_B_ext_buf;
   unsigned int has_colbias_act_fused;
+  unsigned int current_m; /* this is a hack, it's for tracking in SSE relubit
+                             mask fusion the logical M start as we only get 4
+                             mask bits, but can only read and write at 8 bits
+                             granularity */
+  unsigned int m_bitmask_advance; /* this is a hack, it's for tracking in SSE relubit
+                             mask fusion the logical M start as we only get 4
+                             mask bits, but can only read and write at 8 bits
+                             granularity */
+
 
   /* Register names/logistics for fusion boo-keeping */
   unsigned int reserved_zmms;
@@ -1478,6 +1481,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   /* Auxiliary fields to propagate kernel info */
   unsigned int m_remainder;
   unsigned int br_loop_index;
+  unsigned int cur_unroll_factor;
+  unsigned int is_peeled_br_loop;
   /* TODO: should be by-value, not by-pointer? */
   libxsmm_jump_label_tracker *p_jump_label_tracker;
   unsigned int loop_label_id;
@@ -1956,37 +1961,37 @@ typedef enum libxsmm_meqn_stack_var {
 
 /* Auxiliary stack variable enumeration in GEMM */
 typedef enum libxsmm_gemm_stack_var {
-  LIBXSMM_GEMM_STACK_VAR_NONE                 =  0,
-  LIBXSMM_GEMM_STACK_VAR_PFA_PTR              =  1,
-  LIBXSMM_GEMM_STACK_VAR_PFB_PTR              =  2,
-  LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR    =  3,
-  LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR    =  4,
-  LIBXSMM_GEMM_STACK_VAR_INT8_SCF             =  5,
-  LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR     =  6,
-  LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR         =  7,
-  LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR       =  8,
-  LIBXSMM_GEMM_STACK_VAR_ARG_7                =  9,
-  LIBXSMM_GEMM_STACK_VAR_ARG_8                = 10,
-  LIBXSMM_GEMM_STACK_VAR_ARG_9                = 11,
-  LIBXSMM_GEMM_STACK_VAR_ARG_10               = 12,
-  LIBXSMM_GEMM_STACK_VAR_ELT_BUF1             = 13,
-  LIBXSMM_GEMM_STACK_VAR_ELT_BUF2             = 14,
-  LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR       = 15,
-  LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF   = 16,
-  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B      = 17,
-  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C      = 18,
-  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR = 19,
-  LIBXSMM_GEMM_STACK_VAR_BRCOUNT              = 20,
-  LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR        = 21,
-  LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR        = 22,
-  LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR   = 23,
-  LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR            = 24,
-  LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR            = 25,
-  LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR     = 26,
-  LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR        = 27,
-  LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR        = 28,
-  LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR         = 29,
-  LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR     = 30
+  LIBXSMM_GEMM_STACK_VAR_NONE                   =  0,
+  LIBXSMM_GEMM_STACK_VAR_PFA_PTR                =  1,
+  LIBXSMM_GEMM_STACK_VAR_PFB_PTR                =  2,
+  LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR      =  3,
+  LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR      =  4,
+  LIBXSMM_GEMM_STACK_VAR_INT8_SCF               =  5,
+  LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR       =  6,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR           =  7,
+  LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR         =  8,
+  LIBXSMM_GEMM_STACK_VAR_ARG_7                  =  9,
+  LIBXSMM_GEMM_STACK_VAR_ARG_8                  = 10,
+  LIBXSMM_GEMM_STACK_VAR_ARG_9                  = 11,
+  LIBXSMM_GEMM_STACK_VAR_ARG_10                 = 12,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF1               = 13,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF2               = 14,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR         = 15,
+  LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF     = 16,
+  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B        = 17,
+  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C        = 18,
+  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR   = 19,
+  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                = 20,
+  LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR          = 21,
+  LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR          = 22,
+  LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR = 23,
+  LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR              = 24,
+  LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR              = 25,
+  LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR       = 26,
+  LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR          = 27,
+  LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR          = 28,
+  LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR           = 29,
+  LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR       = 30
 } libxsmm_gemm_stack_var;
 
 #if 0
