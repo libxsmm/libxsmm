@@ -6974,6 +6974,9 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       l_record_argop = 1;
       l_use_stack_vars = 1;
     }
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC) > 0) {
+      l_use_stack_vars = 1;
+    }
   }
 
 #if 0
