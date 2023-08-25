@@ -6979,33 +6979,6 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     }
   }
 
-#if 0
-  /* intercept codegen and call specialized opreduce kernel */
-  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN) {
-    libxsmm_descriptor_blob blob;
-    libxsmm_mateltwise_kernel_config new_config = *i_micro_kernel_config;
-    libxsmm_blasint idx_dtype_size = idx_tsize;
-    unsigned short bcast_param = 0;
-    libxsmm_meltw_opreduce_vecs_flags flags = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX) ?
-      (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP) > 0) ? LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS_ARGOP : LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS) :
-      (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP) > 0) ? LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MIN_IDX_COLS_ARGOP : LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MIN_IDX_COLS) ;
-    unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
-    unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
-    unsigned short combined_params = argidx_params | bcast_shifted_params;
-    const libxsmm_meltw_descriptor *const new_desc = libxsmm_meltw_descriptor_init(&blob, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ), (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ),
-        i_mateltwise_desc->m, idx_dtype_size, i_mateltwise_desc->ldi, i_mateltwise_desc->ldo, (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-    free(p_jump_label_tracker);
-#endif
-    new_config.opreduce_use_unary_arg_reading = 1;
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC) > 0) {
-      new_config.opreduce_avoid_acc_load = 1;
-    }
-    libxsmm_generator_opreduce_vecs_index_avx512_microkernel( io_generated_code,io_loop_label_tracker, i_gp_reg_mapping, &new_config, new_desc );
-    return;
-  }
-#endif
-
 #if defined(USE_ENV_TUNING)
   if ( 0 == env_max_m_unroll ) {
   } else {
