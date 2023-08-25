@@ -1,5 +1,6 @@
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
+TSTDIR = ./kernel_test
 SRCDIR = .
 INCDIR = .
 BLDDIR = obj
@@ -50,10 +51,17 @@ FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/gemm_packed_kernel
 
 .PHONY: all
-all: $(XFILES)
+all: $(XFILES) scripts
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
+
+.PHONY: scripts
+scripts: $(TSTDIR)/.generate_gemm_test_scripts
+$(TSTDIR)/.generate_gemm_test_scripts: $(TSTDIR)/generate_gemm_test_scripts.sh Makefile
+	$(info Creating gemm test scripts...)
+	@cd $(TSTDIR) && ./generate_gemm_test_scripts.sh >/dev/null
+	@-touch $@
 
 $(OUTDIR)/gemm_packed_kernel: $(OUTDIR)/.make $(BLDDIR)/gemm_packed_kernel-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/gemm_packed_kernel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -69,11 +77,13 @@ clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
+	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 endif
 
 .PHONY: realclean

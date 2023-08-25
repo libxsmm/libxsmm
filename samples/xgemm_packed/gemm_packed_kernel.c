@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
       } else {
         l_keep_going = 1;
       }
-      if ( 7 != sscanf( l_line, "%i %i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_r, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
+      if ( 7 != sscanf( l_line, "%i %i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc, &l_r ) ) exit(EXIT_FAILURE);
 
       if (l_keep_going == 0) break;
     }
