@@ -2823,7 +2823,6 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
   unsigned int l_m_code_blocks = 0;
   unsigned int l_m_code_block_id = 0;
   unsigned int l_record_argop = 0;
-  unsigned int l_is_reduce_add = 1;
   unsigned int l_is_reduce_max = 0;
   unsigned int l_is_reduce_min = 0;
   unsigned int temp_vreg_argop = 31;
@@ -2851,7 +2850,6 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
 
   l_reduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FADD_V : LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V;
   if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN) {
-    l_is_reduce_add = 0;
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX) {
       l_is_reduce_max = 1;
       l_reduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
