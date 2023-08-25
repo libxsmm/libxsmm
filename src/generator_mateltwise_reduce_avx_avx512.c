@@ -7168,6 +7168,8 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         max_m_unrolling = 8;
       }
     } else {
+      l_bcast_idx_instr = ( idx_tsize == 8 ) ? LIBXSMM_X86_INSTR_VBROADCASTSD : LIBXSMM_X86_INSTR_VBROADCASTSS;
+      l_argop_blend_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VBLENDVPD : LIBXSMM_X86_INSTR_VBLENDVPS;
       l_temp_vreg_argop = 11;
       l_argop_mask = 10;
       if (idx_tsize == 8) {
