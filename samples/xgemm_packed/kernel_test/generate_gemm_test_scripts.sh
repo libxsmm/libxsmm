@@ -20,11 +20,11 @@ for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' ; do
          MSTART=1
          NSTART=1
          KSTART=1
-         RSTART=1
+         RSTART=8
          MSTEP=1
          NSTEP=1
          KSTEP=1
-         RSTEP=1
+         RSTEP=8
 
          # TODO: all the "continue" ifs should be handled by allow list outside of this script
          # transpose A or B is right now not supported

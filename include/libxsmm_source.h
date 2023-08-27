@@ -69,6 +69,7 @@
 #include "../src/generator_matequation_scratch_aarch64.c"
 #include "../src/generator_matequation_scratch_avx_avx512.c"
 #include "../src/generator_packed_gemm.c"
+#include "../src/generator_packed_gemm_aarch64.c"
 #include "../src/generator_packed_gemm_ac_rm.c"
 #include "../src/generator_packed_gemm_ac_rm_aarch64.c"
 #include "../src/generator_packed_gemm_ac_rm_avx_avx2_avx512.c"
