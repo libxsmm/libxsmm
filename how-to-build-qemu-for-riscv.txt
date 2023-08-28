@@ -31,3 +31,13 @@ ${QEMU_INSTALLDIR}/qemu-system-riscv64 \
 
 Mount shared folder:
 sudo mount -t 9p -o trans=virtio host0 shared_folder -oversion=9p2000.L
+
+Emulate RVV instructino using BSC Vehave:
+-----------------------------------------
+
+Download prebuild vehave binary from [1] and untar binary in $VHAVE_INSTALL_PATH.
+
+Usage:
+ $(VEHAVE_INSTALL_PATH)/bin/vehave [command line]
+
+[1] https://ssh.hca.bsc.es/epi/ftp/
