@@ -7,7 +7,7 @@ There can be situations in which it is up-front not clear which problem-sizes wi
 1. To stay agnostic to any threading model used, Pthread mutexes are guarding the updates of the JIT'ted code cache (link line with `-lpthread` is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
 2. There is limited support for the Windows calling convention (only kernels without prefetch signature).
 
-The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_TARGET=0`, or anything prior to <span>Intel&#160;AVX</span>). The latter is an environment variable which allows to set a code path independent of the CPUID (<span>LIBXSMM_TARGET=0&#124;1&#124;sse&#124;snb&#124;hsw&#124;knl&#124;knm&#124;skx&#124;clx&#124;cpx&#124;spr</span>). Please note that LIBXSMM_TARGET cannot enable the JIT backend if it was disabled at build time (JIT=0).
+The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_TARGET=0`, or anything prior to <span>Intel&#160;AVX</span>). The latter is an environment variable which allows to set a code path independent of the CPUID (<span>LIBXSMM_TARGET=0&#124;1&#124;sse&#124;snb&#124;hsw&#124;skx&#124;clx&#124;cpx&#124;spr</span>). Please note that LIBXSMM_TARGET cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
 One can use the afore mentioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling `libxsmm_?mmdispatch`) fall not under a threshold for the problem-size. In any case, JIT code generation can be used for accompanying statically generated code.
 
@@ -39,7 +39,7 @@ The code generator driver program accepts the following arguments:
 11. Beta: (0 or 1)
 12. Alignment override for A (1 auto, 0 unalignment)
 13. Alignment override for C (1 auto, 0 unalignment)
-14. Architecture (noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx)
+14. Architecture (noarch, wsm, snb, hsw, skx, clx, cpx)
 15. Prefetch strategy, see below (only nopf for "sparse*")
 16. SP (single-precision), DP (double-recision), or I16 (only "dense*")
 17. CSC file in Matrix market format (only if 1st arg. is "sparse*").
