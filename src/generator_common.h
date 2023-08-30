@@ -1519,6 +1519,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_ldb;
   unsigned int gp_reg_ldc;
   unsigned int gp_reg_scf;
+  unsigned int gp_reg_zpt;
   unsigned int gp_reg_help_0;
   unsigned int gp_reg_help_1;
   unsigned int gp_reg_help_2;
