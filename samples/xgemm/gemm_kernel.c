@@ -1738,6 +1738,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_gemm_ext_binary_postops l_postops;
   libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_bitfield l_prefetch_flags = 0;
+  unsigned int l_decompress = atoi(getenv("DECOMPRESS"));
+  char *l_decompress_bitmap = NULL;
 #if defined(USE_GEMM_EXT_FRONTEND)
   libxsmm_gemm_ext_param gemm_param;
 #else
@@ -1795,6 +1797,11 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   }
   if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
     l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2;
+  }
+  if (l_decompress > 0) {
+    l_flags |= LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK;
+    l_decompress_bitmap = (char*)libxsmm_aligned_malloc((size_t)(i_gemm_def->lda/8) * (size_t)i_gemm_def->k, 64);
+    memset(l_decompress_bitmap, 0xff,(i_gemm_def->lda/8) * (size_t)i_gemm_def->k);
   }
 
   l_flags |= (0 != i_gemm_def->trans_a ? LIBXSMM_GEMM_FLAG_TRANS_A : 0);
@@ -1924,6 +1931,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)i_a;
+    if (l_decompress > 0) {
+      gemm_param.a.secondary = (void*)l_decompress_bitmap;
+    }
     gemm_param.b.primary = (void*)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       gemm_param.a.quaternary = (void*)i_a;
@@ -2055,7 +2065,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   free( (void*)l_b_addr );
   free( (void*)l_a_offs );
   free( (void*)l_b_offs );
-
+  if (l_decompress > 0) {
+    libxsmm_free(l_decompress_bitmap);
+  }
   return l_runtime;
 }
 
