@@ -221,7 +221,7 @@
 
           !> Set target architecture for subsequent code
           !> generation (JIT); arch argument can be
-          !> "sse", "snb", "hsw", "knl", "knm", "skx",
+          !> "sse", "snb", "hsw", "skx",
           !> "clx", "cpx", "spr", or "0" to rely on
           !> the CPUID (default).
           !> There are some alternative target names as well:
