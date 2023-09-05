@@ -1216,7 +1216,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     }
 
     /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
-    if (i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) {
+    if ((i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) && (has_fused_relu_bitmask == 0)) {
       m_blocking = 16;
       while (i_xgemm_desc->m % m_blocking != 0) {
         m_blocking--;
