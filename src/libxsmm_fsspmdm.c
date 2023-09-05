@@ -14,7 +14,7 @@
 #include "generator_common.h"
 
 #if !defined(LIBXSMM_FSSPMDM_DENSE_BIAS)
-# define LIBXSMM_FSSPMDM_DENSE_BIAS(VALUE) LIBXSMM_UPF(VALUE, -1, 10)
+# define LIBXSMM_FSSPMDM_DENSE_BIAS(VALUE, BIAS) LIBXSMM_UPF(VALUE, (BIAS) * -1, 100)
 #endif
 #if !defined(LIBXSMM_FSSPMDM_NTUNE)
 # define LIBXSMM_FSSPMDM_NTUNE 250
@@ -308,6 +308,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark dense */
     if (NULL != k_dense && NULL != B && NULL != C) {
+      const char *const env_fsspmdm_dense_bias = getenv("LIBXSMM_FSSPMDM_DENSE_BIAS");
+      const int dense_bias_env = (NULL == env_fsspmdm_dense_bias ? 0 : atoi(env_fsspmdm_dense_bias));
+      const int dense_bias = (0 == dense_bias_env ? 10/*default*/ : LIBXSMM_CLMP(dense_bias_env, 0, 100));
 #if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
@@ -324,7 +327,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       }
       /* Bias to prefer dense kernels */
       t = timer_tick();
-      dt_dense = LIBXSMM_FSSPMDM_DENSE_BIAS(LIBXSMM_DELTA(s, t));
+      dt_dense = LIBXSMM_FSSPMDM_DENSE_BIAS(LIBXSMM_DELTA(s, t), dense_bias);
     }
 
     /* Benchmark sparse (regular) */

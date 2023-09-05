@@ -12,6 +12,7 @@
 # shellcheck disable=SC2023
 #set -eo pipefail
 
+MKTEMP=$(command -v mktemp)
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
 DATE=$(command -v date)
@@ -24,13 +25,14 @@ if [ "${DATE}" ]; then
 fi
 
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
-if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
+if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
-  PYTHON=$(command -v python3)
+  PYTHON=$(command -v python3 || true)
   FLOCK=${HERE}/../.flock.sh
-  LG_DEFAULT="${NAME}.log"
+  #LG_DEFAULT=${NAME}.log
+  LG_DEFAULT=/dev/null
   XF_DEFAULT=1; BL_DEFAULT=1; QT_DEFAULT=0
   SP_DEFAULT=2; MT_DEFAULT=1; CONSUMED=0
   # ensure proper permissions
@@ -44,7 +46,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   fi
   # ensure consistent sort
   export LC_ALL=C
-  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
+  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python || true); fi
   if [ "${PYTHON}" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
     TARGET=$(${PYTHON} "${HERE}/libxsmm_utilities.py")
   fi
@@ -72,13 +74,14 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       echo "       -w|--allow  F  [PEXEC_WL]: allowed failures (filename); default: ${PEXEC_WL:-${ALLOW:--}}"
       echo "       -u|--build  F* [PEXEC_UP]: collect failures (filename); default: ${PEXEC_UP:-${FNAME:--}}"
       echo "       -q|--quiet  -  [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
-      echo "       -o|--log    F  [PEXEC_LG]: logfile combining output to stdout/stderr"
+      echo "       -o|--log    F  [PEXEC_LG]: combined stdout/stderr; default: ${PEXEC_LG:-${LOG:-${LG_DEFAULT}}}"
       echo "       -c|--cut    S  [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
       echo "       -m|--min    N  [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N  [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N  [PEXEC_NP]: number of processes (scaled by nscale)"
       echo "       -k|--ninner N  [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
-      echo "       -s|--nscale N  [PEXEC_SP]: oversubscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
+      echo "       -s|--nscale N  [PEXEC_SP]: subscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
+      echo "                                  under-subscription (N<0)"
       echo "       Environment [variables] will precede command line arguments."
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
       echo
@@ -216,11 +219,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
     COUNTED="${COUNTED}"$'\n'"${LINE}"
     COUNTER=$((COUNTER+1))
-  done
+  done && unset IFS
   PEXEC_SCRARG="\$0"
   if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
-    if [ "0" = "${PEXEC_IL}" ] && [ "$(command -v mktemp)" ]; then
-      PEXEC_SCRIPT=$(mktemp)
+    if [ "0" = "${PEXEC_IL}" ]; then
+      PEXEC_SCRIPT=$(${MKTEMP})
       PEXEC_SCRARG="\$*"
     fi
     ATLEAST=${COUNTED}; COUNTED=""; COUNTER=0
@@ -228,7 +231,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
       if [ "${COUNTED}" ]; then COUNTED="${COUNTED}"$'\n'"${LINE}"; else COUNTED=${LINE}; fi
       COUNTER=$((COUNTER+1))
-    done
+    done && unset IFS
   fi
   trap 'rm -f ${NAME}.txt ${PEXEC_SCRIPT}' EXIT
   unset ATLEAST
@@ -244,6 +247,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       fi
     elif [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
+    elif [ "0" != "$((0>SP))" ]; then
+      NP=$(((NP-SP-1)/-SP))
     fi
     NQ=${NP}
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then

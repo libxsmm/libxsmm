@@ -13,6 +13,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
+# if !defined(LIBXSMM_MATHDIFF_MHD)
+#   include <libxsmm_mhd.h>
+#   define LIBXSMM_MATHDIFF_MHD
+# endif
+#endif
 #if !defined(LIBXSMM_MATH_DELIMS)
 # define LIBXSMM_MATH_DELIMS " \t;,:"
 #endif
@@ -51,6 +57,9 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_blasint ldr = (NULL == ldref ? m : *ldref), ldt = (NULL == ldtst ? m : *ldtst);
   if (NULL == ref && NULL != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (NULL != ref && NULL != info && m <= ldr && m <= ldt) {
+    const char *const matdiff_shuffle_env = getenv("LIBXSMM_MATDIFF_SHUFFLE");
+    const int matdiff_shuffle = (NULL == matdiff_shuffle_env ? 0
+      : ('\0' != *matdiff_shuffle_env ? atoi(matdiff_shuffle_env) : 1));
     const size_t ntotal = (size_t)m * n;
     libxsmm_blasint mm = m, nn = n;
     double inf;
@@ -58,68 +67,159 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     libxsmm_matdiff_clear(info);
     inf = info->min_ref;
     switch ((int)datatype) {
-    case LIBXSMM_DATATYPE_I64: {
+      case LIBXSMM_DATATYPE_I64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE long long
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
-    } break;
-    case LIBXSMM_DATATYPE_I32: {
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_I32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
-    } break;
-    case LIBXSMM_DATATYPE_I16: {
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_U32: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE unsigned int
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_I16: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
-    } break;
-    case LIBXSMM_DATATYPE_I8: {
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_U16: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE unsigned short
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_I8: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE signed char
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
-    } break;
-    case LIBXSMM_DATATYPE_F64: {
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) (VALUE)
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       case LIBXSMM_DATATYPE_F32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) (VALUE)
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       case LIBXSMM_DATATYPE_F16: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) libxsmm_convert_f16_to_f32(VALUE)
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_float16
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       case LIBXSMM_DATATYPE_BF16: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) internal_matdiff_convert_bf16(VALUE)
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_bfloat16
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       case LIBXSMM_DATATYPE_BF8: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) internal_matdiff_convert_bf16(VALUE)
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_bfloat8
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+        if (0 == matdiff_shuffle) {
+#         include "template/libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "template/libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       default: {
         static int error_once = 0;
@@ -396,8 +496,7 @@ LIBXSMM_API size_t libxsmm_coprime2(size_t n)
     size_t a = n, b = c;
     do {
       const size_t r = a % b;
-      a = b;
-      b = r;
+      a = b; b = r;
     } while (0 != b);
     if (1 == a) {
       result = c;
@@ -464,7 +563,7 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double 
       result = y;
       y = 0.5 * (y + x / y);
     } while (LIBXSMM_NEQ(result, y));
-  }
+}
   result = y;
 #endif
   return result;

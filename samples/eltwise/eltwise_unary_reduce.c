@@ -17,14 +17,14 @@
 
 
 LIBXSMM_INLINE
-void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
+void sfill_matrix( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
 {
   unsigned int i, j;
   double dtmp;
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr, "Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
   for ( j = 1; j <= n; j++ )
@@ -101,17 +101,35 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
           }
         }
       } else {
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = -FLT_MAX;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
-            if (record_idx > 0) {
-              if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
-                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
-                ref_argop_off[i] = j;
+        if (reduce_op == 1) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = -FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
               }
-            } else {
-              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
+        }
+        if (reduce_op == 2) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] < ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+              }
             }
           }
         }
@@ -133,7 +151,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_bf16( sinp, (libxsmm_bfloat16*)tmp_sinp_lp, ld_in*n );
@@ -143,7 +161,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_float16)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_float16)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_f16( sinp, (libxsmm_float16*)tmp_sinp_lp, ld_in*n );
@@ -153,7 +171,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)tmp_sinp_lp, ld_in*n );
@@ -163,7 +181,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_hfloat8)*result_size );
     tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_hfloat8)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
-      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      fprintf(stderr, "Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
     }
     libxsmm_rne_convert_fp32_hf8( sinp, (libxsmm_hfloat8*)tmp_sinp_lp, ld_in*n );
@@ -226,17 +244,35 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
           }
         }
       } else {
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = -FLT_MAX;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
-            if (record_idx > 0) {
-              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
-                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
-                ref_argop_off[i] = j;
+        if (reduce_op == 1) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = -FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
               }
-            } else {
-              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
+        }
+        if (reduce_op == 2) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] <= ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+              }
             }
           }
         }
@@ -315,8 +351,15 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
     }
   } else {
-    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+    if (reduce_op == 1) {
+      if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+        unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+      }
+    }
+    if (reduce_op == 2) {
+      if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+        unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN;
+      }
     }
   }
 
@@ -361,19 +404,37 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
         exit(-1);
       }
     } else {
-      unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC);
-      if (record_idx > 0) {
-        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
-        if (idx_type == 0) {
-          params2.out.secondary = argop_off;
-        } else {
-          params2.out.secondary = argop_off_i32;
+      if (reduce_op == 1) {
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC);
+        if (record_idx > 0) {
+          unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
+          if (idx_type == 0) {
+            params2.out.secondary = argop_off;
+          } else {
+            params2.out.secondary = argop_off_i32;
+          }
+        }
+        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+        if ( kernel2 == NULL ) {
+          fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+          exit(-1);
         }
       }
-      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
-      if ( kernel2 == NULL ) {
-        fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
-        exit(-1);
+      if (reduce_op == 2) {
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC);
+        if (record_idx > 0) {
+          unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
+          if (idx_type == 0) {
+            params2.out.secondary = argop_off;
+          } else {
+            params2.out.secondary = argop_off_i32;
+          }
+        }
+        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN, unary_shape, unary_flags );
+        if ( kernel2 == NULL ) {
+          fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+          exit(-1);
+        }
       }
     }
   }
@@ -436,12 +497,10 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
+  double check_norm;
   unsigned int reduce_on_outputs = 0;
   char* dt = NULL;
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_UNSUPPORTED;
-
-  const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(NULL == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
 
@@ -479,7 +538,7 @@ int main(int argc, char* argv[])
        (dtype != LIBXSMM_DATATYPE_BF16) &&
        (dtype != LIBXSMM_DATATYPE_BF8)  &&
        (dtype != LIBXSMM_DATATYPE_HF8) ) {
-    printf(" Only F32,F64,BF16,F16,BF8,HF8 are supported datatypes \n");
+    printf("Only F32,F64,BF16,F16,BF8,HF8 are supported datatypes\n");
     exit(EXIT_FAILURE);
   }
 
@@ -700,7 +759,8 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+    printf("Check-norm    : %.24f\n\n", check_norm);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -743,14 +803,15 @@ int main(int argc, char* argv[])
       printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
       printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
       printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
-      printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
+      check_norm = libxsmm_matdiff_epsilon(&norms_elts_squared);
+      printf("Check-norm    : %.24f\n\n", check_norm);
       libxsmm_matdiff_reduce(&diff, &norms_elts_squared);
     }
   }
 
   if (record_idx > 0) {
     printf("##########################################\n");
-    printf("# Arg idx correctness  #\n");
+    printf("# Arg idx correctness                    #\n");
     printf("##########################################\n");
     if (idx_type == 0) {
       libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off, argop_off, 0, 0);
@@ -767,7 +828,8 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
+    printf("Check-norm    : %.24f\n\n", check_norm);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -782,7 +844,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("Reference time = %.5g\n", ((double)(l_total)));
+  printf("Reference time = %.5g\n", l_total);
 
   l_start = libxsmm_timer_tick();
   if (n_cols_idx == 0) {
@@ -797,8 +859,8 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
-  printf("Optimized time = %.5g\n", ((double)(l_total2)));
-  printf("Speedup is = %.5g\n", ((double)(l_total/l_total2)));
+  printf("Optimized time = %.5g\n", l_total2);
+  if (0 < l_total2) printf("Speedup is = %.5g\n", l_total/l_total2);
 
   free(sinp);
   free(result_reduce_elts);
@@ -811,15 +873,12 @@ int main(int argc, char* argv[])
   free(d_ref_result_reduce_elts);
   free(d_ref_result_reduce_elts_squared);
 
-  {
-    const char *const env_check_scale = getenv("CHECK_SCALE");
-    const double check_scale = LIBXSMM_ABS(NULL == env_check_scale ? 1.0 : atof(env_check_scale));
-    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
-      fprintf(stdout, "FAILED unary reduce with an error of %f%%!\n", 100.0 * diff.normf_rel);
-      exit(EXIT_FAILURE);
-    }
+  check_norm = libxsmm_matdiff_epsilon(&diff);
+  if (1e-3 < check_norm) {
+    fprintf(stderr, "FAILED unary reduce with an error of %f!\n", check_norm);
+    exit(EXIT_FAILURE);
   }
 
-  fprintf(stdout, "SUCCESS unnary reduce\n" );
+  printf("SUCCESS unary reduce\n");
   return EXIT_SUCCESS;
 }

@@ -207,16 +207,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                     }
                     else feature_cpu = LIBXSMM_X86_AVX512_CLX; /* CLX */
                   }
-                  else feature_cpu = LIBXSMM_X86_AVX512_CORE; /* SKX */
-                }
-                /* AVX512PF(0x04000000), AVX512ER(0x08000000) */
-                else if (LIBXSMM_CPUID_CHECK(ebx, 0x0C000000)) { /* AVX512-MIC */
-                  if (LIBXSMM_CPUID_CHECK(edx, 0x0000000C)) { /* KNM */
-                    feature_cpu = LIBXSMM_X86_AVX512_KNM;
-                  }
-                  else feature_cpu = LIBXSMM_X86_AVX512_MIC; /* KNL */
-                }
-                else feature_cpu = LIBXSMM_X86_AVX512; /* AVX512-Common */
+                  else feature_cpu = LIBXSMM_X86_AVX512_SKX; /* SKX */
+                } /* we don't target AVX512 COMMON for SKX & KNL */
               }
               else {
                 unsigned int edx2;
@@ -286,12 +278,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           ? "" : (((2 <= libxsmm_verbosity || 0 > libxsmm_verbosity) && LIBXSMM_MAX_STATIC_TARGET_ARCH < feature_cpu)
             ? "highly " : NULL));
         if (NULL != compiler_support) {
-          const int max_static_target_arch = LIBXSMM_MAX_STATIC_TARGET_ARCH;
-          const char *const name = libxsmm_cpuid_name( /* exclude MIC when running on Core processors */
-            (((LIBXSMM_X86_AVX512_MIC == max_static_target_arch) ||
-              (LIBXSMM_X86_AVX512_KNM == max_static_target_arch))
-                && (LIBXSMM_X86_AVX512_CORE <= feature_cpu))
-              ? LIBXSMM_X86_AVX2 : LIBXSMM_MAX_STATIC_TARGET_ARCH);
+          const char *const name = libxsmm_cpuid_name(LIBXSMM_MAX_STATIC_TARGET_ARCH);
           fprintf(stderr, "LIBXSMM WARNING: %soptimized non-JIT code paths are limited to \"%s\"!\n", compiler_support, name);
         }
 # endif
@@ -384,19 +371,10 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_X86_AVX512_CLX: {
       target_arch = "clx";
     } break;
-    case LIBXSMM_X86_AVX512_CORE: {
+    case LIBXSMM_X86_AVX512_SKX: {
       target_arch = "skx";
     } break;
-    case LIBXSMM_X86_AVX512_KNM: {
-      target_arch = "knm";
-    } break;
-    case LIBXSMM_X86_AVX512_MIC: {
-      target_arch = "knl";
-    } break;
-    case LIBXSMM_X86_AVX512: {
-      target_arch = "hsw";
-    } break;
-    case LIBXSMM_X86_AVX512_VL256: {
+    case LIBXSMM_X86_AVX512_VL256_SKX: {
       target_arch = "avx512_vl256";
     } break;
     case LIBXSMM_X86_AVX512_VL256_CLX: {
@@ -487,7 +465,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   {
     result = 16;
   }
-  else if (LIBXSMM_X86_AVX512 <= id) {
+  else if (LIBXSMM_X86_AVX512_SKX <= id) {
     result = 16;
   }
   else if (LIBXSMM_X86_AVX <= id) {
@@ -535,6 +513,17 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
     result = 1;
   }
 # else
+  if ( (type == LIBXSMM_DATATYPE_BF16) ||
+       (type == LIBXSMM_DATATYPE_F16)  ||
+       (type == LIBXSMM_DATATYPE_I16)     ) {
+    result = 4;
+  } else if ( (type == LIBXSMM_DATATYPE_BF8) ||
+              (type == LIBXSMM_DATATYPE_HF8) ||
+              (type == LIBXSMM_DATATYPE_I8)     ) {
+    result = 8;
+  } else {
+    result = 1;
+  }
   if ( libxsmm_cpuid_arm_use_bfdot() != 0 ) {
     if ( (type == LIBXSMM_DATATYPE_BF16) ||
          (type == LIBXSMM_DATATYPE_F16)  ||
@@ -544,8 +533,13 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
                 (type == LIBXSMM_DATATYPE_HF8) ||
                 (type == LIBXSMM_DATATYPE_I8)     ) {
       result = 4;
-    } else {
-      result = 1;
+    }
+  } else if ( libxsmm_cpuid_arm_use_i8dot() != 0 ) {
+    if ( type == LIBXSMM_DATATYPE_I16 ) {
+      result = 2;
+    } else if ( (type == LIBXSMM_DATATYPE_BF8) ||
+                (type == LIBXSMM_DATATYPE_I8)     ) {
+      result = 4;
     }
   } else {
     if ( (type == LIBXSMM_DATATYPE_BF16) ||

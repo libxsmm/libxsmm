@@ -24,7 +24,13 @@
 #endif
 
 #if !defined(LIBXSMM_PAGE_MINSIZE)
-# define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+# if defined(LIBXSMM_PLATFORM_X86)
+#   define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+# elif defined(__APPLE__)
+#   define LIBXSMM_PAGE_MINSIZE 16384 /* 16 KB */
+# else
+#   define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+# endif
 #endif
 
 #if !defined(LIBXSMM_BATCH_CHECK) && !defined(NDEBUG)
@@ -122,6 +128,24 @@
 # endif
 #endif
 
+#if defined(LIBXSMM_PLATFORM_AARCH64)
+# if defined(_MSC_VER)
+#   define LIBXSMM_ARM_ENC16(OP0, OP1, CRN, CRM, OP2) ( \
+      (((OP0) & 1) << 14) | \
+      (((OP1) & 7) << 11) | \
+      (((CRN) & 15) << 7) | \
+      (((CRM) & 15) << 3) | \
+      (((OP2) & 7) << 0))
+#   define ID_AA64ISAR1_EL1 LIBXSMM_ARM_ENC16(0b11, 0b000, 0b0000, 0b0110, 0b001)
+#   define ID_AA64PFR0_EL1  LIBXSMM_ARM_ENC16(0b11, 0b000, 0b0000, 0b0100, 0b000)
+#   define MIDR_EL1         LIBXSMM_ARM_ENC16(0b11, 0b000, 0b0000, 0b0000, 0b000)
+#   define LIBXSMM_ARM_MRS(RESULT, ID) RESULT = _ReadStatusReg(ID)
+# else
+#   define LIBXSMM_ARM_MRS(RESULT, ID) __asm__ __volatile__( \
+      "mrs %0," LIBXSMM_STRINGIFY(ID) : "=r"(RESULT))
+# endif
+#endif
+
 #if defined(__powerpc64__)
 # define LIBXSMM_TIMER_RDTSC(CYCLE) do { \
     CYCLE = __ppc_get_timebase(); \
@@ -135,6 +159,12 @@
   } while(0)
 #elif (defined(_rdtsc) || defined(_WIN32)) && defined(LIBXSMM_PLATFORM_X86)
 # define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
+#elif defined(LIBXSMM_PLATFORM_AARCH64) && 1
+# if defined(ARM64_CNTVCT) /* Windows */
+#   define LIBXSMM_TIMER_RDTSC(CYCLE) LIBXSMM_ARM_MRS(CYCLE, ARM64_CNTVCT)
+# else
+#   define LIBXSMM_TIMER_RDTSC(CYCLE) LIBXSMM_ARM_MRS(CYCLE, CNTVCT_EL0)
+# endif
 #endif
 
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
@@ -281,6 +311,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csc_descriptor
   unsigned int packed_width;
 } libxsmm_pspgemm_csc_descriptor;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_bcsc_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+  unsigned int packed_width;
+  unsigned int bk;
+  unsigned int bn;
+} libxsmm_pspgemm_bcsc_descriptor;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   unsigned int packed_width;
@@ -340,6 +377,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_PSPGEMM_CSR,
   LIBXSMM_BUILD_KIND_PSPGEMM_CSC,
+  LIBXSMM_BUILD_KIND_PSPGEMM_BCSC,
   LIBXSMM_BUILD_KIND_SREG
 } libxsmm_build_kind;
 
@@ -370,6 +408,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_build_request {
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_pspgemm_csr_descriptor* pspgemm_csr;
     const libxsmm_pspgemm_csc_descriptor* pspgemm_csc;
+    const libxsmm_pspgemm_bcsc_descriptor* pspgemm_bcsc;
     const libxsmm_pgemm_ac_rm_descriptor* pgemmacrm;
     const libxsmm_pgemm_bc_rm_descriptor* pgemmbcrm;
     const libxsmm_csr_reg_descriptor* sreg;

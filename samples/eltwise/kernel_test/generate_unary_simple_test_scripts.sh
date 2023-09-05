@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
@@ -9,12 +11,12 @@ fi
 TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
-for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_F32_F32' 'F16_F16_F16' 'F16_F16_F32' 'F32_F16_F32' 'F16_F32_F32' 'BF8_BF8_BF8' 'BF8_BF8_F32' 'F32_BF8_F32' 'BF8_F32_F32' 'HF8_HF8_HF8' 'HF8_HF8_F32' 'F32_HF8_F32' 'HF8_F32_F32' 'F64_F64_F64'; do
-  for TYPE in 1 2 3 4 7 8 9 10 11 12 13 14 15 16 17 27; do
+for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_F32_F32' 'F16_F16_F16' 'F16_F16_F32' 'F32_F16_F32' 'F16_F32_F32' 'BF8_BF8_BF8' 'BF8_BF8_F32' 'F32_BF8_F32' 'BF8_F32_F32' 'HF8_HF8_HF8' 'HF8_HF8_F32' 'F32_HF8_F32' 'HF8_F32_F32' 'F64_F64_F64' 'U32_U16_IMPLICIT'; do
+  for TYPE in 1 2 3 4 7 8 9 10 11 12 13 14 15 16 17 27 42 64 65; do
     for ROUND in 'rne' 'stoch'; do
       for LD in 'eqld' 'gtld'; do
         TPPNAME="none"
-        OUTNAME="unary_"
+        OUTNAME="${HERE}/unary_"
         PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
         RMODE=0
 
@@ -25,6 +27,19 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
 
         # only cpy TPP has low precision compute
         if [[ ("$TYPE" != '1') && ("$TYPE" != '2') && ("$TYPE" != '27') && (("$PREC" == 'F16_F16_F16') || ("$PREC" == 'BF16_BF16_BF16') || ("$PREC" == 'BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8')) ]]; then
+          continue
+        fi
+
+        # Unary unzip to blocks U32 -> 2 x U16 in only possible for 1 prec combination
+        if [[ ("$TYPE" == '42') && ("$PREC" != 'U32_U16_IMPLICIT') ]]; then
+          continue
+        fi
+        if [[ ("$TYPE" != '42') && ("$PREC" == 'U32_U16_IMPLICIT') ]]; then
+          continue
+        fi
+
+        # decomp FP32 -> BF16 in only possible for 1 prec combination
+        if [[ (("$TYPE" == '64') || ("$TYPE" == '65')) && ("$PREC" != 'F32_BF16_F32') ]]; then
           continue
         fi
 
@@ -61,6 +76,12 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
           TPPNAME="exp"
         elif [ "$TYPE" == '27' ] ; then
           TPPNAME="replicate_col_var"
+        elif [ "$TYPE" == '42' ] ; then
+          TPPNAME="unzip"
+        elif [ "$TYPE" == '64' ] ; then
+          TPPNAME="decomp_fp32_to_bf16x2"
+        elif [ "$TYPE" == '65' ] ; then
+          TPPNAME="decomp_fp32_to_bf16x3"
         else
           continue
         fi
@@ -81,7 +102,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
         OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
 
         # generate script by sed
-        sed "s/PREC=0/PREC=\"${PREC}\"/g" unary_simple.tpl \
+        sed "s/PREC=0/PREC=\"${PREC}\"/g" ${HERE}/unary_simple.tpl \
         | sed "s/UNARY_OP=0/UNARY_OP=${TYPE}/g" \
         | sed "s/RMODE=0/RMODE=${RMODE}/g" \
         | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \

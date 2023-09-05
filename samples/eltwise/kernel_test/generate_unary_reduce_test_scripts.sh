@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+
 if [[ -z "${SSIZE}" ]]; then
   SAMPLESIZE=18
 else
@@ -10,7 +12,7 @@ TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
-  for RED_OP in 0 1; do
+  for RED_OP in 0 1 2; do
     for LD in 'eqld' 'gtld'; do
       for RED_VARS in 0 1 2; do
         for IDX in 0 42; do
@@ -19,7 +21,7 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
               for IDX_TYPE in 0 1; do
                 for RECORD_IDX in 0 1; do
                   TPPNAME="none"
-                  OUTNAME="unary_reduce_"
+                  OUTNAME="${HERE}/unary_reduce_"
                   PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
                   RED_X=0
                   RED_X2=0
@@ -57,6 +59,28 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                     fi
                   fi
 
+                  # min case that don't exists
+                  if [[ ("$RED_OP" == '2') && ("$RED_VARS" != '0') ]]; then
+                    continue
+                  fi
+                  if [[ ("$RED_OP" == '2') && ("$ACC" != '0') ]]; then
+                    continue
+                  fi
+                  if [[ ("$RED_OP" == '2') && ("$IDX" != '42') ]]; then
+                    continue
+                  fi
+                  if [[ ("$RED_OP" == '2') && ("$IDX" == '42') ]]; then
+                    if [ "$PREC" == 'F16' ]; then
+                      continue
+                    fi
+                    if [ "$PREC" == 'BF8' ]; then
+                      continue
+                    fi
+                    if [ "$PREC" == 'HF8' ]; then
+                      continue
+                    fi
+                  fi
+
                   # idx_type and record_idx relevant only for indexed reduce cols
                   if [[ ("$IDX_TYPE" == '1') && ("$IDX" != '42') ]]; then
                     continue
@@ -64,8 +88,8 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                   if [[ ("$RECORD_IDX" == '1') && ("$IDX" != '42') ]]; then
                     continue
                   fi
-                  # record idx relevant only for max op
-                  if [[ ("$RECORD_IDX" == '1') && ("$RED_OP" != '1') ]]; then
+                  # record idx relevant only for min/max op
+                  if [[ ("$RECORD_IDX" == '1') && ("$RED_OP" == '0') ]]; then
                     continue
                   fi
 
@@ -74,6 +98,8 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                     TPPNAME="add"
                   elif [ "$RED_OP" == '1' ] ; then
                     TPPNAME="max"
+                  elif [ "$RED_OP" == '2' ] ; then
+                    TPPNAME="min"
                   else
                     continue
                   fi
@@ -115,7 +141,7 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                   OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
 
                   # generate script by sed
-                  sed "s/PREC=0/PREC=\"${PREC}\"/g" unary_reduce.tpl \
+                  sed "s/PREC=0/PREC=\"${PREC}\"/g" ${HERE}/unary_reduce.tpl \
                   | sed "s/REDUCE_X=0/REDUCE_X=${RED_X}/g" \
                   | sed "s/REDUCE_X2=0/REDUCE_X2=${RED_X2}/g" \
                   | sed "s/REDUCE_ROWS=0/REDUCE_ROWS=${RED_ROWS}/g" \
