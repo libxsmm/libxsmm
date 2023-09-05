@@ -1163,8 +1163,14 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
       i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[3] % 16;
     }
     n_blocking = 16;
-    while (i_xgemm_desc->n % n_blocking != 0) {
-      n_blocking--;
+    if (i_micro_kernel_config->vnni_format_C == 0) {
+      while (i_xgemm_desc->n % n_blocking != 0) {
+        n_blocking--;
+      }
+    } else {
+      while ((i_xgemm_desc->n % n_blocking != 0) || (n_blocking % 2 != 0)) {
+        n_blocking--;
+      }
     }
     n_blocking_info[0].blocking = n_blocking;
     n_blocking_info[0].block_size = i_xgemm_desc->n;
@@ -1199,8 +1205,14 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     }
 
     n_blocking = 32;
-    while (i_xgemm_desc->n % n_blocking != 0) {
-      n_blocking--;
+    if (i_micro_kernel_config->vnni_format_C == 0) {
+      while (i_xgemm_desc->n % n_blocking != 0) {
+        n_blocking--;
+      }
+    } else {
+      while ((i_xgemm_desc->n % n_blocking != 0) || (n_blocking % 2 != 0)) {
+        n_blocking--;
+      }
     }
     if (n_blocking <= 16) {
       n_blocking_info[0].blocking = n_blocking;
@@ -1211,8 +1223,13 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
       n_blocking_info[0].blocking = n_blocking;
       n_blocking_info[0].block_size = i_xgemm_desc->n;
       n_blocking_info[0].tiles = 2;
-      n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
-      n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
+      if (i_micro_kernel_config->vnni_format_C == 0) {
+        n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
+        n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
+      } else {
+        n_blocking_info[0].sizes[0] = 16;
+        n_blocking_info[0].sizes[1] = n_blocking - 16;
+      }
     }
 
     /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
