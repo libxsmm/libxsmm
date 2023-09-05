@@ -28,7 +28,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned (ignored for sparse)\n");
   printf("    0: unaligned C, otherwise aligned (ignored for sparse)\n");
-  printf("    ARCH: noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx\n");
+  printf("    ARCH: noarch, wsm, snb, hsw, skx, clx, cpx\n");
   printf("    PREFETCH: nopf (none), other options are not supported\n");
   printf("    PRECISION: SP, DP\n");
   printf("    matrix input (CSC mtx file)\n");
@@ -47,7 +47,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
-  printf("    ARCH: noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx\n");
+  printf("    ARCH: noarch, wsm, snb, hsw, skx, clx, cpx\n");
   printf("    PREFETCH: nopf (none), BL2viaC, AL2, curAL2,\n"
          "              AL2_BL2viaC, curAL2_BL2viaC,\n");
   printf("    PRECISION: SP, DP\n");
@@ -164,8 +164,6 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_arch, "wsm") != 0)    &&
        (strcmp(l_arch, "snb") != 0)    &&
        (strcmp(l_arch, "hsw") != 0)    &&
-       (strcmp(l_arch, "knl") != 0)    &&
-       (strcmp(l_arch, "knm") != 0)    &&
        (strcmp(l_arch, "skx") != 0)    &&
        (strcmp(l_arch, "clx") != 0)    &&
        (strcmp(l_arch, "cpx") != 0)    &&

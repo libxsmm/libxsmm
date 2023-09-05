@@ -779,8 +779,9 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in)
     m = 0x7;
     /* overflow --> make it NaN */
   }
-  else if ((e_f16 > (f16_bias - f8_bias + 15)) ||
-    ((e_f16 == (f16_bias - f8_bias + 15)) && (m_f16 > 0x0300))) {
+  else if ((e_f16 >  (f16_bias - f8_bias + 15)) ||
+          ((e_f16 == (f16_bias - f8_bias + 15)) && (m_f16 > 0x0340)))
+  {
     e = 0xf;
     m = 0x7;
     /* smaller than denormal f8 + eps */
