@@ -1204,6 +1204,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
