@@ -576,7 +576,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
       m = 0x7;
     /* overflow --> make it NaN */
     } else if ( (e_f32 > (f32_bias - f8_bias + 15)) ||
-                ((e_f32 == (f32_bias - f8_bias + 15)) && ( m_f32 > 0x600000))) {
+                ((e_f32 == (f32_bias - f8_bias + 15)) && ( m_f32 > 0x680000))) {
       e = 0xf;
       m = 0x7;
     /* smaller than denormal f8 + eps */
@@ -637,7 +637,7 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) 
     m = 0x7;
   /* overflow --> make it NaN */
   } else if ( (e_f16 > (f16_bias - f8_bias + 15)) ||
-              ((e_f16 == (f16_bias - f8_bias + 15)) && ( m_f16 > 0x0300))) {
+              ((e_f16 == (f16_bias - f8_bias + 15)) && ( m_f16 > 0x0340))) {
     e = 0xf;
     m = 0x7;
   /* smaller than denormal f8 + eps */
