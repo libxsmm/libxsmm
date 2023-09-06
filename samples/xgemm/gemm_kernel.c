@@ -275,6 +275,20 @@ void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbi
         libxsmm_rne_convert_fp32_bf16( &res, &h_c_gold[i + j * ldc], 1 );
       }
     }
+  } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) {
+    libxsmm_float16* h_c_gold  = (libxsmm_float16*)l_c_gold;
+    libxsmm_float16* h_colbias = (libxsmm_float16*)l_colbias;
+    for (j = 0; j < n; j++) {
+      for (i = 0; i < m; i++) {
+        float res = 0.0f;
+        float tmp_c_f = 0.0f;
+        float tmp_colb_f = 0.0f;
+        tmp_c_f    = libxsmm_convert_f16_to_f32( h_c_gold[i + j * ldc] );
+        tmp_colb_f = libxsmm_convert_f16_to_f32( h_colbias[i]);
+        res = tmp_c_f + tmp_colb_f;
+        libxsmm_rne_convert_fp32_f16( &res, &h_c_gold[i + j * ldc], 1 );
+      }
+    }
   } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
     libxsmm_bfloat8* h_c_gold  = (libxsmm_bfloat8*)l_c_gold;
     libxsmm_bfloat8* h_colbias = (libxsmm_bfloat8*)l_colbias;
@@ -604,7 +618,7 @@ void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
   libxsmm_blasint m = i_gemm_def->m;
   libxsmm_blasint n = i_gemm_def->n;
 
-  if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16) {
+  if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F16) {
     libxsmm_bfloat16* h_c   = (libxsmm_bfloat16*)l_c_gold;
     libxsmm_bfloat16* tmp_c = (libxsmm_bfloat16*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat16), 64);
     /* Copy to tmp_c */
@@ -1110,7 +1124,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_float16 c_tmp;
     libxsmm_float16 cur_a, cur_b;
     float up_c;
-    int l_k_block = 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
       env_arch == libxsmm_stristr(env_arch, "spr") ||
@@ -1160,7 +1174,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_float16 c_tmp;
     float c_tmp_f32;
     libxsmm_float16 cur_a, cur_b;
-    int l_k_block = 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
       env_arch == libxsmm_stristr(env_arch, "spr") ||
@@ -1506,6 +1520,9 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
           union libxsmm_bfloat16_f32 bf16_hp;
           bf16_hp.f = 2 * max_float;
           ptr[i] = bf16_hp.i[1];
+        } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) {
+          libxsmm_float16 *ptr = (libxsmm_float16*)ref_fusion_arguments->colbias;
+          ptr[i] = libxsmm_convert_f32_to_f16(2 * max_float);
         } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8 *ptr = (libxsmm_bfloat8*)ref_fusion_arguments->colbias;
           union libxsmm_bfloat8_f16 bf8_hp;
