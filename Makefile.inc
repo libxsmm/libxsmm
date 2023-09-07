@@ -358,6 +358,9 @@ ifeq (0,$(GNU))
   endif
 else ifneq (,$(filter-out default undefined,$(origin CC) $(origin CXX) $(origin FC)))
   $(info WARNING: GNU=$(GNU) was given but CC, CXX, or FC was specified!)
+  FC := gfortran
+  CC := gcc
+  CXX := g++
 endif
 
 # adopt extra flags from C if not set individually
