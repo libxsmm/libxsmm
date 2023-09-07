@@ -334,7 +334,7 @@ void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask
   if (i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold = (float*)l_c_gold;
     relu_f32_f32_gold(m, n, ldc, ldc, i_gemm_def->uop_ld, f_c_gold, f_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
-  } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16) {
+  } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F16) {
     libxsmm_bfloat16* h_c_gold = (libxsmm_bfloat16*)l_c_gold;
     relu_bf16_bf16_gold(m, n, ldc, ldc, i_gemm_def->uop_ld, h_c_gold, h_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
   } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8) {
@@ -369,6 +369,16 @@ void apply_sigmoid(const gemm_def *i_gemm_def, void *l_c_gold) {
         tmp_c.i[1] = h_c_gold[i + j * ldc];
         res = fsigmoid(tmp_c.f);
         libxsmm_rne_convert_fp32_bf16( &res, &h_c_gold[i + j * ldc], 1 );
+      }
+    }
+  } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16) {
+    libxsmm_float16* h_c_gold = (libxsmm_float16*)l_c_gold;
+    for (j = 0; j < n; j++) {
+      for (i = 0; i < m; i++) {
+        float res = 0.0;
+        libxsmm_convert_f16_f32(&h_c_gold[i + j * ldc], &res, 1);
+        res = fsigmoid(res);
+        libxsmm_rne_convert_fp32_f16( &res, &h_c_gold[i + j * ldc], 1 );
       }
     }
   } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8) {
@@ -1491,6 +1501,11 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
             bf16_hp.i[0] = 0;
             bf16_hp.i[1] = val;
             max_float = LIBXSMM_MAX(LIBXSMM_ABS(bf16_hp.f), max_float);
+          } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) {
+            const libxsmm_float16 *const pval = (const libxsmm_float16*)l_c_tmp;
+            const libxsmm_float16 val = pval[j*i_gemm_def->ldc+i];
+            float fval = libxsmm_convert_f16_to_f32( val );
+            max_float = LIBXSMM_MAX(LIBXSMM_ABS(fval), max_float);
           } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
             const libxsmm_bfloat8 *const pval = (const libxsmm_bfloat8*)l_c_tmp;
             const libxsmm_bfloat8 val = pval[j*i_gemm_def->ldc+i];
@@ -1554,7 +1569,16 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       libxsmm_rne_convert_fp32_bf16( (float*)l_c_tmp, (libxsmm_bfloat16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
       i_gemm_def->c_type = LIBXSMM_DATATYPE_BF16;
       libxsmm_free(l_c_tmp);
-    } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
+    } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) {
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
+      libxsmm_convert_f16_f32( (libxsmm_float16*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      apply_sigmoid(i_gemm_def, l_c_tmp);
+      libxsmm_rne_convert_fp32_f16( (float*)l_c_tmp, (libxsmm_float16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F16;
+      libxsmm_free(l_c_tmp);
+    }  else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
       char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
       i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
       libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
@@ -1587,7 +1611,16 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       libxsmm_rne_convert_fp32_bf16( (float*)l_c_tmp, (libxsmm_bfloat16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
       i_gemm_def->c_type = LIBXSMM_DATATYPE_BF16;
       libxsmm_free(l_c_tmp);
-    } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
+    } else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 ) {
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
+      libxsmm_convert_f16_f32( (libxsmm_bfloat16*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      apply_relu(i_gemm_def, l_c_tmp, ref_fusion_arguments->relu_bitmask, l_use_bitmask);
+      libxsmm_rne_convert_fp32_f16( (float*)l_c_tmp, (libxsmm_bfloat16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F16;
+      libxsmm_free(l_c_tmp);
+    }  else if ( i_gemm_def->c_type == LIBXSMM_DATATYPE_BF8 ) {
       char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
       i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
       libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
@@ -2489,7 +2522,7 @@ int main(int argc, char* argv []) {
   l_gemm_def.binary_postop = l_binary_postop;
   l_gemm_def.unary_postop  = l_unary_postop;
 
-  if ((l_gemm_def.c_type != LIBXSMM_DATATYPE_BF16) && (l_gemm_def.c_type != LIBXSMM_DATATYPE_BF8) && (l_gemm_def.c_type != LIBXSMM_DATATYPE_HF8)) {
+  if ((l_gemm_def.c_type != LIBXSMM_DATATYPE_BF16) && (l_gemm_def.c_type != LIBXSMM_DATATYPE_F16) && (l_gemm_def.c_type != LIBXSMM_DATATYPE_BF8) && (l_gemm_def.c_type != LIBXSMM_DATATYPE_HF8)) {
     if (l_vnni_c > 0) {
       fprintf(stderr, "ERROR: requested C to be converted to vnni but output prec is not BF16 or BF8 or HF8!\n");
       exit(EXIT_FAILURE);
@@ -2657,7 +2690,7 @@ int main(int argc, char* argv []) {
           ref_matmul( &l_gemm_def, l_a, l_b, l_c_gold );
         }
         if (l_vnni_c > 0) {
-          if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
+          if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 || l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
             if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.c_type) == 4 ) {
               convert_output_to_vnni4(&l_gemm_def, l_c_gold);
             } else {
