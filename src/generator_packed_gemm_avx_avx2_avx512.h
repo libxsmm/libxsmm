@@ -23,6 +23,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_load_C( li
                                                                               const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                               const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                               const unsigned int                 i_n_blocking,
+                                                                              const unsigned int                 i_m_blocking,
                                                                               const unsigned int                 i_use_masking,
                                                                               const unsigned int                 i_packed_width );
 
@@ -31,6 +32,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_store_C( l
                                                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                                const unsigned int                 i_n_blocking,
+                                                                               const unsigned int                 i_m_blocking,
                                                                                const unsigned int                 i_use_masking,
                                                                                const unsigned int                 i_packed_width );
 
@@ -40,7 +42,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop( lib
                                                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                              const unsigned int                 i_packed_width,
-                                                                             const unsigned int                 i_n_blocking );
+                                                                             const unsigned int                 i_n_blocking,
+                                                                             const unsigned int                 i_m_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd_packed( libxsmm_generated_code*            io_generated_code,
                                                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,
@@ -50,6 +53,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd
                                                                                          const unsigned int                 i_packed_width,
                                                                                          const unsigned int                 i_simd_packed_width,
                                                                                          const unsigned int                 i_simd_packed_valid,
-                                                                                         const unsigned int                 i_n_blocking );
+                                                                                         const unsigned int                 i_n_blocking,
+                                                                                         const unsigned int                 i_m_blocking );
 
 #endif /* GENERATOR_PACKED_GEMM_AVX_AVX2_AVX512_H */
