@@ -438,7 +438,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned long long strides[2];
   char opname[256];
   unsigned long long _N = N;
-  double error_bound = 0.0, check_norm;
+  double error_bound = 0.0;
   const char* matdiff_env;
   libxsmm_blasint N_out = N;
 
@@ -605,10 +605,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( check_norm > error_bound ) {
+  if ( norms_out.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
