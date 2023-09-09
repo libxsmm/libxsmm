@@ -1605,7 +1605,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   libxsmm_matdiff_clear(&l_diff);
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
-    error = libxsmm_matdiff_epsilon(&l_diff);
+    error = l_diff.normf_rel;
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
 #if 0
     float* data_gold_f = (float*)data_gold;
@@ -1619,7 +1619,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     }
 #endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
-    error = libxsmm_matdiff_epsilon(&l_diff);
+    error = l_diff.normf_rel;
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
     float* data_gold_f = (float*)malloc( sizeof(float) * ld * n );
     float* data_f      = (float*)malloc( sizeof(float) * ld * n );
@@ -1638,7 +1638,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     }
 #endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
-    error = libxsmm_matdiff_epsilon(&l_diff);
+    error = l_diff.normf_rel;
 
     free( data_f );
     free( data_gold_f );
@@ -1649,7 +1649,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_convert_f16_f32( (libxsmm_float16*)data_gold, data_gold_f, ld*n );
     libxsmm_convert_f16_f32( (libxsmm_float16*)data,      data_f,      ld*n );
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
-    error = libxsmm_matdiff_epsilon(&l_diff);
+    error = l_diff.normf_rel;
 
     free( data_f );
     free( data_gold_f );
@@ -1697,10 +1697,10 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     }
 #endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
-    error = libxsmm_matdiff_epsilon(&l_diff);
+    error = l_diff.normf_rel;
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
-    error = libxsmm_matdiff_epsilon(&l_diff);
+    error = l_diff.normf_rel;
   } else {
     error = 100.0;
   }
