@@ -105,13 +105,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512( libxsmm_g
   }
 
   /* some very simple m-blocking */
-  if ( i_xgemm_desc->n % 4 == 0 ) {
+  if ( i_xgemm_desc->m % 4 == 0 ) {
     l_m_block = 4;
     l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 6 : 3;
-  } else if ( i_xgemm_desc->n % 3 == 0 ) {
+  } else if ( i_xgemm_desc->m % 3 == 0 ) {
     l_m_block = 3;
     l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 8 : 4;
-  } else if ( i_xgemm_desc->n % 2 == 0 ) {
+  } else if ( i_xgemm_desc->m % 2 == 0 ) {
     l_m_block = 2;
     l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 12 : 6;
   } else {
