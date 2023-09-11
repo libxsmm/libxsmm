@@ -146,7 +146,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
       if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
         /* we are fine, use avx512 path */
-        io_generated_code->arch = LIBXSMM_X86_AVX512_SKX;
+        if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
+          io_generated_code->arch = LIBXSMM_X86_AVX512_SKX;
+        }
       } else {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
       }
