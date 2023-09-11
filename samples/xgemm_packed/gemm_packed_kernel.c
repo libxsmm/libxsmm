@@ -353,7 +353,7 @@ int main(int argc, char* argv[]) {
 
       if (l_keep_going == 0) break;
     }
-
+    printf("CMDLINE: %s %s %s %s %s %i %i %i %i %i %i %i %f %f %i %i %i\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_r, l_alpha, l_beta, l_trans_a, l_trans_b, l_reps);
     {
       /* calculate flops */
       double l_flops = 2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
