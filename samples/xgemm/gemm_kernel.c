@@ -2734,7 +2734,7 @@ int main(int argc, char* argv []) {
 #endif
       {
         if (l_vnni_c > 0) {
-          if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
+          if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 || l_gemm_def.c_type == LIBXSMM_DATATYPE_F16) {
             if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.c_type) == 4 ) {
               error = check_matrix( l_gemm_def.c_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );
             } else {
