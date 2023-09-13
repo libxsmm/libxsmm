@@ -679,7 +679,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 'y',
                 zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
 
-            libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), zmm_reg, zmm_reg);
+            libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), zmm_reg, zmm_reg);
             if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, 'z', zmm_reg, vbias_reg, zmm_reg );
             }
