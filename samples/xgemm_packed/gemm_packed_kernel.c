@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
       /* init libxsmm kernel */
       libxsmm_gemmfunction mykernel = NULL;
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-        l_m, l_n, l_k, l_lda, l_ldb, l_lda, l_dtype_a,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_dtype_a,
         l_dtype_b, l_dtype_c, l_dtype_comp );
       const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
       const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;

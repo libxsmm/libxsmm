@@ -74,7 +74,7 @@ for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' ; do
 
          # for gt we need to touch up the script
          if [ "$LD" == 'gtld' ] ; then
-           sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '100 100 100'/g" ${HERE}/${OUTNAME} >${TMPFILE}
+           sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '100 105 110'/g" ${HERE}/${OUTNAME} >${TMPFILE}
            cp ${TMPFILE} ${HERE}/${OUTNAME}
          fi
 
