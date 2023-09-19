@@ -495,15 +495,15 @@ LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void) {
   return result;
 }
 
-LIBXSMM_API int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
-  int result = 3;
+LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
+ unsigned  int result = 3;
 #if defined(LIBXSMM_PLATFORM_X86)
   const char *const l_env_x86_srf_gemm_set_n_max_blocking = getenv("LIBXSMM_X86_SRF_GEMM_SET_N_MAX_BLOCKING");
   if ( 0 == l_env_x86_srf_gemm_set_n_max_blocking ) {
     result = 3;
   } else {
     if ( atoi(l_env_x86_srf_gemm_set_n_max_blocking) >= 0 ) {
-      result = atoi(l_env_x86_srf_gemm_set_n_max_blocking);
+      result = (unsigned int) atoi(l_env_x86_srf_gemm_set_n_max_blocking);
       if (result >= 8) {
         fprintf(stderr, "LIBXSMM WARNING: MAX N blocking allowed for SRF GEMM kernel is 7, overwriting requested max value...\n");
         result = 7;
