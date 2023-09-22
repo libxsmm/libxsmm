@@ -272,21 +272,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
   if ((has_inp_or_out_fp64 > 0) && (has_all_inp_and_out_fp64 == 0)) {
     is_valid_arch_prec = 0;
   }
-  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) {
-    unsigned int record_argops = (((i_mateltwise_desc->param & 0x1) > 0) || ((i_mateltwise_desc->param & 0x2) > 0)) ? 1 : 0;
-    unsigned int is_bf16_inp = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
-    unsigned int is_fp32_inp = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
-
-    if ((is_bf16_inp == 0) && (is_fp32_inp == 0)) {
-      is_valid_arch_prec = 0;
-    }
-    if ((is_bf16_inp > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
-      is_valid_arch_prec = 0;
-    }
-    if (record_argops > 0) {
-      is_valid_arch_prec = 0;
-    }
-  }
   return is_valid_arch_prec;
 }
 
@@ -321,9 +306,7 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
     /* Stack management for melt kernel */
     libxsmm_generator_meltw_setup_stack_frame_aarch64( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
-    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) {
-      libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
+    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
       if (libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
         if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
