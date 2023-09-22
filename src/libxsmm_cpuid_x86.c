@@ -495,6 +495,21 @@ LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void) {
   return result;
 }
 
+LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
+ unsigned  int result = 3;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *const l_env_x86_srf_gemm_set_n_max_blocking = getenv("LIBXSMM_X86_SRF_GEMM_SET_N_MAX_BLOCKING");
+  if ( 0 == l_env_x86_srf_gemm_set_n_max_blocking ) {
+    result = 3;
+  } else {
+    if ( atoi(l_env_x86_srf_gemm_set_n_max_blocking) > 0 ) {
+      result = (unsigned int) atoi(l_env_x86_srf_gemm_set_n_max_blocking);
+    }
+  }
+#endif
+  return result;
+}
+
 LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
 {
   /* handle signed and unsigned types */

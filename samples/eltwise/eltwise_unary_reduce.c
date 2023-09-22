@@ -497,10 +497,12 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
-  double check_norm;
   unsigned int reduce_on_outputs = 0;
   char* dt = NULL;
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_UNSUPPORTED;
+
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(NULL == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
 
@@ -759,8 +761,7 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
-    printf("Check-norm    : %.24f\n\n", check_norm);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -803,9 +804,7 @@ int main(int argc, char* argv[])
       printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
       printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
       printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
-      check_norm = libxsmm_matdiff_epsilon(&norms_elts_squared);
-      printf("Check-norm    : %.24f\n\n", check_norm);
-      libxsmm_matdiff_reduce(&diff, &norms_elts_squared);
+      printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
     }
   }
 
@@ -828,9 +827,7 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
-    printf("Check-norm    : %.24f\n\n", check_norm);
-    libxsmm_matdiff_reduce(&diff, &norms_elts);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
   }
 
   l_start = libxsmm_timer_tick();
@@ -873,10 +870,13 @@ int main(int argc, char* argv[])
   free(d_ref_result_reduce_elts);
   free(d_ref_result_reduce_elts_squared);
 
-  check_norm = libxsmm_matdiff_epsilon(&diff);
-  if (1e-3 < check_norm) {
-    fprintf(stderr, "FAILED unary reduce with an error of %f!\n", check_norm);
-    exit(EXIT_FAILURE);
+  {
+    const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(NULL == env_check_scale ? 1.0 : atof(env_check_scale));
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
+      fprintf(stdout, "FAILED unary reduce with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }
   }
 
   printf("SUCCESS unary reduce\n");

@@ -73,7 +73,7 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
  */
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
-
+LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void);
 LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
 
 /**

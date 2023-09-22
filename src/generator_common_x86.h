@@ -796,6 +796,17 @@ void libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated
                                                          const unsigned int      io_gp_reg );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_cvt_to_ps_avx512( libxsmm_generated_code* io_generated_code,
+                                                  const char              i_vname,
+                                                  libxsmm_datatype        i_in_prec,
+                                                  const unsigned int      i_vec_reg,
+                                                  const unsigned int      o_vec_reg );
+LIBXSMM_API_INTERN
+void libxsmm_generator_cvthf8ps_avx512( libxsmm_generated_code* io_generated_code,
+                                         const char              i_vname,
+                                         const unsigned int      i_vec_reg,
+                                         const unsigned int      o_vec_reg );
+LIBXSMM_API_INTERN
 void libxsmm_generator_cvtbf8ps_avx512( libxsmm_generated_code* io_generated_code,
                                         const char              i_vname,
                                         const unsigned int      i_vec_reg,
