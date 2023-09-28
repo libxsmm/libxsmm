@@ -66,9 +66,6 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                   if [[ ("$RED_OP" == '2') && ("$ACC" != '0') ]]; then
                     continue
                   fi
-                  if [[ ("$RED_OP" == '2') && ("$IDX" != '42') ]]; then
-                    continue
-                  fi
                   if [[ ("$RED_OP" == '2') && ("$IDX" == '42') ]]; then
                     if [ "$PREC" == 'F16' ]; then
                       continue

@@ -88,7 +88,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
       for (j = 0; j < n; j++) {
         ref_result_reduce_elts[j] = sinp[j*ld_in];
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
+          ref_result_reduce_elts[j] = (reduce_op == 1) ? LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] ) : LIBXSMM_MIN( ref_result_reduce_elts[j], sinp[j*ld_in + i] ) ;
         }
       }
     } else {
@@ -97,7 +97,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = sinp[i];
           for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            ref_result_reduce_elts[i] = (reduce_op == 1) ? LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]) : LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]) ;
           }
         }
       } else {
@@ -124,7 +124,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
               j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
               if (record_idx > 0) {
                 if (sinp[j*ld_in + i] < ref_result_reduce_elts[i] ) {
-                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_result_reduce_elts[ i] = sinp[j*ld_in + i];
                   ref_argop_off[i] = j;
                 }
               } else {
@@ -231,7 +231,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
       for (j = 0; j < n; j++) {
         ref_result_reduce_elts[j] = sinp[j*ld_in];
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
+          ref_result_reduce_elts[j] = (reduce_op == 1) ? LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] ) :  LIBXSMM_MIN( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
         }
       }
     } else {
@@ -240,7 +240,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = sinp[i];
           for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            ref_result_reduce_elts[i] = (reduce_op == 1) ? LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]) :  LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]) ;
           }
         }
       } else {
