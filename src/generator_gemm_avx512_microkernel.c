@@ -383,7 +383,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         unsigned int l_current_mask_reg = (3+l_m)%8;
         /* Load bit mask for current expand operation */
         libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-            LIBXSMM_X86_INSTR_KMOVD_LD,
+            (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) ? LIBXSMM_X86_INSTR_KMOVD_LD : LIBXSMM_X86_INSTR_KMOVW_LD,
             i_gp_reg_mapping->gp_reg_bitmap_a,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (i_micro_kernel_config->vector_length/8) * l_m * l_k_pack_factor,
@@ -397,7 +397,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
 
         /* Expand operation */
         libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
-                                                     LIBXSMM_X86_INSTR_VPEXPANDW,
+                                                     (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) ? LIBXSMM_X86_INSTR_VPEXPANDW : LIBXSMM_X86_INSTR_VPEXPANDD,
                                                      i_micro_kernel_config->vector_name,
                                                      i_gp_reg_mapping->gp_reg_a,
                                                      i_gp_reg_mapping->gp_reg_decompressed_elts,
@@ -417,7 +417,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
 
         /* Move zmm to reg */
         libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVD_GPR_ST,
+          (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) ? LIBXSMM_X86_INSTR_KMOVD_GPR_ST : LIBXSMM_X86_INSTR_KMOVW_GPR_ST,
           i_gp_reg_mapping->gp_reg_popcnt,
           l_current_mask_reg );
         /* Popcount */
