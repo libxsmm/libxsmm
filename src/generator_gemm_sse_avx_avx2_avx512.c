@@ -864,8 +864,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   }
 
   if (l_is_Ai4_Bf16_gemm > 0) {
-    l_k_blocking = l_k_blocking*2;
-    l_k_threshold = ((l_k_threshold+1)*2)-1;
+    l_k_blocking = 4;
+    l_k_threshold = 8;
   }
 
   /* set up architecture dependent compute micro kernel generator */
