@@ -52,7 +52,8 @@ typedef struct gemm_def {
   int tc_config;
   float scf;
   float *scf_f32;
-  char *zpt_i8;
+  float *zpt_f32;
+  libxsmm_float16 *zpt_f16;
   libxsmm_float16 *scf_f16;
   int binary_postop;
   int unary_postop;
@@ -593,9 +594,9 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
           if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
             if ( pos_val_only != 0 ) {
-              uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%8;
+              uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%16;
             } else {
-              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%16;
+              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%8;
             }
           } else {
             if ( pos_val_only != 0 ) {
@@ -1025,17 +1026,19 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
               int int_a = (int) char_a;
-              if (i_gemm_def->fuse_zpt_sub > 0) {
-                short_a = (short)short_a - (short)i_gemm_def->zpt_i8[l_i];
-                int_a = (int)int_a - (int)i_gemm_def->zpt_i8[l_i];
-              }
-              /* Convert a to float16 and scale  */
               if (l_use_replacement_fma > 0) {
                 a_use = (float) short_a;
                 libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
                 libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               } else {
                 a_use = (float) int_a;
+              }
+              if (i_gemm_def->fuse_zpt_sub > 0) {
+                a_use = a_use - i_gemm_def->zpt_f32[l_i];
+                if (l_use_replacement_fma > 0) {
+                  libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
+                  libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
+                }
               }
               a_use = a_use * i_gemm_def->scf_f32[l_i];
               if (l_use_replacement_fma > 0) {
@@ -1094,17 +1097,19 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
               int int_a = (int) char_a;
-              if (i_gemm_def->fuse_zpt_sub > 0) {
-                short_a = (short)short_a - (short)i_gemm_def->zpt_i8[l_i];
-                int_a = (int)int_a - (int)i_gemm_def->zpt_i8[l_i];
-              }
-              /* Convert a to float16 and scale  */
               if (l_use_replacement_fma > 0) {
                 a_use = (float) short_a;
                 libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
                 libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               } else {
                 a_use = (float) int_a;
+              }
+              if (i_gemm_def->fuse_zpt_sub > 0) {
+                a_use = a_use - i_gemm_def->zpt_f32[l_i];
+                if (l_use_replacement_fma > 0) {
+                  libxsmm_rne_convert_fp32_f16(&a_use, &cur_a, 1);
+                  libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
+                }
               }
               a_use = a_use * i_gemm_def->scf_f32[l_i];
               if (l_use_replacement_fma > 0) {
@@ -1984,7 +1989,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   gemm_param.c.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
   gemm_param.a.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f16 :
       (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_BF16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f32 : NULL));
-  gemm_param.a.quaternary = (void*)((i_gemm_def->is_Ai4Bf16_gemm > 0 && i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32)) ? i_gemm_def->zpt_i8 : NULL);
+  gemm_param.a.quaternary = (void*)((i_gemm_def->is_Ai4Bf16_gemm > 0 && i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32)) ? i_gemm_def->zpt_f16 : NULL);
       /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)i_a;
@@ -2635,16 +2640,20 @@ int main(int argc, char* argv []) {
         libxsmm_blasint scf_i = 0;
         float *tmp_scf_f32 = (float*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(float), 64);
         libxsmm_float16 *tmp_scf = (libxsmm_float16*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(libxsmm_float16), 64);
-        char *tmp_zpt = (char*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(char), 64);
+        float *tmp_zpt_f32 = (float*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(float), 64);
+        libxsmm_float16 *tmp_zpt = (libxsmm_float16*)libxsmm_aligned_malloc(l_gemm_def.m * sizeof(libxsmm_float16), 64);
         for (scf_i = 0; scf_i < l_gemm_def.m; scf_i++) {
           tmp_scf_f32[scf_i] = (float)0.1f * (float)get_random_posneg_p5_num();
-          tmp_zpt[scf_i] = (char) scf_i % 8;
+          tmp_zpt_f32[scf_i] = (float)0.2f * (float)get_random_posneg_p5_num();
         }
         l_gemm_def.scf_f32 = tmp_scf_f32;
         l_gemm_def.scf_f16 = tmp_scf;
-        l_gemm_def.zpt_i8 = tmp_zpt;
+        l_gemm_def.zpt_f32 = tmp_zpt_f32;
+        l_gemm_def.zpt_f16 = tmp_zpt;
         libxsmm_rne_convert_fp32_f16(l_gemm_def.scf_f32, l_gemm_def.scf_f16, l_gemm_def.m);
         libxsmm_convert_f16_f32( l_gemm_def.scf_f16, l_gemm_def.scf_f32, l_gemm_def.m );
+        libxsmm_rne_convert_fp32_f16(l_gemm_def.zpt_f32, l_gemm_def.zpt_f16, l_gemm_def.m);
+        libxsmm_convert_f16_f32( l_gemm_def.zpt_f16, l_gemm_def.zpt_f32, l_gemm_def.m );
       }
 
       if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_BF16) &&
@@ -2778,7 +2787,8 @@ int main(int argc, char* argv []) {
            (l_dtype_comp == LIBXSMM_DATATYPE_F16 || l_dtype_comp == LIBXSMM_DATATYPE_F32 || l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT ) && (l_dtype_c == LIBXSMM_DATATYPE_F16 || l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
         libxsmm_free(l_gemm_def.scf_f32);
         libxsmm_free(l_gemm_def.scf_f16);
-        libxsmm_free(l_gemm_def.zpt_i8);
+        libxsmm_free(l_gemm_def.zpt_f32);
+        libxsmm_free(l_gemm_def.zpt_f16);
       }
       if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_BF16) &&
            (l_dtype_c == LIBXSMM_DATATYPE_BF16 || l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
