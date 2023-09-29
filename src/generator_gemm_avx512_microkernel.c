@@ -164,12 +164,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
 
   if (i_is_Ai8_Bf16_gemm > 0) {
     if (l_is_Ai4_Bf16_gemm > 0) {
-      unsigned int l_vreg_mask_0f = 0;
-      unsigned int l_vreg_mask_f0 = 1;
       unsigned int tmp_lo_vreg = io_A_vreg;
       unsigned int tmp_hi_vreg = io_A_vreg + i_m_blocking;
-      char l_vname_cvt = (i_vname_cvt == 'z') ? 'y' : 'x';
-
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF) > 0) {
         l_vec_scf_a = 2+i_m;
       } else {
