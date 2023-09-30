@@ -19,7 +19,7 @@ ROOT=${HERE}/..
 # TODO: map to CI-provider (abstract environment)
 source "${ROOTENV}/buildkite.env" ""
 
-CI_AGENT=$(command -v buildkite-agent)
+CI_AGENT=$(command -v buildkite)
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)

@@ -216,7 +216,7 @@ if [ "${LOGDIR}" ]; then
         # echo parsed/captured JSON
         if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
         if [ -e "${REPORT}" ]; then  # print after summary
-          # normalize path to report file (buildkite-agent)
+          # normalize path to report file (buildkite)
           REPDIR="$(cd "$(dirname "${REPORT}")" && pwd -P)"
           REPFLE=$(basename "${REPORT}")
           if [ "$(command -v tr)" ]; then
