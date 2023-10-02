@@ -381,6 +381,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
     } else {
       if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) {
         unsigned int l_current_mask_reg = (3+l_m)%8;
+        char decompress_vname = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0)) ? (i_micro_kernel_config->vector_name == 'z' ? 'y' : 'x') : i_micro_kernel_config->vector_name;
         /* Load bit mask for current expand operation */
         libxsmm_x86_instruction_mask_move_mem( io_generated_code,
             (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) ? LIBXSMM_X86_INSTR_KMOVD_LD : LIBXSMM_X86_INSTR_KMOVW_LD,
@@ -398,7 +399,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         /* Expand operation */
         libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
                                                      (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) || LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) ? LIBXSMM_X86_INSTR_VPEXPANDW : LIBXSMM_X86_INSTR_VPEXPANDD,
-                                                     i_micro_kernel_config->vector_name,
+                                                     decompress_vname,
                                                      i_gp_reg_mapping->gp_reg_a,
                                                      i_gp_reg_mapping->gp_reg_decompressed_elts,
                                                      i_micro_kernel_config->datatype_size_in,
@@ -499,6 +500,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
           l_b_offset = (i_micro_kernel_config->datatype_size_in2 * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size_in2 + l_k * i_micro_kernel_config->datatype_size_in2);
         }
 #if 1
+        l_b_vname = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0)) ? (l_b_vname == 'z' ? 'y' : 'x') : l_b_vname;
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
             l_b_vmove_instruction,
@@ -545,6 +547,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
           l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size_in2 + l_k * i_micro_kernel_config->datatype_size_in2;
         }
 #if 1
+        l_b_vname = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0)) ? (l_b_vname == 'z' ? 'y' : 'x') : l_b_vname;
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
             l_b_vmove_instruction,
