@@ -4409,6 +4409,20 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
     }
 
     if ( skip_callee_save == 0 ) {
+      /* on windows we also have to save xmm6-xmm15*/
+#if defined(_WIN32) || defined(__CYGWIN__)
+      unsigned int l_i;
+      unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_ST
+                                                                                  : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+      /* decrease rsp by 160 (10x16) */
+      libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 160);
+      /* save 10 xmm onto the stack */
+      for (l_i = 0; l_i < 10; ++l_i) {
+        libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code,
+          l_simd_store_instr, 'x',
+          LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+      }
+#endif
       /* push callee save registers */
       /* push rbx */
       l_code_buffer[l_code_size++] = 0x53;
@@ -4550,6 +4564,23 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
       l_code_buffer[l_code_size++] = 0x5c;
       /* pop rbx */
       l_code_buffer[l_code_size++] = 0x5b;
+
+      /* on windows we also have to save xmm6-xmm15*/
+#if defined(_WIN32) || defined(__CYGWIN__)
+      {
+        unsigned int l_i;
+        unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                      : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+
+        /* save 10 xmm onto the stack */
+        for (l_i = 0; l_i < 10; ++l_i) {
+          libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_store_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+            LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+        }
+        /* increase rsp by 160 (10x16) */
+        libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 160);
+      }
+#endif
 
       /* adjust stack frame size */
       io_generated_code->sf_size -= 40;
