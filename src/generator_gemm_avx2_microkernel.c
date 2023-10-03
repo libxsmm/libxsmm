@@ -384,7 +384,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( libxsmm_genera
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
 
   /* broadcast from B -> into vec registers 0 to i_n_blocking */
   if ( i_offset != (-1) ) {
@@ -544,7 +544,7 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu( libxsmm_generated_co
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
 
   for ( l_pass = 0; l_pass < 2; ++l_pass ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
@@ -893,7 +893,7 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_srf( libxsmm_generated_co
   unsigned int l_k_pack_factor = 1;
 
   /* check that m_blocking is a multiple of vlen and that n_blocking is valid */
-  if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
+  if ( (i_n_blocking > libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking()) || (i_n_blocking < 1) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
@@ -913,7 +913,7 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_srf( libxsmm_generated_co
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_1 );
 
   for ( l_pass = 0; l_pass < 2; ++l_pass ) {
     /* broadcast from B -> into vec registers 0 to i_n_blocking */

@@ -267,7 +267,7 @@ VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
 # explicitly target all objects
-ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
+ifneq (,$(strip $(SSE)$(AVX)))
   TGT ?= 1
 endif
 TGT ?= 0
@@ -296,15 +296,7 @@ ifeq (1,$(AVX_STATIC))
 else ifeq (2,$(AVX_STATIC))
   GENTARGET := hsw
 else ifeq (3,$(AVX_STATIC))
-  ifneq (0,$(MIC))
-    ifeq (2,$(MIC))
-      GENTARGET := knm
-    else
-      GENTARGET := knl
-    endif
-  else
-    GENTARGET := skx
-  endif
+  GENTARGET := skx
 else ifneq (0,$(SSE))
   GENTARGET := wsm
 else
@@ -336,6 +328,7 @@ HEADERS_UTILS := \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_math.h \
           $(ROOTDIR)/include/libxsmm_mhd.h \
+          $(ROOTDIR)/include/libxsmm_rng.h \
           $(NULL)
 HEADERS_MAIN := \
           $(ROOTDIR)/include/libxsmm_generator.h \
@@ -1458,6 +1451,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM tool scripts..."
 	@$(MKDIR) -p $(PREFIX)/$(SCRDIR)
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_envrestore.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_getenvars.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_cpuinfo.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_logperf.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true

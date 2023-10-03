@@ -260,7 +260,7 @@ void test_sve_compute( char* test_name, libxsmm_generated_code* mycode, unsigned
       for (t = 0; t < 32; ++t ) {
         for (w = 0; w < 3; ++w ) {
           for (imm = 0; imm <= has_imm * 255; imm++) {
-            if ( (instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST  ){
+            if ( (instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) {
               d = s;
             }
             if ( has_pred == 0 ) {
@@ -564,7 +564,11 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_compute( "sve_comp_UUNPKLO_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V,   0 );
   test_sve_compute( "sve_comp_UUNPKHI_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V,   0 );
   test_sve_compute( "sve_comp_FMLA_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,   1 );
+  test_sve_compute( "sve_comp_FMAXV_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P,   1 );
+  test_sve_compute( "sve_comp_FMINV_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P,   1 );
   test_sve_compute( "sve_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,    0 );
+  test_sve_compute( "sve_comp_FRINTI_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P,   1 );
+  test_sve_compute( "sve_comp_SCVTF_V_P_SS",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS,   1 );
   /* TODO (MMLA): Fix SVE tests which set size specifiers (not relevant for MMLA-instructions) */
   test_sve_compute( "sve_comp_BFMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V, 0 );
   test_sve_compute( "sve_comp_FMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V, 0 );

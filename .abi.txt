@@ -31,6 +31,7 @@ libxsmm_cpuid
 libxsmm_cpuid_arm
 libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack
 libxsmm_cpuid_arm_use_bfdot
+libxsmm_cpuid_arm_use_i8dot
 libxsmm_cpuid_dot_pack_factor
 libxsmm_cpuid_name
 libxsmm_cpuid_vlen32
@@ -82,7 +83,6 @@ libxsmm_dispatch_matrix_eqn_desc
 libxsmm_dispatch_matrix_eqn_v2
 libxsmm_dispatch_meltw
 libxsmm_dispatch_meltw_binary_v2
-libxsmm_dispatch_meltw_opreduce_vecs_idx
 libxsmm_dispatch_meltw_ternary_v2
 libxsmm_dispatch_meltw_unary_v2
 libxsmm_dmmavailable
@@ -90,6 +90,7 @@ libxsmm_dmmcall
 libxsmm_dmmcall_abc
 libxsmm_dmmcall_prf
 libxsmm_dmmdispatch
+libxsmm_dmmdispatch_v2
 libxsmm_dsqrt
 libxsmm_dvalue
 libxsmm_finalize
@@ -328,6 +329,7 @@ libxsmm_smmcall
 libxsmm_smmcall_abc
 libxsmm_smmcall_prf
 libxsmm_smmdispatch
+libxsmm_smmdispatch_v2
 libxsmm_ssqrt
 libxsmm_stdio_acquire
 libxsmm_stdio_release

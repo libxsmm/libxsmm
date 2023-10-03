@@ -163,7 +163,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
     maxexp -= (15/*LIBXSMM_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
@@ -181,7 +181,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
         const float f = LIBXSMM_ROUNDF(in_buffer[i] * scfq);
         out_buffer[i] = (short)f;
       }
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
@@ -576,7 +576,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
       m = 0x7;
     /* overflow --> make it NaN */
     } else if ( (e_f32 > (f32_bias - f8_bias + 15)) ||
-                ((e_f32 == (f32_bias - f8_bias + 15)) && ( m_f32 > 0x600000))) {
+                ((e_f32 == (f32_bias - f8_bias + 15)) && ( m_f32 > 0x680000))) {
       e = 0xf;
       m = 0x7;
     /* smaller than denormal f8 + eps */
@@ -637,7 +637,7 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) 
     m = 0x7;
   /* overflow --> make it NaN */
   } else if ( (e_f16 > (f16_bias - f8_bias + 15)) ||
-              ((e_f16 == (f16_bias - f8_bias + 15)) && ( m_f16 > 0x0300))) {
+              ((e_f16 == (f16_bias - f8_bias + 15)) && ( m_f16 > 0x0340))) {
     e = 0xf;
     m = 0x7;
   /* smaller than denormal f8 + eps */

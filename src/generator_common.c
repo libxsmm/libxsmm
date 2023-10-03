@@ -350,6 +350,30 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_ADDSS:
       libxsmm_strncpy(o_instr_name, "addss", i_instr_name_max_length, 5 );
       break;
+    case LIBXSMM_X86_INSTR_PEXTRB:
+      libxsmm_strncpy(o_instr_name, "pextrb", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PEXTRW:
+      libxsmm_strncpy(o_instr_name, "pextrw", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PEXTRD:
+      libxsmm_strncpy(o_instr_name, "pextrd", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PEXTRQ:
+      libxsmm_strncpy(o_instr_name, "pextrq", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRB:
+      libxsmm_strncpy(o_instr_name, "pinsrb", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRW:
+      libxsmm_strncpy(o_instr_name, "pinsrw", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRD:
+      libxsmm_strncpy(o_instr_name, "pinsrd", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_PINSRQ:
+      libxsmm_strncpy(o_instr_name, "pinsrq", i_instr_name_max_length, 6 );
+      break;
     /* XOR AVX512F */
     case LIBXSMM_X86_INSTR_VPXORD:
       libxsmm_strncpy(o_instr_name, "vpxord", i_instr_name_max_length, 6 );
@@ -383,25 +407,6 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       break;
     case LIBXSMM_X86_INSTR_VPCMPD:
       libxsmm_strncpy(o_instr_name, "vpcmpd", i_instr_name_max_length, 6 );
-      break;
-    /* AVX512, QFMA */
-    case LIBXSMM_X86_INSTR_V4FMADDPS:
-      libxsmm_strncpy(o_instr_name, "v4fmaddps", i_instr_name_max_length, 9 );
-      break;
-    case LIBXSMM_X86_INSTR_V4FNMADDPS:
-      libxsmm_strncpy(o_instr_name, "v4fnmaddps", i_instr_name_max_length, 10 );
-      break;
-    case LIBXSMM_X86_INSTR_V4FMADDSS:
-      libxsmm_strncpy(o_instr_name, "v4fmaddss", i_instr_name_max_length, 9 );
-      break;
-    case LIBXSMM_X86_INSTR_V4FNMADDSS:
-      libxsmm_strncpy(o_instr_name, "v4fnmaddss", i_instr_name_max_length, 10 );
-      break;
-    case LIBXSMM_X86_INSTR_VP4DPWSSD:
-      libxsmm_strncpy(o_instr_name, "vp4dpwssd", i_instr_name_max_length, 9 );
-      break;
-    case LIBXSMM_X86_INSTR_VP4DPWSSDS:
-      libxsmm_strncpy(o_instr_name, "vp4dpwssds", i_instr_name_max_length, 10 );
       break;
     /* AVX512, VNNI */
     case LIBXSMM_X86_INSTR_VPDPWSSD:
@@ -721,25 +726,6 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_ADDSS:
       l_return = 1;
       break;
-    /* AVX512, QFMA */
-    case LIBXSMM_X86_INSTR_V4FMADDPS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_V4FNMADDPS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_V4FMADDSS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_V4FNMADDSS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_VP4DPWSSD:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_VP4DPWSSDS:
-      l_return = 1;
-      break;
     /* default, we did not had a match */
     default:
       LIBXSMM_ASSERT_MSG(0, "instruction number is x86 FP vector instruction");
@@ -897,15 +883,15 @@ int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwis
                                      libxsmm_meltw_field_type        type) {
   int result = 0;
   if (type == LIBXSMM_MELTW_FIELD_IN0) {
-    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype );
+    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype );
   } else if (type == LIBXSMM_MELTW_FIELD_IN1) {
-    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype1 );
+    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype1 );
   } else if (type == LIBXSMM_MELTW_FIELD_IN2) {
-    result = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype1 );
+    result = LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype1 );
   } else if (type == LIBXSMM_MELTW_FIELD_OUT) {
-    result = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype );
+    result = LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype );
   } else if (type == LIBXSMM_MELTW_FIELD_COMP) {
-    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 );
+    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype2 );
   }
   return result;
 }
@@ -997,7 +983,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128) ) {
+    } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
@@ -1006,7 +992,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {

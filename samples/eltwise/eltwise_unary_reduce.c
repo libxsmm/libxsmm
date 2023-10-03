@@ -88,7 +88,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
       for (j = 0; j < n; j++) {
         ref_result_reduce_elts[j] = sinp[j*ld_in];
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
+          ref_result_reduce_elts[j] = (reduce_op == 1) ? LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] ) : LIBXSMM_MIN( ref_result_reduce_elts[j], sinp[j*ld_in + i] ) ;
         }
       }
     } else {
@@ -97,21 +97,39 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = sinp[i];
           for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            ref_result_reduce_elts[i] = (reduce_op == 1) ? LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]) : LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]) ;
           }
         }
       } else {
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = -FLT_MAX;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
-            if (record_idx > 0) {
-              if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
-                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
-                ref_argop_off[i] = j;
+        if (reduce_op == 1) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = -FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
               }
-            } else {
-              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
+        }
+        if (reduce_op == 2) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] < ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[ i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+              }
             }
           }
         }
@@ -213,7 +231,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
       for (j = 0; j < n; j++) {
         ref_result_reduce_elts[j] = sinp[j*ld_in];
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
+          ref_result_reduce_elts[j] = (reduce_op == 1) ? LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] ) :  LIBXSMM_MIN( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
         }
       }
     } else {
@@ -222,21 +240,39 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = sinp[i];
           for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            ref_result_reduce_elts[i] = (reduce_op == 1) ? LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]) :  LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]) ;
           }
         }
       } else {
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = -FLT_MAX;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
-            if (record_idx > 0) {
-              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
-                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
-                ref_argop_off[i] = j;
+        if (reduce_op == 1) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = -FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
               }
-            } else {
-              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
+        }
+        if (reduce_op == 2) {
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = FLT_MAX;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
+              if (record_idx > 0) {
+                if (sinp[j*ld_in + i] <= ref_result_reduce_elts[i] ) {
+                  ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                  ref_argop_off[i] = j;
+                }
+              } else {
+                ref_result_reduce_elts[i] = LIBXSMM_MIN( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+              }
             }
           }
         }
@@ -315,8 +351,15 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
     }
   } else {
-    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+    if (reduce_op == 1) {
+      if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+        unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+      }
+    }
+    if (reduce_op == 2) {
+      if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+        unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN;
+      }
     }
   }
 
@@ -361,19 +404,37 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
         exit(-1);
       }
     } else {
-      unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC);
-      if (record_idx > 0) {
-        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
-        if (idx_type == 0) {
-          params2.out.secondary = argop_off;
-        } else {
-          params2.out.secondary = argop_off_i32;
+      if (reduce_op == 1) {
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC);
+        if (record_idx > 0) {
+          unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
+          if (idx_type == 0) {
+            params2.out.secondary = argop_off;
+          } else {
+            params2.out.secondary = argop_off_i32;
+          }
+        }
+        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+        if ( kernel2 == NULL ) {
+          fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+          exit(-1);
         }
       }
-      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
-      if ( kernel2 == NULL ) {
-        fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
-        exit(-1);
+      if (reduce_op == 2) {
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC);
+        if (record_idx > 0) {
+          unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
+          if (idx_type == 0) {
+            params2.out.secondary = argop_off;
+          } else {
+            params2.out.secondary = argop_off_i32;
+          }
+        }
+        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN, unary_shape, unary_flags );
+        if ( kernel2 == NULL ) {
+          fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+          exit(-1);
+        }
       }
     }
   }
@@ -436,10 +497,12 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
-  double check_norm;
   unsigned int reduce_on_outputs = 0;
   char* dt = NULL;
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_UNSUPPORTED;
+
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(NULL == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
 
@@ -698,8 +761,7 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
-    printf("Check-norm    : %.24f\n\n", check_norm);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_elts);
   }
 
@@ -742,9 +804,7 @@ int main(int argc, char* argv[])
       printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
       printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
       printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
-      check_norm = libxsmm_matdiff_epsilon(&norms_elts_squared);
-      printf("Check-norm    : %.24f\n\n", check_norm);
-      libxsmm_matdiff_reduce(&diff, &norms_elts_squared);
+      printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
     }
   }
 
@@ -767,9 +827,7 @@ int main(int argc, char* argv[])
     printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_elts);
-    printf("Check-norm    : %.24f\n\n", check_norm);
-    libxsmm_matdiff_reduce(&diff, &norms_elts);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
   }
 
   l_start = libxsmm_timer_tick();
@@ -812,10 +870,13 @@ int main(int argc, char* argv[])
   free(d_ref_result_reduce_elts);
   free(d_ref_result_reduce_elts_squared);
 
-  check_norm = libxsmm_matdiff_epsilon(&diff);
-  if (1e-3 < check_norm) {
-    fprintf(stderr, "FAILED unary reduce with an error of %f!\n", check_norm);
-    exit(EXIT_FAILURE);
+  {
+    const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(NULL == env_check_scale ? 1.0 : atof(env_check_scale));
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
+      fprintf(stdout, "FAILED unary reduce with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }
   }
 
   printf("SUCCESS unary reduce\n");

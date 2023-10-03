@@ -1555,11 +1555,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_SPR:
     case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
-    case LIBXSMM_X86_AVX512_CORE:
-    case LIBXSMM_X86_AVX512_KNM:
-    case LIBXSMM_X86_AVX512_MIC:
-    case LIBXSMM_X86_AVX512:
-    case LIBXSMM_X86_AVX512_VL256:
+    case LIBXSMM_X86_AVX512_SKX:
+    case LIBXSMM_X86_AVX512_VL256_SKX:
     case LIBXSMM_X86_AVX512_VL256_CLX:
     case LIBXSMM_X86_AVX512_VL256_CPX:
     case LIBXSMM_X86_AVX2_ADL:
@@ -1639,7 +1636,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_X86_AVX512_VL256_CLX;
     }
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
-      target_archid = LIBXSMM_X86_AVX512_VL256;
+      target_archid = LIBXSMM_X86_AVX512_VL256_SKX;
     }
     else if (arch == libxsmm_stristr(arch, "gnr")) {
       target_archid = LIBXSMM_X86_AVX512_GNR;
@@ -1654,16 +1651,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_X86_AVX512_CLX;
     }
     else if (arch == libxsmm_stristr(arch, "skx") || arch == libxsmm_stristr(arch, "skl")
-          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512 */
+          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512_SKX */
           || arch == libxsmm_stristr(arch, "avx3") || arch == libxsmm_stristr(arch, "avx512"))
     {
-      target_archid = LIBXSMM_X86_AVX512_CORE;
-    }
-    else if (arch == libxsmm_stristr(arch, "knm")) {
-      target_archid = LIBXSMM_X86_AVX512_KNM;
-    }
-    else if (arch == libxsmm_stristr(arch, "knl") || arch == libxsmm_stristr(arch, "mic")) {
-      target_archid = LIBXSMM_X86_AVX512_MIC;
+      target_archid = LIBXSMM_X86_AVX512_SKX;
     }
     else if (arch == libxsmm_stristr(arch, "srf")) {
       target_archid = LIBXSMM_X86_AVX2_SRF;
@@ -1803,6 +1794,25 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
   return result;
 }
 
+LIBXSMM_API_INLINE const char* libxsmm_get_i4gemm_typename(const unsigned char* datatype)
+{
+  if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+           LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+           LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "i4f16f16";
+  }
+  else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+           LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+           LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "i4f16f32";
+  }
+  else {
+    return "void";
+  }
+}
+
 
 LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* datatype)
 {
@@ -1836,6 +1846,30 @@ LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* da
       {
         return "i8f16f32";
       }
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf8f16f16";
+      }
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf8f16f32";
+      }
+      else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "i8bf16bf16";
+      }
+      else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "i8bf16f32";
+      }
       else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
                LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
       {
@@ -1850,6 +1884,11 @@ LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* da
                LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
       {
         return "i8i32";
+      }
+      else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "i8f32";
       }
       else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
                LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
@@ -1885,8 +1924,11 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_HF8:  return "hf8";
     case LIBXSMM_DATATYPE_I64:  return "i64";
     case LIBXSMM_DATATYPE_I32:  return "i32";
+    case LIBXSMM_DATATYPE_U32:  return "u32";
     case LIBXSMM_DATATYPE_I16:  return "i16";
+    case LIBXSMM_DATATYPE_U16:  return "u16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
+    case LIBXSMM_DATATYPE_IMPLICIT:   return "implicit";
     default: {
       if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
           LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
@@ -2042,10 +2084,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           /* TODO: shall we update variable "target_arch" (name)? */
-          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE ) {
-            generated_code.arch = LIBXSMM_X86_AVX512_VL256;
-          } else {
-            generated_code.arch = LIBXSMM_X86_AVX2;
+          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_SKX ) {
+            generated_code.arch = LIBXSMM_X86_AVX512_VL256_SKX;
           }
         }
 # endif
@@ -2055,7 +2095,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = request->descriptor.gemm->prefetch;
-          const char *const tname = libxsmm_get_gemm_typename(request->descriptor.gemm->datatype);
+          const char *const tname = ( ((LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2 & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2) ) ? libxsmm_get_i4gemm_typename(request->descriptor.gemm->datatype) : libxsmm_get_gemm_typename(request->descriptor.gemm->datatype);
           const char *const meltw_tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.gemm->meltw_datatype_aux);
           int typesigns = 0, br = 0, kernabi = 0, stride_a = 0, stride_b = 0;
           char tc_option[16] = { 0 };
@@ -3426,26 +3466,6 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
   }
   return result;
 }
-
-LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx(
-  const libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype idx_type,
-  const libxsmm_meltw_opreduce_vecs_flags flags, const unsigned short bcast_param )
-{
-  libxsmm_descriptor_blob blob;
-  libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
-  unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
-  unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
-  unsigned short combined_params = argidx_params | bcast_shifted_params;
-  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
-    in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
-
-  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
-
-  return result.meltw_opreduce_vecs_idx;
-}
-
 
 LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                         const libxsmm_blasint ldi, const libxsmm_blasint ldo,

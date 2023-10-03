@@ -79,7 +79,7 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype);
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
 LIBXSMM_API const char* libxsmm_get_target_arch(void);
-/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx|cpx", NULL/"0": CPUID). */
+/** Set target architecture (arch="0|sse|snb|hsw|skx|clx|cpx|spr", NULL/"0": CPUID). */
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Get the level of verbosity. */
@@ -253,9 +253,6 @@ LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
 
 /** Code generation routine for matrix-eltwise using a descriptor. */
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw( const libxsmm_meltw_descriptor* descriptor );
-LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx( const libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-                                                                                              const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype idx_type,
-                                                                                              const libxsmm_meltw_opreduce_vecs_flags flags, const unsigned short bcast_param );
 LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                         const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                                                                         const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );

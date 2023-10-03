@@ -29,18 +29,15 @@
 #define LIBXSMM_X86_AVX2              1006
 #define LIBXSMM_X86_AVX2_ADL          1007
 #define LIBXSMM_X86_AVX2_SRF          1008
-#define LIBXSMM_X86_AVX512_VL128      1041
-#define LIBXSMM_X86_AVX512_VL256      1051
+#define LIBXSMM_X86_AVX512_VL128_SKX  1041
+#define LIBXSMM_X86_AVX512_VL256_SKX  1051
 #define LIBXSMM_X86_AVX512_VL256_CLX  1052
 #define LIBXSMM_X86_AVX512_VL256_CPX  1053
-#define LIBXSMM_X86_AVX512            1101
-#define LIBXSMM_X86_AVX512_MIC        1102 /* KNL */
-#define LIBXSMM_X86_AVX512_KNM        1103
-#define LIBXSMM_X86_AVX512_CORE       1104 /* SKX */
-#define LIBXSMM_X86_AVX512_CLX        1105
-#define LIBXSMM_X86_AVX512_CPX        1106
-#define LIBXSMM_X86_AVX512_SPR        1107
-#define LIBXSMM_X86_AVX512_GNR        1108
+#define LIBXSMM_X86_AVX512_SKX        1101
+#define LIBXSMM_X86_AVX512_CLX        1102
+#define LIBXSMM_X86_AVX512_CPX        1103
+#define LIBXSMM_X86_AVX512_SPR        1104
+#define LIBXSMM_X86_AVX512_GNR        1105
 #define LIBXSMM_X86_ALLFEAT           1999
 #define LIBXSMM_AARCH64_V81           2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
@@ -76,6 +73,8 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
  */
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
+LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void);
+LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
 
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
