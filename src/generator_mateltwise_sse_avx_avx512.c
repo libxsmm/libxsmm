@@ -114,8 +114,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
                                               libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
                                               libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) {
   unsigned int temp_reg                 = LIBXSMM_X86_GP_REG_R10;
-  unsigned int skip_pushpops_callee_gp_reg  = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
-                                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) ||
+  unsigned int skip_pushpops_callee_gp_reg  = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) ||
                                                 (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY)) ? 1 : 0;
 
   /* TODO: Determine if we want to save stuff to stack */
@@ -681,7 +680,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD)    ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD) ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP)         ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX))       ) ? 1 : 0;
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN)   )       ) ? 1 : 0;
   unsigned int is_gather_scatter_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
                                        ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)     ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER)) ) ? 1 : 0;
@@ -736,21 +735,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
   if ((has_inp_or_out_fp64 > 0) && (has_all_inp_and_out_fp64 == 0)) {
     is_valid_arch_prec = 0;
   }
-  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) {
-    unsigned int record_argops = (((i_mateltwise_desc->param & 0x1) > 0) || ((i_mateltwise_desc->param & 0x2) > 0)) ? 1 : 0;
-    unsigned int is_bf16_inp = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
-    unsigned int is_fp32_inp = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
-
-    if ((is_bf16_inp == 0) && (is_fp32_inp == 0)) {
-      is_valid_arch_prec = 0;
-    }
-    if ((is_bf16_inp > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
-      is_valid_arch_prec = 0;
-    }
-    if ((record_argops > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
-      is_valid_arch_prec = 0;
-    }
-  }
   return is_valid_arch_prec;
 }
 
@@ -790,9 +774,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
     libxsmm_generator_meltw_setup_stack_frame( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
     /* Depending on the elementwise function, dispatch the proper code JITer */
-    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) {
-      libxsmm_generator_opreduce_vecs_index_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
+    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
       if (libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
         if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
