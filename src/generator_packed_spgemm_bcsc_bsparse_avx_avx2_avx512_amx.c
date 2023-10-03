@@ -586,7 +586,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
 
     if (l_is_AT_CT_kernel > 0) {
       /* Mask for scalar loading/storing of output entries */
-      if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+      if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
         l_scalar_mask = 14;
         libxsmm_generator_initialize_avx_mask(io_generated_code, l_scalar_mask, 1, LIBXSMM_DATATYPE_F32 );
       } else {
@@ -827,7 +827,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   unsigned int l_AT_CT_ab_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
   unsigned int l_pf_dist_B = libxsmm_generator_x86_packed_spgemm_bcsc_pf_dist_B();
 
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
     l_scalar_mask = 14;
   }
 
@@ -969,7 +969,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
               ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0 );
             /* up-convert bf16 to fp32 */
             if (l_c_bf16 > 0) {
-              libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', l_reg0, l_reg0 );
+              libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, 'z', l_reg0, l_reg0 );
             }
           }
         }
@@ -1114,7 +1114,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
           unsigned int l_reg0 = (l_n*i_packed_blocking) + l_p;
           unsigned int l_reduction_instr = (LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_X86_INSTR_VPADDD : LIBXSMM_X86_INSTR_VADDPS  ;
 
-          if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+          if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
             libxsmm_generator_hinstrps_avx( io_generated_code, l_reduction_instr, l_reg0, l_max_reg_block+1, l_max_reg_block);
           } else {
             libxsmm_generator_hinstrps_avx512( io_generated_code, l_reduction_instr, l_reg0, l_max_reg_block+1, l_max_reg_block);
