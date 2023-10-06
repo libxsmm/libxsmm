@@ -1050,6 +1050,12 @@ void libxsmm_generator_gemm_amx_decompress_32x32_A_block_kloop(libxsmm_generated
         expanded_cl * 4,
         current_mask_reg );
 
+    libxsmm_x86_instruction_prefetch(io_generated_code,
+        LIBXSMM_X86_INSTR_PREFETCHT0,
+        i_gp_reg_mapping->gp_reg_bitmap_a,
+        decompress_loop_reg, 1,
+        expanded_cl * 4 +  16 * 64);
+
     /* Expand operation */
     libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
                                                  LIBXSMM_X86_INSTR_VPEXPANDW,
@@ -1064,6 +1070,13 @@ void libxsmm_generator_gemm_amx_decompress_32x32_A_block_kloop(libxsmm_generated
                                                  current_mask_reg,
                                                  1,
                                                  0);
+
+    libxsmm_x86_instruction_prefetch(io_generated_code,
+        LIBXSMM_X86_INSTR_PREFETCHT0,
+        i_gp_reg_mapping->gp_reg_a,
+        n_elts_decompressed_reg, 2,
+        16 * 64);
+
     /* Move zmm to reg */
     libxsmm_x86_instruction_mask_move( io_generated_code,
       LIBXSMM_X86_INSTR_KMOVD_GPR_ST,
