@@ -4409,11 +4409,11 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
     }
 
     if ( skip_callee_save == 0 ) {
-      /* on windows we also have to save xmm6-xmm15*/
+      /* on windows we also have to save xmm6-xmm15 */
 #if defined(_WIN32) || defined(__CYGWIN__)
       unsigned int l_i;
       unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_ST
-                                                                                  : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+                                                                                    : LIBXSMM_X86_INSTR_VMOVUPS_ST;
       /* decrease rsp by 160 (10x16) */
       libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 160);
       /* save 10 xmm onto the stack */
@@ -4457,6 +4457,32 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
     int l_code_length = 0;
 
     if ( skip_callee_save == 0 ) {
+      /* on windows we also have to save xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      {
+        unsigned int l_i;
+        unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                      : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+        char l_gp_reg_base_name[4];
+        char l_instr_name[16];
+
+        libxsmm_get_x86_gp_reg_name(LIBXSMM_X86_GP_REG_RSP, l_gp_reg_base_name, 3);
+
+        /* decrease rsp by 160 (10x16) */
+        libxsmm_get_x86_instr_name(LIBXSMM_X86_INSTR_SUBQ, l_instr_name, 15);
+        l_code_length = LIBXSMM_SNPRINTF(
+          l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name, 160, l_gp_reg_base_name);
+        libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+
+        libxsmm_get_x86_instr_name(l_simd_store_instr, l_instr_name, 15);
+        /* save 10 xmm onto the stack */
+        for (l_i = 0; l_i < 10; ++l_i) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %i(%%%s)\\n\\t\"\n",
+            l_instr_name, 'x', 6 + l_i, 144 - (l_i * 16), l_gp_reg_base_name);
+          libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+        }
+      }
+#endif
       /* push callee save registers */
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -4565,16 +4591,16 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
       /* pop rbx */
       l_code_buffer[l_code_size++] = 0x5b;
 
-      /* on windows we also have to save xmm6-xmm15*/
+      /* on windows we also have to restore xmm6-xmm15 */
 #if defined(_WIN32) || defined(__CYGWIN__)
       {
         unsigned int l_i;
-        unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
-                                                                                      : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+        unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                     : LIBXSMM_X86_INSTR_VMOVUPS_LD;
 
         /* save 10 xmm onto the stack */
         for (l_i = 0; l_i < 10; ++l_i) {
-          libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_store_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+          libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_load_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
             LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
         }
         /* increase rsp by 160 (10x16) */
@@ -4615,6 +4641,33 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+      /* on windows we also have to restore xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      {
+        unsigned int l_i;
+        unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                     : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+        char l_gp_reg_base_name[4];
+        char l_instr_name[16];
+
+        libxsmm_get_x86_gp_reg_name(LIBXSMM_X86_GP_REG_RSP, l_gp_reg_base_name, 3);
+        libxsmm_get_x86_instr_name(l_simd_load_instr, l_instr_name, 15);
+
+        /* save 10 xmm onto the stack */
+        for (l_i = 0; l_i < 10; ++l_i) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length,
+            "                       %s %i(%%%s), %%%cmm%u\\n\\t\"\n", l_instr_name, 144 - (l_i * 16), l_gp_reg_base_name,
+            'x', 6 + l_i);
+          libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+        }
+        /* increase rsp by 160 (10x16) */
+        libxsmm_get_x86_instr_name(LIBXSMM_X86_INSTR_ADDQ, l_instr_name, 15);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name,
+          160, l_gp_reg_base_name);
+        libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+      }
+#endif
 
       /* adjust stack frame size */
       io_generated_code->sf_size -= 40;
@@ -4818,6 +4871,19 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
     }
 
     if ( skip_callee_save == 0 ) {
+      /* on windows we also have to save xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      unsigned int l_i;
+      unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_ST
+                                                                                    : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+      /* decrease rsp by 160 (10x16) */
+      libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 160);
+      /* save 10 xmm onto the stack */
+      for (l_i = 0; l_i < 10; ++l_i) {
+        libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_store_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+          LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+      }
+#endif
       /* push rbx */
       l_code_buffer[l_code_size++] = 0x53;
       /* push r12 */
@@ -4851,7 +4917,32 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
     int l_code_length = 0;
 
     if ( skip_callee_save == 0 ) {
+      /* on windows we also have to save xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      {
+        unsigned int l_i;
+        unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                      : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+        char l_gp_reg_base_name[4];
+        char l_instr_name[16];
 
+        libxsmm_get_x86_gp_reg_name(LIBXSMM_X86_GP_REG_RSP, l_gp_reg_base_name, 3);
+
+        /* decrease rsp by 160 (10x16) */
+        libxsmm_get_x86_instr_name(LIBXSMM_X86_INSTR_SUBQ, l_instr_name, 15);
+        l_code_length = LIBXSMM_SNPRINTF(
+          l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name, 160, l_gp_reg_base_name);
+        libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+
+        libxsmm_get_x86_instr_name(l_simd_store_instr, l_instr_name, 15);
+        /* save 10 xmm onto the stack */
+        for (l_i = 0; l_i < 10; ++l_i) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %i(%%%s)\\n\\t\"\n",
+            l_instr_name, 'x', 6 + l_i, 144 - (l_i * 16), l_gp_reg_base_name);
+          libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+        }
+      }
+#endif
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
@@ -4924,6 +5015,23 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
       /* pop rbx */
       l_code_buffer[l_code_size++] = 0x5b;
 
+      /* on windows we also have to restore xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      {
+        unsigned int l_i;
+        unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                     : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+
+        /* save 10 xmm onto the stack */
+        for (l_i = 0; l_i < 10; ++l_i) {
+          libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_load_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+            LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+        }
+        /* increase rsp by 160 (10x16) */
+        libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 160);
+      }
+#endif
+
       /* adjust stack frame size */
       io_generated_code->sf_size -= 40;
     }
@@ -4957,6 +5065,31 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      /* on windows we also have to restore xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+      {
+        unsigned int l_i;
+        unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                     : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+        char l_gp_reg_base_name[4];
+        char l_instr_name[16];
+
+        libxsmm_get_x86_gp_reg_name(LIBXSMM_X86_GP_REG_RSP, l_gp_reg_base_name, 3);
+        libxsmm_get_x86_instr_name(l_simd_load_instr, l_instr_name, 15);
+
+        /* save 10 xmm onto the stack */
+        for (l_i = 0; l_i < 10; ++l_i) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u\\n\\t\"\n",
+            l_instr_name, 144 - (l_i * 16), l_gp_reg_base_name, 'x', 6 + l_i);
+          libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+        }
+        /* increase rsp by 160 (10x16) */
+        libxsmm_get_x86_instr_name(LIBXSMM_X86_INSTR_ADDQ, l_instr_name, 15);
+        l_code_length = LIBXSMM_SNPRINTF(
+          l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name, 160, l_gp_reg_base_name);
+        libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length);
+      }
+#endif
 
       /* adjust stack frame size */
       io_generated_code->sf_size -= 40;
