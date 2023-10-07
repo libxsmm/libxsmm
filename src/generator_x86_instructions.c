@@ -4422,6 +4422,8 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
           l_simd_store_instr, 'x',
           LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
       }
+      /* update code length */
+      l_code_size = io_generated_code->code_size;
 #endif
       /* push callee save registers */
       /* push rbx */
@@ -4597,7 +4599,8 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
         unsigned int l_i;
         unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
                                                                                      : LIBXSMM_X86_INSTR_VMOVUPS_LD;
-
+        /* update code length */
+        io_generated_code->code_size = l_code_size;
         /* save 10 xmm onto the stack */
         for (l_i = 0; l_i < 10; ++l_i) {
           libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_load_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
@@ -4605,6 +4608,8 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
         }
         /* increase rsp by 160 (10x16) */
         libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 160);
+        /* update code length */
+        l_code_size = io_generated_code->code_size;
       }
 #endif
 
@@ -4883,6 +4888,8 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
         libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_store_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
           LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
       }
+      /* update code length */
+      l_code_size = io_generated_code->code_size;
 #endif
       /* push rbx */
       l_code_buffer[l_code_size++] = 0x53;
@@ -5021,7 +5028,8 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
         unsigned int l_i;
         unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
                                                                                      : LIBXSMM_X86_INSTR_VMOVUPS_LD;
-
+        /* update code length */
+        io_generated_code->code_size = l_code_size;
         /* save 10 xmm onto the stack */
         for (l_i = 0; l_i < 10; ++l_i) {
           libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_load_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
@@ -5029,6 +5037,8 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
         }
         /* increase rsp by 160 (10x16) */
         libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 160);
+        /* update code length */
+        l_code_size = io_generated_code->code_size;
       }
 #endif
 
