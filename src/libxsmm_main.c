@@ -3435,26 +3435,6 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
   return result;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx(
-  const libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype idx_type,
-  const libxsmm_meltw_opreduce_vecs_flags flags, const unsigned short bcast_param )
-{
-  libxsmm_descriptor_blob blob;
-  libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
-  unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
-  unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
-  unsigned short combined_params = argidx_params | bcast_shifted_params;
-  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
-    in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
-
-  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
-
-  return result.meltw_opreduce_vecs_idx;
-}
-
-
 LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                         const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                                                                         const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )

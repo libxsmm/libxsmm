@@ -3,7 +3,7 @@
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 if [[ -z "${SSIZE}" ]]; then
-  SAMPLESIZE=4
+  SAMPLESIZE=10
 else
   SAMPLESIZE=${SSIZE}
 fi
@@ -64,9 +64,6 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                     continue
                   fi
                   if [[ ("$RED_OP" == '2') && ("$ACC" != '0') ]]; then
-                    continue
-                  fi
-                  if [[ ("$RED_OP" == '2') && ("$IDX" != '42') ]]; then
                     continue
                   fi
                   if [[ ("$RED_OP" == '2') && ("$IDX" == '42') ]]; then

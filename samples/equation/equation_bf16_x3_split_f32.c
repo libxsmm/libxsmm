@@ -14,7 +14,7 @@
 
 int main(int argc, char* argv[]) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0000005, check_norm;
+  double error_bound = 0.0000005;
   long M = 31;
   long N = 15;
   libxsmm_blasint ld = N + 5;
@@ -175,10 +175,9 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n", norms.normf_rel);
 
-  if (check_norm > error_bound ) {
+  if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -192,10 +191,9 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n", norms.normf_rel);
 
-  if (check_norm > error_bound ) {
+  if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -209,10 +207,9 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n", norms.normf_rel);
 
-  if ( check_norm > error_bound ) {
+  if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -226,10 +223,9 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n", norms.normf_rel);
 
-  if ( check_norm > error_bound ) {
+  if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -243,10 +239,9 @@ int main(int argc, char* argv[]) {
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n", norms.normf_rel);
 
-  if ( check_norm > error_bound ) {
+  if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 

@@ -893,7 +893,7 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_srf( libxsmm_generated_co
   unsigned int l_k_pack_factor = 1;
 
   /* check that m_blocking is a multiple of vlen and that n_blocking is valid */
-  if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
+  if ( (i_n_blocking > libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking()) || (i_n_blocking < 1) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
