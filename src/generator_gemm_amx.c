@@ -1250,7 +1250,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     }
 
     /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
-    if ((i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) && (has_fused_relu_bitmask == 0)) {
+    if ((i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61 || (i_xgemm_desc->n == 64 && i_xgemm_desc->m == 16)) && (has_fused_relu_bitmask == 0)) {
       m_blocking = 16;
       while (i_xgemm_desc->m % m_blocking != 0) {
         m_blocking--;
@@ -1280,6 +1280,17 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
         n_blocking_info[0].sizes[2] = 16;
         n_blocking_info[0].sizes[3] = 13;
       }
+      if (i_xgemm_desc->n == 64) {
+        n_blocking_info[0].blocking = 64;
+        n_blocking_info[0].block_size = 64;
+        n_blocking_info[0].tiles = 4;
+        /* I.e. N = 64 = 4 * 16 */
+        n_blocking_info[0].sizes[0] = 16;
+        n_blocking_info[0].sizes[1] = 16;
+        n_blocking_info[0].sizes[2] = 16;
+        n_blocking_info[0].sizes[3] = 16;
+      }
+ 
     }
   }
 
