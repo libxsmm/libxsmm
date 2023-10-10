@@ -4658,7 +4658,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   unsigned int l_use_stack_vars = 0;
   int l_rbp_offset_inf    = -32;
   int l_rbp_offset_idx = -8;
-  unsigned int l_vname_argop_bcast = (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) ? 'y' : 'z';
+  char l_vname_argop_bcast = (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) ? 'y' : 'z';
   unsigned int l_bcast_idx_instr = ( idx_tsize == 8 ) ? LIBXSMM_X86_INSTR_VPBROADCASTQ : LIBXSMM_X86_INSTR_VPBROADCASTD ;
   unsigned int l_gpr_bcast_idx_instr = ( idx_tsize == 8 ) ? LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR : LIBXSMM_X86_INSTR_VPBROADCASTD_GPR;
   unsigned int l_argop_cmp_instr = LIBXSMM_X86_INSTR_VCMPPS;
