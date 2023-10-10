@@ -1290,7 +1290,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
         n_blocking_info[0].sizes[2] = 16;
         n_blocking_info[0].sizes[3] = 16;
       }
- 
+
     }
   }
 
