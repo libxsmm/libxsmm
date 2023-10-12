@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 #if !defined(ELEMTYPE)

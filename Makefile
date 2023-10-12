@@ -327,11 +327,9 @@ SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 
 HEADERS_UTILS := \
-          $(ROOTINC)/utils/libxsmm_intrinsics_x86.h \
           $(ROOTINC)/utils/libxsmm_lpflt_quant.h \
           $(ROOTINC)/utils/libxsmm_barrier.h \
           $(ROOTINC)/utils/libxsmm_timer.h \
-          $(ROOTINC)/utils/libxsmm_utils.h \
           $(ROOTINC)/utils/libxsmm_math.h \
           $(ROOTINC)/utils/libxsmm_mhd.h \
           $(NULL)
@@ -345,6 +343,8 @@ HEADERS_MAIN := \
           $(ROOTINC)/libxsmm_cpuid.h \
           $(ROOTINC)/libxsmm_math.h \
           $(ROOTINC)/libxsmm_sync.h \
+          $(ROOTINC)/libxsmm_utils.h \
+          $(ROOTINC)/libxsmm_intrinsics_x86.h \
           $(NULL)
 HEADERS_SRC := $(wildcard $(ROOTSRC)/*.h)
 HEADERS := \

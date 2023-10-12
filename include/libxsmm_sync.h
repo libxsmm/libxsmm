@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_SYNC_H
 #define LIBXSMM_SYNC_H
 
-#include "utils/libxsmm_intrinsics_x86.h"
+#include "libxsmm_intrinsics_x86.h"
 
 #if !defined(LIBXSMM_TLS)
 # if (0 != LIBXSMM_SYNC) && !defined(LIBXSMM_NO_TLS)

@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
 #if defined(__APPLE__) && defined(__arm64__)

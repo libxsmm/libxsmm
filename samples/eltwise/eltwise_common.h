@@ -9,7 +9,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 

@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {

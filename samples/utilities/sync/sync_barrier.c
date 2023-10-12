@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_utils.h>
 
 #if defined(_OPENMP)
 # include <omp.h>

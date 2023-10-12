@@ -15,11 +15,11 @@
  * Any intrinsics interface (libxsmm_intrinsics_x86.h) shall be explicitly
  * included, i.e., separate from libxsmm_utils.h.
 */
-#include "libxsmm_lpflt_quant.h"
-#include "libxsmm_barrier.h"
-#include "libxsmm_timer.h"
-#include "libxsmm_math.h"
-#include "libxsmm_mhd.h"
+#include "utils/libxsmm_lpflt_quant.h"
+#include "utils/libxsmm_barrier.h"
+#include "utils/libxsmm_timer.h"
+#include "utils/libxsmm_math.h"
+#include "utils/libxsmm_mhd.h"
 
 #if defined(__BLAS) && (1 == __BLAS)
 # if defined(__OPENBLAS)

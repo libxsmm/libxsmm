@@ -13,7 +13,7 @@
 #else
 # include <libxsmm_source.h>
 #endif
-#include <utils/libxsmm_utils.h>
+#include <libxsmm_utils.h>
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>
