@@ -11,11 +11,10 @@
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 
-void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  const unsigned int cBlocks = C/bc;
-  const int kBlocks = K/bk;
-  unsigned int k2, c1, c2;
-  int k1;
+void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
+  const libxsmm_blasint cBlocks = C/bc;
+  const libxsmm_blasint kBlocks = K/bk;
+  libxsmm_blasint k1, k2, c1, c2;
   LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, real_src, src, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
@@ -34,11 +33,10 @@ void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned i
   }
 }
 
-void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack, libxsmm_meltwfunction_unary kernel) {
-  const unsigned int cBlocks = C/bc;
-  const int kBlocks = K/bk;
-  unsigned int k2, c1, c2;
-  int k1;
+void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack, libxsmm_meltwfunction_unary kernel) {
+  const libxsmm_blasint cBlocks = C/bc;
+  const libxsmm_blasint kBlocks = K/bk;
+  libxsmm_blasint k1, k2, c1, c2;
   LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, real_src, src, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
   libxsmm_bfloat16 *const tmp = (libxsmm_bfloat16*)malloc(sizeof(libxsmm_bfloat16) * bc * bk * kBlocks);
@@ -64,10 +62,10 @@ void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const
   }
 }
 
-void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack, libxsmm_meltwfunction_unary kernel) {
-  const int kBlocks = K/bk;
-  const int cBlocks = C/bc;
-  int k1, c1;
+void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack, libxsmm_meltwfunction_unary kernel) {
+  const libxsmm_blasint kBlocks = K/bk;
+  const libxsmm_blasint cBlocks = C/bc;
+  libxsmm_blasint k1, c1;
   LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, real_src, src, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
@@ -84,11 +82,10 @@ void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, con
   }
 }
 
-void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  const unsigned int cBlocks = C/bc;
-  const int kBlocks = K/bk;
-  unsigned int k2, c1, c2;
-  int k1;
+void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
+  const libxsmm_blasint cBlocks = C/bc;
+  const libxsmm_blasint kBlocks = K/bk;
+  libxsmm_blasint k1, k2, c1, c2;
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_dst, dst, K);
   LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, real_src, src, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
@@ -107,11 +104,11 @@ void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned
   }
 }
 
-void unpack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
+void unpack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
   unpack_c( src, dst, C, K, bc, bk, vnni_pack );
 }
 
-void unpack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
+void unpack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
   unpack_c( src, dst, C, K, bc, bk, vnni_pack );
 }
 
@@ -123,7 +120,7 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint bk = ( argc > 5 ) ? atoi(argv[5]) :   32;
   libxsmm_blasint it = ( argc > 6 ) ? atoi(argv[6]) :   1000;
   libxsmm_blasint l_l, l_c, l_k;
-  unsigned int vnni_pack = libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16);
+  const unsigned int vnni_pack = libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16);
   libxsmm_matdiff_info l_diff;
   double error = 0.0;
   double l_datasize = ((double)it * (double)L * (double)K * (double)C * (double)sizeof(libxsmm_bfloat16))/(1024.0*1024.0*1024.0);
