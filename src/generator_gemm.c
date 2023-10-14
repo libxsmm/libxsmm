@@ -158,6 +158,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
+  if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV) > 0) {
+    io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
+  }
+
   /* overwrite VNNI Flag when K == 1 */
   if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
        (l_xgemm_desc_mod.k == 1) &&
