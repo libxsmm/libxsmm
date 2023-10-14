@@ -188,8 +188,12 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
 LIBXSMM_INLINE
 libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
+  libxsmm_matdiff_clear(&l_diff);
 #if 0
-  if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+  if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
+  } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+#if 0
     libxsmm_blasint i, j;
     float* f_data_gold = (float*)data_gold;
     float* f_data = (float*)data;
@@ -211,12 +215,33 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
       }
       printf("\n");
     }
+#endif
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
+  } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
+    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
+    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
+    libxsmm_convert_bf16_f32( data_gold, f_data_gold, n*ld );
+    libxsmm_convert_bf16_f32( data,      f_data,      n*ld );
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
+    free( f_data );
+    free( f_data_gold );
+  } else if ( dtype == LIBXSMM_DATATYPE_F16 ) {
+    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
+    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
+    libxsmm_convert_f16_f32( data_gold, f_data_gold, n*ld );
+    libxsmm_convert_f16_f32( data,      f_data,      n*ld );
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
+    free( f_data );
+    free( f_data_gold );
   } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
+#if 0
     libxsmm_blasint i, j;
+#endif
     float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
     float* f_data      = (float*) malloc( sizeof(float)*n*ld );
     libxsmm_convert_bf8_f32( data_gold, f_data_gold, n*ld );
     libxsmm_convert_bf8_f32( data,      f_data,      n*ld );
+#if 0
     for ( j = 0; j < n; ++j ) {
       for ( i = 0; i < m; ++i ) {
         libxsmm_float_uint tmp0;
@@ -235,6 +260,8 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
       }
       printf("\n");
     }
+#endif
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
     free( f_data );
     free( f_data_gold );
   } else if ( dtype == LIBXSMM_DATATYPE_HF8 ) {
@@ -254,9 +281,10 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
   }
-#endif
-  libxsmm_matdiff_clear(&l_diff);
+  return l_diff;
+#else
   LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_matdiff(&l_diff, dtype, m, n, data_gold, data, &ld, &ld));
+#endif
   return l_diff;
 }
 
