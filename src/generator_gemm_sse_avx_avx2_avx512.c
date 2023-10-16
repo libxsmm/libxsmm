@@ -469,7 +469,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                          "my_i4_hi",
                                                          'z',
                                                          1 );
-    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) perm_rpt_zpt, "my_vperm_i4", 'z', 2 );
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) perm_rpt_zpt, "my_vperm_i4", 'z', 2 );
+    }
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0) {
