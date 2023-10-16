@@ -97,6 +97,7 @@
 #include "../src/generator_spgemm_csr_asparse_reg.c"
 #include "../src/generator_spgemm_csr_reader.c"
 #include "../src/generator_x86_instructions.c"
+#include "../src/libxsmm_barrier.c"
 #include "../src/libxsmm_cpuid_arm.c"
 #include "../src/libxsmm_cpuid_x86.c"
 #include "../src/libxsmm_ext.c"
@@ -118,6 +119,7 @@
 #include "../src/libxsmm_sync.c"
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"
+#include "../src/libxsmm_utils.c"
 #include "../src/libxsmm_xcopy.c"
 
 #endif /*LIBXSMM_SOURCE_H*/

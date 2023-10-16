@@ -3413,38 +3413,6 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
 }
 
 
-LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                      const int* basicflags ) {
-  const int gemm_flags = (NULL == basicflags ? LIBXSMM_FLAGS : *basicflags); /* we leverage that basic flags and flags alias */
-  libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob,
-    LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
-    m, n, k,
-    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
-    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
-    NULL != ldc ? *ldc : m, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
-  return result.dmm;
-}
-
-
-LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                      const int* basicflags ) {
-  const int gemm_flags = (NULL == basicflags ? LIBXSMM_FLAGS : *basicflags); /* we leverage that basic flags and flags alias */
-  libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob,
-    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-    m, n, k,
-    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
-    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
-    NULL != ldc ? *ldc : m, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
-  return result.smm;
-}
-
-
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_descriptor* descriptor)
 {
   libxsmm_xmeltwfunction result;
