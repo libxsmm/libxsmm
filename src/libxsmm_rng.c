@@ -9,12 +9,10 @@
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <libxsmm_memory.h>
 
-#if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))
-# define LIBXSMM_RNG_DRAND48
+#if !defined(LIBXSMM_RNG_AVX512) && 1
+# define LIBXSMM_RNG_AVX512
 #endif
-
 #if !defined(LIBXSMM_RNG_SIMD_MIN)
 # define LIBXSMM_RNG_SIMD_MIN 8
 #endif
@@ -215,12 +213,12 @@ LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr)
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
 {
   LIBXSMM_INIT
-#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_RNG_AVX512)
 # if !defined(NDEBUG) /* used to track if seed is initialized */
   internal_rng_f32_seq = internal_rng_f32_seq_avx512;
 # endif
   internal_rng_set_seed_avx512(seed);
-#elif defined(LIBXSMM_INTRINSICS_AVX512_SKX) /* __AVX512F__ */
+#elif defined(LIBXSMM_INTRINSICS_AVX512_SKX) && defined(LIBXSMM_RNG_AVX512) /* __AVX512F__ */
   if (LIBXSMM_X86_AVX512_SKX <= libxsmm_target_archid) {
     internal_rng_f32_seq = internal_rng_f32_seq_avx512;
     internal_rng_set_seed_avx512(seed);
@@ -241,83 +239,15 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
 LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 {
   LIBXSMM_ASSERT_MSG(NULL != internal_rng_f32_seq, "RNG must be initialized");
-#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_AVX512_SKX <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_RNG_AVX512)
   internal_rng_f32_seq_avx512(rngs, count);
 #else
-# if defined(LIBXSMM_INTRINSICS_AVX512_SKX) /* __AVX512F__ */
+# if defined(LIBXSMM_INTRINSICS_AVX512_SKX) && defined(LIBXSMM_RNG_AVX512) /* __AVX512F__ */
   if ((LIBXSMM_RNG_SIMD_MIN << 4) <= count) { /* SIMD code path */
     internal_rng_f32_seq(rngs, count); /* pointer based function call */
   }
   else /* scalar code path */
 # endif
   internal_rng_f32_seq_sw(rngs, count);
-#endif
-}
-
-
-LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
-{
-  unsigned int result;
-  if (1 < n) {
-#if defined(LIBXSMM_RNG_DRAND48)
-    const unsigned int rmax = (1U << 31);
-    unsigned int r = (unsigned int)lrand48();
-#else
-    const unsigned int rmax = (unsigned int)(RAND_MAX + 1U);
-    unsigned int r = (unsigned int)rand();
-#endif
-    const unsigned int nmax = LIBXSMM_MIN(n, rmax);
-    const unsigned int q = (rmax / nmax) * nmax;
-#if defined(LIBXSMM_RNG_DRAND48)
-    /* coverity[dont_call] */
-    while (q <= r) r = (unsigned int)lrand48();
-#else
-    while (q <= r) r = (unsigned int)rand();
-#endif
-    if (n <= nmax) result = r % nmax;
-    else { /* input range exhausts RNG-state (precision) */
-      const double s = ((double)n / nmax) * r + 0.5;
-      result = (unsigned int)s;
-    }
-  }
-  else result = 0;
-  return result;
-}
-
-
-LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint nbytes)
-{
-  unsigned char* dst = (unsigned char*)data;
-  unsigned char* end = dst + (nbytes & 0xFFFFFFFFFFFFFFFC);
-  unsigned int r;
-  for (; dst < end; dst += 4) {
-#if defined(LIBXSMM_RNG_DRAND48)
-    /* coverity[dont_call] */
-    r = (unsigned int)lrand48();
-#else
-    r = (unsigned int)rand();
-#endif
-    LIBXSMM_MEMCPY127(dst, &r, 4);
-  }
-  end = (unsigned char*)data + nbytes;
-  if (dst < end) {
-#if defined(LIBXSMM_RNG_DRAND48)
-    r = (unsigned int)lrand48();
-#else
-    r = (unsigned int)rand();
-#endif
-    LIBXSMM_MEMCPY127(dst, &r, end - dst);
-  }
-}
-
-
-LIBXSMM_API double libxsmm_rng_f64(void)
-{
-#if defined(LIBXSMM_RNG_DRAND48)
-  /* coverity[dont_call] */
-  return drand48();
-#else
-  static const double scale = 1.0 / (RAND_MAX);
-  return scale * (double)rand();
 #endif
 }

@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 
@@ -138,9 +139,6 @@ int main(int argc, char* argv []) {
   /* set value of prefetch flag */
   if (strcmp("nopf", argv[15]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  }
-  else if (strcmp("pfsigonly", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
   }
   else if (strcmp("BL2viaC", argv[15]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;

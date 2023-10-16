@@ -8,18 +8,18 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
-void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  unsigned int k1, k2, c1, c2;
-  unsigned int kBlocks = K/bk;
-  unsigned int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_src, src, K);
+void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
+  const libxsmm_blasint cBlocks = C/bc;
+  const libxsmm_blasint kBlocks = K/bk;
+  libxsmm_blasint k1, k2, c1, c2;
+  LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, real_src, src, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1,c2,k2) collapse(2)
+# pragma omp parallel for private(k1,c1,c2,k2) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -33,20 +33,21 @@ void pack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned i
   }
 }
 
-void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack, libxsmm_meltwfunction_unary kernel) {
-  unsigned int k1, k2, c1, c2;
-  unsigned int kBlocks = K/bk;
-  unsigned int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_src, src, K);
+void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack, libxsmm_meltwfunction_unary kernel) {
+  const libxsmm_blasint cBlocks = C/bc;
+  const libxsmm_blasint kBlocks = K/bk;
+  libxsmm_blasint k1, k2, c1, c2;
+  LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, real_src, src, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
+  libxsmm_bfloat16 *const tmp = (libxsmm_bfloat16*)malloc(sizeof(libxsmm_bfloat16) * bc * bk * kBlocks);
+  LIBXSMM_ASSERT(NULL != tmp);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1,c2,k2) collapse(2)
+# pragma omp parallel for private(k1,c1,c2,k2) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
-      libxsmm_bfloat16 tmp[bc*bk];
-      LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, real_tmp, tmp, bk, vnni_pack);
+      LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, real_tmp, tmp + bc * bk * k1, bk, vnni_pack);
       libxsmm_meltw_unary_param unary_param;
       for (c2 = 0; c2 < bc; c2++) {
         for (k2 = 0; k2 < bk; k2++) {
@@ -61,15 +62,15 @@ void pack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const
   }
 }
 
-void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack, libxsmm_meltwfunction_unary kernel) {
-  unsigned int k1, c1;
-  unsigned int kBlocks = K/bk;
-  unsigned int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_src, src, K);
+void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack, libxsmm_meltwfunction_unary kernel) {
+  const libxsmm_blasint kBlocks = K/bk;
+  const libxsmm_blasint cBlocks = C/bc;
+  libxsmm_blasint k1, c1;
+  LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, real_src, src, K);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1) collapse(2)
+# pragma omp parallel for private(k1,c1) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (c1 = 0; c1 < cBlocks; c1++) {
     for (k1 = 0; k1 < kBlocks; k1++) {
@@ -81,15 +82,15 @@ void pack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, con
   }
 }
 
-void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
-  unsigned int k1, k2, c1, c2;
-  unsigned int kBlocks = K/bk;
-  unsigned int cBlocks = C/bc;
+void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
+  const libxsmm_blasint cBlocks = C/bc;
+  const libxsmm_blasint kBlocks = K/bk;
+  libxsmm_blasint k1, k2, c1, c2;
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_dst, dst, K);
-  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/vnni_pack, bk, vnni_pack);
+  LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, real_src, src, cBlocks, bc/vnni_pack, bk, vnni_pack);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1,c2,k2) collapse(2)
+# pragma omp parallel for private(k1,c1,c2,k2) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -103,11 +104,11 @@ void unpack_c(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned
   }
 }
 
-void unpack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
+void unpack_tpp_identity(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
   unpack_c( src, dst, C, K, bc, bk, vnni_pack );
 }
 
-void unpack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const unsigned int C, const unsigned int K, const unsigned int bc, const unsigned int bk, const unsigned int vnni_pack) {
+void unpack_tpp_normtovnni(const libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, const libxsmm_blasint C, const libxsmm_blasint K, const libxsmm_blasint bc, const libxsmm_blasint bk, const libxsmm_blasint vnni_pack) {
   unpack_c( src, dst, C, K, bc, bk, vnni_pack );
 }
 
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint bk = ( argc > 5 ) ? atoi(argv[5]) :   32;
   libxsmm_blasint it = ( argc > 6 ) ? atoi(argv[6]) :   1000;
   libxsmm_blasint l_l, l_c, l_k;
-  unsigned int vnni_pack = libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16);
+  const unsigned int vnni_pack = libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16);
   libxsmm_matdiff_info l_diff;
   double error = 0.0;
   double l_datasize = ((double)it * (double)L * (double)K * (double)C * (double)sizeof(libxsmm_bfloat16))/(1024.0*1024.0*1024.0);
@@ -285,4 +286,3 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
-
