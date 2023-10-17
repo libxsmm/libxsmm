@@ -483,13 +483,7 @@
 #define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
 
-/* QUAD MADD, QUAD VNNI and VNNI */
-#define LIBXSMM_X86_INSTR_V4FMADDPS        0xf0072c9a
-#define LIBXSMM_X86_INSTR_V4FNMADDPS       0xf0072caa
-#define LIBXSMM_X86_INSTR_V4FMADDSS        0xf0072c9b
-#define LIBXSMM_X86_INSTR_V4FNMADDSS       0xf0072cab
-#define LIBXSMM_X86_INSTR_VP4DPWSSDS       0xf0072c53
-#define LIBXSMM_X86_INSTR_VP4DPWSSD        0xf0072c52
+/* AVX512 VNNI */
 #define LIBXSMM_X86_INSTR_VPDPBUSD         0x30052650
 #define LIBXSMM_X86_INSTR_VPDPBUSDS        0x30052651
 #define LIBXSMM_X86_INSTR_VPDPWSSD         0x30052652
@@ -1406,6 +1400,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int m_loop_exists;
   unsigned int n_loop_exists;
   unsigned int fused_bcolbias;
+  unsigned int fused_hcolbias;
   unsigned int fused_b8colbias;
   unsigned int fused_h8colbias;
   unsigned int fused_scolbias;
@@ -1752,8 +1747,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int skip_pushpops_callee_gp_reg;
   unsigned int use_stack_vars;
   char vector_name;
-  unsigned int opreduce_use_unary_arg_reading;
-  unsigned int opreduce_avoid_acc_load;
 } libxsmm_mateltwise_kernel_config;
 
 /* structure for storing the current gp reg mapping for matequation */

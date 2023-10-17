@@ -1851,10 +1851,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
           | (LIBXSMM_MALLOC_ALIGNMAX < size ? 0 : MAP_NORESERVE)
 # endif
 # if defined(MAP_32BIT)
-          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32
-            && (LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid)
-            && (LIBXSMM_X86_AVX512 < libxsmm_target_archid ||
-                LIBXSMM_X86_AVX > libxsmm_target_archid)) ? MAP_32BIT : 0)
+          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32) ? MAP_32BIT : 0)
 # endif
 # if defined(MAP_HUGETLB) && defined(LIBXSMM_MALLOC_HUGE_PAGES)
           | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)

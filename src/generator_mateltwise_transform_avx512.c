@@ -2065,7 +2065,7 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_microkernel( libxs
                                                                              const unsigned int                      i_mask_reg_0,
                                                                              const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                              const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE)) {
+  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
     libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl256_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_micro_kernel_config, i_mateltwise_desc );
   } else {
     libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_mask_reg_0, i_micro_kernel_config, i_mateltwise_desc );
@@ -2816,7 +2816,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
   unsigned int l_zmm_tmp1 = ((i_n_step + 3) / 4) * 4 + 1;
   unsigned int l_m_bound = 16;
 
-  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE)) {
+  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
     l_m_bound = 8;
   }
 
@@ -3039,7 +3039,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_microkernel( libxsmm
   unsigned int l_vnni_hi_reg = 30;
   unsigned int l_vnni_lo_reg_2 = 29;
   unsigned int l_vnni_hi_reg_2 = 28;
-  unsigned int l_m_entries = ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE)) ? 16 : 32;
+  unsigned int l_m_entries = ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) ? 16 : 32;
   unsigned int l_m_remainder = i_mateltwise_desc->m % l_m_entries;
   unsigned int l_m_full = i_mateltwise_desc->m / l_m_entries;
   unsigned int l_n_remainder = i_mateltwise_desc->n % 16;

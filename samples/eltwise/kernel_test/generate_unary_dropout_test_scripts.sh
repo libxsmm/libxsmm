@@ -3,7 +3,7 @@
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 if [[ -z "${SSIZE}" ]]; then
-  SAMPLESIZE=18
+  SAMPLESIZE=10
 else
   SAMPLESIZE=${SSIZE}
 fi

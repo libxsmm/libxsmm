@@ -31,8 +31,10 @@ FMTXPAT="/gxm/ /mlpcell/"
 DIR=$1
 
 FMTBIN=$(command -v clang-format)
+SHELLC=$(command -v shellcheck)
 FLAKE8=$(command -v flake8)
 ICONV=$(command -v iconv)
+BLACK=$(command -v black)
 MYPY=$(command -v mypy)
 DIFF=$(command -v diff)
 SED=$(command -v gsed)
@@ -59,20 +61,16 @@ if [ "${CPP}" ] && [ "$(${CPP} -fpreprocessed /dev/null)" ]; then
   unset CPP
 fi
 
+if [ "${FLAKE8}" ] && [ "0" != "$(${FLAKE8} 2>&1 >/dev/null; echo $?)" ]; then
+  unset FLAKE8
+fi
+
+if [ "${MYPY}" ] && [ "0" != "$(${MYPY} 2>&1 >/dev/null; echo $?)" ]; then
+  unset MYPY
+fi
+
 if [ "${CAT}" ] && [ -e "${CODEFILE}" ]; then
   PATTERNS="$(${CAT} "${CODEFILE}")"
-fi
-
-if [ "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; echo $?)" ] && \
-   [ "0" != "$(${FLAKE8} "${HERE}"/*.py 2>&1 >/dev/null; echo $?)" ];
-then
-  echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
-fi
-
-if [ "${MYPY}" ] && [ "0" = "$(${MYPY} 2>&1 >/dev/null; echo $?)" ] && \
-   [ "0" != "$(${MYPY} "${HERE}"/*.py 2>&1 >/dev/null; echo $?)" ];
-then
-  echo "Warning: some Python scripts do not pass MyPy check (${HERE})!"
 fi
 
 if [ ! "${FMTBIN}" ] || [ "$(${FMTBIN} --style=file -dump-config 2>&1 >/dev/null)" ]; then
@@ -84,7 +82,9 @@ if [ "${SED}" ] && [ "${CUT}" ] && [ "${TR}" ] && \
    [ "${GIT}" ] && [ "${CP}" ] && [ "${RM}" ] && \
    [ "${CAT}" ] && [ "${MKTEMP}" ];
 then
+  WARNINGS=0
   TMPF=$("${MKTEMP}" .libxsmm_XXXXXX.txt)
+  trap '${RM} ${TMPF}' EXIT
   # disable glob in Shell
   set -f
   # Search the content of the diffs matching the given file types
@@ -167,9 +167,41 @@ then
     fi
     #
     # Check and fix executable flag of file under source control.
+    # Black-format Flake8-check, and MyPy-check Python file.
+    # Shellcheck any Shell script.
     #
     FLAGS=$(${GIT} ls-files -s "${FILE}" | ${CUT} -d' ' -f1)
     if [ "*.sh" = "${PATTERN}" ] || [ "*.slurm" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ]; then
+      if [ "*.py" = "${PATTERN}" ]; then
+        if [ "${BLACK}" ]; then
+          if ! ${BLACK} -l79 --check "${FILE}" 2>/dev/null; then
+            if [ "${HERE}" = "$(dirname "${FILE}")" ]; then
+              ${BLACK} -l79 "${FILE}" 2>/dev/null
+              echo -n " : reformatted"
+            else
+              echo -n " : reformat using \"black -l 79\""
+            fi
+            REFORMAT=1
+          fi
+        fi
+        if [ "${FLAKE8}" ]; then
+          if [ "0" != "$(${FLAKE8} "${FILE}" 2>&1 >/dev/null; echo $?)" ]; then
+            echo -n " : fix issues pointed out by Flake8"
+            REFORMAT=1
+          fi
+        fi
+        if [ "${MYPY}" ]; then
+          if [ "0" != "$(${MYPY} "${FILE}" 2>&1 >/dev/null; echo $?)" ]; then
+            echo -n " : fix issues pointed out by MyPy"
+            REFORMAT=1
+          fi
+        fi
+      elif [ "${SHELLC}" ]; then
+        if ! ${SHELLC} "${FILE}" >/dev/null; then
+          echo -n " : fix issues pointed out by Shellcheck"
+          REFORMAT=1
+        fi
+      fi
       if [ "$(${SED} -n '1!b;/#!/p' "${FILE}")" ] && \
          [ "100755" != "${FLAGS}" ];
       then
@@ -202,14 +234,18 @@ then
       exit 1
     fi
     if [ "0" != "${REFORMAT}" ]; then
+      WARNINGS=$((WARNINGS+1))
       echo
     else
       echo " : OK"
     fi
   done
   done
-  ${RM} -f "${TMPF}" .libxsmm_??????.txt
-  echo "Successfully Completed."
+  if [ "0" != "${WARNINGS}" ]; then
+    echo "Completed with format warnings."
+  else
+    echo "Completed successfully."
+  fi
   exit 0
 fi
 

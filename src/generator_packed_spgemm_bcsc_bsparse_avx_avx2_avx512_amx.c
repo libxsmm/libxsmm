@@ -16,16 +16,13 @@
 #include "generator_common_x86.h"
 #include "libxsmm_main.h"
 
-#if !defined(LIBXSMM_GENERATOR_X86_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
-# define LIBXSMM_GENERATOR_X86_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC
-#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_spgemm_max_mn_blocking_factors_x86(libxsmm_generated_code* io_generated_code, unsigned int i_bn, unsigned int *o_max_m_bf, unsigned int *o_max_n_bf) {
   unsigned int l_available_vregs = 32;
   unsigned int l_n_max_unroll = 0;
   unsigned int l_m_max_unroll = 0;
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
     l_available_vregs = 15;
   }
   l_n_max_unroll = l_available_vregs - 2;
@@ -226,13 +223,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   unsigned int l_cur_column_gpr = LIBXSMM_X86_GP_REG_RAX;
   unsigned int l_next_column_gpr = LIBXSMM_X86_GP_REG_RBX;
   unsigned int l_dynamic_n_gpr  = LIBXSMM_X86_GP_REG_R14;
-#if defined(LIBXSMM_GENERATOR_X86_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker *const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker *const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
@@ -307,7 +299,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
       return;
     }
     l_simd_packed_width = 16;
-    if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
       l_simd_packed_width = 8;
     }
     l_is_amx_kernel = 0;
@@ -364,7 +356,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   /* implementing load from struct */
   if (l_emit_compute > 0) {
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-      /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
+      /* RDI holds the pointer to the struct, so lets first move this one into R15 */
       libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1 );
       /* A pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
@@ -509,7 +501,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
     /* mask for M remainder  */
     if ( l_simd_packed_remainder != 0 ) {
       /* Mask for output loading/storing */
-      if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+      if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
         l_output_mask = 15;
         l_input_mask  = 15;
         libxsmm_generator_initialize_avx_mask(io_generated_code, l_input_mask, l_simd_packed_remainder, LIBXSMM_DATATYPE_F32 );
@@ -586,7 +578,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
       if (l_is_amx_kernel > 0) {
         libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(          io_generated_code,
                                                                          &l_loop_label_tracker,
-                                                                         p_jump_label_tracker,
+                                                                         &l_jump_label_tracker,
                                                                          &l_gp_reg_mapping,
                                                                          &l_micro_kernel_config,
                                                                          i_xgemm_desc,
@@ -603,7 +595,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
       } else if (l_is_amx_kernel == 0) {
         libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512( io_generated_code,
                                                                          &l_loop_label_tracker,
-                                                                         p_jump_label_tracker,
+                                                                         &l_jump_label_tracker,
                                                                          &l_gp_reg_mapping,
                                                                          &l_micro_kernel_config,
                                                                          i_xgemm_desc,
@@ -669,10 +661,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
 
   /* close asm */
   libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
-
-#if defined(LIBXSMM_GENERATOR_X86_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -747,7 +735,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   l_n_blocks = i_bn / l_n_cols_kernel;
   EMPTY_BLOCK_COLUMN_LABEL_BETA0 = (i_packed_processed == 0) ? 2 : 2 + l_n_blocks;
 
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
     l_input_bf16_mask = 15;
     l_output_bf16_mask = 15;
   }
