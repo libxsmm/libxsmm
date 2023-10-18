@@ -113,10 +113,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm
                                                                          unsigned int                       i_ldo,
                                                                          unsigned int                       i_gp_reg,
                                                                          unsigned int                       o_gp_reg ) {
-  unsigned int ik = 0, im = 0, l_vlen = 16;
+  unsigned int im = 0, l_vlen = 16;
   unsigned int l_vreg_start = i_micro_kernel_config->reserved_zmms;
 
 #if 0
+  unsigned int ik = 0;
   /* Int4 matrix is in vnni8 interleaved format */
   for (ik = 0; ik < i_K; ik += 8) {
     for (im = 0; im < i_m_tiles; im++) {
