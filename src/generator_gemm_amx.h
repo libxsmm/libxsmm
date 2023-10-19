@@ -13,13 +13,14 @@
 
 #include "generator_common.h"
 
+LIBXSMM_API_INTERN
 void libxsmm_generator_brgemm_amx_set_gp_reg_a( libxsmm_generated_code*             io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     unsigned int                       i_unrolled_index );
 
-  LIBXSMM_API_INTERN
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_header_dequant_loop_amx( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
