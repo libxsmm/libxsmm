@@ -30,6 +30,16 @@ for BINARY_POSTOP in 0 1; do
                     NSTEP=1
                     KSTEP=1
 
+                    if [[ -z "${SSIZE}" ]]; then
+                      SAMPLESIZE=10
+                    else
+                      SAMPLESIZE=${SSIZE}
+                    fi
+
+                    if [ "$PREC" == 'U4_U8_I32_I32' ] ; then
+                      SAMPLESIZE=10
+                    fi
+
                     #split PREC string into 4 variables
 
 
