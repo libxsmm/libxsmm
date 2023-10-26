@@ -438,16 +438,33 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
 
   if (l_is_Ai4_Bf16_gemm > 0) {
-    unsigned int lut_f32[16] = {0x00000000, 0x3f800000, 0x40000000, 0x40400000, 0x40800000, 0x40a00000, 0x40c00000, 0x40e00000, 0x41000000, 0x41100000, 0x41200000, 0x41300000, 0x41400000, 0x41500000, 0x41600000, 0x41700000};
-    unsigned int signed_lut_f32[16] = {0x00000000, 0x3f800000, 0x40000000, 0x40400000, 0x40800000, 0x40a00000, 0x40c00000, 0x40e00000, 0xc1000000, 0xc0e00000, 0xc0c00000, 0xc0a00000, 0xc0800000, 0xc0400000, 0xc0000000, 0xbf800000};
-    unsigned short lut[32] = {0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0x4800, 0x4880, 0x4900, 0x4980, 0x4a00, 0x4a80, 0x4b00, 0x4b80,
-                              0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0x4800, 0x4880, 0x4900, 0x4980, 0x4a00, 0x4a80, 0x4b00, 0x4b80};
-    unsigned short signed_lut[32] = {0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0xc800, 0xc700, 0xc600, 0xc500, 0xc400, 0xc200, 0xc000, 0xbc00,
-                                     0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0xc800, 0xc700, 0xc600, 0xc500, 0xc400, 0xc200, 0xc000, 0xbc00};
-    if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype) || io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
-      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) ? lut_f32 : signed_lut_f32), "my_lut", 'z', 0 );
+    unsigned int l_use_perm_based_cvt = (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_SKX || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ? 0 : 1;
+    if (l_use_perm_based_cvt > 0) {
+      unsigned int lut_f32[16] = {0x00000000, 0x3f800000, 0x40000000, 0x40400000, 0x40800000, 0x40a00000, 0x40c00000, 0x40e00000, 0x41000000, 0x41100000, 0x41200000, 0x41300000, 0x41400000, 0x41500000, 0x41600000, 0x41700000};
+      unsigned int signed_lut_f32[16] = {0x00000000, 0x3f800000, 0x40000000, 0x40400000, 0x40800000, 0x40a00000, 0x40c00000, 0x40e00000, 0xc1000000, 0xc0e00000, 0xc0c00000, 0xc0a00000, 0xc0800000, 0xc0400000, 0xc0000000, 0xbf800000};
+      unsigned short lut[32] = {0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0x4800, 0x4880, 0x4900, 0x4980, 0x4a00, 0x4a80, 0x4b00, 0x4b80,
+                                0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0x4800, 0x4880, 0x4900, 0x4980, 0x4a00, 0x4a80, 0x4b00, 0x4b80};
+      unsigned short signed_lut[32] = {0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0xc800, 0xc700, 0xc600, 0xc500, 0xc400, 0xc200, 0xc000, 0xbc00,
+                                       0x0000, 0x3C00, 0x4000, 0x4200, 0x4400, 0x4500, 0x4600, 0x4700, 0xc800, 0xc700, 0xc600, 0xc500, 0xc400, 0xc200, 0xc000, 0xbc00};
+      if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype) || io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) ? lut_f32 : signed_lut_f32), "my_lut", 'z', 0 );
+      } else {
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) ? lut : signed_lut), "my_lut", 'z', 0 );
+      }
     } else {
-      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) ? lut : signed_lut), "my_lut", 'z', 0 );
+      /* Set to 0 lo mask and to 1 hi mask */
+      unsigned int mask_lo_i4[8] = { 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f};
+      unsigned int mask_hi_i4[8] = { 0xf0f0f0f0, 0xf0f0f0f0, 0xf0f0f0f0, 0xf0f0f0f0, 0xf0f0f0f0, 0xf0f0f0f0, 0xf0f0f0f0, 0xf0f0f0f0};
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) mask_lo_i4 ,
+                                                           "my_i4_lo",
+                                                           'y',
+                                                           0 );
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) mask_hi_i4 ,
+                                                           "my_i4_hi",
+                                                           'y',
+                                                           1 );
     }
   }
 
