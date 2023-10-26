@@ -2750,7 +2750,7 @@ int main(int argc, char* argv []) {
         } else {
           if (l_gemm_def.is_Ai4Bi8_gemm > 0) {
             /* We create a new tensor of i4 in vnni8-interleaved format (l_gemm_def.is_Ai4Bf16_gemm > 0)from A... */
-            char *l_a_i4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)(l_k/2) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
+            char *l_a_i4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+7)/8)*8)/2) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0, l_akk = 0;
             unsigned char *uc_a = (unsigned char*) l_a;
             unsigned char *uc_ai4 = (unsigned char*) l_a_i4;
