@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(libxsmm VERSION ${CMAKE_PROJECT_VERSION})
+project(libxsmm C CXX)
 
 # Platform
 set(LINUX False)
