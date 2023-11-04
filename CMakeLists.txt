@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(${XSMM_PROJ_NAME} VERSION ${CMAKE_PROJECT_VERSION})
+project(libxsmm VERSION ${CMAKE_PROJECT_VERSION})
 
 # Platform
 set(LINUX False)
