@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(libxsmm C CXX)
 
+option(XSMM_STATIC  "static build" ON)
+
+# display config
+message(STATUS "******** Build Summary ********")
+message(STATUS "  CMake version         : ${CMAKE_VERSION}")
+message(STATUS "  CMake command         : ${CMAKE_COMMAND}")
+message(STATUS "  System                : ${CMAKE_SYSTEM_NAME}")
+message(STATUS "  XSMM_STATIC           : ${XSMM_STATIC}")
+
 # Platform
 set(LINUX False)
 set(MACOS False)
@@ -33,7 +42,12 @@ endif()
 
 set(XSMM_INCLUDE_DIRS ${XSMM_ROOT_DIR}/include)
 
-add_library(xsmm STATIC ${XSMM_SRCS})
+if(XSMM_STATIC)
+  add_library(xsmm STATIC ${XSMM_SRCS})
+else()
+  add_library(xsmm SHARED ${XSMM_SRCS})
+endif()
+
 target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
 target_compile_definitions(xsmm PRIVATE
   __BLAS=0
