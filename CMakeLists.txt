@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(libxsmm C CXX)
 
-option(XSMM_STATIC  "static build" ON)
+message(WARNING
+    "CMake is the not preferred to to build libxsmm for the time being. It's only for some target usages and \"make\" is the tool of choice."
+)
+
+option(XSMM_STATIC      "static build" ON)
 
 # display config
 message(STATUS "******** Build Summary ********")
+message(STATUS "General:")
 message(STATUS "  CMake version         : ${CMAKE_VERSION}")
 message(STATUS "  CMake command         : ${CMAKE_COMMAND}")
 message(STATUS "  System                : ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Options:")
 message(STATUS "  XSMM_STATIC           : ${XSMM_STATIC}")
 
 # Platform
@@ -49,9 +55,11 @@ else()
 endif()
 
 target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
-target_compile_definitions(xsmm PRIVATE
-  __BLAS=0
-)
+
+# https://github.com/libxsmm/libxsmm/tree/main#link-instructions
+# Please pass BLAS config by "-D__BLAS=0"
+# target_compile_definitions(xsmm PRIVATE __BLAS=0)
+
 add_definitions(-DLIBXSMM_DEFAULT_CONFIG -U_DEBUG)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
