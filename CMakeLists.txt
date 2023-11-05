@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(libxsmm C CXX)
 
 message(WARNING
-    "CMake is the not preferred to to build libxsmm for the time being. It's only for some target usages and \"make\" is the tool of choice."
+    "CMake is the not preferred tool to build libxsmm for the time being. It's only for some target usages and \"make\" is the tool of choice."
 )
 
 option(XSMM_STATIC      "static build" ON)
