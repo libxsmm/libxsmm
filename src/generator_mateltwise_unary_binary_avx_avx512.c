@@ -1851,7 +1851,6 @@ void libxsmm_compute_ternary_2d_reg_block( libxsmm_generated_code*              
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg) {
   unsigned int im, in, cur_vreg;
-  unsigned int binary_op_instr = 0;
   unsigned int bcast_row = (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1) > 0)) ? 1 : 0;
   unsigned int bcast_col = (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1) > 0)) ? 1 : 0;
   unsigned int bcast_scalar = (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1) > 0)) ? 1 : 0;
@@ -1956,10 +1955,8 @@ void libxsmm_compute_ternary_2d_reg_block( libxsmm_generated_code*              
 
       if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
         /* Load mask and perform blend */
-        unsigned int l_bf16_compute = ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? 1 : 0;
         unsigned int l_vblend_instr = ( l_bf16_compute > 0 ) ? LIBXSMM_X86_INSTR_VPBLENDMW : LIBXSMM_X86_INSTR_VPBLENDMD;
         unsigned int l_mask_ld_instr = ( l_bf16_compute > 0  ) ? LIBXSMM_X86_INSTR_KMOVD_LD : LIBXSMM_X86_INSTR_KMOVW_LD;
-        unsigned int l_vlen = ( l_bf16_compute > 0 ) ? 32 : 16;
         unsigned int cur_mask_reg = i_micro_kernel_config->blend_tmp_mask;
         if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
           if ( l_bf16_compute != 0 ) {
