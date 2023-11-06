@@ -39,7 +39,7 @@ SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter \
-          $(OUTDIR)/eltwise_binary_simple \
+          $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_ternary_simple \
           $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform \
           $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu \
           $(OUTDIR)/eltwise_unary_quantization
@@ -97,6 +97,9 @@ $(OUTDIR)/eltwise_unary_gather_scatter: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_
 $(OUTDIR)/eltwise_binary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_binary_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_binary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
+$(OUTDIR)/eltwise_ternary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_ternary_simple-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_ternary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
 $(OUTDIR)/eltwise_unary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
@@ -150,6 +153,7 @@ endif
 	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
 	@-rm -f $(TSTDIR)/unary_*.sh
 	@-rm -f $(TSTDIR)/binary_*.sh
+	@-rm -f $(TSTDIR)/ternary_*.sh
 
 .PHONY: deepclean
 deepclean: realclean
