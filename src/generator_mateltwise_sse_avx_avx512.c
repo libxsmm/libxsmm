@@ -785,6 +785,22 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
   if ((has_inp_or_out_fp64 > 0) && (has_all_inp_and_out_fp64 == 0)) {
     is_valid_arch_prec = 0;
   }
+  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) {
+    if (i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
+      is_valid_arch_prec = 0;
+    } else {
+      if (LIBXSMM_DATATYPE_F32 != libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) {
+        is_valid_arch_prec = 0;
+      }
+      if (LIBXSMM_DATATYPE_IMPLICIT != libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2)) {
+        is_valid_arch_prec = 0;
+      }
+      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BITMASK_2BYTEMULT) == 0) {
+        is_valid_arch_prec = 0;
+      }
+    }
+  }
+
   return is_valid_arch_prec;
 }
 
