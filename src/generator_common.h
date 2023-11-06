@@ -1667,6 +1667,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_halves;
   unsigned int mask_hi;
   unsigned int mask_lo;
+  unsigned int blend_tmp_mask;
 
   /* Additional aux variables for exp */
   unsigned int vec_log2e;
