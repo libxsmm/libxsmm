@@ -60,7 +60,7 @@ unsigned char extract_bit(const char *bit_matrix, libxsmm_blasint i, libxsmm_bla
   unsigned char result = 0;
   libxsmm_blasint byte_load = i/8;
   libxsmm_blasint pos_in_byte = i%8;
-  char byte_loaded = bit_matrix[byte_load + j * ld];
+  char byte_loaded = bit_matrix[byte_load + j * (ld/8)];
   result = ((unsigned char)(byte_loaded << (7-pos_in_byte))) >> 7;
   result = (result == 0) ? 0 : 1;
   return result;
@@ -212,7 +212,7 @@ int test_ternary_op( const libxsmm_blasint M, const libxsmm_blasint N, const lib
   libxsmm_meltw_ternary_shape ternary_shape = libxsmm_create_meltw_ternary_shape( M, N, ldi, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_in2, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_ternary_type  ternary_type;
-  libxsmm_blasint l_ld2 = (op == SELECT_OP) ? LIBXSMM_UPDIV(ldi, 8) : ldi;
+  libxsmm_blasint l_ld2 = (op == SELECT_OP) ? LIBXSMM_UPDIV(ldi, 16)*16 : ldi;
 
   char opname[256];
 
@@ -233,7 +233,7 @@ int test_ternary_op( const libxsmm_blasint M, const libxsmm_blasint N, const lib
   in        = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in)*N*LIBXSMM_MAX(M,ldi), 64);
   in2       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in1)*N*LIBXSMM_MAX(M,ldi), 64);
   if (op == SELECT_OP) {
-    in3       = (char*) libxsmm_aligned_malloc((size_t)N*LIBXSMM_MAX(LIBXSMM_UPDIV(M,8),l_ld2), 64);
+    in3       = (char*) libxsmm_aligned_malloc((size_t)N*LIBXSMM_MAX(LIBXSMM_UPDIV(M,16)*16,l_ld2), 64);
   } else {
     in3       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in2)*N*LIBXSMM_MAX(M,ldi), 64);
   }
@@ -242,6 +242,7 @@ int test_ternary_op( const libxsmm_blasint M, const libxsmm_blasint N, const lib
   _in       = in;
   _in2      = in2;
   _in3      = in3;
+
 
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
@@ -391,7 +392,7 @@ int main( int argc, char* argv[] ) {
   char opname[256];
   int res = EXIT_FAILURE;
 
-  if ( argc != 11 && argc != 12 ) {
+  if ( argc != 12 && argc != 13 ) {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [prec_in2: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
     exit(-1);
   }

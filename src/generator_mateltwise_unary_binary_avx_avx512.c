@@ -63,7 +63,11 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_gp_
       if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
         tsize = 1;
         m_microkernel = m_microkernel/8;
-        ld = ld/8;
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BITMASK_2BYTEMULT) > 0) {
+          ld = (LIBXSMM_UPDIV(ld, 16)*16)/8;
+        } else {
+          ld = ld/8;
+        }
       }
     }
 
@@ -182,6 +186,9 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_in_microkernel_addr_gp_reg
       ld = i_mateltwise_desc->ldi3;
       if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
         tsize = 1;
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BITMASK_2BYTEMULT) > 0) {
+          ld = LIBXSMM_UPDIV(ld, 16)*16;
+        }
         m_adjust = (long long)(vlen * i_adjust_param * tsize)/8;
         n_adjust = (long long)(ld * i_adjust_param * tsize)/8;
       }
@@ -1885,8 +1892,12 @@ void libxsmm_compute_ternary_2d_reg_block( libxsmm_generated_code*              
       unsigned int _i_mask_reg = (bcast_row == 1) ? 0 : i_mask_reg;
       unsigned int in_offset;
 
-      if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
+      if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
         l_vlen = l_vlen/2;
+      } else {
+        if (io_generated_code->arch <= LIBXSMM_X86_AVX512_VL256_CPX) {
+          l_vlen = l_vlen/2;
+        }
       }
 
       if (bcast_scalar == 1) {
@@ -1958,20 +1969,22 @@ void libxsmm_compute_ternary_2d_reg_block( libxsmm_generated_code*              
         unsigned int l_vblend_instr = ( l_bf16_compute > 0 ) ? LIBXSMM_X86_INSTR_VPBLENDMW : LIBXSMM_X86_INSTR_VPBLENDMD;
         unsigned int l_mask_ld_instr = ( l_bf16_compute > 0  ) ? LIBXSMM_X86_INSTR_KMOVD_LD : LIBXSMM_X86_INSTR_KMOVW_LD;
         unsigned int cur_mask_reg = i_micro_kernel_config->blend_tmp_mask;
+        unsigned int l_ld_mask = i_mateltwise_desc->ldi3;
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BITMASK_2BYTEMULT) > 0) {
+          l_ld_mask = LIBXSMM_UPDIV(l_ld_mask, 16)*16;
+        }
         if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
           if ( l_bf16_compute != 0 ) {
             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
             return;
           }
-          l_vlen = l_vlen/2;
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
               LIBXSMM_X86_INSTR_VPBROADCASTB,
               i_gp_reg_mapping->gp_reg_in3,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              (im * l_vlen + in * i_mateltwise_desc->ldi3)/8,
+              (im * l_vlen + in * l_ld_mask)/8,
               i_micro_kernel_config->vector_name,
               cur_mask_reg, 0, 0, 0 );
-
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name,
                                        cur_mask_reg, i_micro_kernel_config->vec_tmp0, cur_mask_reg);
@@ -1984,8 +1997,10 @@ void libxsmm_compute_ternary_2d_reg_block( libxsmm_generated_code*              
               cur_vreg,
               0, 0, 0, cur_mask_reg << 4);
         } else {
-          l_vlen = (io_generated_code->arch <= LIBXSMM_X86_AVX512_VL256_CPX) ? l_vlen/2 : l_vlen ;
-          libxsmm_x86_instruction_mask_move_mem( io_generated_code, l_mask_ld_instr, i_gp_reg_mapping->gp_reg_in3, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldi3)/8, cur_mask_reg );
+          if (io_generated_code->arch <= LIBXSMM_X86_AVX512_VL256_CPX) {
+            l_mask_ld_instr = ( l_bf16_compute > 0  ) ? LIBXSMM_X86_INSTR_KMOVW_LD : LIBXSMM_X86_INSTR_KMOVB_LD;
+          }
+          libxsmm_x86_instruction_mask_move_mem( io_generated_code, l_mask_ld_instr, i_gp_reg_mapping->gp_reg_in3, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * l_ld_mask)/8, cur_mask_reg );
           libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vblend_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_vreg, cur_mask_reg, 0 );
         }
       }
