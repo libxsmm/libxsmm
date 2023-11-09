@@ -528,6 +528,12 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
     }
   }
 
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+    if (node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
+      result = 1;
+    }
+  }
+
   if (libxsmm_generator_matequation_is_xgemm_node(node) > 0) {
     result = 1;
   }
