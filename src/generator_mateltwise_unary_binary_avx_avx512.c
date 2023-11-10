@@ -19,6 +19,20 @@
 #define LOOP_TYPE_M 0
 #define LOOP_TYPE_N 1
 
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_mateltwise_is_binary_cmp_op( const libxsmm_meltw_descriptor*         i_mateltwise_desc) {
+  unsigned int result = 0;
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) &&
+      (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE)) {
+    result = 1;
+  }
+  return result;
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
@@ -69,6 +83,12 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_gp_
           ld = ld/8;
         }
       }
+    }
+
+    if ((libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT) > 0) && (is_out_gp_reg > 0)) {
+      tsize = 1;
+      m_microkernel = m_microkernel/8;
+      ld = i_micro_kernel_config->ldo_mask;
     }
 
     if (bcast_input == 0) {
@@ -194,6 +214,13 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_in_microkernel_addr_gp_reg
       }
     }
 
+    if ((libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT) > 0) && (is_out_gp_reg > 0)) {
+      tsize = 1;
+      ld = i_micro_kernel_config->ldo_mask;
+      m_adjust = (long long)(vlen * i_adjust_param * tsize)/8;
+      n_adjust = (long long)(ld * i_adjust_param * tsize)/8;
+    }
+
     if (bcast_input == 0) {
       if (i_loop_type == LOOP_TYPE_M) {
         libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_gp_reg, m_adjust);
@@ -287,7 +314,9 @@ void libxsmm_generator_configure_avx512_vlens(const libxsmm_meltw_descriptor* i_
   i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_comp;
 
   /* The vlen_out depends on the output datatype */
-  if ( LIBXSMM_DATATYPE_I8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+  if ( LIBXSMM_DATATYPE_IMPLICIT == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+    i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_in;
+  } else  if ( LIBXSMM_DATATYPE_I8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
     i_micro_kernel_config->vlen_out = 64;
   } else if ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
        LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
@@ -716,6 +745,11 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
   unsigned int bcast_row = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0))) ? 1 : 0;
   unsigned int bcast_col = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0))) ? 1 : 0;
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
+
+  if (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) {
+    /* In this case the store part is fused with the compute */
+    return;
+  }
 
   if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ||
        ( LIBXSMM_DATATYPE_F16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ||
@@ -2027,6 +2061,10 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
   unsigned int bcast_input = ( bcast_row == 1 || bcast_col == 1 || bcast_scalar == 1 ) ? 1 : 0;
   unsigned int vbcast_instr = ( i_micro_kernel_config->datatype_size_in1 == 4 ) ? ((io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTD) : (( i_micro_kernel_config->datatype_size_in1 == 2 ) ? LIBXSMM_X86_INSTR_VPBROADCASTW : LIBXSMM_X86_INSTR_VPBROADCASTB);
   unsigned int i_mask_reg_out = i_mask_reg;
+  unsigned int l_cmp_imm = 0;
+  unsigned int cur_mask_reg = 0;
+  unsigned int n_available_mask_regs = 8 - i_micro_kernel_config->reserved_mask_regs;
+  unsigned int l_mask_st_instr = LIBXSMM_X86_INSTR_KMOVW_ST;
 
   if ( i_micro_kernel_config->datatype_size_in1 == 8 ) {
     if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
@@ -2079,6 +2117,31 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
       binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMINPS : LIBXSMM_X86_INSTR_VMINPD;
     } break;
     default:;
+  }
+
+  if (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) {
+    binary_op_instr = LIBXSMM_X86_INSTR_VCMPPS;
+    switch (i_mateltwise_desc->param) {
+      case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT: {
+        l_cmp_imm = 6;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE: {
+        l_cmp_imm = 5;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT: {
+        l_cmp_imm = 1;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE: {
+        l_cmp_imm = 2;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ: {
+        l_cmp_imm = 0;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE: {
+        l_cmp_imm = 4;
+      } break;
+      default:;
+    }
   }
 
   if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP) {
@@ -2245,7 +2308,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
 
           libxsmm_generator_vcvthf8_to_f32_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2,
               i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1, i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1 );
-        }  else {
+        } else {
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             i_micro_kernel_config->vmove_instruction_in,
             i_gp_reg_mapping->gp_reg_out,
@@ -2255,6 +2318,22 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0,  ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
         }
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg, cur_vreg );
+      } else if (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) {
+        if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
+          cur_mask_reg = i_micro_kernel_config->tmp_vreg;
+          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_mask_reg, l_cmp_imm );
+          if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT) > 0 ) {
+            libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_scratch_0 );
+            libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVMSKPS, i_micro_kernel_config->vector_name, cur_mask_reg, LIBXSMM_X86_VEC_REG_UNDEF, i_gp_reg_mapping->gp_reg_scratch_0, 0 );
+            libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVB, i_gp_reg_mapping->gp_reg_out,
+                LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_micro_kernel_config->ldo_mask)/8, i_gp_reg_mapping->gp_reg_scratch_0, 1);
+            libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_scratch_0 );
+          }
+        } else {
+          cur_mask_reg = i_micro_kernel_config->reserved_mask_regs + (in * i_m_blocking + im) % n_available_mask_regs;
+          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_mask_reg, l_cmp_imm );
+          libxsmm_x86_instruction_mask_move_mem( io_generated_code, l_mask_st_instr, i_gp_reg_mapping->gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_micro_kernel_config->ldo_mask)/8, cur_mask_reg );
+        }
       } else {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_vreg );
       }
@@ -3564,6 +3643,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
          LIBXSMM_DATATYPE_BF8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
          LIBXSMM_DATATYPE_HF8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
          LIBXSMM_DATATYPE_U16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
+         LIBXSMM_DATATYPE_IMPLICIT == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
          LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)))      ||
        (  LIBXSMM_DATATYPE_I8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) && LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ) ||
        ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) && LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ) ||
@@ -3621,6 +3701,10 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
   if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ) {
     i_micro_kernel_config->ldo_mask = (i_mateltwise_desc->ldo+15) - ((i_mateltwise_desc->ldo+15)%16);
     i_micro_kernel_config->ldi_mask = (i_mateltwise_desc->ldi+15) - ((i_mateltwise_desc->ldi+15)%16);
+  }
+
+  if ((libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT) > 0)) {
+    i_micro_kernel_config->ldo_mask = (i_mateltwise_desc->ldo+15) - ((i_mateltwise_desc->ldo+15)%16);
   }
 
   /* let's check that we have bitmask set for dropput and relu backward */
