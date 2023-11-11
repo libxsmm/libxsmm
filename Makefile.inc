@@ -1381,10 +1381,12 @@ ifneq (0,$(INTEL))
   ifneq (0,$(SIMD))
   ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION_NUM)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
-    CXXFLAGS += -qopenmp-simd
-    CFLAGS += -qopenmp-simd
-    ifeq (,$(strip $(GFC)))
-      FCFLAGS += -qopenmp-simd
+    ifeq (0,$(OMP))
+      CXXFLAGS += -qopenmp-simd
+      CFLAGS += -qopenmp-simd
+      ifeq (,$(strip $(GFC)))
+        FCFLAGS += -qopenmp-simd
+      endif
     endif
     SIMD ?= 1
   endif
