@@ -600,7 +600,10 @@ LIBXSMM_API_INTERN void internal_scratch_free(const void* memory, internal_mallo
   const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
   char *const pool_buffer = pool->instance.buffer;
 # if (!defined(NDEBUG) || defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
   char *const buffer = (char*)memory; /* non-const */
+#pragma GCC diagnostic pop
   LIBXSMM_ASSERT(pool_buffer <= buffer && buffer < pool_buffer + pool->instance.minsize);
 # endif
   LIBXSMM_ASSERT(pool_buffer <= pool->instance.head);
