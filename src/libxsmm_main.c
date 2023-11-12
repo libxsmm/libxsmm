@@ -1511,7 +1511,7 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 #endif
               libxsmm_xfree(code.ptr_const, 0/*no check*/);
               /* round-up size (it is fine to assume 4 KB pages since it is likely more accurate than not rounding up) */
-              internal_registry_nbytes += LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
+              internal_registry_nbytes += LIBXSMM_UP2(size + (((const char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
             }
             else ++internal_registry_nleaks;
           }
@@ -2970,7 +2970,7 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 #endif
           result = libxsmm_get_malloc_xinfo(code.ptr_const, &buffer_size, NULL/*flags*/, &buffer);
           if (EXIT_SUCCESS == result) {
-            info->nbytes += LIBXSMM_UP2(buffer_size + (((char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
+            info->nbytes += LIBXSMM_UP2(buffer_size + (((const char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
           }
         }
         else {

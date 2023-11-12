@@ -445,6 +445,8 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INLINE
 LIBXSMM_ATTRIBUTE_NO_SANITIZE(address)
 internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
@@ -511,6 +513,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
   }
   return result;
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_type* exclude)

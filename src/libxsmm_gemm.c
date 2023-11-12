@@ -534,6 +534,8 @@ LIBXSMM_API void libxsmm_gemm_groups(
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -923,6 +925,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   /* coverity[missing_unlock] */
   return result;
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
@@ -956,6 +959,8 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
@@ -1126,6 +1131,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
   }
 #endif
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype oprec,
