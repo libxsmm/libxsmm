@@ -1463,7 +1463,9 @@ else # GCC assumed
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros \
                  -Wno-unused-parameter -Wwrite-strings \
-                 -Wmissing-field-initializers
+                 -Wmissing-field-initializers -Wwrite-strings \
+                 -Wcast-qual -Wmissing-field-initializers \
+                 -Wimplicit-fallthrough -Wmisleading-indentation
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
