@@ -2330,6 +2330,9 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_scratch_0 );
           }
         } else {
+          if (io_generated_code->arch <= LIBXSMM_X86_AVX512_VL256_CPX) {
+            l_mask_st_instr = LIBXSMM_X86_INSTR_KMOVB_ST;
+          }
           cur_mask_reg = i_micro_kernel_config->reserved_mask_regs + (in * i_m_blocking + im) % n_available_mask_regs;
           libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_mask_reg, l_cmp_imm );
           libxsmm_x86_instruction_mask_move_mem( io_generated_code, l_mask_st_instr, i_gp_reg_mapping->gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_micro_kernel_config->ldo_mask)/8, cur_mask_reg );

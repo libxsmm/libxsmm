@@ -14,6 +14,9 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_mateltwise_is_binary_cmp_op( const libxsmm_meltw_descriptor*         i_mateltwise_desc);
+
+LIBXSMM_API_INTERN
 void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  libxsmm_datatype                        i_compute_dtype,
