@@ -226,7 +226,6 @@ unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned
   }
   return result;
 }
-#pragma GCC diagnostic pop
 
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
@@ -260,6 +259,7 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
   return result;
 }
 #endif
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE
