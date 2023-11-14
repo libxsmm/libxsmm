@@ -158,6 +158,14 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
+  /* TODO: For large K and amx gemm we fallback to avx512 code... we can limit k unrolling to avoid code buffer size issues */
+  if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
+       (l_xgemm_desc_mod.k >= 4096) &&
+       (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) &&
+       ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
+    io_generated_code->arch = LIBXSMM_X86_AVX512_SKX;
+  }
+
   /* overwrite VNNI Flag when K == 1 */
   if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
        (l_xgemm_desc_mod.k == 1) &&
