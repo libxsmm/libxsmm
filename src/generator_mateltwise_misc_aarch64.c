@@ -14,10 +14,6 @@
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
 
-#if !defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-# define LIBXSMM_GENERATOR_MATELTWISE_MISC_AARCH64_JUMP_LABEL_TRACKER_MALLOC
-#endif
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generated_code*                        io_generated_code,
@@ -125,13 +121,8 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
   unsigned char pred_reg_mask_bf16= 3;
   unsigned int l_is_inp_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ? 1 : 0;
   unsigned int l_is_out_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ? 1 : 0;
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in     = LIBXSMM_AARCH64_GP_REG_X9;
@@ -144,7 +135,7 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
   /* load the input pointer and output pointer and the variable N */
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_gp_reg_mapping->gp_reg_n );
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_n, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_gp_reg_mapping->gp_reg_n );
-  libxsmm_aarch64_instruction_cond_jump_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBZ, i_gp_reg_mapping->gp_reg_n, END_LABEL, p_jump_label_tracker );
+  libxsmm_aarch64_instruction_cond_jump_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBZ, i_gp_reg_mapping->gp_reg_n, END_LABEL, &l_jump_label_tracker);
 
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, i_gp_reg_mapping->gp_reg_in );
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, i_gp_reg_mapping->gp_reg_out );
@@ -202,10 +193,5 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
         vlen, 0, peeled_m_trips, peeled_m_trips, use_m_masking, mask_inout );
   }
 
-  libxsmm_aarch64_instruction_register_jump_label( io_generated_code, END_LABEL, p_jump_label_tracker );
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
+  libxsmm_aarch64_instruction_register_jump_label( io_generated_code, END_LABEL, &l_jump_label_tracker );
 }
-
-

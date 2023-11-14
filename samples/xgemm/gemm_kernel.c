@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
 #if defined(__APPLE__) && defined(__arm64__)
@@ -2259,9 +2260,6 @@ int main(int argc, char* argv []) {
     if (strcmp("nopf", argv[20]) == 0) {
       l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
     }
-    else if (strcmp("pfsigonly", argv[20]) == 0) {
-      l_prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
-    }
     else if (strcmp("BL2viaC", argv[20]) == 0) {
       l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
     }
@@ -2820,7 +2818,6 @@ int main(int argc, char* argv []) {
         const char *prefetch = NULL, *br_type = NULL;
         switch (l_prefetch) {
           case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
-          case LIBXSMM_GEMM_PREFETCH_SIGONLY: prefetch = "pfsigonly"; break;
           case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
           case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
           case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;

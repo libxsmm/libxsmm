@@ -10,12 +10,14 @@
 ******************************************************************************/
 #if !defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
+# include <libxsmm_utils.h>
 #endif
 #include <inttypes.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
 #if defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm_utils.h>
 # include <libxsmm.h>
 #endif
 

@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_INTRINSICS_X86_H
-#define LIBXSMM_INTRINSICS_X86_H
+#ifndef LIBXSMM_UTILS_INTRINSICS_X86_H
+#define LIBXSMM_UTILS_INTRINSICS_X86_H
 
 #include "libxsmm_cpuid.h"
 
@@ -951,4 +951,4 @@ LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif /*__AVX512F__*/
 
 
-#endif /*LIBXSMM_INTRINSICS_X86_H*/
+#endif /*LIBXSMM_UTILS_INTRINSICS_X86_H*/

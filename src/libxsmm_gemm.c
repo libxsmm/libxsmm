@@ -12,7 +12,6 @@
 #include "generator_common.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_hash.h"
-#include <libxsmm_mhd.h>
 
 #if !defined(LIBXSMM_GEMM_TASKGRAIN)
 # define LIBXSMM_GEMM_TASKGRAIN 128
@@ -497,159 +496,6 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 }
 
 
-LIBXSMM_API void libxsmm_gemm_print(void* ostream,
-  libxsmm_datatype precision, const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_gemm_print2(ostream, precision, precision, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-
-LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
-  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc)
-{
-  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
-  const int itransa = LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A, itransb = LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B;
-  const char ctransa = (char)(NULL != transa ? (*transa) : (0 == itransa ? 'n' : 't'));
-  const char ctransb = (char)(NULL != transb ? (*transb) : (0 == itransb ? 'n' : 't'));
-  const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));
-  const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
-  const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
-  libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
-  char string_a[128] = "", string_b[128] = "", typeprefix = 0;
-
-  switch (iprec | oprec) {
-    case LIBXSMM_DATATYPE_F64: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", NULL != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
-      LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", NULL != beta  ? *((const double*)beta)  : LIBXSMM_BETA);
-      mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_F64;
-      typeprefix = 'd';
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", NULL != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
-      LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", NULL != beta  ? *((const float*)beta)  : LIBXSMM_BETA);
-      mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_F32;
-      typeprefix = 's';
-    } break;
-    default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) { /* TODO: support I16, etc. */
-        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
-      }
-    }
-  }
-
-  if (0 != typeprefix) {
-    if (NULL != ostream) { /* print information about GEMM call */
-      if (NULL != a && NULL != b && NULL != c) {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %" PRIuPTR "/*m*/, %" PRIuPTR "/*n*/, %" PRIuPTR "/*k*/,\n"
-                                "  %s/*alpha*/, %p/*a*/, %" PRIuPTR "/*lda*/,\n"
-                                "              %p/*b*/, %" PRIuPTR "/*ldb*/,\n"
-                                "   %s/*beta*/, %p/*c*/, %" PRIuPTR "/*ldc*/)",
-          typeprefix, ctransa, ctransb, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
-          string_a, a, (uintptr_t)ilda, b, (uintptr_t)ildb, string_b, c, (uintptr_t)ildc);
-      }
-      else {
-        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIuPTR ",%" PRIuPTR ",%" PRIuPTR
-                                                 " ldx=%" PRIuPTR ",%" PRIuPTR ",%" PRIuPTR " a,b=%s,%s)",
-          typeprefix, ctransa, ctransb, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
-          (uintptr_t)ilda, (uintptr_t)ildb, (uintptr_t)ildc, string_a, string_b);
-      }
-    }
-    else { /* dump A, B, and C matrices into MHD files */
-      char extension_header[256] = "";
-      size_t data_size[2] = { 0 }, size[2] = { 0 };
-
-      if (NULL != a) {
-        LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "TRANS = %c\nALPHA = %s", ctransa, string_a);
-        LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_a_%p.mhd", a);
-        data_size[0] = (size_t)ilda; data_size[1] = (size_t)kk; size[0] = (size_t)(*m); size[1] = (size_t)kk;
-        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
-          NULL/*conversion*/, a, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
-      }
-      if (NULL != b) {
-        LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c", ctransb);
-        LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_b_%p.mhd", b);
-        data_size[0] = (size_t)ildb; data_size[1] = (size_t)nn; size[0] = (size_t)kk; size[1] = (size_t)nn;
-        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
-          NULL/*conversion*/, b, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
-      }
-      if (NULL != c) {
-        LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "BETA = %s", string_b);
-        LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_c_%p.mhd", c);
-        data_size[0] = (size_t)ildc; data_size[1] = (size_t)nn; size[0] = (size_t)(*m); size[1] = (size_t)nn;
-        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
-          NULL/*conversion*/, c, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
-      }
-    }
-  }
-}
-
-
-LIBXSMM_API void libxsmm_gemm_dprint(
-  void* ostream, libxsmm_datatype precision, char transa, char transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, double dalpha, const void* a, libxsmm_blasint lda,
-  const void* b, libxsmm_blasint ldb, double dbeta, void* c, libxsmm_blasint ldc)
-{
-  libxsmm_gemm_dprint2(ostream, precision, precision, transa, transb, m, n, k, dalpha, a, lda, b, ldb, dbeta, c, ldc);
-}
-
-
-LIBXSMM_API void libxsmm_gemm_dprint2(
-  void* ostream, libxsmm_datatype iprec, libxsmm_datatype oprec, char transa, char transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, double dalpha, const void* a, libxsmm_blasint lda,
-  const void* b, libxsmm_blasint ldb, double dbeta, void* c, libxsmm_blasint ldc)
-{
-  switch ((int)iprec) {
-    case LIBXSMM_DATATYPE_F64: {
-      libxsmm_gemm_print2(ostream, LIBXSMM_DATATYPE_F64, oprec, &transa, &transb,
-        &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
-      const float alpha = (float)dalpha, beta = (float)dbeta;
-      libxsmm_gemm_print2(ostream, LIBXSMM_DATATYPE_F32, oprec, &transa, &transb,
-        &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-    } break;
-    default: {
-      libxsmm_gemm_print2(ostream, iprec, oprec, &transa, &transb,
-        &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
-    }
-  }
-}
-
-
-LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
-  libxsmm_xmmfunction kernel, const void* a, const void* b, void* c)
-{
-  const libxsmm_descriptor* desc;
-  libxsmm_code_pointer code = { NULL };
-  size_t code_size;
-  code.xgemm = kernel;
-  if (NULL != libxsmm_get_kernel_xinfo(code, &desc, &code_size) &&
-      NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
-  {
-    libxsmm_gemm_dprint2(ostream,
-      (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(desc->gemm.desc.datatype),
-      (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(desc->gemm.desc.datatype),
-      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->gemm.desc.flags) ? 'N' : 'T'),
-      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->gemm.desc.flags) ? 'N' : 'T'),
-      (libxsmm_blasint)desc->gemm.desc.m, (libxsmm_blasint)desc->gemm.desc.n, (libxsmm_blasint)desc->gemm.desc.k,
-      1, a, (libxsmm_blasint)desc->gemm.desc.lda, b, (libxsmm_blasint)desc->gemm.desc.ldb,
-      0 != (LIBXSMM_GEMM_FLAG_BETA_0 & desc->gemm.desc.flags) ? 0 : 1, c, (libxsmm_blasint)desc->gemm.desc.ldc);
-    fprintf((FILE*)ostream, " = %p+%u", code.ptr_const, (unsigned int)code_size);
-  }
-}
-
-
 LIBXSMM_API void libxsmm_gemm_strided(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
@@ -688,6 +534,8 @@ LIBXSMM_API void libxsmm_gemm_groups(
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -1077,6 +925,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   /* coverity[missing_unlock] */
   return result;
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
@@ -1110,6 +959,8 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
@@ -1280,6 +1131,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
   }
 #endif
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype oprec,

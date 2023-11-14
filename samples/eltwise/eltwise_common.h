@@ -9,6 +9,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 
@@ -187,9 +188,8 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
 LIBXSMM_INLINE
 libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
-
   libxsmm_matdiff_clear(&l_diff);
-
+#if 0
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
@@ -281,7 +281,10 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
   }
-
+  return l_diff;
+#else
+  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_matdiff(&l_diff, dtype, m, n, data_gold, data, &ld, &ld));
+#endif
   return l_diff;
 }
 

@@ -28,7 +28,6 @@
 #endif
 
 /** Generic prefetch applicable for all domains. */
-#define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 /** Attempt to automatically select a strategy. */
 #define LIBXSMM_PREFETCH_AUTO -1
@@ -507,23 +506,21 @@ typedef enum libxsmm_gemm_flags {
 typedef enum libxsmm_gemm_prefetch_type {
   /** No data-prefetch. */
   LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
-  /** Only function prefetch signature. */
-  LIBXSMM_GEMM_PREFETCH_SIGONLY            = LIBXSMM_PREFETCH_SIGONLY,
   /** Prefetch PA using accesses to A. */
-  LIBXSMM_GEMM_PREFETCH_AL2                = 2,
+  LIBXSMM_GEMM_PREFETCH_AL2                = 1,
   /** Prefetch PA (aggressive). */
-  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 4,
+  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 2,
   /** Prefetch A ahead. */
-  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 8,
+  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 4,
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2,
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_AHEAD,
   /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C (Eigen library). */
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
   /** Current B into L1. */
-  LIBXSMM_GEMM_PREFETCH_BL1                = 16,
-  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32,
-  LIBXSMM_GEMM_PREFETCH_C_SCRATCH          = 64,
-  LIBXSMM_GEMM_PREFETCH_C                  = 128
+  LIBXSMM_GEMM_PREFETCH_BL1                = 8,
+  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 16,
+  LIBXSMM_GEMM_PREFETCH_C_SCRATCH          = 32,
+  LIBXSMM_GEMM_PREFETCH_C                  = 64
 } libxsmm_gemm_prefetch_type;
 
 /** Enumeration of the batchreduce type. */

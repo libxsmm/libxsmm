@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
-#include <libxsmm_sync.h>
 
 #if defined(_OPENMP)
 # include <omp.h>

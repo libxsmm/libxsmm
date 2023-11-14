@@ -21,7 +21,7 @@
 # define LIBXSMM_MEMORY_SW
 #endif
 
-#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime2(N)
+#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime(N, (N) / 2)
 #define LIBXSMM_MEMORY_SHUFFLE(INOUT, ELEMSIZE, COUNT, SHUFFLE, NREPEAT) do { \
   unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)(INOUT); \
   const size_t c = (COUNT) - 1, c2 = ((COUNT) + 1) / 2; \
@@ -535,7 +535,7 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
   }
   else { /* reinterpret directly as hash value */
     LIBXSMM_ASSERT(NULL != string);
-    result = *(unsigned long long*)string;
+    result = *(const unsigned long long*)string;
   }
   return result;
 }
