@@ -2527,10 +2527,10 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
         binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
       } break;
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT: {
-        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
+        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
       } break;
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE: {
-        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V;
+        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V;
       } break;
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ: {
         binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V;
@@ -2540,10 +2540,8 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
       } break;
       default:;
     }
-    if (l_is_sve == 0) {
-      if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ) {
-        l_flip_args = 1;
-      }
+    if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ) {
+      l_flip_args = 1;
     }
   }
 
@@ -2679,7 +2677,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
         unsigned char l_tmp_pred_reg0 = 6; /* tmp sve predicate register for blending; todo should be a function input / part of the config */
         unsigned char l_tmp_pred_reg1 = 5;
         if ( l_is_sve ) {
-          libxsmm_aarch64_instruction_sve_compute( io_generated_code, binary_op_instr, cur_vreg, i_micro_kernel_config->tmp_vreg, 0, l_blend_reg, l_pred_reg, l_sve_type );
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, binary_op_instr, (l_flip_args > 0) ? i_micro_kernel_config->tmp_vreg : cur_vreg, (l_flip_args > 0) ? cur_vreg : i_micro_kernel_config->tmp_vreg, 0, l_blend_reg, l_pred_reg, l_sve_type );
           libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_mateltwise_desc->m, im, i_m_blocking,
                                                                                 LIBXSMM_CAST_UCHAR(i_micro_kernel_config->tmp_vreg),
                                                                                 LIBXSMM_CAST_UCHAR(i_gp_reg_mapping->gp_reg_out),
