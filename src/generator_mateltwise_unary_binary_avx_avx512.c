@@ -2320,7 +2320,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg, cur_vreg );
       } else if (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) {
         if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
-          cur_mask_reg = i_micro_kernel_config->tmp_vreg;
+          cur_mask_reg = i_micro_kernel_config->tmp_vreg2;
           libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_mask_reg, l_cmp_imm );
           if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT) > 0 ) {
             libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_scratch_0 );
@@ -3307,6 +3307,13 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
     /* This is the temp register used to load the second input */
     i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+
+    if (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) {
+      if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
+        i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms;
+        i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+      }
+    }
 
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
       if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
