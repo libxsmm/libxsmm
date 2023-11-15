@@ -34,7 +34,7 @@ set(XSMM_ROOT_DIR ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_INSTALL_MESSAGE NEVER)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 file(GLOB XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${XSMM_ROOT_DIR}/include/libxsmm/*.c)
 list(REMOVE_ITEM XSMM_SRCS ${XSMM_ROOT_DIR}/include/libxsmm/libxsmm_generator_gemm_driver.c)
@@ -69,7 +69,7 @@ if(NOT MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 endif()
 
-# add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
+add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
 add_definitions(-DNDEBUG)
 add_definitions(-DLIBXSMM_NOFORTRAN)
 add_definitions(-DLIBXSMM_TARGET_ARCH=1006)
