@@ -55,7 +55,6 @@ target_include_directories(xsmm PUBLIC ${XSMM_ROOT_DIR}/src)
 
 # https://github.com/libxsmm/libxsmm/tree/main#link-instructions
 
-# add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
 if(NOT MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
@@ -70,13 +69,12 @@ if(NOT MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 endif()
 
+# add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
+add_definitions(-DNDEBUG)
 add_definitions(-DLIBXSMM_NOFORTRAN)
 add_definitions(-DLIBXSMM_TARGET_ARCH=1006)
 add_definitions(-DLIBXSMM_OPENMP_SIMD)
 add_definitions(-DLIBXSMM_BUILD=2)
-add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
-add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
-add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
