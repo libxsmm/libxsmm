@@ -54,11 +54,8 @@ target_include_directories(xsmm PUBLIC ${XSMM_ROOT_DIR}/include)
 target_include_directories(xsmm PUBLIC ${XSMM_ROOT_DIR}/src)
 
 # https://github.com/libxsmm/libxsmm/tree/main#link-instructions
-# Please pass BLAS config by "-D__BLAS=0"
-# target_compile_definitions(xsmm PRIVATE __BLAS=0)
 
 # add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
-
 if(NOT MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
