@@ -2897,19 +2897,19 @@ int main(int argc, char* argv []) {
         return EXIT_SUCCESS;
       }
     }
-  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_BF8 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.comp_type == LIBXSMM_DATATYPE_F16 ) {
+  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_BF8 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
     if ( l_total_max_error >= 0.031 ) {
       return EXIT_FAILURE;
     } else {
       return EXIT_SUCCESS;
     }
-  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.comp_type == LIBXSMM_DATATYPE_F16 ) {
+  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
     if ( l_total_max_error >= 0.06 ) {
       return EXIT_FAILURE;
     } else {
       return EXIT_SUCCESS;
     }
-   } else if ( l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 ) {
+  } else if ( l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 ) {
     if ( l_total_max_error >= 0.008 ) {
       return EXIT_FAILURE;
     } else {
