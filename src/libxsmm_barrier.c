@@ -67,6 +67,8 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 {
 #if (0 == LIBXSMM_SYNC)
@@ -256,3 +258,4 @@ LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
 #endif
   free((libxsmm_barrier*)barrier);
 }
+#pragma GCC diagnostic pop
