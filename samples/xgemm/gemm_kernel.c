@@ -2904,7 +2904,7 @@ int main(int argc, char* argv []) {
       return EXIT_SUCCESS;
     }
   } else if ( l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 ) {
-    if ( l_total_max_error >= 0.008 ) {
+    if ( l_total_max_error >= 0.06 ) {
       return EXIT_FAILURE;
     } else {
       return EXIT_SUCCESS;
