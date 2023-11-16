@@ -2487,7 +2487,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   unsigned int l_flip_args = 0;
 
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MAX) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MIN);
+  unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MAX) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MIN) || (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0);
   unsigned char l_pred_reg = LIBXSMM_CAST_UCHAR(i_mask_reg);
   unsigned int l_is_comp_zip = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP)) ? 1 : 0;
   libxsmm_aarch64_sve_type l_sve_type = (l_is_comp_zip > 0) ? libxsmm_generator_aarch64_get_sve_type(LIBXSMM_TYPESIZE(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)))
@@ -2527,10 +2527,10 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
         binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
       } break;
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT: {
-        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
+        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V;
       } break;
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE: {
-        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V;
+        binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
       } break;
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ: {
         binary_op_instr = (l_is_sve > 0) ? LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V;

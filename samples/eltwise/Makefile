@@ -89,7 +89,7 @@ $(TSTDIR)/.generate_binary_test_scripts: $(TSTDIR)/generate_binary_test_scripts.
 	@-touch $@
 
 $(TSTDIR)/.generate_ternary_test_scripts: $(TSTDIR)/generate_ternary_test_scripts.sh Makefile
-	$(info Creating binary test scripts...)
+	$(info Creating ternary test scripts...)
 	@cd $(TSTDIR) && ./generate_ternary_test_scripts.sh >/dev/null
 	@-touch $@
 
