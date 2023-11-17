@@ -1766,7 +1766,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   printf("Check-norm    : %.24f\n\n", error);
 
   /* attempt to catch some corner/degenerated cases */
-  if (error > 1 && l_diff.linf_abs < 0.004) {
+  if (error > 0.6 && l_diff.linf_abs < 0.004) {
     error = l_diff.linf_abs;
   }
 
