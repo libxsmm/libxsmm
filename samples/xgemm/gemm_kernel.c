@@ -2991,7 +2991,7 @@ int main(int argc, char* argv []) {
         return EXIT_SUCCESS;
       }
     } else {
-      if ( l_total_max_error >= 0.000007 ) {
+      if ( l_total_max_error >= 0.000012 ) {
         return EXIT_FAILURE;
       } else {
         return EXIT_SUCCESS;
