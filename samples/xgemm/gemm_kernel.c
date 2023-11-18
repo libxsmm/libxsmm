@@ -126,7 +126,8 @@ float ftanh_rational_78(float x) {
 LIBXSMM_INLINE
 float fsigmoid(float x) {
   if ( libxsmm_get_target_archid() == LIBXSMM_X86_SSE42 ||
-       libxsmm_get_target_archid() == LIBXSMM_X86_SSE3 ||
+       libxsmm_get_target_archid() == LIBXSMM_X86_SSE3  ||
+       libxsmm_get_target_archid() == LIBXSMM_X86_AVX   ||
        libxsmm_get_target_archid() == LIBXSMM_X86_GENERIC ) {
     return (ftanh_rational_78(x/2.0f) + 1.0f)/2.0f;
   } else {

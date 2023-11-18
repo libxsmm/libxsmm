@@ -1581,24 +1581,53 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
                                         i_vec_x, i_vec_x, i_vec_x2 );
 
 
-   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VMOVUPS, 'y', i_vec_x2, i_vec_nom );
 
 
-   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       'y',
-                                       i_vec_c2, i_vec_c3, i_vec_nom );
+  if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VMULPS,
+                                         'y',
+                                         i_vec_c3, i_vec_nom, i_vec_nom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VADDPS,
+                                         'y',
+                                         i_vec_c2, i_vec_nom, i_vec_nom );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       'y',
-                                       i_vec_c1, i_vec_x2, i_vec_nom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VMULPS,
+                                         'y',
+                                         i_vec_x2, i_vec_nom, i_vec_nom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VADDPS,
+                                         'y',
+                                         i_vec_c1, i_vec_nom, i_vec_nom );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       'y',
-                                       i_vec_c0, i_vec_x2, i_vec_nom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VMULPS,
+                                         'y',
+                                         i_vec_x2, i_vec_nom, i_vec_nom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VADDPS,
+                                         'y',
+                                         i_vec_c0, i_vec_nom, i_vec_nom );
+  } else {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VFMADD213PS,
+                                         'y',
+                                         i_vec_c2, i_vec_c3, i_vec_nom );
+
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VFMADD213PS,
+                                         'y',
+                                         i_vec_c1, i_vec_x2, i_vec_nom );
+
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VFMADD213PS,
+                                         'y',
+                                         i_vec_c0, i_vec_x2, i_vec_nom );
+  }
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                         LIBXSMM_X86_INSTR_VMULPS,
@@ -1610,20 +1639,49 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
                                        'y',
                                        i_vec_x2, i_vec_c3_d, i_vec_denom );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       'y',
-                                       i_vec_c2_d, i_vec_x2, i_vec_denom );
+  if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VMULPS,
+                                         'y',
+                                         i_vec_x2, i_vec_denom, i_vec_denom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VADDPS,
+                                         'y',
+                                         i_vec_c2_d, i_vec_denom, i_vec_denom );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       'y',
-                                       i_vec_c1_d, i_vec_x2, i_vec_denom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VMULPS,
+                                         'y',
+                                         i_vec_x2, i_vec_denom, i_vec_denom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VADDPS,
+                                         'y',
+                                         i_vec_c1_d, i_vec_denom, i_vec_denom );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       'y',
-                                       i_vec_c0, i_vec_x2, i_vec_denom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VMULPS,
+                                         'y',
+                                         i_vec_x2, i_vec_denom, i_vec_denom );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VADDPS,
+                                         'y',
+                                         i_vec_c0, i_vec_denom, i_vec_denom );
+  } else {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VFMADD213PS,
+                                         'y',
+                                         i_vec_c2_d, i_vec_x2, i_vec_denom );
+
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VFMADD213PS,
+                                         'y',
+                                         i_vec_c1_d, i_vec_x2, i_vec_denom );
+
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VFMADD213PS,
+                                         'y',
+                                         i_vec_c0, i_vec_x2, i_vec_denom );
+  }
 
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VRCPPS,
