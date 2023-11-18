@@ -612,6 +612,56 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
 }
 
 LIBXSMM_INLINE
+void init_identity_matrix( const libxsmm_blasint vnni_pack, const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
+  double* d_data = (double*) data;
+  float* f_data = (float*) data;
+  libxsmm_bfloat16* bf16_data = (libxsmm_bfloat16*) data;
+  libxsmm_float16* f16_data = (libxsmm_float16*) data;
+  libxsmm_bfloat8* bf8_data = (libxsmm_bfloat8*) data;
+  libxsmm_hfloat8* hf8_data = (libxsmm_hfloat8*) data;
+  int* i_data = (int*) data;
+  short* s_data = (short*) data;
+  char* sc_data = (char*) data;
+  libxsmm_blasint l_r, l_i, l_j, l_k;
+  libxsmm_blasint l_n_block = ( vnni_pack != 0) ? libxsmm_cpuid_dot_pack_factor(dtype) : 1;
+
+  for (l_r = 0; l_r < br; l_r++) {
+    for (l_i = 0; l_i < ld; l_i++) {
+      for (l_j = 0; l_j < n/l_n_block; l_j++) {
+        for (l_k = 0; l_k < l_n_block; l_k++) {
+          if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+            d_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = ( l_i == (l_j*l_n_block + l_k) ) ? 1.0  : 0.0;
+          } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+            f_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = ( l_i == (l_j*l_n_block + l_k) ) ? 1.0f : 0.0f;
+          } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
+            libxsmm_bfloat16_f32 tmp /*= { 0 }*/;
+            tmp.f = ( l_i == (l_j*l_n_block + l_k) ) ? 1.0f : 0.0f;
+            bf16_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = tmp.i[1];
+          } else if ( dtype == LIBXSMM_DATATYPE_F16 ) {
+            float val = ( l_i == (l_j*l_n_block + l_k) ) ? 1.0f : 0.0f;
+            libxsmm_rne_convert_fp32_f16(&val, &(f16_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k]), 1);
+          } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
+            union libxsmm_bfloat8_f16 tmp/* = { 0 }*/;
+            tmp.hf = libxsmm_convert_f32_to_f16( ( l_i == (l_j*l_n_block + l_k) ) ? 1.0f : 0.0f );
+            bf8_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = tmp.i[1];
+          } else if ( dtype == LIBXSMM_DATATYPE_HF8 ) {
+            float tmp_rnd = ( l_i == (l_j*l_n_block + l_k) ) ? 1.0f : 0.0f;
+            libxsmm_rne_convert_fp32_hf8( &tmp_rnd, &hf8_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k], 1 );
+          } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
+            i_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = ( l_i == (l_j*l_n_block + l_k) ) ? 1 : 0;
+          } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
+            s_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = ( l_i == (l_j*l_n_block + l_k) ) ? 1 : 0;
+          } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
+            sc_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = ( l_i == (l_j*l_n_block + l_k) ) ? 1 : 0;
+          } else {
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE
 void init_zero_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0x0, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
@@ -2213,6 +2263,7 @@ int main(int argc, char* argv []) {
   gemm_def l_gemm_def;
   int l_n_threads = 1;
   unsigned int l_keep_going = 0;
+  unsigned int l_retry_case = 0;
 
 # if defined(__APPLE__) && defined(__arm64__)
 #  if 1
@@ -2516,7 +2567,7 @@ int main(int argc, char* argv []) {
   l_gemm_def.vnni_a = l_vnni_a;
   l_gemm_def.vnni_b = l_vnni_b;
   l_gemm_def.vnni_c = l_vnni_c;
-   l_gemm_def.aligned_a = l_aligned_a;
+  l_gemm_def.aligned_a = l_aligned_a;
   l_gemm_def.aligned_c = l_aligned_c;
   l_gemm_def.prefetch = l_prefetch;
   l_gemm_def.br_type = l_br_type;
@@ -2561,21 +2612,24 @@ int main(int argc, char* argv []) {
 #endif
 
   l_keep_going = 0;
+  l_retry_case = 0;
   do {
     double error = 0.0;
     double error_bitmask = 0.0;
 
-    if ( l_file_input != 0 ) {
-      char l_line[512];
-      if ( fgets( l_line, 512, l_file_handle) == NULL ) {
-        l_keep_going = 0;
-        break;
-      } else {
-        l_keep_going = 1;
-      }
-      if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
+    if ( l_retry_case == 0 ) {
+      if ( l_file_input != 0 ) {
+        char l_line[512];
+        if ( fgets( l_line, 512, l_file_handle) == NULL ) {
+          l_keep_going = 0;
+          break;
+        } else {
+          l_keep_going = 1;
+        }
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
 
-      if (l_keep_going == 0) break;
+        if (l_keep_going == 0) break;
+      }
     }
 
     l_gemm_def.m = l_m;
@@ -2658,9 +2712,17 @@ int main(int argc, char* argv []) {
       }
 
       if (l_gemm_def.trans_a == 0) {
-        init_random_matrix( &l_gemm_def, l_gemm_def.a_type, l_a, l_br, l_lda, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
+        if ( l_retry_case == 0 ) {
+          init_random_matrix( &l_gemm_def, l_gemm_def.a_type, l_a, l_br, l_lda, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
+        } else {
+          init_identity_matrix( l_gemm_def.vnni_a, l_gemm_def.a_type, l_a, l_br, l_lda, l_k );
+        }
       } else {
-        init_random_matrix( &l_gemm_def, l_gemm_def.a_type, l_a, l_br, l_lda, l_m, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
+        if ( l_retry_case == 0 ) {
+          init_random_matrix( &l_gemm_def, l_gemm_def.a_type, l_a, l_br, l_lda, l_m, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
+        } else {
+          init_identity_matrix( l_gemm_def.vnni_a, l_gemm_def.a_type, l_a, l_br, l_lda, l_m );
+        }
       }
       if (l_gemm_def.trans_b == 0) {
         init_random_matrix( &l_gemm_def, l_gemm_def.b_type, l_b, l_br, l_ldb, l_n, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
@@ -2854,6 +2916,13 @@ int main(int argc, char* argv []) {
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
+    }
+
+    if ( (error > 0.05) && (l_retry_case == 0) ) {
+      printf("\nRetrying this test case with A as identity matrix\n\n");
+      l_retry_case = 1;
+    } else if ( l_retry_case == 1 ) {
+      l_retry_case = 0;
     }
 
     if ( (l_total_max_error < error) && (l_run_check == 1) ) {

@@ -1828,7 +1828,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   }
 
   /* compute number of n accumulators to hide FMA latencies */
-#if 0
   if (i_n_blocking >= 12) {
     l_n_accs = 1;
   } else if (i_n_blocking >= 6) {
@@ -1840,9 +1839,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     l_n_accs = l_k_iters;
     l_n_accs = (l_n_accs == 0) ? 1 : l_n_accs;
   }
-#else
-  l_n_accs = 1;
-#endif
 
   /* xor additional accumulator, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
