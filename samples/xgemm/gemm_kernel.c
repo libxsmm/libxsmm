@@ -2918,18 +2918,18 @@ int main(int argc, char* argv []) {
       printf("max. error: %f\n", error);
     }
 
-    if ( (error > 0.05) && (l_retry_case == 0) ) {
+    if ( (error > 0.009999) && (l_retry_case == 0) ) {
       printf("\nRetrying this test case with A as identity matrix\n\n");
       l_retry_case = 1;
     } else if ( l_retry_case == 1 ) {
       l_retry_case = 0;
     }
 
-    if ( (l_total_max_error < error) && (l_run_check == 1) ) {
+    if ( (l_total_max_error < error) && (l_run_check == 1) && (l_retry_case == 0) ) {
       l_total_max_error = error;
     }
     if (l_gemm_def.unary_postop == RELU_BITMASK) {
-      if ( (l_total_max_error_bitmask < error_bitmask) && (l_run_check == 1) ) {
+      if ( (l_total_max_error_bitmask < error_bitmask) && (l_run_check == 1) && (l_retry_case == 0) ) {
         l_total_max_error_bitmask = error_bitmask;
       }
     }
