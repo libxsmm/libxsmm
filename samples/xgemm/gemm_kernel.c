@@ -2865,10 +2865,17 @@ int main(int argc, char* argv []) {
       printf("Converting C to vnni format in GEMM\n");
     }
 
+    if ( (error > 0.008) && (l_retry_case == 0) ) {
+      l_retry_case = 1;
+    } else if ( l_retry_case == 1 ) {
+      l_retry_case = 0;
+    }
+
     if ( l_file_input == 0 ) {
       printf("%fs for libxsmm\n", l_runtime_libxsmm);
       printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * (double)l_n_threads * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
+      l_retry_case = 0;
       if (l_gemm_def.unary_postop == RELU_BITMASK) {
         printf("max. error relu_bitmask: %f\n", error_bitmask);
       }
@@ -2915,14 +2922,11 @@ int main(int argc, char* argv []) {
       }
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-      printf("max. error: %f\n", error);
-    }
-
-    if ( (error > 0.009999) && (l_retry_case == 0) ) {
-      printf("\nRetrying this test case with A as identity matrix\n\n");
-      l_retry_case = 1;
-    } else if ( l_retry_case == 1 ) {
-      l_retry_case = 0;
+      if ( l_retry_case == 0 ) {
+        printf("max. error: %f\n", error);
+      } else {
+        printf("\nRetrying this test case with A as identity matrix\n\n");
+      }
     }
 
     if ( (l_total_max_error < error) && (l_run_check == 1) && (l_retry_case == 0) ) {
@@ -2967,31 +2971,13 @@ int main(int argc, char* argv []) {
         return EXIT_SUCCESS;
       }
     }
-  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_BF8 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
-    if ( l_total_max_error >= 0.065 ) {
-      return EXIT_FAILURE;
-    } else {
-      return EXIT_SUCCESS;
-    }
-  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
-    if ( l_total_max_error >= 0.06 ) {
-      return EXIT_FAILURE;
-    } else {
-      return EXIT_SUCCESS;
-    }
-  } else if ( l_gemm_def.a_type == LIBXSMM_DATATYPE_I8 && l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 && l_gemm_def.c_type == LIBXSMM_DATATYPE_F32 ) {
-    if ( l_total_max_error >= 0.03 ) {
-      return EXIT_FAILURE;
-    } else {
-      return EXIT_SUCCESS;
-    }
   } else if ( l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 ) {
     if ( l_total_max_error >= 0.008 ) {
       return EXIT_FAILURE;
     } else {
       return EXIT_SUCCESS;
     }
-  }  else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF8 ) {
+  } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF8 ) {
     if (l_gemm_def.unary_postop == SIGMOID) {
       if ( l_total_max_error >= 0.009 ) {
         if (l_gemm_def.binary_postop == COLBIAS_ADD) {
