@@ -605,6 +605,7 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
             }
           }
         } else {
+          /* should not happen, @TODO: need return type */
         }
       }
     }
@@ -654,6 +655,7 @@ void init_identity_matrix( const libxsmm_blasint vnni_pack, const libxsmm_dataty
           } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
             sc_data[(l_r * ld * n) + (l_j * ld * l_n_block) + (l_i * l_n_block) + l_k] = ( l_i == (l_j*l_n_block + l_k) ) ? 1 : 0;
           } else {
+            /* should not happen, @TODO: need return type */
           }
         }
       }
@@ -695,7 +697,7 @@ void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
     }
     libxsmm_free(tmp_c);
   } else {
-    /* Should not happen */
+    /* Should not happen, @TODO need return type */
   }
 }
 
@@ -749,7 +751,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
     }
     libxsmm_free(tmp_c);
   } else {
-    /* Should not happen */
+    /* Should not happen, @TODO need return type */
   }
 }
 
