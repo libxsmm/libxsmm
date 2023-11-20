@@ -12,9 +12,6 @@ DFLAGS = $(NULL)
 OMP = 1
 SYM = 1
 
-# explore AVX/ARCH=native
-SSE = 0
-
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
