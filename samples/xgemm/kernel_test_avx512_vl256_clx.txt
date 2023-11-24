@@ -32,4 +32,3 @@ f16f16f32f16gemm_nn_gtld_bop1_uop1_cvnni0
 f16f16f32f16gemm_nn_gtld_bop1_uop2_cvnni0
 f16f16f32f16gemm_nn_gtld_bop1_uop3_cvnni0
 f16f16f32f16gemm_nn_gtld
-
