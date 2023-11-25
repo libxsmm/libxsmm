@@ -329,15 +329,9 @@ int main(int argc, char* argv[]) {
   if ( l_file_input != 0 ) {
     l_file_handle = fopen( l_file_name, "r" );
   } else {
-    if ( l_trans_b == 0 ) {
-      printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%iX%i) X (%ix%iX%i) = (%ix%iX%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_r, l_k, l_n, l_r, l_m, l_n, l_r, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
-      printf("------------------------------------------------\n");
-    } else {
-      printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%iX%i) X (%ix%iX%i)^T = (%ix%iX%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_r, l_k, l_n, l_r, l_m, l_n, l_r, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
-      printf("------------------------------------------------\n");
-    }
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%iX%i) X (%ix%iX%i) = (%ix%iX%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_r, l_k, l_n, l_r, l_m, l_n, l_r, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+    printf("------------------------------------------------\n");
   }
 
   l_keep_going = 0;
