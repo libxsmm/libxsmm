@@ -18,19 +18,31 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64( libxsmm_generated
                                                                const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                                const unsigned int              i_packed_width );
 
+
+LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_mloop( libxsmm_generated_code*            io_generated_code,
+                                                                     libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                                     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                     const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                     const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                     const unsigned int                 i_packed_width,
+                                                                     const unsigned int                 i_max_n_reg_block,
+                                                                     const unsigned int                 i_m_blocking );
+
 LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_kloop( libxsmm_generated_code*            io_generated_code,
                                                                      libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                      const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                      const unsigned int                 i_packed_width,
-                                                                     const unsigned int                 i_n_blocking );
+                                                                     const unsigned int                 i_n_blocking,
+                                                                     const unsigned int                 i_m_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_asimd_load_C( libxsmm_generated_code*            io_generated_code,
                                                                             const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                             const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                             const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                             const unsigned int                 i_n_blocking,
+                                                                            const unsigned int                 i_m_blocking,
                                                                             const unsigned int                 i_use_masking,
                                                                             const unsigned int                 i_packed_width );
 
@@ -39,6 +51,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_asimd_store_C( lib
                                                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                              const unsigned int                 i_n_blocking,
+                                                                             const unsigned int                 i_m_blocking,
                                                                              const unsigned int                 i_use_masking,
                                                                              const unsigned int                 i_packed_width );
 
@@ -50,13 +63,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_kloop_simd_packed_
                                                                                        const unsigned int                 i_packed_width,
                                                                                        const unsigned int                 i_simd_packed_width,
                                                                                        const unsigned int                 i_simd_packed_valid,
-                                                                                       const unsigned int                 i_n_blocking );
+                                                                                       const unsigned int                 i_n_blocking,
+                                                                                       const unsigned int                 i_m_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_sve_load_C( libxsmm_generated_code*            io_generated_code,
                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                           const unsigned int                 i_n_blocking,
+                                                                          const unsigned int                 i_m_blocking,
                                                                           const unsigned int                 i_use_masking,
                                                                           const unsigned int                 i_packed_width );
 
@@ -65,6 +80,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_sve_store_C( libxs
                                                                            const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                            const unsigned int                 i_n_blocking,
+                                                                           const unsigned int                 i_m_blocking,
                                                                            const unsigned int                 i_use_masking,
                                                                            const unsigned int                 i_packed_width );
 
@@ -76,6 +92,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_kloop_simd_packed_
                                                                                      const unsigned int                 i_packed_width,
                                                                                      const unsigned int                 i_simd_packed_width,
                                                                                      const unsigned int                 i_simd_packed_valid,
-                                                                                     const unsigned int                 i_n_blocking );
+                                                                                     const unsigned int                 i_n_blocking,
+                                                                                     const unsigned int                 i_m_blocking );
 
 #endif /* GENERATOR_PACKED_GEMM_AARCH64_H */

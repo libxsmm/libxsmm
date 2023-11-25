@@ -9,6 +9,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_utils.h>
 
 LIBXSMM_INLINE
 void matMulpacked(             libxsmm_blasint  i_r,
