@@ -310,7 +310,13 @@ int main(int argc, char* argv[]) {
   LIBXSMM_UNUSED( l_file_name );
   LIBXSMM_UNUSED( l_alpha );
   LIBXSMM_UNUSED( l_trans_a );
+
   LIBXSMM_UNUSED( l_trans_b );
+
+  if ( (l_trans_a != 0) || (l_trans_b != 0) ) {
+    fprintf(stderr, "Unsupported transpose combination: a: %i, b: %i\n", l_trans_a, l_trans_b);
+    exit(EXIT_FAILURE);
+  }
 
   l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
   l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
@@ -322,7 +328,7 @@ int main(int argc, char* argv[]) {
          ((l_dtype_a == LIBXSMM_DATATYPE_F64)  && (l_dtype_b == LIBXSMM_DATATYPE_F64)  && (l_dtype_comp == LIBXSMM_DATATYPE_F64) && (l_dtype_c == LIBXSMM_DATATYPE_F64))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_F32)  && (l_dtype_b == LIBXSMM_DATATYPE_F32)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))
         ) ) {
-    fprintf(stderr, "Unsupported precion combination: a: %s, b: %s, comp: %s, c: %s!\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+    fprintf(stderr, "Unsupported precision combination: a: %s, b: %s, comp: %s, c: %s!\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
     exit(EXIT_FAILURE);
   }
 
@@ -374,14 +380,19 @@ int main(int argc, char* argv[]) {
       double l_gflops_opt2 = 0.0;
       libxsmm_blasint i = 0;
 
+      /* JIT code */
+      mykernel = libxsmm_create_packed_gemm(gemm_shape, l_flags, l_prefetch_flags, l_r);
+
+      if ( mykernel == NULL ) {
+        printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+        exit(-1);
+      }
+
       /* init data */
       init_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1 );
       copy_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1, c2 );
       init_data( l_r, l_m, l_k, l_lda, l_dtype_a, a  );
       init_data( l_r, l_k, l_n, l_ldb, l_dtype_b, b  );
-
-      /* JIT code */
-      mykernel = libxsmm_create_packed_gemm(gemm_shape, l_flags, l_prefetch_flags, l_r);
 
       /* run reference */
       matMulpacked(l_r,
