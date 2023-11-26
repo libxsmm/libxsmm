@@ -42,9 +42,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512( libxsmm_g
 #endif
   l_gp_reg_mapping.gp_reg_a = l_gp_reg_mapping.gp_reg_param_struct;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
-  l_gp_req_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
+  l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8
+  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
