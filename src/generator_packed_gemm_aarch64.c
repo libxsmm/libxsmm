@@ -596,7 +596,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_sve_load_C( libxsm
       if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
         libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                  LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-                                                 l_n, l_n, (unsigned char)-1, l_n,
+                                                 (l_n*i_m_blocking) + l_m, (l_n*i_m_blocking) + l_m, (unsigned char)-1, (l_n*i_m_blocking) + l_m,
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  LIBXSMM_AARCH64_SVE_TYPE_D );
       } else {
@@ -607,7 +607,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_sve_load_C( libxsm
         } else {
           libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
                                                 i_gp_reg_mapping->gp_reg_c, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
-                                                l_n, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                                (l_n*i_m_blocking) + l_m, LIBXSMM_AARCH64_SVE_REG_UNDEF );
         }
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_c,
