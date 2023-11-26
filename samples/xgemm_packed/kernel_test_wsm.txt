@@ -1,0 +1,4 @@
+sgemm_packed_nn_gtld
+sgemm_packed_nn_eqld
+dgemm_packed_nn_gtld
+dgemm_packed_nn_eqld
