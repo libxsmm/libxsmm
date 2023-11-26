@@ -735,7 +735,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_kloop_simd_packed_
   /* advance A pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
-                                                 (long long)i_xgemm_desc->lda*i_packed_width*i_micro_kernel_config->datatype_size_in );
+                                                 (long long)(i_xgemm_desc->lda - i_m_blocking)*i_packed_width*i_micro_kernel_config->datatype_size_in );
 
   /* advance B pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
