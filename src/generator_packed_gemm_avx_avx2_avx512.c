@@ -26,7 +26,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512( libxsmm_g
 
   /* select accumulator blocking */
   /* TODO: we could do more aggressive blockings if needed */
-  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     l_max_n_reg_block = 28;
   } else {
     l_max_n_reg_block = 13;
@@ -102,7 +102,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512( libxsmm_g
   if ( i_xgemm_desc->m >= 4 ) {
     l_m_block = 4;
     l_m_remainder = i_xgemm_desc->m % 4;
-    l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 6 : 2;
+    l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 6 : 2;
   } else {
     l_m_block = 0;
     l_m_remainder = i_xgemm_desc->m;
@@ -126,13 +126,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512( libxsmm_g
   if ( l_m_remainder != 0 ) {
     if ( l_m_remainder == 3 ) {
       l_m_block = 3;
-      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 8 : 3;
+      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 8 : 3;
     } else if ( l_m_remainder == 2 ) {
       l_m_block = 2;
-      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 12 : 5;
+      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 12 : 5;
     } else {
       l_m_block = 1;
-      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 28 : ((io_generated_code->arch >= LIBXSMM_X86_AVX2) ? 13 : 12 );
+      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 28 : ((io_generated_code->arch >= LIBXSMM_X86_AVX2) ? 13 : 12 );
     }
 
     /* m loop body */
@@ -259,13 +259,21 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop( lib
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )  ) {
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) ) {
+      l_simd_packed_width = 2;
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX ) && ( io_generated_code->arch < LIBXSMM_X86_AVX512_SKX ) ) {
+      l_simd_packed_width = 4;
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
       l_simd_packed_width = 4;
     }
   } else {
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) ) {
+      l_simd_packed_width = 4;
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX ) && ( io_generated_code->arch < LIBXSMM_X86_AVX512_SKX ) ) {
+      l_simd_packed_width = 8;
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 16;
     } else {
       l_simd_packed_width = 8;
@@ -437,7 +445,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_load_C( li
       } else {
         /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
         if ( i_use_masking ) {
-          if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+          if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               i_micro_kernel_config->instruction_set,
                                               i_micro_kernel_config->c_vmove_instruction,
@@ -492,7 +500,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_store_C( l
     for ( l_m = 0; l_m < i_m_blocking; l_m++ ) {
       /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
       if ( i_use_masking ) {
-        if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+        if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
                                             i_micro_kernel_config->c_vmove_instruction,
@@ -542,7 +550,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd
   /* check if we need to compute a mask */
   if ( i_simd_packed_width > i_simd_packed_valid ) {
     /* on AVX512 we can use mask registers */
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_simd_packed_width - i_simd_packed_valid, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
     } else {
       const char l_id = LIBXSMM_CAST_CHAR(128 > i_n_blocking ? ((int)i_n_blocking) : 127);
@@ -586,7 +594,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd
   /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
   for ( l_m = 0; l_m < i_m_blocking; ++l_m ) {
     if ( l_use_masking ) {
-      if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+      if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           i_micro_kernel_config->instruction_set,
                                           i_micro_kernel_config->a_vmove_instruction,
@@ -618,7 +626,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512_kloop_simd
 
   /* loop over the register block */
   for ( l_n = 0; l_n < i_n_blocking; ++l_n ) {
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL128_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       if ( l_use_masking ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           i_micro_kernel_config->instruction_set,
