@@ -132,7 +132,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_avx_avx2_avx512( libxsmm_g
       l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 12 : 5;
     } else {
       l_m_block = 1;
-      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 28 : 13;
+      l_max_n_reg_block = ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) ? 28 : ((io_generated_code->arch >= LIBXSMM_X86_AVX2) ? 13 : 12 );
     }
 
     /* m loop body */
