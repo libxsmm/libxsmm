@@ -28,6 +28,7 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
                                                const unsigned short    i_callee_save_bitmask )
 {
+  libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X0, LIBXSMM_RV64_GP_REG_X1, 0);
   return;
 }
 
@@ -661,7 +662,7 @@ void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_gene
                                                     const unsigned int      i_alu_instr,
                                                     const unsigned int      i_gp_reg_src,
                                                     const unsigned int      i_gp_reg_dst,
-                                                    const unsigned int      i_imm12 ) {
+                                                    const int               i_imm12 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm12: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -803,7 +804,7 @@ void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_gene
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm12 )
+                                               const int               i_imm12 )
 {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_move_imm12: at least RV64 needs to be specified as target arch!\n");
@@ -914,7 +915,7 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
                                               const unsigned int       i_gp_reg_dst,
                                               const unsigned long long i_imm64 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm64: at least RV64 needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_rv64_instruction_alu_set_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -980,18 +981,25 @@ void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_gen
     return;
   }
 
+#if 0
   if (i_imm64 <= 0xfff) {
-    libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_tmp, i_imm64 );
+    libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, i_alu_meta_instr, i_gp_reg_tmp, i_gp_reg_dst, i_imm64 );
   } else if (i_imm64 <= 0xfffff){
     libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_tmp, i_imm64 );
+
+    /* reg-reg instruction */
+    libxsmm_rv64_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
+                                         i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst);
   } else {
+#endif
+  {
     /* move imm64 into the temp register */
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, i_imm64 );
-  }
 
-  /* reg-reg instruction */
-  libxsmm_rv64_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
+    /* reg-reg instruction */
+    libxsmm_rv64_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
                                          i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst);
+  }
 }
 
 /* Conditional jump instructions. */
@@ -1000,7 +1008,10 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
                                           const unsigned int      i_jmp_instr,
                                           const unsigned int      i_gp_reg_src_1,
                                           const unsigned int      i_gp_reg_src_2,
-                                          const unsigned int      i_imm ) {
+                                          const int               i_imm ) {
+  printf("Received imm for jmp = %d %d\n", i_imm, (i_imm > 0xfff));
+  fflush(stdout);
+
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1014,7 +1025,7 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
   }
 
   if ( i_imm > 0xfff ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_cond_jump: unexpected imm: %u %u\n", i_jmp_instr, i_imm);
+    fprintf(stderr, "libxsmm_rv64_instruction_cond_jump: unexpected imm: %u %d\n", i_jmp_instr, i_imm);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -1043,9 +1054,28 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
         return;
       }
 
+      int i_sign = 0;
+      unsigned int a_imm = i_imm;
+
+      if (i_imm < 0) {
+        i_sign = 1;
+        a_imm = (~abs(i_imm) + 1) & 0xfff;
+        //a_imm = abs(i_imm);
+      }
+
+      //a_imm = a_imm >> 1;
+
       /* Generate immediate */
-      unsigned int imm_lo = ((i_imm >> 11) & 0x1) | (i_imm & 0x1e);
-      unsigned int imm_hi = (i_imm & 0x1fe0) | ((i_imm >> 12) & 0x1);
+      printf("Received immediate %x %x\n", i_imm, a_imm);
+
+      // TODO: format definition
+      unsigned int imm_lo = ((a_imm >> 11) & 0x1) | ((a_imm & 0xf) << 1);
+      //unsigned int imm_hi = ((a_imm & 0x7e0) >> 5) | (((i_sign)) << 6);
+      unsigned int imm_hi = ((a_imm & 0x3f0) >> 4) | (((i_sign)) << 6);
+
+      printf("immediate low %x \n", imm_lo);
+      printf("immediate high %x \n", imm_hi);
+      fflush(stdout);
 
       /* fix bits */
       code[code_head]  = i_jmp_instr;
@@ -1146,7 +1176,7 @@ void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_gene
                                               const unsigned int      i_jmp_instr,
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_gp_reg_src_1,
-                                              const unsigned int      i_imm12 ) {
+                                              const int               i_imm12 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_jump_and_link_reg: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1313,8 +1343,10 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io
       return;
     }
 
+    // TODO: remove devision here and move to the jump
     libxsmm_rv64_instruction_cond_jump(io_generated_code, i_jmp_instr,
-        i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm);
+        //i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm );
+        i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm/2 );
 
     /* advance code head */
     io_generated_code->code_size += 4;
@@ -1345,6 +1377,11 @@ void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code* 
     int l_lab = io_loop_label_tracker->label_count;
     io_loop_label_tracker->label_count++;
     io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
+
+    printf("Added a new label\n");
+    printf("Label count %d\n", io_loop_label_tracker->label_count);
+    printf("Label address %d\n", io_loop_label_tracker->label_address[l_lab]);
+    fflush(stdout);
   } else {
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
@@ -1387,9 +1424,12 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
 
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_lab = --io_loop_label_tracker->label_count;
-    unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab]) / 4;
-    unsigned int code_head = io_generated_code->code_size / 4;
+    unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab]);
+    unsigned int code_head = io_generated_code->code_size;
     int l_jmp_imm = (int)l_jmp_dst - (int)code_head; /* computing jump immediate */
+
+    printf("Jump address %x %x\n", l_jmp_dst, code_head);
+    fflush(stdout);
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
@@ -1404,10 +1444,7 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
     }
 
     libxsmm_rv64_instruction_cond_jump(io_generated_code, i_jmp_instr,
-        i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm);
-
-    /* advance code head */
-    io_generated_code->code_size += 4;
+        i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm/2);
   } else {
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");

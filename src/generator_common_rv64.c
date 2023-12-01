@@ -186,8 +186,8 @@ void libxsmm_generator_loop_footer_rv64( libxsmm_generated_code*     io_generate
                                             const unsigned int          i_gp_reg_loop_cnt,
                                             const unsigned int          i_loop_blocking ) {
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
-                                                 i_gp_reg_loop_cnt, i_gp_reg_loop_cnt, i_loop_blocking );
-  libxsmm_rv64_instruction_cond_jump_back_to_label( io_generated_code, LIBXSMM_RV64_INSTR_GP_BEQ,
+                                                 i_gp_reg_loop_cnt, i_gp_reg_loop_cnt, -1 * i_loop_blocking );
+  libxsmm_rv64_instruction_cond_jump_back_to_label( io_generated_code, LIBXSMM_RV64_INSTR_GP_BNE,
                                                        i_gp_reg_loop_cnt, LIBXSMM_RV64_GP_REG_X0, io_loop_label_tracker );
 }
 

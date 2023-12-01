@@ -420,6 +420,24 @@ void unary_op_fp32_to_bf16x2_bf16x3( const libxsmm_blasint M, const libxsmm_blas
   }
 }
 
+
+void dump_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
+  FILE *fp;
+  char filename[255];
+
+  memset( filename, 0, 255);
+  strcat( filename, test_name );
+  strcat( filename, ".bin" );
+
+  fp = fopen( filename, "wb" );
+  if (fp == NULL) {
+    printf("Error opening binary dumping file!\n");
+    exit(1);
+  }
+  fwrite(mycode->generated_code, sizeof(unsigned char), mycode->code_size, fp);
+  fclose(fp);
+}
+
 LIBXSMM_INLINE
 int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in;
@@ -559,6 +577,8 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 
   unary_kernel( &unary_param );
+
+  dump_code_buffer( unary_kernel, "simple.dump" );
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {

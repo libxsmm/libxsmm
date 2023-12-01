@@ -2168,8 +2168,8 @@ void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_cod
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generated_code,
-                                                 const unsigned int      i_gp_reg_dst,
-                                                 const unsigned int      i_imm12 );
+                                                 const unsigned int   i_gp_reg_dst,
+                                                 const int            i_imm12 );
 
 /**
  * Generates mov 20-bit immediate instructions
@@ -2242,7 +2242,7 @@ void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_gene
                                                     const unsigned int      i_alu_instr,
                                                     const unsigned int      i_gp_reg_src,
                                                     const unsigned int      i_gp_reg_dst,
-                                                    const unsigned int      i_imm12 );
+                                                    const int               i_imm12 );
 
 /**
  * Generates a sequence of compute with intermediates
@@ -2290,7 +2290,7 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
                                           const unsigned int      i_jmp_instr,
                                           const unsigned int      i_gp_src_1,
                                           const unsigned int      i_gp_src_2,
-                                          const unsigned int      i_imm );
+                                          const int               i_imm );
 
 /**
  * Generates jump and link
@@ -2321,7 +2321,7 @@ void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_gene
                                               const unsigned int      i_jmp_instr,
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_gp_reg_src_1,
-                                              const unsigned int      i_imm12 );
+                                              const int               i_imm12 );
 /**
  * Generates jump and link instruction with register
  *
