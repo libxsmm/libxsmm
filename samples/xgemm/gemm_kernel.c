@@ -2619,7 +2619,9 @@ int main(int argc, char* argv []) {
     double error = 0.0;
     double error_bitmask = 0.0;
 
+#if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
     if ( l_retry_case == 0 ) {
+#endif
       if ( l_file_input != 0 ) {
         char l_line[512];
         if ( fgets( l_line, 512, l_file_handle) == NULL ) {
@@ -2632,7 +2634,9 @@ int main(int argc, char* argv []) {
 
         if (l_keep_going == 0) break;
       }
+#if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
     }
+#endif
 
     l_gemm_def.m = l_m;
     l_gemm_def.n = l_n;
@@ -2795,7 +2799,9 @@ int main(int argc, char* argv []) {
       } else {
         l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
       }
-
+#if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
+       printf("runtime [s], GFLOPS for thread %i: %f : %f\n", omp_get_thread_num(), l_runtime_libxsmm, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+#endif
       /* run compare */
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
 #     pragma omp master
@@ -2867,17 +2873,21 @@ int main(int argc, char* argv []) {
       printf("Converting C to vnni format in GEMM\n");
     }
 
+#if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
     if ( (error > 0.008) && (l_retry_case == 0) ) {
       l_retry_case = 1;
     } else if ( l_retry_case == 1 ) {
       l_retry_case = 0;
     }
+#endif
 
     if ( l_file_input == 0 ) {
       printf("%fs for libxsmm\n", l_runtime_libxsmm);
       printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * (double)l_n_threads * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
+#if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
       l_retry_case = 0;
+#endif
       if (l_gemm_def.unary_postop == RELU_BITMASK) {
         printf("max. error relu_bitmask: %f\n", error_bitmask);
       }
