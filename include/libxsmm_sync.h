@@ -553,7 +553,7 @@ typedef enum libxsmm_atomic_kind {
  * libxsmm and libxsmmext are built with OpenMP support.
  */
 # if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
-#   include <omp.h>
+/*#   include <omp.h>*/
 #   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
 #     define LIBXSMM_LOCK_ACQUIRED_spin 1
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0

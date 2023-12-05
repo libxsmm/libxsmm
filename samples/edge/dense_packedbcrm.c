@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
   REALTYPE* c1 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
   REALTYPE* c2 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
 
-  libxsmm_gemmfunction mykernel = NULL;
+  libxsmm_xmmfunction mykernel = { NULL };
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
     l_m, l_n, l_k, l_k, l_n, l_n, LIBXSMM_DATATYPE(REALTYPE),
     LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* JIT code */
-    mykernel = libxsmm_create_packed_gemm_bc_rm_v2( gemm_shape, l_flags, l_prefetch_flags, l_r );
+    mykernel.gemm = libxsmm_create_packed_gemm_bc_rm_v2( gemm_shape, l_flags, l_prefetch_flags, l_r );
 
     /* run reference */
     matMulFusedBC( l_r,
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     gemm_param.a.primary = (void*)a;
     gemm_param.b.primary = (void*)b;
     gemm_param.c.primary = (void*)c2;
-    mykernel( &gemm_param );
+    mykernel.gemm( &gemm_param );
 
     /* check correctness */
     for ( i = 0; i < l_m*l_n*l_r; ++i ) {
@@ -157,11 +157,11 @@ int main(int argc, char* argv[]) {
     l_start = libxsmm_timer_tick();
     for ( i = 0; i < l_reps; ++i ) {
       /* run optimized */
-      mykernel( &gemm_param );
+      mykernel.gemm( &gemm_param );
     }
     l_end = libxsmm_timer_tick();
     l_total_opt = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info( LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
+    libxsmm_get_kernel_info( mykernel.ptr_const, &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;
 
     gflops_ref = (flops/l_total_ref)/1e9;

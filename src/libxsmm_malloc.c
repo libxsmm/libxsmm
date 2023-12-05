@@ -445,15 +445,14 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INLINE
 LIBXSMM_ATTRIBUTE_NO_SANITIZE(address)
 internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 {
-  const char *const buffer = (const char*)memory;
-  internal_malloc_info_type* result = (internal_malloc_info_type*)(NULL != memory
+  const char *const buffer = (const char*)memory, *const buffer_info = (NULL != memory
     ? (buffer - sizeof(internal_malloc_info_type)) : NULL);
+  internal_malloc_info_type* result;
+  LIBXSMM_VALUE_ASSIGN(result, buffer_info);
 #if defined(LIBXSMM_MALLOC_HOOK_CHECK)
   if ((LIBXSMM_MALLOC_HOOK_CHECK) < check) check = (LIBXSMM_MALLOC_HOOK_CHECK);
 #endif
@@ -513,7 +512,6 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
   }
   return result;
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_type* exclude)
@@ -600,10 +598,8 @@ LIBXSMM_API_INTERN void internal_scratch_free(const void* memory, internal_mallo
   const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
   char *const pool_buffer = pool->instance.buffer;
 # if (!defined(NDEBUG) || defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-  char *const buffer = (char*)memory; /* non-const */
-#pragma GCC diagnostic pop
+  char* buffer; /* non-const */
+  LIBXSMM_VALUE_ASSIGN(buffer, memory);
   LIBXSMM_ASSERT(pool_buffer <= buffer && buffer < pool_buffer + pool->instance.minsize);
 # endif
   LIBXSMM_ASSERT(pool_buffer <= pool->instance.head);
@@ -2692,22 +2688,20 @@ LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i)
   LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
   assert(0 < *i && ((size_t)-1) != *i); /* !LIBXSMM_ASSERT */
   pointer = pool[--(*i)];
-#if !defined(NDEBUG)
-  pool[*i] = NULL;
-#endif
   LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_SEQ_CST);
   LIBXSMM_ASSERT(NULL != pointer);
   return pointer;
 }
 
 
-LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i)
+LIBXSMM_API void libxsmm_pfree(const void* pointer, void* pool[], size_t* i)
 {
-  const unsigned int hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool);
-  volatile int *const lock = internal_pmallocs + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
-  LIBXSMM_ASSERT(NULL != pointer && NULL != pool && NULL != i);
-  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
-  assert(NULL == pool[*i]); /* !LIBXSMM_ASSERT */
-  pool[(*i)++] = pointer;
-  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_SEQ_CST);
+  LIBXSMM_ASSERT(NULL != pool && NULL != i);
+  if (NULL != pointer) {
+    const unsigned int hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool);
+    volatile int *const lock = internal_pmallocs + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
+    LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
+    LIBXSMM_VALUE_ASSIGN(pool[*i], pointer); ++(*i);
+    LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_SEQ_CST);
+  }
 }

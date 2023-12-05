@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
   const char* l_csr_file =  ( argc == 7 ) ?      argv[6]  : "file.csr";
 
-  libxsmm_gemmfunction mykernel = NULL;
+  libxsmm_xmmfunction mykernel = { NULL };
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
     M, N, K, K, 0, N, LIBXSMM_DATATYPE(REALTYPE),
     LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
     printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)M * (double)N * (double)K * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
     /* sparse routine */
-    mykernel = libxsmm_create_packed_spgemm_csr_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_rowptr, l_colidx, (const void*)l_b_sp );
+    mykernel.gemm = libxsmm_create_packed_spgemm_csr_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_rowptr, l_colidx, (const void*)l_b_sp );
 
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     gemm_param.a.primary = (void*)l_a;
@@ -161,11 +161,11 @@ int main(int argc, char* argv[]) {
     gemm_param.c.primary = (void*)l_c_asm;
     l_start = libxsmm_timer_tick();
     for ( l_n = 0; l_n < REPS; l_n++) {
-      mykernel( &gemm_param );
+      mykernel.gemm( &gemm_param );
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info( LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
+    libxsmm_get_kernel_info( mykernel.ptr_const, &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;
     printf("%fs for sparse (asm)\n", l_total);
     printf("%f GFLOPS for sparse (asm), caculated \n", ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));

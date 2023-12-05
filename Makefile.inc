@@ -1150,9 +1150,18 @@ LIBRT := $(call ldclib,$(LD),$(SLDFLAGS),rt)
 LIBDL := $(call ldclib,$(LD),$(SLDFLAGS),dl)
 ifneq (0,$(INTEL))
   LIBM := $(call ldclib,$(LD),$(SLDFLAGS),imf)
+else
+  LIBM := $(call ldclib,$(LD),$(SLDFLAGS),m)
 endif
-LIBM ?= $(call ldclib,$(LD),$(SLDFLAGS),m)
 LIBC := $(call ldclib,$(LD),$(SLDFLAGS),c)
+
+# fallback
+ifeq (,$(LIBM))
+  LIBM := -lm
+endif
+ifeq (,$(LIBC))
+  LIBC := -lc
+endif
 
 # (default) runtime library dependencies
 ifneq (0,$(FORCE_CXX)) # incl. undefined
@@ -1463,9 +1472,8 @@ else # GCC assumed
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros \
                  -Wno-unused-parameter -Wwrite-strings \
-                 -Wmissing-field-initializers -Wwrite-strings \
-                 -Wcast-qual -Wmissing-field-initializers \
-                 -Wimplicit-fallthrough -Wmisleading-indentation
+                 -Wmissing-field-initializers \
+                 -Wcast-qual
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
