@@ -451,6 +451,8 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
                                                 i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0,
                                                 i_gp_reg_mapping->gp_reg_in, ((long long)l_ld_bytes - l_m_adjust));
+
+    libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
   }
 
   // Reset the base address
@@ -534,6 +536,8 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
                                                   i_vlen * i_micro_kernel_config->datatype_size_out);
       }
     }
+
+    libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
     if (l_m_adjust != l_ld_bytes)
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
@@ -2808,7 +2812,6 @@ void libxsmm_generator_unary_rv64_binary_2d_microkernel( libxsmm_generated_code*
   }
 
   if (inner_loop_trips > 1) {
-
     libxsmm_generator_loop_header_rv64(io_generated_code, io_loop_label_tracker, inner_loop_reg, inner_loop_bound);
   }
 
