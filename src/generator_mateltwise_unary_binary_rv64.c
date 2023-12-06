@@ -376,6 +376,7 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
                                         const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                         const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                         unsigned int                            i_vlen,
+                                        unsigned int                            i_avlen,
                                         unsigned int                            i_start_vreg,
                                         unsigned int                            i_m_blocking,
                                         unsigned int                            i_n_blocking,
@@ -408,15 +409,13 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
 
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP)) {
       offset = (l_ld_bytes*i_n_blocking);
-      //libxsmm_generator_set_p_register_rv64_sve( io_generated_code, 2, i_vlen * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
+
       for (in = 0; in < i_n_blocking; in++) {
         for (im = 0; im < i_m_blocking; im++) {
           unsigned int l_is_f32_or_f64 = (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) || LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ? 1 : 0;
           unsigned int l_masked_elements = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0 : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_mask_last_m_chunk : i_vlen : i_vlen;
-          //unsigned int l_mask_load = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 0 : 0
  LIBXSMM_UNUSED(l_masked_elements);
-          //                                             : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 2 : 2;
-          //cur_vreg = i_start_vreg + in * i_m_blocking + im;
+          cur_vreg = i_start_vreg + in * i_m_blocking + im;
       }
 
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
@@ -429,10 +428,12 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
     for (im = 0; im < i_m_blocking; im++) {
       offset = (l_ld_bytes*i_n_blocking);
 
-      if ((im == (i_m_blocking - 1)) && i_mask_last_m_chunk != 0)
-        libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_mask_last_m_chunk, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+      cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
-      libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_VLE32_V, i_gp_reg_mapping->gp_reg_in, LIBXSMM_RV64_GP_REG_V16, i_gp_reg_mapping->gp_reg_scratch_0, 1);
+      if ((im == (i_m_blocking - 1)) && i_mask_last_m_chunk != 0)
+        libxsmm_rv64_instruction_rvv_setvli( io_generated_code, i_avlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+
+      libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_VLE32_V, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, cur_vreg, 1);
 
       //  Increament in address
       if ((im == (i_m_blocking - 1)) && i_mask_last_m_chunk != 0){
@@ -464,6 +465,7 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                          unsigned int                            i_vlen,
+                                         unsigned int                            i_avlen,
                                          unsigned int                            i_start_vreg,
                                          unsigned int                            i_m_blocking,
                                          unsigned int                            i_n_blocking,
@@ -513,11 +515,13 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       offset = (l_ld_bytes*i_n_blocking);
+      cur_vreg = i_start_vreg + in * i_m_blocking + im;
+
       if ((im == (i_m_blocking - 1)) && i_mask_last_m_chunk != 0)
-        libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_mask_last_m_chunk, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+        libxsmm_rv64_instruction_rvv_setvli( io_generated_code, i_avlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_VSE32_V,
-            i_gp_reg_mapping->gp_reg_out, LIBXSMM_RV64_GP_REG_V16, i_gp_reg_mapping->gp_reg_scratch_0, 1);
+            i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, cur_vreg, 1);
 
       //  Increament in address
       if ((im == (i_m_blocking - 1)) && i_mask_last_m_chunk != 0){
@@ -534,6 +538,7 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
     if (l_m_adjust != l_ld_bytes)
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
                                                 i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_1, i_gp_reg_mapping->gp_reg_out,
+                                                ((long long)l_ld_bytes - l_m_adjust));
   }
 
   // Reset the base address
@@ -1957,9 +1962,9 @@ void libxsmm_configure_microkernel_rv64_loops( libxsmm_generated_code*          
                                                   unsigned int*                           i_out_unroll_factor,
                                                   unsigned int*                           i_inner_unroll_factor) {
   unsigned int m_trips, n_trips, m_unroll_factor, n_unroll_factor, m_assm_trips, n_assm_trips, out_loop_trips, inner_loop_trips, out_loop_bound, inner_loop_bound, out_loop_reg, inner_loop_reg, out_unroll_factor, inner_unroll_factor;
-  unsigned int max_nm_unrolling = 1;
+  unsigned int max_nm_unrolling = 32;
   unsigned int i_loop_order = i_micro_kernel_config->loop_order;
-  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+  unsigned int reserved_zmms = 0;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   LIBXSMM_UNUSED(i_mateltwise_desc);
   LIBXSMM_UNUSED(io_generated_code);
@@ -2797,10 +2802,6 @@ void libxsmm_generator_unary_rv64_binary_2d_microkernel( libxsmm_generated_code*
     &m_trips, &n_trips, &m_unroll_factor, &n_unroll_factor, &m_assm_trips, &n_assm_trips,
     &out_loop_trips, &inner_loop_trips, &out_loop_bound, &inner_loop_bound, &out_loop_reg, &inner_loop_reg, &out_unroll_factor, &inner_unroll_factor );
 
-#define LVL (4)
-
-   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen_in, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
-
   /* Headers of microkernel loops */
   if (out_loop_trips > 1) {
     libxsmm_generator_loop_header_rv64(io_generated_code, io_loop_label_tracker, out_loop_reg, out_loop_bound);
@@ -2811,8 +2812,15 @@ void libxsmm_generator_unary_rv64_binary_2d_microkernel( libxsmm_generated_code*
     libxsmm_generator_loop_header_rv64(io_generated_code, io_loop_label_tracker, inner_loop_reg, inner_loop_bound);
   }
 
+  if (use_m_input_masking)
+    libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, LIBXSMM_RV64_GP_REG_X20, use_m_input_masking);
+  else
+    libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, LIBXSMM_RV64_GP_REG_X20, i_vlen_in);
+
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen_in, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+
   /* Load block of registers */
-  libxsmm_load_rv64_2d_reg_block(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, i_vlen_in, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
+  libxsmm_load_rv64_2d_reg_block(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, i_vlen_in, LIBXSMM_RV64_GP_REG_X20, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
 
 #if 0
   /* Compute on registers */
@@ -2820,8 +2828,10 @@ void libxsmm_generator_unary_rv64_binary_2d_microkernel( libxsmm_generated_code*
       i_vlen_in, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
 #endif
 
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen_out, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+
   /* Store block of registers */
-  libxsmm_store_rv64_2d_reg_block(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, i_vlen_out, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out);
+  libxsmm_store_rv64_2d_reg_block(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, i_vlen_out, LIBXSMM_RV64_GP_REG_X20, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out);
 
   /* Footers of microkernel loops */
   if (inner_loop_trips > 1) {
