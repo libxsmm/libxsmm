@@ -1123,7 +1123,7 @@ void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_
   }
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SARQ, decompress_loop_reg, 1);
-  libxsmm_generator_gemm_footer_decompress_dyn_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg, 32*(i_k_CL/8), 8);
+  libxsmm_generator_gemm_footer_decompress_dyn_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg, (32*i_k_CL)/8, 8);
 
   /* Advance bitmap reg and compressed reg  */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_bitmap_a, (i_k_CL*32)/8);
@@ -1578,6 +1578,12 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     if ((decompress_via_bitmap > 0) && (_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0)) {
       /* Decompress also the next 32x32 block  */
       unsigned int K_CL = (m_tiles == 1) ? 16 : 32;
+      if (i_xgemm_desc->m == 8 || i_xgemm_desc->m == 4 || i_xgemm_desc->m == 2 || i_xgemm_desc->m == 1) {
+        K_CL = K_CL/(16/i_xgemm_desc->m);
+      } else {
+        /* Do nothing */
+      }
+
       if (i_brgemm_loop == 0) {
         libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_xgemm_desc, i_micro_kernel_config, i_brgemm_loop, K_CL);
       }
@@ -1590,6 +1596,11 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       /* TODO: catch int overdlow in A_offset */
       if (decompress_via_bitmap > 0) {
         unsigned int K_CL = (m_tiles == 1) ? 16 : 32;
+        if (i_xgemm_desc->m == 8 || i_xgemm_desc->m == 4 || i_xgemm_desc->m == 2 || i_xgemm_desc->m == 1) {
+          K_CL = K_CL/(16/i_xgemm_desc->m);
+        } else {
+          /* Do nothing */
+        }
         libxsmm_x86_instruction_tile_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
             _A_tileload_instr[i],
