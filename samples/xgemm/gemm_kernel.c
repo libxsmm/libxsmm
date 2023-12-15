@@ -1758,8 +1758,8 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     free( data_f );
     free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
-    float* data_gold_f = malloc( ld * n * sizeof(float) );
-    float* data_f      = malloc( ld * n * sizeof(float) );
+    float* data_gold_f = (float*)malloc( ld * n * sizeof(float) );
+    float* data_f      = (float*)malloc( ld * n * sizeof(float) );
 
     libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)data_gold, data_gold_f, ld*n );
     libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)data,      data_f,      ld*n );
@@ -1769,8 +1769,8 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     free( data_f );
     free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_HF8 ) {
-    float* data_gold_f = malloc( ld * n * sizeof(float) );
-    float* data_f      = malloc( ld * n * sizeof(float) );
+    float* data_gold_f = (float*)malloc( ld * n * sizeof(float) );
+    float* data_f      = (float*)malloc( ld * n * sizeof(float) );
 
     libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)data_gold, data_gold_f, ld*n );
     libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)data,      data_f,      ld*n );
