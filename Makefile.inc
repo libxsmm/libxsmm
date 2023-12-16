@@ -1381,10 +1381,12 @@ ifneq (0,$(INTEL))
   ifneq (0,$(SIMD))
   ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION_NUM)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
-    CXXFLAGS += -qopenmp-simd
-    CFLAGS += -qopenmp-simd
-    ifeq (,$(strip $(GFC)))
-      FCFLAGS += -qopenmp-simd
+    ifeq (0,$(OMP))
+      CXXFLAGS += -qopenmp-simd
+      CFLAGS += -qopenmp-simd
+      ifeq (,$(strip $(GFC)))
+        FCFLAGS += -qopenmp-simd
+      endif
     endif
     SIMD ?= 1
   endif
@@ -1461,7 +1463,9 @@ else # GCC assumed
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros \
                  -Wno-unused-parameter -Wwrite-strings \
-                 -Wmissing-field-initializers
+                 -Wmissing-field-initializers -Wwrite-strings \
+                 -Wcast-qual -Wmissing-field-initializers \
+                 -Wimplicit-fallthrough -Wmisleading-indentation
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \

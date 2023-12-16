@@ -33,7 +33,7 @@ int internal_x86_instructions_add_offset(const unsigned int i_place1,
     return (1);
   }
   else {
-    unsigned char *l_cptr = (unsigned char *)&i_offset;
+    const unsigned char *l_cptr = (const unsigned char *)&i_offset;
     buf[i_place1] += 0x80;
     buf[i_place2] = l_cptr[0];
     buf[i_place2 + 1] = l_cptr[1];
@@ -4208,7 +4208,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
   if ( io_generated_code->code_type > 1 )
   {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    unsigned char *cval = (unsigned char *) &i_data[0];
+    const unsigned char *cval = (const unsigned char *) &i_data[0];
     int i = io_generated_code->code_size;
     unsigned int l_maxsize = io_generated_code->buffer_size;
     int j = 0;
@@ -4316,7 +4316,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
 
     io_generated_code->code_size = i;
   } else {
-    unsigned char *cval = (unsigned char *) &i_data[0];
+    const unsigned char *cval = (const unsigned char *) &i_data[0];
     int j = 0;
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -4329,8 +4329,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       for ( j = 0; j < number_of_bytes_to_load; j += 4 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\\n\\t\"\n",
-                                                                                                        cval[0],cval[1],cval[2],cval[3] );
-        cval = cval + 4;
+                                                                                                        cval[j+0],cval[j+1],cval[j+2],cval[j+3] );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".continued_%s:\\n\\t\"\n", i_id );
@@ -4345,8 +4344,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       for ( j = 0; j < number_of_bytes_to_load; j += 4 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
-                                                                                                      cval[0],cval[1],cval[2],cval[3] );
-        cval = cval + 4;
+                                                                                                      cval[j+0],cval[j+1],cval[j+2],cval[j+3] );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .continued_%s:\n", i_id );

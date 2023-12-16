@@ -535,7 +535,7 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
   }
   else { /* reinterpret directly as hash value */
     LIBXSMM_ASSERT(NULL != string);
-    result = *(unsigned long long*)string;
+    result = *(const unsigned long long*)string;
   }
   return result;
 }

@@ -1307,13 +1307,14 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       l_new_xgemm_desc_opa = *i_xgemm_desc;
       l_new_xgemm_desc_opa.lda = lda_transpose;
       l_new_xgemm_desc_opa.flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
-      l_xgemm_desc_opa = (libxsmm_gemm_descriptor *) &l_new_xgemm_desc_opa;
+      l_xgemm_desc_opa = (libxsmm_gemm_descriptor*) &l_new_xgemm_desc_opa;
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
   } else {
-    l_xgemm_desc_opa = (libxsmm_gemm_descriptor*) i_xgemm_desc;
+    l_new_xgemm_desc_opa = *i_xgemm_desc;
+    l_xgemm_desc_opa = (libxsmm_gemm_descriptor*) &l_new_xgemm_desc_opa;
   }
 
   /* implementing load from struct */
