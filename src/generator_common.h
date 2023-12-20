@@ -1669,9 +1669,15 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
 
   /* Additional aux variables for exp */
   unsigned int vec_log2e;
+  unsigned int vec_ln2;
+  unsigned int vec_c4;
+  unsigned int vec_c5;
   unsigned int vec_y;
   unsigned int vec_z;
   unsigned int vec_expmask;
+  unsigned int vec_logfmax;
+  unsigned int vec_logfmin;
+  unsigned int aux_mask;
 
   /* Additional aux variables for gelu */
   unsigned int vec_xr;
