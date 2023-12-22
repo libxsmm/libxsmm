@@ -415,27 +415,27 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
 }
 
 LIBXSMM_INLINE
-int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint _ldo, const unsigned int op, const unsigned int use_bcast,
+int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast,
                     const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype _dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in, *in2, *_in2;
   char *out, *out_gold;
   unsigned int *rng_state = NULL;
   unsigned int *rng_state_gold = NULL;
-  libxsmm_blasint ldo = _ldo;
+  libxsmm_blasint l_ldo = ldo;
   libxsmm_datatype dtype_out = _dtype_out;
 
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_binary binary_kernel;
   libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
   libxsmm_bitfield binary_flags;
-  libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
+  libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, l_ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
 
   if (is_cmp_op(op) > 0) {
     dtype_out = LIBXSMM_DATATYPE_I8;
-    ldo = LIBXSMM_UPDIV(ldo, 16)*16;
+    l_ldo = LIBXSMM_UPDIV(l_ldo, 16)*16;
   }
 
   set_opname(op, opname);
@@ -445,7 +445,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     fprintf( stderr, "test_binary_%s %i %i %i %i: ldi needs to be equal to or bigger than M\n", opname, (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
-  if (M > ldo ) {
+  if (M > l_ldo ) {
     fprintf( stderr, "test_binary_%s %i %i %i %i: ldo needs to be equal to or bigger than N\n", opname, (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
@@ -454,16 +454,16 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   in        = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in)*N*LIBXSMM_MAX(M,ldi), 64);
   in2       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in1)*N*LIBXSMM_MAX(M,ldi), 64);
-  out       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
-  out_gold  = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
+  out       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*l_ldo, 64);
+  out_gold  = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*l_ldo, 64);
   _in       = in;
   _in2      = in2;
 
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
   init_random_matrix( dtype_in1, in2,      1, ldi, N, 0 );
-  init_zero_matrix(   dtype_out, out,      1, ldo, N );
-  init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
+  init_zero_matrix(   dtype_out, out,      1, l_ldo, N );
+  init_zero_matrix(   dtype_out, out_gold, 1, l_ldo, N );
 
   if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
@@ -505,9 +505,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   /* compute out_gold */
   if (op == ZIP_OP) {
-    reference_pack_2x16bit_blocks_to_32bit(M, N, ldi, ldi, ldo, in, in2, out_gold);
+    reference_pack_2x16bit_blocks_to_32bit(M, N, ldi, ldi, l_ldo, in, in2, out_gold);
   } else {
-    binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp, binary_flags, rng_state_gold );
+    binary_op_gold( M, N, ldi, ldi, l_ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp, binary_flags, rng_state_gold );
   }
 
   /* use jited transpose */
@@ -550,13 +550,13 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   if (is_cmp_op(op) > 0) {
     libxsmm_blasint i, j;
     for (j = 0; j < N; j++) {
-      for (i = M; i < ldo; i++) {
-        zero_bit((unsigned char *)out, i, j, ldo);
+      for (i = M; i < l_ldo; i++) {
+        zero_bit((unsigned char *)out, i, j, l_ldo);
       }
     }
-    norms_out = check_matrix( dtype_out, out_gold, out, ldo/8, LIBXSMM_UPDIV(M, 8), N );
+    norms_out = check_matrix( dtype_out, out_gold, out, l_ldo/8, LIBXSMM_UPDIV(M, 8), N );
   } else {
-    norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N );
+    norms_out = check_matrix( dtype_out, out_gold, out, l_ldo, M, N );
   }
   printf("##########################################\n");
   printf("#   Correctness  - Output                #\n");
