@@ -1,0 +1,6 @@
+gemm_packed_kernel
+kernel_test/.generate_gemm_test_scripts
+kernel_test/dgemm_packed_nn_eqld.slurm
+kernel_test/dgemm_packed_nn_gtld.slurm
+kernel_test/sgemm_packed_nn_eqld.slurm
+kernel_test/sgemm_packed_nn_gtld.slurm
