@@ -11,6 +11,7 @@
 #include "generator_common_x86.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
+#include "generator_mateltwise_common.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 
@@ -18,21 +19,6 @@
 #define NM_LOOP_ORDER 1
 #define LOOP_TYPE_M 0
 #define LOOP_TYPE_N 1
-
-LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_mateltwise_is_binary_cmp_op( const libxsmm_meltw_descriptor*         i_mateltwise_desc) {
-  unsigned int result = 0;
-  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) &&
-      (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT ||
-       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE ||
-       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT ||
-       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ||
-       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ ||
-       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE)) {
-    result = 1;
-  }
-  return result;
-}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,

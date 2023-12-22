@@ -14,7 +14,7 @@
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
-#include "generator_mateltwise_unary_binary_avx_avx512.h"
+#include "generator_mateltwise_common.h"
 
 #define MN_LOOP_ORDER 0
 #define NM_LOOP_ORDER 1

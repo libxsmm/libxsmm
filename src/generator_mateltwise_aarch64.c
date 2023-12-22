@@ -12,7 +12,7 @@
 #include "generator_mateltwise_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
-#include "generator_mateltwise_unary_binary_avx_avx512.h"
+#include "generator_mateltwise_common.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_mateltwise_misc_aarch64.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
