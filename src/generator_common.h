@@ -1566,6 +1566,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_param_struct;
   unsigned int gp_reg_in;
   unsigned int gp_reg_in2;
+  unsigned int gp_reg_in3;
   unsigned int gp_reg_in_pf;
   unsigned int gp_reg_ldi;
   unsigned int gp_reg_out;
@@ -1666,6 +1667,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_halves;
   unsigned int mask_hi;
   unsigned int mask_lo;
+  unsigned int blend_tmp_mask;
 
   /* Additional aux variables for exp */
   unsigned int vec_log2e;
