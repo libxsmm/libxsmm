@@ -44,6 +44,8 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+int unary_kernel_test(libxsmm_meltw_unary_param *param);
+
 LIBXSMM_INLINE
 void reference_unpack_32bit_to_2x16bit_blocks(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, char *in_char, char *out_char, long long offset) {
   float *in = (float*)in_char;
@@ -420,6 +422,11 @@ void unary_op_fp32_to_bf16x2_bf16x3( const libxsmm_blasint M, const libxsmm_blas
   }
 }
 
+int unary_kernel_test(libxsmm_meltw_unary_param *param)
+{
+  printf("%lx\n", *((libxsmm_meltw_unary_param *)0x0));
+}
+
 LIBXSMM_INLINE
 int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in;
@@ -518,8 +525,10 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
   /* use jited transpose */
   memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
+
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+
   if (rnd_mode == RND_STOCHASTIC) {
     unary_param.op.secondary = (void*)rng_state;
   }
@@ -557,7 +566,12 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
   }
+
+  printf("Allcoated %lx %lx %lx \n", in, out, &unary_param);
+  fflush(stdout);
+
   unary_kernel( &unary_param );
+  //unary_kernel_test( &unary_param );
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
