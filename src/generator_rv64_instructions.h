@@ -2207,8 +2207,8 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
-                                                const unsigned int       i_gp_reg_dst,
-                                                const unsigned long long i_imm64 );
+                                                const unsigned int    i_gp_reg_dst,
+                                                const long long       i_imm64 );
 
 /**
  * Generate compute with immediate
@@ -2274,7 +2274,7 @@ void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_gen
                                                   const unsigned int       i_gp_reg_src,
                                                   const unsigned int       i_gp_reg_tmp,
                                                   const unsigned int       i_gp_reg_dst,
-                                                  const unsigned long long i_imm64 );
+                                                  const long long          i_imm64 );
 
 /**
  * Generates conditional branch

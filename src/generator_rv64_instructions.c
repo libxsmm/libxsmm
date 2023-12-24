@@ -912,8 +912,8 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
 /* 64 bit immediate move using addi, lui, and shift instructions. */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
-                                              const unsigned int       i_gp_reg_dst,
-                                              const unsigned long long i_imm64 ) {
+                                              const unsigned int      i_gp_reg_dst,
+                                              const long long         i_imm64 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_set_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -926,12 +926,12 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
     return;
   }
 
-  if (i_imm64 <= 0xfff) {
-    libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, i_imm64 );
+  if (i_imm64 <= 0x7ff) {
+    libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
   } else if ( i_imm64 <= 0xfffff ){
-    libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, i_imm64 );
+    libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
   } else if ( i_imm64 <= 0xffffffff) {
-    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, i_imm64 );
+    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
   } else {
 #define IMM_12_2 (0xfff00000000)
 #define IMM_20_2 (0xfffff00000000000)
@@ -968,7 +968,7 @@ void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_gen
                                                   const unsigned int       i_gp_reg_src,
                                                   const unsigned int       i_gp_reg_tmp,
                                                   const unsigned int       i_gp_reg_dst,
-                                                  const unsigned long long i_imm64 ) {
+                                                  const long long          i_imm64 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1044,6 +1044,7 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
         LIBXSMM_EXIT_ERROR(io_generated_code);
         return;
     }
+
     if ( io_generated_code->code_type > 1 ) {
       unsigned int code_head = io_generated_code->code_size/4;
       unsigned int* code     = (unsigned int *)io_generated_code->generated_code;

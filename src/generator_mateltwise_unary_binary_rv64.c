@@ -1966,7 +1966,7 @@ void libxsmm_configure_microkernel_rv64_loops( libxsmm_generated_code*          
                                                   unsigned int*                           i_out_unroll_factor,
                                                   unsigned int*                           i_inner_unroll_factor) {
   unsigned int m_trips, n_trips, m_unroll_factor, n_unroll_factor, m_assm_trips, n_assm_trips, out_loop_trips, inner_loop_trips, out_loop_bound, inner_loop_bound, out_loop_reg, inner_loop_reg, out_unroll_factor, inner_unroll_factor;
-  unsigned int max_nm_unrolling = 32;
+  unsigned int max_nm_unrolling = 2;
   unsigned int i_loop_order = i_micro_kernel_config->loop_order;
   unsigned int reserved_zmms = 0;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
@@ -3094,8 +3094,8 @@ void libxsmm_generator_unary_binary_rv64_microkernel( libxsmm_generated_code*   
 
   /* load the input pointer and output pointer */
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LW, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, 32 );
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LW, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_out, 64 );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, 32 );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_out, 64 );
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
       libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LW, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_out2, 72 );
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
