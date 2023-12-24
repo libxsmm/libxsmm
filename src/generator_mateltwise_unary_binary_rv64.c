@@ -3169,7 +3169,7 @@ void libxsmm_generator_unary_binary_rv64_microkernel( libxsmm_generated_code*   
   out_ind = 0;
   while ( out_ind != out_bound ) {
     inner_ind = 0;
-    /*reset_regs = 0;*/
+    reset_regs = 0;
     while( inner_ind != inner_bound ) {
 
       out_block = (out_ind < out_blocking) ? out_blocking : out_bound - out_ind;
