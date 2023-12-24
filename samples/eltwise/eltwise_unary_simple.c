@@ -571,7 +571,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   fflush(stdout);
 
   unary_kernel( &unary_param );
-  //unary_kernel_test( &unary_param );
+  /*unary_kernel_test( &unary_param );*/
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {

@@ -246,7 +246,7 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 #define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
 #define RVV_I(i)    (RVV_LUI(i) || RVV_LOI(i) || RVV_SUI(i) || RVV_SOI(i))
 
-  // Unit stride and mask memory ops
+  /* Unit stride and mask memory ops */
   if ( RVV_U(i_vmove_instr)||(RVV_M(i_vmove_instr)) ) {
     if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
       fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
@@ -286,7 +286,7 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
     }
   }
 
-  // Stride and Indexed memory ops
+  /* Stride and Indexed memory ops */
   if ( RVV_S(i_vmove_instr) || RVV_I(i_vmove_instr)) {
     if ( !REG_VALID_3(i_vec_reg_addr, i_vec_reg_offset, i_vec_reg_dst) ) {
       fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
@@ -566,7 +566,7 @@ void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_
     return;
   }
 
-  // Sanity check
+  /* Sanity check */
   switch ( i_alu_instr ) {
     case LIBXSMM_RV64_INSTR_GP_ADD:
     case LIBXSMM_RV64_INSTR_GP_SUB:
@@ -681,7 +681,7 @@ void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_gene
     return;
   }
 
-  // Sanity check
+  /* Sanity check */
   switch ( i_alu_instr ) {
     case LIBXSMM_RV64_INSTR_GP_ADDI:
     case LIBXSMM_RV64_INSTR_GP_ADDIW:
@@ -762,7 +762,7 @@ void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_gene
     return;
   }
 
-  // Sanity check
+  /* Sanity check */
   switch ( i_alu_instr ) {
     case LIBXSMM_RV64_INSTR_GP_AUIPC:
     case LIBXSMM_RV64_INSTR_GP_LUI:
@@ -826,7 +826,7 @@ void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generat
     return;
   }
 
-  // ADDI immediate to X0 register
+  /* ADDI immediate to X0 register */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
     LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0, i_gp_reg_dst, i_imm12);
 }
@@ -854,11 +854,11 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
     return;
   }
 
-  // ADDI immediate to X0 register
+  /* ADDI immediate to X0 register */
   libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
     LIBXSMM_RV64_INSTR_GP_LUI, i_gp_reg_dst, i_imm20);
 
-  // SHIFT Right
+  /* SHIFT Right */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
       LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 12);
 }
@@ -897,10 +897,10 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
    unsigned int imm_12_1 = (i_imm32 & IMM_12_1);
    unsigned int imm_20_1 = ((i_imm32 & IMM_20_1) >> 12);
 
-   // LUI 20 bits
+   /* LUI 20 bits */
    libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
        LIBXSMM_RV64_INSTR_GP_LUI, i_gp_reg_dst, imm_20_1);
-   // ADD 12 bits
+   /* ADD 12 bits */
    libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
        LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_1);
 
@@ -939,17 +939,17 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
     unsigned int imm_12_2 = ((i_imm64 & IMM_12_2) >> 32);
     unsigned int imm_20_2 = ((i_imm64 & IMM_20_2) >> 44);
 
-    // LUI 20 bits
+    /* LUI 20 bits */
     libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
         LIBXSMM_RV64_INSTR_GP_LUI, i_gp_reg_dst, imm_20_2);
-    // ADD 12 bits
+    /* ADD 12 bits */
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
         LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_2);
 
 #undef IMM_12_2
 #undef IMM_20_2
 
-    // SHIFT Left
+    /* SHIFT Left */
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
         LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
 
@@ -1061,17 +1061,17 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
       if (i_imm < 0) {
         i_sign = 1;
         a_imm = (~abs(i_imm) + 1) & 0xfff;
-        //a_imm = abs(i_imm);
+        /*a_imm = abs(i_imm);*/
       }
 
-      //a_imm = a_imm >> 1;
+      /*a_imm = a_imm >> 1;*/
 
       /* Generate immediate */
       printf("Received immediate %x %x\n", i_imm, a_imm);
 
-      // TODO: format definition
+      /* TODO: format definition */
       unsigned int imm_lo = ((a_imm >> 11) & 0x1) | ((a_imm & 0xf) << 1);
-      //unsigned int imm_hi = ((a_imm & 0x7e0) >> 5) | (((i_sign)) << 6);
+      /*unsigned int imm_hi = ((a_imm & 0x7e0) >> 5) | (((i_sign)) << 6);*/
       unsigned int imm_hi = ((a_imm & 0x3f0) >> 4) | (((i_sign)) << 6);
 
       printf("immediate low %x \n", imm_lo);
@@ -1344,9 +1344,9 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io
       return;
     }
 
-    // TODO: remove devision here and move to the jump
+    /* TODO: remove devision here and move to the jump */
     libxsmm_rv64_instruction_cond_jump(io_generated_code, i_jmp_instr,
-        //i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm );
+        /*i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm );*/
         i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm/2 );
 
     /* advance code head */
