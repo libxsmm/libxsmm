@@ -29,7 +29,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
-  PYTHON=$(command -v python3)
+  PYTHON=$(command -v python3 || true)
   FLOCK=${HERE}/../.flock.sh
   #LG_DEFAULT=${NAME}.log
   LG_DEFAULT=/dev/null
@@ -46,7 +46,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
   fi
   # ensure consistent sort
   export LC_ALL=C
-  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
+  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python || true); fi
   if [ "${PYTHON}" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
     TARGET=$(${PYTHON} "${HERE}/libxsmm_utilities.py")
   fi
@@ -80,7 +80,8 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
       echo "       -n|--nth    N  [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N  [PEXEC_NP]: number of processes (scaled by nscale)"
       echo "       -k|--ninner N  [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
-      echo "       -s|--nscale N  [PEXEC_SP]: oversubscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
+      echo "       -s|--nscale N  [PEXEC_SP]: subscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
+      echo "                                  under-subscription (N<0)"
       echo "       Environment [variables] will precede command line arguments."
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
       echo
@@ -218,7 +219,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
     if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
     COUNTED="${COUNTED}"$'\n'"${LINE}"
     COUNTER=$((COUNTER+1))
-  done
+  done && unset IFS
   PEXEC_SCRARG="\$0"
   if [ "${COUNTER}" != "${TOTAL}" ] || [ "0" = "${PEXEC_IL}" ]; then
     if [ "0" = "${PEXEC_IL}" ]; then
@@ -230,7 +231,7 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
       if [ "0" != "$((TOTAL<=COUNTER))" ]; then break; fi
       if [ "${COUNTED}" ]; then COUNTED="${COUNTED}"$'\n'"${LINE}"; else COUNTED=${LINE}; fi
       COUNTER=$((COUNTER+1))
-    done
+    done && unset IFS
   fi
   trap 'rm -f ${NAME}.txt ${PEXEC_SCRIPT}' EXIT
   unset ATLEAST
@@ -246,6 +247,8 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
       fi
     elif [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
+    elif [ "0" != "$((0>SP))" ]; then
+      NP=$(((NP-SP-1)/-SP))
     fi
     NQ=${NP}
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then

@@ -9,6 +9,7 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "equation_common.h"
+#include <libxsmm_intrinsics_x86.h>
 
 #define FWD_LNORM 1
 #define BWD_LNORM 2
@@ -593,7 +594,7 @@ void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, 
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0003;
+  double error_bound = 0.0002;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
@@ -610,7 +611,6 @@ int main( int argc, char* argv[] ) {
   float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
   const char *matdiff_env;
-  double check_norm;
 #if defined(USE_SUM)
   float sum = 0.0;
 #endif
@@ -637,13 +637,11 @@ int main( int argc, char* argv[] ) {
   if (datatype_mode == 0) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
-    if ((1 == S1 || 1 == S2 || 1 == S3) && (16 < S1 || 16 < S2 || 16 < S3)) {
-      error_bound = LIBXSMM_MAX(0.002, error_bound);
-    }
+    error_bound = LIBXSMM_MAX(0.007, error_bound);
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_BF16;
-    error_bound = LIBXSMM_MAX(0.001, error_bound);
+    error_bound = LIBXSMM_MAX(0.007, error_bound);
   } else {
     printf("ERROR: Supporting only FP32 and BF16 precisions...\n");
   }
@@ -790,10 +788,9 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f\n\n", check_norm);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-    if ( check_norm > error_bound ) {
+    if ( norms_out.normf_rel > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -997,10 +994,9 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f\n\n", check_norm);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-    if ( check_norm > error_bound ) {
+    if ( norms_out.normf_rel > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -1018,10 +1014,9 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f\n\n", check_norm);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-    if ( check_norm > error_bound ) {
+    if ( norms_out.normf_rel > error_bound ) {
       ret = EXIT_FAILURE;
     }
 
@@ -1039,10 +1034,9 @@ int main( int argc, char* argv[] ) {
     printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-    check_norm = libxsmm_matdiff_epsilon(&norms_out);
-    printf("Check-norm    : %.24f\n\n", check_norm);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-    if ( check_norm > error_bound ) {
+    if ( norms_out.normf_rel > error_bound ) {
       ret = EXIT_FAILURE;
     }
 

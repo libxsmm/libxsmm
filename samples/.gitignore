@@ -4,6 +4,7 @@ deeplearning/sparse_weight_mult/parallel_sparse_weight_C_redmult
 deeplearning/sparse_weight_mult/sparse_weight_A_mult
 deeplearning/sparse_weight_mult/sparse_weight_B_mult
 deeplearning/sparse_weight_mult/sparse_weight_C_redmult
+deeplearning/vnni_pack/vnni_pack
 eltwise/eltwise_*
 equation/equation_*
 edge/asparse_packed_csr_*
@@ -11,6 +12,7 @@ edge/bsparse_packed_csc_*
 edge/bsparse_packed_csr_*
 edge/dense_packedacrm_*
 edge/dense_packedbcrm_*
+edge/dense_packed_*
 edge/edge_vol_int
 eigen/eigen_smm
 eigen/eigen_tensor

@@ -1,0 +1,19 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Build documentation based on Sphinx
+#sphinx:
+#  configuration: documentation/conf.py
+
+# Build documentation based on MkDocs
+mkdocs:
+  configuration: mkdocs.yml
+
+# It is recommend specifying dependencies to enable reproducible builds:
+# https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+python:
+  install:
+  - requirements: .theme/requirements.txt

@@ -23,7 +23,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
     libxsmm_matequation_kernel_config*    io_micro_kernel_config) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
     io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
@@ -340,6 +340,21 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   }
 
   /* Now push to RSP the callee-save registers */
+  /* on windows we also have to save xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+  {
+    unsigned int l_i;
+    unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_ST
+                                                                                  : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+    /* decrease rsp by 160 (10x16) */
+    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 160);
+    /* save 10 xmm onto the stack */
+    for (l_i = 0; l_i < 10; ++l_i) {
+      libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_store_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+    }
+  }
+#endif
   if (skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
@@ -395,6 +410,21 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
   }
+  /* on windows we also have to restore xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+  {
+    unsigned int l_i;
+    unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                 : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+    /* save 10 xmm onto the stack */
+    for (l_i = 0; l_i < 10; ++l_i) {
+      libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_load_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+    }
+    /* increase rsp by 160 (10x16) */
+    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 160);
+  }
+#endif
 
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
@@ -494,6 +524,23 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
          libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(node->info.u_op.type) ||
          libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ||
          libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(node->info.u_op.type) ) {
+      result = 1;
+    }
+  }
+
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+    if (node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
+      result = 1;
+    }
+  }
+
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+    if (node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE) {
       result = 1;
     }
   }
@@ -677,7 +724,7 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_gather
   if ((gather_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
     if (gather_node->up != NULL) {
       if (gather_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
-        if (gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
+        if (gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) {
           if ((gather_node->up->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
             result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS;
           }
@@ -837,7 +884,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
     } else if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
       cur_node->fusion_info.gather.fused_reduce_cols_max = 1;
       cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX;
-      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
+      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC;
       if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
       } else {
@@ -845,6 +892,18 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
       }
       if (libxsmm_verbosity < 0) {
         fprintf( stderr, "Fusing GATHER-COLS with MAX-REDUCE-COLS\n");
+      }
+    } else if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) {
+      cur_node->fusion_info.gather.fused_reduce_cols_max = 1;
+      cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN;
+      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC;
+      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
+      } else {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+      }
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing GATHER-COLS with MIN-REDUCE-COLS\n");
       }
     } else {
       /* Should not happen */
@@ -996,7 +1055,7 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
   if (io_generated_code->arch < LIBXSMM_X86_AVX) {
     is_valid_arch_prec = 0;
   }
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128)) {
+  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX)) {
     is_valid_arch_prec = 0;
   }
   if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
@@ -1005,7 +1064,7 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
   if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU_INV, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
     is_valid_arch_prec = 0;
   }
-  if ((has_inp_or_out_fp8 > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256)) {
+  if ((has_inp_or_out_fp8 > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX)) {
     is_valid_arch_prec = 0;
   }
   if ((has_inp_or_out_fp64 > 0) && (all_fp64 == 0)) {

@@ -1204,6 +1204,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
@@ -1213,6 +1214,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS:
     case LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMNE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
@@ -1277,7 +1280,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   /* special instruction, where only dst = src_0 is supported */
   /* this check could be disabled for performance reasons */
-  if ( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ){
+  if ( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) {
     if ( i_vec_reg_src_0 != i_vec_reg_dst ) {
       if (i_vec_reg_src_1 == i_vec_reg_dst &&
         (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
@@ -1301,7 +1304,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P ||
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P ||
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ||
-               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P ) ){
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P ) ) {
       l_vec_reg_src_0 = l_vec_reg_src_1;
     }
   }
@@ -1358,7 +1361,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
           code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_1) << 16);
         }
       }
-      else if ( l_has_immediate ){
+      else if ( l_has_immediate ) {
         code[code_head] = (code[code_head] & 0xffffe01f) | (unsigned int)(i_index << 5);
       }
     }

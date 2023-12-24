@@ -71,9 +71,12 @@
 #include "../src/generator_matequation_regblocks_avx_avx512.c"
 #include "../src/generator_matequation_scratch_aarch64.c"
 #include "../src/generator_matequation_scratch_avx_avx512.c"
+#include "../src/generator_packed_gemm.c"
+#include "../src/generator_packed_gemm_aarch64.c"
 #include "../src/generator_packed_gemm_ac_rm.c"
 #include "../src/generator_packed_gemm_ac_rm_aarch64.c"
 #include "../src/generator_packed_gemm_ac_rm_avx_avx2_avx512.c"
+#include "../src/generator_packed_gemm_avx_avx2_avx512.c"
 #include "../src/generator_packed_gemm_bc_rm.c"
 #include "../src/generator_packed_gemm_bc_rm_aarch64.c"
 #include "../src/generator_packed_gemm_bc_rm_avx_avx2_avx512.c"
@@ -101,6 +104,7 @@
 #include "../src/generator_spgemm_csr_asparse_reg.c"
 #include "../src/generator_spgemm_csr_reader.c"
 #include "../src/generator_x86_instructions.c"
+#include "../src/libxsmm_barrier.c"
 #include "../src/libxsmm_cpuid_arm.c"
 #include "../src/libxsmm_cpuid_x86.c"
 #include "../src/libxsmm_ext.c"
@@ -122,6 +126,7 @@
 #include "../src/libxsmm_sync.c"
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"
+#include "../src/libxsmm_utils.c"
 #include "../src/libxsmm_xcopy.c"
 
 #endif /*LIBXSMM_SOURCE_H*/

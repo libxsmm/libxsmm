@@ -156,6 +156,11 @@ void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_gen
                                           const unsigned int              i_packed_width );
 
 LIBXSMM_API
+void libxsmm_generator_packed_gemm( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                    const unsigned int              i_packed_width );
+
+LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_generated_code,
                                           const libxsmm_meltw_descriptor*    i_mateltw_desc );
 

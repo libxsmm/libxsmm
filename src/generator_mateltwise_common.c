@@ -71,3 +71,18 @@ libxsmm_blasint libxsmm_generator_mateltwise_involves_prec(const libxsmm_meltw_d
   }
   return result;
 }
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_mateltwise_is_binary_cmp_op( const libxsmm_meltw_descriptor*         i_mateltwise_desc) {
+  unsigned int result = 0;
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) &&
+      (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ ||
+       i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE)) {
+    result = 1;
+  }
+  return result;
+}

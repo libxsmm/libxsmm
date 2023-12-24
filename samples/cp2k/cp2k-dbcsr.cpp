@@ -13,6 +13,7 @@
 #else
 # include <libxsmm_source.h>
 #endif
+#include <libxsmm_utils.h>
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>
@@ -325,8 +326,9 @@ int main(int argc, char* argv[])
     fprintf(stdout, "Finished\n");
 
     if (!LIBXSMM_FEQ(0, check)) {
-      if (check < 100.0 * diff.normf_rel) {
-        fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      const double epsilon = libxsmm_matdiff_epsilon(&diff);
+      if (0.001 < epsilon) {
+        fprintf(stderr, "FAILED with an error of %f!\n", epsilon);
         result = EXIT_FAILURE;
       }
     }

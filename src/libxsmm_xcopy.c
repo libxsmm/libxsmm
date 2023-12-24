@@ -28,15 +28,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(float libxsmm_tcopy_nscale);
 LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
 {
   { /* setup tile sizes according to CPUID or environment */
-    if (LIBXSMM_X86_AVX512_CORE <= archid) { /* avx-512/core */
-      libxsmm_mcopy_mbytes = 0;
-      libxsmm_mcopy_nscale = 0.f;
-      libxsmm_mzero_mbytes = 0;
-      libxsmm_mzero_nscale = 0.f;
-      libxsmm_tcopy_mbytes = 32768;
-      libxsmm_tcopy_nscale = 0.f;
-    }
-    else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
+    if (LIBXSMM_X86_AVX512_SKX <= archid) { /* avx-512/core */
       libxsmm_mcopy_mbytes = 0;
       libxsmm_mcopy_nscale = 0.f;
       libxsmm_mzero_mbytes = 0;
@@ -198,6 +190,8 @@ LIBXSMM_API void libxsmm_otrans_task_internal(void* out, const void* in, unsigne
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
@@ -624,6 +618,7 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
     }
   }
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,

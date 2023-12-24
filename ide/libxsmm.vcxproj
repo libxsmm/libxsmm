@@ -40,21 +40,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
-    <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
-    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
-    <ClInclude Include="..\include\libxsmm_lpflt_quant.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />
     <ClInclude Include="..\include\libxsmm_memory.h" />
-    <ClInclude Include="..\include\libxsmm_mhd.h" />
-    <ClInclude Include="..\include\libxsmm_rng.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_sync.h" />
-    <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
+    <ClInclude Include="..\include\utils\libxsmm_barrier.h" />
+    <ClInclude Include="..\include\utils\libxsmm_intrinsics_x86.h" />
+    <ClInclude Include="..\include\utils\libxsmm_lpflt_quant.h" />
+    <ClInclude Include="..\include\utils\libxsmm_math.h" />
+    <ClInclude Include="..\include\utils\libxsmm_mhd.h" />
+    <ClInclude Include="..\include\utils\libxsmm_timer.h" />
+    <ClInclude Include="..\include\utils\libxsmm_utils.h" />
     <ClInclude Include="..\src\generator_aarch64_instructions.h" />
     <ClInclude Include="..\src\generator_common_aarch64.h" />
     <ClInclude Include="..\src\generator_common_x86.h" />
@@ -92,6 +93,9 @@
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h" />
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse.h" />
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.h" />
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.h" />
@@ -120,6 +124,7 @@
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
+    <ClInclude Include="..\src\libxsmm_matdiff.h" />
     <ClInclude Include="..\src\libxsmm_matrixeqn.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
@@ -127,7 +132,6 @@
     <ClInclude Include="..\src\perf_jitdump.h" />
     <ClInclude Include="..\src\template\libxsmm.h" />
     <ClInclude Include="..\src\template\libxsmm_config.h" />
-    <ClInclude Include="..\src\template\libxsmm_matdiff.h" />
     <ClInclude Include="..\src\template\libxsmm_version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +184,9 @@
     <ClCompile Include="..\src\generator_packed_gemm_bc_rm_aarch64.c" />
     <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_spgemm.c" />
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse.c" />
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.c" />
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.c" />
     <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse.c" />
     <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse_aarch64.c" />
     <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.c" />
@@ -199,6 +206,7 @@
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
+    <ClCompile Include="..\src\libxsmm_barrier.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_arm.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
@@ -217,6 +225,7 @@
     <ClCompile Include="..\src\libxsmm_sync.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
+    <ClCompile Include="..\src\libxsmm_utils.c" />
     <ClCompile Include="..\src\libxsmm_xcopy.c" />
   </ItemGroup>
   <ItemGroup>
@@ -370,9 +379,9 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='release|Win32'">$(SolutionDir)..\obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">$(SolutionDir)..\obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">$(SolutionDir)..\obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)..\lib\intel64\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">$(SolutionDir)..\lib\intel64\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)..\lib\intel64\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)..\lib\$(IntelPlatform)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">$(SolutionDir)..\lib\$(IntelPlatform)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)..\lib\$(IntelPlatform)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)..\obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='release|ARM64'">$(SolutionDir)..\obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">$(SolutionDir)..\obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
@@ -542,7 +551,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
@@ -582,8 +591,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -625,7 +634,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
@@ -667,8 +676,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -739,7 +748,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -774,8 +783,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
