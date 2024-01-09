@@ -1966,7 +1966,7 @@ void libxsmm_configure_microkernel_rv64_loops( libxsmm_generated_code*          
                                                   unsigned int*                           i_out_unroll_factor,
                                                   unsigned int*                           i_inner_unroll_factor) {
   unsigned int m_trips, n_trips, m_unroll_factor, n_unroll_factor, m_assm_trips, n_assm_trips, out_loop_trips, inner_loop_trips, out_loop_bound, inner_loop_bound, out_loop_reg, inner_loop_reg, out_unroll_factor, inner_unroll_factor;
-  unsigned int max_nm_unrolling = 2;
+  unsigned int max_nm_unrolling = 32;
   unsigned int i_loop_order = i_micro_kernel_config->loop_order;
   unsigned int reserved_zmms = 0;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
@@ -1991,6 +1991,9 @@ void libxsmm_configure_microkernel_rv64_loops( libxsmm_generated_code*          
   if (m_unroll_factor > max_nm_unrolling) {
     m_unroll_factor = max_nm_unrolling;
   }
+
+  printf("Vlen for loop config vlen=%d m=%d n-trip=%d m-trips=%d n-unroll=%d m-unroll=%d\n",
+    i_vlen_in, i_m, n_trips, m_trips, m_unroll_factor, m_unroll_factor);
 
   while (m_trips % m_unroll_factor != 0) {
     m_unroll_factor--;

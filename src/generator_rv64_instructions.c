@@ -13,7 +13,7 @@
 #include "generator_rv64_instructions.h"
 
 #define FILL_REGID(r, t)        (t & (r << libxsmm_ctz(t)));
-#define REG_VALID_1(r1)         (((r1) >= LIBXSMM_RV64_GP_REG_X0) && ((r1) <= LIBXSMM_RV64_GP_REG_X31))
+#define REG_VALID_1(r1)         (((r1) <= LIBXSMM_RV64_GP_REG_X31))
 #define REG_VALID_2(r1, r2)     (REG_VALID_1(r1) && REG_VALID_1(r2))
 #define REG_VALID_3(r1, r2, r3) (REG_VALID_2(r1, r2) && REG_VALID_1(r3))
 
