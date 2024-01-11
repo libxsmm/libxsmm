@@ -853,6 +853,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     }
   }
 
+  if ( l_k_threshold < l_k_blocking ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return;
+  }
+
   if (l_is_Ai4_Bf16_gemm > 0) {
     l_k_blocking = l_k_blocking*2;
     l_k_threshold = ((l_k_threshold+1)*2)-1;
