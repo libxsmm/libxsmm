@@ -759,7 +759,6 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   l_generated_code.code_type = 1;
   l_generated_code.last_error = 0;
   l_generated_code.arch = 0;
-  l_generated_code.sf_size = 0;
 
   /* set arch */
   if ( strcmp(i_arch, "wsm") == 0  ) {
