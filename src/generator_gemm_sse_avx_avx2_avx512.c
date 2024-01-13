@@ -149,8 +149,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   unsigned int adjust_A_pf_ptrs = 0;
   unsigned int adjust_B_pf_ptrs = 0;
-  unsigned int                      lda_transpose;
-  unsigned int                      l_max_n_blocking = 0;
+  unsigned int l_max_n_blocking = 0;
   unsigned int a_in_vnni = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 0;
   unsigned int l_is_Ai8_Bbf16_gemm = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                                       (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
@@ -191,10 +190,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* in case when A needs to be transposed, we need to change temporarily the descriptor dimensions for gemm */
-  lda_transpose = l_xgemm_desc->m;
   if (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
     if ((LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(l_xgemm_desc->datatype)) || (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(l_xgemm_desc->datatype))) {
-      l_xgemm_desc->lda = lda_transpose;
+      l_xgemm_desc->lda = l_xgemm_desc->m;
       l_xgemm_desc->flags = (unsigned int)((unsigned int)(l_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
