@@ -1506,10 +1506,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
 
-  /* Auxiliary fields for LP emulations */
+  /* Auxiliary fields for LP emulations and stack-based data prepartion */
   unsigned int bf8_gemm_via_stack_alloc_tensors;
   unsigned int hf8_gemm_via_stack_alloc_tensors;
-
+  unsigned int atrans_gemm_stack_alloc_tensors;
+  unsigned int bvnni_btrans_gemm_stack_alloc_tensors;
 } libxsmm_micro_kernel_config;
 
 /* structure for storing the current gp reg mapping */
