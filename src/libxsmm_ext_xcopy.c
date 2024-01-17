@@ -334,7 +334,10 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
               } break;
             }
             if (NULL != kernel.ptr) { /* JIT-kernel available */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
               LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
+#pragma GCC diagnostic pop
               return; /* fast path */
             }
           }

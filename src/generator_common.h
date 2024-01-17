@@ -220,6 +220,12 @@
 #define LIBXSMM_X86_INSTR_VPERMPD_I        0x208d3601
 #define LIBXSMM_X86_INSTR_VPERMILPS        0x3005250c
 #define LIBXSMM_X86_INSTR_VPERMILPS_I      0x200d3504
+#define LIBXSMM_X86_INSTR_VPEXTRB          0x280d3814
+#define LIBXSMM_X86_INSTR_VPEXTRD          0x280d3a16
+#define LIBXSMM_X86_INSTR_VPEXTRQ          0x288d3b16
+#define LIBXSMM_X86_INSTR_VPINSRB          0x300d3820
+#define LIBXSMM_X86_INSTR_VPINSRD          0x300d3a22
+#define LIBXSMM_X86_INSTR_VPINSRQ          0x308d3b22
 /* VEX only */
 #define LIBXSMM_X86_INSTR_VPERM2F128       0x700d3006
 #define LIBXSMM_X86_INSTR_VPERM2I128       0x700d3046
@@ -279,6 +285,7 @@
 #define LIBXSMM_X86_INSTR_VPERMT2Q         0xf085267e
 #define LIBXSMM_X86_INSTR_VPERMILPD        0xf085260d
 #define LIBXSMM_X86_INSTR_VPERMILPD_I      0xe08d3605
+#define LIBXSMM_X86_INSTR_VPERMQ           0xf0852e36
 
 /* FMA instructions */
 #define LIBXSMM_X86_INSTR_VFMADD132PS      0x30052698
@@ -1571,6 +1578,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_param_struct;
   unsigned int gp_reg_in;
   unsigned int gp_reg_in2;
+  unsigned int gp_reg_in3;
   unsigned int gp_reg_in_pf;
   unsigned int gp_reg_ldi;
   unsigned int gp_reg_out;
@@ -1671,6 +1679,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_halves;
   unsigned int mask_hi;
   unsigned int mask_lo;
+  unsigned int blend_tmp_mask;
 
   /* Additional aux variables for exp */
   unsigned int vec_log2e;
