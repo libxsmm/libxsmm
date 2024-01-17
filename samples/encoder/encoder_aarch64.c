@@ -19,7 +19,6 @@ void reset_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
   mycode->code_size = 0;
   mycode->code_type = 2;
   mycode->last_error = 0;
-  mycode->sf_size = 0;
   memset( (unsigned char*)mycode->generated_code, 0, mycode->buffer_size );
 }
 

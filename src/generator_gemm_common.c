@@ -1310,8 +1310,8 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( libxsmm_
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_PFB_PTR, temp_reg );
   }
 
-  if ((is_brgemm == 1) && (( i_micro_kernel_config->decompress_A == 1) || ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) ||
-                           ((LIBXSMM_GEMM_FLAG_TRANS_B & i_xgemm_desc->flags) > 0 && (LIBXSMM_GEMM_FLAG_VNNI_B & i_xgemm_desc->flags) > 0 ) ||
+  if ((is_brgemm == 1) && (( i_micro_kernel_config->decompress_A == 1) || (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) ||
+                           (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) ||
                            (i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0))) {
     libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduce_count, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
@@ -1425,13 +1425,12 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   }
 
   if ((i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0) ||
-      ((LIBXSMM_GEMM_FLAG_TRANS_B & i_xgemm_desc->flags) > 0 && (LIBXSMM_GEMM_FLAG_VNNI_B & i_xgemm_desc->flags) > 0 ) ||
-      ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) ) {
+      (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) ) {
     int is_stride_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
     int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
     int is_address_brgemm = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
     int is_brgemm         = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
-    unsigned int inp_dtype_size = (((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) || ((LIBXSMM_GEMM_FLAG_TRANS_B & i_xgemm_desc->flags) > 0 && (LIBXSMM_GEMM_FLAG_VNNI_B & i_xgemm_desc->flags) > 0 ) ) ?  LIBXSMM_TYPESIZE(LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype)) : 4;
+    unsigned int inp_dtype_size = ( (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) ) ?  LIBXSMM_TYPESIZE(LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype)) : 4;
     unsigned int a_size  = (i_xgemm_desc->m * i_xgemm_desc->k) * inp_dtype_size;
     unsigned int b_size  = (i_xgemm_desc->k * i_xgemm_desc->n) * inp_dtype_size;
     unsigned int c_size  = (i_xgemm_desc->m * i_xgemm_desc->n) * 4;
@@ -1463,10 +1462,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
       }
     }
     if (is_brgemm == 0) {
-      if ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) {
+      if ( i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, a_size );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR, LIBXSMM_X86_GP_REG_RSP );
-      } else if ((LIBXSMM_GEMM_FLAG_TRANS_B & i_xgemm_desc->flags) > 0 && (LIBXSMM_GEMM_FLAG_VNNI_B & i_xgemm_desc->flags) > 0 ) {
+      } else if ( i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, b_size );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, LIBXSMM_X86_GP_REG_RSP );
       } else {
@@ -1477,7 +1476,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
       }
     } else {
       unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
-      if ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) {
+      if ( i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0 ) {
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, temp_reg, a_size);
         libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, temp_reg, LIBXSMM_X86_GP_REG_RSP );
@@ -1488,7 +1487,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
           libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, temp_reg, LIBXSMM_X86_GP_REG_RSP );
           libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, LIBXSMM_X86_GP_REG_RSP );
         }
-      } else if ((LIBXSMM_GEMM_FLAG_TRANS_B & i_xgemm_desc->flags) > 0 && (LIBXSMM_GEMM_FLAG_VNNI_B & i_xgemm_desc->flags) > 0 ) {
+      } else if ( i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0 ) {
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, temp_reg, b_size);
         libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, temp_reg, LIBXSMM_X86_GP_REG_RSP );
@@ -1557,7 +1556,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      BIAS SCRATCH PTR                          <-- RBP-168, RSP
    *
    * */
-  if ( (((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) || ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) || ((LIBXSMM_GEMM_FLAG_TRANS_B & i_xgemm_desc->flags) > 0 && (LIBXSMM_GEMM_FLAG_VNNI_B & i_xgemm_desc->flags) > 0) || (i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0) ) ) {
+  if ( (((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) || (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0) ) ) {
     libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( io_generated_code, i_xgemm_desc, i_micro_kernel_config, i_gp_reg_mapping );
   } else {
     int has_scf = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
