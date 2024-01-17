@@ -1034,38 +1034,39 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
               i_micro_kernel_config->vec_hi_bound,
               i_micro_kernel_config->vec_lo_bound );
         } else {
-#if 0
-          libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_y,
-              i_micro_kernel_config->vec_z,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config->vector_name );
-#else
-          libxsmm_generator_exp_ps_5dts_avx512( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_y,
-              i_micro_kernel_config->vec_z,
-              i_micro_kernel_config->aux_mask,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_c4,
-              i_micro_kernel_config->vec_c5,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config->vec_ln2,
-              i_micro_kernel_config->vec_expmask,
-              i_micro_kernel_config->vec_logfmax,
-              i_micro_kernel_config->vec_logfmin,
-              i_micro_kernel_config->vector_name);
-#endif
+          if (libxsmm_cpuid_x86_use_high_prec_eltwise_approx() == 0) {
+            libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
+                cur_vreg,
+                i_micro_kernel_config->vec_y,
+                i_micro_kernel_config->vec_z,
+                i_micro_kernel_config->vec_c0,
+                i_micro_kernel_config->vec_c1,
+                i_micro_kernel_config->vec_c2,
+                i_micro_kernel_config->vec_c3,
+                i_micro_kernel_config->vec_halves,
+                i_micro_kernel_config->vec_log2e,
+                i_micro_kernel_config->vector_name );
+          } else {
+            libxsmm_generator_exp_ps_5dts_avx512( io_generated_code,
+                cur_vreg,
+                i_micro_kernel_config->vec_y,
+                i_micro_kernel_config->vec_z,
+                i_micro_kernel_config->aux_mask,
+                i_micro_kernel_config->vec_c0,
+                i_micro_kernel_config->vec_c1,
+                i_micro_kernel_config->vec_c2,
+                i_micro_kernel_config->vec_c3,
+                i_micro_kernel_config->vec_c4,
+                i_micro_kernel_config->vec_c5,
+                i_micro_kernel_config->vec_halves,
+                i_micro_kernel_config->vec_log2e,
+                i_micro_kernel_config->vec_ln2,
+                i_micro_kernel_config->vec_expmask,
+                i_micro_kernel_config->vec_logfmax,
+                i_micro_kernel_config->vec_logfmin,
+                i_micro_kernel_config->vector_name);
+        
+          }
         }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
         if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
@@ -2703,63 +2704,61 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_hi_bound,
           i_micro_kernel_config->vec_lo_bound );
     } else {
-#if 0
-      reserved_zmms += 6;
-      i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
-      i_micro_kernel_config->vec_c0         = reserved_zmms - 2;
-      i_micro_kernel_config->vec_c1         = reserved_zmms - 3;
-      i_micro_kernel_config->vec_c2         = reserved_zmms - 4;
-      i_micro_kernel_config->vec_c3         = reserved_zmms - 5;
-      i_micro_kernel_config->vec_log2e      = reserved_zmms - 6;
+      if (libxsmm_cpuid_x86_use_high_prec_eltwise_approx() == 0) { 
+        reserved_zmms += 6;
+        i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
+        i_micro_kernel_config->vec_c0         = reserved_zmms - 2;
+        i_micro_kernel_config->vec_c1         = reserved_zmms - 3;
+        i_micro_kernel_config->vec_c2         = reserved_zmms - 4;
+        i_micro_kernel_config->vec_c3         = reserved_zmms - 5;
+        i_micro_kernel_config->vec_log2e      = reserved_zmms - 6;
 
-      libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx512( io_generated_code,
-          i_micro_kernel_config->vec_c0,
-          i_micro_kernel_config->vec_c1,
-          i_micro_kernel_config->vec_c2,
-          i_micro_kernel_config->vec_c3,
-          i_micro_kernel_config->vec_halves,
-          i_micro_kernel_config->vec_log2e,
-          i_micro_kernel_config->vector_name);
-#else
-      unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
-      reserved_zmms += 14;
-      reserved_mask_regs += 1;
+        libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx512( io_generated_code,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_log2e,
+            i_micro_kernel_config->vector_name);
+      } else {
+        unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+        reserved_zmms += 14;
+        reserved_mask_regs += 1;
+        i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
+        i_micro_kernel_config->vec_c0         = reserved_zmms - 2;
+        i_micro_kernel_config->vec_c1         = reserved_zmms - 3;
+        i_micro_kernel_config->vec_c2         = reserved_zmms - 4;
+        i_micro_kernel_config->vec_c3         = reserved_zmms - 5;
+        i_micro_kernel_config->vec_c4         = reserved_zmms - 6;
+        i_micro_kernel_config->vec_c5         = reserved_zmms - 7;
+        i_micro_kernel_config->vec_log2e      = reserved_zmms - 8;
+        i_micro_kernel_config->vec_ln2        = reserved_zmms - 9;
+        i_micro_kernel_config->vec_logfmax    = reserved_zmms - 10;
+        i_micro_kernel_config->vec_logfmin    = reserved_zmms - 11;
+        i_micro_kernel_config->vec_y          = reserved_zmms - 12;
+        i_micro_kernel_config->vec_z          = reserved_zmms - 13;
+        i_micro_kernel_config->vec_expmask    = reserved_zmms - 14;
+        i_micro_kernel_config->aux_mask       = reserved_mask_regs - 1;
 
-      i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
-      i_micro_kernel_config->vec_c0         = reserved_zmms - 2;
-      i_micro_kernel_config->vec_c1         = reserved_zmms - 3;
-      i_micro_kernel_config->vec_c2         = reserved_zmms - 4;
-      i_micro_kernel_config->vec_c3         = reserved_zmms - 5;
-      i_micro_kernel_config->vec_c4         = reserved_zmms - 6;
-      i_micro_kernel_config->vec_c5         = reserved_zmms - 7;
-      i_micro_kernel_config->vec_log2e      = reserved_zmms - 8;
-      i_micro_kernel_config->vec_ln2        = reserved_zmms - 9;
-      i_micro_kernel_config->vec_logfmax    = reserved_zmms - 10;
-      i_micro_kernel_config->vec_logfmin    = reserved_zmms - 11;
-      i_micro_kernel_config->vec_y          = reserved_zmms - 12;
-      i_micro_kernel_config->vec_z          = reserved_zmms - 13;
-      i_micro_kernel_config->vec_expmask    = reserved_zmms - 14;
-      i_micro_kernel_config->aux_mask       = reserved_mask_regs - 1;
+        libxsmm_generator_prepare_coeffs_exp_ps_5dts_avx512( io_generated_code,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c4,
+            i_micro_kernel_config->vec_c5,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_log2e,
+            i_micro_kernel_config->vec_ln2,
+            i_micro_kernel_config->vec_expmask,
+            i_micro_kernel_config->vec_logfmax,
+            i_micro_kernel_config->vec_logfmin,
+            i_micro_kernel_config->vector_name );
 
-      libxsmm_generator_prepare_coeffs_exp_ps_5dts_avx512( io_generated_code,
-          i_micro_kernel_config->vec_c0,
-          i_micro_kernel_config->vec_c1,
-          i_micro_kernel_config->vec_c2,
-          i_micro_kernel_config->vec_c3,
-          i_micro_kernel_config->vec_c4,
-          i_micro_kernel_config->vec_c5,
-          i_micro_kernel_config->vec_halves,
-          i_micro_kernel_config->vec_log2e,
-          i_micro_kernel_config->vec_ln2,
-          i_micro_kernel_config->vec_expmask,
-          i_micro_kernel_config->vec_logfmax,
-          i_micro_kernel_config->vec_logfmin,
-          i_micro_kernel_config->vector_name );
-
-      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
-#endif
+        i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+      }
     }
-
     i_micro_kernel_config->reserved_zmms = reserved_zmms;
   }
 
