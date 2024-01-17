@@ -279,7 +279,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       }
     } else if (l_is_Ai4_Bi8_gemm > 0) {
       int l_m_zpt_vregs = 3 + init_m_blocks;
-      if ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0) {
+      if ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0) {
         l_m_zpt_vregs += init_m_blocks;
       }
       while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1 + l_m_zpt_vregs) > l_micro_kernel_config.vector_reg_count) {
