@@ -1573,6 +1573,13 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VSUBPH", &mycode, LIBXSMM_X86_INSTR_VSUBPH, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VSUBSH", &mycode, LIBXSMM_X86_INSTR_VSUBSH, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VCVTW2PH", &mycode, LIBXSMM_X86_INSTR_VCVTW2PH, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPEXTRB", &mycode, LIBXSMM_X86_INSTR_VPEXTRB, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPEXTRD", &mycode, LIBXSMM_X86_INSTR_VPEXTRD, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPEXTRQ", &mycode, LIBXSMM_X86_INSTR_VPEXTRQ, 1, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPINSRB", &mycode, LIBXSMM_X86_INSTR_VPINSRB, 2, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPINSRD", &mycode, LIBXSMM_X86_INSTR_VPINSRD, 2, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPINSRQ", &mycode, LIBXSMM_X86_INSTR_VPINSRQ, 2, 0x01, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPERMQ", &mycode, LIBXSMM_X86_INSTR_VPERMQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
 
   /* testing AVX512 masking */
   test_mask_move( "mask_move_KMOVB_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVB_GPR_LD );
