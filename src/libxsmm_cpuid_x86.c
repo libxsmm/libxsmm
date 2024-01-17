@@ -510,6 +510,21 @@ LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
   return result;
 }
 
+LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void) {
+ unsigned int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *const l_env_bf8_gemm_via_stack_alloc_tensors = getenv("LIBXSMM_BF8_GEMM_VIA_STACK");
+  if ( 0 == l_env_bf8_gemm_via_stack_alloc_tensors ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_bf8_gemm_via_stack_alloc_tensors) != 0 ) {
+      result = 1;
+    }
+  }
+#endif
+  return result;
+}
+
 LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
 {
   /* handle signed and unsigned types */
