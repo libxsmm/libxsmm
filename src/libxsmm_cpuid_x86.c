@@ -480,6 +480,21 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   return result;
 }
 
+LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void) {
+  int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *const l_env_x86_use_high_prec_eltwise_approx = getenv("LIBXSMM_X86_HINT_USE_HIGH_PREC_ELTWISE_APPROX");
+  if ( 0 == l_env_x86_use_high_prec_eltwise_approx ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_x86_use_high_prec_eltwise_approx) != 0 ) {
+      result = 1;
+    }
+  }
+#endif
+  return result;
+}
+
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void) {
   int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
