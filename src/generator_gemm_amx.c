@@ -823,7 +823,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
   int vbias_reg = 31;
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
-  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 1 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 0 : 0;
   unsigned int col = 0;
   unsigned int gp_reg_bias = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
   unsigned int l_is_Ai4_Bi8_gemm = (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV) > 0) &&
@@ -1389,7 +1389,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     libxsmm_tile_config*          tile_config ) {
   unsigned int im = 0, in = 0, m_blocking = 0, n_blocking = 0, k_blocking = 0, ii = 0, m_tiles = 0, n_tiles = 0, l_k_pack_factor = 2;
   unsigned int has_fused_relu_bitmask = ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ? 1 : 0;
-  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 1 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 0 : 0;
 
   if (l_enforce_Mx1_amx_tile_blocking > 0) {
     i_micro_kernel_config->m_remainder  = 0;
@@ -1969,7 +1969,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
   unsigned int gp_reg_a         = LIBXSMM_X86_GP_REG_RDI;
   unsigned int gp_reg_b         = LIBXSMM_X86_GP_REG_RSI;
   unsigned short gp_save_bitmask = 0x2 | 0x4 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000;
-  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 1 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 0 : 0;
 
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
@@ -2257,7 +2257,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   libxsmm_gemm_descriptor *l_xgemm_desc = &l_xgemm_desc_mod;
   unsigned int m0 = 0, m1 = 0;
-  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 1 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 0 : 0;
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
