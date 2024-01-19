@@ -133,16 +133,20 @@ void libxsmm_generator_vloadstore_masked_vreg_rv64( libxsmm_generated_code* io_g
                                                        const unsigned int      i_adv_gpr,
                                                        const unsigned int      i_is_store,
                                                        const unsigned char     i_mask_reg );
+#endif
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_bcastload_masked_vreg_rv64_asimd( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_generated_code,
                                                             const unsigned int      i_gp_reg_addr,
                                                             const unsigned int      i_gp_reg_scratch,
                                                             const unsigned int      i_vec_reg,
                                                             const unsigned int      i_datatype_size,
                                                             const unsigned int      i_masked_elems,
+                                                            const unsigned int      i_vlen,
+                                                            const unsigned int      i_avlen,
                                                             const unsigned int      i_adv_gpr );
 
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_rv64_asimd( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      i_gp_reg_addr,

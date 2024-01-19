@@ -66,6 +66,7 @@ void libxsmm_rv64_instruction_rvv_setvli( libxsmm_generated_code* io_generated_c
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int zimm11    = (i_sew << 3 | i_lmul) & 0x3f;
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
@@ -73,7 +74,6 @@ void libxsmm_rv64_instruction_rvv_setvli( libxsmm_generated_code* io_generated_c
       return;
     }
 
-    unsigned int zimm11 = (i_sew << 3 | i_lmul) & 0x3f;
 
     /* fix bits */
     code[code_head]  = LIBXSMM_RV64_INSTR_GP_VSETVLI;
@@ -136,14 +136,13 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int uimm      = (i_sew << 3 | i_lmul) & 0x3f;
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
       return;
     }
-
-    unsigned int uimm = (i_sew << 3 | i_lmul) & 0x3f;
 
     /* fix bits */
     code[code_head]  = LIBXSMM_RV64_INSTR_GP_VSETIVLI;
@@ -616,6 +615,7 @@ void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_
     case LIBXSMM_RV64_INSTR_GP_FMIN_D:
     case LIBXSMM_RV64_INSTR_GP_FMAX_S:
     case LIBXSMM_RV64_INSTR_GP_FMAX_D:
+    case LIBXSMM_RV64_INSTR_GP_VFADD_VF:
       break;
     default:
       fprintf(stderr, "libxsmm_rv64_instruction_alu_compute: unexpected instruction number: %u\n", i_alu_instr);
@@ -1049,34 +1049,30 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
       unsigned int code_head = io_generated_code->code_size/4;
       unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+      int i_sign = 0;
+
+      unsigned int a_imm = i_imm;
+      unsigned int imm_lo;
+      unsigned int imm_hi;
+
       /* Ensure we have enough space */
       if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
         return;
       }
 
-      int i_sign = 0;
-      unsigned int a_imm = i_imm;
-
       if (i_imm < 0) {
         i_sign = 1;
         a_imm = (~abs(i_imm) + 1) & 0xfff;
-        /*a_imm = abs(i_imm);*/
       }
 
-      /*a_imm = a_imm >> 1;*/
-
       /* Generate immediate */
-      printf("Received immediate %x %x\n", i_imm, a_imm);
+      imm_lo = ((a_imm >> 11) & 0x1) | ((a_imm & 0xf) << 1);
+      imm_hi = ((a_imm & 0x3f0) >> 4) | (((i_sign)) << 6);
 
-      /* TODO: format definition */
-      unsigned int imm_lo = ((a_imm >> 11) & 0x1) | ((a_imm & 0xf) << 1);
-      /*unsigned int imm_hi = ((a_imm & 0x7e0) >> 5) | (((i_sign)) << 6);*/
-      unsigned int imm_hi = ((a_imm & 0x3f0) >> 4) | (((i_sign)) << 6);
-
-      printf("immediate low %x \n", imm_lo);
-      printf("immediate high %x \n", imm_hi);
-      fflush(stdout);
+      //printf("immediate low %x \n", imm_lo);
+      //printf("immediate high %x \n", imm_hi);
+      //fflush(stdout);
 
       /* fix bits */
       code[code_head]  = i_jmp_instr;
@@ -1137,16 +1133,15 @@ void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generate
     if ( io_generated_code->code_type > 1 ) {
       unsigned int code_head = io_generated_code->code_size/4;
       unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+      unsigned int imm_lo    = 0;
+      unsigned int imm_hi    = 0;
+      unsigned int imm_f     = 0;
 
       /* Ensure we have enough space */
       if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
         return;
       }
-
-      unsigned int imm_lo = 0;
-      unsigned int imm_hi = 0;
-      unsigned int imm_f  = 0;
 
       /* Generate immediate */
       imm_lo = (((i_imm & 0x7fe) << 9)|((i_imm >> 12) & 0xff));

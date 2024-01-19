@@ -455,65 +455,42 @@ void libxsmm_generator_vloadstore_masked_vreg_rv64( libxsmm_generated_code* io_g
     }
   }
 }
+#endif
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_bcastload_masked_vreg_rv64_asimd( libxsmm_generated_code* io_generated_code,
-                                                            const unsigned int      i_gp_reg_addr,
-                                                            const unsigned int      i_gp_reg_scratch,
-                                                            const unsigned int      i_vec_reg,
-                                                            const unsigned int      i_datatype_size,
-                                                            const unsigned int      i_masked_elems,
-                                                            const unsigned int      i_adv_gpr ) {
+void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned int      i_gp_reg_addr,
+                                                   const unsigned int      i_gp_reg_scratch,
+                                                   const unsigned int      i_vec_reg,
+                                                   const unsigned int      i_datatype_size,
+                                                   const unsigned int      i_masked_elems,
+                                                   const unsigned int      i_vlen,
+                                                   const unsigned int      i_avlen,
+                                                   const unsigned int      i_adv_gpr ) {
   unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_RV64_SVE128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT);
 
-  if ( l_is_sve ) {
-    int l_pred_reg = 0; /* TODO: find suitable predicate register */
-    /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
-    int l_instr = i_datatype_size == 1 ? LIBXSMM_RV64_INSTR_SVE_LD1RB_I_OFF :
-                  i_datatype_size == 2 ? LIBXSMM_RV64_INSTR_SVE_LD1RH_I_OFF :
-                  i_datatype_size == 4 ? LIBXSMM_RV64_INSTR_SVE_LD1RW_I_OFF :
-                                         LIBXSMM_RV64_INSTR_SVE_LD1RD_I_OFF ;
-     /* mark the predicate element to only load i_masked_elems elements, or all if -1 */
-    libxsmm_generator_set_p_register_rv64_sve( io_generated_code, l_pred_reg, i_masked_elems ? (int)(i_masked_elems * i_datatype_size) : -1, i_gp_reg_scratch );
-    libxsmm_rv64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, LIBXSMM_RV64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
-    if ( l_offset ){/* post increment address by offset */
-      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
-    }
-    libxsmm_generator_set_p_register_rv64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch );
-  } else {
-    if ( i_masked_elems != 1 ) {
-      if ( i_adv_gpr == 0 ) {
-        libxsmm_rv64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_RV64_INSTR_ASIMD_LD1R,
-                                                         i_gp_reg_addr, LIBXSMM_RV64_GP_REG_UNDEF, i_vec_reg,
-                                                        (i_datatype_size == 4) ?  LIBXSMM_RV64_ASIMD_TUPLETYPE_4S : LIBXSMM_RV64_ASIMD_TUPLETYPE_2D );
-      } else {
-        libxsmm_rv64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_RV64_INSTR_ASIMD_LD1R_R_POST,
-                                                        i_gp_reg_addr, LIBXSMM_RV64_GP_REG_XZR, i_vec_reg,
-                                                        (i_datatype_size == 4) ?  LIBXSMM_RV64_ASIMD_TUPLETYPE_4S : LIBXSMM_RV64_ASIMD_TUPLETYPE_2D );
-      }
-      if ( i_masked_elems != 0 ) {
-        libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch, 0x0 );
-        /* todo: this is currently only implemented for fp32; the asimd_widths need to be adjusted for other types */
-        if ( i_masked_elems == 2 ) {
-          libxsmm_rv64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_RV64_INSTR_ASIMD_MOV_G_V,
-                                                      i_gp_reg_scratch, i_vec_reg, 1, LIBXSMM_RV64_ASIMD_WIDTH_D );
-        } else if ( i_masked_elems == 3 ) {
-          libxsmm_rv64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_RV64_INSTR_ASIMD_MOV_G_V,
-                                                      i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_RV64_ASIMD_WIDTH_S );
-        } else {
-          /* should not happen */
-        }
-      }
-    } else {
-      libxsmm_rv64_instruction_asimd_compute( io_generated_code, LIBXSMM_RV64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_RV64_ASIMD_TUPLETYPE_16B );
-      libxsmm_rv64_instruction_asimd_move( io_generated_code, LIBXSMM_RV64_INSTR_ASIMD_LDR_I_POST,
-                                              i_gp_reg_addr, LIBXSMM_RV64_GP_REG_UNDEF, l_offset, i_vec_reg,
-                                              (i_datatype_size == 4) ? LIBXSMM_RV64_ASIMD_WIDTH_S : LIBXSMM_RV64_ASIMD_WIDTH_D );
-    }
+  /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
+  int l_instr = i_datatype_size == 1 ? LIBXSMM_RV64_INSTR_GP_LB :
+    i_datatype_size == 2 ? LIBXSMM_RV64_INSTR_GP_LH : i_datatype_size == 4 ? LIBXSMM_RV64_INSTR_GP_LW :
+    LIBXSMM_RV64_INSTR_GP_LD ;
+
+  /* Set vector length and load required number of elements */
+  libxsmm_rv64_instruction_rvv_setvli( io_generated_code, i_avlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+
+  libxsmm_rv64_instruction_rvv_move( io_generated_code, l_instr, i_gp_reg_addr, i_gp_reg_scratch, i_vec_reg, 1 );
+
+  /* Set vector length to full length */
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+
+  /* Broadcast loaded value to */
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFADD_VF, i_vec_reg, i_vec_reg, i_vec_reg, 1);
+
+  if ( l_offset ){/* post increment address by offset */
+    libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_addr, i_gp_reg_addr, l_offset);
   }
 }
 
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_rv64_asimd( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      i_gp_reg_addr,
