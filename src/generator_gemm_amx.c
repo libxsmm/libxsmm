@@ -2089,6 +2089,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
 
   /* Readjusting descriptor for upcoming bf16 gemm */
   if ((i_xgemm_desc_orig->m % 16 == 0) || (i_xgemm_desc_orig->m <= 32) || l_enforce_Mx1_amx_tile_blocking > 0) {
+    if ((l_enforce_Mx1_amx_tile_blocking > 0) && (i_xgemm_desc_orig->m > 32)) {
+      if ( (i_xgemm_desc_orig->m % 16 == 0) || (i_xgemm_desc_orig->m % 32 == 0) || (i_xgemm_desc_orig->m % 48 == 0) || (i_xgemm_desc_orig->m % 64 == 0) ) {
+      } else {
+        i_xgemm_desc->m = i_xgemm_desc_orig->m - (i_xgemm_desc_orig->m % 64);
+      }
+    }
   } else {
     i_xgemm_desc->m = i_xgemm_desc_orig->m - (i_xgemm_desc_orig->m % 32);
   }
