@@ -1070,10 +1070,6 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
       imm_lo = ((a_imm >> 11) & 0x1) | ((a_imm & 0xf) << 1);
       imm_hi = ((a_imm & 0x3f0) >> 4) | (((i_sign)) << 6);
 
-      //printf("immediate low %x \n", imm_lo);
-      //printf("immediate high %x \n", imm_hi);
-      //fflush(stdout);
-
       /* fix bits */
       code[code_head]  = i_jmp_instr;
       /* setting RS1 */

@@ -398,8 +398,6 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
   unsigned int l_is_comp_unzip = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) ? 1 : 0;
   unsigned int l_is_comp_zip = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP)) ? 1 : 0;
 
- //LIBXSMM_UNUSED(cur_vreg);
- //LIBXSMM_UNUSED(bcast_input);
  LIBXSMM_UNUSED(l_m_adjust);
  LIBXSMM_UNUSED(l_is_sve);
  LIBXSMM_UNUSED(l_is_comp_unzip);
