@@ -1127,7 +1127,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int pf_dist = 0;
   int pf_dist_l1 = 0;
   int emit_tilestores = ((i_brgemm_loop == (i_micro_kernel_config->cur_unroll_factor - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1) && (i_micro_kernel_config->is_peeled_br_loop == 1)) ? 1 : 0;
-  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 0 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 1 : 0;
   int use_paired_tilestores = ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0) && (l_enforce_Mx1_amx_tile_blocking == 0)) ? 1 : 0;
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
