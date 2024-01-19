@@ -449,7 +449,7 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
           offset = (bcast_scalar == 1) ?  i_micro_kernel_config->datatype_size_in:l_ld_bytes*i_n_blocking;
           if (im == 0) {
             if ((bcast_row == 1) || ((bcast_scalar == 1) && (in == 0))) {
-              // Masked load and broadcast
+              /* Masked load and broadcast */
               libxsmm_generator_bcastload_masked_vreg_rv64( io_generated_code, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_1, cur_vreg,
                   i_micro_kernel_config->datatype_size_in, (im == i_m_blocking - 1) ? 1 : 0, i_vlen, i_avlen, 1 );
             } else if ((bcast_scalar == 1) && (in > 0) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY || i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) ) {
