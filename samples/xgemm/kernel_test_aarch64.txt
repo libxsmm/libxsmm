@@ -1,3 +1,5 @@
+u4u8i32i32gemm_nn_eqld
+u4u8i32i32gemm_nn_gtld
 mmla_sui8f32gemm_nn_eqld
 mmla_sui8f32gemm_nn_gtld
 mmla_sui8i32gemm_nn_eqld
