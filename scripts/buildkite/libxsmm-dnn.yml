@@ -1,0 +1,115 @@
+env:
+  RANDOMEX: "clang-system gcc-system intel-next"
+  LIBXSMM_VERBOSE_BANNER: 0
+  LIBXSMM_VERBOSE: 4
+  TOOL_ENABLED: 0
+  ENV_PYTHON: 1
+  CONFIG: "random"
+  FORTRAN: 0
+  ARTOFF: 1
+  SYM: 2
+
+steps:
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_01_07thr.slurm"
+    label: "allconv_f32_ppad_skx_01_07thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_01_13thr.slurm"
+    label: "allconv_f32_ppad_skx_01_13thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_01_28thr.slurm"
+    label: "allconv_f32_ppad_skx_01_28thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_11_07thr.slurm"
+    label: "allconv_f32_ppad_skx_11_07thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_11_13thr.slurm"
+    label: "allconv_f32_ppad_skx_11_13thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_28_16thr.slurm"
+    label: "allconv_f32_ppad_skx_28_16thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_28_28thr.slurm"
+    label: "allconv_f32_ppad_skx_28_28thr"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_50_28thr_fwd.slurm"
+    label: "allconv_f32_ppad_skx_50_28thr_fwd"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_50_28thr_bwd.slurm"
+    label: "allconv_f32_ppad_skx_50_28thr_bwd"
+
+  - command: "libxsmm/scripts/tool_test.sh tests/conv/kernel_test/allconv_f32_ppad_skx_50_28thr_upd.slurm"
+    label: "allconv_f32_ppad_skx_50_28thr_upd"
+
+  - command: "libxsmm/scripts/tool_test.sh 1"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "ResNet-50"
+
+  - command: "libxsmm/scripts/tool_test.sh 2"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "AlexNet"
+
+  - command: "libxsmm/scripts/tool_test.sh 3"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "Overfeat"
+
+  - command: "libxsmm/scripts/tool_test.sh 4"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "GoogleNet-v1"
+
+  - command: "libxsmm/scripts/tool_test.sh 5"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "GoogleNet-v3"
+
+  - command: "libxsmm/scripts/tool_test.sh 6"
+    env:
+      CONFIG: "intel-2015"
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+      DBG: 1
+    label: "dcGAN"
+
+  - command: "libxsmm/scripts/tool_test.sh 7"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "VGGa"
+
+  - command: "libxsmm/scripts/tool_test.sh 8"
+    env:
+      TESTSET: "test-conv"
+      LIBXSMM_TARGETS: "hsw cpuid"
+      MB_THREADS: "56_56"
+      PASSES: "f32_A bf16_A"
+    label: "DeepBench"
+
+  - command: "libxsmm/scripts/tool_test.sh 1"
+    env:
+      OMP_PROC_BIND: close
+      OMP_PLACES: threads
+      TESTSET: test-fc
+      #LIMIT: 0
+    label: "fullyconnected MLP (FP32)"
