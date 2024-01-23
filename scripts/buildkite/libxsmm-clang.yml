@@ -1,0 +1,73 @@
+env:
+  CONFIGS: "clang-* clang-160"
+  CONFIGEX: "clang-37 clang-38"
+  LIBXSMM_TARGET_HIDDEN: 1
+  SHOW_PARTITION: 0
+  FORTRAN: 0
+  SYM: 2
+
+steps:
+  - label: "#1"
+    command: "scripts/tool_test.sh 1"
+
+  - label: "#2"
+    command: "scripts/tool_test.sh 2"
+
+  - label: "#3"
+    command: "scripts/tool_test.sh 3"
+
+  - label: "#4"
+    command: "scripts/tool_test.sh 4"
+
+  - label: "#5"
+    command: "scripts/tool_test.sh 5"
+
+  - label: "#6"
+    command: "scripts/tool_test.sh 6"
+
+  - label: "#7"
+    command: "scripts/tool_test.sh 7"
+
+  - label: "#8"
+    command: "scripts/tool_test.sh 8"
+
+  - label: "#9"
+    command: "scripts/tool_test.sh 9"
+
+  - label: "#10"
+    command: "scripts/tool_test.sh 10"
+
+  - label: "#11"
+    command: "scripts/tool_test.sh 11"
+
+  - label: "#12"
+    command: "scripts/tool_test.sh 12"
+    env:
+      CONFIG: "clang-160"
+      STATIC_ANALYSIS: 1
+
+  - label: "PyFR"
+    command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
+    env:
+      CONFIG: "clang-160"
+      PARTITIONS: "clxap"
+      MAKETGT: "all"
+      #ENV_PYTHON: "matplotlib"
+      #ENV_PYTHON: "1"
+      LOGRPTFMT: "svg pdf"
+      LOGRPTSUM: "mean"
+      LOGRPTQRY: ""
+
+  - label: "FSSPMDM"
+    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    env:
+      ENVS: "LIBXSMM_TARGET=x86 LIBXSMM_TARGET=wsm LIBXSMM_TARGET=avx"
+      CONFIG: "clang-160"
+
+  - label: "FSSPMDM-HINT"
+    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    env:
+      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 FSSPMDM_NOTUNE=1"
+      PARTITIONS: "clxap"
+      LIBXSMM_TARGET: avx2
+      CONFIG: "clang-160"

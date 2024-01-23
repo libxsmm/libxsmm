@@ -1,0 +1,117 @@
+env:
+  LIBXSMM_VERBOSE_BANNER: 0
+  LIBXSMM_TARGET_HIDDEN: 1
+  LIBXSMM_VERBOSE: 1
+  SHOW_PARTITION: 0
+  INSTALL: "install"
+  PEDANTIC: 2
+  PLATFORM: 2
+  SPACES: 1
+  SYM: 2
+
+steps:
+  - label: "Normalized"
+    command: "scripts/tool_test.sh 13"
+    env:
+      STATIC_ANALYSIS: 1
+  - wait
+
+  - label: "Quick-SA"
+    command: "scripts/tool_test.sh 12"
+    env:
+      CONFIG: clang-160
+      STATIC_ANALYSIS: 1
+
+  - label: "GCC"
+    command: "scripts/tool_test.sh 3"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: gcc-95
+
+  - label: "GCC-OLD"
+    command: "scripts/tool_test.sh 6"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIGS: "gcc-42 gcc-49"
+
+  - label: "GCC-SKX"
+    command: "scripts/tool_test.sh 1"
+    env:
+      CONFIG: gcc-81
+      AVX: 3
+
+  - label: "GCC-NEW"
+    command: "scripts/tool_test.sh 11"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: gcc-131
+      LIBXSMM_MALLOC: 1
+      MALLOC: -1
+
+  - label: "Clang"
+    command: "scripts/tool_test.sh 4"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: clang-160
+      FORTRAN: 0
+      MALLOC: 1
+
+  - label: "Clang-OLD"
+    command: "scripts/tool_test.sh 1"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: clang-37
+
+  - label: "Clang-SKX"
+    command: "scripts/tool_test.sh 1"
+    env:
+      CONFIG: clang-90
+      AVX: 3
+
+  - label: "Intel"
+    command: "scripts/tool_test.sh 5"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: intel-2023
+
+  - label: "Intel-SKX"
+    command: "scripts/tool_test.sh 2"
+    env:
+      CONFIG: intel-2023
+      AVX: 3
+
+  - label: "GFortran"
+    command: "scripts/tool_test.sh 5"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: gcc-131
+
+  - label: "Mixed"
+    command: "scripts/tool_test.sh 5"
+    env:
+      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      CONFIG: clang-160
+
+  #- label: "PGI"
+  #  command: "scripts/tool_test.sh 11"
+  #  env:
+  #    CONFIG: pgi
+
+  - label: "ABI"
+    command: "scripts/tool_test.sh 14"
+    env:
+      CONFIG: gcc-131
+      STATIC_ANALYSIS: 1
+
+  - wait
+  - label: "Install Library"
+    command: "make GNU=1 PREFIX=${LIBXSMMROOT} CLEAN=1 install-dev -j"
+    if: build.branch == "main"
+
+  - wait
+  - label: "DBCSR"
+    trigger: cp2k-dbcsr
+    async: true
+    build:
+      message: "LIBXSMM ${BUILDKITE_COMMIT}"
+    if: build.branch == "main" && build.author.teams includes "cp2k"

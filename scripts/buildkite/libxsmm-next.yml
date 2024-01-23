@@ -1,0 +1,19 @@
+env:
+  RANDOMEX: "clang-3. clang-4. clang-5. gcc-4. gcc-5. gcc-6. gcc-7. intel-2014 intel-2015 intel-2016 intel-next pgi"
+  LIBXSMM_VERBOSE: 4
+  CONFIG: "random"
+  FORTRAN: 0
+  SYM: 2
+
+steps:
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_bf16only.sh"
+    env:
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
+      LIBXSMM_TARGET: srf
+    label: "SMMs BF16 (SRF)"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_f16f32only.sh"
+    env:
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -gnr --"
+      LIBXSMM_TARGET: gnr
+    label: "SMMs F16F32 (GNR)"
