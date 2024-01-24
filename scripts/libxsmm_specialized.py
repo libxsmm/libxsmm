@@ -87,10 +87,13 @@ if __name__ == "__main__":
                     " LIBXSMM_UNUSED(pb);"
                     " LIBXSMM_UNUSED(pc);"
                 )
+            print("#pragma GCC diagnostic push")
+            print("#pragma GCC diagnostic ignored \"-Wcast-qual\"")
             print(
                 "  LIBXSMM_INLINE_XGEMM(float, float, &transa, &transb,"
                 " &m, &n, &k, &alpha, a, &m, b, &k, &beta, c, &m);"
             )
+            print("#pragma GCC diagnostic pop")
             print("#endif")
             print("}")
             print
@@ -176,10 +179,13 @@ if __name__ == "__main__":
                     " LIBXSMM_UNUSED(pb);"
                     " LIBXSMM_UNUSED(pc);"
                 )
+            print("#pragma GCC diagnostic push")
+            print("#pragma GCC diagnostic ignored \"-Wcast-qual\"")
             print(
                 "  LIBXSMM_INLINE_XGEMM(double, double, &transa, &transb,"
                 " &m, &n, &k, &alpha, a, &m, b, &k, &beta, c, &m);"
             )
+            print("#pragma GCC diagnostic pop")
             print("#endif")
             print("}")
             print

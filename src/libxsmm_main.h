@@ -12,8 +12,6 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
-#include <libxsmm_memory.h>
-#include <libxsmm_sync.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -191,18 +189,7 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
-/** TODO double check it's save to not set the descriptor to zero
- *we saw issues with re-jit due to different hash */
-#if 0
-#if defined(LIBXSMM_UNPACKED) || !defined(NDEBUG)
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
-#else
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) \
-    /*if (LIBXSMM_GEMM_FLAG_DESC_ISBIG <= (FLAGS)) LIBXSMM_MEMSET127(DST, 0, SIZE)*/
-#endif
-#else
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
-#endif
+#define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
   LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \
   LIBXSMM_DESCRIPTOR_CLEAR_AUX(BLOB, LIBXSMM_DESCRIPTOR_MAXSIZE, 0)
@@ -318,6 +305,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_bcsc_descripto
   unsigned int bn;
 } libxsmm_pspgemm_bcsc_descriptor;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pgemm_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+  unsigned int packed_width;
+} libxsmm_pgemm_descriptor;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   unsigned int packed_width;
@@ -373,7 +365,8 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_MELTW      = LIBXSMM_KERNEL_KIND_MELTW,
   LIBXSMM_BUILD_KIND_MEQN       = LIBXSMM_KERNEL_KIND_MEQN,
   LIBXSMM_BUILD_KIND_USER       = LIBXSMM_KERNEL_KIND_USER,
-  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_UNREGISTERED,
+  LIBXSMM_BUILD_KIND_PGEMM      = LIBXSMM_KERNEL_UNREGISTERED,
+  LIBXSMM_BUILD_KIND_PGEMMRMAC,
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_PSPGEMM_CSR,
   LIBXSMM_BUILD_KIND_PSPGEMM_CSC,
@@ -409,6 +402,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_build_request {
     const libxsmm_pspgemm_csr_descriptor* pspgemm_csr;
     const libxsmm_pspgemm_csc_descriptor* pspgemm_csc;
     const libxsmm_pspgemm_bcsc_descriptor* pspgemm_bcsc;
+    const libxsmm_pgemm_descriptor* pgemm;
     const libxsmm_pgemm_ac_rm_descriptor* pgemmacrm;
     const libxsmm_pgemm_bc_rm_descriptor* pgemmbcrm;
     const libxsmm_csr_reg_descriptor* sreg;

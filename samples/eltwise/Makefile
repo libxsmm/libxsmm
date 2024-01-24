@@ -13,9 +13,6 @@ DFLAGS = $(NULL)
 OMP = 1
 SYM = 1
 
-# explore AVX/ARCH=native
-SSE = 0
-
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
@@ -39,7 +36,7 @@ SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter \
-          $(OUTDIR)/eltwise_binary_simple \
+          $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_ternary_simple \
           $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform \
           $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu \
           $(OUTDIR)/eltwise_unary_quantization
@@ -51,7 +48,7 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts
+scripts: $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts  $(TSTDIR)/.generate_ternary_test_scripts
 
 $(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_test_scripts.sh Makefile
 	$(info Creating unary simple test scripts...)
@@ -88,6 +85,11 @@ $(TSTDIR)/.generate_binary_test_scripts: $(TSTDIR)/generate_binary_test_scripts.
 	@cd $(TSTDIR) && ./generate_binary_test_scripts.sh >/dev/null
 	@-touch $@
 
+$(TSTDIR)/.generate_ternary_test_scripts: $(TSTDIR)/generate_ternary_test_scripts.sh Makefile
+	$(info Creating ternary test scripts...)
+	@cd $(TSTDIR) && ./generate_ternary_test_scripts.sh >/dev/null
+	@-touch $@
+
 $(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
@@ -96,6 +98,9 @@ $(OUTDIR)/eltwise_unary_gather_scatter: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_
 
 $(OUTDIR)/eltwise_binary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_binary_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_binary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_ternary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_ternary_simple-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_ternary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/eltwise_unary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -148,8 +153,10 @@ endif
 	@-rm -f $(TSTDIR)/.generate_unary_dropout_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_gather_scatter_test_scripts
 	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
+	@-rm -f $(TSTDIR)/.generate_ternary_test_scripts
 	@-rm -f $(TSTDIR)/unary_*.sh
 	@-rm -f $(TSTDIR)/binary_*.sh
+	@-rm -f $(TSTDIR)/ternary_*.sh
 
 .PHONY: deepclean
 deepclean: realclean

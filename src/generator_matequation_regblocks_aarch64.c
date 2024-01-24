@@ -1136,7 +1136,7 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block_aarch64( libxsmm_ge
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V, right_vreg, LIBXSMM_AARCH64_SVE_REG_UNDEF, 16, right_vreg, l_pred_reg, l_sve_type);
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V, left_vreg, right_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
       } else {
-        if ( l_is_sve ){
+        if ( l_is_sve ) {
           if ((binary_op_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P) && (left_vreg != dst_vreg) && (right_vreg != dst_vreg)) {
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V, left_vreg, left_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, binary_op_instr, dst_vreg, right_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
@@ -1185,7 +1185,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
       right_vreg = i_right_start_vreg + in * i_m_blocking + im;
       dst_vreg = i_dst_start_vreg + in * i_m_blocking + im;
       if (i_op_type == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD) {
-        if ( l_is_sve ){
+        if ( l_is_sve ) {
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, left_vreg, dst_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V, right_vreg, dst_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
         } else {
@@ -1193,7 +1193,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V, right_vreg, dst_vreg, 0, dst_vreg, l_tupletype);
         }
       } else {
-        if ( l_is_sve ){
+        if ( l_is_sve ) {
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
         } else {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, l_tupletype);
@@ -1558,7 +1558,7 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
       i_micro_kernel_config->reduce_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms += i_micro_kernel_config->reserved_zmms + 1;
 
-      if ( l_is_sve ){
+      if ( l_is_sve ) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
                                                  i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg, 0, i_micro_kernel_config->reduce_vreg,
                                                  0, libxsmm_generator_aarch64_get_sve_type(4) );

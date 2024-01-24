@@ -42,7 +42,6 @@ void* dynamic_reset_zero_create() {
   mycode.code_size = 0;
   mycode.code_type = 2;
   mycode.last_error = 0;
-  mycode.sf_size = 0;
   memset( mycode.generated_code, 0, mycode.buffer_size );
 
   libxsmm_aarch64_instruction_asimd_move( &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,

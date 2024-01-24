@@ -1,0 +1,74 @@
+env:
+  TOOL_TEST: "$${BUILDKITE_BUILD_CHECKOUT_PATH}/libxsmm/scripts/tool_test.sh"
+  PARTITIONS: "spr-all"
+  CONFIG: "intel-2022"
+  LOGRPTBND: "+"
+  ENV_PYTHON: 1
+  FORTRAN: 0
+
+steps:
+  - label: "ResNet-50 (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 32 -1 f32 F 1 0 64 64 1"
+
+  - label: "ResNet-50 (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 32 -1 bf16 F 1 0 64 64 1"
+
+  - label: "Alexnet (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 256 -1 f32 F 1 0 64 64 2"
+
+  - label: "Alexnet (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 256 -1 bf16 F 1 0 64 64 2"
+
+  - label: "dcGAN (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 128 -1 f32 F 1 0 64 64 3"
+
+  - label: "dcGAN (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 64 -1 bf16 F 1 0 64 64 3"
+
+  - label: "Deepbench (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 2 -1 f32 F 1 0 64 64 4"
+
+  - label: "Deepbench (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 2 -1 bf16 F 1 0 64 64 4"
+
+  - label: "GoogleNet-v1 (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 32 -1 f32 F 1 0 64 64 5"
+
+  - label: "GoogleNet-v1 (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 32 -1 bf16 F 1 0 64 64 5"
+
+  - label: "GoogleNet-v3 (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 16 -1 f32 F 1 0 64 64 6"
+
+  - label: "GoogleNet-v3 (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 16 -1 bf16 F 1 0 64 64 6"
+
+  - label: "MaskRCNN (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 4 -1 f32 F 1 0 64 64 7"
+
+  - label: "MaskRCNN (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 2 -1 bf16 F 1 0 64 64 7"
+
+  - label: "Overfeat (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 32 -1 f32 F 1 0 64 64 8"
+
+  - label: "Overfeat (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 32 -1 bf16 F 1 0 64 64 8"
+
+  - label: "VGGa (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 64 -1 f32 F 1 0 64 64 9"
+
+  - label: "VGGa (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/conv/run_convs.sh 1 64 -1 bf16 F 1 0 64 64 9"
+
+  #- label: "VGGa-HR (fwd, mb=1, f32)"
+  #  command: "${TOOL_TEST} tests/conv/run_convs.sh 1 2 -1 f32 F 1 0 64 64 10"
+
+  #- label: "VGGa-HR (fwd, mb=1, bf16)"
+  #  command: "${TOOL_TEST} tests/conv/run_convs.sh 1 2 -1 bf16 F 1 0 64 64 10"
+
+  - label: "FC (fwd, mb=1, f32)"
+    command: "${TOOL_TEST} tests/fc/run_fullyconnected.sh f32 150000 1 F 0 32 32 32 0"
+
+  - label: "FC (fwd, mb=1, bf16)"
+    command: "${TOOL_TEST} tests/fc/run_fullyconnected.sh bf16 150000 1 F 0 32 32 32 1"

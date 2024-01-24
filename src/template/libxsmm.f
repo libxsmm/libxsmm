@@ -90,14 +90,12 @@
      &    LIBXSMM_PREFETCH_AUTO                     = -1,               &
           ! No prefetching and no prefetch function signature.
      &    LIBXSMM_PREFETCH_NONE                     = 0,                &
-          ! Only function prefetch signature.
-     &    LIBXSMM_PREFETCH_SIGONLY                  = 1,                &
           ! Prefetch PA using accesses to A.
-     &    LIBXSMM_GEMM_PREFETCH_AL2                 = 2,                &
+     &    LIBXSMM_GEMM_PREFETCH_AL2                 = 1,                &
           ! Prefetch PB using accesses to C.
-     &    LIBXSMM_GEMM_PREFETCH_BL2_VIA_C           = 4,                &
+     &    LIBXSMM_GEMM_PREFETCH_BL2_VIA_C           = 2,                &
           ! Prefetch A ahead.
-     &    LIBXSMM_GEMM_PREFETCH_AL2_AHEAD           = 8,                &
+     &    LIBXSMM_GEMM_PREFETCH_AL2_AHEAD           = 4,                &
           ! Composed prefetch strategies.
      &    LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C        = IOR(              &
      &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
@@ -106,7 +104,8 @@
      &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
      &        LIBXSMM_GEMM_PREFETCH_AL2_AHEAD),                         &
           ! Current B into L1.
-     &    LIBXSMM_GEMM_PREFETCH_BL1                 = 16
+     &    LIBXSMM_GEMM_PREFETCH_BL1                 = 8,                &
+     &    LIBXSMM_GEMM_PREFETCH_C                   = 64
 
         !> Enumerates the available target architectures and instruction
         !> set extensions as returned by libxsmm_get_target_archid().

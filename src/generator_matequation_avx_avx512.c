@@ -340,6 +340,21 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   }
 
   /* Now push to RSP the callee-save registers */
+  /* on windows we also have to save xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+  {
+    unsigned int l_i;
+    unsigned int l_simd_store_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_ST
+                                                                                  : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+    /* decrease rsp by 160 (10x16) */
+    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 160);
+    /* save 10 xmm onto the stack */
+    for (l_i = 0; l_i < 10; ++l_i) {
+      libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_store_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+    }
+  }
+#endif
   if (skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
@@ -395,6 +410,21 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
   }
+  /* on windows we also have to restore xmm6-xmm15 */
+#if defined(_WIN32) || defined(__CYGWIN__)
+  {
+    unsigned int l_i;
+    unsigned int l_simd_load_instr = (io_generated_code->arch < LIBXSMM_X86_AVX) ? LIBXSMM_X86_INSTR_MOVUPS_LD
+                                                                                 : LIBXSMM_X86_INSTR_VMOVUPS_LD;
+    /* save 10 xmm onto the stack */
+    for (l_i = 0; l_i < 10; ++l_i) {
+      libxsmm_x86_instruction_vec_compute_mem_1reg_mask(io_generated_code, l_simd_load_instr, 'x', LIBXSMM_X86_GP_REG_RSP,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, 144 - (l_i * 16), 0, 6 + l_i, 0, 0);
+    }
+    /* increase rsp by 160 (10x16) */
+    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 160);
+  }
+#endif
 
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
@@ -494,6 +524,23 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
          libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(node->info.u_op.type) ||
          libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ||
          libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(node->info.u_op.type) ) {
+      result = 1;
+    }
+  }
+
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+    if (node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
+      result = 1;
+    }
+  }
+
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+    if (node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ ||
+        node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE) {
       result = 1;
     }
   }
