@@ -1,5 +1,5 @@
 fp32_spmm_eqld
-fp32_spmm_gtl
+fp32_spmm_gtld
 bf16bf16_spmm_eqld
 bf16bf16_spmm_gtld
 bf16f32_spmm_eqld
