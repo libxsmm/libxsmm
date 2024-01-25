@@ -1822,15 +1822,15 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     unsigned int k_gp_reg = LIBXSMM_X86_GP_REG_R9;
     /* Peel off first iteration */
     libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, 0, 0, 0, 0, fully_unrolled_brloop);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, l_k_blocking*i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in);
 
     /* K loop here */
     libxsmm_generator_gemm_header_kbitmap_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, k_gp_reg);
 
     libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, 0, 0, 0, 1, fully_unrolled_brloop);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, l_k_blocking*i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in);
     libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, 0, 0, 0, 2, fully_unrolled_brloop);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, l_k_blocking*i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in);
 
     libxsmm_generator_gemm_footer_kbitmap_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, k_gp_reg, ((i_xgemm_desc->k/l_k_blocking)-2)/2 );
 

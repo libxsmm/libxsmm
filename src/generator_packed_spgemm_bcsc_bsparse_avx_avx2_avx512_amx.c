@@ -710,7 +710,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
         libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
         /* Adjust C pointer */
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_dynamic_n_gpr, l_cur_column_gpr );
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, l_cur_column_gpr, i_bn * l_micro_kernel_config.datatype_size_out );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, l_cur_column_gpr, (long long)i_bn * l_micro_kernel_config.datatype_size_out );
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_sub_instruction, l_cur_column_gpr, l_gp_reg_mapping.gp_reg_c );
       } else {
         /* close n loop */
@@ -722,7 +722,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
         libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
         /* Adjust C pointer */
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_dynamic_n_gpr, l_cur_column_gpr );
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, l_cur_column_gpr, i_bn * i_packed_width * l_micro_kernel_config.datatype_size_out );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, l_cur_column_gpr, (long long)i_bn * i_packed_width * l_micro_kernel_config.datatype_size_out );
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_sub_instruction, l_cur_column_gpr, l_gp_reg_mapping.gp_reg_c );
       }
       /* advance M */
@@ -976,11 +976,11 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
 
     if (l_is_AT_CT_kernel > 0) {
       /* Prep reg_a with "k" offset */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_kloop, i_bk * i_micro_kernel_config->datatype_size_in);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_kloop, (long long)i_bk * i_micro_kernel_config->datatype_size_in);
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_kloop);
     } else {
       /* Prep reg_a with "k" offset */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_kloop, i_bk * i_packed_width * i_micro_kernel_config->datatype_size_in);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_kloop, (long long)i_bk * i_packed_width * i_micro_kernel_config->datatype_size_in);
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_kloop);
     }
     /* Prep reg_b with "k" offset */
@@ -1010,14 +1010,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
             l_AT_CT_ab_vmove_instr,
             i_gp_reg_mapping->gp_reg_help_2,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            ((long long) i_bk * l_n_in_block + l_fma_i * l_vnni_block_size * i_simd_packed_width + l_n_block_id * l_n_cols_kernel * i_bk) * i_micro_kernel_config->datatype_size_in,
+            ((long long) i_bk * l_n_in_block + (long long)l_fma_i * l_vnni_block_size * i_simd_packed_width + (long long) l_n_block_id * l_n_cols_kernel * i_bk) * i_micro_kernel_config->datatype_size_in,
             l_AT_CT_vname, l_max_reg_block+i_packed_blocking,
             ((l_simd_packed_remainder > 0) && (l_fma_i == l_fma_iters - 1) && (l_use_short_vec == 0)) ? 1 : 0,
             ((l_simd_packed_remainder > 0) && (l_fma_i == l_fma_iters - 1) && (l_use_short_vec == 0)) ? l_input_bf16_mask : 0, 0 );
 
           if (l_pf_dist_B > 0) {
             if (l_fma_i == 0 && l_n_block_id == 0 && l_n_in_block == 0) {
-             libxsmm_generator_packed_spgemm_bcsc_prefetch_B_block_in_L1( io_generated_code, i_bk*i_bn*i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_help_2, l_pf_dist_B*i_bk*i_bn*i_micro_kernel_config->datatype_size_in);
+             libxsmm_generator_packed_spgemm_bcsc_prefetch_B_block_in_L1( io_generated_code, i_bk*i_bn*i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_help_2, (long long)l_pf_dist_B*i_bk*i_bn*i_micro_kernel_config->datatype_size_in);
             }
           }
 
@@ -1060,13 +1060,13 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
               LIBXSMM_X86_INSTR_VBROADCASTSS,
               i_gp_reg_mapping->gp_reg_help_2,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((long long) i_bk * l_n_in_block + l_fma_i * l_vnni_block_size + l_n_block_id * l_n_cols_kernel * i_bk) * i_micro_kernel_config->datatype_size_in,
+              ((long long) i_bk * l_n_in_block + (long long)l_fma_i * l_vnni_block_size + (long long)l_n_block_id * l_n_cols_kernel * i_bk) * i_micro_kernel_config->datatype_size_in,
               i_micro_kernel_config->vector_name,
               l_max_reg_block+i_packed_blocking, 0, 1, 0 );
 
           if (l_pf_dist_B > 0) {
             if (l_fma_i == 0 && l_n_block_id == 0 && l_n_in_block == 0) {
-             libxsmm_generator_packed_spgemm_bcsc_prefetch_B_block_in_L1( io_generated_code, i_bk*i_bn*i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_help_2, l_pf_dist_B*i_bk*i_bn*i_micro_kernel_config->datatype_size_in);
+             libxsmm_generator_packed_spgemm_bcsc_prefetch_B_block_in_L1( io_generated_code, i_bk*i_bn*i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_help_2, (long long)l_pf_dist_B*i_bk*i_bn*i_micro_kernel_config->datatype_size_in);
             }
           }
 
@@ -1081,8 +1081,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
         }
       }
       if ( l_assm_fma_iters > 1 ) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_2, l_fma_iters * l_vnni_block_size * i_micro_kernel_config->datatype_size_in);
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, l_fma_iters * i_packed_width * l_vnni_block_size * i_micro_kernel_config->datatype_size_in);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_2, (long long)l_fma_iters * l_vnni_block_size * i_micro_kernel_config->datatype_size_in);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, (long long)l_fma_iters * i_packed_width * l_vnni_block_size * i_micro_kernel_config->datatype_size_in);
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, l_k_loop_fma_reg, (long long)l_assm_fma_iters );
         libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker);
         libxsmm_x86_instruction_pop_reg( io_generated_code, l_k_loop_fma_reg );
@@ -1443,7 +1443,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
 
         if (l_pf_dist_B > 0) {
           if (l_k_iter == 0 && l_n == 0 && l_n_block_id == 0) {
-            libxsmm_generator_packed_spgemm_bcsc_prefetch_B_block_in_L1( io_generated_code, i_bk*i_bn*i_micro_kernel_config->datatype_size_in, l_b_tmp_gpr, l_pf_dist_B*i_bk*i_bn*i_micro_kernel_config->datatype_size_in);
+            libxsmm_generator_packed_spgemm_bcsc_prefetch_B_block_in_L1( io_generated_code, i_bk*i_bn*i_micro_kernel_config->datatype_size_in, l_b_tmp_gpr, (long long)l_pf_dist_B*i_bk*i_bn*i_micro_kernel_config->datatype_size_in);
           }
         }
 
