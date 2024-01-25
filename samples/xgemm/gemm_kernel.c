@@ -3168,6 +3168,7 @@ int main(int argc, char* argv []) {
           case 1: br_type = "addrbr"; break;
           case 2: br_type = "offsbr"; break;
           case 3: br_type = "strdbr"; break;
+          case 4: br_type = "spmm"; break;
           default: br_type = "unknown";
         }
 

@@ -1,3 +1,7 @@
+bf16bf16_spmm_eqld
+bf16bf16_spmm_gtld
+bf16f32_spmm_eqld
+bf16f32_spmm_gtld
 f16f16f32f32gemm_nn_eqld_bop0_uop1_cvnni0
 f16f16f32f32gemm_nn_eqld_bop0_uop2_cvnni0
 f16f16f32f32gemm_nn_eqld_bop0_uop3_cvnni0

@@ -2090,7 +2090,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           /* TODO: shall we update variable "target_arch" (name)? */
-          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_SKX ) {
+          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_SKX &&  ((request->descriptor.gemm->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) == 0) ) {
             generated_code.arch = LIBXSMM_X86_AVX512_VL256_SKX;
           }
         }
