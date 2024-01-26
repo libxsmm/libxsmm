@@ -2364,12 +2364,6 @@ void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                 
 
   char vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) ? 'z' : 'y';
 
-  if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
-    /* This should not happen */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) {
     libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
                                              LIBXSMM_X86_INSTR_VSHUFF64X2,

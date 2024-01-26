@@ -1137,7 +1137,7 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
                 i_micro_kernel_config->vec_logfmax,
                 i_micro_kernel_config->vec_logfmin,
                 i_micro_kernel_config->vector_name);
-        
+
           }
         }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
@@ -2989,7 +2989,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_hi_bound,
           i_micro_kernel_config->vec_lo_bound );
     } else {
-      if (libxsmm_cpuid_x86_use_high_prec_eltwise_approx() == 0) { 
+      if (libxsmm_cpuid_x86_use_high_prec_eltwise_approx() == 0) {
         reserved_zmms += 6;
         i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
         i_micro_kernel_config->vec_c0         = reserved_zmms - 2;

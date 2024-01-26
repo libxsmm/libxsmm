@@ -11,37 +11,37 @@ steps:
 #      LIBXSMM_TARGET: spr
 #      CONFIG: gcc-122
     label: "SMMs CPUID"
-    
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: spr
 #      CONFIG: gcc-122
     label: "SMMs SPR"
-    
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: cpx
 #      CONFIG: gcc-122
     label: "SMMs CPX"
- 
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: clx
 #      CONFIG: gcc-122
     label: "SMMs CLX"
-    
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: skx
 #      CONFIG: gcc-122
     label: "SMMs SKX"
-    
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: avx512_vl256_cpx
 #      CONFIG: gcc-122
     label: "SMMs CPX VL256"
-    
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: avx512_vl256_clx
@@ -59,7 +59,7 @@ steps:
       LIBXSMM_TARGET: adl
 #      CONFIG: gcc-122
     label: "SMMs ADL"
-    
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: hsw
@@ -87,12 +87,12 @@ steps:
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "spr"
-      
+
   - label: "ELTWISE CPX"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "cpx"
-      
+
   - label: "ELTWISE CLX"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
@@ -107,7 +107,7 @@ steps:
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "avx512_vl256_cpx"
-      
+
   - label: "ELTWISE CLX VL256"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
@@ -122,12 +122,12 @@ steps:
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "adl"
-      
+
   - label: "ELTWISE HSW"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "hsw"
-      
+
   - label: "ELTWISE SNB"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
@@ -144,37 +144,37 @@ steps:
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
-    
+
   - label: "EQUATION SPR"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "spr"
-      
+
   - label: "EQUATION CPX"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "cpx"
-     
+
   - label: "EQUATION CLX"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "clx"
-     
+
   - label: "EQUATION SKX"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "skx"
-     
+
   - label: "EQUATION CPX VL256"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "avx512_vl256_cpx"
-      
+
   - label: "EQUATION CLX VL256"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
@@ -192,13 +192,13 @@ steps:
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "adl"
-      
+
   - label: "EQUATION HSW"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "hsw"
-      
+
   - label: "EQUATION SNB"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:

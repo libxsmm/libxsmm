@@ -1494,7 +1494,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     }
 
     /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
-    if ((i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) && (has_fused_relu_bitmask == 0)) {
+    if ((i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61 || (i_xgemm_desc->n == 64 && i_xgemm_desc->m == 16)) && (has_fused_relu_bitmask == 0)) {
       m_blocking = 16;
       while (i_xgemm_desc->m % m_blocking != 0) {
         m_blocking--;
@@ -1524,6 +1524,17 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
         n_blocking_info[0].sizes[2] = 16;
         n_blocking_info[0].sizes[3] = 13;
       }
+      if (i_xgemm_desc->n == 64) {
+        n_blocking_info[0].blocking = 64;
+        n_blocking_info[0].block_size = 64;
+        n_blocking_info[0].tiles = 4;
+        /* I.e. N = 64 = 4 * 16 */
+        n_blocking_info[0].sizes[0] = 16;
+        n_blocking_info[0].sizes[1] = 16;
+        n_blocking_info[0].sizes[2] = 16;
+        n_blocking_info[0].sizes[3] = 16;
+      }
+
     }
   }
 
@@ -1905,7 +1916,7 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   }
 #endif
   l_gp_reg_mapping.gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_R10;
+  l_gp_reg_mapping.gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R12;
@@ -2323,6 +2334,10 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
       /* A pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, LIBXSMM_X86_GP_REG_RDI, 0 );
+      if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, i_gp_reg_mapping->gp_reg_bitmap_a, 0 );
+      }
       /* B pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 64, LIBXSMM_X86_GP_REG_RSI, 0 );
@@ -2368,6 +2383,10 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0))     ) {
     libxsmm_generator_gemm_setup_stack_frame( io_generated_code, l_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
+  }
+
+  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) {
+    libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_mapping->gp_reg_decompressed_a );
   }
 
   /* Copy A/B/C to stack in case of emulating BF8 on amx stack */
