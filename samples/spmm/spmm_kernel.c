@@ -395,6 +395,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
   unsigned long long N = i_spmm_def->n/i_spmm_def->bn;
+  unsigned char l_tileconfig_save[64] = { 0 };
 
   if (0 == i_spmm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
@@ -444,18 +445,18 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     exit(-1);
   }
 
-  /* run external tileconfig */
-  if (i_spmm_def->tc_config) {
-    cfg_tr.gemm( NULL );
-  }
-
   /* run correctness */
+  gemm_param.op.quaternary = (void*)l_tileconfig_save;
   gemm_param.a.primary = (void*)i_a;
   gemm_param.b.primary = (void*)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
   gemm_param.c.primary = (void*)o_c;
+  /* run external tileconfig */
+  if (i_spmm_def->tc_config) {
+    cfg_tr.gemm( &gemm_param );
+  }
   l_test_jit.gemm( &gemm_param );
 
   /* run performance */
@@ -473,7 +474,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run external tilerelease */
   if (i_spmm_def->tc_config) {
-    rls_tr.gemm( NULL );
+    rls_tr.gemm( &gemm_param );
   }
 
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
