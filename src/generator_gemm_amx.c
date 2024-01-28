@@ -1916,7 +1916,6 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
     }
     l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
   }
-#endif
   l_gp_reg_mapping.gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
