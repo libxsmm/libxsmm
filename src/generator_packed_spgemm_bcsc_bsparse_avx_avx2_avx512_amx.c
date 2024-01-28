@@ -358,23 +358,16 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
-  /* matching calling convention on Linux */
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDX;
-  l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_R8;
-  /* TODO: full support for Windows calling convention */
-  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
 #else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
+#endif
+  l_gp_reg_mapping.gp_reg_a = l_gp_reg_mapping.gp_reg_param_struct;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-#endif
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
