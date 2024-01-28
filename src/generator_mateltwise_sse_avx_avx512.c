@@ -785,7 +785,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
   if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (is_transform_tpp == 0) && (is_unary_simple_tpp == 0) && (has_inp_or_out_fp64 > 0)) {
     is_valid_arch_prec = 0;
   }
-  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param) > 0) && (has_inp_or_out_fp64 > 0)) {
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param) > 0) && (has_inp_or_out_fp64 > 0)) {
     is_valid_arch_prec = 0;
   }
   if ((has_inp_or_out_fp64 > 0) && (has_all_inp_and_out_fp64 == 0)) {
@@ -841,13 +841,13 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
   libxsmm_x86_instruction_open_stream_v2( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
 
   /* being BLAS aligned, for empty kermls, do nothing */
-  if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param)) ) {
+  if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param)) ) {
     /* Stack management for melt kernel */
     libxsmm_generator_meltw_setup_stack_frame( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
     /* Depending on the elementwise function, dispatch the proper code JITer */
     if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
-      if (libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
+      if (libxsmm_meqn_is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
         if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
         } else if (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) && (i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT)) {
@@ -859,7 +859,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }
-      } else if (libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param) > 0) {
+      } else if (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param) > 0) {
         libxsmm_generator_reduce_cols_index_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
         libxsmm_generator_replicate_col_var_avx_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );

@@ -119,8 +119,8 @@ void eqn_gather_dot_one_f32_tpp2( const libxsmm_blasint M,
                            float* i_tmp_mat,
                            float* o_vec_out,
                            const long long* i_idx,
-                           libxsmm_matrix_eqn_function i_eqn ) {
-  libxsmm_matrix_eqn_param l_eqn_param;
+                           libxsmm_meqn_function i_eqn ) {
+  libxsmm_meqn_param l_eqn_param;
   libxsmm_matrix_arg l_arg_array[2];
   libxsmm_blasint i;
 
@@ -222,7 +222,7 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   /* equation for mul + reduce add TPP */
   libxsmm_blasint l_eqn_0_idx = 0;
   libxsmm_meqn_arg_shape l_eqn_0_shape_out;
-  libxsmm_matrix_eqn_function l_eqn_0 = NULL;
+  libxsmm_meqn_function l_eqn_0 = NULL;
   /* gather + GEMM TPP */
   libxsmm_meltwfunction_unary l_gather = NULL;
   libxsmm_meltw_unary_shape   l_gahter_shape = libxsmm_create_meltw_unary_shape( M, idxblk_gemm, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -282,17 +282,17 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   l_addreduce = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
 
   /* second TPP implementation equation for reduce muladd */
-  l_eqn_0_idx = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
+  l_eqn_0_idx = libxsmm_meqn_create();
+  libxsmm_meqn_push_back_unary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
                                          LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_BINARY_MUL,
+  libxsmm_meqn_push_back_binary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_BINARY_MUL,
                                           LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_tree_print( l_eqn_0_idx );
-  libxsmm_matrix_eqn_rpn_print( l_eqn_0_idx );
+  libxsmm_meqn_push_back_arg( l_eqn_0_idx, M, 1, M, 0, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meqn_push_back_arg( l_eqn_0_idx, M, 1, M, 1, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meqn_tree_print( l_eqn_0_idx );
+  libxsmm_meqn_rpn_print( l_eqn_0_idx );
   l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
-  l_eqn_0 = libxsmm_dispatch_matrix_eqn_v2( l_eqn_0_idx, l_eqn_0_shape_out );
+  l_eqn_0 = libxsmm_dispatch_meqn_v2( l_eqn_0_idx, l_eqn_0_shape_out );
 
   /* third TPP implementation we run gather and than matmul */
   l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );

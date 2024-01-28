@@ -431,8 +431,8 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_elem* libxsmm_generator_matequation_find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint timestamp) {
-  libxsmm_matrix_eqn_elem *result = NULL;
+libxsmm_meqn_elem* libxsmm_generator_matequation_find_op_at_timestamp(libxsmm_meqn_elem* cur_node, libxsmm_blasint timestamp) {
+  libxsmm_meqn_elem *result = NULL;
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     result = NULL;
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
@@ -467,7 +467,7 @@ libxsmm_matrix_eqn_elem* libxsmm_generator_matequation_find_op_at_timestamp(libx
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node) {
+int libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(libxsmm_meqn_elem  *xgemm_node) {
   int result = 0;
   if (((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16)) ||
       ((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_F16)) ||
@@ -479,7 +479,7 @@ int libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(libxsmm_matrix
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_matequation_is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_node) {
+int libxsmm_generator_matequation_is_xgemm_node(libxsmm_meqn_elem  *cur_node) {
   int result = 0;
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     if ( (cur_node->info.b_op.is_matmul  == 1) ||
@@ -498,7 +498,7 @@ int libxsmm_generator_matequation_is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_no
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_matequation_is_gather_node(libxsmm_matrix_eqn_elem  *cur_node) {
+int libxsmm_generator_matequation_is_gather_node(libxsmm_meqn_elem  *cur_node) {
   int result = 0;
   if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER)) {
     result = 1;
@@ -507,7 +507,7 @@ int libxsmm_generator_matequation_is_gather_node(libxsmm_matrix_eqn_elem  *cur_n
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs) {
+int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_meqn_elem *node, libxsmm_meqn_fusion_knobs *fusion_knobs) {
   int result = 0;
   if (node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
     if ( node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_TANH ||
@@ -521,9 +521,9 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GATHER ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SCATTER ||
-         libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(node->info.u_op.type) ||
-         libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ||
-         libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(node->info.u_op.type) ) {
+         libxsmm_meqn_is_unary_opcode_transform_kernel(node->info.u_op.type) ||
+         libxsmm_meqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ||
+         libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(node->info.u_op.type) ) {
       result = 1;
     }
   }
@@ -616,7 +616,7 @@ LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_with_bcast(libxs
   return result;
 }
 
-LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_unary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node) {
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_unary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_meqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) ||
@@ -628,7 +628,7 @@ LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_unary_bcast_arg_an_input
   return result;
 }
 
-LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_binary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node) {
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_binary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_meqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) ||
@@ -648,7 +648,7 @@ LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_binary_bcast_arg_an_inpu
   return result;
 }
 
-LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node) {
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_meqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) ||
@@ -677,11 +677,11 @@ LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_bcast_arg_an_inp
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *xgemm_node) {
-  libxsmm_matrix_eqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
+libxsmm_meqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_fusion_pattern_with_ancestors(libxsmm_meqn_elem *xgemm_node) {
+  libxsmm_meqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
   if (xgemm_node->up != NULL) {
     if (xgemm_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
-      libxsmm_matrix_eqn_elem     *sibling_node = NULL;
+      libxsmm_meqn_elem     *sibling_node = NULL;
       libxsmm_bitfield bcast_flag = LIBXSMM_MELTW_FLAG_BINARY_NONE;
       if (xgemm_node->up->le == xgemm_node) {
         sibling_node = xgemm_node->up->ri;
@@ -719,8 +719,8 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_gather_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *gather_node) {
-  libxsmm_matrix_eqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
+libxsmm_meqn_fusion_pattern_type libxsmm_generator_matequation_find_gather_fusion_pattern_with_ancestors(libxsmm_meqn_elem *gather_node) {
+  libxsmm_meqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
   if ((gather_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
     if (gather_node->up != NULL) {
       if (gather_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
@@ -736,8 +736,8 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_gather
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *cur_node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs) {
-  libxsmm_matrix_eqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
+libxsmm_meqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion_pattern_with_ancestors(libxsmm_meqn_elem *cur_node, libxsmm_meqn_fusion_knobs *fusion_knobs) {
+  libxsmm_meqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
   /* Check for xgemm fusion patterns*/
   if ((libxsmm_generator_matequation_is_xgemm_node(cur_node) > 0) && (fusion_knobs->may_fuse_xgemm > 0) ) {
     if (libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(cur_node) > 0) {
@@ -754,7 +754,7 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_matequation_find_in_pos_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node) {
+int libxsmm_generator_matequation_find_in_pos_for_colbias(libxsmm_meqn_elem *colbias_add_node) {
   int result = 0;
   if (colbias_add_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     result = colbias_add_node->le->info.arg.in_pos;
@@ -765,7 +765,7 @@ int libxsmm_generator_matequation_find_in_pos_for_colbias(libxsmm_matrix_eqn_ele
 }
 
 LIBXSMM_API_INTERN
-libxsmm_datatype libxsmm_generator_matequation_find_dtype_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node) {
+libxsmm_datatype libxsmm_generator_matequation_find_dtype_for_colbias(libxsmm_meqn_elem *colbias_add_node) {
   libxsmm_datatype result = LIBXSMM_DATATYPE_F32;
   if (colbias_add_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     result = colbias_add_node->le->info.arg.dtype;
@@ -776,9 +776,9 @@ libxsmm_datatype libxsmm_generator_matequation_find_dtype_for_colbias(libxsmm_ma
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
-                                               libxsmm_matrix_eqn_elem                *cur_node,
-                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(libxsmm_meqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_meqn_elem                *cur_node,
+                                               libxsmm_meqn_elem                *new_arg_node,
                                                unsigned int                           *timestamp,
                                                unsigned int                           last_timestamp ) {
   if (fusion_pattern == LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD) {
@@ -859,9 +859,9 @@ void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(lib
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
-                                               libxsmm_matrix_eqn_elem                *cur_node,
-                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(libxsmm_meqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_meqn_elem                *cur_node,
+                                               libxsmm_meqn_elem                *new_arg_node,
                                                unsigned int                           *timestamp,
                                                unsigned int                           last_timestamp ) {
   if (fusion_pattern == LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS) {
@@ -928,9 +928,9 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
-                                               libxsmm_matrix_eqn_elem                *cur_node,
-                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_meqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_meqn_elem                *cur_node,
+                                               libxsmm_meqn_elem                *new_arg_node,
                                                unsigned int                           *timestamp,
                                                unsigned int                           last_timestamp ) {
   if (libxsmm_generator_matequation_is_xgemm_node(cur_node) > 0) {
@@ -942,33 +942,33 @@ void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_m
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs) {
-  libxsmm_matrix_eqn_elem *root = eqn->eqn_root;
+void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_meqn_fusion_knobs *fusion_knobs) {
+  libxsmm_meqn_elem *root = eqn->eqn_root;
   unsigned int last_timestamp = eqn->eqn_root->visit_timestamp;
   unsigned int timestamp = 0;
 
   for (timestamp = 0; timestamp <= last_timestamp;) {
-    libxsmm_matrix_eqn_elem *cur_node = libxsmm_generator_matequation_find_op_at_timestamp(root, timestamp);
+    libxsmm_meqn_elem *cur_node = libxsmm_generator_matequation_find_op_at_timestamp(root, timestamp);
     if (timestamp == last_timestamp) {
       libxsmm_generator_matequation_enqueue_equation(eqn, jiting_queue, queue_size);
     }
     if ( (timestamp < last_timestamp) && ((libxsmm_generator_matequation_is_eqn_node_breaking_point(cur_node, fusion_knobs) > 0) || (libxsmm_generator_matequation_is_eqn_node_breaking_point(cur_node->up, fusion_knobs) > 0) ||
-                                           ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0)) ||
-                                           ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_matrix_eqn_is_binary_opcode_reduce_to_scalar(cur_node->info.b_op.type) > 0)) ||
+                                           ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0)) ||
+                                           ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_meqn_is_binary_opcode_reduce_to_scalar(cur_node->info.b_op.type) > 0)) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_generator_matequation_is_unary_with_bcast(cur_node->up->info.u_op.flags) > 0) && (libxsmm_generator_matequation_is_unary_bcast_arg_an_inputarg(cur_node->up->info.u_op.flags, cur_node->up) == 0) ) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_generator_matequation_is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0) && (libxsmm_generator_matequation_is_binary_bcast_arg_an_inputarg(cur_node->up->info.b_op.flags, cur_node->up) == 0)) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (libxsmm_generator_matequation_is_ternary_with_bcast(cur_node->up->info.t_op.flags) > 0) && (libxsmm_generator_matequation_is_ternary_bcast_arg_an_inputarg(cur_node->up->info.t_op.flags, cur_node->up) == 0)))) {
 
-      libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
-      libxsmm_matrix_eqn_elem                *new_arg_node  = NULL;
+      libxsmm_meqn_fusion_pattern_type fusion_pattern = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
+      libxsmm_meqn_elem                *new_arg_node  = NULL;
       libxsmm_matrix_eqn                     *new_eqn       = NULL;
 #if !defined(__clang_analyzer__)
-      new_arg_node = (libxsmm_matrix_eqn_elem*)malloc(sizeof(libxsmm_matrix_eqn_elem));
+      new_arg_node = (libxsmm_meqn_elem*)malloc(sizeof(libxsmm_meqn_elem));
       new_eqn = (libxsmm_matrix_eqn*)malloc(sizeof(libxsmm_matrix_eqn));
 #endif
 
       if (NULL != new_arg_node && NULL != new_eqn) {
-        union libxsmm_matrix_eqn_info info;
+        union libxsmm_meqn_info info;
         info.arg.m = cur_node->tmp.m;
         info.arg.n = cur_node->tmp.n;
         info.arg.ld = cur_node->tmp.ld;
@@ -1095,7 +1095,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_matequation_kernel_config   l_kernel_config;
   libxsmm_loop_label_tracker          l_loop_label_tracker;
   unsigned int eqn_idx = i_mateqn_desc->eqn_idx;
-  libxsmm_matrix_eqn *eqn = libxsmm_matrix_eqn_get_equation( eqn_idx );
+  libxsmm_matrix_eqn *eqn = libxsmm_meqn_get_equation( eqn_idx );
   libxsmm_matrix_eqn **jiting_queue;
   unsigned int queue_size = 0;
   /* TODO: Use number of tree nodes as max size */
@@ -1103,8 +1103,8 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   unsigned int strategy = JIT_STRATEGY_HYBRID;
   unsigned int eqn_tree_id = 0;
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
-  libxsmm_matrix_eqn_fusion_knobs fusion_knobs;
-  memset(&fusion_knobs, 0, sizeof(libxsmm_matrix_eqn_fusion_knobs));
+  libxsmm_meqn_fusion_knobs fusion_knobs;
+  memset(&fusion_knobs, 0, sizeof(libxsmm_meqn_fusion_knobs));
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
@@ -1209,15 +1209,15 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       }
 #if 0
       printf("\nJITing tree with scratch %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
-      libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
+      libxsmm_meqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
       /* For these nodes use strategy via regblocks */
       /* Re-optimize current tree */
-      if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
-          ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_matrix_eqn_is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
+      if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
+          ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_meqn_is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
         copy_mateqn_desc.m = cur_eqn->eqn_root->le->tmp.m;
         copy_mateqn_desc.n = cur_eqn->eqn_root->le->tmp.n;
       } else {
@@ -1237,7 +1237,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
 #if 0
       printf("\nJITing tree with regblocks %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
-      libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
+      libxsmm_meqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);

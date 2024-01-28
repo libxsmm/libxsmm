@@ -640,15 +640,15 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg_attributes {
   libxsmm_blasint             set_stride_hint;
 } libxsmm_matrix_arg_attributes;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_eqn_op_metadata {
+LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_op_metadata {
   libxsmm_blasint eqn_idx;
   libxsmm_blasint op_arg_pos;
-} libxsmm_matrix_eqn_op_metadata;
+} libxsmm_meqn_op_metadata;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_eqn_arg_metadata {
+LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_arg_metadata {
   libxsmm_blasint eqn_idx;
   libxsmm_blasint in_arg_pos;
-} libxsmm_matrix_eqn_arg_metadata;
+} libxsmm_meqn_arg_metadata;
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_unary_param {
@@ -675,18 +675,18 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_ternary_param {
 } libxsmm_meltw_ternary_param;
 
 /** argument struct for matrix equation */
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_eqn_param {
+LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_param {
   const libxsmm_matrix_op_arg* ops_args;    /* op state & parameters */
   const libxsmm_matrix_arg*    inputs;      /* array of input args */
   libxsmm_matrix_arg           output;      /* output arg */
-} libxsmm_matrix_eqn_param;
+} libxsmm_meqn_param;
 
 /** Specialized function for matrix-eltw (weak-typed). */
 LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
 LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
 LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_ternary)(const libxsmm_meltw_ternary_param* in_struct);
 /* matrix equation function */
-LIBXSMM_EXTERN_C typedef void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
+LIBXSMM_EXTERN_C typedef void (*libxsmm_meqn_function)(const libxsmm_meqn_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);

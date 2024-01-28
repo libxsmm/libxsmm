@@ -251,9 +251,9 @@ void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
-  libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
+  libxsmm_meqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_blasint i, j, k, l, it, i2;
-  libxsmm_matrix_eqn_param eqn_param;
+  libxsmm_meqn_param eqn_param;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
@@ -276,8 +276,8 @@ int main( int argc, char* argv[] ) {
   libxsmm_bfloat16* bf16_arg[128] = { NULL };
   libxsmm_matrix_arg arg_array[128];
   libxsmm_matrix_arg bf16_arg_array[128];
-  libxsmm_matrix_eqn_arg_metadata arg_metadata[128];
-  libxsmm_matrix_eqn_op_metadata  op_metadata[128];
+  libxsmm_meqn_arg_metadata arg_metadata[128];
+  libxsmm_meqn_op_metadata  op_metadata[128];
   libxsmm_blasint n_tensors, ref_id, block_size;
   libxsmm_matrix_op_arg op_arg_arr[9];
   int relu_sigmoid_fusion_mode = 0;
@@ -384,7 +384,7 @@ int main( int argc, char* argv[] ) {
   /* Result = gelu(A+B) * tanh(C x D) */
   arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
-  my_eqn0 = libxsmm_matrix_eqn_create();
+  my_eqn0 = libxsmm_meqn_create();
   arg_metadata[0].eqn_idx     = my_eqn0;
   arg_metadata[0].in_arg_pos  = 0;
   arg_metadata[1].eqn_idx     = my_eqn0;
@@ -396,17 +396,17 @@ int main( int argc, char* argv[] ) {
   op_metadata[0].eqn_idx      = my_eqn0;
   op_metadata[0].op_arg_pos   = -1;
 
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MATMUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
-  libxsmm_matrix_eqn_tree_print( my_eqn0 );
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape[n_tensors-1] );
+  libxsmm_meqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+  libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  libxsmm_meqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
+  libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  libxsmm_meqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MATMUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
+  libxsmm_meqn_tree_print( my_eqn0 );
+  func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape[n_tensors-1] );
 
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;
@@ -534,7 +534,7 @@ int main( int argc, char* argv[] ) {
   op_arg_arr[7].tertiary = (void*)&brcount;
   eqn_param.ops_args = op_arg_arr;
 
-  my_eqn1 = libxsmm_matrix_eqn_create();
+  my_eqn1 = libxsmm_meqn_create();
   arg_metadata[0].eqn_idx     = my_eqn1;
   arg_metadata[1].eqn_idx     = my_eqn1;
   arg_metadata[2].eqn_idx     = my_eqn1;
@@ -543,16 +543,16 @@ int main( int argc, char* argv[] ) {
   op_metadata[1].eqn_idx      = my_eqn1;
   op_metadata[1].op_arg_pos   = 7;
 
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
-  libxsmm_matrix_eqn_tree_print( my_eqn1 );
-  func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape[n_tensors-1] );
+  libxsmm_meqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+  libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
+  libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  libxsmm_meqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
+  libxsmm_meqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
+  libxsmm_meqn_tree_print( my_eqn1 );
+  func1 = libxsmm_dispatch_meqn_v2( my_eqn1, arg_shape[n_tensors-1] );
   func1(&eqn_param);
   /* Recover type of arg1 */
   arg_shape[1].type = in_dt;
@@ -631,7 +631,7 @@ int main( int argc, char* argv[] ) {
     colbias_shape_fused.ld = m_i[2];
     colbias_shape_fused.type = in_dt;
 
-    my_eqn5 = libxsmm_matrix_eqn_create();
+    my_eqn5 = libxsmm_meqn_create();
     arg_metadata[2].eqn_idx     = my_eqn5;
     arg_metadata[3].eqn_idx     = my_eqn5;
     op_metadata[0].eqn_idx      = my_eqn5;
@@ -642,18 +642,18 @@ int main( int argc, char* argv[] ) {
     if (relu_sigmoid_fusion_mode == 0) {
       /* Do nothing */
     } else if (relu_sigmoid_fusion_mode == 1) {
-      libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     } else if (relu_sigmoid_fusion_mode == 2) {
-      libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_DATATYPE_F32 , LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_DATATYPE_F32 , LIBXSMM_MELTW_FLAG_UNARY_NONE);
     }
-    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0);
-    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[42], colbias_shape_fused, arg_singular_attr);
-    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_BINARY_BRGEMM, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
-    libxsmm_matrix_eqn_tree_print( my_eqn5 );
-    func5 = libxsmm_dispatch_matrix_eqn_v2( my_eqn5, arg_shape[n_tensors-1] );
+    libxsmm_meqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0);
+    libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[42], colbias_shape_fused, arg_singular_attr);
+    libxsmm_meqn_push_back_binary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_BINARY_BRGEMM, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
+    libxsmm_meqn_tree_print( my_eqn5 );
+    func5 = libxsmm_dispatch_meqn_v2( my_eqn5, arg_shape[n_tensors-1] );
 
     arg_array[42].primary = colbias_f32_fused;
     func5(&eqn_param);
@@ -750,22 +750,22 @@ int main( int argc, char* argv[] ) {
     }
     bf16_arg_array[2].primary = copy_C;
 
-    my_eqn2 = libxsmm_matrix_eqn_create();
+    my_eqn2 = libxsmm_meqn_create();
     arg_metadata[0].eqn_idx     = my_eqn2;
     arg_metadata[2].eqn_idx     = my_eqn2;
     arg_metadata[3].eqn_idx     = my_eqn2;
     op_metadata[0].eqn_idx      = my_eqn2;
     op_metadata[1].eqn_idx      = my_eqn2;
 
-    libxsmm_matrix_eqn_push_back_binary_op_v2( op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-    libxsmm_matrix_eqn_push_back_unary_op_v2( op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2( arg_metadata[0], arg_shape[0], arg_singular_attr);
-    libxsmm_matrix_eqn_push_back_unary_op_v2( op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_binary_op_v2( op_metadata[1], LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2( arg_metadata[2], arg_shape[2], arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2( arg_metadata[3], arg_shape[3], arg_set_attr1);
-    libxsmm_matrix_eqn_tree_print( my_eqn2 );
-    func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape[n_tensors-1] );
+    libxsmm_meqn_push_back_binary_op_v2( op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+    libxsmm_meqn_push_back_unary_op_v2( op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_arg_v2( arg_metadata[0], arg_shape[0], arg_singular_attr);
+    libxsmm_meqn_push_back_unary_op_v2( op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_binary_op_v2( op_metadata[1], LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+    libxsmm_meqn_push_back_arg_v2( arg_metadata[2], arg_shape[2], arg_set_attr0);
+    libxsmm_meqn_push_back_arg_v2( arg_metadata[3], arg_shape[3], arg_set_attr1);
+    libxsmm_meqn_tree_print( my_eqn2 );
+    func2 = libxsmm_dispatch_meqn_v2( my_eqn2, arg_shape[n_tensors-1] );
     func2(&eqn_param);
 
     eqn2_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
@@ -844,23 +844,23 @@ int main( int argc, char* argv[] ) {
     op_arg_arr[7].tertiary = (void*)&brcount;
     eqn_param.ops_args = op_arg_arr;
 
-    my_eqn3 = libxsmm_matrix_eqn_create();
+    my_eqn3 = libxsmm_meqn_create();
     arg_metadata[0].eqn_idx     = my_eqn3;
     arg_metadata[2].eqn_idx     = my_eqn3;
     arg_metadata[3].eqn_idx     = my_eqn3;
     op_metadata[0].eqn_idx      = my_eqn3;
     op_metadata[1].eqn_idx      = my_eqn3;
 
-    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
-    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
+    libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
+    libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
-    libxsmm_matrix_eqn_tree_print( my_eqn3 );
-    func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape[n_tensors-1] );
+    libxsmm_meqn_tree_print( my_eqn3 );
+    func3 = libxsmm_dispatch_meqn_v2( my_eqn3, arg_shape[n_tensors-1] );
     func3(&eqn_param);
 
     eqn3_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
@@ -936,7 +936,7 @@ int main( int argc, char* argv[] ) {
     colbias_shape_bf16.ld = m_i[2];
     colbias_shape_bf16.type = in_dt;
 
-    my_eqn4 = libxsmm_matrix_eqn_create();
+    my_eqn4 = libxsmm_meqn_create();
     arg_metadata[2].eqn_idx     = my_eqn4;
     arg_metadata[3].eqn_idx     = my_eqn4;
     arg_metadata[42].eqn_idx    = my_eqn4;
@@ -947,18 +947,18 @@ int main( int argc, char* argv[] ) {
     if (relu_sigmoid_fusion_mode == 0) {
       /* Do nothing */
     } else if (relu_sigmoid_fusion_mode == 1) {
-      libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     } else if (relu_sigmoid_fusion_mode == 2) {
-      libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     }
-    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0);
-    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[42], colbias_shape_bf16, arg_singular_attr );
-    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
-    libxsmm_matrix_eqn_tree_print( my_eqn4 );
-    func4 = libxsmm_dispatch_matrix_eqn_v2( my_eqn4, arg_shape[n_tensors-1] );
+    libxsmm_meqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0);
+    libxsmm_meqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[42], colbias_shape_bf16, arg_singular_attr );
+    libxsmm_meqn_push_back_binary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_set_attr0);
+    libxsmm_meqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_set_attr1);
+    libxsmm_meqn_tree_print( my_eqn4 );
+    func4 = libxsmm_dispatch_meqn_v2( my_eqn4, arg_shape[n_tensors-1] );
     bf16_arg_array[42].primary = colbias;
 
     func4(&eqn_param);

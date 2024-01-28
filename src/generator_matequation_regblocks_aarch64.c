@@ -23,9 +23,9 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_copy_opargs_aarch64(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
-    libxsmm_matrix_eqn_elem             *cur_node,
+    libxsmm_meqn_elem             *cur_node,
     unsigned int                        *oparg_id,
-    libxsmm_matrix_eqn_tmp_info         *oparg_info,
+    libxsmm_meqn_tmp_info         *oparg_info,
     unsigned int                        input_reg) {
 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -62,9 +62,9 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_copy_input_args_aarch64(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
-    libxsmm_matrix_eqn_elem             *cur_node,
+    libxsmm_meqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_matrix_eqn_arg_v2           *arg_info,
+    libxsmm_meqn_arg_v2           *arg_info,
     unsigned int                        input_reg) {
 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -147,7 +147,7 @@ void libxsmm_generator_mateqn_adjust_opargs_addr_aarch64(libxsmm_generated_code*
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_tmp_info         *oparg_info) {
+    libxsmm_meqn_tmp_info         *oparg_info) {
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int n_opargs = i_micro_kernel_config->n_opargs;
   unsigned int i;
@@ -182,7 +182,7 @@ void libxsmm_generator_mateqn_adjust_args_addr_aarch64(libxsmm_generated_code*  
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_arg_v2           *arg_info) {
+    libxsmm_meqn_arg_v2           *arg_info) {
 
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
@@ -402,7 +402,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( libxsmm_generate
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   unsigned int temp_reg3 = i_gp_reg_mapping->temp_reg3;
   unsigned int cur_vreg;
-  libxsmm_matrix_eqn_arg_v2  *arg_info = i_micro_kernel_config->arg_info;
+  libxsmm_meqn_arg_v2  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
   unsigned int l_ld_bytes = arg_info[i_arg_id].ld * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype);
@@ -1252,7 +1252,7 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
 
   /* Traverse equation tree based on optimal execution plan and emit code */
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
-    libxsmm_matrix_eqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(i_eqn->eqn_root, timestamp);
+    libxsmm_meqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(i_eqn->eqn_root, timestamp);
     if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
       if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
         /* We have to load the input from the argument tensor using the node's assigned tmp reg block */
@@ -1504,7 +1504,7 @@ void libxsmm_adjust_required_zmms_aarch64( libxsmm_generated_code*    io_generat
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_mark_reserved_zmms_aarch64( libxsmm_generated_code*    io_generated_code, libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn_elem *cur_node ) {
+void libxsmm_mark_reserved_zmms_aarch64( libxsmm_generated_code*    io_generated_code, libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_meqn_elem *cur_node ) {
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
     libxsmm_adjust_required_zmms_aarch64( io_generated_code,  i_micro_kernel_config, cur_node->info.u_op.type, LIBXSMM_MELTW_TYPE_BINARY_NONE, UNARY_OP_POOL);
     libxsmm_mark_reserved_zmms_aarch64( io_generated_code, i_micro_kernel_config, cur_node->le);
@@ -1602,8 +1602,8 @@ void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_ge
     libxsmm_matequation_kernel_config*      i_micro_kernel_config_orig,
     libxsmm_loop_label_tracker*             io_loop_label_tracker,
     libxsmm_matrix_eqn*                     eqn ) {
-  libxsmm_matrix_eqn_arg_v2              *arg_info;
-  libxsmm_matrix_eqn_tmp_info            *oparg_info;
+  libxsmm_meqn_arg_v2              *arg_info;
+  libxsmm_meqn_tmp_info            *oparg_info;
   unsigned int arg_id = 0, i = 0, oparg_id = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
   libxsmm_matequation_kernel_config l_meqn_kernel_config = *i_micro_kernel_config_orig;
@@ -1627,8 +1627,8 @@ void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_ge
 
   /* Iterate over the equation tree and copy the args ptrs in the auxiliary scratch */
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 8, i_gp_reg_mapping->gp_reg_scratch_0 );
-  arg_info = (libxsmm_matrix_eqn_arg_v2*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg_v2));
-  oparg_info = (libxsmm_matrix_eqn_tmp_info*) malloc((eqn->eqn_root->visit_timestamp + 1) * sizeof(libxsmm_matrix_eqn_tmp_info));
+  arg_info = (libxsmm_meqn_arg_v2*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_meqn_arg_v2));
+  oparg_info = (libxsmm_meqn_tmp_info*) malloc((eqn->eqn_root->visit_timestamp + 1) * sizeof(libxsmm_meqn_tmp_info));
   i_micro_kernel_config->contains_binary_op = 0;
   i_micro_kernel_config->contains_ternary_op = 0;
   libxsmm_generator_copy_input_args_aarch64(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, eqn->eqn_root, &arg_id, arg_info, i_gp_reg_mapping->gp_reg_scratch_0);

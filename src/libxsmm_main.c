@@ -3574,8 +3574,8 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary_v2( con
 }
 
 
-LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor ) {
-  libxsmm_matrix_eqn_function result;
+LIBXSMM_API libxsmm_meqn_function libxsmm_dispatch_meqn_desc( const libxsmm_meqn_descriptor* descriptor ) {
+  libxsmm_meqn_function result;
   LIBXSMM_INIT /* verbosity */
 #if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
@@ -3583,7 +3583,7 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
   if (NULL != descriptor) {
     libxsmm_descriptor wrap /*= { 0 }*/;
     /* check if equation is ready for JIT */
-    if (0 == libxsmm_matrix_eqn_is_ready_for_jit( descriptor->eqn_idx)) {
+    if (0 == libxsmm_meqn_is_ready_for_jit( descriptor->eqn_idx)) {
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
       LIBXSMM_MEMZERO127(&wrap);
 #endif
@@ -3598,7 +3598,7 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
 }
 
 
-LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2(
+LIBXSMM_API libxsmm_meqn_function libxsmm_dispatch_meqn_v2(
   const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape ) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meqn_descriptor *const desc = libxsmm_meqn_descriptor_init(&blob,
@@ -3609,7 +3609,7 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2(
     return NULL;
   }
 
-  return libxsmm_dispatch_matrix_eqn_desc(desc);
+  return libxsmm_dispatch_meqn_desc(desc);
 }
 
 

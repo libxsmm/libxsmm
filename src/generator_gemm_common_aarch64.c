@@ -107,7 +107,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
     0, LIBXSMM_CAST_USHORT(i_op_type), LIBXSMM_MELTW_OPERATION_UNARY);
   libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
 
-  if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(LIBXSMM_CAST_USHORT(i_op_type)) > 0) {
+  if (libxsmm_meqn_is_unary_opcode_transform_kernel(LIBXSMM_CAST_USHORT(i_op_type)) > 0) {
     libxsmm_generator_transform_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
   } else {
     libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc  );
@@ -129,7 +129,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
       0, LIBXSMM_CAST_USHORT(i_op2_type), LIBXSMM_MELTW_OPERATION_UNARY);
     libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
 
-    if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(LIBXSMM_CAST_USHORT(i_op2_type)) > 0) {
+    if (libxsmm_meqn_is_unary_opcode_transform_kernel(LIBXSMM_CAST_USHORT(i_op2_type)) > 0) {
       libxsmm_generator_transform_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
     } else {
       libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc  );

@@ -372,7 +372,7 @@ void libxsmm_generator_matequation_destroy_stack_frame_aarch64( libxsmm_generate
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs) {
+void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_meqn_fusion_knobs *fusion_knobs) {
   /* For now jus call the same decomposition strategy as on x86 */
   libxsmm_generator_decompose_equation_tree_x86( eqn, jiting_queue, queue_size, fusion_knobs);
 }
@@ -454,7 +454,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   libxsmm_matequation_kernel_config   l_kernel_config;
   libxsmm_loop_label_tracker          l_loop_label_tracker;
   unsigned int eqn_idx = i_mateqn_desc->eqn_idx;
-  libxsmm_matrix_eqn *eqn = libxsmm_matrix_eqn_get_equation( eqn_idx );
+  libxsmm_matrix_eqn *eqn = libxsmm_meqn_get_equation( eqn_idx );
   libxsmm_matrix_eqn **jiting_queue;
   unsigned int queue_size = 0;
 
@@ -468,8 +468,8 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
 #endif
   unsigned int eqn_tree_id = 0;
   unsigned int temp_reg = LIBXSMM_AARCH64_GP_REG_X6;
-  libxsmm_matrix_eqn_fusion_knobs fusion_knobs;
-  memset(&fusion_knobs, 0, sizeof(libxsmm_matrix_eqn_fusion_knobs));
+  libxsmm_meqn_fusion_knobs fusion_knobs;
+  memset(&fusion_knobs, 0, sizeof(libxsmm_meqn_fusion_knobs));
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
@@ -560,15 +560,15 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       }
 #if 0
       printf("\nJITing tree with scratch %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
-      libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
+      libxsmm_meqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
       /* For these nodes use strategy via regblocks */
       /* Re-optimize current tree */
-      if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
-          ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_matrix_eqn_is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
+      if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
+          ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_meqn_is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
         copy_mateqn_desc.m = cur_eqn->eqn_root->le->tmp.m;
         copy_mateqn_desc.n = cur_eqn->eqn_root->le->tmp.n;
       } else {
@@ -587,7 +587,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
 #if 0
       printf("\nJITing tree with regblocks %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
-      libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
+      libxsmm_meqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_register_block_aarch64_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);

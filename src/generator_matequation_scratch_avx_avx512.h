@@ -21,26 +21,26 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor* i_xgemm_desc, libxsmm_gp_reg_mapping*  i_gp_reg_mapping );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* io_generated_code, const libxsmm_matrix_eqn_elem *cur_op,
+void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* io_generated_code, const libxsmm_meqn_elem *cur_op,
   libxsmm_descriptor_blob* blob, libxsmm_gemm_descriptor **out_desc);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob,
-    libxsmm_matrix_eqn_elem *cur_op,
+    libxsmm_meqn_elem *cur_op,
     libxsmm_meltw_descriptor **desc,
     libxsmm_datatype in_precision,
     libxsmm_datatype out_precision);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_blob *blob,
-    libxsmm_matrix_eqn_elem *cur_op,
+    libxsmm_meqn_elem *cur_op,
     libxsmm_meltw_descriptor **desc,
     libxsmm_datatype in_precision,
     libxsmm_datatype out_precision);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_ternary_descriptor(libxsmm_descriptor_blob *blob,
-    libxsmm_matrix_eqn_elem *cur_op,
+    libxsmm_meqn_elem *cur_op,
     libxsmm_meltw_descriptor **desc,
     libxsmm_datatype in_precision,
     libxsmm_datatype out_precision);
@@ -49,7 +49,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_generated_code*   io_generated_code,
     libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
     libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
-    libxsmm_matrix_eqn_elem*                            cur_node,
+    libxsmm_meqn_elem*                            cur_node,
     unsigned int                                        temp_reg,
     unsigned int                                        ptr_id );
 
@@ -57,7 +57,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_generated_code*   io_generated_code,
     libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
     libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
-    libxsmm_matrix_eqn_elem*                            cur_node,
+    libxsmm_meqn_elem*                            cur_node,
     unsigned int                                        temp_reg,
     unsigned int                                        is_last_op );
 
