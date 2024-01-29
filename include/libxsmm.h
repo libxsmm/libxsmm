@@ -147,6 +147,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
 LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
                                                                   const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
                                                                   const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
+/** Query or JIT-generate Tileconfig kernles, if the machine doesn't support Intel AMX, the kernel can be still called */
+LIBXSMM_API libxsmm_tilecfgfunction libxsmm_dispatch_tilecfg( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags );
 
 /**
  * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.

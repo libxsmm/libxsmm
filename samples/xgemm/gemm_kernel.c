@@ -1922,6 +1922,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_gemm_batch_reduce_config l_brconfig;
   libxsmm_gemm_ext_unary_argops l_argops;
   libxsmm_gemm_ext_binary_postops l_postops;
+  libxsmm_tilecfg_state l_tilestate;
   libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_bitfield l_prefetch_flags = 0;
   unsigned int l_decompress = (i_gemm_def->br_type == 4) ? 1 : 0;
@@ -1943,7 +1944,6 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
   int l_asize_divide_factor = 1;
-  unsigned char l_tileconfig_save[64] = {0};
 
   if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
@@ -2076,13 +2076,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-#if defined(USE_GEMM_EXT_FRONTEND)
-    cfg_tr.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
-    rls_tr.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
-#else
-    cfg_tr.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig );
-    rls_tr.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig );
-#endif
+    cfg_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_cfg_flags );
+    rls_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_rls_flags );
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
   l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
@@ -2119,9 +2114,6 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
 
   gemm_param.op.tertiary = &l_br;
-  if (i_gemm_def->tc_config) {
-    gemm_param.op.quaternary = &l_tileconfig_save;
-  }
   gemm_param.c.primary = (void*)o_c;
   gemm_param.c.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
   gemm_param.a.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f16 :
@@ -2133,11 +2125,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run external tileconfig */
   if (i_gemm_def->tc_config) {
-#if defined(USE_GEMM_EXT_FRONTEND)
-    cfg_tr.gemm_ext( &gemm_param );
-#else
-    cfg_tr.gemm( &gemm_param );
-#endif
+    cfg_tr.tilecfg( &l_tilestate );
   }
 
   /* run correctness */
@@ -2282,11 +2270,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run external tilerelease */
   if (i_gemm_def->tc_config) {
-#if defined(USE_GEMM_EXT_FRONTEND)
-    rls_tr.gemm_ext( &gemm_param );
-#else
-    rls_tr.gemm( &gemm_param );
-#endif
+    rls_tr.tilecfg( &l_tilestate );
   }
 
   if ( i_print_jit_info == 0 ) {

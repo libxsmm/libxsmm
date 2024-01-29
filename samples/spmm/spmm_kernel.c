@@ -388,6 +388,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   libxsmm_bitfield l_prefetch_flags = 0;
   libxsmm_gemm_param gemm_param;
   libxsmm_spgemm_config spgemm_config;
+  libxsmm_tilecfg_state l_tilestate;
 
   double l_jittime, l_runtime;
   size_t l_t;
@@ -395,7 +396,6 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
   unsigned long long N = i_spmm_def->n/i_spmm_def->bn;
-  unsigned char l_tileconfig_save[64] = { 0 };
 
   if (0 == i_spmm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
@@ -434,8 +434,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    cfg_tr.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_cfg_flags, l_prefetch_flags, spgemm_config);
-    rls_tr.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_rls_flags, l_prefetch_flags, spgemm_config);
+    cfg_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_cfg_flags );
+    rls_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_rls_flags );
   }
   l_test_jit.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_flags, l_prefetch_flags, spgemm_config);
 
@@ -446,7 +446,6 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   }
 
   /* run correctness */
-  gemm_param.op.quaternary = (void*)l_tileconfig_save;
   gemm_param.a.primary = (void*)i_a;
   gemm_param.b.primary = (void*)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
@@ -455,7 +454,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   gemm_param.c.primary = (void*)o_c;
   /* run external tileconfig */
   if (i_spmm_def->tc_config) {
-    cfg_tr.gemm( &gemm_param );
+    cfg_tr.tilecfg( &l_tilestate );
   }
   l_test_jit.gemm( &gemm_param );
 
@@ -474,7 +473,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run external tilerelease */
   if (i_spmm_def->tc_config) {
-    rls_tr.gemm( &gemm_param );
+    rls_tr.tilecfg( &l_tilestate );
   }
 
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
@@ -973,21 +972,7 @@ int main(int argc, char* argv []) {
       printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * l_m_blocks * (double)l_n * (double)l_k) * (double)l_n_threads * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
     } else {
-      {
-        const char *prefetch = NULL;
-        switch (l_prefetch) {
-          case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
-          case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2: prefetch = "AL2"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C: prefetch = "AL2_BL2viaC"; break;
-          default: prefetch = "unknown";
-        }
-
-        assert(NULL != prefetch);
-        l_runtime_libxsmm /= (double)l_n_threads;
-      }
+      l_runtime_libxsmm /= (double)l_n_threads;
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * l_m_blocks * (double)l_n * (double)l_k * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
