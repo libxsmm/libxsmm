@@ -4860,7 +4860,7 @@ void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generate
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generated_code,
+void libxsmm_x86_instruction_open_stream_alt( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_struct_params,
                                              const unsigned int      skip_callee_save ) {
   /* TODO: add checks in debug mode */
@@ -4980,7 +4980,7 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
 
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generated_code,
+void libxsmm_x86_instruction_close_stream_alt( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      skip_callee_save ) {
   if ( io_generated_code->code_type > 1 ) {
     /* TODO: this is a very simple System V ABI 64 interface */

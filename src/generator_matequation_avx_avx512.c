@@ -1152,7 +1152,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_generator_decompose_equation_tree_x86( eqn, jiting_queue, &queue_size, &fusion_knobs);
 
   /* Open asm */
-  libxsmm_x86_instruction_open_stream_v2( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
+  libxsmm_x86_instruction_open_stream_alt( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
 
   /* Setup the stack */
   libxsmm_generator_matequation_setup_stack_frame( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
@@ -1248,7 +1248,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_generator_matequation_destroy_stack_frame(  io_generated_code,  &l_kernel_config, &l_gp_reg_mapping, strategy);
 
   /* Close asm */
-  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1 );
+  libxsmm_x86_instruction_close_stream_alt( io_generated_code, 1 );
 
   free(jiting_queue);
 }
