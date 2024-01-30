@@ -9,6 +9,11 @@ steps:
     agents:
       queue: "ftp"
 
+  - label: "BCSC SPMM"
+    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    agents:
+      queue: "ftp"
+
   - label: "ELTWISE"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     agents:
