@@ -55,7 +55,7 @@ void libxsmm_spgemm_max_mn_blocking_factors_x86(libxsmm_generated_code* io_gener
   unsigned int l_n_max_unroll = 0;
   unsigned int l_m_max_unroll = 0;
   if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
-    l_available_vregs = 15;
+    l_available_vregs = 14;
   }
   l_n_max_unroll = l_available_vregs - 2;
   while (i_bn % l_n_max_unroll != 0) {
