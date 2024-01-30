@@ -724,7 +724,7 @@ int main( int argc, char* argv[] ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
     jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
     reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, ld, tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
+    reduce_cols_kernel = libxsmm_dispatch_meltw_unary( unary_type, reduce_cols_shape, jit_reduce_flags );
     if ( reduce_cols_kernel == NULL ) {
       fprintf( stderr, "JIT for reduce_cols_kernel failed. Bailing...!\n");
       exit(-1);
@@ -734,7 +734,7 @@ int main( int argc, char* argv[] ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
     jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
     reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, ld, tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
+    reduce_rows_kernel = libxsmm_dispatch_meltw_unary( unary_type, reduce_rows_shape, jit_reduce_flags );
     if ( reduce_rows_kernel == NULL ) {
       fprintf( stderr, "JIT for reduce_rows_kernel failed. Bailing...!\n");
       exit(-1);
@@ -754,7 +754,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 3, 0, in_dt );
     libxsmm_meqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 4, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
-    func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape_out );
+    func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
     if ( func0 == NULL ) {
       fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
       exit(-1);
@@ -881,7 +881,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg( my_eqn1, S3, S1, ld, 3, 0, in_dt );
     libxsmm_meqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 4, 0, LIBXSMM_DATATYPE_F32 );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-    func1 = libxsmm_dispatch_meqn_v2( my_eqn1, arg_shape_out );
+    func1 = libxsmm_dispatch_meqn( my_eqn1, arg_shape_out );
     if ( func1 == NULL ) {
       fprintf( stderr, "JIT for func1 failed. Bailing...!\n");
       exit(-1);
@@ -893,7 +893,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg( my_eqn2, S3, S1, ld, 3, 0, in_dt );
     libxsmm_meqn_push_back_arg( my_eqn2, S3, S1, tmp_ld, 5, 0, LIBXSMM_DATATYPE_F32 );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-    func2 = libxsmm_dispatch_meqn_v2( my_eqn2, arg_shape_out );
+    func2 = libxsmm_dispatch_meqn( my_eqn2, arg_shape_out );
     if ( func2 == NULL ) {
       fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
       exit(-1);
@@ -906,7 +906,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
     libxsmm_meqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
-    func3 = libxsmm_dispatch_meqn_v2( my_eqn3, arg_shape_out );
+    func3 = libxsmm_dispatch_meqn( my_eqn3, arg_shape_out );
     if ( func3 == NULL ) {
       fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
       exit(-1);
@@ -931,7 +931,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
     libxsmm_meqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
-    func4 = libxsmm_dispatch_meqn_v2( my_eqn4, arg_shape_out );
+    func4 = libxsmm_dispatch_meqn( my_eqn4, arg_shape_out );
     if ( func4 == NULL ) {
       fprintf( stderr, "JIT for func4 failed. Bailing...!\n");
       exit(-1);
@@ -962,7 +962,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg( my_eqn5, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );
     libxsmm_meqn_push_back_arg( my_eqn5, 1, 1, 1, 7, 0, LIBXSMM_DATATYPE_F32 );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, in_dt );
-    func5 = libxsmm_dispatch_meqn_v2( my_eqn5, arg_shape_out );
+    func5 = libxsmm_dispatch_meqn( my_eqn5, arg_shape_out );
     if ( func5 == NULL ) {
       fprintf( stderr, "JIT for func5 failed. Bailing...!\n");
       exit(-1);

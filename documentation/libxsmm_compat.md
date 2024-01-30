@@ -10,7 +10,7 @@ If platform support is forced (`PLATFORM=1`), runtime code generation is disable
 
 ## LIBXSMM 2.x
 
-For new developments prior to LIBXSMM 2.0 release, e.g., the integration of LIBXSMM into an application or a library, it is advisable to rely on `main` branch (`main` may not be the default branch temporarily, i.e., a fresh clone of LIBXSMM can be based on `main_stable` rather than `main`). Any functions carrying `_v2` as a postfix is encouraged (`_v2` is when development approaches LIBXSMM v2.0).
+For new developments prior to LIBXSMM 2.0 release, e.g., the integration of LIBXSMM into an application or a library, it is advisable to rely on `main` branch (`main` may not be the default branch temporarily, i.e., a fresh clone of LIBXSMM can be based on `main_stable` rather than `main`). Any functions carrying `` as a postfix is encouraged (`` is when development approaches LIBXSMM v2.0).
 
 Version 2 remains feature wise compatible, i.e., equivalent but new API calls are necessary for v1.x functionality. For an existing integration with LIBXSMM v1.x it is recommended to transition to API v2. If such code base cannot easily control dependencies/users, or wishes to support APIv1 as well as APIv2, it is possible to distinct LIBXSMM's version at compile-time and to implement v1- and v2-codepaths.
 

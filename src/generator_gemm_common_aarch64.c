@@ -1561,7 +1561,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
                                                               const unsigned int             i_arch,
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
+  libxsmm_generator_gemm_setup_fusion_microkernel_properties(i_xgemm_desc, io_micro_kernel_config);
   if ( i_arch  == LIBXSMM_AARCH64_V81 || i_arch  == LIBXSMM_AARCH64_V82 || i_arch  == LIBXSMM_AARCH64_APPL_M1 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_AARCH64_V81;
     io_micro_kernel_config->vector_reg_count = 32;

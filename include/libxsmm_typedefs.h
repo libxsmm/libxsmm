@@ -564,13 +564,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg {
   void* quaternary;
 } libxsmm_matrix_arg;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg_v2 {
-  void* primary;
-  void* secondary;
-  void* tertiary;
-  void* quaternary;
-} libxsmm_matrix_arg_v2;
-
 LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_op_arg {
   void* primary;
   void* secondary;
@@ -703,20 +696,20 @@ LIBXSMM_EXTERN_C typedef void (*libxsmm_smmfunction)(const float* a, const float
 /* argument structs for generalized interface */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
-  libxsmm_matrix_arg_v2 a;   /* a matrix  */
-  libxsmm_matrix_arg_v2 b;   /* b matrix  */
-  libxsmm_matrix_arg_v2 c;   /* c matrix  */
+  libxsmm_matrix_arg a;   /* a matrix  */
+  libxsmm_matrix_arg b;   /* b matrix  */
+  libxsmm_matrix_arg c;   /* c matrix  */
 } libxsmm_gemm_param;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
-  libxsmm_matrix_arg_v2 a;   /* a matrix  */
-  libxsmm_matrix_arg_v2 b;   /* b matrix  */
-  libxsmm_matrix_arg_v2 c;   /* c matrix  */
-  libxsmm_matrix_arg_v2 d;   /* additional tensor for binary op on c */
-  libxsmm_matrix_arg_v2 ap;  /* a after applying unary op */
-  libxsmm_matrix_arg_v2 bp;  /* b after applying unary op */
-  libxsmm_matrix_arg_v2 cp;  /* c before applying binary/ternary op after GEMM */
+  libxsmm_matrix_arg a;   /* a matrix  */
+  libxsmm_matrix_arg b;   /* b matrix  */
+  libxsmm_matrix_arg c;   /* c matrix  */
+  libxsmm_matrix_arg d;   /* additional tensor for binary op on c */
+  libxsmm_matrix_arg ap;  /* a after applying unary op */
+  libxsmm_matrix_arg bp;  /* b after applying unary op */
+  libxsmm_matrix_arg cp;  /* c before applying binary/ternary op after GEMM */
 } libxsmm_gemm_ext_param;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_shape {

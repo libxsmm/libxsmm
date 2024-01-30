@@ -29,7 +29,7 @@ void libxsmm_generator_copy_input_args_aarch64(libxsmm_generated_code*        io
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
     libxsmm_meqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_meqn_arg_v2           *arg_info,
+    libxsmm_meqn_arg           *arg_info,
     unsigned int                        input_reg);
 
 LIBXSMM_API_INTERN
@@ -50,7 +50,7 @@ void libxsmm_generator_mateqn_adjust_args_addr_aarch64(libxsmm_generated_code*  
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_meqn_arg_v2           *arg_info);
+    libxsmm_meqn_arg           *arg_info);
 
 LIBXSMM_API_INTERN
 void libxsmm_configure_mateqn_microkernel_loops_aarch64( libxsmm_generated_code*                 io_generated_code,

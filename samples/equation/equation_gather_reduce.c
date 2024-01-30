@@ -145,10 +145,10 @@ int main( int argc, char* argv[] ) {
     ? (LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES)
     : (LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES));
 
-  libxsmm_meqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, in_dt, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
-  libxsmm_meqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
-  libxsmm_meqn_push_back_arg_v2(arg_metadata, arg_shape_in, arg_singular_attr);
-  func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape_out );
+  libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, in_dt, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
+  libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for equation failed. Bailing...!\n");
     exit(-1);

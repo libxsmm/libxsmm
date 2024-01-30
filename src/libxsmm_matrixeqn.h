@@ -73,19 +73,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_meqn_arg {
   libxsmm_blasint  in_pos;
   libxsmm_blasint  offs_in_pos;
   libxsmm_datatype dtype;
-  libxsmm_meqn_bcast_type  bcast_type;
-} libxsmm_meqn_arg;
-
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_meqn_arg_v2 {
-  libxsmm_blasint  m;
-  libxsmm_blasint  n;
-  libxsmm_blasint  ld;
-  libxsmm_blasint  in_pos;
-  libxsmm_blasint  offs_in_pos;
-  libxsmm_datatype dtype;
   libxsmm_meqn_bcast_type   bcast_type;
   libxsmm_matrix_arg_attributes   arg_attr;
-} libxsmm_meqn_arg_v2;
+} libxsmm_meqn_arg;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_meqn_tmp_info {
   libxsmm_blasint  id;
@@ -110,7 +100,7 @@ LIBXSMM_EXTERN_C typedef union libxsmm_meqn_info {
   libxsmm_meqn_unary_op   u_op;
   libxsmm_meqn_binary_op  b_op;
   libxsmm_meqn_ternary_op t_op;
-  libxsmm_meqn_arg_v2     arg;
+  libxsmm_meqn_arg     arg;
 } libxsmm_meqn_info;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_xgemm_fusion_info {

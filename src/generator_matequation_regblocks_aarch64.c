@@ -64,7 +64,7 @@ void libxsmm_generator_copy_input_args_aarch64(libxsmm_generated_code*        io
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
     libxsmm_meqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_meqn_arg_v2           *arg_info,
+    libxsmm_meqn_arg           *arg_info,
     unsigned int                        input_reg) {
 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -182,7 +182,7 @@ void libxsmm_generator_mateqn_adjust_args_addr_aarch64(libxsmm_generated_code*  
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_meqn_arg_v2           *arg_info) {
+    libxsmm_meqn_arg           *arg_info) {
 
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
@@ -402,7 +402,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( libxsmm_generate
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   unsigned int temp_reg3 = i_gp_reg_mapping->temp_reg3;
   unsigned int cur_vreg;
-  libxsmm_meqn_arg_v2  *arg_info = i_micro_kernel_config->arg_info;
+  libxsmm_meqn_arg  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
   unsigned int l_ld_bytes = arg_info[i_arg_id].ld * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype);
@@ -1602,7 +1602,7 @@ void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_ge
     libxsmm_matequation_kernel_config*      i_micro_kernel_config_orig,
     libxsmm_loop_label_tracker*             io_loop_label_tracker,
     libxsmm_matrix_eqn*                     eqn ) {
-  libxsmm_meqn_arg_v2              *arg_info;
+  libxsmm_meqn_arg              *arg_info;
   libxsmm_meqn_tmp_info            *oparg_info;
   unsigned int arg_id = 0, i = 0, oparg_id = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
@@ -1627,7 +1627,7 @@ void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_ge
 
   /* Iterate over the equation tree and copy the args ptrs in the auxiliary scratch */
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 8, i_gp_reg_mapping->gp_reg_scratch_0 );
-  arg_info = (libxsmm_meqn_arg_v2*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_meqn_arg_v2));
+  arg_info = (libxsmm_meqn_arg*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_meqn_arg));
   oparg_info = (libxsmm_meqn_tmp_info*) malloc((eqn->eqn_root->visit_timestamp + 1) * sizeof(libxsmm_meqn_tmp_info));
   i_micro_kernel_config->contains_binary_op = 0;
   i_micro_kernel_config->contains_ternary_op = 0;

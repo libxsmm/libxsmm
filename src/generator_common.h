@@ -1858,7 +1858,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      contains_binary_op;
   unsigned int                      contains_ternary_op;
   unsigned int                      tmp_size;
-  libxsmm_meqn_arg_v2         *arg_info;
+  libxsmm_meqn_arg         *arg_info;
   libxsmm_meqn_tmp_info       *oparg_info;
   unsigned int                      reserved_zmms;
   unsigned int                      reserved_mask_regs;

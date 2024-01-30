@@ -90,7 +90,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_meqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 3, 0, bg_dt );
   libxsmm_meqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 4, 0, bg_dt );
   arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
-  func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
 
   arg_array[0].primary = (void*)bf8_arg[0];
   arg_array[1].primary = (void*)arg[1];

@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
   unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   op_metadata.eqn_idx      = my_eqn0;
   op_metadata.op_arg_pos   = 1;
-  libxsmm_meqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, unary_flags); /* b1 */
+  libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, unary_flags); /* b1 */
 
   libxsmm_meqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16 );
 
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
   unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   op_metadata.eqn_idx      = my_eqn0;
   op_metadata.op_arg_pos   = 0;
-  libxsmm_meqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, unary_flags); /* b0 */
+  libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, unary_flags); /* b0 */
 
   libxsmm_meqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16 );
 
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 
   /* libxsmm_meqn_tree_print(my_eqn0); */
   /* libxsmm_meqn_rpn_print(my_eqn0); */
-  func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);

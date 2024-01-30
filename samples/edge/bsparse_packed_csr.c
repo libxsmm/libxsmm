@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
     printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)M * (double)N * (double)K * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
     /* sparse routine */
-    mykernel = libxsmm_create_packed_spgemm_csr_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_rowptr, l_colidx, (const void*)l_b_sp );
+    mykernel = libxsmm_create_packed_spgemm_csr( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_rowptr, l_colidx, (const void*)l_b_sp );
 
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     gemm_param.a.primary = (void*)l_a;

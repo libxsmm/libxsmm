@@ -1646,7 +1646,7 @@ void libxsmm_generator_gemm_destroy_stack_frame( libxsmm_generated_code*        
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm_gemm_descriptor*      i_xgemm_desc,
+void libxsmm_generator_gemm_setup_fusion_microkernel_properties(const libxsmm_gemm_descriptor*      i_xgemm_desc,
                                                                 libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
   i_micro_kernel_config->fused_bcolbias          = 0;
   i_micro_kernel_config->fused_hcolbias          = 0;
@@ -1919,7 +1919,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
                                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                       const unsigned int             i_use_masking_a_c ) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
+  libxsmm_generator_gemm_setup_fusion_microkernel_properties(i_xgemm_desc, io_micro_kernel_config);
   if ( (i_arch <= LIBXSMM_TARGET_ARCH_GENERIC) || (i_arch > LIBXSMM_X86_ALLFEAT) ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;

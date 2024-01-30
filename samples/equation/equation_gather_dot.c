@@ -278,8 +278,8 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   }
 
   /* first TPP implementation we just run a reduce muladd */
-  l_mul = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
-  l_addreduce = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  l_mul = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  l_addreduce = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
 
   /* second TPP implementation equation for reduce muladd */
   l_eqn_0_idx = libxsmm_meqn_create();
@@ -292,16 +292,16 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   libxsmm_meqn_tree_print( l_eqn_0_idx );
   libxsmm_meqn_rpn_print( l_eqn_0_idx );
   l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
-  l_eqn_0 = libxsmm_dispatch_meqn_v2( l_eqn_0_idx, l_eqn_0_shape_out );
+  l_eqn_0 = libxsmm_dispatch_meqn( l_eqn_0_idx, l_eqn_0_shape_out );
 
   /* third TPP implementation we run gather and than matmul */
-  l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_gather_gemm.gemm = libxsmm_dispatch_gemm_v2( l_gather_gemm_shape, l_gather_gemm_flags, l_gather_gemm_prefetch_flags );
+  l_gather = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
+  l_gather_gemm.gemm = libxsmm_dispatch_gemm( l_gather_gemm_shape, l_gather_gemm_flags, l_gather_gemm_prefetch_flags );
 
   /* forth TPP implementation we run gather and reduce muladd */
-  l_gather_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_2_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_mul_2 = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_2_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 );
-  l_addreduce_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_2_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  l_gather_2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_2_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
+  l_mul_2 = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_2_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 );
+  l_addreduce_2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_2_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
 
   if ( (l_gather == NULL) || (l_gather_gemm.xmm == NULL) ) {
     printf("JIT failed for gather+gemm, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");

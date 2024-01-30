@@ -2371,7 +2371,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-    libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(l_xgemm_desc, &l_micro_kernel_config );
+    libxsmm_generator_gemm_setup_fusion_microkernel_properties(l_xgemm_desc, &l_micro_kernel_config );
   } else {
     /* AMX kernels are supported only under the new abi */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_ABI );

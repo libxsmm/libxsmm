@@ -213,7 +213,7 @@ void libxsmm_generator_gemm_destroy_stack_frame( libxsmm_generated_code*        
                                                   const libxsmm_micro_kernel_config*  i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm_gemm_descriptor*      i_xgemm_desc,
+void libxsmm_generator_gemm_setup_fusion_microkernel_properties(const libxsmm_gemm_descriptor*      i_xgemm_desc,
                                                                 libxsmm_micro_kernel_config*        i_micro_kernel_config );
 
 LIBXSMM_API_INTERN

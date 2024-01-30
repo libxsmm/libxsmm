@@ -521,7 +521,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_meqn_tree_print( my_eqn0 );
   libxsmm_meqn_rpn_print( my_eqn0 );
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, out_dt );
-  func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);

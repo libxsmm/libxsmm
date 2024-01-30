@@ -181,7 +181,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_meqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with lo bits  */
   libxsmm_meqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with hi bits  */
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_U16 );
-  func0 = libxsmm_dispatch_meqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);

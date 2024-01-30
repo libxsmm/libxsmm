@@ -1356,36 +1356,7 @@ LIBXSMM_API libxsmm_meqn_op_metadata libxsmm_create_meqn_op_metadata( const libx
   return res;
 }
 
-LIBXSMM_API int libxsmm_meqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype ) {
-  union libxsmm_meqn_info info /*= { 0 }*/;
-
-  if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation does not exist!\n" );
-    return 1;
-  }
-  if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
-    fprintf( stderr, "the requested equation is already finalized!\n" );
-    return 2;
-  }
-
-  info.arg.m = m;
-  info.arg.n = n;
-  info.arg.ld = ld;
-  info.arg.in_pos = in_pos;
-  info.arg.offs_in_pos = offs_in_pos;
-  info.arg.dtype = dtype;
-  libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_meqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_ARG, info );
-#if 0
-  printf("added arg node: %lld %i %i %i %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, M, N, ld, in_pos, offs_in_pos, dtype );
-#endif
-
-  /* move to the next head position in the tree */
-  libxsmm_meqn_mov_head( idx );
-
-  return 0;
-}
-
-LIBXSMM_API int libxsmm_meqn_push_back_arg_v2( const libxsmm_meqn_arg_metadata arg_metadata, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr ) {
+LIBXSMM_API int libxsmm_meqn_push_back_arg( const libxsmm_meqn_arg_metadata arg_metadata, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr ) {
   union libxsmm_meqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = arg_metadata.eqn_idx;
 
@@ -1416,34 +1387,7 @@ LIBXSMM_API int libxsmm_meqn_push_back_arg_v2( const libxsmm_meqn_arg_metadata a
 }
 
 
-LIBXSMM_API int libxsmm_meqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype ) {
-  union libxsmm_meqn_info info /*= { 0 }*/;
-
-  if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation does not exist!\n" );
-    return 1;
-  }
-  if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
-    fprintf( stderr, "the requested equation is already finalized!\n" );
-    return 2;
-  }
-
-  info.u_op.type  = type;
-  info.u_op.flags = (libxsmm_bitfield)flags;
-  info.u_op.dtype = (dtype == LIBXSMM_DATATYPE_IMPLICIT) ? LIBXSMM_DATATYPE_F32 : dtype;
-  libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_meqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_UNARY, info );
-#if 0
-  printf("added unary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
-#endif
-
-  /* move to the next head position in the tree */
-  libxsmm_meqn_mov_head( idx );
-
-  return 0;
-}
-
-
-LIBXSMM_API int libxsmm_meqn_push_back_unary_op_v2(const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_unary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
+LIBXSMM_API int libxsmm_meqn_push_back_unary_op(const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_unary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
   union libxsmm_meqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = op_metadata.eqn_idx;
 
@@ -1471,35 +1415,7 @@ LIBXSMM_API int libxsmm_meqn_push_back_unary_op_v2(const libxsmm_meqn_op_metadat
   return 0;
 }
 
-LIBXSMM_API int libxsmm_meqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype ) {
-  union libxsmm_meqn_info info /*= { 0 }*/;
-
-  if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation does not exist!\n" );
-    return 1;
-  }
-  if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
-    fprintf( stderr, "the requested equation is already finalized!\n" );
-    return 2;
-  }
-
-  info.b_op.type  = type;
-  info.b_op.flags = (libxsmm_bitfield)flags;
-  info.b_op.dtype = (dtype == LIBXSMM_DATATYPE_IMPLICIT) ? LIBXSMM_DATATYPE_F32 : dtype;
-  info.b_op.is_matmul  = 0;
-  info.b_op.is_brgemm  = 0;
-  libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_meqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_BINARY, info );
-#if 0
-  printf("added binary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
-#endif
-
-  /* move to the next head position in the tree */
-  libxsmm_meqn_mov_head( idx );
-
-  return 0;
-}
-
-LIBXSMM_API int libxsmm_meqn_push_back_binary_op_v2(const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_binary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
+LIBXSMM_API int libxsmm_meqn_push_back_binary_op(const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_binary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
   union libxsmm_meqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = op_metadata.eqn_idx;
   unsigned int is_brgemm = ((type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM) ||
@@ -1546,37 +1462,7 @@ LIBXSMM_API int libxsmm_meqn_push_back_binary_op_v2(const libxsmm_meqn_op_metada
   return 0;
 }
 
-
-LIBXSMM_API int libxsmm_meqn_push_back_ternary_op( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype ) {
-  union libxsmm_meqn_info info /*= { 0 }*/;
-
-  if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation does not exist!\n" );
-    return 1;
-  }
-  if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
-    fprintf( stderr, "the requested equation is already finalized!\n" );
-    return 2;
-  }
-
-  info.t_op.type  = type;
-  info.t_op.flags = (libxsmm_bitfield)flags;
-  info.t_op.dtype = (dtype == LIBXSMM_DATATYPE_IMPLICIT) ? LIBXSMM_DATATYPE_F32 : dtype;
-  info.t_op.is_matmul  = 0;
-  info.t_op.is_brgemm  = 0;
-
-  libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_meqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_TERNARY, info );
-#if 0
-  printf("added ternary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
-#endif
-
-  /* move to the next head position in the tree */
-  libxsmm_meqn_mov_head( idx );
-
-  return 0;
-}
-
-LIBXSMM_API int libxsmm_meqn_push_back_ternary_op_v2(const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_ternary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
+LIBXSMM_API int libxsmm_meqn_push_back_ternary_op(const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_ternary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
   union libxsmm_meqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = op_metadata.eqn_idx;
   unsigned int is_brgemm = ((type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM) ||

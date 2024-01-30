@@ -138,13 +138,13 @@ LIBXSMM_API libxsmm_gemm_ext_binary_postops libxsmm_create_gemm_ext_binary_posto
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 /** Query or JIT-generate SMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
                                                         const libxsmm_bitfield prefetch_flags );
 /** Query or JIT-generate BRGEMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
                                                           const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config );
 /** Query or JIT-generate BRGEMM-kernel with fusion, general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
-LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
                                                                   const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
                                                                   const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
 
@@ -256,31 +256,25 @@ LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const 
 LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                             const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldi3, const libxsmm_blasint ldo,
                                                                             const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype in2_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
-LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary_v2( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags );
-LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary_v2( const libxsmm_meltw_binary_type binary_type, const libxsmm_meltw_binary_shape binary_shape, const libxsmm_bitfield binary_flags );
-LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary_v2( const libxsmm_meltw_ternary_type ternary_type, const libxsmm_meltw_ternary_shape ternary_shape, const libxsmm_bitfield ternary_flags );
+LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags );
+LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary( const libxsmm_meltw_binary_type binary_type, const libxsmm_meltw_binary_shape binary_shape, const libxsmm_bitfield binary_flags );
+LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary( const libxsmm_meltw_ternary_type ternary_type, const libxsmm_meltw_ternary_shape ternary_shape, const libxsmm_bitfield ternary_flags );
 
 /** matrix equation interface */
 LIBXSMM_API libxsmm_blasint libxsmm_meqn_create(void);
-LIBXSMM_API int libxsmm_meqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld,
-                                                  const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype );
-LIBXSMM_API int libxsmm_meqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype );
-LIBXSMM_API int libxsmm_meqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype );
-LIBXSMM_API int libxsmm_meqn_push_back_ternary_op( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype );
-
 LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_datatype type );
 LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_create_matrix_arg_attributes( const libxsmm_matrix_arg_type type, const libxsmm_matrix_arg_set_type set_type, const libxsmm_blasint set_cardinality_hint, const libxsmm_blasint set_stride_hint );
 LIBXSMM_API libxsmm_meqn_arg_metadata libxsmm_create_meqn_arg_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint in_arg_pos );
 LIBXSMM_API libxsmm_meqn_op_metadata libxsmm_create_meqn_op_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint op_arg_pos );
-LIBXSMM_API int libxsmm_meqn_push_back_arg_v2( const libxsmm_meqn_arg_metadata arg_metadata, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr);
-LIBXSMM_API int libxsmm_meqn_push_back_unary_op_v2( const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_unary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
-LIBXSMM_API int libxsmm_meqn_push_back_binary_op_v2( const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_binary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
-LIBXSMM_API int libxsmm_meqn_push_back_ternary_op_v2( const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_ternary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
+LIBXSMM_API int libxsmm_meqn_push_back_arg( const libxsmm_meqn_arg_metadata arg_metadata, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr);
+LIBXSMM_API int libxsmm_meqn_push_back_unary_op( const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_unary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
+LIBXSMM_API int libxsmm_meqn_push_back_binary_op( const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_binary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
+LIBXSMM_API int libxsmm_meqn_push_back_ternary_op( const libxsmm_meqn_op_metadata op_metadata, const libxsmm_meltw_ternary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
 
 LIBXSMM_API void libxsmm_meqn_tree_print( const libxsmm_blasint idx );
 LIBXSMM_API void libxsmm_meqn_rpn_print( const libxsmm_blasint idx );
 LIBXSMM_API libxsmm_meqn_function libxsmm_dispatch_meqn_desc( const libxsmm_meqn_descriptor* descriptor );
-LIBXSMM_API libxsmm_meqn_function libxsmm_dispatch_meqn_v2( const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape );
+LIBXSMM_API libxsmm_meqn_function libxsmm_dispatch_meqn( const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape );
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
@@ -288,7 +282,7 @@ LIBXSMM_API libxsmm_meqn_function libxsmm_dispatch_meqn_v2( const libxsmm_blasin
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
 
@@ -298,7 +292,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
 
@@ -319,7 +313,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm( const libxsmm_gemm_
  * here is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libxsmm_gemm_shape gemm_shape,
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width );
 
 /**
@@ -328,7 +322,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
  * here is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libxsmm_gemm_shape gemm_shape,
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width );
 
 /**
@@ -336,7 +330,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libx
  * The sparse matrix "a" is kept in registers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsmm_gemm_shape gemm_shape,
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
   const libxsmm_blasint max_N, const unsigned int* row_ptr, const unsigned int* column_idx, const double* values );
 
@@ -471,7 +465,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = libxsmm_dispatch_gemm_v2(gemm_shape, 0/*flags*/,
+    m_function = libxsmm_dispatch_gemm(gemm_shape, 0/*flags*/,
       static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT));
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch = PREFETCH_DEFAULT) {
@@ -479,7 +473,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = libxsmm_dispatch_gemm(gemm_shape,
       static_cast<libxsmm_bitfield>(flags),
       static_cast<libxsmm_bitfield>(prefetch));
   }
@@ -488,7 +482,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm(gemm_shape,
       static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
       static_cast<libxsmm_bitfield>(prefetch)) : NULL);
   }
@@ -498,7 +492,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = libxsmm_dispatch_gemm(gemm_shape,
       static_cast<libxsmm_bitfield>(flags),
       static_cast<libxsmm_bitfield>(prefetch));
   }
@@ -509,7 +503,7 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm_v2(gemm_shape,
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) ? libxsmm_dispatch_gemm(gemm_shape,
       static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
       static_cast<libxsmm_bitfield>(prefetch)) : NULL);
   }
