@@ -121,7 +121,10 @@ int main( int argc, char* argv[] ) {
   int N = 64;
   int ld = 64;
   /*unsigned int correct = 1;*/
-  libxsmm_meqn_arg_shape arg_shape_out;
+  libxsmm_meqn_arg_metadata arg_metadata;
+  libxsmm_meqn_op_metadata  op_metadata;
+  libxsmm_meqn_arg_shape          arg_shape_in, arg_shape_out;
+  libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   libxsmm_meqn_param eqn_param;
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
@@ -171,15 +174,21 @@ int main( int argc, char* argv[] ) {
 
   /* Split sgd via equation */
   my_eqn0 = libxsmm_meqn_create();
-  libxsmm_meqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_IMPLICIT );
-  libxsmm_meqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
-    (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT),
-    LIBXSMM_DATATYPE_F32);
-  libxsmm_meqn_push_back_arg( my_eqn0, M, N, ld, 3, 0, LIBXSMM_DATATYPE_BF16 ); /* This is the "gradient" weights   */
-  libxsmm_meqn_push_back_arg( my_eqn0, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );   /* This is the scalar learning rate */
-  libxsmm_meqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_IMPLICIT );
-  libxsmm_meqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with lo bits  */
-  libxsmm_meqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_U16 );  /* This is the tensor with hi bits  */
+  op_metadata   = libxsmm_create_meqn_op_metadata(my_eqn0, -1);
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_DATATYPE_IMPLICIT, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  libxsmm_meqn_push_back_ternary_op( op_metadata, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_BF16 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 3);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( 1, 1, 1, LIBXSMM_DATATYPE_F32 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 2);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_DATATYPE_IMPLICIT, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_U16 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr); /* This is the tensor with lo bits  */
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 1);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr); /* This is the tensor with hi bits  */
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_U16 );
   func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
