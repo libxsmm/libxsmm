@@ -8,6 +8,11 @@ steps:
     agents:
       queue: "aarch64"
 
+  - label: "BCSC SPMM"
+    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    agents:
+      queue: "aarch64"
+
   - label: "ELTWISE"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     agents:
