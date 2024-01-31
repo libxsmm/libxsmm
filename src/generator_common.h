@@ -1474,6 +1474,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
+  unsigned int luth_reg0;
+  unsigned int luth_reg1;
+  unsigned int lutl_reg0;
+  unsigned int lutl_reg1;
+  unsigned int sign_reg;
+  unsigned int blend_reg;
+  unsigned int tmp_reg0;
+  unsigned int tmp_reg1;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
