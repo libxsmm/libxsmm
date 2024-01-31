@@ -8,12 +8,6 @@ If platform support is forced (`PLATFORM=1`), runtime code generation is disable
 
 **Note**: JIT-support normally guarantees a non-NULL code pointer ("kernel") if the request is according to the [limitations](https://github.com/libxsmm/libxsmm/wiki/Q&A#what-is-a-small-matrix-multiplication) (user-code is not asked to check for a NULL-kernel), which does not hold true if JIT is enabled on a platform that does not implement it.
 
-## LIBXSMM 2.x
-
-For new developments prior to LIBXSMM 2.0 release, e.g., the integration of LIBXSMM into an application or a library, it is advisable to rely on `main` branch (`main` may not be the default branch temporarily, i.e., a fresh clone of LIBXSMM can be based on `main_stable` rather than `main`). Any functions carrying `` as a postfix is encouraged (`` is when development approaches LIBXSMM v2.0).
-
-Version 2 remains feature wise compatible, i.e., equivalent but new API calls are necessary for v1.x functionality. For an existing integration with LIBXSMM v1.x it is recommended to transition to API v2. If such code base cannot easily control dependencies/users, or wishes to support APIv1 as well as APIv2, it is possible to distinct LIBXSMM's version at compile-time and to implement v1- and v2-codepaths.
-
 ## Linux
 
 All Linux distributions are meant to be fully supported (please [report](https://github.com/libxsmm/libxsmm/issues/new) any compatibility issue). A shared library (`STATIC=0`) necessarily implies some performance hit when accessing thread-local memory (contended multicore execution). The GNU Compiler Collection prior to v5.1 may imply performance hits in some CPUID-dispatched code paths (non-JIT).
