@@ -1018,11 +1018,11 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
                                                                         libxsmm_matrix_eqn*               i_eqn,
                                                                         const libxsmm_meqn_descriptor*    i_mateqn_desc) {
   libxsmm_blasint is_valid_arch_prec = 1;
-  unsigned int has_inp_or_out_fp8 = ((libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_BF8) > 0) || (libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_HF8) > 0) ||
+  unsigned int has_inp_or_out_fp8 = ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_BF8) > 0) || (libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_HF8) > 0) ||
                                      (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
-  unsigned int has_inp_or_out_fp64= ((libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64) > 0) || (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
-  unsigned int all_nodes_fp64 = libxsmm_generator_matequation_all_nodes_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
-  unsigned int all_args_fp64 = libxsmm_generator_matequation_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
+  unsigned int has_inp_or_out_fp64= ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64) > 0) || (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+  unsigned int all_nodes_fp64 = libxsmm_meqn_all_nodes_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
+  unsigned int all_args_fp64 = libxsmm_meqn_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
   unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
 
   /* Unary not supported for fp64 */
@@ -1055,13 +1055,13 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
   if (io_generated_code->arch < LIBXSMM_X86_AVX) {
     is_valid_arch_prec = 0;
   }
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX)) {
+  if ((libxsmm_meqn_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNZIP, LIBXSMM_MELTW_TYPE_BINARY_ZIP, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX)) {
     is_valid_arch_prec = 0;
   }
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
+  if ((libxsmm_meqn_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
     is_valid_arch_prec = 0;
   }
-  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU_INV, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
+  if ((libxsmm_meqn_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_GELU_INV, LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
     is_valid_arch_prec = 0;
   }
   if ((has_inp_or_out_fp8 > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX)) {
@@ -1073,13 +1073,13 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
   if (has_inp_or_out_fp64 > 0) {
     unsigned int i = 0;
     for (i = 0; i < 21; i++) {
-      if (libxsmm_generator_matequation_contains_opcode(i_eqn, non_fp64_unary[i], LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) {
+      if (libxsmm_meqn_contains_opcode(i_eqn, non_fp64_unary[i], LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) {
         is_valid_arch_prec = 0;
         break;
       }
     }
     for (i = 0; i < 2; i++) {
-      if (libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_NONE, non_fp64_binary[i], LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) {
+      if (libxsmm_meqn_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_NONE, non_fp64_binary[i], LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) {
         is_valid_arch_prec = 0;
         break;
       }
@@ -1198,7 +1198,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     if (libxsmm_generator_matequation_is_eqn_node_breaking_point(cur_eqn->eqn_root, &fusion_knobs) > 0) {
       /* For these nodes use strategy via scratch */
       /* Re assign visit_stamps to current equation tree */
-      libxsmm_generator_matequation_assign_timestamps(cur_eqn);
+      libxsmm_meqn_assign_timestamps(cur_eqn);
       if (eqn_tree_id < queue_size - 1) {
         if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) &&
             ((cur_eqn->eqn_root->info.t_op.is_matmul == 1) || (cur_eqn->eqn_root->info.t_op.is_brgemm == 1))) {
@@ -1233,7 +1233,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         libxsmm_x86_instruction_alu_mem( io_generated_code, l_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_offset, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_reg_mapping.gp_reg_offset, 0 );
       }
 
-      libxsmm_generator_reoptimize_eqn(cur_eqn);
+      libxsmm_meqn_reoptimize(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
 #if 0
       printf("\nJITing tree with regblocks %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);

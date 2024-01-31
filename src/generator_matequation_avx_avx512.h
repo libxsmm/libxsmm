@@ -125,15 +125,6 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_meqn_fusion_knobs *fusion_knobs );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_assign_new_timestamp(libxsmm_meqn_elem* cur_node, libxsmm_blasint *current_timestamp );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn);
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn);
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc );
 
@@ -143,7 +134,7 @@ LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_with_bcast(libxs
 LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_unary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_meqn_elem *node);
 LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_binary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_meqn_elem *node);
 LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_meqn_elem *node);
-LIBXSMM_API_INTERN void libxsmm_generator_matequation_are_nodes_pure_f32(libxsmm_meqn_elem *node, unsigned int *result);
+LIBXSMM_API_INTERN void libxsmm_meqn_are_nodes_pure_f32(libxsmm_meqn_elem *node, unsigned int *result);
 
 #endif /* GENERATOR_MATEQUATION_AVX_AVX512_H */
 
