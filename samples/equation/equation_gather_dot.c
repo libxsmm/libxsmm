@@ -223,6 +223,10 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   libxsmm_blasint l_eqn_0_idx = 0;
   libxsmm_meqn_arg_shape l_eqn_0_shape_out;
   libxsmm_meqn_function l_eqn_0 = NULL;
+  libxsmm_meqn_arg_metadata l_eqn_0_arg_metadata;
+  libxsmm_meqn_op_metadata l_eqn_0_op_metadata;
+  libxsmm_meqn_arg_shape l_eqn_0_arg_shape_in;
+  libxsmm_matrix_arg_attributes l_eqn_0_arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   /* gather + GEMM TPP */
   libxsmm_meltwfunction_unary l_gather = NULL;
   libxsmm_meltw_unary_shape   l_gahter_shape = libxsmm_create_meltw_unary_shape( M, idxblk_gemm, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -283,12 +287,17 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
 
   /* second TPP implementation equation for reduce muladd */
   l_eqn_0_idx = libxsmm_meqn_create();
-  libxsmm_meqn_push_back_unary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
-                                         LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meqn_push_back_binary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_BINARY_MUL,
-                                          LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meqn_push_back_arg( l_eqn_0_idx, M, 1, M, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_meqn_push_back_arg( l_eqn_0_idx, M, 1, M, 1, 0, LIBXSMM_DATATYPE_F32 );
+  l_eqn_0_op_metadata   = libxsmm_create_meqn_op_metadata(l_eqn_0_idx, -1);
+  libxsmm_meqn_push_back_unary_op( l_eqn_0_op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
+                                         LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  libxsmm_meqn_push_back_binary_op( l_eqn_0_op_metadata, LIBXSMM_MELTW_TYPE_BINARY_MUL,
+                                          LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  l_eqn_0_arg_shape_in  = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
+  l_eqn_0_arg_metadata  = libxsmm_create_meqn_arg_metadata(l_eqn_0_idx, 0);
+  libxsmm_meqn_push_back_arg(l_eqn_0_arg_metadata, l_eqn_0_arg_shape_in, l_eqn_0_arg_singular_attr);
+  l_eqn_0_arg_shape_in  = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
+  l_eqn_0_arg_metadata  = libxsmm_create_meqn_arg_metadata(l_eqn_0_idx, 1);
+  libxsmm_meqn_push_back_arg(l_eqn_0_arg_metadata, l_eqn_0_arg_shape_in, l_eqn_0_arg_singular_attr);
   libxsmm_meqn_tree_print( l_eqn_0_idx );
   libxsmm_meqn_rpn_print( l_eqn_0_idx );
   l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
