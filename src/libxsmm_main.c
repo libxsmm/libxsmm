@@ -3279,16 +3279,58 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 }
 
 
-LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                           const libxsmm_bitfield prefetch_flags ) {
+LIBXSMM_API libxsmm_tilecfgfunction libxsmm_dispatch_tilecfg_gemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags ) {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_descriptor_blob blob;
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
   /* TODO: some checks */
+#if 0
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
-    /*return NULL;*/
+    return NULL;
+  }
+#endif
+  /* if we try to hoist tileconfig, this call should return NULL */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) != 0)) ||
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) == 0)) ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utilizes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_init(&blob, gemm_shape.a_in_type,
+    gemm_shape.b_in_type, gemm_shape.comp_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    gemm_shape.lda, gemm_shape.ldb, gemm_shape.ldc,
+    l_gemm_flags, libxsmm_get_gemm_prefetch(0));
+
+  /* JIT! */
+  result = libxsmm_xmmdispatch(desc);
+
+  return result.tilecfg;
+}
+
+
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+                                                        const libxsmm_bitfield prefetch_flags ) {
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_descriptor_blob blob;
+  libxsmm_xmmfunction result;
+  libxsmm_gemm_descriptor *desc = NULL;
+
+  /* TODO: some checks */
+#if 0
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+#endif
+  /* if we try to hoist tileconfig, this call should return NULL */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) == 0)) ||
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) != 0)) ) {
+    return NULL;
   }
 
   /* use the XGEMM ABI which utilizes an arg struct */
@@ -3316,8 +3358,15 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm( const libxsmm_gemm_sha
   libxsmm_gemm_descriptor *desc = NULL;
 
   /* TODO: some checks */
+#if 0
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
-    /*return NULL;*/
+    return NULL;
+  }
+#endif
+  /* if we try to hoist tileconfig, this call should return NULL */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) == 0)) ||
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) != 0)) ) {
+    return NULL;
   }
 
   /* use the XGEMM ABI which utilizes an arg struct */
@@ -3373,7 +3422,14 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext( const libxsmm_
   libxsmm_gemm_descriptor *desc = NULL;
 
   /* TODO: some checks */
+#if 0
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+#endif
+  /* if we try to hoist tileconfig, this call should return NULL */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) == 0)) ||
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) != 0)) ) {
     return NULL;
   }
 
@@ -3717,6 +3773,11 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
+  /* if we try to hoist tileconfig, this call should return NULL */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) == 0)) ||
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) != 0)) ) {
+    return NULL;
+  }
 
   /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
@@ -3737,6 +3798,51 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
 
   return result.xgemm.gemm;
+}
+
+LIBXSMM_API libxsmm_tilecfgfunction libxsmm_create_tilecfg_packed_spgemm_bcsc(const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_spgemm_config spgemm_config)
+{
+  int l_gemm_flags = (int)gemm_flags;
+  const libxsmm_blasint packed_width = spgemm_config.packed_width;
+  const libxsmm_blasint bk = spgemm_config.bk;
+  const libxsmm_blasint bn = spgemm_config.bn;
+
+  libxsmm_pspgemm_bcsc_descriptor pspgemm_bcsc /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* TODO: some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+  /* if we try to hoist tileconfig, this call should return NULL */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) != 0)) ||
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_gemm_flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_gemm_flags) == 0)) ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utilizes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_init(&blob, gemm_shape.a_in_type,
+    gemm_shape.b_in_type, gemm_shape.comp_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    gemm_shape.lda, gemm_shape.ldb, gemm_shape.ldc,
+    l_gemm_flags, libxsmm_get_gemm_prefetch(0));
+
+  pspgemm_bcsc.gemm = desc;
+  pspgemm_bcsc.packed_width = packed_width;
+  pspgemm_bcsc.bk = bk;
+  pspgemm_bcsc.bn = bn;
+  request.descriptor.pspgemm_bcsc = &pspgemm_bcsc;
+  request.kind = LIBXSMM_BUILD_KIND_PSPGEMM_BCSC;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.tilecfg;
 }
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm( const libxsmm_gemm_shape gemm_shape,

@@ -760,9 +760,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_binary_postops {
   libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_tilecfg_state {
+  unsigned char tileconfig[64];
+} libxsmm_tilecfg_state;
+
 /* generalized and extended functions for everything that is not a basic GEMM as defined above */
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction_ext)( const libxsmm_gemm_ext_param* in_struct );
+LIBXSMM_EXTERN_C typedef void (*libxsmm_tilecfgfunction) ( const libxsmm_tilecfg_state*  in_struct );
 
 /** Union to convert between different function types or plain pointers (weak-typed). */
 LIBXSMM_EXTERN_C typedef union libxsmm_xmmfunction {
@@ -771,6 +776,7 @@ LIBXSMM_EXTERN_C typedef union libxsmm_xmmfunction {
   void (*xgemm)(const void* in_struct);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm;
   libxsmm_gemmfunction gemm; libxsmm_gemmfunction_ext gemm_ext;
+  libxsmm_tilecfgfunction tilecfg;
 } libxsmm_xmmfunction;
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */

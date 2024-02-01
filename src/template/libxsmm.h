@@ -147,6 +147,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm( const libxsmm_gemm_sha
 LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
                                                                   const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
                                                                   const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
+/** Query or JIT-generate Tileconfig kernles, if the machine doesn't support Intel AMX, the kernel can be still called */
+LIBXSMM_API libxsmm_tilecfgfunction libxsmm_dispatch_tilecfg_gemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags );
 
 /**
  * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
@@ -298,6 +300,9 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc(
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_spgemm_config spgemm_config);
+
+LIBXSMM_API libxsmm_tilecfgfunction libxsmm_create_tilecfg_packed_spgemm_bcsc(
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_spgemm_config spgemm_config );
 
 /**
  * Code generation routine for packed GEMM. In this case A is [K][M][packed], B is [K][N][packed] and C is [N][M][packed],

@@ -1922,6 +1922,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_gemm_batch_reduce_config l_brconfig;
   libxsmm_gemm_ext_unary_argops l_argops;
   libxsmm_gemm_ext_binary_postops l_postops;
+  libxsmm_tilecfg_state l_tilestate;
   libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_bitfield l_prefetch_flags = 0;
   unsigned int l_decompress = (i_gemm_def->br_type == 4) ? 1 : 0;
@@ -2041,6 +2042,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
   memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
+
   /* Setup fusion postops */
   if (i_gemm_def->binary_postop != OP_NONE ) {
     if (i_gemm_def->binary_postop == COLBIAS_ADD) {
@@ -2074,8 +2076,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    cfg_tr.gemm = libxsmm_dispatch_brgemm( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig );
-    rls_tr.gemm = libxsmm_dispatch_brgemm( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig );
+    cfg_tr.tilecfg = libxsmm_dispatch_tilecfg_gemm( l_shape, l_cfg_flags );
+    rls_tr.tilecfg = libxsmm_dispatch_tilecfg_gemm( l_shape, l_rls_flags );
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
   l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
@@ -2090,11 +2092,6 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
-  /* run external tileconfig */
-  if (i_gemm_def->tc_config) {
-    cfg_tr.gemm( NULL );
-  }
 
   /* reset GEMM parameter */
 #if defined(USE_GEMM_EXT_FRONTEND)
@@ -2125,6 +2122,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   if (i_gemm_def->is_Ai4Bi8_gemm > 0) {
     gemm_param.a.quaternary = i_gemm_def->zpt_u8;
   }
+
+  /* run external tileconfig */
+  if (i_gemm_def->tc_config) {
+    cfg_tr.tilecfg( &l_tilestate );
+  }
+
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)i_a;
@@ -2267,7 +2270,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run external tilerelease */
   if (i_gemm_def->tc_config) {
-    rls_tr.gemm( NULL );
+    rls_tr.tilecfg( &l_tilestate );
   }
 
   if ( i_print_jit_info == 0 ) {
