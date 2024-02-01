@@ -419,7 +419,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* setting update GEMM struct */
   l_shape = libxsmm_create_gemm_shape( i_spmm_def->m_blocks,  0, i_spmm_def->k,
-      i_spmm_def->k, 0, i_spmm_def->n,
+      i_spmm_def->k, i_spmm_def->k, i_spmm_def->n,
       i_spmm_def->a_type, i_spmm_def->b_type, i_spmm_def->c_type, i_spmm_def->comp_type );
 
   /* setting prefetch flags */
