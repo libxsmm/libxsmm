@@ -28,12 +28,12 @@ public:
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 
     if (sizeof(T) == 4) {
-      kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape_f32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES );
+      kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape_f32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES );
     } else {
-      kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape_f16, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES );
+      kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape_f16, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES );
     }
-    kernel1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR, unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-    kernel2 = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MULADD, binary_shape_f32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0 );
+    kernel1 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR, unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    kernel2 = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MULADD, binary_shape_f32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0 );
 #else
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 #endif

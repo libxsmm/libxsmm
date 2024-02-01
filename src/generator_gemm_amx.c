@@ -1930,13 +1930,13 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 0 );
+  libxsmm_x86_instruction_open_stream_alt( io_generated_code, 0, 0 );
 
   /* call Intel AMX kernel */
   libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, i_xgemm_desc_const );
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 0 );
+  libxsmm_x86_instruction_close_stream_alt( io_generated_code, 0 );
 }
 
 /* Setup A (in vnni4 or flat) and B bf8 tensors as bf16 tensors in stack for execution on amx (A in vnni2)*/
@@ -2371,7 +2371,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-    libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(l_xgemm_desc, &l_micro_kernel_config );
+    libxsmm_generator_gemm_setup_fusion_microkernel_properties(l_xgemm_desc, &l_micro_kernel_config );
   } else {
     /* AMX kernels are supported only under the new abi */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_ABI );

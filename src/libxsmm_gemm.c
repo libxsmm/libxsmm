@@ -1094,7 +1094,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
             }
           }
           if (EXIT_SUCCESS == result) {
-            kernel.gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
+            kernel.gemm = libxsmm_dispatch_gemm(shape, flags, prefetch);
             if (NULL != kernel.ptr_const) {
               result = libxsmm_gemm_batch_kernel(kernel.gemm, index_base, index_stride,
                 stride_a, stride_b, stride_c, a, b, c, batchsize, tid, ntasks,

@@ -340,7 +340,7 @@ LIBXSMM_EXTERN_C typedef union libxsmm_code_pointer {
   intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, or void-function */
   libxsmm_xmeltwfunction xmateltw;
-  libxsmm_matrix_eqn_function xmateqn;
+  libxsmm_meqn_function xmateqn;
 } libxsmm_code_pointer;
 
 struct libxsmm_fsspmdm {
