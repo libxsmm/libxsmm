@@ -419,7 +419,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* setting update GEMM struct */
   l_shape = libxsmm_create_gemm_shape( i_spmm_def->m_blocks,  0, i_spmm_def->k,
-      i_spmm_def->k, i_spmm_def->k, i_spmm_def->n,
+      i_spmm_def->k, 0, i_spmm_def->n,
       i_spmm_def->a_type, i_spmm_def->b_type, i_spmm_def->c_type, i_spmm_def->comp_type );
 
   /* setting prefetch flags */
@@ -434,8 +434,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    cfg_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_cfg_flags );
-    rls_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_rls_flags );
+    cfg_tr.tilecfg = libxsmm_create_tilecfg_packed_spgemm_bcsc( l_shape, l_cfg_flags, spgemm_config );
+    rls_tr.tilecfg = libxsmm_create_tilecfg_packed_spgemm_bcsc( l_shape, l_rls_flags, spgemm_config );
   }
   l_test_jit.gemm = libxsmm_create_packed_spgemm_bcsc(l_shape, l_flags, l_prefetch_flags, spgemm_config);
 
