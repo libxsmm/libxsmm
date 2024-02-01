@@ -145,7 +145,7 @@
     const libxsmm_gemm_shape libxsmm_xgemm_shape_ = libxsmm_create_gemm_shape( \
       *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_, \
       LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE)); \
-    const libxsmm_gemmfunction libxsmm_xgemm_function_ = libxsmm_dispatch_gemm_v2(libxsmm_xgemm_shape_, \
+    const libxsmm_gemmfunction libxsmm_xgemm_function_ = libxsmm_dispatch_gemm(libxsmm_xgemm_shape_, \
       (libxsmm_bitfield)libxsmm_xgemm_flags_, (libxsmm_bitfield)(LIBXSMM_PREFETCH)); \
     if (NULL != libxsmm_xgemm_function_) { \
       libxsmm_gemm_param libxsmm_xgemm_param_; libxsmm_xgemm_param_.a.primary = (ITYPE*)(A); \

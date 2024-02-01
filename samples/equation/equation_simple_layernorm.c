@@ -15,15 +15,18 @@
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0;
-  libxsmm_matrix_eqn_function func0;
+  libxsmm_meqn_function func0;
 
   libxsmm_blasint S1, S2, S3, s1, s3;
   libxsmm_blasint ld, tmp_ld, tmp_ld2;
   libxsmm_datatype bg_dt, in_dt, out_dt;
-  libxsmm_meqn_arg_shape arg_shape_out;
+  libxsmm_meqn_arg_metadata arg_metadata;
+  libxsmm_meqn_op_metadata  op_metadata;
+  libxsmm_meqn_arg_shape          arg_shape_in, arg_shape_out;
+  libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   float* arg[5] = { NULL }, *out = NULL, *eqn_out = NULL;
   libxsmm_bfloat8* bf8_arg[5] = { NULL }, *bf8_out = NULL, *bf8_eqn_out = NULL;
-  libxsmm_matrix_eqn_param eqn_param;
+  libxsmm_meqn_param eqn_param;
   libxsmm_matrix_arg arg_array[5];
   unsigned int all_correct = 1;
   int result = EXIT_SUCCESS;
@@ -79,18 +82,28 @@ int main( int argc, char* argv[] ) {
   libxsmm_convert_bf8_f32(bf8_out, out, S1*ld);
   libxsmm_convert_bf8_f32(bf8_eqn_out, eqn_out, S1*ld);
 
-  my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
-    (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT),
-    LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, tmp_ld, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, tmp_ld, 2, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 3, 0, bg_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 4, 0, bg_dt );
+  my_eqn0 = libxsmm_meqn_create();
+  op_metadata   = libxsmm_create_meqn_op_metadata(my_eqn0, -1);
+  libxsmm_meqn_push_back_ternary_op( op_metadata, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT );
+  libxsmm_meqn_push_back_ternary_op( op_metadata, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32,
+    (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( S3, S1, ld, in_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 1);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 2);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld2, bg_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 3);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld2, bg_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 4);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
   arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
 
   arg_array[0].primary = (void*)bf8_arg[0];
   arg_array[1].primary = (void*)arg[1];

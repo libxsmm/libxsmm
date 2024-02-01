@@ -197,7 +197,7 @@ float fsigmoid(float x) {
     return (ftanh_rational_78(x/2.0f) + 1.0f)/2.0f;
   } else {
     libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     libxsmm_meltw_unary_param unary_param;
     float in = x, out;
     if( unary_kernel == NULL ) {
@@ -2080,9 +2080,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     rls_tr.tilecfg = libxsmm_dispatch_tilecfg( l_shape, l_rls_flags );
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
-  l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+  l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
 #else
-  l_test_jit.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  l_test_jit.gemm = libxsmm_dispatch_brgemm( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 #endif
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == NULL) {
