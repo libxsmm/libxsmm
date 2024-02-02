@@ -70,6 +70,7 @@ void libxsmm_generator_configure_rv64_M_N_blocking( libxsmm_generated_code*     
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_rv64_loop_order(const libxsmm_meltw_descriptor* i_mateltwise_desc, unsigned int *loop_order, unsigned int *m_blocking, unsigned int *n_blocking, unsigned int *out_blocking, unsigned int *inner_blocking, unsigned int *out_bound, unsigned int *inner_bound);
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
@@ -77,12 +78,14 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
                                         const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                         const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                         unsigned int                            i_vlen,
+                                        unsigned int                            i_avlen,
                                         unsigned int                            i_start_vreg,
                                         unsigned int                            i_m_blocking,
                                         unsigned int                            i_n_blocking,
                                         unsigned int                            i_mask_last_m_chunk,
                                         unsigned int                            i_mask_reg);
 
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
                                          libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
@@ -154,6 +157,7 @@ void libxsmm_compute_unary_rv64_2d_reg_block_dropout_inv( libxsmm_generated_code
                                                              unsigned int                            i_n_blocking,
                                                              unsigned int                            i_mask_last_m_chunk,
                                                              unsigned int                            i_mask_reg);
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_compute_binary_rv64_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
@@ -161,6 +165,7 @@ void libxsmm_compute_binary_rv64_2d_reg_block( libxsmm_generated_code*          
                                                   const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                   const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                   unsigned int                            i_vlen,
+                                                  unsigned int                            i_avlen,
                                                   unsigned int                            i_start_vreg,
                                                   unsigned int                            i_m_blocking,
                                                   unsigned int                            i_n_blocking,
@@ -173,12 +178,13 @@ void libxsmm_compute_unary_binary_rv64_2d_reg_block( libxsmm_generated_code*    
                                                         const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                         const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                         unsigned int                            i_vlen,
+                                                        unsigned int                            i_avlen,
                                                         unsigned int                            i_start_vreg,
                                                         unsigned int                            i_m_blocking,
                                                         unsigned int                            i_n_blocking,
                                                         unsigned int                            i_mask_last_m_chunk,
                                                         unsigned int                            i_mask_reg);
-
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_setup_input_output_rv64_masks( libxsmm_generated_code*                 io_generated_code,
                                                libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,

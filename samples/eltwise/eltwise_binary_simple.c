@@ -558,6 +558,15 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   } else {
     norms_out = check_matrix( dtype_out, out_gold, out, l_ldo, M, N );
   }
+
+#if 0
+  for (int j = 0; j < N; j++) {
+    for (int i = 0; i < M; i++) {
+      printf("(%d %d) %f %f ", i, j, *((float *)out_gold + j * l_ldo + i), *((float *)out + j * l_ldo + i));
+    }
+  }
+#endif
+
   printf("##########################################\n");
   printf("#   Correctness  - Output                #\n");
   printf("##########################################\n");

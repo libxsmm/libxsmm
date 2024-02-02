@@ -608,6 +608,14 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     }
   }
 
+#if 0
+  for (int i = 0; i < 2; i ++) {
+    for (int j = 0; j < 2; j++) {
+      printf("%f %f ", *((float *)out_gold + i * ldo + j), *((float *)out + i * ldo + j));
+    }
+  }
+#endif
+
   /* compare result */
   norms_out = check_matrix(dtype_out, out_gold, out, ldo, M, N_out);
   printf("##########################################\n");

@@ -470,12 +470,13 @@ void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_ge
   unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
 
   /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
-  int l_instr = i_datatype_size == 1 ? LIBXSMM_RV64_INSTR_GP_LB :
-    i_datatype_size == 2 ? LIBXSMM_RV64_INSTR_GP_LH : i_datatype_size == 4 ? LIBXSMM_RV64_INSTR_GP_LW :
-    LIBXSMM_RV64_INSTR_GP_LD ;
+  int l_instr = i_datatype_size == 1 ? LIBXSMM_RV64_INSTR_GP_VLE8_V :
+    i_datatype_size == 2 ? LIBXSMM_RV64_INSTR_GP_VLE16_V : i_datatype_size == 4 ? LIBXSMM_RV64_INSTR_GP_VLE32_V :
+    LIBXSMM_RV64_INSTR_GP_VLE64_V ;
 
   /* Set vector length and load required number of elements */
-  libxsmm_rv64_instruction_rvv_setvli( io_generated_code, i_avlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  if (i_masked_elems)
+    libxsmm_rv64_instruction_rvv_setvli( io_generated_code, i_avlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   libxsmm_rv64_instruction_rvv_move( io_generated_code, l_instr, i_gp_reg_addr, i_gp_reg_scratch, i_vec_reg, 1 );
 
@@ -483,7 +484,9 @@ void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_ge
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X17, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Broadcast loaded value to */
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFADD_VF, i_vec_reg, i_vec_reg, i_vec_reg, 1);
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFMV_F_S, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, LIBXSMM_RV64_GP_REG_F10, 1);
+
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFMV_V_F, LIBXSMM_RV64_GP_REG_F10, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, 1);
 
   if ( l_offset ){/* post increment address by offset */
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_addr, i_gp_reg_addr, l_offset);
