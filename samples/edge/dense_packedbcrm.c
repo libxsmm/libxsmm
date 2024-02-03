@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* JIT code */
-    mykernel = libxsmm_create_packed_gemm_bc_rm_v2( gemm_shape, l_flags, l_prefetch_flags, l_r );
+    mykernel = libxsmm_create_packed_gemm_bc_rm( gemm_shape, l_flags, l_prefetch_flags, l_r );
 
     /* run reference */
     matMulFusedBC( l_r,

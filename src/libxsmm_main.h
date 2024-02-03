@@ -189,18 +189,7 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
-/** TODO double check it's save to not set the descriptor to zero
- *we saw issues with re-jit due to different hash */
-#if 0
-#if defined(LIBXSMM_UNPACKED) || !defined(NDEBUG)
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
-#else
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) \
-    /*if (LIBXSMM_GEMM_FLAG_DESC_ISBIG <= (FLAGS)) LIBXSMM_MEMSET127(DST, 0, SIZE)*/
-#endif
-#else
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
-#endif
+#define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
   LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \
   LIBXSMM_DESCRIPTOR_CLEAR_AUX(BLOB, LIBXSMM_DESCRIPTOR_MAXSIZE, 0)
@@ -351,7 +340,7 @@ LIBXSMM_EXTERN_C typedef union libxsmm_code_pointer {
   intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, or void-function */
   libxsmm_xmeltwfunction xmateltw;
-  libxsmm_matrix_eqn_function xmateqn;
+  libxsmm_meqn_function xmateqn;
 } libxsmm_code_pointer;
 
 struct libxsmm_fsspmdm {

@@ -350,7 +350,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
       libxsmm_finalize();
       libxsmm_init();
       libxsmm_set_target_arch(l_arch);
-      unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+      unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
 
       /* warmup and computation how many steps are required */
       l_startTime0 = libxsmm_timer_tick();
@@ -406,7 +406,7 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
       libxsmm_finalize();
       libxsmm_init();
       libxsmm_set_target_arch(l_arch);
-      binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
+      binary_kernel = libxsmm_dispatch_meltw_binary( binary_type, binary_shape, binary_flags );
 
       /* warmup and computation how many steps are required */
       l_startTime0 = libxsmm_timer_tick();

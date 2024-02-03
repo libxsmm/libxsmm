@@ -1,0 +1,288 @@
+env:
+  RANDOMEX: "clang-3. clang-4. clang-5. gcc-4. gcc-5. gcc-6. gcc-7. intel-2014 intel-2015 intel-2016 intel-next pgi"
+  LIBXSMM_VERBOSE: 4
+  CONFIG: "random"
+  FORTRAN: 0
+  SYM: 2
+
+steps:
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+#      LIBXSMM_TARGET: spr
+#      CONFIG: gcc-122
+    label: "SMMs CPUID"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: spr
+#      CONFIG: gcc-122
+    label: "SMMs SPR"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: cpx
+#      CONFIG: gcc-122
+    label: "SMMs CPX"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: clx
+#      CONFIG: gcc-122
+    label: "SMMs CLX"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: skx
+#      CONFIG: gcc-122
+    label: "SMMs SKX"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: avx512_vl256_cpx
+#      CONFIG: gcc-122
+    label: "SMMs CPX VL256"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: avx512_vl256_clx
+#      CONFIG: gcc-122
+    label: "SMMs CLX VL256"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: avx512_vl256
+#      CONFIG: gcc-122
+    label: "SMMs SKX VL256"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: adl
+#      CONFIG: gcc-122
+    label: "SMMs ADL"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: hsw
+#      CONFIG: gcc-122
+    label: "SMMs HSW"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: snb
+#      CONFIG: gcc-122
+      PARTITIONS: "clxap"
+    label: "SMMs SNB"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: wsm
+#      CONFIG: gcc-122
+      PARTITIONS: "clxap"
+    label: "SMMs WSM"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+#      LIBXSMM_TARGET: spr
+#      CONFIG: gcc-122
+    label: "BCSC SPMM CPUID"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: spr
+#      CONFIG: gcc-122
+    label: "BCSC SPMM SPR"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: cpx
+#      CONFIG: gcc-122
+    label: "BCSC SPMM CPX"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: clx
+#      CONFIG: gcc-122
+    label: "BCSC SPMM CLX"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: skx
+#      CONFIG: gcc-122
+    label: "BCSC SPMM SKX"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: avx512_vl256_cpx
+#      CONFIG: gcc-122
+    label: "BCSC SPMM CPX VL256"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: avx512_vl256_clx
+#      CONFIG: gcc-122
+    label: "BCSC SPMM CLX VL256"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: avx512_vl256
+#      CONFIG: gcc-122
+    label: "BCSC SPMM SKX VL256"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: adl
+#      CONFIG: gcc-122
+    label: "BCSC SPMM ADL"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: hsw
+#      CONFIG: gcc-122
+    label: "BCSC SPMM HSW"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: snb
+#      CONFIG: gcc-122
+      PARTITIONS: "clxap"
+    label: "BCSC SPMM SNB"
+
+  - command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: wsm
+#      CONFIG: gcc-122
+      PARTITIONS: "clxap"
+    label: "BCSC SPMM WSM"
+
+  - label: "ELTWISE CPUID"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+
+  - label: "ELTWISE SPR"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "spr"
+
+  - label: "ELTWISE CPX"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "cpx"
+
+  - label: "ELTWISE CLX"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "clx"
+
+  - label: "ELTWISE SKX"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "skx"
+
+  - label: "ELTWISE CPX VL256"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "avx512_vl256_cpx"
+
+  - label: "ELTWISE CLX VL256"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "avx512_vl256_clx"
+
+  - label: "ELTWISE SKX VL256"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "avx512_vl256"
+
+  - label: "ELTWISE ADL"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "adl"
+
+  - label: "ELTWISE HSW"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "hsw"
+
+  - label: "ELTWISE SNB"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      PARTITIONS: "clxap"
+      LIBXSMM_TARGET: "snb"
+
+  - label: "ELTWISE WSM"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      PARTITIONS: "clxap"
+      LIBXSMM_TARGET: "wsm"
+
+  - label: "EQUATION CPUID"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+
+  - label: "EQUATION SPR"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "spr"
+
+  - label: "EQUATION CPX"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "cpx"
+
+  - label: "EQUATION CLX"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "clx"
+
+  - label: "EQUATION SKX"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "skx"
+
+  - label: "EQUATION CPX VL256"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "avx512_vl256_cpx"
+
+  - label: "EQUATION CLX VL256"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "avx512_vl256_clx"
+
+  - label: "EQUATION SKX VL256"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "avx512_vl256"
+
+  - label: "EQUATION ADL"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "adl"
+
+  - label: "EQUATION HSW"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "hsw"
+
+  - label: "EQUATION SNB"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      PARTITIONS: "clxap"
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "snb"
+
+  - label: "EQUATION WSM"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      PARTITIONS: "clxap"
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "wsm"
