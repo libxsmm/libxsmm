@@ -748,7 +748,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
 
   if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (fused_eltwise == 0)) ||
-      (LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || l_is_Abf8_Bbf16_gemm > 0) {
+      (LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (l_is_Abf8_Bbf16_gemm > 0 && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))) {
     libxsmm_x86_instruction_tile_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_TILESTORED,
