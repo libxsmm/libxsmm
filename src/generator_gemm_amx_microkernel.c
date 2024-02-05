@@ -1807,7 +1807,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   }
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
-    i_brgemm_loop = (long long)(B_offs/((unsigned long long)i_xgemm_desc->c2));
+    i_brgemm_loop = (long long)i_micro_kernel_config->br_loop_index;
   }
 
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) && (fully_unrolled_brloop == 1)) {
