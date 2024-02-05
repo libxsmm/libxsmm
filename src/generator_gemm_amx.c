@@ -31,6 +31,7 @@ void libxsmm_generator_brgemm_amx_set_gp_reg_a( libxsmm_generated_code*         
     if (i_unrolled_index > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, i_unrolled_index*i_xgemm_desc->c1);
     }
+    i_micro_kernel_config->br_loop_index = i_unrolled_index;
   } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
@@ -2708,6 +2709,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
               A_offs = i * i_xgemm_desc->c1;
               B_offs = i * i_xgemm_desc->c2;
               i_micro_kernel_config->B_offs_trans = i * i_micro_kernel_config->stride_b_trans;
+              i_micro_kernel_config->br_loop_index = i;          
             }
             /* Here is the K loop along with the microkernel */
             l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], A_offs, B_offs, 1);
@@ -2835,6 +2837,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
               i_micro_kernel_config->br_loop_index = i;
             } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
               B_offs = i * i_xgemm_desc->c2;
+              i_micro_kernel_config->br_loop_index = i;   
             }
 
             if (code_block_index == CODE_BLOCK_UNROLLED || code_block_index == CODE_BLOCK_PEELED_2_ITER) {
