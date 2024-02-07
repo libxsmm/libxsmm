@@ -434,7 +434,7 @@ void libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( lib
       io_micro_kernel_config->datatype_size_out = 1;
       io_micro_kernel_config->vmove_instruction_out = libxsmm_generator_mateltwise_select_store_instruction( i_mateltwise_desc, l_vlen_bytes, io_micro_kernel_config->datatype_size_out,
                                                                                                              LIBXSMM_X86_INSTR_VMOVDQU8, LIBXSMM_X86_INSTR_VMOVNTPS );
-    } else  {
+    } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
@@ -528,7 +528,7 @@ void libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( lib
       io_micro_kernel_config->datatype_size_out = 1;
       io_micro_kernel_config->vmove_instruction_out = libxsmm_generator_mateltwise_select_store_instruction( i_mateltwise_desc, l_vlen_bytes, io_micro_kernel_config->datatype_size_out,
                                                                                                              LIBXSMM_X86_INSTR_VMOVDQU8, LIBXSMM_X86_INSTR_VMOVNTPS );
-    } else  {
+    } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
@@ -623,7 +623,7 @@ void libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( lib
       io_micro_kernel_config->datatype_size_out = 1;
       io_micro_kernel_config->vmove_instruction_out = libxsmm_generator_mateltwise_select_store_instruction( i_mateltwise_desc, l_vlen_bytes, io_micro_kernel_config->datatype_size_out,
                                                                                                              LIBXSMM_X86_INSTR_UNDEF, LIBXSMM_X86_INSTR_UNDEF );
-    } else  {
+    } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
