@@ -310,18 +310,10 @@ unsigned int libxsmm_generator_mateltwise_select_store_instruction( const libxsm
                                                                     const unsigned int i_instr_nts ) {
   unsigned int l_instr;
 
-  if ( i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
+  if ( ( ( i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT)  == LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT  ) ) ||
+       ( ( i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_NTS_HINT) == LIBXSMM_MELTW_FLAG_BINARY_NTS_HINT ) )    ) {
     if ( (i_mateltwise_desc->m   % (i_vlen_bytes / i_dt_width ) == 0) &&
-         (i_mateltwise_desc->ldo % (i_vlen_bytes / i_dt_width ) == 0) &&
-         ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT) == LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT ) ) {
-      l_instr = i_instr_nts;
-    } else {
-      l_instr = i_instr_st;
-    }
-  } else if ( i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
-    if ( (i_mateltwise_desc->m   % (i_vlen_bytes / i_dt_width ) == 0) &&
-         (i_mateltwise_desc->ldo % (i_vlen_bytes / i_dt_width ) == 0) &&
-         ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_NTS_HINT) == LIBXSMM_MELTW_FLAG_BINARY_NTS_HINT ) ) {
+         (i_mateltwise_desc->ldo % (i_vlen_bytes / i_dt_width ) == 0)  ) {
       l_instr = i_instr_nts;
     } else {
       l_instr = i_instr_st;
