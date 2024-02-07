@@ -536,6 +536,8 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     }
   }
 
+  binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_NTS_HINT;
+
   if (is_cmp_op(op) > 0) {
     binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT;
   }

@@ -78,6 +78,13 @@ void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*    
                                               const unsigned int                            i_gp_reg_n_bound );
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_mateltwise_select_store_instruction( const libxsmm_meltw_descriptor*   i_mateltwise_desc,
+                                                                    const unsigned int i_vlen_bytes,
+                                                                    const unsigned int i_dt_width,
+                                                                    const unsigned int i_instr_st,
+                                                                    const unsigned int i_instr_nts );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( libxsmm_generated_code*           io_generated_code,
                                                                            libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
                                                                            const libxsmm_meltw_descriptor*   i_mateltwise_desc);
