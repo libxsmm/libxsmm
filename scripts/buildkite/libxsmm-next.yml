@@ -1,8 +1,7 @@
 env:
-#  RANDOMEX: "clang-3. clang-4. clang-5. gcc-4. gcc-5. gcc-6. gcc-7. intel-2014 intel-2015 intel-2016 intel-next pgi"
-  RANDOMEX: "intel-next"
+  RANDOMEX: "clang-3. clang-4. clang-5. gcc-4. gcc-5. gcc-6. gcc-7. intel-2014 intel-2015 intel-2016 intel-next pgi"
   LIBXSMM_VERBOSE: 4
-  CONFIG: "random"
+  CONFIG: "intel-next"
   FORTRAN: 0
   SYM: 2
 
