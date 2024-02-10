@@ -2125,7 +2125,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run external tileconfig */
   if (i_gemm_def->tc_config) {
-    cfg_tr.tilecfg( &l_tilestate );
+    /* this is to trigger the different ABI behavior in the kernel */
+    if ( i_gemm_def->m % 2 == 0 ) {
+      cfg_tr.tilecfg( &l_tilestate );
+    } else {
+      cfg_tr.tilecfg( NULL );
+    }
   }
 
   /* run correctness */
@@ -2270,7 +2275,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run external tilerelease */
   if (i_gemm_def->tc_config) {
-    rls_tr.tilecfg( &l_tilestate );
+    /* this is to trigger the different ABI behavior in the kernel */
+    if ( i_gemm_def->m % 2 == 0 ) {
+      rls_tr.tilecfg( &l_tilestate );
+    } else {
+      rls_tr.tilecfg( NULL );
+    }
   }
 
   if ( i_print_jit_info == 0 ) {
