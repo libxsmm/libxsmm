@@ -1631,7 +1631,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         vlen = 8;
       } else {
       }
-    } else if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (i_mateltwise_desc->m >= 1)) {
+    } else if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) && (i_mateltwise_desc->m >= 1)) {
       /* Reconfig if large m and arch >= avx512 */
       cvt_vreg_aux0 = 31; cvt_vreg_aux1 = 30; cvt_vreg_aux2 = 29; cvt_vreg_aux3 = 28;
       cvt_mask_aux0 = 7; cvt_mask_aux1 = 6; cvt_mask_aux2 = 5;
@@ -1675,7 +1675,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
     if (arch_avx512_and_large_m > 0) {
       mask_out = 1;
-      libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_out, vlen - 1, (libxsmm_datatype)libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ));
+      libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_out, vlen - 1, LIBXSMM_DATATYPE_F32);
     } else if (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT )) {
       cvt_vreg_aux0 = available_vregs - 1;
       cvt_vreg_aux1 = available_vregs - 2;
@@ -1696,7 +1696,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
     if (use_m_masking == 1) {
       if (arch_has_maskregs_and_prec_f64 > 0 || arch_avx512_and_large_m > 0) {
         mask_reg = 2;
-        libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, vlen - (m % vlen), (libxsmm_datatype)libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ));
+        libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, vlen - (m % vlen), (arch_has_maskregs_and_prec_f64 > 0) ? LIBXSMM_DATATYPE_F64 : LIBXSMM_DATATYPE_F32);
         mask_reg_in = mask_reg;
       } else {
         const int datatype = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP);
