@@ -1631,7 +1631,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         vlen = 8;
       } else {
       }
-    } else if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) && (i_mateltwise_desc->m >= 1)) {
+    } else if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (i_mateltwise_desc->m >= 1)) {
       /* Reconfig if large m and arch >= avx512 */
       cvt_vreg_aux0 = 31; cvt_vreg_aux1 = 30; cvt_vreg_aux2 = 29; cvt_vreg_aux3 = 28;
       cvt_mask_aux0 = 7; cvt_mask_aux1 = 6; cvt_mask_aux2 = 5;
@@ -1639,8 +1639,13 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
       reg_sum_squared = 26;
       available_vregs = 26;
       arch_avx512_and_large_m = 1;
-      vlen = 16;
-      vname_comp = 'z';
+      if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) {
+        vlen = 16;
+        vname_comp = 'z';
+      } else {
+        vlen = 8;
+        vname_comp = 'y';
+      }
     }
 
     m                 = i_mateltwise_desc->m;
