@@ -1,0 +1,63 @@
+env:
+  LIBXSMM_VERBOSE: 4
+  SYM: 2
+
+steps:
+  - label: "GEMM"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    agents:
+      queue: "aarch64"
+
+  - label: "BCSC SPMM"
+    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    agents:
+      queue: "aarch64"
+
+  - label: "ELTWISE"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    agents:
+      queue: "aarch64"
+
+  - label: "EQUATION"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    agents:
+      queue: "aarch64"
+
+  - label: "FSSPMDM"
+    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    agents:
+      queue: "aarch64"
+    env:
+      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3"
+      TEST_N: 48
+
+  #- label: "PyFR"
+    #command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
+    #agents:
+      #queue: "aarch64"
+    #env:
+      #ARTIFACT_UPLOAD_DB: "1"
+      #LOGRPTFMT: "svg pdf"
+      #LOGRPTSUM: "mean"
+      #LOGRPTQRY: ""
+      #MAKETGT: "all"
+
+  - label: "Test #4"
+    command: "scripts/tool_test.sh 4"
+    agents:
+      queue: "aarch64"
+
+  - label: "Test #6"
+    command: "scripts/tool_test.sh 6"
+    agents:
+      queue: "aarch64"
+
+  - label: "Test #11"
+    command: "scripts/tool_test.sh 11"
+    agents:
+      queue: "aarch64"
+
+  - label: "Fortran"
+    command: "scripts/tool_test.sh 5"
+    agents:
+      queue: "aarch64"

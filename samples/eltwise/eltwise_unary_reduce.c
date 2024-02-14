@@ -382,7 +382,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
   /* JIT kernel */
   if (n_cols_idx == 0) {
-    kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
     if ( kernel == NULL ) {
       fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
       exit(-1);
@@ -398,7 +398,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     }
     unary_shape.n = 0;
     if (reduce_op == 0) {
-      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
+      kernel2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
       if ( kernel2 == NULL ) {
         fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
         exit(-1);
@@ -414,7 +414,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
             params2.out.secondary = argop_off_i32;
           }
         }
-        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+        kernel2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
         if ( kernel2 == NULL ) {
           fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
           exit(-1);
@@ -430,7 +430,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
             params2.out.secondary = argop_off_i32;
           }
         }
-        kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN, unary_shape, unary_flags );
+        kernel2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN, unary_shape, unary_flags );
         if ( kernel2 == NULL ) {
           fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
           exit(-1);

@@ -155,8 +155,8 @@ int main(int argc, char* argv[]) {
   libxsmm_convert_bf16_f32( l_wt_gold, l_wt_gold_f32, L*C*K );
 
   /* JITing kernels */
-  norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, norm_to_vnni_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  copy_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, copy_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, norm_to_vnni_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  copy_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, copy_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
 
   /* test dense packed */
   for ( l_l = 0; l_l < L; l_l++) {

@@ -99,5 +99,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
                                                                                   unsigned int                       i_m,
                                                                                   unsigned int                       i_m_blocking,
                                                                                   unsigned int                       io_A_vreg );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A_for_i4i8 ( libxsmm_generated_code*            io_generated_code,
+                                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                  unsigned int                       i_m,
+                                                                                  unsigned int                       i_m_blocking,
+                                                                                  unsigned int                       io_A_vreg );
+
 #endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_H */
 

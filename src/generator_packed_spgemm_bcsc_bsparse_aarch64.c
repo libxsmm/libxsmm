@@ -109,7 +109,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
         l_simd_packed_width = 16;
       }
     } else { /* asimd */
-      l_simd_packed_width = 4;
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
     }
   } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) {

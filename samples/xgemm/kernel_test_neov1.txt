@@ -1,3 +1,11 @@
+fp32_spmm_eqld
+fp32_spmm_gtld
+bf16bf16_spmm_eqld
+bf16bf16_spmm_gtld
+bf16f32_spmm_eqld
+bf16f32_spmm_gtld
+u4u8i32i32gemm_nn_eqld
+u4u8i32i32gemm_nn_gtld
 i4f16f16f16gemm_nn_eqld
 i4f16f16f16gemm_nn_gtld
 i4f16f16f16gemm_nt_eqld

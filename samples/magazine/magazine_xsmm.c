@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
   prefetch |= LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
 #   endif
 # endif
-  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+  kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
 
   /* initialize data according to touch-first policy */

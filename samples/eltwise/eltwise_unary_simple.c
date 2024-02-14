@@ -547,11 +547,13 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     }
   }
 
+  unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT;
+
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_shape.n = 0;
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
   } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
   }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
