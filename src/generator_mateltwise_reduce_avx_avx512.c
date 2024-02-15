@@ -1851,7 +1851,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         }
 
         /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
-        if ((use_m_masking == 1) && (im == (peeled_m_trips-1))) {
+        if ((flag_reduce_op_max > 0 || flag_reduce_op_min > 0) && (use_m_masking == 1) && (im == (peeled_m_trips-1))) {
           unsigned int blend_vreg_mask_id = (arch_has_maskregs_and_prec_f64 > 0 || arch_avx512_and_large_m > 0) ? 0 : (mask_reg) << 4;
           unsigned int blend_mask_id = (arch_has_maskregs_and_prec_f64 > 0 || arch_avx512_and_large_m > 0) ? mask_reg : 0;
           unsigned int blend_instr = (arch_has_maskregs_and_prec_f64 > 0) ? LIBXSMM_X86_INSTR_VPBLENDMQ :
