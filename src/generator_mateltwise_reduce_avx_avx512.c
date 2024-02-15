@@ -1485,8 +1485,8 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
   unsigned int aux_vreg = 24;
   unsigned int tmp_vreg = 24;
   unsigned int vlen = 16;
-  unsigned int max_m_unrolling = 4;
-  unsigned int m_unroll_factor = 4;
+  unsigned int max_m_unrolling = 16;
+  unsigned int m_unroll_factor = 16;
   unsigned int peeled_m_trips = 0;
   unsigned int m_trips_loop = 1;
   unsigned int shuf_mask = 0x4e;
@@ -1849,6 +1849,16 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         } else if (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) {
           libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, cur_vreg, cur_vreg );
         }
+
+        /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
+        if ((use_m_masking == 1) && (im == (peeled_m_trips-1))) {
+          unsigned int blend_vreg_mask_id = (arch_has_maskregs_and_prec_f64 > 0 || arch_avx512_and_large_m > 0) ? 0 : (mask_reg) << 4;
+          unsigned int blend_mask_id = (arch_has_maskregs_and_prec_f64 > 0 || arch_avx512_and_large_m > 0) ? mask_reg : 0;
+          unsigned int blend_instr = (arch_has_maskregs_and_prec_f64 > 0) ? LIBXSMM_X86_INSTR_VPBLENDMQ :
+            ( (arch_avx512_and_large_m > 0) ? LIBXSMM_X86_INSTR_VBLENDMPS : (LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) ? LIBXSMM_X86_INSTR_VBLENDVPD : LIBXSMM_X86_INSTR_VBLENDVPS) ;
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code, blend_instr, vname_comp, cur_vreg, aux_vreg, cur_vreg, blend_mask_id, 0, 0, blend_vreg_mask_id);
+        }
+
         if ( compute_plain_vals_reduce > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                reduce_instr,
