@@ -1609,7 +1609,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
   }
 
   /* In this case we do not support the algorithm with "on the fly transpose" */
-  if ((i_mateltwise_desc->m >= 1) || io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX || (LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP))) {
+  if ((i_mateltwise_desc->m >= 256) || io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX || (LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP))) {
     unsigned int reg_sum = 15, reg_sum_squared = 14;
     unsigned int cur_vreg;
     unsigned int mask_out = 13;
@@ -1635,7 +1635,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         vlen = 8;
       } else {
       }
-    } else if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (i_mateltwise_desc->m >= 1)) {
+    } else if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (i_mateltwise_desc->m >= 256)) {
       /* Reconfig if large m and arch >= avx512 */
       cvt_vreg_aux0 = 31; cvt_vreg_aux1 = 30; cvt_vreg_aux2 = 29; cvt_vreg_aux3 = 28;
       cvt_mask_aux0 = 7; cvt_mask_aux1 = 6; cvt_mask_aux2 = 5;
