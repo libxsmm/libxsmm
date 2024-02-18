@@ -31,6 +31,7 @@ void libxsmm_generator_brgemm_amx_set_gp_reg_a( libxsmm_generated_code*         
     if (i_unrolled_index > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, i_unrolled_index*i_xgemm_desc->c1);
     }
+    i_micro_kernel_config->br_loop_index = i_unrolled_index;
   } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
@@ -2022,9 +2023,11 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
 #if defined(_WIN32) || defined(__CYGWIN__)
-#else
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RCX;
+#else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
+#endif
+  l_gp_reg_mapping.gp_reg_a = l_gp_reg_mapping.gp_reg_param_struct;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
@@ -2083,7 +2086,6 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
     }
     l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
   }
-#endif
   l_gp_reg_mapping.gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
@@ -2099,13 +2101,44 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 0 );
+  libxsmm_x86_instruction_open_stream_alt( io_generated_code, 0, 0 );
 
-  /* call Intel AMX kernel */
-  libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, i_xgemm_desc_const );
+  /* saving current tileconfig to the stack */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc_const->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc_const->flags) == 0)) ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 64 );
+    libxsmm_x86_instruction_tile_control( io_generated_code, 1000, io_generated_code->arch, LIBXSMM_X86_INSTR_STTILECFG, LIBXSMM_X86_GP_REG_RSP, 0, NULL );
+  } else if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc_const->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc_const->flags) == 0)) ) {
+    libxsmm_jump_label_tracker l_jump_label_tracker;
+    libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, l_gp_reg_mapping.gp_reg_param_struct, 0 );
+    libxsmm_x86_instruction_jump_to_label( io_generated_code, LIBXSMM_X86_INSTR_JE, 0, &l_jump_label_tracker );
+    libxsmm_x86_instruction_tile_control( io_generated_code, 1000, io_generated_code->arch, LIBXSMM_X86_INSTR_STTILECFG, l_gp_reg_mapping.gp_reg_param_struct, 0, NULL );
+    libxsmm_x86_instruction_register_jump_label( io_generated_code, 0, &l_jump_label_tracker );
+  }
+
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc_const->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc_const->flags) != 0)) ) {
+    libxsmm_jump_label_tracker l_jump_label_tracker;
+    libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, l_gp_reg_mapping.gp_reg_param_struct, 0 );
+    libxsmm_x86_instruction_jump_to_label( io_generated_code, LIBXSMM_X86_INSTR_JE, 0, &l_jump_label_tracker );
+    libxsmm_x86_instruction_tile_control( io_generated_code, 1001, io_generated_code->arch, LIBXSMM_X86_INSTR_LDTILECFG, l_gp_reg_mapping.gp_reg_param_struct, 0, NULL );
+    libxsmm_x86_instruction_jump_to_label( io_generated_code, LIBXSMM_X86_INSTR_JMP, 1, &l_jump_label_tracker );
+    libxsmm_x86_instruction_register_jump_label( io_generated_code, 0, &l_jump_label_tracker );
+    libxsmm_x86_instruction_tile_control( io_generated_code, 1002, io_generated_code->arch, LIBXSMM_X86_INSTR_TILERELEASE, LIBXSMM_X86_GP_REG_UNDEF, 0, NULL );
+    libxsmm_x86_instruction_register_jump_label( io_generated_code, 1, &l_jump_label_tracker );
+  } else {
+    /* call Intel AMX kernel */
+    libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, i_xgemm_desc_const );
+
+    /* restoring current tileconfig to the stack */
+    if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc_const->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc_const->flags) == 0)) ) {
+      libxsmm_x86_instruction_tile_control( io_generated_code, 1001, io_generated_code->arch, LIBXSMM_X86_INSTR_LDTILECFG, LIBXSMM_X86_GP_REG_RSP, 0, NULL );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 64 );
+    }
+  }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 0 );
+  libxsmm_x86_instruction_close_stream_alt( io_generated_code, 0 );
 }
 
 /* Setup A (in vnni4 or flat) and B bf8 tensors as bf16 tensors in stack for execution on amx (A in vnni2)*/
@@ -2542,7 +2575,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-    libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(l_xgemm_desc, &l_micro_kernel_config );
+    libxsmm_generator_gemm_setup_fusion_microkernel_properties(l_xgemm_desc, &l_micro_kernel_config );
   } else {
     /* AMX kernels are supported only under the new abi */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_ABI );
@@ -2615,19 +2648,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     libxsmm_generator_gemm_amx_kernel_nloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, n_blocking_info, m_blocking_info);
   }
 
-  /* Conditionally perform a tilerelease */
-  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0)) ||
-      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
-      (n_gemm_code_blocks > 1) || (bf8_gemm_via_stack_alloc_tensors > 0) || (hf8_gemm_via_stack_alloc_tensors > 0)) {
-    libxsmm_x86_instruction_tile_control( io_generated_code,
-        0,
-        l_micro_kernel_config.instruction_set,
-        LIBXSMM_X86_INSTR_TILERELEASE,
-        LIBXSMM_X86_GP_REG_UNDEF,
-        0,
-        &tile_config );
-  }
-
   if (n_gemm_code_blocks > 1) {
     l_xgemm_desc->m = m1;
     l_micro_kernel_config.m_remainder  = 0;
@@ -2639,7 +2659,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     }
 
     /* Here compute the 2D blocking info based on the M and N values */
-    libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(l_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
+    libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(l_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, &tile_config );
     libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
     if (l_is_Abf8_Bbf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0) {
       libxsmm_generator_gemm_amx_setup_masking_infra_fp8_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking);
@@ -2673,14 +2693,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
       libxsmm_generator_gemm_amx_kernel_nloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, n_blocking_info, m_blocking_info);
     }
-
-    libxsmm_x86_instruction_tile_control( io_generated_code,
-        0,
-        l_micro_kernel_config.instruction_set,
-        LIBXSMM_X86_INSTR_TILERELEASE,
-        LIBXSMM_X86_GP_REG_UNDEF,
-        0,
-        &tile_config );
   }
 
   /* Apply eltwise fusion in case of emulating BF8 on amx stack */
@@ -2890,6 +2902,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
               A_offs = i * i_xgemm_desc->c1;
               B_offs = i * i_xgemm_desc->c2;
               i_micro_kernel_config->B_offs_trans = i * i_micro_kernel_config->stride_b_trans;
+              i_micro_kernel_config->br_loop_index = i;
             }
             /* Here is the K loop along with the microkernel */
             l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], A_offs, B_offs, 1);
@@ -3026,6 +3039,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
               i_micro_kernel_config->br_loop_index = i;
             } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
               B_offs = i * i_xgemm_desc->c2;
+              i_micro_kernel_config->br_loop_index = i;
             }
 
             if (code_block_index == CODE_BLOCK_UNROLLED || code_block_index == CODE_BLOCK_PEELED_2_ITER) {

@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
     printf("%fs for dense\n", l_total);
     printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)M * (double)N * (double)K * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
-    mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
+    mykernel = libxsmm_create_packed_spgemm_csc( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
 
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     gemm_param.a.primary = (void*)l_a;

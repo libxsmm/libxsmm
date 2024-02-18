@@ -3,4 +3,5 @@ gemm_kernel
 gemm_kernel_fused
 gemm_kernel_parallel
 kernel_test/.generate_gemm_test_scripts
+kernel_test/.generate_spmm_test_scripts
 kernel_test/*.slurm

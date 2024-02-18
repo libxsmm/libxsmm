@@ -199,7 +199,7 @@ float fsigmoid(float x) {
     return (ftanh_rational_78(x/2.0f) + 1.0f)/2.0f;
   } else {
     libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     libxsmm_meltw_unary_param unary_param;
     float in = x, out;
     if( unary_kernel == NULL ) {
@@ -1924,6 +1924,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_gemm_batch_reduce_config l_brconfig;
   libxsmm_gemm_ext_unary_argops l_argops;
   libxsmm_gemm_ext_binary_postops l_postops;
+  libxsmm_tilecfg_state l_tilestate;
   libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_bitfield l_prefetch_flags = 0;
   unsigned int l_decompress = (i_gemm_def->br_type == 4) ? 1 : 0;
@@ -2043,6 +2044,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
   memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
+
   /* Setup fusion postops */
   if (i_gemm_def->binary_postop != OP_NONE ) {
     if (i_gemm_def->binary_postop == COLBIAS_ADD) {
@@ -2076,13 +2078,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    cfg_tr.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig );
-    rls_tr.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig );
+    cfg_tr.tilecfg = libxsmm_dispatch_tilecfg_gemm( l_shape, l_cfg_flags );
+    rls_tr.tilecfg = libxsmm_dispatch_tilecfg_gemm( l_shape, l_rls_flags );
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
-  l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+  l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
 #else
-  l_test_jit.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  l_test_jit.gemm = libxsmm_dispatch_brgemm( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 #endif
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == NULL) {
@@ -2092,11 +2094,6 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
-  /* run external tileconfig */
-  if (i_gemm_def->tc_config) {
-    cfg_tr.gemm( NULL );
-  }
 
   /* reset GEMM parameter */
 #if defined(USE_GEMM_EXT_FRONTEND)
@@ -2127,6 +2124,17 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   if (i_gemm_def->is_Ai4Bi8_gemm > 0) {
     gemm_param.a.quaternary = i_gemm_def->zpt_u8;
   }
+
+  /* run external tileconfig */
+  if (i_gemm_def->tc_config) {
+    /* this is to trigger the different ABI behavior in the kernel */
+    if ( i_gemm_def->m % 2 == 0 ) {
+      cfg_tr.tilecfg( &l_tilestate );
+    } else {
+      cfg_tr.tilecfg( NULL );
+    }
+  }
+
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)i_a;
@@ -2269,7 +2277,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run external tilerelease */
   if (i_gemm_def->tc_config) {
-    rls_tr.gemm( NULL );
+    /* this is to trigger the different ABI behavior in the kernel */
+    if ( i_gemm_def->m % 2 == 0 ) {
+      rls_tr.tilecfg( &l_tilestate );
+    } else {
+      rls_tr.tilecfg( NULL );
+    }
   }
 
   if ( i_print_jit_info == 0 ) {
