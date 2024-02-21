@@ -1045,17 +1045,23 @@ void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_
   unsigned int popcnt_reg               = i_gp_reg_mapping->gp_reg_help_1;
   unsigned int decompress_loop_reg      = LIBXSMM_X86_GP_REG_R14;
 
+  unsigned int unroll_factor = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ))) ? 1 : 2;
+  unsigned int expand_dtype_size = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ))) ? 1 : 2;
+  unsigned int maskload_instruction = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ))) ? LIBXSMM_X86_INSTR_KMOVQ_LD : LIBXSMM_X86_INSTR_KMOVD_LD;
+  unsigned int maskmove_instruction = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ))) ? LIBXSMM_X86_INSTR_KMOVQ_GPR_ST : LIBXSMM_X86_INSTR_KMOVD_GPR_ST;
+  unsigned int expand_instruction = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ))) ? LIBXSMM_X86_INSTR_VPEXPANDB : LIBXSMM_X86_INSTR_VPEXPANDW;
+
   libxsmm_x86_instruction_push_reg( io_generated_code, decompress_loop_reg);
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, n_elts_decompressed_reg, 0);
   libxsmm_generator_gemm_header_decompress_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg );
 
-  for (expanded_cl = 0; expanded_cl < 2; expanded_cl++ ) {
+  for (expanded_cl = 0; expanded_cl < unroll_factor; expanded_cl++ ) {
     current_mask_reg = reserved_mask_regs + (expanded_cl % (8-reserved_mask_regs));
     current_zmm      = expanded_cl % (32-reserved_zmms) + reserved_zmms;
 
     /* Load bit mask for current expand operation */
     libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-        LIBXSMM_X86_INSTR_KMOVD_LD,
+        maskload_instruction,
         i_gp_reg_mapping->gp_reg_bitmap_a,
         decompress_loop_reg,
         1,
@@ -1070,11 +1076,11 @@ void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_
 
     /* Expand operation */
     libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPEXPANDW,
+                                                 expand_instruction,
                                                  i_micro_kernel_config->vector_name,
                                                  i_gp_reg_mapping->gp_reg_a,
                                                  n_elts_decompressed_reg,
-                                                 2,
+                                                 expand_dtype_size,
                                                  0,
                                                  0,
                                                  LIBXSMM_X86_VEC_REG_UNDEF,
@@ -1086,12 +1092,12 @@ void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_
     libxsmm_x86_instruction_prefetch(io_generated_code,
         LIBXSMM_X86_INSTR_PREFETCHT0,
         i_gp_reg_mapping->gp_reg_a,
-        n_elts_decompressed_reg, 2,
+        n_elts_decompressed_reg, expand_dtype_size,
         16 * 64);
 
     /* Move zmm to reg */
     libxsmm_x86_instruction_mask_move( io_generated_code,
-      LIBXSMM_X86_INSTR_KMOVD_GPR_ST,
+      maskmove_instruction,
       popcnt_reg,
       current_mask_reg );
 
@@ -1106,11 +1112,35 @@ void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_
         LIBXSMM_X86_INSTR_ADDQ,
         popcnt_reg,
         n_elts_decompressed_reg);
+
+    if (expand_dtype_size == 1) {
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI32X8, i_micro_kernel_config->vector_name, current_zmm, LIBXSMM_X86_VEC_REG_UNDEF, current_zmm+1, 0, 0, 0, 1 );
+      libxsmm_generator_cvt_8bit_to_16bit_lut_prepped_regs_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+        current_zmm, current_zmm,
+        i_micro_kernel_config->luth_reg0,
+        i_micro_kernel_config->luth_reg1,
+        i_micro_kernel_config->lutl_reg0,
+        i_micro_kernel_config->lutl_reg1,
+        i_micro_kernel_config->sign_reg,
+        i_micro_kernel_config->blend_reg,
+        i_micro_kernel_config->tmp_reg0,
+        i_micro_kernel_config->tmp_reg1 );
+      libxsmm_generator_cvt_8bit_to_16bit_lut_prepped_regs_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+        current_zmm+1, current_zmm+1,
+        i_micro_kernel_config->luth_reg0,
+        i_micro_kernel_config->luth_reg1,
+        i_micro_kernel_config->lutl_reg0,
+        i_micro_kernel_config->lutl_reg1,
+        i_micro_kernel_config->sign_reg,
+        i_micro_kernel_config->blend_reg,
+        i_micro_kernel_config->tmp_reg0,
+        i_micro_kernel_config->tmp_reg1 );
+    }
   }
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SALQ, decompress_loop_reg, 1);
 
-  for (expanded_cl = 0; expanded_cl < 2; expanded_cl++ ) {
+  for (expanded_cl = 0; expanded_cl < unroll_factor; expanded_cl++ ) {
     current_mask_reg = reserved_mask_regs + (expanded_cl % (8-reserved_mask_regs));
     current_zmm      = expanded_cl % (32-reserved_zmms) + reserved_zmms;
 
@@ -1123,14 +1153,27 @@ void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_
       expanded_cl * 64 + (i_k_iter % 2)*i_k_CL*32*2 + 64 * i_micro_kernel_config->gemm_scratch_ld * 4,
       i_micro_kernel_config->vector_name,
       current_zmm, 0, 0, 1 );
+    if (expand_dtype_size == 1) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+        i_micro_kernel_config->instruction_set,
+        LIBXSMM_X86_INSTR_VMOVUPS,
+        i_gp_reg_mapping->gp_reg_decompressed_a,
+        decompress_loop_reg, 8,
+        1 * 64 + (i_k_iter % 2)*i_k_CL*32*2 + 64 * i_micro_kernel_config->gemm_scratch_ld * 4,
+        i_micro_kernel_config->vector_name,
+        current_zmm+1, 0, 0, 1 );
+    }
   }
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SARQ, decompress_loop_reg, 1);
+
   libxsmm_generator_gemm_footer_decompress_dyn_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg, (32*i_k_CL)/8, 8);
 
   /* Advance bitmap reg and compressed reg  */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_bitmap_a, (i_k_CL*32)/8);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SALQ, n_elts_decompressed_reg, 1);
+  if (expand_dtype_size == 2) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SALQ, n_elts_decompressed_reg, 1);
+  }
   libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, n_elts_decompressed_reg, i_gp_reg_mapping->gp_reg_a);
   libxsmm_x86_instruction_pop_reg( io_generated_code, decompress_loop_reg);
 }
@@ -1829,15 +1872,15 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     unsigned int k_gp_reg = LIBXSMM_X86_GP_REG_R9;
     /* Peel off first iteration */
     libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, 0, 0, 0, 0, fully_unrolled_brloop);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in2);
 
     /* K loop here */
     libxsmm_generator_gemm_header_kbitmap_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, k_gp_reg);
 
     libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, 0, 0, 0, 1, fully_unrolled_brloop);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in2);
     libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, 0, 0, 0, 2, fully_unrolled_brloop);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, (long long)l_k_blocking*i_micro_kernel_config->datatype_size_in2);
 
     libxsmm_generator_gemm_footer_kbitmap_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, k_gp_reg, ((i_xgemm_desc->k/l_k_blocking)-2)/2 );
 
