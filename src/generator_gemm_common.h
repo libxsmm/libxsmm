@@ -15,6 +15,10 @@
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai4_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Abf8_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ahf8_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( libxsmm_generated_code*    io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       libxsmm_micro_kernel_config*   i_micro_kernel_config,
