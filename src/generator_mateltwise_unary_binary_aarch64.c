@@ -412,7 +412,6 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
   }
   /* For now not any additional blocking in N */
   *n_blocking = n;
-  printf("M blocking found is %d\n", *m_blocking);
 }
 
 LIBXSMM_API_INTERN
