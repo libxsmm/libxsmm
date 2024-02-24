@@ -356,8 +356,10 @@ ifeq (0,$(GNU))
       CC := icx
     endif
   endif
-else ifneq (,$(filter-out default undefined,$(origin CC) $(origin CXX) $(origin FC)))
-  $(info WARNING: GNU=$(GNU) was given but CC, CXX, or FC was specified!)
+else # GNU
+  ifneq (,$(filter environment%,$(origin CC) $(origin CXX) $(origin FC)))
+    $(info WARNING: GNU=$(GNU) given but CC, CXX, or FC are specified by environment!)
+  endif
   FC := gfortran
   CC := gcc
   CXX := g++
@@ -2248,7 +2250,7 @@ endif
 
 ifneq (,$(strip $(MKLROOT)))
   ifeq (0,$(PGI))
-    MKL ?= $(BLAS)
+    MKL ?= $(if $(BLASLIB),0,$(BLAS))
     ifneq (,$(strip $(FC)))
       ifneq (0,$(shell echo "$$((0==$(XSMM_GCC)||40600<=$(GCC_VERSION_NUM)))"))
         MKL_DIRECT ?= 0
