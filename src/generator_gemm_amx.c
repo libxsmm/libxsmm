@@ -303,6 +303,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm
 
 LIBXSMM_API_INTERN
 void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned int *n_cols, libxsmm_tile_config *tc) {
+  *n_rows = 0;
+  *n_cols = 0;
   switch (tile_id) {
     case 0:
       (*n_rows) = (int) tc->tile0rowsb/4;

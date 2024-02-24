@@ -81,8 +81,6 @@ void compress_sparse_A_with_bitmap(const gemm_def*    i_gemm_def,
   unsigned int l_i, l_c = 0, l_bm = 0;
   unsigned long long l_nnz = 0;
   libxsmm_bfloat16 *l_a_bf16 = (libxsmm_bfloat16*) i_a;
-  libxsmm_bfloat8 *l_a_bf8 = (libxsmm_bfloat8*) i_a;
-  libxsmm_hfloat8 *l_a_hf8 = (libxsmm_hfloat8*) i_a;
   float  *l_a_fp32 = (float*) i_a;
 
   /* First pass to count number of non-zeros */
@@ -2871,7 +2869,7 @@ int main(int argc, char* argv []) {
 #   pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
     {
-      char *l_a, *l_b, *l_c, *l_c_perf, *l_c_gold, *l_a_aux;
+      char *l_a, *l_b, *l_c, *l_c_perf, *l_c_gold, *l_a_aux = NULL;
       char *l_colbias = NULL, *l_relu_bitmask = NULL, *l_relu_bitmask_gold = NULL;
       fusion_args fusion_arguments;
       fusion_args ref_fusion_arguments;
@@ -3082,7 +3080,9 @@ int main(int argc, char* argv []) {
 
           if ((l_gemm_def.is_Abf8Bbf16_gemm > 0 || l_gemm_def.is_Ahf8Bbf16_gemm > 0) && (l_br_type != 4)) {
             l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a_aux, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
-            libxsmm_free(l_a_aux);
+            if (l_a_aux != NULL) {
+              libxsmm_free(l_a_aux);
+            }
           }
 
           /* SPMM: Sparsify A based on requested sparsity factor  */
