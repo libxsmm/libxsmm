@@ -265,7 +265,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
     exit(-1);
   }
 
-  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
@@ -410,7 +410,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     exit(-1);
   }
 
-  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");

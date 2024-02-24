@@ -1,0 +1,43 @@
+env:
+  LIBXSMM_VERBOSE_BANNER: 0
+  LIBXSMM_VERBOSE: 4
+  INSTALL: "install"
+  #LIMIT: 10800
+  PEDANTIC: 2
+  MALLOC: 1
+  SYM: 2
+
+steps:
+  - label: "GEMM"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-jetson"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 4
+
+  - label: "BCSC SPMM"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-jetson"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      SSIZE: 4
+
+  - label: "ELTWISE"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-jetson"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      #LIBXSMM_MATDIFF: "/data/nfs_home/buildkite/artifacts/eltwise-armeps.log"
+      SSIZE: 4
+
+  - label: "FSSPMDM"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-jetson"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    env:
+      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 REALTYPE=float"
+      TEST_N: 48

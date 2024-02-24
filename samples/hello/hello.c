@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, m /*lda*/, k /*ldb*/, m /*ldc*/, LIBXSMM_DATATYPE_F64,
     LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
   /* generate and dispatch a matrix multiplication kernel */
-  const libxsmm_gemmfunction kernel = libxsmm_dispatch_gemm_v2(
+  const libxsmm_gemmfunction kernel = libxsmm_dispatch_gemm(
     gemm_shape, (libxsmm_bitfield)(flags_trans | flags_ab), (libxsmm_bitfield)LIBXSMM_GEMM_PREFETCH_NONE);
   libxsmm_gemm_param gemm_param; /* collect call-arguments into single structure */
   assert(NULL != kernel && NULL != a && NULL != b && NULL != c);

@@ -29,7 +29,7 @@ int main(void)
     m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
     LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),
     LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE));
-  const libxsmm_gemmfunction fa = libxsmm_dispatch_gemm_v2(gemm_shape,
+  const libxsmm_gemmfunction fa = libxsmm_dispatch_gemm(gemm_shape,
     LIBXSMM_GEMM_FLAG_NONE, (libxsmm_bitfield)LIBXSMM_PREFETCH);
   const libxsmm_gemmfunction fb = mmdispatch(m, n, k);
   int result = EXIT_SUCCESS;

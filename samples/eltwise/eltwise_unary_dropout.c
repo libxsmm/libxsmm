@@ -254,7 +254,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
     exit(-1);
@@ -372,7 +372,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unary_param.out.primary = (void*)out;
 
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
     exit(-1);

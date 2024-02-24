@@ -105,7 +105,7 @@ int main(void)
       {
         const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
           m[test], n[test], ldi[test], ldo[test], elemtype, elemtype, elemtype);
-        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary_v2(
+        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
           LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape,
           LIBXSMM_MELTW_FLAG_UNARY_NONE);
         if (NULL != kernel) {

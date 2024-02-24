@@ -480,6 +480,21 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   return result;
 }
 
+LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void) {
+  int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *const l_env_x86_use_high_prec_eltwise_approx = getenv("LIBXSMM_X86_HINT_USE_HIGH_PREC_ELTWISE_APPROX");
+  if ( 0 == l_env_x86_use_high_prec_eltwise_approx ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_x86_use_high_prec_eltwise_approx) != 0 ) {
+      result = 1;
+    }
+  }
+#endif
+  return result;
+}
+
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void) {
   int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
@@ -504,6 +519,21 @@ LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
   } else {
     if ( atoi(l_env_x86_srf_gemm_set_n_max_blocking) > 0 ) {
       result = (unsigned int) atoi(l_env_x86_srf_gemm_set_n_max_blocking);
+    }
+  }
+#endif
+  return result;
+}
+
+LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void) {
+ unsigned int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *const l_env_bf8_gemm_via_stack_alloc_tensors = getenv("LIBXSMM_BF8_GEMM_VIA_STACK");
+  if ( 0 == l_env_bf8_gemm_via_stack_alloc_tensors ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_bf8_gemm_via_stack_alloc_tensors) != 0 ) {
+      result = 1;
     }
   }
 #endif

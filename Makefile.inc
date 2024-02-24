@@ -1883,13 +1883,14 @@ else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
 #else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
   #override CTARGET := $(NULL)
 endif
-ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
-  ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
-    CTARGET := -march=native -mtune=native
-  else # revoke target flags
-    CTARGET := $(NULL)
-  endif
-endif
+# The following logic is causing reset of .state flags when FORTRAN=0 is exported
+#ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
+#  ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
+#    CTARGET := -march=native -mtune=native
+#  else # revoke target flags
+#    CTARGET := $(NULL)
+#  endif
+#endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
   TARGET ?= $(CTARGET)

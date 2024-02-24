@@ -1,0 +1,41 @@
+env:
+  CONFIGS: "intel-* intel-next"
+  CONFIGEX: "intel-2015 intel-2016"
+  LIBXSMM_TARGET_HIDDEN: 1
+  SHOW_PARTITION: 0
+  AVX: 3
+  SYM: 2
+
+steps:
+  - command: "scripts/tool_test.sh 1"
+    label: "#1"
+
+  - command: "scripts/tool_test.sh 2"
+    label: "#2"
+
+  - command: "scripts/tool_test.sh 3"
+    label: "#3"
+
+  - command: "scripts/tool_test.sh 4"
+    label: "#4"
+
+  - command: "scripts/tool_test.sh 5"
+    label: "#5"
+
+  - command: "scripts/tool_test.sh 6"
+    label: "#6"
+
+  - command: "scripts/tool_test.sh 7"
+    label: "#7"
+
+  - command: "scripts/tool_test.sh 8"
+    label: "#8"
+
+  - command: "scripts/tool_test.sh 9"
+    label: "#9"
+
+  - command: "scripts/tool_test.sh 10"
+    label: "#10"
+
+  - command: "scripts/tool_test.sh 11"
+    label: "#11"

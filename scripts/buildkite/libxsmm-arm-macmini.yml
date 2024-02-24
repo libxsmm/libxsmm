@@ -1,0 +1,73 @@
+env:
+  LIBXSMM_VERBOSE_BANNER: 0
+  LIBXSMM_VERBOSE: 4
+  LIBXSMM_XCOPY_JIT: 3
+  INSTALL: "install"
+  #LIMIT: 10800
+  PEDANTIC: 2
+  SYM: 2
+  ENV_APPLY : 0
+
+steps:
+  - label: "GEMM"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-macmini"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 6
+
+  - label: "BCSC SPMM"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-macmini"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    env:
+      SSIZE: 6
+
+  - label: "ELTWISE"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-macmini"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      #LIBXSMM_MATDIFF: "/Users/buildkite/artifacts/eltwise-maceps.log"
+      SSIZE: 6
+
+#  - label: "FSSPMDM"
+#    concurrency: 1
+#    concurrency_group: "libxsmm-arm-macmini"
+#    cancel_on_build_failing: true
+#    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+#    env:
+#      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 REALTYPE=float"
+#      TEST_N: 48
+#
+#  - label: "PyFR"
+#    concurrency: 1
+#    concurrency_group: "libxsmm-arm-macmini"
+#    cancel_on_build_failing: true
+#    command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
+#    env:
+#      MAKETGT: "all"
+#      LOGRPTFMT: "svg pdf"
+#      LOGRPTSUM: "mean"
+#      LOGRPTQRY: ""
+
+  - label: "Test #4"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-macmini"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh 4"
+
+  - label: "Test #6"
+    concurrency: 1
+    concurrency_group: "libxsmm-arm-macmini"
+    cancel_on_build_failing: true
+    command: "scripts/tool_test.sh 6"
+
+  #- label: "Test #11"
+  #  concurrency: 1
+  #  concurrency_group: "libxsmm-arm-macmini"
+  #  cancel_on_build_failing: true
+  #  command: "scripts/tool_test.sh 11"

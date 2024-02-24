@@ -9,6 +9,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_utils.h>
 #include <libxsmm_intrinsics_x86.h>
 #include <stdio.h>
 

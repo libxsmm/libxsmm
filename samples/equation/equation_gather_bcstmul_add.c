@@ -207,7 +207,7 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   }
 
   /* first TPP implementation we just run a binary muladd in a loop */
-  l_muladd = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MULADD, l_muladd_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
+  l_muladd = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MULADD, l_muladd_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
 
   if ( l_muladd == NULL ) {
     printf("JIT failed for muladd, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
@@ -215,10 +215,10 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
   }
 
   /* second TPP implementation we run gather + binary mul + addreduce + add */
-  l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gather_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_mul = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
-  l_addreduce = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS );
-  l_add = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_ADD, l_add_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  l_gather = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gather_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
+  l_mul = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
+  l_addreduce = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS );
+  l_add = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_ADD, l_add_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
   if ( (l_gather == NULL) || (l_mul == NULL) || (l_addreduce == NULL) || (l_add == NULL) ) {
     printf("JIT failed for gather+muladd+addreduce+add, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
     exit(-1);
