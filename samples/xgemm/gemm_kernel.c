@@ -2398,7 +2398,10 @@ int main(int argc, char* argv []) {
   char* l_b_dt = NULL;
   char* l_comp_dt = NULL;
   char* l_c_dt = NULL;
-  libxsmm_datatype l_dtype_a, l_dtype_b, l_dtype_comp, l_dtype_c;
+  libxsmm_datatype l_dtype_a = LIBXSMM_DATATYPE_UNSUPPORTED;
+  libxsmm_datatype l_dtype_b = LIBXSMM_DATATYPE_UNSUPPORTED;
+  libxsmm_datatype l_dtype_c = LIBXSMM_DATATYPE_UNSUPPORTED;
+  libxsmm_datatype l_dtype_comp = LIBXSMM_DATATYPE_UNSUPPORTED;
   libxsmm_blasint l_lda = 0, l_ldb = 0, l_ldc = 0;
   libxsmm_blasint l_m = 0, l_n = 0, l_k = 0;
   int l_aligned_a = 0;
@@ -2429,7 +2432,7 @@ int main(int argc, char* argv []) {
   int l_n_threads = 1;
   unsigned int l_keep_going = 0;
   unsigned int l_retry_case = 0;
-  float l_spfrac = 0.4;
+  float l_spfrac = 0.4f;
 
 # if defined(__APPLE__) && defined(__arm64__)
 #  if 1
@@ -2543,7 +2546,7 @@ int main(int argc, char* argv []) {
 
     /* arch specific stuff */
     if (l_br_type == 4) {
-      l_spfrac = atof(argv[22]);
+      l_spfrac = (float)atof(argv[22]);
     } else {
       l_br = atoi(argv[22]);
     }
@@ -2631,7 +2634,7 @@ int main(int argc, char* argv []) {
       return EXIT_FAILURE;
     }
     if (l_br_type == 4) {
-      l_spfrac = atof(argv[16]);
+      l_spfrac = (float)atof(argv[16]);
     } else {
       l_br = atoi(argv[16]);
     }
