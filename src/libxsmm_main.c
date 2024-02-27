@@ -2325,18 +2325,17 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tname_print[16];
           if (strcmp(tname, "i8i32") == 0) {
             if (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) == 0)) {
-              sprintf(tname_print, "u8s8s32");
+              LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "u8s8s32");
             } else if (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) == 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0)) {
-              sprintf(tname_print, "s8u8s32");
+              LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "s8u8s32");
             } else if (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0)) {
-              sprintf(tname_print, "u8u8u32");
+              LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "u8u8u32");
             } else {
-              sprintf(tname_print, "s8s8s32");
+              LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "s8s8s32");
             }
           } else {
-            sprintf(tname_print, "%s", tname);
+            LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "%s", tname);
           }
-
           /* query tileconfig options */
           if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.pspgemm_bcsc->gemm->flags) != 0) &&
               ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.pspgemm_bcsc->gemm->flags) == 0) ) {
