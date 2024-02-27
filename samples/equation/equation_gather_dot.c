@@ -98,14 +98,15 @@ void eqn_gather_dot_one_f32_tpp1( const libxsmm_blasint M,
   libxsmm_blasint i;
 
   /* look up from kv-cache */
-  l_mul_param.in0.primary = (void*)i_vec_in;
+  LIBXSMM_VALUE_ASSIGN(l_mul_param.in0.primary, i_vec_in);
   for ( i = 0; i < idxblk; ++i ) {
-    l_mul_param.in1.primary = (void*)&(i_gather_dot[(i_idx[i]*M)]);
-    l_mul_param.out.primary = (void*)i_tmp_mat;
+    const float *const gather_dot = &i_gather_dot[(i_idx[i]*M)];
+    LIBXSMM_VALUE_ASSIGN(l_mul_param.in1.primary, gather_dot);
+    l_mul_param.out.primary = i_tmp_mat;
     i_mul( &l_mul_param );
 
-    l_addreduce_param.in.primary = (void*)i_tmp_mat;
-    l_addreduce_param.out.primary = (void*)&(o_vec_out[i]);
+    l_addreduce_param.in.primary = i_tmp_mat;
+    l_addreduce_param.out.primary = &o_vec_out[i];
     i_addreduce( &l_addreduce_param );
   }
 }
@@ -125,11 +126,12 @@ void eqn_gather_dot_one_f32_tpp2( const libxsmm_blasint M,
   libxsmm_blasint i;
 
   /* look up from kv-cache */
-  l_arg_array[0].primary = (void*)i_vec_in;
+  LIBXSMM_VALUE_ASSIGN(l_arg_array[0].primary, i_vec_in);
   for ( i = 0; i < idxblk; ++i ) {
-    l_arg_array[1].primary = (void*)&(i_gather_dot[(i_idx[i]*M)]);
+    const float *const gather_dot = &i_gather_dot[(i_idx[i]*M)];
+    LIBXSMM_VALUE_ASSIGN(l_arg_array[1].primary, gather_dot);
     l_eqn_param.inputs = l_arg_array;
-    l_eqn_param.output.primary = (void*)&(o_vec_out[i]);
+    l_eqn_param.output.primary = &o_vec_out[i];
 
     i_eqn( &l_eqn_param );
   }
@@ -149,13 +151,13 @@ void eqn_gather_dot_one_f32_tpp3( const libxsmm_blasint M,
   libxsmm_meltw_unary_param l_gather_param;
   libxsmm_gemm_param l_gemm_param;
 
-  l_gather_param.in.primary = (void*)i_gather_dot;
-  l_gather_param.in.secondary = (void*)i_idx;
-  l_gather_param.out.primary = (void*)i_tmp_mat;
+  LIBXSMM_VALUE_ASSIGN(l_gather_param.in.primary, i_gather_dot);
+  LIBXSMM_VALUE_ASSIGN(l_gather_param.in.secondary, i_idx);
+  l_gather_param.out.primary = i_tmp_mat;
 
-  l_gemm_param.a.primary = (void*)i_vec_in;
-  l_gemm_param.b.primary = (void*)i_tmp_mat;
-  l_gemm_param.c.primary = (void*)o_vec_out;
+  LIBXSMM_VALUE_ASSIGN(l_gemm_param.a.primary, i_vec_in);
+  l_gemm_param.b.primary = i_tmp_mat;
+  l_gemm_param.c.primary = o_vec_out;
 
   i_gather_func( &l_gather_param );
   i_gemm_func.gemm( &l_gemm_param );
@@ -177,16 +179,16 @@ void eqn_gather_dot_one_f32_tpp4( const libxsmm_blasint M,
   libxsmm_meltw_binary_param l_mul_param;
   libxsmm_meltw_unary_param l_addreduce_param;
 
-  l_gather_param.in.primary = (void*)i_gather_dot;
-  l_gather_param.in.secondary = (void*)i_idx;
-  l_gather_param.out.primary = (void*)i_tmp_mat;
+  LIBXSMM_VALUE_ASSIGN(l_gather_param.in.primary, i_gather_dot);
+  LIBXSMM_VALUE_ASSIGN(l_gather_param.in.secondary, i_idx);
+  l_gather_param.out.primary = i_tmp_mat;
 
-  l_mul_param.in0.primary = (void*)i_tmp_mat;
-  l_mul_param.in1.primary = (void*)i_vec_in;
-  l_mul_param.out.primary = (void*)i_tmp_mat;
+  l_mul_param.in0.primary = i_tmp_mat;
+  LIBXSMM_VALUE_ASSIGN(l_mul_param.in1.primary, i_vec_in);
+  l_mul_param.out.primary = i_tmp_mat;
 
-  l_addreduce_param.in.primary = (void*)i_tmp_mat;
-  l_addreduce_param.out.primary = (void*)o_vec_out;
+  l_addreduce_param.in.primary = i_tmp_mat;
+  l_addreduce_param.out.primary = o_vec_out;
 
   i_gather_func( &l_gather_param );
   i_mul( &l_mul_param );

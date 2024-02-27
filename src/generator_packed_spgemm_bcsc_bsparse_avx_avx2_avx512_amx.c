@@ -834,7 +834,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   unsigned int l_is_AT_CT_kernel = 0;
   unsigned int l_simd_packed_remainder = 0;
   unsigned int l_use_short_vec = 0;
-  unsigned int l_AT_CT_vname = i_micro_kernel_config->vector_name;
+  char l_AT_CT_vname = i_micro_kernel_config->vector_name;
   unsigned int l_AT_CT_ab_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
   unsigned int l_pf_dist_B = libxsmm_generator_x86_packed_spgemm_bcsc_pf_dist_B();
 

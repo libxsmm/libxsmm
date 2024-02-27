@@ -94,7 +94,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
     for ( j = 0; j < N; ++j ) {
       if ( dtype_in == LIBXSMM_DATATYPE_F32 ) {
         const float* f_in = (const float*)in;
-        memcpy( in_values, (void*)&(f_in[(j*ldi)]), M*sizeof(float) );
+        memcpy( in_values, &f_in[(j*ldi)], M*sizeof(float) );
       } else if ( dtype_in == LIBXSMM_DATATYPE_BF16 ) {
         const libxsmm_bfloat16* bf16_in = (const libxsmm_bfloat16*)in;
         libxsmm_convert_bf16_f32( &(bf16_in[(j*ldi)]), in_values, M );
