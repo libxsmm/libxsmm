@@ -2667,12 +2667,13 @@ LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi)
 
 LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], void* storage)
 {
-  const unsigned int hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool);
   char* p = (char*)storage;
   volatile int* lock;
+  unsigned int hash;
   size_t n, i = 0;
   LIBXSMM_ASSERT(0 < size && NULL != num && NULL != pool && NULL != storage);
   LIBXSMM_INIT /* CRC-facility must be initialized upfront */
+  hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool); /* after LIBXSMM_INIT */
   lock = internal_malloc_plocks + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
   LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
   for (n = *num; i < n; ++i, p += size) pool[i] = p;
