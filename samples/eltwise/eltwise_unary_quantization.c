@@ -12,7 +12,7 @@
 
 
 LIBXSMM_INLINE
-int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int skip_scf_cvt ) {
   float *in;
   char *char_data;
   char *char_data_gold;
@@ -55,6 +55,9 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   maxexp -= 6;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
+  if (skip_scf_cvt > 0) {
+    scf_quant = 1.0;
+  }
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
@@ -64,6 +67,10 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
 
   /* run dequantization */
   scf_dequant = libxsmm_sexp2_i8i(maxexp);
+
+  if (skip_scf_cvt > 0) {
+    scf_dequant = 1.0;
+  }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       f32_char_data_gold[(i*ldi)+j] = ((float)char_data_gold[(i*ldo)+j]) * scf_dequant ;
@@ -82,7 +89,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary  = (void*)&scf_quant;
   unary_param.out.primary = (void*)char_data;
-  unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -101,7 +108,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_param.in.primary  = (void*)char_data;
   unary_param.in.secondary  = (void*)&scf_dequant;
   unary_param.out.primary = (void*)f32_char_data;
-  unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -150,7 +157,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
 }
 
 LIBXSMM_INLINE
-int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int skip_scf_cvt ) {
   float *in;
   short *short_data;
   short *short_data_gold;
@@ -192,7 +199,9 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   maxexp -= 14;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
-
+  if (skip_scf_cvt > 0) {
+    scf_quant = 1.0;
+  }
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
@@ -202,6 +211,9 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* run dequantization */
   scf_dequant = libxsmm_sexp2_i8i(maxexp);
+  if (skip_scf_cvt > 0) {
+    scf_dequant = 1.0;
+  }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       f32_short_data_gold[(i*ldi)+j] = ((float)short_data_gold[(i*ldi)+j]) * scf_dequant ;
@@ -220,7 +232,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary  = (void*)&scf_quant;
   unary_param.out.primary = (void*)short_data;
-  unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -235,7 +247,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)short_data;
   unary_param.in.secondary  = (void*)&scf_dequant;
   unary_param.out.primary = (void*)f32_short_data;
-  unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -284,7 +296,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 }
 
 LIBXSMM_INLINE
-int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int skip_scf_cvt ) {
   float *in;
   int *int_data;
   int *int_data_gold;
@@ -326,7 +338,9 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   maxexp -= 30;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
-
+  if (skip_scf_cvt > 0) {
+    scf_quant = 1.0;
+  }
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
@@ -336,6 +350,9 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* run dequantization */
   scf_dequant = libxsmm_sexp2_i8i(maxexp);
+  if (skip_scf_cvt > 0) {
+    scf_dequant = 1.0;
+  }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       f32_int_data_gold[(i*ldi)+j] = ((float)int_data_gold[(i*ldi)+j]) * scf_dequant ;
@@ -354,7 +371,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary  = (void*)&scf_quant;
   unary_param.out.primary = (void*)int_data;
-  unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -369,7 +386,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)int_data;
   unary_param.in.secondary  = (void*)&scf_dequant;
   unary_param.out.primary = (void*)f32_int_data;
-  unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -427,10 +444,11 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint N;
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
+  unsigned int skip_scf_cvt = 0;
   int ret = EXIT_FAILURE;
 
-  if ( argc != 7 ) {
-    printf(" Error! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo]\n", argv[0] );
+  if ( argc != 8 ) {
+    printf(" Error! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo] [skip_scf_cvt]\n", argv[0] );
     exit(-1);
   }
 
@@ -440,19 +458,20 @@ int main( int argc, char* argv[] ) {
   N         = atoi(argv[4]);
   ldi       = atoi(argv[5]);
   ldo       = atoi(argv[6]);
+  skip_scf_cvt  = atoi(argv[7]);
 
   dtype_in  = char_to_libxsmm_datatype( dt_in );
   dtype_out = char_to_libxsmm_datatype( dt_out );
 
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I8) ) {
     printf("Testing FP32 <-> int8 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_float_to_int8_to_float( M, N, ldi, ldo );
+    ret = test_float_to_int8_to_float( M, N, ldi, ldo, skip_scf_cvt );
   } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I16) ) {
     printf("Testing FP32 <-> int16 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_float_to_int16_to_float( M, N, ldi, ldo );
+    ret = test_float_to_int16_to_float( M, N, ldi, ldo, skip_scf_cvt );
   } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I32) ) {
     printf("Testing FP32 <-> int32 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_float_to_int32_to_float( M, N, ldi, ldo );
+    ret = test_float_to_int32_to_float( M, N, ldi, ldo, skip_scf_cvt );
   } else {
     printf(" Case not implemented! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
