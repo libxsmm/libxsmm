@@ -925,8 +925,14 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_sse_microkernel( li
   unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R15;
   unsigned int l_ldi = i_mateltwise_desc->ldi*4;
   unsigned int l_ldo = i_mateltwise_desc->ldo*4;
-  unsigned int l_in_index[16] =  {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15 };
-  unsigned int l_out_index[16] = {  0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15 };
+  unsigned int l_in_index[16] =  {  0,  1,  2,  3,
+                                    4,  5,  6,  7,
+                                    8,  9, 10, 11,
+                                   12, 13, 14, 15 };
+  unsigned int l_out_index[16] = {  0,  4,  8, 12,
+                                    1,  5,  9, 13,
+                                    2,  6, 10, 14,
+                                    3,  7, 11, 15 };
   unsigned int l_n = 0;
 
   /* GP temp registers: check against loop and address registers */
@@ -1024,6 +1030,23 @@ void libxsmm_generator_transform_vnni8_to_vnni8t_mbit_scalar_sse_microkernel( li
   unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R15;
   unsigned int l_ldi = i_mateltwise_desc->ldi*8;
   unsigned int l_ldo = i_mateltwise_desc->ldo*8;
+  unsigned int l_in_index[64] =  {  0,  1,  2,  3,  4,  5,  6,  7,
+                                    8,  9, 10, 11, 12, 13, 14, 15,
+                                   16, 17, 18, 19, 20, 21, 22, 23,
+                                   24, 25, 26, 27, 28, 29, 30, 31,
+                                   32, 33, 34, 35, 36, 37, 38, 39,
+                                   40, 41, 42, 43, 44, 45, 46, 47,
+                                   48, 49, 50, 51, 52, 53, 54, 55,
+                                   56, 57, 58, 59, 60, 61, 62, 63 };
+  unsigned int l_out_index[64] = {  0,  8, 16, 24, 32, 40, 48, 56,
+                                    1,  9, 17, 25, 33, 41, 49, 57,
+                                    2, 10, 18, 26, 34, 42, 50, 58,
+                                    3, 11, 19, 27, 35, 43, 51, 59,
+                                    4, 12, 20, 28, 36, 44, 52, 60,
+                                    5, 13, 21, 29, 37, 45, 53, 61,
+                                    6, 14, 22, 30, 38, 46, 54, 62,
+                                    7, 15, 23, 31, 39, 47, 55, 63 };
+  unsigned int l_n = 0;
 
   /* GP temp registers: check against loop and address registers */
   if ( (l_gp_temp == i_gp_reg_m_loop) || (l_gp_temp == i_gp_reg_n_loop) ||
@@ -1064,133 +1087,15 @@ void libxsmm_generator_transform_vnni8_to_vnni8t_mbit_scalar_sse_microkernel( li
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_m_loop, 8 );
 
     /* actual transpose */
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 0,
-                                     l_gp_temp, 0 );
+    for ( l_n = 0; l_n < 64; l_n++ ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
+                                       i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * l_in_index[l_n],
+                                       l_gp_temp, 0 );
 
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 0,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 1,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 4,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 2,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 8,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 3,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 12,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 4,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 1,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 5,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 5,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 6,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 9,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 7,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 13,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 8,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 2,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 9,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 6,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 10,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 10,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 11,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 14,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 12,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 3,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 13,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 7,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 14,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 11,
-                                     l_gp_temp, 1 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * 15,
-                                     l_gp_temp, 0 );
-
-    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * 15,
-                                     l_gp_temp, 1 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
+                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * l_out_index[l_n],
+                                       l_gp_temp, 1 );
+    }
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
