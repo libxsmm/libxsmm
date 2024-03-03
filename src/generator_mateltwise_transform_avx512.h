@@ -78,66 +78,66 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni8_to_vnni8t_16bit_avx512_vl512_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                                             libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                             const unsigned int                      i_gp_reg_in,
-                                                                             const unsigned int                      i_gp_reg_out,
-                                                                             const unsigned int                      i_gp_reg_m_loop,
-                                                                             const unsigned int                      i_gp_reg_n_loop,
-                                                                             const unsigned int                      i_gp_reg_mask,
-                                                                             const unsigned int                      i_mask_reg_0,
-                                                                             const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                             const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+                                                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                 const unsigned int                      i_gp_reg_in,
+                                                                                 const unsigned int                      i_gp_reg_out,
+                                                                                 const unsigned int                      i_gp_reg_m_loop,
+                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                 const unsigned int                      i_gp_reg_mask,
+                                                                                 const unsigned int                      i_mask_reg_0,
+                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni8_to_vnni8t_16bit_avx512_vl256_microkernel( libxsmm_generated_code*             io_generated_code,
-                                                                             libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                             const unsigned int                      i_gp_reg_in,
-                                                                             const unsigned int                      i_gp_reg_out,
-                                                                             const unsigned int                      i_gp_reg_m_loop,
-                                                                             const unsigned int                      i_gp_reg_n_loop,
-                                                                             const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                             const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+                                                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                 const unsigned int                      i_gp_reg_in,
+                                                                                 const unsigned int                      i_gp_reg_out,
+                                                                                 const unsigned int                      i_gp_reg_m_loop,
+                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni8_to_vnni8t_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                                             libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                             const unsigned int                      i_gp_reg_in,
-                                                                             const unsigned int                      i_gp_reg_out,
-                                                                             const unsigned int                      i_gp_reg_m_loop,
-                                                                             const unsigned int                      i_gp_reg_n_loop,
-                                                                             const unsigned int                      i_gp_reg_mask,
-                                                                             const unsigned int                      i_mask_reg_0,
-                                                                             const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                             const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+                                                                           libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                           const unsigned int                      i_gp_reg_in,
+                                                                           const unsigned int                      i_gp_reg_out,
+                                                                           const unsigned int                      i_gp_reg_m_loop,
+                                                                           const unsigned int                      i_gp_reg_n_loop,
+                                                                           const unsigned int                      i_gp_reg_mask,
+                                                                           const unsigned int                      i_mask_reg_0,
+                                                                           const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                           const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                                        libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                        const unsigned int                      i_gp_reg_in,
-                                                                        const unsigned int                      i_gp_reg_out,
-                                                                        const unsigned int                      i_gp_reg_m_loop,
-                                                                        const unsigned int                      i_gp_reg_n_loop,
-                                                                        const unsigned int                      i_gp_reg_mask,
-                                                                        const unsigned int                      i_mask_reg_0,
-                                                                        const unsigned int                      i_mask_reg_1,
-                                                                        const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                        const libxsmm_meltw_descriptor*         i_mateltwise_desc,
-                                                                        const unsigned int                      i_pad_vnni );
+                                                                         libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                         const unsigned int                      i_gp_reg_in,
+                                                                         const unsigned int                      i_gp_reg_out,
+                                                                         const unsigned int                      i_gp_reg_m_loop,
+                                                                         const unsigned int                      i_gp_reg_n_loop,
+                                                                         const unsigned int                      i_gp_reg_mask,
+                                                                         const unsigned int                      i_mask_reg_0,
+                                                                         const unsigned int                      i_mask_reg_1,
+                                                                         const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                         const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                                         const unsigned int                      i_pad_vnni );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_mnblock_micro_kernel( libxsmm_generated_code*                 io_generated_code,
-                                                                                 const unsigned int                      i_gp_reg_in,
-                                                                                 const unsigned int                      i_gp_reg_out,
-                                                                                 const unsigned int                      i_mask_reg_0,
-                                                                                 const unsigned int                      i_mask_reg_1,
-                                                                                 const unsigned int                      i_vnni_lo_reg,
-                                                                                 const unsigned int                      i_vnni_hi_reg,
-                                                                                 const unsigned int                      i_vnni_lo_reg_2,
-                                                                                 const unsigned int                      i_vnni_hi_reg_2,
-                                                                                 const unsigned int                      i_m_step,
-                                                                                 const unsigned int                      i_n_step,
-                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+                                                                                  const unsigned int                      i_gp_reg_in,
+                                                                                  const unsigned int                      i_gp_reg_out,
+                                                                                  const unsigned int                      i_mask_reg_0,
+                                                                                  const unsigned int                      i_mask_reg_1,
+                                                                                  const unsigned int                      i_vnni_lo_reg,
+                                                                                  const unsigned int                      i_vnni_hi_reg,
+                                                                                  const unsigned int                      i_vnni_lo_reg_2,
+                                                                                  const unsigned int                      i_vnni_hi_reg_2,
+                                                                                  const unsigned int                      i_m_step,
+                                                                                  const unsigned int                      i_n_step,
+                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 
 LIBXSMM_API_INTERN
@@ -234,6 +234,23 @@ void libxsmm_generator_transform_two_4x4_64bit_norm_to_normt_avx512( libxsmm_gen
                                                                      const unsigned int      i_vec_reg_dst_start,
                                                                      const unsigned int      i_mask_reg_1,
                                                                      const unsigned int      i_mask_reg_2 );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_normt_128bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                          libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                          const unsigned int                      i_gp_reg_in,
+                                                                          const unsigned int                      i_gp_reg_out,
+                                                                          const unsigned int                      i_gp_reg_m_loop,
+                                                                          const unsigned int                      i_gp_reg_n_loop,
+                                                                          const unsigned int                      i_gp_reg_mask,
+                                                                          const unsigned int                      i_mask_reg_0,
+                                                                          const unsigned int                      i_mask_reg_1,
+                                                                          const unsigned int                      i_mask_reg_2,
+                                                                          const unsigned int                      i_mask_reg_3,
+                                                                          const unsigned int                      i_mask_reg_4,
+                                                                          const unsigned int                      i_mask_reg_5,
+                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
