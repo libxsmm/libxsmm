@@ -192,6 +192,20 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x8_shufflenetwork_avx( lib
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_normt_128bit_avx_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                       libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                       const unsigned int                      i_gp_reg_in,
+                                                                       const unsigned int                      i_gp_reg_out,
+                                                                       const unsigned int                      i_gp_reg_m_loop,
+                                                                       const unsigned int                      i_gp_reg_n_loop,
+                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  libxsmm_generator_transform_norm_to_normt_128bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                    i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
+                                                                    i_micro_kernel_config, i_mateltwise_desc );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_64bit_avx_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                       libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                       const unsigned int                      i_gp_reg_in,
@@ -776,6 +790,18 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_16bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc );
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T ) {
+      /* Call 64bit normal transpose */
+      libxsmm_descriptor_blob blob;
+      const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
+        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, i_mateltwise_desc->m/8, i_mateltwise_desc->n,
+        i_mateltwise_desc->ldi/8, i_mateltwise_desc->ldo, 0, 0,
+        (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
+      libxsmm_mateltwise_kernel_config l_trans_config;
+      libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, mock_desc);
+      libxsmm_generator_transform_norm_to_normt_128bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                 l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                 &l_trans_config, mock_desc );
     } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T ) {
       /* Call 64bit normal transpose */
       libxsmm_descriptor_blob blob;
@@ -798,6 +824,18 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
       libxsmm_mateltwise_kernel_config l_trans_config;
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, mock_desc);
       libxsmm_generator_transform_norm_to_normt_32bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                 l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                 &l_trans_config, mock_desc );
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM ) {
+      /* Call 64bit normal transpose */
+      libxsmm_descriptor_blob blob;
+      const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
+        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, i_mateltwise_desc->m, i_mateltwise_desc->n/8,
+        i_mateltwise_desc->ldi, i_mateltwise_desc->ldo/8, 0, 0,
+        (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
+      libxsmm_mateltwise_kernel_config l_trans_config;
+      libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, mock_desc);
+      libxsmm_generator_transform_norm_to_normt_128bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
     } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM ) {
