@@ -123,7 +123,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
 
       # for gt we need to touch up the script
       if [ "$LD" == 'gtld' ] ; then
-        sed "s/+ str(m) + '_' + LDOTPL/+ '100_100'/g" ${OUTNAME} >${TMPFILE}
+        sed "s/+ str(m) + '_' + LDOTPL/+ '104_104'/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       fi
 
@@ -136,13 +136,22 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
       elif [ "$TYPE" == 'S' ] ; then
         sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'F' ] ; then
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'V' ] ; then
         sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'W' ] ; then
         sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'G' ] ; then
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'Q' ] ; then
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'H' ] ; then
         sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'B' ] ; then
@@ -153,6 +162,10 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
         sed "s/+ str(m) + '_' +/+ str(n) + '_' +/g" ${TMPFILE2} > ${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'D' ] ; then
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} > ${TMPFILE2}
+        sed "s/+ str(m) + '_' +/+ str(n) + '_' +/g" ${TMPFILE2} > ${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'I' ] ; then
         sed "s/LDOTPL/str(m)/g" ${OUTNAME} > ${TMPFILE2}
         sed "s/+ str(m) + '_' +/+ str(n) + '_' +/g" ${TMPFILE2} > ${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}

@@ -900,7 +900,7 @@ int test_vnni8T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M % 8 != 0 || ldo % 8 != 0 ) {
-    fprintf( stderr, "test_vnni8T_to_norm_16bit: M mod 4 AND ldo mod 4 must be 0\n");
+    fprintf( stderr, "test_vnni8T_to_norm_16bit: M mod 8 AND ldo mod 8 must be 0\n");
     exit(-1);
   }
   if ( N > ldi ) {
@@ -1293,7 +1293,7 @@ int test_norm_to_vnni8T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M % 8 != 0 || ldi % 8 != 0 ) {
-    fprintf( stderr, "test_norm_to_vnni8T_16bit: M mod 4 AND ldi mod 4 must be 0\n");
+    fprintf( stderr, "test_norm_to_vnni8T_16bit: M mod 8 AND ldi mod 8 must be 0\n");
     exit(-1);
   }
   if ( M > ldi ) {
