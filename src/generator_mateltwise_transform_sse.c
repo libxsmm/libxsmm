@@ -1099,7 +1099,7 @@ void libxsmm_generator_transform_vnni8_to_vnni8t_mbit_scalar_sse_microkernel( li
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                     i_gp_reg_in, (long long)i_micro_kernel_config->datatype_size_in * 16 );
+                                     i_gp_reg_in, (long long)i_micro_kernel_config->datatype_size_in * 64 );
 
     /* advance output pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1111,17 +1111,15 @@ void libxsmm_generator_transform_vnni8_to_vnni8t_mbit_scalar_sse_microkernel( li
 
     /* advance output pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                     i_gp_reg_in, ((long long)l_ldi * i_micro_kernel_config->datatype_size_in) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->m * 4) );
+                                     i_gp_reg_in, ((long long)l_ldi * i_micro_kernel_config->datatype_size_in) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->m * 8) );
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
-                                     i_gp_reg_out, ((long long)i_micro_kernel_config->datatype_size_out * l_ldo * i_mateltwise_desc->m/4) - ((long long)i_micro_kernel_config->datatype_size_out * 16) );
+                                     i_gp_reg_out, ((long long)i_micro_kernel_config->datatype_size_out * l_ldo * i_mateltwise_desc->m/8) - ((long long)i_micro_kernel_config->datatype_size_out * 64) );
 
     /* close n loop */
     libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
                                                 i_gp_reg_n_loop, i_mateltwise_desc->n );
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
@@ -1469,7 +1467,7 @@ void libxsmm_generator_transform_norm_to_normt_128bit_sse_microkernel( libxsmm_g
 
   libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_store_instr,
                                             i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                            'x', 0, 0, 1, 0);
+                                            'x', 0, 0, 1, 1);
 
   /* advance input pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,

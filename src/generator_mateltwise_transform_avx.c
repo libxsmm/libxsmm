@@ -225,7 +225,7 @@ void libxsmm_generator_transform_norm_to_normt_128bit_avx_microkernel( libxsmm_g
 
   libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_store_instr,
                                             i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                            'x', 0, 0, 1, 0);
+                                            'x', 0, 0, 1, 1);
 
   /* advance input pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
