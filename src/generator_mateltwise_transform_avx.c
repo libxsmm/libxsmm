@@ -697,7 +697,7 @@ void libxsmm_generator_transform_vnni8_to_vnni8t_16bit_avx_microkernel( libxsmm_
                                                                         const unsigned int                      i_gp_reg_n_loop,
                                                                         const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                         const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
+  libxsmm_generator_transform_vnni8_to_vnni8t_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                            i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
                                                                            i_micro_kernel_config, i_mateltwise_desc );
 }
