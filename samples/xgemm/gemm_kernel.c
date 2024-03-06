@@ -3197,6 +3197,9 @@ int main(int argc, char* argv []) {
             }
           }
           ref_matmul( &l_gemm_def, l_a, l_b, l_c_gold );
+          if (l_gemm_def.is_Amxfp4Bbf16_gemm > 0) {
+            l_gemm_def.a_type = LIBXSMM_DATATYPE_I8;
+          }
         }
         if (l_vnni_c > 0) {
           if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 || l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
