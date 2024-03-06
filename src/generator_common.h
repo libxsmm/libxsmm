@@ -2031,7 +2031,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR           = 29,
   LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR       = 30,
   LIBXSMM_GEMM_STACK_VAR_ZPT_PTR                = 31,
-  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32
+  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32,
+  LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33
 } libxsmm_gemm_stack_var;
 
 #if 0
