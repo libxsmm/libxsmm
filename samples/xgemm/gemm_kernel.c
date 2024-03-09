@@ -3124,6 +3124,10 @@ int main(int argc, char* argv []) {
           if (l_gemm_def.is_Amxfp4Bbf16_gemm > 0) {
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0, l_akk = 0;
             char *l_a_mxfp4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * ((size_t)l_k/2) * (size_t)l_br, 64);
+            unsigned char scale_exp = 0;
+            unsigned int scale_exp_u32 = 0;
+            float *scalef_ptr = (float*)&scale_exp_u32;
+            float scale_expf = 0.0;
             libxsmm_bfloat16 *l_a_new = NULL;
             libxsmm_free(l_a);
             l_a  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
@@ -3133,10 +3137,6 @@ int main(int argc, char* argv []) {
             for (l_ar = 0; l_ar < l_br; l_ar++) {
               for (l_am = 0; l_am < l_m; l_am++) {
                 for (l_ak = 0; l_ak < l_k/2; l_ak++) {
-                  unsigned char scale_exp = 0;
-                  unsigned int scale_exp_u32 = 0;
-                  float *scalef_ptr = (float*)&scale_exp_u32;
-                  float scale_expf = 0.0;
                   if (l_ak % 16 == 0) {
                     scale_exp = l_gemm_def.scf_u8[l_ar * l_lda * (l_k/32) + (l_ak/16) * l_lda + l_am];
                     scale_exp_u32 = (unsigned int) scale_exp;
