@@ -190,8 +190,6 @@ LIBXSMM_API void libxsmm_otrans_task_internal(void* out, const void* in, unsigne
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
@@ -618,7 +616,6 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
     }
   }
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,

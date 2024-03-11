@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_ext.h"
 #include "libxsmm_gemm.h"
 
 
@@ -145,8 +144,6 @@ void LIBXSMM_FSYMBOL(sgemm_batch)(const char transa_array[], const char transb_a
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_ATTRIBUTE_WEAK
 void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -183,7 +180,7 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
     libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
-#pragma GCC diagnostic pop
+
 
 LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_ATTRIBUTE_WEAK
 void LIBXSMM_FSYMBOL(dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
@@ -324,8 +321,6 @@ void LIBXSMM_FSYMBOL(sgemm_batch)(const char transa_array[], const char transb_a
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_ATTRIBUTE_NO_TRACE /*LIBXSMM_ATTRIBUTE_WEAK*/
 void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -348,7 +343,6 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
   LIBXSMM_INLINE_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   internal_noblas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_ATTRIBUTE_NO_TRACE /*LIBXSMM_ATTRIBUTE_WEAK*/

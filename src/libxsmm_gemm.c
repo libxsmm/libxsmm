@@ -534,8 +534,6 @@ LIBXSMM_API void libxsmm_gemm_groups(
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -595,8 +593,10 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != kernel);
   LIBXSMM_UNUSED(flags);
   if (begin < end) {
-    char *const a0 = (char*)a, *const b0 = (char*)b, *const c0 = (char*)c;
     libxsmm_gemm_param gemm_param;
+    char *a0, *b0, *const c0 = (char*)c;
+    LIBXSMM_VALUE_ASSIGN(a0, a);
+    LIBXSMM_VALUE_ASSIGN(b0, b);
 #if defined(_DEBUG)
     memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
 #endif
@@ -925,7 +925,6 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   /* coverity[missing_unlock] */
   return result;
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
@@ -959,8 +958,6 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
@@ -996,13 +993,14 @@ LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatyp
       const libxsmm_blasint da = (NULL != stride_a ? *stride_a : pointersize) - index_base * pointersize;
       const libxsmm_blasint db = (NULL != stride_b ? *stride_b : pointersize) - index_base * pointersize;
       const libxsmm_blasint dc = (NULL != stride_c ? *stride_c : pointersize) - index_base * pointersize;
+      union { const void* pc; const void** ppc; } ai, bi;
       for (i = 0; i < size; ++i) {
-        const void *const ai = *(const void**)&a0[i * da], *const bi = *(const void**)&b0[i * db];
         void *const ci = *(void**)&c0[i * dc];
+        ai.pc = &a0[i * da]; bi.pc = &b0[i * db];
 #if defined(LIBXSMM_BATCH_CHECK)
-        if (NULL != ai && NULL != bi && NULL != ci)
+        if (NULL != *ai.ppc && NULL != *bi.ppc && NULL != ci)
 #endif
-        libxsmm_blas_gemm(iprec, oprec, transa, transb, &m, &n, &k, alpha, ai, lda, bi, ldb, beta, ci, ldc);
+        libxsmm_blas_gemm(iprec, oprec, transa, transb, &m, &n, &k, alpha, *ai.ppc, lda, *bi.ppc, ldb, beta, ci, ldc);
       }
     }
     else { /* strided */
@@ -1079,10 +1077,11 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
             libxsmm_blasint size = LIBXSMM_ABS(batchsize), s = 0;
             const char* pc = (const char*)c;
             for (; s < size; ++s, pc += dc) {
-              const void *const ci = *(const void**)pc;
-              if (NULL != ci) {
-                flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, ci, &vlen);
-                if (otypesize < vlen && 0 != LIBXSMM_MOD2((uintptr_t)ci, vlen)) {
+              union { const void* pc; const void** ppc; } ci;
+              ci.pc = pc;
+              if (NULL != *ci.ppc) {
+                flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, *ci.ppc, &vlen);
+                if (otypesize < vlen && 0 != LIBXSMM_MOD2((uintptr_t)*ci.ppc, vlen)) {
                   flags = gemm_flags; /* reset */
                   break;
                 }
@@ -1131,7 +1130,6 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
   }
 #endif
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype oprec,

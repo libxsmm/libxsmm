@@ -99,6 +99,112 @@
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
 #define LIBXSMM_ELIDE(...)
 
+ /** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
+#define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
+#define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
+  (((0x7F & (MAJOR)) << 24) | ((0x1F & (MINOR)) << 19) | ((0x1F & (UPDATE)) << 14) | (0x3FFF & (PATCH)))
+#define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
+#define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
+#define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
+#define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
+
+#if !defined(LIBXSMM_VERSION_NUMBER)
+# define LIBXSMM_VERSION_NUMBER LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, \
+    LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
+#endif
+#if !defined(LIBXSMM_VERSION_CHECK)
+# define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
+    (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
+#endif
+/**
+ * Macro to check minimum version requirements in code, for example:
+ * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
+ * // code requiring version 1.17 or later
+ * #else
+ * // fallback code
+ * #endif
+*/
+#define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
+  LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
+
+/** Make LIBXSMM_PRAGMA available early. */
+#if defined(__cplusplus)
+# if (201103L <= __cplusplus) /*C99 compatibility*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# endif
+#else /* C */
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# elif defined(__GNUC__) /*|| defined(__clang__)*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# endif
+#endif /*__cplusplus*/
+#if !defined(LIBXSMM_PRAGMA)
+# if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
+# else
+#   define LIBXSMM_PRAGMA(DIRECTIVE)
+# endif
+#endif
+
+/** Allow control of diagnostics. */
+#if !defined(__INTEL_COMPILER)
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# endif
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG)
+# define LIBXSMM_PRAGMA_DIAG_PUSH()
+# define LIBXSMM_PRAGMA_DIAG_POP()
+# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+# define LIBXSMM_PRAGMA_DIAG_OFF_PEDANTIC() LIBXSMM_PRAGMA_DIAG_OFF("-Wpedantic")
+# define LIBXSMM_PRAGMA_DIAG_OFF_CASTQUAL() LIBXSMM_PRAGMA_DIAG_OFF("-Wcast-qual")
+# if (defined(__GNUC__) && !defined(__clang__)) || \
+      LIBXSMM_VERSION2(9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
+#   define LIBXSMM_PRAGMA_DIAG_OFF_FADDRESS() LIBXSMM_PRAGMA_DIAG_OFF("-Wframe-address")
+# endif
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_OFF_WUNKNOWN() LIBXSMM_PRAGMA_DIAG_OFF("-Wunknown-warning-option")
+# else
+#   define LIBXSMM_PRAGMA_DIAG_OFF_WUNKNOWN() LIBXSMM_PRAGMA_DIAG_OFF("-Wpragmas")
+# endif
+# define LIBXSMM_PRAGMA_DIAG_OFF_VARUNUSED() LIBXSMM_PRAGMA_DIAG_OFF("-Wunused-variable")
+#else
+# define LIBXSMM_PRAGMA_DIAG_OFF_PEDANTIC()
+# define LIBXSMM_PRAGMA_DIAG_OFF_CASTQUAL()
+# define LIBXSMM_PRAGMA_DIAG_OFF_WUNKNOWN()
+# define LIBXSMM_PRAGMA_DIAG_OFF_VARUNUSED()
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG_OFF_FADDRESS)
+# define LIBXSMM_PRAGMA_DIAG_OFF_FADDRESS()
+#endif
+#if defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
+#elif defined(__clang__)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(clang optimize off)
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(clang optimize on)
+#elif defined(__GNUC__)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(GCC push_options) LIBXSMM_PRAGMA(GCC optimize("O0"))
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(GCC pop_options)
+#else
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON
+#endif
+
+LIBXSMM_PRAGMA_DIAG_PUSH()
+LIBXSMM_PRAGMA_DIAG_OFF_VARUNUSED()
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL) || \
     (defined(__MKL) && !defined(LIBXSMM_BUILD) && \
@@ -114,41 +220,12 @@
     defined(NOTHROW)
 # include <mkl_version.h>
 #endif
-
-/** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
-#define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
-#define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
-#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
-  (((0x7F & (MAJOR)) << 24) | ((0x1F & (MINOR)) << 19) | ((0x1F & (UPDATE)) << 14) | (0x3FFF & (PATCH)))
-#define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
-#define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
-#define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
-#define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
-
-#if !defined(LIBXSMM_VERSION_NUMBER)
-# define LIBXSMM_VERSION_NUMBER LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, \
-    LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
-#endif
-
-#define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
-  (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
-
-/**
- * Macro to check minimum version requirements in code, for example:
- * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
- * // code requiring version 1.17 or later
- * #else
- * // fallback code
- * #endif
-*/
-#define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
-  LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
-
 /** Calculation of INTEL_MKL_VERSION has no continuous history. */
 #if defined(__INTEL_MKL__) && defined(__INTEL_MKL_MINOR__) && defined(__INTEL_MKL_UPDATE__)
 # define LIBXSMM_MKL_VERSION3 LIBXSMM_VERSION3(__INTEL_MKL__, __INTEL_MKL_MINOR__, __INTEL_MKL_UPDATE__)
 # define LIBXSMM_MKL_VERSION2 LIBXSMM_VERSION2(__INTEL_MKL__, __INTEL_MKL_MINOR__)
 #endif
+LIBXSMM_PRAGMA_DIAG_POP()
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
 #define LIBXSMM_IS_INTEGER(TYPE, VALUE, LO, HI) ( \
@@ -492,7 +569,6 @@
 # define LIBXSMM_EXTERN extern
 # define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
-#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_CALLER __func__
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
@@ -501,7 +577,7 @@
 #   define LIBXSMM_FUNCNAME __FUNCTION__
 #   define LIBXSMM_INLINE_KEYWORD __inline
 #   define LIBXSMM_INLINE_FIXUP
-# elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
+# elif (defined(__GNUC__) /*|| defined(__clang__)*/) && !defined(__STRICT_ANSI__)
 #   define LIBXSMM_CALLER __PRETTY_FUNCTION__
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)
@@ -624,14 +700,6 @@
 # endif
 #endif /*LIBXSMM_RESTRICT*/
 
-#if !defined(LIBXSMM_PRAGMA)
-# if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
-#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
-# else
-#   define LIBXSMM_PRAGMA(DIRECTIVE)
-# endif
-#endif
-
 #if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_OPENMP_SIMD
@@ -704,39 +772,6 @@
 # endif
 #endif
 
-#if !defined(__INTEL_COMPILER)
-# if defined(__clang__)
-#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
-#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
-#   define LIBXSMM_PRAGMA_DIAG
-# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
-#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
-#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
-#   define LIBXSMM_PRAGMA_DIAG
-# endif
-#endif
-#if !defined(LIBXSMM_PRAGMA_DIAG)
-# define LIBXSMM_PRAGMA_DIAG_PUSH()
-# define LIBXSMM_PRAGMA_DIAG_POP()
-# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
-#endif
-
-#if defined(LIBXSMM_INTEL_COMPILER)
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
-#elif defined(__clang__)
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(clang optimize off)
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(clang optimize on)
-#elif defined(__GNUC__)
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(GCC push_options) LIBXSMM_PRAGMA(GCC optimize("O0"))
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(GCC pop_options)
-#else
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON
-#endif
-
 #if defined(_OPENMP) && (200805/*v3.0*/ <= _OPENMP) \
  && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
@@ -776,7 +811,6 @@
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
 #define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE, ((double)(A) / 2.0)) * 2)))
-#define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 #define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
 LIBXSMM_API_INLINE   signed long long libxsmm_widen_u32i64(unsigned int value) { return value; }
@@ -947,7 +981,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 /** Address of an ARRAY of elements (of TYPESIZE) using linear index according to LIBXSMM_INDEX1. */
-#define LIBXSMM_ACCESS_RAW(NDIMS, TYPESIZE, ARRAY, ...) ((void*)(((char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
+#define LIBXSMM_ACCESS_RO(NDIMS, TYPESIZE, ARRAY, ...) ((const void*)(((const char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
+#define LIBXSMM_ACCESS_RW(NDIMS, TYPESIZE, ARRAY, ...) ((void*)(((char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
 /** Address of an ARRAY of TYPE (can be const-qualified) using linear index according to LIBXSMM_INDEX1. */
 #define LIBXSMM_ACCESS(NDIMS, TYPE, ARRAY, ...) (((TYPE*)(ARRAY)) + LIBXSMM_INDEX1(NDIMS, __VA_ARGS__))
 
@@ -989,7 +1024,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 /** Append "_omp" postfix to the given symbol. */
 #define LIBXSMM_USEOMP(FUNCTION) LIBXSMM_CONCATENATE(FUNCTION, _omp)
 
-#if defined(LIBXSMM_BUILD) && (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+#if defined(LIBXSMM_BUILD) && (defined(__GNUC__) || defined(__clang__)) && \
+   !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(_WIN32)
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
 # define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
 #else
@@ -1154,8 +1190,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_EXPECT_DEBUG LIBXSMM_EXPECT_ELIDE
 #endif
-#if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
+#if defined(_OPENMP) /*&& defined(LIBXSMM_SYNC_OMP)*/
+LIBXSMM_PRAGMA_DIAG_PUSH()
+LIBXSMM_PRAGMA_DIAG_OFF_PEDANTIC()
 # include <omp.h>
+LIBXSMM_PRAGMA_DIAG_POP()
 #endif
 #include <inttypes.h>
 #include <stdint.h>

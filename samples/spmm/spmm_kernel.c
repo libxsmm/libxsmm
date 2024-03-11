@@ -265,7 +265,7 @@ void create_spmm_inputs(spmm_def *i_spmm_def, double l_sparsity_frac, char *l_a,
   }
 
   /* Sparsify B matrix and generate matrix in BCSC format */
-  for (l_i = 0; l_i < n_grid_points; l_i++) {
+  for (l_i = 0; l_i < (libxsmm_blasint)n_grid_points; l_i++) {
     grid_point_array[l_i] = l_i;
   }
   /* Pemute array of n grid points and sparsify the ones with id > n_dense_grid_points */
@@ -277,8 +277,8 @@ void create_spmm_inputs(spmm_def *i_spmm_def, double l_sparsity_frac, char *l_a,
         unsigned int l_ui = l_i * l_bn;
         unsigned int l_uj = l_j * l_bk;
         unsigned int l_di = 0, l_dj = 0;
-        for (l_di = 0; l_di < l_bn; l_di++) {
-          for (l_dj = 0; l_dj < l_bk; l_dj++) {
+        for (l_di = 0; l_di < (unsigned int)l_bn; l_di++) {
+          for (l_dj = 0; l_dj < (unsigned int)l_bk; l_dj++) {
             if (l_spmm_def.b_type == LIBXSMM_DATATYPE_F32) {
               float *ptr_f32 = (float*)l_b + ((l_ui + l_di) * l_k + (l_uj + l_dj));
               *ptr_f32 = (float)0;
@@ -317,8 +317,8 @@ void create_spmm_inputs(spmm_def *i_spmm_def, double l_sparsity_frac, char *l_a,
         unsigned int l_uj = l_j * l_bk;
         unsigned int l_di = 0, l_dj = 0;
         l_rowidx[l_nz_block_id] = l_j;
-        for (l_di = 0; l_di < l_bn; l_di++) {
-          for (l_dj = 0; l_dj < l_bk; l_dj++) {
+        for (l_di = 0; l_di < (unsigned int)l_bn; l_di++) {
+          for (l_dj = 0; l_dj < (unsigned int)l_bk; l_dj++) {
             if (l_spmm_def.b_type == LIBXSMM_DATATYPE_F32) {
               float *ptr_f32 = (float*)l_b + ((l_ui + l_di) * l_k + (l_uj + l_dj));
               float *sp_ptr_f32 = (float*)l_b_sp_bcsc_data + l_val_idx;
@@ -345,11 +345,12 @@ void create_spmm_inputs(spmm_def *i_spmm_def, double l_sparsity_frac, char *l_a,
   if (l_vnni_b > 0 && l_trans_b > 0) {
     unsigned int l_di = 0, l_dj = 0;
     int l_b_vnni_factor =  libxsmm_cpuid_dot_pack_factor(l_spmm_def.b_type);
-    for ( l_i = 0; l_i < nnz/(l_bk*l_bn); l_i++) {
-      char tmp_block[l_bk*l_bn*LIBXSMM_TYPESIZE(l_spmm_def.b_type)];
+    for ( l_i = 0; l_i < (libxsmm_blasint)nnz/(l_bk*l_bn); l_i++) {
+      char tmp_block[8192];
+      assert((size_t)l_bk*l_bn*LIBXSMM_TYPESIZE(l_spmm_def.b_type) <= sizeof(tmp_block));
       memcpy(tmp_block, &l_b_sp_bcsc_data[l_i*(l_bk*l_bn)*LIBXSMM_TYPESIZE(l_spmm_def.b_type)], (l_bk*l_bn)*LIBXSMM_TYPESIZE(l_spmm_def.b_type));
-      for (l_di = 0; l_di < l_bn; l_di++) {
-        for (l_dj = 0; l_dj < l_bk; l_dj++) {
+      for (l_di = 0; l_di < (unsigned int)l_bn; l_di++) {
+        for (l_dj = 0; l_dj < (unsigned int)l_bk; l_dj++) {
           if (l_spmm_def.b_type == LIBXSMM_DATATYPE_BF16) {
             libxsmm_bfloat16 *l_tmp_bf16 = (libxsmm_bfloat16*)tmp_block;
             libxsmm_bfloat16 *l_b_sp_bcsc_data_bf16 = (libxsmm_bfloat16*)l_b_sp_bcsc_data;
@@ -446,8 +447,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   }
 
   /* run correctness */
-  gemm_param.a.primary = (void*)i_a;
-  gemm_param.b.primary = (void*)i_b;
+  LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
+  LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
@@ -465,8 +466,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run performance */
   l_start = libxsmm_timer_tick();
-  gemm_param.a.primary = (void*)i_a;
-  gemm_param.b.primary = (void*)i_b;
+  LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
+  LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
@@ -662,8 +663,8 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     float* data_gold_f = (float*)malloc( sizeof(float) * ld * n );
     float* data_f      = (float*)malloc( sizeof(float) * ld * n );
 
-    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data_gold, data_gold_f, ld*n );
-    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data,      data_f,      ld*n );
+    libxsmm_convert_bf16_f32( (const libxsmm_bfloat16*)data_gold, data_gold_f, ld*n );
+    libxsmm_convert_bf16_f32( (const libxsmm_bfloat16*)data,      data_f,      ld*n );
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
 
@@ -673,8 +674,8 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     float* data_gold_f = malloc( ld * n * sizeof(float) );
     float* data_f      = malloc( ld * n * sizeof(float) );
 
-    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)data_gold, data_gold_f, ld*n );
-    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)data,      data_f,      ld*n );
+    libxsmm_convert_bf8_f32( (const libxsmm_bfloat8*)data_gold, data_gold_f, ld*n );
+    libxsmm_convert_bf8_f32( (const libxsmm_bfloat8*)data,      data_f,      ld*n );
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
     error = l_diff.normf_rel;
 
@@ -684,8 +685,8 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     float* data_gold_f = malloc( ld * n * sizeof(float) );
     float* data_f      = malloc( ld * n * sizeof(float) );
 
-    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)data_gold, data_gold_f, ld*n );
-    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)data,      data_f,      ld*n );
+    libxsmm_convert_hf8_f32( (const libxsmm_hfloat8*)data_gold, data_gold_f, ld*n );
+    libxsmm_convert_hf8_f32( (const libxsmm_hfloat8*)data,      data_f,      ld*n );
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
     error = l_diff.normf_rel;
     free( data_f );

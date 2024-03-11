@@ -9,7 +9,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_xcopy.h"
-#include "libxsmm_ext.h"
 
 #define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && (64U * 64U) <= (((unsigned int)(M)) * (N)))
 
@@ -334,10 +333,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
               } break;
             }
             if (NULL != kernel.ptr) { /* JIT-kernel available */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
               LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
-#pragma GCC diagnostic pop
               return; /* fast path */
             }
           }

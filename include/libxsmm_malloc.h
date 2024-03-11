@@ -121,7 +121,7 @@ LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], vo
 /** Allocate from the given pool by using the original num-counter (libxsmm_pmalloc_init). */
 LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i);
 /** Bring pointer back into the pool by using original num-counter (libxsmm_pmalloc_init). */
-LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i);
+LIBXSMM_API void libxsmm_pfree(const void* pointer, void* pool[], size_t* i);
 
 /**
  * Release the entire scratch memory regardless

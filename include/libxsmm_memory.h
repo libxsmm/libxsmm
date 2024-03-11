@@ -43,14 +43,18 @@
   LIBXSMM_MEMCPY127(DST, SRC, sizeof(*(SRC))); \
 } while(0)
 
-#define LIBXSMM_MEMSWP127_RHS(TYPE, DST, SRC, IDX) \
-  LIBXSMM_ISWAP((DST)[IDX], ((TYPE*)(SRC))[IDX])
-#define LIBXSMM_MEMSWP127(DST, SRC, SIZE) do { \
-  LIBXSMM_ASSERT((DST) != (SRC)); \
-  LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
+#define LIBXSMM_MEMSWP127_RHS(TYPE, A, B, IDX) \
+  LIBXSMM_ISWAP((A)[IDX], ((TYPE*)(B))[IDX])
+#define LIBXSMM_MEMSWP127(A, B, SIZE) do { \
+  LIBXSMM_ASSERT((A) != (B)); \
+  LIBXSMM_MEMORY127_LOOP(A, B, SIZE, \
   LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS); \
 } while (0)
 
+/** Assigns SRC to DST (must be L-values). Can be used to cast const-qualifiers. */
+#define LIBXSMM_VALUE_ASSIGN(DST, SRC) LIBXSMM_ASSIGN127(&(DST), &(SRC))
+/** Swap two arbitrary-sized values (must be L-values) */
+#define LIBXSMM_VALUE_SWAP(A, B) LIBXSMM_MEMSWP127(&(A), &(B), sizeof(DST))
 
 /** Returns the type-size of data-type (can be also libxsmm_datatype). */
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);

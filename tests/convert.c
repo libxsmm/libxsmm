@@ -54,7 +54,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -72,7 +72,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_truncate_convert_f32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf16_truncate.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -95,7 +95,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -113,7 +113,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_rnaz_convert_fp32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf16_rnaz.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -136,7 +136,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -154,7 +154,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_rne_convert_fp32_bf16((const float*)data, (libxsmm_bfloat16*)data_lp, s);
       libxsmm_convert_bf16_f32((const libxsmm_bfloat16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf16_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -177,7 +177,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_f16_f32((const libxsmm_float16*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -195,7 +195,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_rne_convert_fp32_f16((const float*)data, (libxsmm_float16*)data_lp, s);
       libxsmm_convert_f16_f32((const libxsmm_float16*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_f16_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -218,7 +218,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -236,7 +236,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_rne_convert_fp32_bf8((const float*)data, (libxsmm_bfloat8*)data_lp, s);
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf8_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -260,7 +260,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -279,7 +279,7 @@ int main(/*int argc, char* argv[]*/void)
         rng_state, 0/*start_seed_idx*/);
       libxsmm_convert_bf8_f32((const libxsmm_bfloat8*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_bf8_stochastic.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -302,7 +302,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_convert_hf8_f32((const libxsmm_hfloat8*)data_lp, data, s);
       result = libxsmm_mhd_read(filename,
         NULL/*offset*/, size, NULL/*pitch*/, ndims, channels, header,
-        (libxsmm_mhd_elemtype)type, NULL/*type*/, data, libxsmm_mhd_element_comparison,
+        (libxsmm_mhd_elemtype)type, data, NULL/*info*/, libxsmm_mhd_element_comparison,
         NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;
@@ -320,7 +320,7 @@ int main(/*int argc, char* argv[]*/void)
       libxsmm_rne_convert_fp32_hf8((const float*)data, (libxsmm_hfloat8*)data_lp, s);
       libxsmm_convert_hf8_f32((const libxsmm_hfloat8*)data_lp, data, s);
       result = libxsmm_mhd_write("convert_hf8_rne.mhd", NULL/*offset*/, size, NULL/*pitch*/, ndims, channels,
-        (libxsmm_mhd_elemtype)type, NULL/*no conversion*/, data, NULL/*header_size*/,
+        (libxsmm_mhd_elemtype)type, data, NULL/*conversion*/, NULL/*handler*/, NULL/*header_size*/,
         NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
     }
     else result = EXIT_FAILURE;

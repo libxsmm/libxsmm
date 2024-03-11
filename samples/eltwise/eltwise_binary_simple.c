@@ -142,17 +142,17 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   } else if ( op == MIN_OP) {
     res = (in0 > in1) ? in1 : in0;
   } else if ( op == CMP_GT_OP) {
-    res = (in0 > in1) ? 1 : 0;
+    res = (in0 > in1) ? 1.f : 0.f;
   } else if ( op == CMP_GE_OP) {
-    res = (in0 >= in1 ) ? 1 : 0;
+    res = (in0 >= in1 ) ? 1.f : 0.f;
   } else if ( op == CMP_LT_OP) {
-    res = (in0 < in1) ? 1 : 0;
+    res = (in0 < in1) ? 1.f : 0.f;
   } else if ( op == CMP_LE_OP) {
-    res = (in0 <= in1) ? 1 : 0;
+    res = (in0 <= in1) ? 1.f : 0.f;
   } else if ( op == CMP_EQ_OP) {
-    res = (in0 == in1) ? 1 : 0;
+    res = (in0 == in1) ? 1.f : 0.f;
   } else if ( op == CMP_NE_OP) {
-    res = (in0 != in1) ? 1 : 0;
+    res = (in0 != in1) ? 1.f : 0.f;
   } else {
     printf("Invalid OP\n");
     exit(-1);

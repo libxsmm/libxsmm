@@ -11,7 +11,6 @@
 #include <libxsmm.h>
 #include "libxsmm_xcopy.h"
 #include "libxsmm_gemm.h"
-#include "libxsmm_ext.h"
 
 #if defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD_EXT)
 # include "libxsmm_trace.h"
@@ -285,8 +284,6 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
   const double* alpha, const double* a, const libxsmm_blasint* lda, const double* x, const libxsmm_blasint* incx,
   const double* beta, double* y, const libxsmm_blasint* incy)
@@ -301,7 +298,9 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemv)(const c
         LIBXSMM_GEMM_FLAGS(*trans, 'N'), (libxsmm_bitfield)LIBXSMM_PREFETCH);
       if (NULL != xgemv) {
         libxsmm_gemm_param param;
-        param.a.primary = (double*)a; param.b.primary = (double*)x; param.c.primary = y;
+        LIBXSMM_VALUE_ASSIGN(param.a.primary, a);
+        LIBXSMM_VALUE_ASSIGN(param.b.primary, x);
+        param.c.primary = y;
         LIBXSMM_XGEMM_PREFETCH(double, double, *m, 1/*n*/, *n/*k*/, param);
         xgemv(&param);
       }
@@ -333,7 +332,9 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemv)(const c
         LIBXSMM_GEMM_FLAGS(*trans, 'N'), (libxsmm_bitfield)LIBXSMM_PREFETCH);
       if (NULL != xgemv) {
         libxsmm_gemm_param param;
-        param.a.primary = (float*)a; param.b.primary = (float*)x; param.c.primary = y;
+        LIBXSMM_VALUE_ASSIGN(param.a.primary, a);
+        LIBXSMM_VALUE_ASSIGN(param.b.primary, x);
+        param.c.primary = y;
         LIBXSMM_XGEMM_PREFETCH(float, float, *m, 1/*n*/, *n/*k*/, param);
         xgemv(&param);
       }
@@ -349,7 +350,6 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemv)(const c
     LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void __wrap_dgemm_batch_strided(
@@ -402,8 +402,6 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void __wrap_sgemm_batch(
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
@@ -480,10 +478,11 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
               const char* pc = (const char*)c;
               libxsmm_blasint s = 0;
               for (; s < asize; ++s, pc += dc) {
-                const void *const ci = *(const void**)pc;
-                if (NULL != ci) {
-                  flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, ci, &vlen);
-                  if (otypesize < vlen && 0 != LIBXSMM_MOD2((uintptr_t)ci, vlen)) {
+                union { const void* pc; const void** ppc; } cast;
+                cast.pc = pc;
+                if (NULL != *cast.ppc) {
+                  flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, *cast.ppc, &vlen);
+                  if (otypesize < vlen && 0 != LIBXSMM_MOD2((uintptr_t)*cast.ppc, vlen)) {
                     flags = gemm_flags; /* reset */
                     break;
                   }
@@ -602,7 +601,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
   }
 #endif
 }
-#pragma GCC diagnostic pop
+
 
 LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,

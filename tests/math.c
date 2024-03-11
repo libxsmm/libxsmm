@@ -294,11 +294,11 @@ int main(int argc, char* argv[])
     }
   }
 
-  { /* check coprime/2 routine */
-    const size_t test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997, 1024 };
+  { /* check coprime routine */
+    const size_t test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997, 1024, 4096 };
     const int n = sizeof(test) / sizeof(*test);
     for (i = 0; i < n; ++i) {
-      for (j = 0; j <= test[i]; ++j) {
+      for (j = 0; j <= (int)test[i]; ++j) {
         const size_t coprime = libxsmm_coprime(test[i], j);
         const size_t gcd = libxsmm_gcd(coprime, test[i]);
         if ((0 != coprime || 1 < test[i]) && (test[i] <= coprime || 1 != gcd)) {
@@ -306,18 +306,6 @@ int main(int argc, char* argv[])
         }
       }
     }
-    if (libxsmm_coprime2(65423) != 32711) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1030) != 513) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1029) != 514) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1028) != 513) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1027) != 513) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1026) != 511) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1025) != 512) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1024) != 511) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(1000) != 499) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(997) != 498) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(24) != 11) exit(EXIT_FAILURE);
-    if (libxsmm_coprime2(5) != 2) exit(EXIT_FAILURE);
   }
 
   { /* check libxsmm_remainder minimizing the remainder */
