@@ -1471,7 +1471,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int norm_to_normT_mask_reg_1;
   unsigned int mask_m_fp32;
   unsigned int mask_m_bf16;
-  unsigned int mask_m_fp8_cvt;
+  unsigned int mask_m_lp_cvt;
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
