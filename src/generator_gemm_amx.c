@@ -408,7 +408,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
         unsigned int l_vreg_cpy_lo = l_vreg_start + (3*u_ik+2) % (32-l_vreg_start);
         unsigned int l_scf_vreg = i_micro_kernel_config->reserved_zmms + im;
         unsigned int l_mask_reg_even = l_mask_start + (2*u_ik+0) % (7-l_mask_start);
-        unsigned int l_mask_reg_odd  = l_mask_start + (2*u_ik+1) % (7-l_mask_start);;
+        unsigned int l_mask_reg_odd  = l_mask_start + (2*u_ik+1) % (7-l_mask_start);
         libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             LIBXSMM_X86_INSTR_VMOVDQU8,
             i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
@@ -439,13 +439,20 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
         if (l_process_hi_half > 0) {
           libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name, l_vreg_hi, i_micro_kernel_config->perm_table_vnni_hi, l_vreg_cpy_lo);
         }
+      }
+    }
+
+    for (u_ik = 0; u_ik < k_unroll; u_ik++) {
+      for (im = 0; im < i_m_tiles; im += 2) {
+        unsigned int l_process_hi_half = ((im + 2 < i_m_tiles) || i_m_tiles == 2 || ((im + 2 >= i_m_tiles-1) && (i_m_tiles > 3))) ? 1 : 0;
+        unsigned int l_vreg_lo = l_vreg_start + (3*u_ik+0) % (32-l_vreg_start);
+        unsigned int l_vreg_cpy_lo = l_vreg_start + (3*u_ik+2) % (32-l_vreg_start);
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
             o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
             (im * l_vlen + ik * 16 * i_ldo + u_ik * i_ldo) * 4 * i_micro_kernel_config->datatype_size_in,
             i_micro_kernel_config->vector_name,
             l_vreg_lo, ((im + 2 >= i_m_tiles) && (l_process_hi_half == 0)) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
-
         if (l_process_hi_half > 0) {
           libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVUPS,
@@ -456,6 +463,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
         }
       }
     }
+
+
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg, (long long)i_ldi * k_unroll *  i_micro_kernel_config->datatype_size_in );
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, o_gp_reg, (long long)i_ldo * k_unroll * 4 * i_micro_kernel_config->datatype_size_in );
     libxsmm_generator_gemm_footer_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg, 16/k_unroll);
