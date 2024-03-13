@@ -372,7 +372,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
                                                                          unsigned int                       o_gp_reg ) {
   unsigned int im = 0, ik = 0, l_vlen = 16;
   unsigned int l_vreg_start = i_micro_kernel_config->reserved_zmms;
-  unsigned int l_mask_start = i_micro_kernel_config->reserved_mask_regs;
+  unsigned int l_mask_expon = i_micro_kernel_config->reserved_mask_regs;
+  unsigned int l_mask_start = i_micro_kernel_config->reserved_mask_regs+1;
   unsigned int cnt_reg = LIBXSMM_X86_GP_REG_R11;
   unsigned int u_ik = 0, k_unroll = 2;
 
@@ -394,6 +395,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
             (int)((im * l_vlen + ik * i_ldi) * i_micro_kernel_config->datatype_size_in + (long long)(i_xgemm_desc->c1/16)) );
       }
       libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXBW, i_micro_kernel_config->vector_name, l_scf_vreg, l_scf_vreg);
+      libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_reg, l_scf_vreg, l_mask_expon, 0 );
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBW, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones, l_scf_vreg, l_scf_vreg);
       libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_micro_kernel_config->vector_name, l_scf_vreg, l_scf_vreg, 7);
     }
@@ -426,6 +428,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, i_micro_kernel_config->vector_name, l_vreg_lo, l_vreg_hi, 4);
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMW, i_micro_kernel_config->vector_name, i_micro_kernel_config->luth_reg0, l_vreg_lo, l_vreg_lo);
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones, l_vreg_lo, l_mask_reg_even, 0 );
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORD, l_mask_reg_even, l_mask_expon, l_mask_reg_even, 0);
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_micro_kernel_config->vector_name, l_scf_vreg, l_vreg_lo, l_vreg_lo);
         libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_reg, l_vreg_lo, l_vreg_lo, l_mask_reg_even, 0 );
         if (l_process_hi_half > 0) {
@@ -433,6 +436,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
         }
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMW, i_micro_kernel_config->vector_name, i_micro_kernel_config->luth_reg0, l_vreg_hi, l_vreg_hi);
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones, l_vreg_hi, l_mask_reg_odd, 0 );
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORD, l_mask_reg_odd, l_mask_expon, l_mask_reg_odd, 0);
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_micro_kernel_config->vector_name, l_scf_vreg, l_vreg_hi, l_vreg_hi);
         libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_reg, l_vreg_hi, l_vreg_hi, l_mask_reg_odd, 0 );
         libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name, l_vreg_hi, i_micro_kernel_config->perm_table_vnni_lo, l_vreg_lo);

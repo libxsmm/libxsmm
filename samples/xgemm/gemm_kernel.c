@@ -227,8 +227,8 @@ float ftanh_rational_78(float x) {
 
 LIBXSMM_INLINE
 float convert_mxfp4_to_float(unsigned char x) {
-  float fp4_e1m2_lut[16] = {0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0};
-  float result = fp4_e1m2_lut[x];
+  float fp4_e2m1_lut[16] = {0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0};
+  float result = fp4_e2m1_lut[x];
   return result;
 }
 
