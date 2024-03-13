@@ -373,14 +373,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
   unsigned int im = 0, ik = 0, l_vlen = 16;
   unsigned int l_vreg_start = i_micro_kernel_config->reserved_zmms;
   unsigned int l_mask_expon = i_micro_kernel_config->reserved_mask_regs;
-  unsigned int l_mask_start = i_micro_kernel_config->reserved_mask_regs+1;
+  unsigned int l_mask_start = i_micro_kernel_config->reserved_mask_regs+(i_m_tiles+1)/2;
   unsigned int cnt_reg = LIBXSMM_X86_GP_REG_R11;
   unsigned int u_ik = 0, k_unroll = 2;
 
   for (ik = 0; ik < (i_K/32); ik++) {
     /* Here we load the scaling factors for the upcoming 32-K values */
     for (im = 0; im < i_m_tiles; im += 2) {
-      unsigned int l_scf_vreg = i_micro_kernel_config->reserved_zmms + im;
+      unsigned int l_scf_vreg = i_micro_kernel_config->reserved_zmms + im/2;
+      l_mask_expon = i_micro_kernel_config->reserved_mask_regs + im/2;
       libxsmm_x86_instruction_unified_vec_move( io_generated_code,
           LIBXSMM_X86_INSTR_VMOVDQU8,
           i_gp_scf, LIBXSMM_X86_GP_REG_UNDEF, 0,
@@ -399,7 +400,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBW, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones, l_scf_vreg, l_scf_vreg);
       libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_micro_kernel_config->vector_name, l_scf_vreg, l_scf_vreg, 7);
     }
-    l_vreg_start = i_micro_kernel_config->reserved_zmms + i_m_tiles;
+    l_vreg_start = i_micro_kernel_config->reserved_zmms + (i_m_tiles+1)/2;
     libxsmm_x86_instruction_push_reg( io_generated_code, cnt_reg );
     libxsmm_generator_gemm_header_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg );
     for (u_ik = 0; u_ik < k_unroll; u_ik++) {
@@ -408,9 +409,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
         unsigned int l_vreg_lo = l_vreg_start + (u_ik*i_m_tiles*3+im*3+0) % (32-l_vreg_start);
         unsigned int l_vreg_hi = l_vreg_start + (u_ik*i_m_tiles*3+im*3+1) % (32-l_vreg_start);
         unsigned int l_vreg_cpy_lo = l_vreg_start + (u_ik*i_m_tiles*3+im*3+2) % (32-l_vreg_start);
-        unsigned int l_scf_vreg = i_micro_kernel_config->reserved_zmms + im;
-        unsigned int l_mask_reg_even = l_mask_start + (2*u_ik+0) % (7-l_mask_start);
-        unsigned int l_mask_reg_odd  = l_mask_start + (2*u_ik+1) % (7-l_mask_start);
+        unsigned int l_scf_vreg = i_micro_kernel_config->reserved_zmms + im/2;
+        unsigned int l_mask_reg_even = l_mask_start + (2*u_ik+0) % (7-l_mask_start+1);
+        unsigned int l_mask_reg_odd  = l_mask_start + (2*u_ik+1) % (7-l_mask_start+1);
+        l_mask_expon = i_micro_kernel_config->reserved_mask_regs + im/2;
         libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             LIBXSMM_X86_INSTR_VMOVDQU8,
             i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
