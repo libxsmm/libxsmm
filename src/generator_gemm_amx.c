@@ -403,9 +403,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
     for (u_ik = 0; u_ik < k_unroll; u_ik++) {
       for (im = 0; im < i_m_tiles; im += 2) {
         unsigned int l_process_hi_half = ((im + 2 < i_m_tiles) || i_m_tiles == 2 || ((im + 2 >= i_m_tiles-1) && (i_m_tiles > 3))) ? 1 : 0;
-        unsigned int l_vreg_lo = l_vreg_start + (3*u_ik+0) % (32-l_vreg_start);
-        unsigned int l_vreg_hi = l_vreg_start + (3*u_ik+1) % (32-l_vreg_start);
-        unsigned int l_vreg_cpy_lo = l_vreg_start + (3*u_ik+2) % (32-l_vreg_start);
+        unsigned int l_vreg_lo = l_vreg_start + (u_ik*i_m_tiles*3+im*3+0) % (32-l_vreg_start);
+        unsigned int l_vreg_hi = l_vreg_start + (u_ik*i_m_tiles*3+im*3+1) % (32-l_vreg_start);
+        unsigned int l_vreg_cpy_lo = l_vreg_start + (u_ik*i_m_tiles*3+im*3+2) % (32-l_vreg_start);
         unsigned int l_scf_vreg = i_micro_kernel_config->reserved_zmms + im;
         unsigned int l_mask_reg_even = l_mask_start + (2*u_ik+0) % (7-l_mask_start);
         unsigned int l_mask_reg_odd  = l_mask_start + (2*u_ik+1) % (7-l_mask_start);
@@ -445,8 +445,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libx
     for (u_ik = 0; u_ik < k_unroll; u_ik++) {
       for (im = 0; im < i_m_tiles; im += 2) {
         unsigned int l_process_hi_half = ((im + 2 < i_m_tiles) || i_m_tiles == 2 || ((im + 2 >= i_m_tiles-1) && (i_m_tiles > 3))) ? 1 : 0;
-        unsigned int l_vreg_lo = l_vreg_start + (3*u_ik+0) % (32-l_vreg_start);
-        unsigned int l_vreg_cpy_lo = l_vreg_start + (3*u_ik+2) % (32-l_vreg_start);
+        unsigned int l_vreg_lo = l_vreg_start + (u_ik*i_m_tiles*3+im*3+0) % (32-l_vreg_start);
+        unsigned int l_vreg_cpy_lo = l_vreg_start + (u_ik*i_m_tiles*3+im*3+2) % (32-l_vreg_start);
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
             o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
