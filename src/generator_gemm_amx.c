@@ -342,23 +342,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm
 #endif
 }
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_mxfp4_vreg ( libxsmm_generated_code*         io_generated_code,
-                                                                    const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                    unsigned int                       i_scf_vreg,
-                                                                    unsigned int                       io_vreg0,
-                                                                    unsigned int                       i_tmp_vreg ) {
-  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXBD, i_micro_kernel_config->vector_name, io_vreg0, io_vreg0);
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, i_micro_kernel_config->vector_name, io_vreg0, i_tmp_vreg, 4);
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMD, i_micro_kernel_config->vector_name, i_micro_kernel_config->luth_reg0, io_vreg0, io_vreg0);
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMD, i_micro_kernel_config->vector_name, i_micro_kernel_config->luth_reg0, i_tmp_vreg, i_tmp_vreg);
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name, io_vreg0, i_scf_vreg, io_vreg0);
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name, i_tmp_vreg, i_scf_vreg, i_tmp_vreg);
-  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, io_vreg0, io_vreg0 );
-  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, i_tmp_vreg, i_tmp_vreg );
-  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name, i_tmp_vreg, i_micro_kernel_config->vnni_perm_reg, io_vreg0);
-}
-
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( libxsmm_generated_code*         io_generated_code,
                                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
