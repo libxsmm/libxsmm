@@ -245,12 +245,6 @@ FAT ?= 0
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
 
-# TBB Malloc enabled (1) or disabled (0)
-# availability depends on TBBROOT
-TBB_MALLOC ?= 0
-# TBB runtime compatible with oldest supported GCC
-TBB_OLDRTL ?= 0
-
 # Enable absolute library paths
 ABSLIBS ?= 1
 
@@ -2153,30 +2147,6 @@ endif
 endif
 endif
 
-ifneq (0,$(TBB_MALLOC))
-ifneq (,$(TBBROOT))
-  ifneq (Windows_NT,$(UNAME))
-    TBBLIB_DIR := $(TBBROOT)/lib/intel64
-    TBBLIB_DIRGCC := gcc$(GCC_VERSION_MAJOR).$(GCC_VERSION_MINOR)
-    TBBLIB_MALLOC := $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
-    ifeq (,$(TBBLIB_MALLOC))
-      ifneq (0,$(TBB_OLDRTL))
-        TBB_LIBDIRGCC := $(shell ls -1 $(call quote,$(TBB_LIBDIR)) | head -n1)
-      else
-        TBB_LIBDIRGCC := $(shell ls -1 $(call quote,$(TBB_LIBDIR)) | tail -n1)
-      endif
-      TBB_LIBMALLOC := $(wildcard $(TBB_LIBDIR)/$(TBB_LIBDIRGCC)/libtbbmalloc.$(ILIBEXT))
-    endif
-    ifneq (,$(TBB_LIBMALLOC))
-      IFLAGS += -I$(call quote,$(TBBROOT)/include)
-      DFLAGS += -D__TBB
-      LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(TBB_LIBMALLOC)) $(XLIB_END)
-    endif
-  else # TODO: Windows support
-  endif
-endif
-endif
-
 MAKE_ILP64 := 0
 ifneq (,$(strip $(ILP64)))
 ifneq (0,$(ILP64))
@@ -2502,7 +2472,6 @@ ifneq (0,$(STATEFLT))
     LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR DYNAMIC XGROUP_% \
     $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
     $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
-    $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
     $(if $(filter 0,$(MKL)),MKL_%), \
     $(.VARIABLES))
 else # debug
