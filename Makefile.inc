@@ -9,24 +9,15 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-MAKE_VERSION_MAJOR := $(shell echo "$(MAKE_VERSION)" | cut -d. -f1)
-MAKE_VERSION_MINOR := $(shell echo "$(MAKE_VERSION)" | cut -d. -f2)
-MAKE_VERSION_PATCH := $(shell echo "$(MAKE_VERSION)" | cut -d. -f3)
-ifeq (,$(MAKE_VERSION_MAJOR))
-MAKE_VERSION_MAJOR := 0
-endif
-ifeq (,$(MAKE_VERSION_MINOR))
-MAKE_VERSION_MINOR := 0
-endif
-ifeq (,$(MAKE_VERSION_PATCH))
-MAKE_VERSION_PATCH := 0
-endif
 # calculate version number given by up to three components
 version = $(shell echo "$$(( \
   $(if $1,$(word 1,$1)*10000,0) + \
   $(if $2,$2*100,$(if $(word 2,$1),$(word 2,$1)*100,0)) + \
   $(if $3,$3,$(if $(word 3,$1),$(word 3,$1),0))))")
-MAKE_VERSION_INT := $(call version,$(MAKE_VERSION_MAJOR),$(MAKE_VERSION_MINOR),$(MAKE_VERSION_PATCH))
+MAKE_VERSION_INT := $(call version, \
+  $(shell echo "$(MAKE_VERSION)" | cut -d. -f1), \
+  $(shell echo "$(MAKE_VERSION)" | cut -d. -f2), \
+  $(shell echo "$(MAKE_VERSION)" | cut -d. -f3))
 
 # Automatically disable parallel builds
 # depending on the version of GNU Make.
@@ -459,35 +450,19 @@ CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVE
 ifeq (,$(CXX_VERSION))
   CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
 endif
-CXX_VERSION_MAJOR := $(shell echo "$(CXX_VERSION)" | cut -d. -f1)
-CXX_VERSION_MINOR := $(shell echo "$(CXX_VERSION)" | cut -d. -f2)
-CXX_VERSION_PATCH := $(shell echo "$(CXX_VERSION)" | cut -d. -f3)
-ifeq (3,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR) $(CXX_VERSION_PATCH)))
-  CXX_VERSION_NUM := $(call version,$(CXX_VERSION_MAJOR),$(CXX_VERSION_MINOR),$(CXX_VERSION_PATCH))
-else ifeq (2,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR)))
-  CXX_VERSION_NUM := $(call version,$(CXX_VERSION_MAJOR),$(CXX_VERSION_MINOR))
-  CXX_VERSION_PATCH := 0
-else
-  CXX_VERSION := $(NULL)
-  CXX_VERSION_NUM := 0
-endif
+CXX_VERSION_NUM := $(call version, \
+  $(shell echo "$(CXX_VERSION)" | cut -d. -f1), \
+  $(shell echo "$(CXX_VERSION)" | cut -d. -f2), \
+  $(shell echo "$(CXX_VERSION)" | cut -d. -f3))
 
 CC_VERSION := $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
 ifeq (,$(CC_VERSION))
   CC_VERSION := $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
 endif
-CC_VERSION_MAJOR := $(shell echo "$(CC_VERSION)" | cut -d. -f1)
-CC_VERSION_MINOR := $(shell echo "$(CC_VERSION)" | cut -d. -f2)
-CC_VERSION_PATCH := $(shell echo "$(CC_VERSION)" | cut -d. -f3)
-ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
-  CC_VERSION_NUM := $(call version,$(CC_VERSION_MAJOR),$(CC_VERSION_MINOR),$(CC_VERSION_PATCH))
-else ifeq (2,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR)))
-  CC_VERSION_NUM := $(call version,$(CC_VERSION_MAJOR),$(CC_VERSION_MINOR))
-  CC_VERSION_PATCH := 0
-else
-  CC_VERSION := $(NULL)
-  CC_VERSION_NUM := 0
-endif
+CC_VERSION_NUM := $(call version, \
+  $(shell echo "$(CC_VERSION)" | cut -d. -f1), \
+  $(shell echo "$(CC_VERSION)" | cut -d. -f2), \
+  $(shell echo "$(CC_VERSION)" | cut -d. -f3))
 
 # disable Fortran per user-request
 ifeq (0,$(FORTRAN))
@@ -522,18 +497,10 @@ ifneq (,$(strip $(FC)))
   ifeq (,$(FC_VERSION))
     FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
   endif
-  FC_VERSION_MAJOR := $(shell echo "$(FC_VERSION)" | cut -d. -f1)
-  FC_VERSION_MINOR := $(shell echo "$(FC_VERSION)" | cut -d. -f2)
-  FC_VERSION_PATCH := $(shell echo "$(FC_VERSION)" | cut -d. -f3)
-  ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-    FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR),$(FC_VERSION_PATCH))
-  else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-    FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR))
-    FC_VERSION_PATCH := 0
-  else
-    FC_VERSION := $(NULL)
-    FC_VERSION_NUM := 0
-  endif
+  FC_VERSION_NUM := $(call version, \
+    $(shell echo "$(FC_VERSION)" | cut -d. -f1), \
+    $(shell echo "$(FC_VERSION)" | cut -d. -f2), \
+    $(shell echo "$(FC_VERSION)" | cut -d. -f3))
   ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | cut -d" " -f1))
     ifneq (0,$(shell echo "$$((40500>$(FC_VERSION_NUM)))"))
       ifneq (gfortran,$(call qndir,$(FC)))
@@ -542,17 +509,10 @@ ifneq (,$(strip $(FC)))
         ifeq (,$(FC_VERSION))
           FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
         endif
-        FC_VERSION_MAJOR := $(shell echo "$(FC_VERSION)" | cut -d. -f1)
-        FC_VERSION_MINOR := $(shell echo "$(FC_VERSION)" | cut -d. -f2)
-        FC_VERSION_PATCH := $(shell echo "$(FC_VERSION)" | cut -d. -f3)
-        ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-          FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR),$(FC_VERSION_PATCH))
-        else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-          FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR))
-          FC_VERSION_PATCH := 0
-        else
-          FC_VERSION_NUM := 0
-        endif
+        FC_VERSION_NUM := $(call version, \
+          $(shell echo "$(FC_VERSION)" | cut -d. -f1), \
+          $(shell echo "$(FC_VERSION)" | cut -d. -f2), \
+          $(shell echo "$(FC_VERSION)" | cut -d. -f3))
         ifneq (0,$(shell echo "$$((40500>$(FC_VERSION_NUM)))"))
           override FC := $(NULL)
         endif
@@ -779,15 +739,10 @@ else ifeq (0,$(CLANG))
     GCC_VERSION_PATCH := $(shell echo "$(GCC_VERSION)" | cut -d. -f3)
   endif
 endif
-ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
-  GCC_VERSION_NUM := $(call version,$(GCC_VERSION_MAJOR),$(GCC_VERSION_MINOR),$(GCC_VERSION_PATCH))
-else ifeq (2,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR)))
-  GCC_VERSION_NUM := $(call version,$(GCC_VERSION_MAJOR),$(GCC_VERSION_MINOR))
-  GCC_VERSION_PATCH := 0
-else
-  GCC_VERSION := $(NULL)
-  GCC_VERSION_NUM := 0
-endif
+GCC_VERSION_NUM := $(call version, \
+  $(shell echo "$(GCC_VERSION)" | cut -d. -f1), \
+  $(shell echo "$(GCC_VERSION)" | cut -d. -f2), \
+  $(shell echo "$(GCC_VERSION)" | cut -d. -f3))
 
 # Manually enable maintainer build (aka x86_64v1).
 # Previously, it was automatically detected.
