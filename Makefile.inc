@@ -721,16 +721,10 @@ CLANG ?= 0
 # Make GCC version number available even when not using GCC
 ifneq (0,$(XSMM_GCC))
   GCC_VERSION := $(CXX_VERSION)
-  GCC_VERSION_MAJOR := $(CXX_VERSION_MAJOR)
-  GCC_VERSION_MINOR := $(CXX_VERSION_MINOR)
-  GCC_VERSION_PATCH := $(CXX_VERSION_PATCH)
 else ifeq (0,$(CLANG))
   GCCBIN := $(call qndir,$(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
     GCC_VERSION := $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
-    GCC_VERSION_MAJOR := $(shell echo "$(GCC_VERSION)" | cut -d. -f1)
-    GCC_VERSION_MINOR := $(shell echo "$(GCC_VERSION)" | cut -d. -f2)
-    GCC_VERSION_PATCH := $(shell echo "$(GCC_VERSION)" | cut -d. -f3)
   endif
 endif
 GCC_VERSION_NUM := $(call version, \
