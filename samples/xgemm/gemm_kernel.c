@@ -2517,7 +2517,7 @@ int main(int argc, char* argv []) {
     } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "BF16") == 0) {
       l_gemm_def.is_Abf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
-    } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "F16") == 0) {
+    } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "F16") == 0 && atoi(argv[17]) > 0) {
       l_gemm_def.is_Abf8Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_F16;
     } else if (strcmp(argv[1], "HF8") == 0 && strcmp(argv[2], "BF16") == 0) {
@@ -2645,7 +2645,7 @@ int main(int argc, char* argv []) {
     } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "BF16") == 0) {
       l_gemm_def.is_Abf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
-    } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "F16") == 0) {
+    } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "F16") == 0 && atoi(argv[12]) > 0) {
       l_gemm_def.is_Abf8Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_F16;
     } else if (strcmp(argv[1], "HF8") == 0 && strcmp(argv[2], "BF16") == 0) {
