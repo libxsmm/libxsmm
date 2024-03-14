@@ -1693,7 +1693,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
                                                     libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
   unsigned int l_is_Ai4_Bi8_gemm = libxsmm_x86_is_Ai4_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
-  unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
+  unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
   unsigned int reserved_zmms      = 0;
