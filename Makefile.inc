@@ -11,9 +11,9 @@
 
 # calculate version number given by up to three components
 version = $(shell echo "$$(( \
-  $(if $1,$(word 1,$1)*10000,0) + \
-  $(if $2,$2*100,$(if $(word 2,$1),$(word 2,$1)*100,0)) + \
-  $(if $3,$3,$(if $(word 3,$1),$(word 3,$1),0))))")
+  $(if $(strip $1),$(word 1,$1)*10000,0) + \
+  $(if $(strip $2),$2*100,$(if $(word 2,$1),$(word 2,$1)*100,0)) + \
+  $(if $(strip $3),$3,$(if $(word 3,$1),$(word 3,$1),0))))")
 MAKE_VERSION_INT := $(call version, \
   $(shell echo "$(MAKE_VERSION)" | cut -d. -f1), \
   $(shell echo "$(MAKE_VERSION)" | cut -d. -f2), \
