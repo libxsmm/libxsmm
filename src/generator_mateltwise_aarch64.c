@@ -37,6 +37,7 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ||
        io_generated_code->arch == LIBXSMM_AARCH64_V82 ||
        io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
@@ -121,7 +122,8 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
-    if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
+    if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ||
+         io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
          io_generated_code->arch == LIBXSMM_AARCH64_NEOV1  ||
          io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
          io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
@@ -230,7 +232,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
       LIBXSMM_DATATYPE_I64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) {
       is_valid_arch_prec = 0;
     }
-  }
+  } // TODO: check for SVE128 Support!! add -> (&& (io_generated_code->arch != LIBXSMM_AARCH64_SVE128)
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
     is_valid_arch_prec = 0;
   }
