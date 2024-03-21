@@ -191,7 +191,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
                                                   (long long)l_remainder_size * i_micro_kernel_config->datatype_size_in * l_k_pack_factor );
     }
   }
-#if 0
+
   /* Load scalar and then broadcast on b */
 #if 0
   libxsmm_rv64_instruction_rvv_move( io_generated_code,
@@ -203,100 +203,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
 
 #endif
 
-  for ( l_n = 0; ((u_loop_index_local % 2 == 1)) && (l_n < i_n_blocking); l_n++ ) {
-    printf("In b broadcast\n");
-#if 0
-    libxsmm_rv64_instruction_rvv_compute( io_generated_code,
-                                        LIBXSMM_RV64_INSTR_GP_VEXT_X_V,
-                                        l_n % MAX_FP_REG,
-                                        src_reg,
-                                        fp_regid[l_n % MAX_FP_REG],
-                                        1  );
-#endif
-#if 0
-    libxsmm_rv64_instruction_rvv_compute_imm( io_generated_code,
-                                        LIBXSMM_RV64_INSTR_GP_VRGATHER_VI,
-                                        src_reg,
-                                        l_n % MAX_FP_REG,
-                                        LIBXSMM_RV64_GP_REG_V6,
-                                        1  );
-#endif
-    //src_reg = (src_reg == LIBXSMM_RV64_GP_REG_V5) ? (src_reg + 1) : LIBXSMM_RV64_GP_REG_V5;
-    //dst_reg = (dst_reg == LIBXSMM_RV64_GP_REG_V5) ? (dst_reg + 1) : LISLIDEDOWN_VIBXSMM_RV64_GP_REG_V5;
-    //
-#if 0
-    libxsmm_rv64_instruction_alu_move( io_generated_code,
-                                       l_b_load_scalar_instr,
-                                       i_gp_reg_mapping->gp_reg_b,
-                                       fp_regid[((u_loop_index_local % 2) * i_n_blocking + l_n) % MAX_FP_REG],
-                                       l_b_next  );
-
-    if ( l_n != i_n_blocking - 1 ) {
-       /* move on to next entry of B */
-      l_b_next += l_b_stride;
-
-      /* If immidiate exceeds 12 bit */
-      if (l_b_next >= ((1 << 11) - 1)) {
-        /* move on to next entry of B */
-        if (l_b_stride > ((1 << 11) - 1)){
-          libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,
-                                                      LIBXSMM_RV64_INSTR_GP_ADD,
-                                                      i_gp_reg_mapping->gp_reg_b,
-                                                      i_gp_reg_mapping->gp_reg_help_0,
-                                                      i_gp_reg_mapping->gp_reg_b,
-                                                      l_b_stride);
-          l_b_next = 0;
-        }
-        else {
-          libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_RV64_INSTR_GP_ADDI,
-                                                      i_gp_reg_mapping->gp_reg_b,
-                                                      i_gp_reg_mapping->gp_reg_b,
-                                                      l_b_next - l_b_stride);
-          l_b_next = l_b_stride;
-        }
-      }
-#endif
-
-#if 0
-      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
-                                                  LIBXSMM_RV64_INSTR_GP_ADDI,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  0 );
-#endif
-    }
-    else {
-      LIBXSMM_UNUSED( l_b_next_k );
-      /* @TODO this code doesn't work for transposed B */
-      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
-                                                  LIBXSMM_RV64_INSTR_GP_ADDI,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  i_micro_kernel_config->datatype_size_in);
-#if 0
-      /* move on to next entry of B */
-      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,
-                                                  LIBXSMM_RV64_INSTR_GP_ADD,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  i_gp_reg_mapping->gp_reg_help_0,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  l_b_next );
-
-      l_b_next = 0;
-
-      /* prepare for next call of kernel */
-      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,
-                                                     l_b_next_k_inst,
-                                                     i_gp_reg_mapping->gp_reg_b,
-                                                     i_gp_reg_mapping->gp_reg_help_0,
-                                                     i_gp_reg_mapping->gp_reg_b,
-                                                     l_b_next_k );
-#endif
-    }
-  }
-
-  for ( l_n = 0; ((u_loop_index_local % 2 == 0)) && (l_n < i_n_blocking); l_n++ ) {
+  for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     printf("In b broadcast\n");
 #if 0
     libxsmm_rv64_instruction_rvv_compute( io_generated_code,
@@ -385,7 +292,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
 #endif
     }
   }
-#endif
 
   /* move immediate to the rgister */
   if ( (((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in) > 0 ) {
@@ -409,6 +315,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
                                      1 );
 
 #endif
+
+#if 0
 #if 0
   for ( l_n = 0; ((u_loop_index_local % 2 == 0)) && (l_n < i_n_blocking); l_n++ ) {
 #endif
@@ -483,6 +391,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
     }
 #if 0
   }
+#endif
 #endif
 
     /* issue FMAs */

@@ -2033,7 +2033,7 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
       }
     }
 
-    i4f ( l_m_blocks[1] != 0 ) {
+    if ( l_m_blocks[1] != 0 ) {
       /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                             l_masked_store_instr,

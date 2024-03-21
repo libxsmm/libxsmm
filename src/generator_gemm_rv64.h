@@ -34,7 +34,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
                                                      const unsigned int                 i_n_blocking,
 const unsigned int u_loop_index );
 
-IBXSMM_API_INTERN
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_rv64_microkernel_rvv_vv( libxsmm_generated_code*            io_generated_code,
                                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                      const libxsmm_micro_kernel_config* i_micro_kernel_config,
