@@ -444,7 +444,7 @@ unsigned int libxsmm_generator_gemm_rv64_get_initial_m_blocking( libxsmm_micro_k
                                                                                            ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )    ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* TODO: check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 32 ) {
+    if ( i_xgemm_desc->m >= 32 ){
       l_m_blocking = 32;
     } else{
       l_m_blocking = i_xgemm_desc->m;

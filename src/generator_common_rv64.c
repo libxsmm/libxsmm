@@ -1976,8 +1976,8 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
   unsigned int l_remainder_size = 0;
   unsigned long long l_jump_block_n_last = 0; /* this is the jump size to be performed after a n-block is complete */
   unsigned int l_datatype_size = LIBXSMM_TYPESIZE(i_datatype);
-  unsigned int l_store_instr =  LIBXSMM_RV64_INSTR_GP_VSE32_V;
-  unsigned int l_masked_store_instr = LIBXSMM_RV64_INSTR_GP_VSE32_V;
+  unsigned int l_store_instr =  LIBXSMM_RV64_INSTR_GP_VS4R_V;
+  unsigned int l_masked_store_instr = LIBXSMM_RV64_INSTR_GP_VS4R_V;
   unsigned int l_tmp_vreg = 0;
   unsigned int l_tmp_vreg2 = 0;
 
@@ -2003,12 +2003,15 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
     unsigned long long l_jump_block_m_last = 0;
 
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+      if (l_m % 4 == 0){
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                             l_store_instr,
                                             i_gp_reg_addr,
                                             0,
                                             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                             1);
+      }
+
       /* increase pointer in m-dimension.
           but only if
             1) remainder follows
@@ -2016,19 +2019,21 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
             2) we are not at the end of the m-loop
       */
       if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+#if 0
         libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
                                                         LIBXSMM_RV64_INSTR_GP_ADDI,
                                                         i_gp_reg_addr,
                                                         i_gp_reg_addr,
                                                         i_vec_length * l_datatype_size);
+#endif
       }
       /* combine the m-jump with the n one */
       else {
-        l_jump_block_m_last = (long long)i_vec_length * l_datatype_size;
+        l_jump_block_m_last = (long long)i_vec_length * l_datatype_size * l_m_blocks[0];
       }
     }
 
-    if ( l_m_blocks[1] != 0 ) {
+    i4f ( l_m_blocks[1] != 0 ) {
       /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                             l_masked_store_instr,

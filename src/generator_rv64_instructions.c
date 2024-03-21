@@ -373,7 +373,7 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 #define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
 #define RVV_I(i)    (RVV_LUI(i) || RVV_LOI(i) || RVV_SUI(i) || RVV_SOI(i))
 
-  if ( i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VL4RE32_V ) {
+  if ( (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VL4RE32_V)  || (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VS4R_V)) {
     if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
       fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -600,7 +600,7 @@ void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gener
     code[code_head]  = i_vec_instr;
 
     /* setting RS1 */
-    code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS1);
+    code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS2);
 
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
