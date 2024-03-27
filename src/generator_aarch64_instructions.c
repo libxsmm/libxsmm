@@ -523,6 +523,10 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1R:
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -552,7 +556,7 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     code[code_head] |= (unsigned int)((0x1 & (unsigned int)i_tupletype) << 30);
 
     /* load/store with offset register */
-    if ( (i_vmove_instr & 0x3) == 0x3 ) {
+    if ( (i_vmove_instr & 0x3) == 0x3 && ((i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_LD1R) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST))) {
       /* setting Rm */
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
     }
