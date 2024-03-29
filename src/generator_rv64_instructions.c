@@ -491,6 +491,10 @@ void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_cod
     case LIBXSMM_RV64_INSTR_GP_LW:
     case LIBXSMM_RV64_INSTR_GP_LD:
     case LIBXSMM_RV64_INSTR_GP_LQ:
+    case LIBXSMM_RV64_INSTR_GP_FLH:
+    case LIBXSMM_RV64_INSTR_GP_FLW:
+    case LIBXSMM_RV64_INSTR_GP_FLD:
+    case LIBXSMM_RV64_INSTR_GP_FLQ:
       is_load = 1;
       break;
     case LIBXSMM_RV64_INSTR_GP_SB:
@@ -498,6 +502,10 @@ void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_cod
     case LIBXSMM_RV64_INSTR_GP_SW:
     case LIBXSMM_RV64_INSTR_GP_SD:
     case LIBXSMM_RV64_INSTR_GP_SQ:
+    case LIBXSMM_RV64_INSTR_GP_FSH:
+    case LIBXSMM_RV64_INSTR_GP_FSW:
+    case LIBXSMM_RV64_INSTR_GP_FSD:
+    case LIBXSMM_RV64_INSTR_GP_FSQ:
       break;
     default:
       fprintf(stderr, "libxsmm_rv64_instruction_alu_move: unexpected instruction number: %u\n", i_move_instr);

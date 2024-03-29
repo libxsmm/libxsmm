@@ -171,9 +171,10 @@ void libxsmm_generator_load_2dregblock_mmla_rv64_asimd( libxsmm_generated_code* 
                                                            const unsigned int      i_ld,
                                                            const unsigned int      i_zero,
                                                            const unsigned char     i_zip_row_major );
+#endif
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_load_2dregblock_rv64_sve( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_generated_code,
                                                     const libxsmm_datatype  i_datatype,
                                                     const unsigned int      i_gp_reg_addr,
                                                     const unsigned int      i_gp_reg_scratch,
@@ -183,7 +184,7 @@ void libxsmm_generator_load_2dregblock_rv64_sve( libxsmm_generated_code* io_gene
                                                     const unsigned int      i_n_blocking,
                                                     const unsigned int      i_ld,
                                                     const unsigned int      i_zero );
-
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_mmla_rv64_sve( libxsmm_generated_code* io_generated_code,
                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -240,9 +241,10 @@ void libxsmm_generator_store_2dregblock_mmla_rv64_sve( libxsmm_generated_code* i
                                                           const unsigned int      i_data_size,
                                                           const unsigned int      i_zero,
                                                           const unsigned char     i_zip_row_major );
+#endif
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_store_2dregblock_rv64_sve( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_generated_code,
                                                      const libxsmm_datatype  i_datatype,
                                                      const unsigned int      i_gp_reg_addr,
                                                      const unsigned int      i_gp_reg_scratch,
@@ -254,7 +256,7 @@ void libxsmm_generator_store_2dregblock_rv64_sve( libxsmm_generated_code* io_gen
                                                      const libxsmm_datatype  i_inp_datatype,
                                                      const unsigned int      i_aux_gp_reg,
                                                      const unsigned int      i_reduce_on_output  );
-
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_prng_state_rv64_asimd( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      i_gp_reg_prng_state_ptr,
