@@ -1471,7 +1471,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int norm_to_normT_mask_reg_1;
   unsigned int mask_m_fp32;
   unsigned int mask_m_bf16;
-  unsigned int mask_m_fp8_cvt;
+  unsigned int mask_m_lp_cvt;
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
@@ -2031,7 +2031,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR           = 29,
   LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR       = 30,
   LIBXSMM_GEMM_STACK_VAR_ZPT_PTR                = 31,
-  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32
+  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32,
+  LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33
 } libxsmm_gemm_stack_var;
 
 #if 0
