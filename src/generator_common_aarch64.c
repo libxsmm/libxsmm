@@ -529,6 +529,8 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
   unsigned int l_m_blocks[3];  /* 0: 128bit, 1: 64bit, 2: 32bit */
   unsigned int l_m_total_blocks;
   unsigned int l_m_bytes = 0;
+  unsigned int l_a_load_instruction = 0;
+  unsigned int l_add_load = 0;
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
@@ -539,15 +541,38 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  /* set load type */
+  if( l_m_blocks[0] == 4 ){
+    l_a_load_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4;
+    l_add_load = 64;
+  } else if( l_m_blocks[0] == 3 ){
+    l_a_load_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3;
+    l_add_load = 48;
+  } else if( l_m_blocks[0] == 2 ){
+    l_a_load_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2;
+    l_add_load = 32;
+  } else if( l_m_blocks[0] == 1 ){
+    l_a_load_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1;
+    l_add_load = 16;
+  }
 
   /* load C accumulator */
   if (i_zero == 0) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
-        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
-                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                                l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
-                                                LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+      if ( l_m_blocks[0] > 0 ) {
+        libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code,
+                                                         l_a_load_instruction,
+                                                         i_gp_reg_addr,
+                                                         LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                         l_vec_reg_acc_start + (l_m_total_blocks * l_n),
+                                                         LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                     LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                     i_gp_reg_addr,
+                                                     i_gp_reg_addr,
+                                                     l_add_load,
+                                                     0 );
+
       }
       for ( l_m = 0; l_m < l_m_blocks[1]; l_m++ ) {
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
@@ -1374,6 +1399,8 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
   unsigned int l_m_blocks[3];  /* 0: 128bit, 1: 64bit, 2: 32bit */
   unsigned int l_m_total_blocks;
   unsigned int l_m_bytes = 0;
+  unsigned int l_a_store_instruction = 0;
+  unsigned int l_add_store = 0;
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
@@ -1384,14 +1411,36 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  /* set store instruction */
+  if( l_m_blocks[0] == 4 ){
+    l_a_store_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4;
+    l_add_store = 64;
+  } else if( l_m_blocks[0] == 3 ){
+    l_a_store_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3;
+    l_add_store = 48;
+  } else if( l_m_blocks[0] == 2 ){
+    l_a_store_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2;
+    l_add_store = 32;
+  } else if( l_m_blocks[0] == 1 ){
+    l_a_store_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1;
+    l_add_store = 16;
+  }
 
   /* store C accumulator */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-    for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
-      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
-                                              i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                              l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
-                                              LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    if( l_m_blocks[0] > 0){
+      libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code,
+                                                       l_a_store_instruction,
+                                                       i_gp_reg_addr,
+                                                       LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                       l_vec_reg_acc_start + (l_m_total_blocks * l_n),
+                                                       LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                    LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                    i_gp_reg_addr,
+                                                    i_gp_reg_addr,
+                                                    l_add_store,
+                                                    0 );
     }
     for ( l_m = 0; l_m < l_m_blocks[1]; l_m++ ) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,

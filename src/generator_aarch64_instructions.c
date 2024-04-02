@@ -527,6 +527,10 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2:
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3:
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4:
+        case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: unexpected instruction number: %u\n", i_vmove_instr);

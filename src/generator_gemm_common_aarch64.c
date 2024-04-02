@@ -2012,7 +2012,7 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
     }
   }
 
-  while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > io_micro_kernel_config->vector_reg_count) {
+  while ((init_m_blocks * max_n_blocking + init_m_blocks + max_n_blocking) > io_micro_kernel_config->vector_reg_count) {
     max_n_blocking--;
   }
 

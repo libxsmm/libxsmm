@@ -264,6 +264,10 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3        0x0c406000 // loads 3 values to vector register
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2        0x0c40A000 // loads 2 values to vector register
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1        0x0c407000 // loads 1 values to vector register
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4        0x0c002000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3        0x0c006000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2        0x0c00a000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1        0x0c007000
 
 /* ASIMD <-> GPR moves */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e

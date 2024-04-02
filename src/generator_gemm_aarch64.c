@@ -1245,7 +1245,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
       l_k_stride = 4;
     }
   }
-
+  // TODO: implement new neoverse_v2 kernel
   /* select micro kernel based on aarch64 variant */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO (MMLA) */
