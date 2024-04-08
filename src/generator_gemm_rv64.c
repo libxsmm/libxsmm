@@ -93,9 +93,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 #endif
 
   {
-    //l_b_next_k = i_xgemm_desc->ldb - (i_n_blocking - 1);
-    //l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
-
     l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
     l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUB;
   }
@@ -122,9 +119,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* remainder load on a */
   if ( l_m_blocks[1] > 0) {
 
-    // TODO: vsetvli
+    /* Set vector length */
     libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
-    //libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_m_blocks[1], i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
     libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                           l_a_part_load_instr,
                                           i_gp_reg_mapping->gp_reg_a,
@@ -188,9 +184,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
                                                );
     }
     if ( l_m_blocks[1] > 0 ) {
-      // Set vsetvli
       libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
-      //libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_m_blocks[1], i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                                l_compute_instr,
                                                1 + l_m,
@@ -198,12 +192,12 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
                                                l_vec_reg_acc_start + (l_m_total_blocks * l_n) + l_m_blocks[0],
                                                1
                                                );
-      // Revert vsetvli to VL
+      /* Revert VL to full vector */
       libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 16, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
     }
   }
 
-  // TODO: move immediate to the rgister
+  /* move immediate to the rgister */
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
   libxsmm_rv64_instruction_alu_compute( io_generated_code,
@@ -453,8 +447,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 #endif
   }
 
-  // Set vector length to full vector
-  //libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_micro_kernel_config.vector_length, l_gp_reg_mapping.gp_reg_help_0, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  /* Set vector length to full vector */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 16, l_gp_reg_mapping.gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
 

@@ -569,7 +569,6 @@ void libxsmm_generator_gemm_rv64_setup_k_strides( libxsmm_generated_code*       
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
   /* register blocking counter in n */
-  //unsigned int l_n = 0;
   libxsmm_blasint l_rv64_bfdot = (libxsmm_blasint)libxsmm_cpuid_arm_use_bfdot();
   libxsmm_blasint l_rv64_i8dot = (libxsmm_blasint)libxsmm_cpuid_arm_use_i8dot();
 

@@ -589,7 +589,7 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
         }
       } else {
         if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
-          //offset = (bcast_scalar == 1) ?  i_micro_kernel_config->datatype_size_in:l_ld_bytes*i_n_blocking;
+          /* offset = (bcast_scalar == 1) ?  i_micro_kernel_config->datatype_size_in:l_ld_bytes*i_n_blocking; */
           offset = (bcast_scalar == 1) ?  l_ld_bytes * i_n_blocking :l_ld_bytes*i_n_blocking;
           if (im == 0) {
             if ((bcast_row == 1) || ((bcast_scalar == 1) && (in == 0))) {
