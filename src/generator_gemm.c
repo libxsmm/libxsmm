@@ -710,7 +710,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_SVE512) || (io_generated_code->arch == LIBXSMM_AARCH64_A64FX) ) {
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
-  } else if ( (io_generated_code->arch == LIBXSMM_RV64) ) {
+  } else if ( io_generated_code->arch == LIBXSMM_RV64 ) {
     libxsmm_generator_gemm_rv64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else {
     printf("Unknown architectrue called\n");
