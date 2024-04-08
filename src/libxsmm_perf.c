@@ -13,6 +13,7 @@
 
 #include "perf_jitdump.h"
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
+#include "libxsmm_memory.h"
 # include <sys/mman.h>
 # include <sys/types.h>
 # include <sys/types.h>
