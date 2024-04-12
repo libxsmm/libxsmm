@@ -820,7 +820,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   unsigned int l_k = 0;
 
   /* operate on four 2x4 blocks at a time */
-  unsigned int l_a_stride = 64;
+  // this just supports 128 and 256 SVE
+  unsigned int l_a_stride = (io_generated_code->arch == LIBXSMM_AARCH64_SVE256) ? 64 : 32;
   unsigned int l_b_vnnit = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 &&  (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 1 : 0;
   unsigned int l_b_stride = (l_b_vnnit == 0) ? i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in : 2 * 4 * i_micro_kernel_config->datatype_size_in;
 
@@ -854,15 +855,21 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   for (l_n = 0; l_n < 6; l_n++) {
     l_vr_b[l_n] = l_n;
   }
-
-  l_m_blocks = i_m_blocking / 8;
+  if((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) ){
+    l_m_blocks = i_m_blocking / 8;
+    l_m_blocks_remainder = (i_m_blocking % 8 == 0) ? 0 : 1;
+    l_m_remainder = i_m_blocking % 8;
+  } else {
+    l_m_blocks = i_m_blocking / 4;
+    l_m_blocks_remainder = (i_m_blocking % 4 == 0) ? 0 : 1;
+    l_m_remainder = i_m_blocking % 4;
+  }
   l_n_blocks = (i_n_blocking + 1) / 2;
-  l_m_blocks_remainder = (i_m_blocking % 8 == 0) ? 0 : 1;
-  l_m_remainder = i_m_blocking % 8;
+  printf("m remainder: %u \n", l_m_remainder);
 
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V;
-    if (i_xgemm_desc->k % 8 == 0) {
+    if ((i_xgemm_desc->k % 8 == 0) && ((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ) {
       l_k_blocking = 8;
     } else {
       l_k_blocking = 4;
@@ -879,7 +886,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
     } else {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V;
     }
-    if (i_xgemm_desc->k % 16 == 0) {
+    if ((i_xgemm_desc->k % 16 == 0) && ((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1))) {
       l_k_blocking = 16;
     } else {
       l_k_blocking = 8;
@@ -1117,7 +1124,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                        i_gp_reg_mapping->gp_reg_a,
                                                        l_a_stride );
       } else {
-        if (l_m_remainder >= 4) {
+        if (l_m_remainder >= (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4 : 2)) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                                 i_gp_reg_mapping->gp_reg_a,
@@ -1125,7 +1132,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                 0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
                                                 l_vr_a[0],
                                                 l_pr_all );
-          if (l_m_remainder > 4) {
+          if (l_m_remainder > (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4 : 2)) {
             libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                   LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                                   i_gp_reg_mapping->gp_reg_a,
@@ -1161,7 +1168,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                  l_vr_c[8*l_n + 2*l_m],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  (libxsmm_aarch64_sve_type)0 );
-        if (((l_m <= l_m_blocks - 1) && (l_m_blocks > 0))  || (l_m_remainder > 4)) {
+        if (((l_m <= l_m_blocks - 1) && (l_m_blocks > 0))  || (l_m_remainder > (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4 : 2))) {
           libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                    l_instr_mmla ,
                                                    (l_flip_mmla_src == 0 ) ? l_vr_b[2*l_n+l_k] : l_vr_a[1],
@@ -1218,8 +1225,8 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
           l_k_stride = 4;
         }
       } else {
-        l_k_blocking = 8;
-        l_k_stride = 8;
+        l_k_blocking = 4;
+        l_k_stride = 4;
       }
     } else {
       l_k_blocking = 8;
@@ -1238,8 +1245,8 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
           l_k_stride = 8;
         }
       } else {
-        l_k_blocking = 16;
-        l_k_stride = 16;
+        l_k_blocking = 8;
+        l_k_stride = 8;
       }
     } else {
       l_k_blocking = 16;
@@ -1608,7 +1615,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
     /* TODO (MMLA): remove, hardcoded */
     if ( l_use_mmla ) {
-      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+      if ( io_generated_code->arch <= LIBXSMM_AARCH64_SVE128 ) {
         l_m_blocking = 16;
       }
       else {
