@@ -134,6 +134,8 @@ void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_mnblock_micro_kernel
                                                                                   const unsigned int                      i_vnni_hi_reg,
                                                                                   const unsigned int                      i_vnni_lo_reg_2,
                                                                                   const unsigned int                      i_vnni_hi_reg_2,
+                                                                                  const unsigned int                      i_vnni_lo_reg_4,
+                                                                                  const unsigned int                      i_vnni_hi_reg_4,
                                                                                   const unsigned int                      i_m_step,
                                                                                   const unsigned int                      i_n_step,
                                                                                   const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
