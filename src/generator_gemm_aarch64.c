@@ -865,7 +865,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
     l_m_remainder = i_m_blocking % 4;
   }
   l_n_blocks = (i_n_blocking + 1) / 2;
-  printf("m remainder: %u \n", l_m_remainder);
 
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V;

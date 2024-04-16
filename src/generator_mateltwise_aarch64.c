@@ -233,15 +233,15 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
       is_valid_arch_prec = 0;
     }
   } /* TODO: check for SVE128 Support!! add -> (&& (io_generated_code->arch != LIBXSMM_AARCH64_SVE128) */
-  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1 && (io_generated_code->arch != LIBXSMM_AARCH64_SVE128))) {
     is_valid_arch_prec = 0;
   }
-  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) && (io_generated_code->arch != LIBXSMM_AARCH64_SVE128)) {
     is_valid_arch_prec = 0;
   }
   if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2) ||
                                                                             (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3)    )
-                                                                       && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) ) {
+                                                                       && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) && (io_generated_code->arch != LIBXSMM_AARCH64_SVE128)) {
     is_valid_arch_prec = 0;
   }
   if (has_inp_or_out_fp8 > 0) {
@@ -256,7 +256,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
   if ((has_inp_or_out_f16 > 0) && !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT)) ) {
     is_valid_arch_prec = 0;
   }
-  if ((has_inp_or_out_bf16 > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
+  if ((has_inp_or_out_bf16 > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) && (io_generated_code->arch != LIBXSMM_AARCH64_SVE128)) {
     if (!(((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) &&
             ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER ||
               i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER))) ||
