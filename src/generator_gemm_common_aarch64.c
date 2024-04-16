@@ -344,7 +344,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X0, 0, 0 );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 64, i_gp_reg_mapping->gp_reg_c);
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 32, l_gp_reg_in);
-    if ( libxsmm_cpuid_arm_use_bfdot() == 0 ) { // TODO: check for SVE128
+    if ( libxsmm_cpuid_arm_use_bfdot() == 0 ) {
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
         libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
                                                                                  i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
@@ -2011,7 +2011,7 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
       init_m_blocks++;
     }
   }
-
+  /* this is just fast on Grace Neoverse V2 */
   if(io_generated_code->arch == LIBXSMM_AARCH64_V81){
     while ((init_m_blocks * max_n_blocking + init_m_blocks + max_n_blocking) > io_micro_kernel_config->vector_reg_count) {
       max_n_blocking--;

@@ -232,7 +232,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
       LIBXSMM_DATATYPE_I64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) {
       is_valid_arch_prec = 0;
     }
-  } // TODO: check for SVE128 Support!! add -> (&& (io_generated_code->arch != LIBXSMM_AARCH64_SVE128)
+  } /* TODO: check for SVE128 Support!! add -> (&& (io_generated_code->arch != LIBXSMM_AARCH64_SVE128) */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
     is_valid_arch_prec = 0;
   }

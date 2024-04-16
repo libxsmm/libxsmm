@@ -560,7 +560,7 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     code[code_head] |= (unsigned int)((0x1 & (unsigned int)i_tupletype) << 30);
 
     /* load/store with offset register */
-    if ( (i_vmove_instr & 0x3) == 0x3 && ((i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_LD1R) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST))) {
+    if ( (i_vmove_instr & 0x3) == 0x3 && ((i_vmove_instr & 0xff000000) == 0x0d000000)) {
       /* setting Rm */
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
     }

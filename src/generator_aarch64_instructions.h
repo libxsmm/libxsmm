@@ -260,10 +260,10 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST   0x0ddf8002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_R_POST   0x0dc08003
-#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4        0x0c402000 // loads 4 values to vector register
-#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3        0x0c406000 // loads 3 values to vector register
-#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2        0x0c40A000 // loads 2 values to vector register
-#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1        0x0c407000 // loads 1 values to vector register
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4        0x0c402000 /* loads 4 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3        0x0c406000 /* loads 3 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2        0x0c40A000 /* loads 2 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1        0x0c407000 /* loads 1 values to vector register */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4        0x0c002000
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3        0x0c006000
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2        0x0c00a000
