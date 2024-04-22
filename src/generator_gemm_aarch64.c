@@ -821,7 +821,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
 
   /* operate on four 2x4 blocks at a time */
   // this just supports 128 and 256 SVE
-  unsigned int l_a_stride = (io_generated_code->arch == LIBXSMM_AARCH64_SVE256) ? 64 : 32;
+  unsigned int l_a_stride = (io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ) ? 64 : 32;
   unsigned int l_b_vnnit = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 &&  (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 1 : 0;
   unsigned int l_b_stride = (l_b_vnnit == 0) ? i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in : 2 * 4 * i_micro_kernel_config->datatype_size_in;
 
