@@ -2141,6 +2141,22 @@ void libxsmm_generator_store_prng_state_avx_avx512( libxsmm_generated_code* io_g
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_load_vreg_signmask(libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_vreg_signmask,
+                                                   libxsmm_datatype        i_dtype) {
+  /* load constant register with plus/minus infinity */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, (i_dtype == LIBXSMM_DATATYPE_F32) ? 0x7fffffff : 0x7fffffffffffffff);
+  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_tmp );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
+                                    (i_dtype == LIBXSMM_DATATYPE_F32) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTQ,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                    i_vname, i_vreg_signmask, 0, 1, 0 );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_tmp );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_load_vreg_infinity(libxsmm_generated_code* io_generated_code,
                                                    const unsigned char     i_vname,
                                                    const unsigned int      i_gp_reg_tmp,
