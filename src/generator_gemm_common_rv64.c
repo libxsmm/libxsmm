@@ -458,7 +458,9 @@ unsigned int libxsmm_generator_gemm_rv64_get_initial_m_blocking( libxsmm_micro_k
     /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 32 ) {
       l_m_blocking = 32;
-    } else {
+    } else if ( i_xgemm_desc->m >= 16 ) {
+      l_m_blocking = 16;
+    } else{
       l_m_blocking = i_xgemm_desc->m;
     }
   } else if ( ( i_arch == LIBXSMM_RV64 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
@@ -490,7 +492,8 @@ unsigned int libxsmm_generator_gemm_rv64_update_m_blocking( libxsmm_micro_kernel
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
     if (i_current_m_blocking == 32 ) {
       l_m_blocking = i_xgemm_desc->m % 32;
-    } else {
+    } else if (i_current_m_blocking == 16 ) {
+      l_m_blocking = i_xgemm_desc->m % 16;
       /* we are done with m_blocking */
     }
   } else if ( ( i_arch == LIBXSMM_RV64 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {

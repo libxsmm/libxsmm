@@ -2029,14 +2029,14 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
     }
 
     if ( l_m_blocks[1] != 0 ) {
-      libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+      /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                             l_masked_store_instr,
                                             i_gp_reg_addr,
                                             0,
                                             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
                                             1 );
-      libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vec_length, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+      /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vec_length, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
     }
 
     l_jump_block_m_last += (long long)i_ld - l_m_bytes_full;
