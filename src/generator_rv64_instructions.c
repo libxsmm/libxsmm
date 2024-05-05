@@ -116,13 +116,13 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
   }
 
   if ( i_sew > 0x8 ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected imm: %u \n", i_sew);
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected sew: %u \n", i_sew);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
 
   if ( i_lmul > 0x8 ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected imm: %u \n", i_lmul);
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected lmul: %u \n", i_lmul);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }

@@ -818,9 +818,10 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
              2) we are not at the end of the m-loop
         */
         if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
-          libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_RV64_INSTR_GP_ADDI,
+          libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,
+                                                      LIBXSMM_RV64_INSTR_GP_ADD,
                                                       i_gp_reg_addr,
+                                                      i_gp_reg_scratch,
                                                       i_gp_reg_addr,
                                                       i_vec_length * l_datatype_size
                                                       );
@@ -843,10 +844,9 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
       l_jump_block_m_last += (long long)i_ld - l_m_bytes_full;
 
       if ( l_n != i_n_blocking - 1 ) {
-        libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,
+        libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
                                                        LIBXSMM_RV64_INSTR_GP_ADDI,
                                                        i_gp_reg_addr,
-                                                       i_gp_reg_scratch,
                                                        i_gp_reg_addr,
                                                        l_jump_block_m_last );
       }
