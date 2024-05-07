@@ -433,9 +433,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {
     /* Set to 0 lo mask and to 1 hi mask */
-    l_micro_kernel_config.io_loop_label_tracker = io_loop_label_tracker;
     float lut_mant[8] = { 0.0f, 0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f };
     float lut_sign[8] = { 0.0f, -0.0f, 0.0f, -0.0f, 0.0f, -0.0f, 0.0f, -0.0f };
+    l_micro_kernel_config.io_loop_label_tracker = io_loop_label_tracker;
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                          (const unsigned char *) lut_mant ,
                                                          "vperm_mant",
