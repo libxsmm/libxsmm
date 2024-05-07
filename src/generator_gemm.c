@@ -31,6 +31,13 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
 
+  /* Support this precision only in avx2 for now  */
+  if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX2) {
+      io_generated_code->arch = LIBXSMM_X86_AVX2;
+    }
+  }
+
   /* Check if it is a supported spmm with bitmap */
   if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0) {
     if ((io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )) {
