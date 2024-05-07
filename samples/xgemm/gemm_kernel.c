@@ -3233,7 +3233,7 @@ int main(int argc, char* argv []) {
             l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a_mxfp4, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
             libxsmm_free(l_a_mxfp4);
             l_gemm_def.a_type = LIBXSMM_DATATYPE_F32;
-            l_gemm_def.vnni_a = 0;
+            l_gemm_def.vnni_a = 1;
           }
 
           if ((l_gemm_def.is_Abf8Bbf16_gemm > 0 || l_gemm_def.is_Ahf8Bbf16_gemm > 0) && (l_br_type != 4)) {

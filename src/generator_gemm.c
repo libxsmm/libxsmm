@@ -33,7 +33,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* Support this precision only in avx2 for now  */
   if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {
-    if (io_generated_code->arch >= LIBXSMM_X86_AVX2) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX2 && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) {
       io_generated_code->arch = LIBXSMM_X86_AVX2;
     }
   }
