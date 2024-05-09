@@ -89,7 +89,7 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4Bfp32( libxsmm_generated_code
   unsigned int l_vreg_n_start = l_vreg_m_start + 2 * l_m_blocking + 1;
   unsigned int l_i = 0;
   unsigned int l_k = 0;
-  unsigned int l_k_unroll_factor = (i_n_blocking == 1) ? 16 : 8;
+  unsigned int l_k_unroll_factor = (i_n_blocking == 1) ? 16 : 4;
   unsigned int l_pf_dist = 16;
 
   /* Load scale value GPR */
