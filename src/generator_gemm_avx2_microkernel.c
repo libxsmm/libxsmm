@@ -89,7 +89,8 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4Bfp32( libxsmm_generated_code
   unsigned int l_vreg_n_start = l_vreg_m_start + 2 * l_m_blocking + 1;
   unsigned int l_i = 0;
   unsigned int l_k = 0;
-  unsigned int l_k_unroll_factor = (i_n_blocking == 1) ? 16 : 4;
+  unsigned int l_k_unroll_factor = (i_n_blocking == 1) ? 16 : 8;
+  unsigned int l_pf_dist = 16;
 
   /* Load scale value GPR */
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) == 0)) {
@@ -130,6 +131,13 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4Bfp32( libxsmm_generated_code
           i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0,
           i_micro_kernel_config->datatype_size_in * i_micro_kernel_config->vector_length * l_m + l_k * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in,
           i_micro_kernel_config->vector_name, l_m_vreg_k0, 0, 0, 0 );
+      if (l_k % 8 == 0) {
+        libxsmm_x86_instruction_prefetch(io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_a,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            i_micro_kernel_config->datatype_size_in * i_micro_kernel_config->vector_length * l_m + l_k * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in + l_pf_dist * 64);   
+      }
 
       libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, i_micro_kernel_config->vector_name, l_m_vreg_k0, l_m_vreg_k1, 4);
 
