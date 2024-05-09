@@ -12,7 +12,7 @@ TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
-  for RED_OP in 0 1 2; do
+  for RED_OP in 0 1 2 3; do
     for LD in 'eqld' 'gtld'; do
       for RED_VARS in 0 1 2; do
         for IDX in 0 42; do
@@ -59,6 +59,17 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                     fi
                   fi
 
+                  # absmax case that don't exists
+                  if [[ ("$RED_OP" == '3') && ("$RED_VARS" != '0') ]]; then
+                    continue
+                  fi
+                  if [[ ("$RED_OP" == '3') && ("$ACC" != '0') ]]; then
+                    continue
+                  fi
+                  if [[ ("$RED_OP" == '3') && ("$IDX" == '42') ]]; then
+                    continue
+                  fi
+
                   # min case that don't exists
                   if [[ ("$RED_OP" == '2') && ("$RED_VARS" != '0') ]]; then
                     continue
@@ -97,6 +108,8 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                     TPPNAME="max"
                   elif [ "$RED_OP" == '2' ] ; then
                     TPPNAME="min"
+                  elif [ "$RED_OP" == '3' ] ; then
+                    TPPNAME="absmax"
                   else
                     continue
                   fi
