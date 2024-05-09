@@ -1834,6 +1834,12 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
   {
     return "mxfp4bf16f32";
   }
+  if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+           LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+           LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxfp4f32";
+  }
   else {
     return "void";
   }
