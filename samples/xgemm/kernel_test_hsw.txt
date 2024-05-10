@@ -1,7 +1,3 @@
-mxfp4bf16f32gemm_nn_eqld
-mxfp4bf16f32gemm_nn_gtld
-mxfp4bf16gemm_nn_eqld
-mxfp4bf16gemm_nn_gtld
 hf8bf16bf16_spmm_eqld
 hf8bf16bf16_spmm_gtld
 hf8bf16f32_spmm_eqld

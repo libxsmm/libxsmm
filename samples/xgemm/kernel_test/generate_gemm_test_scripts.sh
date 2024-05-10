@@ -286,10 +286,14 @@ for BINARY_POSTOP in 0 1; do
                       OUTNAME="mxfp4bf16gemm_"
                       KSTART=32
                       KSTEP=32
+                      MSTART=8
+                      MSTEP=8           
                     elif [[ ("$PREC" == 'MXFP4_BF16_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="mxfp4bf16f32gemm_"
                       KSTART=32
                       KSTEP=32
+                      MSTART=8
+                      MSTEP=8                    
                     elif [[ ("$PREC" == 'MXFP4_F32_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="mxfp4f32gemm_"
                       KSTART=32
