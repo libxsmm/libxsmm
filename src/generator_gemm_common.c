@@ -1425,7 +1425,6 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   unsigned short avx2_bf16_mask[16] = { 0x0, 0xffff, 0x0, 0xffff,   0x0, 0xffff, 0x0, 0xffff,   0x0, 0xffff, 0x0, 0xffff,   0x0, 0xffff, 0x0, 0xffff };
   unsigned int l_is_Ai4_Bi8_gemm = libxsmm_x86_is_Ai4_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
-  unsigned int l_is_Amxfp4_Bfp32_gemm = libxsmm_x86_is_Amxfp4_Bfp32_gemm(i_xgemm_desc);
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
 
@@ -1433,10 +1432,6 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     i_micro_kernel_config->gemm_scratch_ld = 16;
     gemm_scratch_size = LIBXSMM_MAX(((i_micro_kernel_config->vnni_format_C > 0) ? (32 * 64 + i_xgemm_desc->n * i_xgemm_desc->m * 4) : (32*64)), 64 * i_micro_kernel_config->gemm_scratch_ld * 4 + 8 * 1024/*i_micro_kernel_config->datatype_size*/);
   } else {
-    if (l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bfp32_gemm > 0) {
-      /* Allocate scratch for stashing perm regs if need be */
-      gemm_scratch_size = 128;
-    }
     /* Allocate scratch for stashing 32 zmms */
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
       gemm_scratch_size = 32 * 64;
@@ -3769,6 +3764,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                                      (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
                                      ((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )))) ? 1 : 0;
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
+  unsigned int l_is_Amxfp4_Bfp32_gemm = libxsmm_x86_is_Amxfp4_Bfp32_gemm(i_xgemm_desc);
   unsigned int l_is_Ai8_Bbf16_gemm = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) && l_is_Amxfp4_Bbf16_gemm == 0) &&
                                      (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
                                      ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )))) ? 1 : 0;
@@ -4036,7 +4032,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
            (i_micro_kernel_config->use_masking_a_c != 0) ) {
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_1 );
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
-                                          i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 0, 0 );
+                                          i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', (l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bfp32_gemm > 0) ? 2 : 1, 0, 0, 0 );
       }
 
       /* In this case we have to split loading C in 2 chunks of vlen/2 each  */
@@ -4075,7 +4071,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
             char vname_load = i_micro_kernel_config->vector_name;
-            unsigned int l_mask_reg_or_val = ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX ) ? 1 : i_m_blocking%i_micro_kernel_config->vector_length;
+            unsigned int l_mask_reg_or_val = ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX ) ? (l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bfp32_gemm > 0) ? 2 : 1 : i_m_blocking%i_micro_kernel_config->vector_length;
             if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype) && LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype)) ||
                 (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype) && LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype) && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR)) {
               vname_load = (vname_load == 'z') ? 'y' : 'x';
@@ -4182,6 +4178,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
     const unsigned int                 i_n_blocking )
 {
   /* deriving register blocking from kernel config */
+  unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
+  unsigned int l_is_Amxfp4_Bfp32_gemm = libxsmm_x86_is_Amxfp4_Bfp32_gemm(i_xgemm_desc);
   const unsigned int l_m_blocking = ( i_m_blocking % i_micro_kernel_config->vector_length == 0
     ? (i_m_blocking/i_micro_kernel_config->vector_length) : (i_m_blocking/i_micro_kernel_config->vector_length + 1));
   /* start register of accumulator */
@@ -4705,7 +4703,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
     const unsigned int scratch_gpr = i_gp_reg_mapping->gp_reg_help_2;
     const unsigned int aux_gpr = i_gp_reg_mapping->gp_reg_help_1;
     const unsigned int zero_vreg = 0;
-    const unsigned int aux_vreg  = 1;
+    const unsigned int aux_vreg  = (l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bfp32_gemm > 0 ) ? 2 : 1;
     const unsigned int mask_gpr = i_gp_reg_mapping->gp_reg_help_0;
     const unsigned int sse_scratch_gpr = i_gp_reg_mapping->gp_reg_help_0;
 
@@ -4765,7 +4763,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
         for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
-          unsigned int l_mask_reg_or_val = ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX ) ? 1 : i_m_blocking%i_micro_kernel_config->vector_length;
+          unsigned int l_mask_reg_or_val = ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX ) ? (l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bfp32_gemm > 0 ) ? 2 : 1 : i_m_blocking%i_micro_kernel_config->vector_length;
           char vname_store = i_micro_kernel_config->vector_name;
 
           if ((i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu == 1)) {

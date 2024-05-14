@@ -100,14 +100,6 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4( libxsmm_generated_code*    
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR, i_gp_reg_mapping->gp_reg_scf );
   }
 
-  if ( i_micro_kernel_config->use_masking_a_c != 0 || 1 ) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
-        i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', l_lut_mant_vreg, 0, 0, 0 );
-    libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
-        i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 0, 64, 'y', l_lut_sign_vreg, 0, 0, 0 );
-  }
-
   if (l_is_Amxfp4_Bbf16_gemm > 0) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR, i_gp_reg_mapping->gp_reg_help_0 );
     libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
