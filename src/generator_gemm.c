@@ -246,9 +246,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         } else if (l_xgemm_desc_mod.k % 32 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
           return;
-        } else if (l_xgemm_desc_mod.m % 8 != 0) {
-          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-          return;
         } else {
           /* We are good...  */
         }
@@ -349,10 +346,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ) {
     l_vector_length = 8;
     if (l_xgemm_desc_mod.k % 32 != 0) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-      return;
-    }
-    if (l_xgemm_desc_mod.m % 8 != 0) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }
