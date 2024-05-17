@@ -139,22 +139,18 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
                                                    (long long)l_remainder_size * i_micro_kernel_config->datatype_size_in * l_k_pack_factor );
   }
 
+#define MAX_FP_REG (10)
+  int fp_regid[MAX_FP_REG] = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11};
+
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     printf("In b broadcast\n");
+
     /* Load scalar and then broadcast on b */
     libxsmm_rv64_instruction_alu_move( io_generated_code,
                                        l_b_load_scalar_instr,
                                        i_gp_reg_mapping->gp_reg_b,
-                                       LIBXSMM_RV64_GP_REG_F10,
+                                       fp_regid[l_n % MAX_FP_REG],
                                        l_b_next  );
-#if 0
-    libxsmm_rv64_instruction_rvv_compute( io_generated_code,
-                                       l_b_load_bcast_instr,
-                                       LIBXSMM_RV64_GP_REG_F10,
-                                       0,
-                                       0,
-                                       1 );
-#endif
     if ( l_n != i_n_blocking - 1 ) {
       /* move on to next entry of B */
       l_b_next += l_b_stride;
@@ -213,7 +209,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                                l_compute_instr,
-                                               LIBXSMM_RV64_GP_REG_F10,
+                                               fp_regid[l_n % MAX_FP_REG],
                                                1 + l_m,
                                                l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
                                                1
@@ -223,7 +219,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       /* libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1); */
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                                l_compute_instr,
-                                               LIBXSMM_RV64_GP_REG_F10,
+                                               fp_regid[l_n % MAX_FP_REG],
                                                1 + l_m,
                                                l_vec_reg_acc_start + (l_m_total_blocks * l_n) + l_m_blocks[0],
                                                1
@@ -232,6 +228,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 16, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
     }
   }
+#undef MAX_FP_REG
 
   /* move immediate to the rgister */
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
