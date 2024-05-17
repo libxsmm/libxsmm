@@ -17,6 +17,8 @@
 #include "generator_mateltwise_transform_common.h"
 #include "generator_common.h"
 
+#define MAX_FP_REG (10)
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*            io_generated_code,
                                                            const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
@@ -47,6 +49,9 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   unsigned int l_b_load_bcast_instr = LIBXSMM_RV64_INSTR_GP_VFMV_V_F;
   unsigned int l_compute_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_compute_is_pred = 1;
+
+  int fp_regid[MAX_FP_REG] = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11};
+
 
   printf("Kernel called with blocking m=%d n=%d vl=%d\n", i_m_blocking, i_n_blocking, i_micro_kernel_config->vector_length);
 
@@ -139,9 +144,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
                                                    (long long)l_remainder_size * i_micro_kernel_config->datatype_size_in * l_k_pack_factor );
   }
 
-#define MAX_FP_REG (10)
-  int fp_regid[MAX_FP_REG] = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11};
-
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     printf("In b broadcast\n");
 
@@ -228,7 +230,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 16, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
     }
   }
-#undef MAX_FP_REG
 
   /* move immediate to the rgister */
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
@@ -627,3 +628,5 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   /* close asm */
   libxsmm_rv64_instruction_close_stream( io_generated_code, 0xe0f );
 }
+
+#undef MAX_FP_REG
