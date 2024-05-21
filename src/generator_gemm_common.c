@@ -2236,7 +2236,11 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
         io_micro_kernel_config->datatype_size_out = 4;
       }
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
+      if (i_arch >= LIBXSMM_X86_AVX2_SRF) {
+        io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBCSTNEBF162PS;
+      } else {
+        io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
+      }
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->ldc % io_micro_kernel_config->vector_length));
