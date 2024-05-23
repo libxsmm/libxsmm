@@ -2273,7 +2273,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (NULL != name && '\0' != *name) { /* profiler support requested */
           if (0 > libxsmm_verbosity) { /* avoid dump if just the profiler is enabled */
-            LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr,
+            LIBXSMM_EXPECT_DEBUG(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr,
               /* dump executable code without constant data (apply_size vs info_size) */
               apply_size, 1/*unique*/, 0/*overwrite*/));
           }
