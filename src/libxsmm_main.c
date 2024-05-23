@@ -922,6 +922,14 @@ LIBXSMM_API_INTERN void internal_libxsmm_signal(int signum) {
 }
 
 
+LIBXSMM_API void __wrap__gfortran_runtime_warning_at(const char* /*where*/, const char* /*message*/, ...);
+LIBXSMM_API void __wrap__gfortran_runtime_warning_at(const char* where, const char* message, ...)
+{ /* link application with "-Wl,--wrap=_gfortran_runtime_warning_at" */
+  LIBXSMM_UNUSED(message);
+  LIBXSMM_UNUSED(where);
+}
+
+
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
