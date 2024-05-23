@@ -2071,8 +2071,8 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
       fprintf(stderr, "%s(ptr:file) %p : %s\n", title, data, name);
     }
     if (0 != diff) { /* overwrite existing dump and warn about erroneous condition */
-      fprintf(stderr, "LIBXSMM ERROR: %s is not a unique filename!\n", name);
-      data_file = fopen(name, "wb");
+      fprintf(stderr, "LIBXSMM DUMP: %s is not a unique filename!\n", name);
+      data_file = (0 != overwrite ? fopen(name, "wb") : NULL);
       if (NULL != data_file) { /* dump data into a file */
         if (size != fwrite(data, 1, size, data_file)) result = EXIT_FAILURE;
         result_close = fclose(data_file);
