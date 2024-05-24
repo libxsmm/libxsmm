@@ -3233,7 +3233,7 @@ LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint 
                                                           const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
   libxsmm_gemm_shape res /*= { 0 }*/;
-
+  LIBXSMM_ASSERT(m <= lda && k <= ldb && m <= ldc);
   res.m = m;
   res.n = n;
   res.k = k;
@@ -4259,9 +4259,8 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     }
     LIBXSMM_PRAGMA_FORCEINLINE
     descriptor = libxsmm_gemm_descriptor_init(&blob, atype, btype, comptype, ctype, *m, nn, kk,
-        NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? *m : kk),
-        NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? kk : nn),
-      *(NULL != ldc ? ldc : m), gemm_flags, gemm_prefetch);
+      NULL != lda ? *lda : *m, NULL != ldb ? *ldb : kk, NULL != ldc ? *ldc : *m,
+      gemm_flags, gemm_prefetch);
 #if !defined(NDEBUG)
     if (NULL != descriptor)
 #endif

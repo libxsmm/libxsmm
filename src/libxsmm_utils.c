@@ -272,9 +272,9 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   const int itransa = LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A, itransb = LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B;
   const char ctransa = (char)(NULL != transa ? (*transa) : (0 == itransa ? 'n' : 't'));
   const char ctransb = (char)(NULL != transb ? (*transb) : (0 == itransb ? 'n' : 't'));
-  const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));
-  const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
-  const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
+  const libxsmm_blasint ilda = (NULL != lda ? *lda : *m);
+  const libxsmm_blasint ildb = (NULL != ldb ? *ldb : kk);
+  const libxsmm_blasint ildc = (NULL != ldc ? *ldc : *m);
   libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
   char string_a[128] = "", string_b[128] = "", typeprefix = 0;
 

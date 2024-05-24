@@ -136,11 +136,9 @@
     (LIBXSMM_NEQ(0, libxsmm_xgemm_beta_) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0); \
   const libxsmm_blasint *const libxsmm_xgemm_k_ = (NULL != (K) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_xgemm_n_ = (NULL != (N) ? (N) : libxsmm_xgemm_k_); \
-  const libxsmm_blasint libxsmm_xgemm_lda_ = LIBXSMM_MAX(NULL != ((const void*)(LDA)) ? *(LDA) : \
-    *(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? (M) : libxsmm_xgemm_k_), 1); \
-  const libxsmm_blasint libxsmm_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((const void*)(LDB)) ? *(LDB) : \
-    *(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_), 1); \
-  const libxsmm_blasint libxsmm_xgemm_ldc_ = LIBXSMM_MAX(NULL != (LDC) ? *(LDC) : *(M), 1); \
+  const libxsmm_blasint libxsmm_xgemm_lda_ = LIBXSMM_MAX(*(NULL != ((const void*)(LDA)) ? (LDA) : (M)), 1); \
+  const libxsmm_blasint libxsmm_xgemm_ldb_ = LIBXSMM_MAX(*(NULL != ((const void*)(LDB)) ? (LDB) : libxsmm_xgemm_k_), 1); \
+  const libxsmm_blasint libxsmm_xgemm_ldc_ = LIBXSMM_MAX(*(NULL != (LDC) ? (LDC) : (M)), 1); \
   if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, 2/*RFO*/, sizeof(OTYPE))) { \
     const libxsmm_gemm_shape libxsmm_xgemm_shape_ = libxsmm_create_gemm_shape( \
       *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_, \
@@ -186,11 +184,9 @@
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & LIBXSMM_FLAGS) ? 'n' : 't')); \
   const libxsmm_blasint *const libxsmm_blas_xgemm_k_ = (NULL != ((const void*)(K)) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_blas_xgemm_n_ = (NULL != ((const void*)(N)) ? (N) : libxsmm_blas_xgemm_k_); \
-  const libxsmm_blasint libxsmm_blas_xgemm_lda_ = LIBXSMM_MAX(NULL != ((const void*)(LDA)) ? *(LDA) : \
-    *(('n' == libxsmm_blas_xgemm_transa_ || *"N" == libxsmm_blas_xgemm_transa_) ? (M) : libxsmm_blas_xgemm_k_), 1); \
-  const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((const void*)(LDB)) ? *(LDB) : \
-    *(('n' == libxsmm_blas_xgemm_transb_ || *"N" == libxsmm_blas_xgemm_transb_) ? libxsmm_blas_xgemm_k_ : libxsmm_blas_xgemm_n_), 1); \
-  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = LIBXSMM_MAX(NULL != ((const void*)(LDC)) ? *(LDC) : *(M), 1); \
+  const libxsmm_blasint libxsmm_blas_xgemm_lda_ = LIBXSMM_MAX(*(NULL != ((const void*)(LDA)) ? (LDA) : (M)), 1); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = LIBXSMM_MAX(*(NULL != ((const void*)(LDB)) ? (LDB) : libxsmm_blas_xgemm_k_), 1); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = LIBXSMM_MAX(*(NULL != ((const void*)(LDC)) ? (LDC) : (M)), 1); \
   const OTYPE libxsmm_blas_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_blas_xgemm_beta_  = (NULL != ((const void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
   LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \

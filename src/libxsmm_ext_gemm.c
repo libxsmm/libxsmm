@@ -440,8 +440,8 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         const char *const tb = (NULL != transb ? (transb + i) : NULL);
         libxsmm_bitfield gemm_flags = LIBXSMM_GEMM_PFLAGS(ta, tb, LIBXSMM_FLAGS), flags = gemm_flags;
         const libxsmm_blasint im = m[i], in = n[i], ik = k[i];
-        const libxsmm_blasint ilda = (NULL != lda ? lda[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? im : ik));
-        const libxsmm_blasint ildb = (NULL != ldb ? ldb[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in));
+        const libxsmm_blasint ilda = (NULL != lda ? lda[i] : im);
+        const libxsmm_blasint ildb = (NULL != ldb ? ldb[i] : ik);
         const libxsmm_blasint ildc = (NULL != ldc ? ldc[i] : im);
         if (LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, otypesize)) {
           double dalpha = LIBXSMM_ALPHA, dbeta = LIBXSMM_BETA;
