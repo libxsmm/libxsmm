@@ -119,7 +119,6 @@ libxsmm_gcd
 libxsmm_gemm_batch
 libxsmm_gemm_batch_
 libxsmm_gemm_batch_blas
-libxsmm_gemm_batch_flags
 libxsmm_gemm_batch_kernel
 libxsmm_gemm_batch_omp
 libxsmm_gemm_batch_omp_

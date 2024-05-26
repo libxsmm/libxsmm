@@ -159,8 +159,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -193,46 +192,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
-#if defined(PRINT)
-      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      start = libxsmm_timer_tick();
-#endif
-      for (i = 0; i < size; ++i) {
-        GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + ia[i], &lda, b + ib[i], &ldb,
-          &beta, d + ic[i], &ldc);
-      }
-#if defined(PRINT)
-      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#endif
-      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
-      if (EXIT_SUCCESS == result) {
-        const double epsilon = libxsmm_matdiff_epsilon(&di);
-        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
-          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
-        }
-        else {
-          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
-          result = EXIT_FAILURE;
-        }
-      }
-    }
-
-    if (EXIT_SUCCESS == result) {
-#if defined(PRINT)
-      start = libxsmm_timer_tick();
-#endif
-#if defined(_OPENMP) /* external parallelization */
-#     pragma omp parallel
-#     pragma omp single nowait
-#endif
-      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -269,8 +229,44 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
+#if defined(PRINT)
+      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      start = libxsmm_timer_tick();
+#endif
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, a + ia[i], &lda, b + ib[i], &ldb,
+          &beta, d + ic[i], &ldc);
+      }
+#if defined(PRINT)
+      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+#endif
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
+          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
+        }
+        else {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+      }
+    }
+
+    if (EXIT_SUCCESS == result) {
+#if defined(PRINT)
+      start = libxsmm_timer_tick();
+#endif
+#if defined(_OPENMP) /* external parallelization */
+#     pragma omp parallel
+#     pragma omp single nowait
+#endif
+      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -303,8 +299,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_gemm_batch(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -338,8 +333,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_gemm_batch(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -377,8 +371,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -413,48 +406,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
-#if defined(PRINT)
-      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      start = libxsmm_timer_tick();
-#endif
-      for (i = 0; i < size; ++i) {
-        GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, pa[i], &lda, pb[i], &ldb,
-          &beta, pd[i], &ldc);
-      }
-#if defined(PRINT)
-      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#endif
-      libxsmm_matdiff_reduce(&diff, &di);
-      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
-      if (EXIT_SUCCESS == result) {
-        const double epsilon = libxsmm_matdiff_epsilon(&di);
-        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
-          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
-        }
-        else {
-          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
-          result = EXIT_FAILURE;
-        }
-      }
-    }
-
-    if (EXIT_SUCCESS == result) {
-      const libxsmm_blasint ptrsize = sizeof(void*);
-#if defined(PRINT)
-      start = libxsmm_timer_tick();
-#endif
-#if defined(_OPENMP) /* external parallelization */
-#     pragma omp parallel
-#     pragma omp single nowait
-#endif
-      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -493,8 +445,46 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
+#if defined(PRINT)
+      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      start = libxsmm_timer_tick();
+#endif
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, pa[i], &lda, pb[i], &ldb,
+          &beta, pd[i], &ldc);
+      }
+#if defined(PRINT)
+      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+#endif
+      libxsmm_matdiff_reduce(&diff, &di);
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(TYPE) >= epsilon) {
+          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
+        }
+        else {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+      }
+    }
+
+    if (EXIT_SUCCESS == result) {
+      const libxsmm_blasint ptrsize = sizeof(void*);
+#if defined(PRINT)
+      start = libxsmm_timer_tick();
+#endif
+#if defined(_OPENMP) /* external parallelization */
+#     pragma omp parallel
+#     pragma omp single nowait
+#endif
+      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -529,8 +519,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_gemm_batch(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -565,8 +554,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_gemm_batch(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -708,8 +696,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 0/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -742,8 +729,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
         &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/,
-        size, 1/*batchcheck*/);
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -776,8 +762,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_groups)(iprec, oprec, &transa, &transb, &m, &n, &k,
         &alpha, (const void**)pa, &lda, (const void**)pb, &ldb,
-        &beta, (void**)pc, &ldc, group_count,
-        &size, 0/*batchcheck*/);
+        &beta, (void**)pc, &ldc, group_count, &size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -810,8 +795,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_groups)(iprec, oprec, &transa, &transb, &m, &n, &k,
         &alpha, (const void**)pa, &lda, (const void**)pb, &ldb,
-        &beta, (void**)pc, &ldc, group_count,
-        &size, 1/*batchcheck*/);
+        &beta, (void**)pc, &ldc, group_count, &size);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -850,8 +834,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_groups)(iprec, oprec, ta, tb, pm, pn, pk,
         palpha, (const void**)pa, plda, (const void**)pb, pldb,
-        pbeta, (void**)pc, pldc, size,
-        psize, 0/*batchcheck*/);
+        pbeta, (void**)pc, pldc, size, psize);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -883,8 +866,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_groups)(iprec, oprec, ta, tb, pm, pn, pk,
         palpha, (const void**)pa, plda, (const void**)pb, pldb,
-        pbeta, (void**)pc, pldc, size,
-        psize, 1/*batchcheck*/);
+        pbeta, (void**)pc, pldc, size, psize);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -920,8 +902,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_groups)(iprec, oprec, ta, tb, pm, pn, pk,
         palpha, (const void**)pa, plda, (const void**)pb, pldb,
-        pbeta, (void**)pc, pldc, size,
-        psize, 0/*batchcheck*/);
+        pbeta, (void**)pc, pldc, size, psize);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -957,8 +938,7 @@ int main(int argc, char* argv[])
 #endif
       USEOMP(libxsmm_gemm_groups)(iprec, oprec, ta, tb, pm, pn, pk,
         palpha, (const void**)pa, plda, (const void**)pb, pldb,
-        pbeta, (void**)pc, pldc, size,
-        psize, 1/*batchcheck*/);
+        pbeta, (void**)pc, pldc, size, psize);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -990,8 +970,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_gemm_groups(iprec, oprec, ta, tb, pm, pn, pk,
         palpha, (const void**)pa, plda, (const void**)pb, pldb,
-        pbeta, (void**)pc, pldc, size,
-        psize, 0/*batchcheck*/);
+        pbeta, (void**)pc, pldc, size, psize);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
@@ -1023,8 +1002,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_gemm_groups(iprec, oprec, ta, tb, pm, pn, pk,
         palpha, (const void**)pa, plda, (const void**)pb, pldb,
-        pbeta, (void**)pc, pldc, size,
-        psize, 1/*batchcheck*/);
+        pbeta, (void**)pc, pldc, size, psize);
 #if defined(PRINT)
       d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       start = libxsmm_timer_tick();
