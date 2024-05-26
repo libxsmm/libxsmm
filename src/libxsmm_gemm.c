@@ -583,7 +583,7 @@ LIBXSMM_API void libxsmm_blas_gemm(libxsmm_datatype iprec, libxsmm_datatype opre
 LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_blasint index_base,
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, /*unsigned*/int tid, /*unsigned*/int ntasks,
-  unsigned char itypesize, unsigned char otypesize, int flags)
+  unsigned char itypesize, unsigned char otypesize)
 {
   int result = EXIT_SUCCESS;
   const libxsmm_blasint size = LIBXSMM_ABS(batchsize), nsplit = LIBXSMM_MIN(size, ntasks);
@@ -591,7 +591,6 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   const libxsmm_blasint begin = (tid < nsplit ? (tid * tasksize) : size), span = begin + tasksize;
   const libxsmm_blasint end = LIBXSMM_MIN(span, size);
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != kernel);
-  LIBXSMM_UNUSED(flags);
   if (begin < end) {
     libxsmm_gemm_param gemm_param;
     char *a0, *b0, *const c0 = (char*)c;
@@ -944,7 +943,9 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
       if (0 == LIBXSMM_MOD2((uintptr_t)c, (uintptr_t)cpuid_vlen)) {
         otypesize = libxsmm_typesize(gemm_shape->out_type);
         /* check if C-matrices are aligned */
-        if (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, cpuid_vlen)) {
+        if  (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, cpuid_vlen)
+          && 0 == LIBXSMM_MOD2(gemm_shape->n   * otypesize, cpuid_vlen))
+        {
           result |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
         }
       }
@@ -1096,7 +1097,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
             if (NULL != kernel.ptr_const) {
               result = libxsmm_gemm_batch_kernel(kernel.gemm, index_base, index_stride,
                 stride_a, stride_b, stride_c, a, b, c, batchsize, tid, ntasks,
-                libxsmm_typesize(iprec), otypesize, flags);
+                libxsmm_typesize(iprec), otypesize);
             }
             else result = EXIT_FAILURE;
           }

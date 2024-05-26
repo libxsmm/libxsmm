@@ -525,7 +525,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
                   LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_gemm_batch_kernel(
                     kernel.gemm, index_base, index_stride, stride_a, stride_b, stride_c,
                     (const char*)a + j * sa, (const char*)b + j * sb, (char*)c + j * sc,
-                    0 < group_count ? isize : -asize, tid, ntasks, itypesize, otypesize, flags));
+                    0 < group_count ? isize : -asize, tid, ntasks, itypesize, otypesize));
                 }
               }
 # if defined(LIBXSMM_EXT_TASKS)
@@ -539,7 +539,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
                       LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_gemm_batch_kernel(
                         kernel.gemm, index_base, index_stride, stride_a, stride_b, stride_c,
                         (const char*)a + j * sa, (const char*)b + j * sb, (char*)c + j * sc,
-                        0 < group_count ? isize : -asize, tid, ntasks, itypesize, otypesize, flags));
+                        0 < group_count ? isize : -asize, tid, ntasks, itypesize, otypesize));
                     }
                   }
                 } /* implicit synchronization (barrier) */
@@ -555,7 +555,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
                   LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_gemm_batch_kernel(
                     kernel.gemm, index_base, index_stride, stride_a, stride_b, stride_c,
                     (const char*)a + j * sa, (const char*)b + j * sb, (char*)c + j * sc,
-                    0 < group_count ? isize : -asize, tid, ntasks, itypesize, otypesize, flags));
+                    0 < group_count ? isize : -asize, tid, ntasks, itypesize, otypesize));
                 }
               }
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
@@ -571,7 +571,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
             LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_gemm_batch_kernel(
               kernel.gemm, index_base, index_stride, stride_a, stride_b, stride_c,
               (const char*)a + j * sa, (const char*)b + j * sb, (char*)c + j * sc,
-              0 < group_count ? isize : -asize, 0/*tid*/, 1/*nthreads*/, itypesize, otypesize, flags));
+              0 < group_count ? isize : -asize, 0/*tid*/, 1/*nthreads*/, itypesize, otypesize));
           }
         }
         else { /* trigger fallback */
