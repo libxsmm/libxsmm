@@ -38,6 +38,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
+  if ( l_is_Amxfp4_Bbf16_gemm > 0 ) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX2 && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) {
+      io_generated_code->arch = LIBXSMM_X86_AVX2;
+    }
+  }
+
   /* Check if it is a supported spmm with bitmap */
   if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0) {
     if ((io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )) {
@@ -224,7 +230,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         } else {
           /* We are good...  */
         }
-      } else if ((l_is_Amxfp4_Bfp32_gemm > 0) && (io_generated_code->arch >= LIBXSMM_X86_AVX2)) {
+      } else if ((l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) && (io_generated_code->arch >= LIBXSMM_X86_AVX2)) {
         if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 ) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
           return;
@@ -238,9 +244,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
           return;
         } else if (l_xgemm_desc_mod.k % 32 != 0) {
-          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-          return;
-        } else if (l_xgemm_desc_mod.m % 8 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
           return;
         } else {
@@ -340,13 +343,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     } else {
       l_vector_length = 8;
     }
-  } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( l_is_Amxfp4_Bfp32_gemm > 0 ) ) {
+  } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ) {
     l_vector_length = 8;
     if (l_xgemm_desc_mod.k % 32 != 0) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-      return;
-    }
-    if (l_xgemm_desc_mod.m % 8 != 0) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }
