@@ -16,10 +16,6 @@
 #if !defined(LIBXSMM_GEMM_TASKGRAIN)
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
-/* 0: disabled, 1: "always", 2 (or negative): beta=0 */
-#if !defined(LIBXSMM_GEMM_NTS)
-# define LIBXSMM_GEMM_NTS 1
-#endif
 #if !defined(LIBXSMM_GEMM_FASTPATH) && defined(NDEBUG) && 1
 # define LIBXSMM_GEMM_FASTPATH
 #endif
