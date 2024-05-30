@@ -25,14 +25,6 @@
 # include <time.h>
 #endif
 
-#if !defined(LIBXSMM_SYNC_RWLOCK_BITS)
-# if defined(__MINGW32__)
-#   define LIBXSMM_SYNC_RWLOCK_BITS 32
-# else
-#   define LIBXSMM_SYNC_RWLOCK_BITS 16
-# endif
-#endif
-
 
 LIBXSMM_API unsigned int libxsmm_get_pid(void)
 {
