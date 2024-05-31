@@ -40,7 +40,7 @@ endif
 #MAKEINC := $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 MAKEINC := $(patsubst %/,%,$(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
-COMMAND := $(shell which command 2>/dev/null)
+COMMAND := $(shell command 2>/dev/null && echo "command")
 ifneq (,$(COMMAND))
   which = $(shell $(COMMAND) -v $1)
 else
