@@ -40,12 +40,8 @@ endif
 #MAKEINC := $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 MAKEINC := $(patsubst %/,%,$(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
-COMMAND := $(shell command 2>/dev/null && echo "command")
-ifneq (,$(COMMAND))
-  which = $(shell $(COMMAND) -v $1)
-else
-  which = $(shell which $(firstword $1) 2>/dev/null)
-endif
+WHICH := $(shell which which 2>/dev/null || echo "command -v")
+which = $(shell $(WHICH) 2>/dev/null $(firstword $1))
 
 # ensure a number or instead return zero (by default) or 2nd argument (if given)
 qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "$(if $2,$2,0)")
