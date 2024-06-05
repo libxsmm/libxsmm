@@ -556,7 +556,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       l_vector_length = 8;
     }
     /* SVE128 + BFDOT */
-    else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 )  ) {
+    else if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ) {
       l_vector_length = 4;
     }
     else {
@@ -600,7 +600,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       l_vector_length = 8;
     }
     /* SVE128 + MMLA */
-    else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 )  ) {
+    else if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ) {
       l_vector_length = 4;
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
