@@ -4287,7 +4287,6 @@ void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_microkernel( libxsmm
                                                                                   l_vnni_lo_reg, l_vnni_hi_reg, l_vnni_lo_reg_2, l_vnni_hi_reg_2, l_vnni_lo_reg_4, l_vnni_hi_reg_4, l_m_remainder, l_n_remainder, i_micro_kernel_config, i_mateltwise_desc );
     }
   }
-#endif
 }
 
 LIBXSMM_API_INTERN
