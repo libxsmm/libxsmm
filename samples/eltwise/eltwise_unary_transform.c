@@ -1551,14 +1551,14 @@ int test_norm_to_vnni8_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
-  if ( N % 4 != 0 ) {
+  if ( N % 8 != 0 ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD;
   } else {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8;
   }
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for NORM_TO_VNNI4 TPP. Bailing...!\n");
+    fprintf( stderr, "JIT for NORM_TO_VNNI8 TPP. Bailing...!\n");
     exit(-1);
   }
   unary_kernel( &unary_param );

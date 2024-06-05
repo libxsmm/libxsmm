@@ -4006,13 +4006,12 @@ void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_mnblock_micro_kernel
                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int l_zmm = 0;
-  unsigned int l_m_bound = 16;
 
-  LIBXSMM_UNUSED( l_m_bound );
-
+#if 0
   if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
     l_m_bound = 8;
   }
+#endif
 
   /* load registers */
   /* zmm0: 0a, 1a, 2a, 3a, ..., 31a */
@@ -4110,10 +4109,21 @@ void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_mnblock_micro_kernel
   /* store VNNI packed vectors */
   {
     unsigned int l_out_reg[8] = { 7, 9, 8, 10, 15, 17, 16, 18 };
+    unsigned int l_write_cnt = 0;
     for ( l_zmm = 0; l_zmm < 8; l_zmm++ ) {
-      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
-                                        i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                        i_micro_kernel_config->vector_name, l_out_reg[l_zmm], 0, 1, 1 );
+      if ( l_write_cnt < i_m_step ) {
+        if ( l_write_cnt + 4 < i_m_step ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                            i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * 32 * i_micro_kernel_config->datatype_size_out,
+                                            i_micro_kernel_config->vector_name, l_out_reg[l_zmm], 0, 1, 1 );
+        } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                            i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * 32 * i_micro_kernel_config->datatype_size_out,
+                                            i_micro_kernel_config->vector_name, l_out_reg[l_zmm], i_mask_reg_1, 0, 1 );
+
+        }
+      }
+      l_write_cnt += 4;
     }
   }
 
@@ -4135,42 +4145,30 @@ void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_microkernel( libxsmm
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                                          const unsigned int                      i_pad_vnni ) {
-#if 1
-  LIBXSMM_UNUSED( i_gp_reg_mask );
-  LIBXSMM_UNUSED( i_mask_reg_0 );
-  LIBXSMM_UNUSED( i_mask_reg_1 );
-
-  libxsmm_generator_transform_norm_to_vnni8_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                         i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
-                                                                         i_micro_kernel_config, i_mateltwise_desc, i_pad_vnni );
-#else
+  /* perm-table register mappings */
   unsigned int l_vnni_lo_reg = 31;
   unsigned int l_vnni_hi_reg = 30;
   unsigned int l_vnni_lo_reg_2 = 29;
   unsigned int l_vnni_hi_reg_2 = 28;
   unsigned int l_vnni_lo_reg_4 = 27;
   unsigned int l_vnni_hi_reg_4 = 26;
+  /* m-blocking control */
   unsigned int l_m_entries = ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) ? 16 : 32;
   unsigned int l_m_remainder = i_mateltwise_desc->m % l_m_entries;
   unsigned int l_m_full = i_mateltwise_desc->m / l_m_entries;
+  /* n-blocking control */
   unsigned int l_n_step = 8;
   unsigned int l_n_remainder = i_mateltwise_desc->n % l_n_step;
   unsigned int l_n_full = i_mateltwise_desc->n / l_n_step;
-  short perm_table_vnni_lo[32] = {32, 0, 33, 1, 34, 2, 35, 3, 36, 4, 37, 5, 38, 6, 39, 7, 40, 8, 41, 9, 42, 10, 43, 11, 44, 12, 45, 13, 46, 14, 47, 15};
-  short perm_table_vnni_hi[32] = {48, 16, 49, 17, 50, 18, 51, 19, 52, 20, 53, 21, 54, 22, 55, 23, 56, 24, 57, 25, 58, 26, 59, 27, 60, 28, 61, 29, 62, 30, 63, 31};
-  int perm_table_vnni_lo_2[16] = {16, 0, 17, 1, 18, 2, 19, 3, 20, 4, 21, 5, 22, 6, 23, 7 };
-  int perm_table_vnni_hi_2[16] = {24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15};
-  long long perm_table_vnni_lo_4[8]  = {8, 0, 9, 1, 10, 2, 11, 3};
-  long long perm_table_vnni_hi_4[8]  = {12, 4, 13, 5, 14, 6, 15, 7};
-
-  short _perm_table_vnni_lo[16] = {16, 0, 17, 1, 18, 2, 19, 3, 20, 4, 21, 5, 22, 6, 23, 7};
-  short _perm_table_vnni_hi[16] = {24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15};
-  int _perm_table_vnni_lo_2[8]  = {8, 0, 9, 1, 10, 2, 11, 3};
-  int _perm_table_vnni_hi_2[8]  = {12, 4, 13, 5, 14, 6, 15, 7};
-  long long _perm_table_vnni_lo_4[4]  = {4, 0, 5, 1};
-  long long _perm_table_vnni_hi_4[4]  = {6, 2, 7, 3};
 
   if (l_m_entries == 32) {
+    short perm_table_vnni_lo[32] = {32, 0, 33, 1, 34, 2, 35, 3, 36, 4, 37, 5, 38, 6, 39, 7, 40, 8, 41, 9, 42, 10, 43, 11, 44, 12, 45, 13, 46, 14, 47, 15};
+    short perm_table_vnni_hi[32] = {48, 16, 49, 17, 50, 18, 51, 19, 52, 20, 53, 21, 54, 22, 55, 23, 56, 24, 57, 25, 58, 26, 59, 27, 60, 28, 61, 29, 62, 30, 63, 31};
+    int perm_table_vnni_lo_2[16] = {16, 0, 17, 1, 18, 2, 19, 3, 20, 4, 21, 5, 22, 6, 23, 7 };
+    int perm_table_vnni_hi_2[16] = {24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15};
+    long long perm_table_vnni_lo_4[8]  = {8, 0, 9, 1, 10, 2, 11, 3};
+    long long perm_table_vnni_hi_4[8]  = {12, 4, 13, 5, 14, 6, 15, 7};
+
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi, "perm_table_vnni_hi_", i_micro_kernel_config->vector_name, l_vnni_hi_reg);
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo, "perm_table_vnni_lo_", i_micro_kernel_config->vector_name, l_vnni_lo_reg);
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo_2, "perm_table_vnni_lo_2_", i_micro_kernel_config->vector_name, l_vnni_lo_reg_2);
@@ -4178,6 +4176,13 @@ void libxsmm_generator_transform_norm_to_vnni8_16bit_avx512_microkernel( libxsmm
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo_4, "perm_table_vnni_lo_4_", i_micro_kernel_config->vector_name, l_vnni_lo_reg_4);
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi_4, "perm_table_vnni_hi_4_", i_micro_kernel_config->vector_name, l_vnni_hi_reg_4);
   } else {
+    short _perm_table_vnni_lo[16] = {16, 0, 17, 1, 18, 2, 19, 3, 20, 4, 21, 5, 22, 6, 23, 7};
+    short _perm_table_vnni_hi[16] = {24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15};
+    int _perm_table_vnni_lo_2[8]  = {8, 0, 9, 1, 10, 2, 11, 3};
+    int _perm_table_vnni_hi_2[8]  = {12, 4, 13, 5, 14, 6, 15, 7};
+    long long _perm_table_vnni_lo_4[4]  = {4, 0, 5, 1};
+    long long _perm_table_vnni_hi_4[4]  = {6, 2, 7, 3};
+
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) _perm_table_vnni_hi, "perm_table_vnni_hi_", i_micro_kernel_config->vector_name, l_vnni_hi_reg);
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) _perm_table_vnni_lo, "perm_table_vnni_lo_", i_micro_kernel_config->vector_name, l_vnni_lo_reg);
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) _perm_table_vnni_lo_2, "perm_table_vnni_lo_2_", i_micro_kernel_config->vector_name, l_vnni_lo_reg_2);
