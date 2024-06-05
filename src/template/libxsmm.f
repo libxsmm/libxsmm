@@ -12,7 +12,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_DOUBLE, C_FLOAT, C_DOUBLE_COMPLEX, C_FLOAT_COMPLEX,         &
-     &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T, C_BOOL,        &
+     &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T,                &
      &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR,                      &
      &    C_FUNPTR, C_NULL_FUNPTR, C_NULL_PTR
         IMPLICIT NONE
@@ -564,10 +564,10 @@
           !> Routine suitable for FORTRAN 77; size in Bytes.
           PURE SUBROUTINE libxsmm_xdiff(diff, a, b, nbytes)             &
      &    BIND(C, NAME="libxsmm_xdiff_")
-            IMPORT :: C_PTR, C_LONG_LONG, C_BOOL
+            IMPORT :: C_PTR, C_LONG_LONG, C_INT
             TYPE(C_PTR), INTENT(IN), VALUE   :: a, b
             INTEGER(C_LONG_LONG), INTENT(IN) :: nbytes
-            LOGICAL(C_BOOL), INTENT(OUT)     :: diff
+            INTEGER(C_INT), INTENT(OUT)      :: diff
           END SUBROUTINE
         END INTERFACE
         $MNK_INTERFACE_LIST
@@ -1863,14 +1863,16 @@
         !> FORTRAN 77: see libxsmm_xdiff
         FUNCTION libxsmm_diff_char(a, b)
           CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
-          LOGICAL(C_BOOL) :: libxsmm_diff_char
+          LOGICAL :: libxsmm_diff_char
+          INTEGER(C_INT) :: true_false
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
-            CALL libxsmm_xdiff(libxsmm_diff_char,                       &
+            CALL libxsmm_xdiff(true_false,                              &
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
      &        SIZE(a, KIND=C_LONG_LONG))
+            libxsmm_diff_char = (0 .NE. true_false)
           ELSE
-            libxsmm_diff_char = LOGICAL(.TRUE., KIND=C_BOOL)
+            libxsmm_diff_char = .TRUE.
           END IF
         END FUNCTION
 
@@ -1878,14 +1880,16 @@
         !> FORTRAN 77: see libxsmm_xdiff
         FUNCTION libxsmm_diff_i8(a, b)
           INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
-          LOGICAL(C_BOOL) :: libxsmm_diff_i8
+          LOGICAL :: libxsmm_diff_i8
+          INTEGER(C_INT) :: true_false
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
-            CALL libxsmm_xdiff(libxsmm_diff_i8,                         &
+            CALL libxsmm_xdiff(true_false,                              &
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
      &        SIZE(a, KIND=C_LONG_LONG))
+            libxsmm_diff_i8 = (0 .NE. true_false)
           ELSE
-            libxsmm_diff_i8 = LOGICAL(.TRUE., KIND=C_BOOL)
+            libxsmm_diff_i8 = .TRUE.
           END IF
         END FUNCTION
 
@@ -1893,14 +1897,16 @@
         !> FORTRAN 77: see libxsmm_xdiff
         FUNCTION libxsmm_diff_i32(a, b)
           INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
-          LOGICAL(C_BOOL) :: libxsmm_diff_i32
+          LOGICAL :: libxsmm_diff_i32
+          INTEGER(C_INT) :: true_false
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
-            CALL libxsmm_xdiff(libxsmm_diff_i32,                        &
+            CALL libxsmm_xdiff(true_false,                              &
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
      &        SIZE(a, KIND=C_LONG_LONG) * INT(4, KIND=C_LONG_LONG))
+            libxsmm_diff_i32 = (0 .NE. true_false)
           ELSE
-            libxsmm_diff_i32 = LOGICAL(.TRUE., KIND=C_BOOL)
+            libxsmm_diff_i32 = .TRUE.
           END IF
         END FUNCTION
 
@@ -1908,14 +1914,16 @@
         !> FORTRAN 77: see libxsmm_xdiff
         FUNCTION libxsmm_diff_i64(a, b)
           INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
-          LOGICAL(C_BOOL) :: libxsmm_diff_i64
+          LOGICAL :: libxsmm_diff_i64
+          INTEGER(C_INT) :: true_false
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
-            CALL libxsmm_xdiff(libxsmm_diff_i64,                        &
+            CALL libxsmm_xdiff(true_false,                              &
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
      &        SIZE(a, KIND=C_LONG_LONG) * INT(8, KIND=C_LONG_LONG))
+            libxsmm_diff_i64 = (0 .NE. true_false)
           ELSE
-            libxsmm_diff_i64 = LOGICAL(.TRUE., KIND=C_BOOL)
+            libxsmm_diff_i64 = .TRUE.
           END IF
         END FUNCTION
 
@@ -1932,7 +1940,7 @@
           INTERFACE
             SUBROUTINE internal_aligned(is_aligned, location,           &
      &      increment, alignment) BIND(C, NAME="libxsmm_aligned_")
-              IMPORT :: C_PTR, C_INT, C_BOOL
+              IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), VALUE, INTENT(IN) :: location
               INTEGER(C_INT),     INTENT(IN) :: increment
               INTEGER(C_INT),    INTENT(OUT) :: alignment
