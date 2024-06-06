@@ -1366,7 +1366,7 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( libxsmm_
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, temp_reg );
   }
 
-  if (l_is_Ai4_Bi8_gemm > 0 && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0 && (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
+  if (l_is_Ai4_Bi8_gemm > 0 && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0 || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_MxK_ZPT) > 0) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
     libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 56, temp_reg, 0 );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ZPT_PTR, temp_reg );
@@ -1916,6 +1916,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -104;
     case LIBXSMM_GEMM_STACK_VAR_SSE_AVX2_LP_HELPER_PTR:
       return -112;
+    case LIBXSMM_GEMM_STACK_VAR_SCF_BRGEMM_PTR:
+      return -112;
     case LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR:
       return -120;
     case LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR:
@@ -1929,6 +1931,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
     case LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR:
       return -160;
     case LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR:
+      return -168;
+    case LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR:
       return -168;
   }
   return 0;
