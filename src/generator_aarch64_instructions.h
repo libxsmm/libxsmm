@@ -478,6 +478,15 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
 
+/* define SME instructions */
+#define LIBXSMM_AARCH64_INSTR_SME_FMOPA_SP                    0x80800000 /* compute outer product */
+#define LIBXSMM_AARCH64_INSTR_SME_SMSTART                     0xd503477f /* start SVE streaming mode and za regsiter*/
+#define LIBXSMM_AARCH64_INSTR_SME_SMSSTOP                     0xd503467f /* stop  SVE streaming mode and za regsiter*/
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR  0xc0860400 /* move tile to 4 vectors */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE  0xc0840400 /* move 4 vectors to tile */
+#define LIBXSMM_AARCH64_INSTR_SME_LD1W_2                      0xa1404000 /* 0b10100001010000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SME_ST1W_2                      0xa1604000 /* 0b10100001011000000100000000000000 */
+
 /**
  * shift mode */
 typedef enum libxsmm_aarch64_shiftmode {
@@ -981,5 +990,25 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
                                                      const unsigned int          i_gp_reg_cmp,
                                                      const unsigned int          i_label_no,
                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
+  * Execute sme outer-product operation
+  *
+  * @param io_generated_code pointer to the pointer of the generated code structure
+  * @param i_matrix_instr actual matrix instruction
+  * @param i_tile the tile number 0-3
+  * @param i_vec_reg_src_0 first source register
+  * @param i_vec_reg_src_1 second source register
+  * @param i_pred_reg_0 first predicate register
+  * @param i_pred_reg_1 second predicate register
+  */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generated_code,
+                                              unsigned int            i_matrix_instr,
+                                              unsigned int            i_tile,
+                                              unsigned int            i_vec_reg_src_0,
+                                              unsigned int            i_vec_reg_src_1,
+                                              unsigned int            i_pred_reg_0,
+                                              unsigned int            i_pred_reg_1 );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */

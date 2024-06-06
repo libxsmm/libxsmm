@@ -47,6 +47,7 @@
 #define LIBXSMM_AARCH64_NEOV1         2302 /* Neoverse V1, Graviton 3 */
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
+#define LIBXSMM_AARCH64_APPL_M4       2403 /* Apple M4 SME */
 #define LIBXSMM_AARCH64_ALLFEAT       2999
 
  /** Zero-initialized structure; assumes conservative properties. */
