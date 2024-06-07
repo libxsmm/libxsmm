@@ -370,7 +370,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
     io_micro_kernel_config->use_masking_a_c = 0;
     io_micro_kernel_config->vector_name = 'v';
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-      io_micro_kernel_config->vector_length = 4;
+      io_micro_kernel_config->vector_length = libxsmm_cpuid_mvl_rv64()/64;
       io_micro_kernel_config->datatype_size_in = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE64_V;
@@ -382,7 +382,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
       io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_GP_VFMACC_VV;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
     } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-      io_micro_kernel_config->vector_length = 16;
+      io_micro_kernel_config->vector_length = libxsmm_cpuid_mvl_rv64()/32;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE32_V;
@@ -394,7 +394,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
       io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_GP_VFMACC_VV;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
     } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) { /* TODO (MMLA): do a proper integration; right now just assumes A in MMLA format, rest col-major */
-      io_micro_kernel_config->vector_length = 8;
+      io_micro_kernel_config->vector_length = libxsmm_cpuid_mvl_rv64()/16;
       io_micro_kernel_config->datatype_size_in = 2;
       if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 4;
@@ -408,18 +408,6 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_RV64_INSTR_UNDEF;
       io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VSE16_V;
       io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_GP_VSE16_V;
-      io_micro_kernel_config->vxor_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-    } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) { /* TODO (MMLA): do a proper integration; right now just assumes A in MMLA format, rest col-major */
-      io_micro_kernel_config->vector_length = 8;
-      io_micro_kernel_config->datatype_size_in = 1;
-      io_micro_kernel_config->datatype_size_out = 4;
-      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE8_V;
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE8_V;
-      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VSE8_V;
-      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_GP_VSE8_V;
       io_micro_kernel_config->vxor_instruction = LIBXSMM_RV64_INSTR_UNDEF;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_UNDEF;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
@@ -439,7 +427,7 @@ unsigned int libxsmm_generator_gemm_rv64_get_max_n_blocking( const libxsmm_micro
   LIBXSMM_UNUSED( i_xgemm_desc );
 
   if ( i_arch == LIBXSMM_RV64 ) {
-    return 16;
+    return libxsmm_cpuid_mvl_rv64();
   } else {
     return 0;
   }

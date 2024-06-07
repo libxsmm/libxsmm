@@ -226,7 +226,11 @@ void libxsmm_generator_configure_rv64_vlens(const libxsmm_meltw_descriptor* i_ma
   /* First, determine the vlen compute based on the architecture; there may be architectures with different widths for different types */
   /* At the moment, all types are assumed to be of the same length */
   /* unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_vlen(i_micro_kernel_config->instruction_set);*/
-  unsigned int l_asimd_bytes_per_register = 64;
+#define BIT_BYTE (8)
+
+  unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_mvl_rv64()/BIT_BYTE;
+
+#undef BIT_BYTE
 
   unsigned char l_inp_type = (LIBXSMM_DATATYPE_IMPLICIT == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) ? LIBXSMM_CAST_UCHAR(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) : LIBXSMM_CAST_UCHAR(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP));
   unsigned int  l_inp_type_size = LIBXSMM_TYPESIZE(l_inp_type); /* like libxsmm_typesize; returns 0 if type is unknown */

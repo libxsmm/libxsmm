@@ -356,7 +356,7 @@ SRCFILES_LIB := $(patsubst %,$(ROOTSRC)/%, \
           libxsmm_utils.c libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_barrier.c \
           libxsmm_rng.c libxsmm_mhd.c)
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(wildcard $(ROOTSRC)/generator_*.c)) \
-          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
+          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 SRCFILES := $(SRCFILES_LIB) $(SRCFILES_GEN_LIB) $(SRCFILES_KERNELS)
 
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_generator_gemm_driver.c)
