@@ -449,7 +449,12 @@ void libxsmm_generator_transform_norm_to_normt_128bit_avx512_microkernel( libxsm
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                          i_gp_reg_n_loop, 4 );
 
-        /* load 4 registers with two half rows */
+        /* load 4 registers with two half rows
+           aX-dX: 128bit elements, or xmms
+           zmm0: b1 b0 a1 a0
+           zmm1: b3 b2 a3 a2
+           zmm2: d1 d0 c1 c0
+           zmm3: d3 d2 c3 c2  */
         {
           const unsigned int ld_idx[4] = { 0x0, 0x1, 0x4, 0x5};
           unsigned int l_mask_regs[2] = { 0 };
@@ -464,7 +469,11 @@ void libxsmm_generator_transform_norm_to_normt_128bit_avx512_microkernel( libxsm
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                          i_gp_reg_in, (long long)i_mateltwise_desc->ldi * l_datatype_size_in * 4 );
 
-        /* transpose 4x4 blocks */
+        /* transpose 4x4 blocks
+          zmm4 = zmm0,zmm2 -> d0 c0 b0 a0
+          zmm5 = zmm0,zmm2 -> d1 c1 b1 a1
+          zmm6 = zmm1,zmm3 -> d2 c2 b2 a2
+          zmm7 = zmm1,zmm3 -> d3 c3 b3 a3 */
         {
           unsigned char l_in_idx[16] = { 0x0, 0x0, 0x1, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
           unsigned char l_shuf_imm[16] = { 0x88, 0xdd, 0x88, 0xdd, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
