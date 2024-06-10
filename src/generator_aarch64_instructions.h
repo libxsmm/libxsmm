@@ -1010,5 +1010,22 @@ void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generat
                                               unsigned int            i_vec_reg_src_1,
                                               unsigned int            i_pred_reg_0,
                                               unsigned int            i_pred_reg_1 );
+/**
+  * mov streaming sve register
+  **/
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_code,
+                                          unsigned int            i_instr,
+                                          unsigned int            i_vec_reg,
+                                          unsigned int            i_gp_reg,
+                                          unsigned int            i_imm4,
+                                          unsigned int            i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_code,
+                                           unsigned int i_instr,
+                                           unsigned int i_tile,
+                                           unsigned int i_index_reg,
+                                           unsigned int i_vec_reg );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */
