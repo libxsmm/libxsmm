@@ -18,7 +18,7 @@
 
 #define MVL_BPI_F3 (256)
 
-LIBXSMM_API int libxsmm_cpuid_mvl_rv64()
+LIBXSMM_API int libxsmm_cpuid_mvl_rv64(void)
 {
   return MVL_BPI_F3;
 }
