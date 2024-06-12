@@ -407,27 +407,13 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
 
 #if defined(__cplusplus)
 
-/** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). TODO: LP-types shall rely on struct for proper overload in C++. */
+/** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). */
 template<typename T> struct libxsmm_datatype_enum         { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
 template<> struct libxsmm_datatype_enum<double>           { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
 template<> struct libxsmm_datatype_enum<float>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
-template<> struct libxsmm_datatype_enum<int>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
-template<> struct libxsmm_datatype_enum<unsigned int>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_U32; };
-template<> struct libxsmm_datatype_enum</*signed*/short>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
-template<> struct libxsmm_datatype_enum<libxsmm_bfloat16> { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct libxsmm_datatype_enum<Eigen::bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct libxsmm_datatype_enum<libxsmm_bfloat8>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF8; };
-template<> struct libxsmm_datatype_enum<signed char>      { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct libxsmm_datatype_enum<char>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 
-/** Determine default output type based on the input-type. TODO: LP-types shall rely on struct for proper overload in C++. */
+/** Determine default output type based on the input-type. */
 template<typename INP_TYPE> struct libxsmm_gemm_default_output  { typedef INP_TYPE type; };
-template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16> { typedef float type; };
-template<> struct libxsmm_gemm_default_output<Eigen::bfloat16>  { typedef float type; };
-template<> struct libxsmm_gemm_default_output<libxsmm_bfloat8>  { typedef float type; };
-template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
-template<> struct libxsmm_gemm_default_output<signed char>      { typedef int type; };
-template<> struct libxsmm_gemm_default_output<char>             { typedef int type; };
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
 template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(

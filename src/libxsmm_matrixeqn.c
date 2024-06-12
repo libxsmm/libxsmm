@@ -809,6 +809,7 @@ int libxsmm_meqn_is_unary_opcode_reduce_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MUL) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||

@@ -454,7 +454,12 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   gemm_param.c.primary = (void*)o_c;
   /* run external tileconfig */
   if (i_spmm_def->tc_config) {
-    cfg_tr.tilecfg( &l_tilestate );
+    /* this is to trigger the different ABI behavior in the kernel */
+    if ( i_spmm_def->n % 2 == 0 ) {
+      cfg_tr.tilecfg( &l_tilestate );
+    } else {
+      cfg_tr.tilecfg( NULL );
+    }
   }
   l_test_jit.gemm( &gemm_param );
 
@@ -473,7 +478,12 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run external tilerelease */
   if (i_spmm_def->tc_config) {
-    rls_tr.tilecfg( &l_tilestate );
+    /* this is to trigger the different ABI behavior in the kernel */
+    if ( i_spmm_def->n % 2 == 0 ) {
+      rls_tr.tilecfg( &l_tilestate );
+    } else {
+      rls_tr.tilecfg( NULL );
+    }
   }
 
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);

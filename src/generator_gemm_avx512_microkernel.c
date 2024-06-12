@@ -156,7 +156,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
   unsigned int tmp_hi_vreg = io_A_vreg + i_m_blocking;
   unsigned int l_vreg_mask_0f = 0;
   unsigned int l_vreg_mask_f0 = 1;
-  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0) {
+  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0 || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_MxK_ZPT) > 0) {
     l_subtract_zpt = 1;
     l_vec_zpt_a = 3 + i_m;
   }
@@ -205,7 +205,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
       } else {
         l_vec_scf_a = 2;
       }
-      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0) {
+      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0 || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_MxK_ZPT) > 0) {
         l_subtract_zpt = 1;
         l_vec_zpt_a = l_vec_scf_a + i_m_blocking;
       }
@@ -398,7 +398,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         l_vreg_ab_offset = l_m_blocking;
       }
     }
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0) {
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0 || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_MxK_ZPT) > 0) {
       l_vreg_ab_offset += l_m_blocking;
     }
   }
@@ -412,7 +412,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
 
   if (l_is_Ai4_Bi8_gemm > 0) {
     l_vreg_ab_offset = 3;
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0) {
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT) > 0 || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_MxK_ZPT) > 0) {
       l_vreg_ab_offset += l_m_blocking;
     }
   }

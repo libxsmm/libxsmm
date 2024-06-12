@@ -1387,6 +1387,13 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
   unsigned int const_data_nload_insns;
 } libxsmm_const_data_tracker;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
+  unsigned int tiles;
+  unsigned int sizes[4];
+  unsigned int blocking;
+  unsigned int block_size;
+} libxsmm_blocking_info_t;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -1471,9 +1478,18 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int norm_to_normT_mask_reg_1;
   unsigned int mask_m_fp32;
   unsigned int mask_m_bf16;
+  unsigned int mask_m_lp_cvt;
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
+  unsigned int luth_reg0;
+  unsigned int luth_reg1;
+  unsigned int lutl_reg0;
+  unsigned int lutl_reg1;
+  unsigned int sign_reg;
+  unsigned int blend_reg;
+  unsigned int tmp_reg0;
+  unsigned int tmp_reg1;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
@@ -1485,6 +1501,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _C_tile_mate_id[4];
   int _im_offset_prefix_sums[4];
   int _in_offset_prefix_sums[4];
+  libxsmm_blocking_info_t m_blocking_info[2];
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
@@ -1892,13 +1909,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   char vector_name;
 } libxsmm_transpose_kernel_config;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
-  unsigned int tiles;
-  unsigned int sizes[4];
-  unsigned int blocking;
-  unsigned int block_size;
-} libxsmm_blocking_info_t;
-
 typedef enum libxsmm_meltw_field_type {
   LIBXSMM_MELTW_FIELD_IN0              =  0,
   LIBXSMM_MELTW_FIELD_IN1              =  1,
@@ -2022,7 +2032,10 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR           = 29,
   LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR       = 30,
   LIBXSMM_GEMM_STACK_VAR_ZPT_PTR                = 31,
-  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32
+  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32,
+  LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33,
+  LIBXSMM_GEMM_STACK_VAR_SCF_BRGEMM_PTR         = 34,
+  LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35
 } libxsmm_gemm_stack_var;
 
 #if 0
