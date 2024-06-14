@@ -930,4 +930,20 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
                                              const unsigned int             i_element_count,
                                              const libxsmm_aarch64_sve_type i_sve_type );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_gp_reg_addr,
+                                                    const unsigned int      i_gp_reg_help,
+                                                    const unsigned int      i_m_blocking,
+                                                    const unsigned int      i_n_blocking,
+                                                    const unsigned int      i_ldc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_generated_code,
+                                                     const unsigned int      i_gp_reg_addr,
+                                                     const unsigned int      i_gp_reg_help,
+                                                     const unsigned int      i_m_blocking,
+                                                     const unsigned int      i_n_blocking,
+                                                     const unsigned int      i_ldc  );
+
 #endif /* GENERATOR_COMMON_AARCH64_H */

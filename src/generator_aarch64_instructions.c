@@ -936,11 +936,11 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg ) {
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
-  }
+  // if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+  //   fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
+  //   LIBXSMM_EXIT_ERROR(io_generated_code);
+  //   return;
+  // }
 
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF:
@@ -2191,11 +2191,11 @@ void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generat
                                               unsigned int            i_vec_reg_src_1,
                                               unsigned int            i_pred_reg_0,
                                               unsigned int            i_pred_reg_1 ){
-  if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sme_compute apple M4 is needed ( or SME )\n");
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
-  }
+  // if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
+  //   fprintf(stderr, "libxsmm_aarch64_instruction_sme_compute apple M4 is needed ( or SME )\n");
+  //   LIBXSMM_EXIT_ERROR(io_generated_code);
+  //   return;
+  // }
 
   switch ( i_matrix_instr ) {
     case LIBXSMM_AARCH64_INSTR_SME_FMOPA_SP:
@@ -2239,14 +2239,16 @@ void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_c
                                           unsigned int            i_gp_reg,
                                           unsigned int            i_imm4,
                                           unsigned int            i_pred_reg ){
-  if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sme_mov apple M4 is needed ( or SME )\n");
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
-  }
+  // if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
+  //   fprintf(stderr, "libxsmm_aarch64_instruction_sme_mov apple M4 is needed ( or SME )\n");
+  //   LIBXSMM_EXIT_ERROR(io_generated_code);
+  //   return;
+  // }
   switch ( i_instr ) {
     case LIBXSMM_AARCH64_INSTR_SME_LD1W_2:
     case LIBXSMM_AARCH64_INSTR_SME_ST1W_2:
+    case LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2:
+    case LIBXSMM_AARCH64_INSTR_SVE2_LD1W_4:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sme_compute: unexpected instruction number: %u\n", i_instr);
@@ -2272,6 +2274,10 @@ void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_c
   /* setting predicate register */
   code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
 
+  if( io_generated_code->arch == LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2 ){
+    code[code_head] &= 0xfffffffe;
+  }
+
   /* advance code head */
   io_generated_code->code_size += 4;
 
@@ -2285,11 +2291,11 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
                                            unsigned int i_tile,
                                            unsigned int i_index_reg,
                                            unsigned int i_vec_reg ){
-  if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sme_mova apple M4 is needed ( or SME )\n");
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
-  }
+  // if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
+  //   fprintf(stderr, "libxsmm_aarch64_instruction_sme_mova apple M4 is needed ( or SME )\n");
+  //   LIBXSMM_EXIT_ERROR(io_generated_code);
+  //   return;
+  // }
   switch ( i_instr ) {
     case LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR:
     case LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE:
@@ -2319,6 +2325,40 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
     code[code_head] |= (unsigned int)((0x3 & i_index_reg) << 13);
     code[code_head] |= (unsigned int)((0x7 & i_vec_reg)    << 7);
   }
+  /* advance code head */
+  io_generated_code->code_size += 4;
+
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sm( libxsmm_generated_code* io_generated_code,
+                                     unsigned int            i_instr ){
+  // if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
+  //   fprintf(stderr, "libxsmm_aarch64_instruction_sme_mova apple M4 is needed ( or SME )\n");
+  //   LIBXSMM_EXIT_ERROR(io_generated_code);
+  //   return;
+  // }
+  switch ( i_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SME_SMSTART:
+    case LIBXSMM_AARCH64_INSTR_SME_SMSTOP:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_sme_sm: unexpected instruction number: %u\n", i_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+  }
+  /* Ensure we have enough space */
+  if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
+  unsigned int code_head = io_generated_code->code_size/4;
+  unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+  /* fix bits */
+  code[code_head] = i_instr;
+
   /* advance code head */
   io_generated_code->code_size += 4;
 
