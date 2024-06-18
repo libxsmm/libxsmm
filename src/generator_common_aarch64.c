@@ -4260,7 +4260,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                         LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                         LIBXSMM_AARCH64_GP_REG_W12+l*2,
                                                         LIBXSMM_AARCH64_GP_REG_W12+l*2,
-                                                        i_ldc*4,
+                                                        4,
                                                         0);
         }
         for( int i = 4; i < 8; i++){
