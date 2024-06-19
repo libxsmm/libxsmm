@@ -124,7 +124,7 @@ LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void)
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_AARCH64_V81;
-  return;
+  return result;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
   libxsmm_cpuid_info cpuid_info;
   size_t model_size = 0;
