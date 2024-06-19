@@ -1953,7 +1953,7 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda ) * 4 );
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
-                                             ((long long)i_xgemm_desc->ldb ) * 4 );
+                                             ((long long)i_xgemm_desc->n ) * 4 );
   /* set p register */
   if( i_m_blocking == 32  ){
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
