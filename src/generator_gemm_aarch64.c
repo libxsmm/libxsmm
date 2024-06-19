@@ -2112,7 +2112,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
 
     /* open N loop */
     libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
-                                           l_gp_reg_mapping.gp_reg_nloop, (l_n_2 == 0) ? (l_perfect_blocking * l_perfect_n_count) : 0);
+                                           l_gp_reg_mapping.gp_reg_nloop, (l_n_2 == 0) ? (l_perfect_blocking * l_perfect_n_count) : l_rest_n);
 
      /* apply m_blocking */
     for( int l_m_2 = 0; l_m_2 < 2; l_m_2++ ) {
@@ -2122,7 +2122,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
       unsigned int l_m_blocking = (l_m_2 == 0) ? l_perfect_blocking : l_rest_m;
       /* open M loop */
       libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
-                                             l_gp_reg_mapping.gp_reg_mloop, (l_m_2 == 0) ? (l_perfect_blocking * l_perfect_m_count) : 0 );
+                                             l_gp_reg_mapping.gp_reg_mloop, (l_m_2 == 0) ? (l_perfect_blocking * l_perfect_m_count) : l_rest_m );
 
       /* save pointer of x2 */
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,

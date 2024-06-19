@@ -4165,7 +4165,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                                     LIBXSMM_AARCH64_SVE_REG_P2,
                                                     -1,
                                                     11 );
-    } else if( i_m_blocking > 16 ) {
+    } else if( i_m_blocking >= 16 ) {
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                     LIBXSMM_AARCH64_SVE_REG_P0,
                                                     -1,
@@ -4335,7 +4335,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                     LIBXSMM_AARCH64_SVE_REG_P2,
                                                     -1,
                                                     11 );
-    } else if( i_m_blocking > 16 ) {
+    } else if( i_m_blocking >= 16 ) {
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                     LIBXSMM_AARCH64_SVE_REG_P0,
                                                     -1,
