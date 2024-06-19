@@ -4358,7 +4358,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
       /* mov to za register */
       for( int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
                                               l_en*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
                                               (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
@@ -4373,7 +4373,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
       if( i_m_blocking > 16 ){
         for( int i = 0; i < 4; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
                                                 1+l_en*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
                                                 (i<2) ? i+2 : 4+i );
