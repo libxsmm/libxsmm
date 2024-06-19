@@ -2021,14 +2021,14 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
   /* reset B pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
-                                                 (long long)i_xgemm_desc->k * i_n_blocking * 4 );
+                                                 (long long)i_xgemm_desc->k * i_xgemm_desc->n * 4 );
 
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        io_generated_code,
                                                 const libxsmm_gemm_descriptor* i_xgemm_desc ){
-  printf("using SME\n");
+  // printf("using SME\n");
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -2220,7 +2220,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
     /* reset C pointer */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
-                                                   ((long long)l_n_blocking * l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out) -
+                                                   ((long long)l_n_blocking * l_xgemm_desc_opa->ldc * 4) -
                                                    ((long long)l_xgemm_desc_opa->m * 4) );
 
     /* reset A pointer */
@@ -2231,7 +2231,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
     /* advance B pointer */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                   l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b,
-                                                  (long long)l_n_blocking * l_xgemm_desc_opa->ldb * 4 );
+                                                  (long long)l_n_blocking * 4 );
 
     /* close N loop */
     libxsmm_generator_loop_footer_aarch64( io_generated_code, &l_loop_label_tracker,
