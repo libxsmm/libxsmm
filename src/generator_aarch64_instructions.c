@@ -2335,7 +2335,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sm( libxsmm_generated_code* io_generated_code,
                                      unsigned int            i_instr ){
   // if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
-  //   fprintf(stderr, "libxsmm_aarch64_instruction_sme_mova apple M4 is needed ( or SME )\n");
+  //   fprintf(stderr, "libxsmm_aarch64_instruction_sm apple M4 is needed ( or SME )\n");
   //   LIBXSMM_EXIT_ERROR(io_generated_code);
   //   return;
   // }

@@ -4128,7 +4128,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
       for( int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
-                                              0,
+                                              l*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+l*2,
                                               LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4142,7 +4142,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
       for( int i = 4; i < 8; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
-                                              0,
+                                              1+l*2,
                                               LIBXSMM_AARCH64_GP_REG_W13+l*2,
                                               LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4195,7 +4195,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
       for( int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
-                                              0,
+                                              l_en*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
                                               LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4210,7 +4210,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
         for( int i = 4; i < 8; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
-                                                0,
+                                                1+l_en*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
                                                 LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4252,7 +4252,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
         for( int i = 0; i < 4; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
-                                                0,
+                                                l*2,
                                                 LIBXSMM_AARCH64_GP_REG_W12+l*2,
                                                 LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4266,7 +4266,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
         for( int i = 4; i < 8; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
-                                                0,
+                                                1+l*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+l*2,
                                                 LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4294,7 +4294,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                       LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      42,
+                                                      i_ldc*4,
                                                       0);
       }
     }
@@ -4307,7 +4307,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
       for( int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
-                                              0,
+                                              l_en*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
                                               LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
@@ -4322,7 +4322,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
         for( int i = 4; i < 8; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
-                                                0,
+                                                1+l_en*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
                                                 LIBXSMM_AARCH64_SVE_REG_Z0+i );
 
