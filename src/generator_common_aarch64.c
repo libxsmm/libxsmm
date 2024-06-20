@@ -4437,7 +4437,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                 0,
                                                 i );
   }
-  unsigned int l_k_blocksize = 16;
+  unsigned int l_k_blocksize = (i_k_rest == 0) ? 16 : i_k_rest;
 
   /* set p register for k blocks*/
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
