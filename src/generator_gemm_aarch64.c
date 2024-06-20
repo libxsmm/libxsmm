@@ -2116,23 +2116,41 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_reduce_count ,
                                                     0);
-      unsigned int l_trans_loop = ( l_xgemm_desc_opa->k % 16 == 0) ? l_xgemm_desc_opa->k/16 : l_xgemm_desc_opa->k/16+1;
+
+      unsigned int l_trans_loop = l_xgemm_desc_opa->k/16;
+      unsigned int l_trans_rest = 0;
+      if( l_xgemm_desc_opa->k % 16 != 0 ){
+        l_trans_rest = l_xgemm_desc_opa->k % 16;;
+      }
+
       for( int i = 0 ; i < l_trans_loop ; i++){
         libxsmm_generator_transpose_sme( io_generated_code,
                                           l_gp_reg_mapping.gp_reg_b,
                                           l_xgemm_desc_opa->ldb,
-                                          (i == l_xgemm_desc_opa->k/16) ? l_xgemm_desc_opa->k % 16 : 0,
+                                          16,
                                           l_n_blocking,
                                           l_gp_reg_mapping.gp_reg_help_0 );
         /* advance pointer B */
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                         l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b ,
-                                                        16*4); // TODO: adjust if k % 16 != 0
+                                                        16*4);
+      }
+      if(l_trans_rest > 0 ){
+        libxsmm_generator_transpose_sme( io_generated_code,
+                                          l_gp_reg_mapping.gp_reg_b,
+                                          l_xgemm_desc_opa->ldb,
+                                          l_trans_rest,
+                                          l_n_blocking,
+                                          l_gp_reg_mapping.gp_reg_help_0 );
+        /* advance pointer B */
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                        l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b ,
+                                                        l_trans_rest*4);
       }
       /* reset b pointer */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                         l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b ,
-                                                        16*4 * l_trans_loop );
+                                                        l_xgemm_desc_opa->k * 4 );
      /* apply m_blocking */
     for( int l_m_2 = 0; l_m_2 < 2; l_m_2++ ) {
       if( (l_rest_m == 0 && l_m_2 == 1) || (l_perfect_m_count == 0 && l_m_2 == 0)){
