@@ -2121,6 +2121,14 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_reduce_count ,
                                                     0);
+      /* 128 bit alignment */
+      libxsmm_aarch64_instruction_shift( io_generated_code,
+                                          LIBXSMM_AARCH64_INSTR_GP_LSL );
+      libxsmm_aarch64_instruction_shift( io_generated_code,
+                                              LIBXSMM_AARCH64_INSTR_GP_LSR );
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                    l_gp_reg_mapping.gp_reg_reduce_count, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_XSP,
+                                                    0);
 
       unsigned int l_trans_loop = l_xgemm_desc_opa->k/16;
       unsigned int l_trans_rest = 0;
