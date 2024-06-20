@@ -4182,10 +4182,10 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
     }
 
     unsigned int l_n_block_count = (i_n_blocking <= 16) ? 1 : 2 ;
-    // unsigned int l_m_block_count = i_m_blocking / 16;
+    unsigned int l_n_count = i_n_blocking;
     for( unsigned int l_en = 0; l_en < l_n_block_count ; l_en++){
       unsigned int l_register_offset = 0;
-      for( unsigned int l_em = 0; l_em < 16; l_em++){
+      for( unsigned int l_em = 0; l_em < ((l_n_count > 16 ) ? 16 : l_n_count); l_em++){
         if( l_em < 8){
           l_register_offset = 0;
         } else {
@@ -4247,6 +4247,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                                         0);
         }
       }
+      l_n_count -= 16;
     }
   }
 }
@@ -4353,7 +4354,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
     }
 
     unsigned int l_n_block_count = (i_n_blocking <= 16) ? 1 : 2 ;
-    // unsigned int l_m_block_count = i_m_blocking / 16;
+    unsigned int l_n_count = i_n_blocking;
     for( unsigned int l_en = 0; l_en < l_n_block_count ; l_en++){
       unsigned int l_register_offset = 0;
       /* mov to za register */
@@ -4387,7 +4388,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                         0);
         }
       }
-      for( unsigned int l_em = 0; l_em < 16; l_em++){
+      for( unsigned int l_em = 0; l_em < ((l_n_count > 16 ) ? 16 : l_n_count); l_em++){
         if( l_em < 8){
           l_register_offset = 0;
         } else {
@@ -4417,6 +4418,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                         i_ldc*4,
                                                         0);
       }
+      l_n_count -= 16;
     }
   }
 }
