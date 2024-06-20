@@ -1953,7 +1953,7 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda ) * 4 );
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
-                                             ((long long)i_xgemm_desc->n ) * 4 );
+                                             ((long long)i_n_blocking  * 4) );
   /* set p register */
   if( i_m_blocking == 32  ){
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
@@ -2021,7 +2021,7 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
   /* reset B pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_reduce_count, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_reduce_count,
-                                                 (long long)i_xgemm_desc->k * i_xgemm_desc->n * 4 );
+                                                 (long long)i_xgemm_desc->k * i_n_blocking * 4 );
 
 }
 
