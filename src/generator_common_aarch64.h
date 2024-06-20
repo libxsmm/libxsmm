@@ -944,6 +944,15 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                      const unsigned int      i_gp_reg_help,
                                                      const unsigned int      i_m_blocking,
                                                      const unsigned int      i_n_blocking,
-                                                     const unsigned int      i_ldc  );
+                                                     const unsigned int      i_ldc,
+                                                     const unsigned int      i_hor  );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code,
+                                      const unsigned int       i_gp_reg_addr,
+                                      unsigned int             i_k,
+                                      unsigned int             i_k_rest,
+                                      unsigned int             i_n_blocking,
+                                      unsigned int             i_help_register );
 
 #endif /* GENERATOR_COMMON_AARCH64_H */

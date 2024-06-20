@@ -2299,6 +2299,7 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
   switch ( i_instr ) {
     case LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR:
     case LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE:
+    case LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sme_compute: unexpected instruction number: %u\n", i_instr);
@@ -2316,7 +2317,7 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
   /* fix bits */
   code[code_head] = i_instr;
 
-  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR ){
+  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR || i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR ){
     code[code_head] |= (unsigned int)((0x3  & i_tile)     << 5);
     code[code_head] |= (unsigned int)((0x3 & i_index_reg) << 13);
     code[code_head] |= (unsigned int)((0x7 & i_vec_reg)    << 2);
