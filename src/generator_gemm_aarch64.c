@@ -2108,6 +2108,11 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
     libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
                                            l_gp_reg_mapping.gp_reg_nloop, (l_n_2 == 0) ? (l_perfect_blocking * l_perfect_n_count) : l_rest_n);
 
+      /* save address of stackpointer */
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                    LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_1,
+                                                    0);
+
       /* allocate memory on stack for transposed B */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_XSP,
@@ -2147,6 +2152,10 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
                                                         l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b ,
                                                         l_trans_rest*4);
       }
+      /* reset address of stackpointer */
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                    l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_XSP,
+                                                    0);
       /* reset b pointer */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                         l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b ,
