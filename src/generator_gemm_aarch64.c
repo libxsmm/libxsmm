@@ -2111,7 +2111,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
       /* allocate memory on stack for transposed B */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_XSP,
-                                                    32 * l_xgemm_desc_opa->ldb * 4 );
+                                                    l_n_blocking * l_xgemm_desc_opa->ldb * 4 );
       /* store address of stack pointer to transposed B register ( x3 )*/
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_reduce_count ,

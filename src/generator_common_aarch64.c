@@ -4568,20 +4568,21 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                   LIBXSMM_AARCH64_GP_REG_XSP,
                                                   (i_n_blocking > 16) ? 16 * 4 : i_n_blocking * 4,
                                                   0);
-    if( i_n_blocking > 16 )
-    libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
-                                          LIBXSMM_AARCH64_GP_REG_XSP,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                          0,
-                                          l_str+16,
-                                          LIBXSMM_AARCH64_SVE_REG_P1 );
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                  LIBXSMM_AARCH64_GP_REG_XSP,
-                                                  LIBXSMM_AARCH64_GP_REG_XSP,
-                                                  (i_n_blocking - 16 )* 4,
-                                                  0);
+    if( i_n_blocking > 16 ){
+      libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                            LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
+                                            LIBXSMM_AARCH64_GP_REG_XSP,
+                                            LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                            0,
+                                            l_str+16,
+                                            LIBXSMM_AARCH64_SVE_REG_P1 );
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                    LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                    LIBXSMM_AARCH64_GP_REG_XSP,
+                                                    LIBXSMM_AARCH64_GP_REG_XSP,
+                                                    (i_n_blocking - 16 )* 4,
+                                                    0);
+    }
   }
 
 }
