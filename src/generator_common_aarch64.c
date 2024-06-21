@@ -4117,12 +4117,12 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                             0,
                                             LIBXSMM_AARCH64_SVE_REG_P8);
         /* adjust pointer */
-        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                      (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      i_ldc*4,
-                                                      0);
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
+                                                       LIBXSMM_AARCH64_GP_REG_X11,
+                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
+                                                       i_ldc * 4 );
       }
       /* mov to za register */
       for( int i = 0; i < 4; i++){
@@ -4317,12 +4317,12 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                             0,
                                             LIBXSMM_AARCH64_SVE_REG_P8);
         /* adjust pointer */
-        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                      (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      i_ldc*4,
-                                                      0);
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
+                                                       LIBXSMM_AARCH64_GP_REG_X11,
+                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
+                                                       i_ldc * 4 );
       }
     }
   } else {

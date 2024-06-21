@@ -2188,23 +2188,14 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
                                                            0 );
 
       /* TODO: set x9 register using leftshift for bigger */
-      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                    LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                    LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     l_gp_reg_mapping.gp_reg_c,
+                                                    LIBXSMM_AARCH64_GP_REG_X11,
                                                     l_gp_reg_mapping.gp_reg_help_0,
-                                                    0,
-                                                    0);
+                                                    l_xgemm_desc_opa->ldc * 16*4  );
 
-      unsigned int l_shift = l_xgemm_desc_opa->ldc * 16*4;
-      for( int l_en = 0 ; l_en <= (l_xgemm_desc_opa->ldc * 16*4) / 2048; l_en++ ){
-        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                      l_gp_reg_mapping.gp_reg_help_0,
-                                                      l_gp_reg_mapping.gp_reg_help_0,
-                                                      (l_shift > 2048) ? 2048 : l_shift,
-                                                      0);
-        l_shift -= 2048;
-      }
+
       /* load block of C */
       libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
                                                      l_gp_reg_mapping.gp_reg_c,
@@ -2225,22 +2216,12 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
                                                            l_gp_reg_mapping.gp_reg_c,
                                                            0,
                                                            0 );
-      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                    LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                    LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     l_gp_reg_mapping.gp_reg_c,
+                                                    LIBXSMM_AARCH64_GP_REG_X11,
                                                     l_gp_reg_mapping.gp_reg_help_0,
-                                                    0,
-                                                    0);
-      l_shift = l_xgemm_desc_opa->ldc * 16*4;
-      for( int l_en = 0 ; l_en <= (l_xgemm_desc_opa->ldc * 16*4) / 2048; l_en++ ){
-        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                      l_gp_reg_mapping.gp_reg_help_0,
-                                                      l_gp_reg_mapping.gp_reg_help_0,
-                                                      (l_shift > 2048) ? 2048 : l_shift,
-                                                      0);
-        l_shift -= 2048;
-      }
+                                                    l_xgemm_desc_opa->ldc * 16*4  );
 
       /* store block of C */
       libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
