@@ -4456,12 +4456,12 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                           0,                          // offset mul vl
                                           l_i,     // vector register
                                           LIBXSMM_AARCH64_SVE_REG_P0 );
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                  i_gp_reg_addr,
-                                                  i_gp_reg_addr,
-                                                  i_k*4,
-                                                  0);
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   i_gp_reg_addr,
+                                                   LIBXSMM_AARCH64_GP_REG_X11,
+                                                   i_gp_reg_addr,
+                                                   i_k * 4 );
   }
   /* mov to za register */
   for( int i = 0; i < 4; i++){
