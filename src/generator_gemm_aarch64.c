@@ -2187,7 +2187,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
                                                            0,
                                                            0 );
 
-      /* TODO: set x9 register using leftshift for bigger */
+      /* set x9 register */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                     LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     l_gp_reg_mapping.gp_reg_c,
