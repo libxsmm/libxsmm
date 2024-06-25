@@ -1949,11 +1949,11 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
   /* set micro kernel */
   l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_sme;
 
-  /* apply k loop */
+  /* advance A and B */
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda ) * 4 );
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
-                                             ((long long)i_n_blocking  * 4) );
+                                             (i_n_blocking > 16 ) ? ((long long)32  * 4) : ((long long)16  * 4) );
   /* set p register */
   if( i_m_blocking == 32  ){
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
@@ -2021,20 +2021,16 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
   /* reset B pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_reduce_count, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_reduce_count,
-                                                 (long long)i_xgemm_desc->k * i_n_blocking * 4 );
+                                                 (i_n_blocking > 16 ) ? (long long)i_xgemm_desc->k * 32 * 4 : (long long)i_xgemm_desc->k * 16 * 4 );
 
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        io_generated_code,
                                                 const libxsmm_gemm_descriptor* i_xgemm_desc ){
-  // printf("using SME\n");
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
-  // unsigned int l_n_n[2]     = {0,0};       /* blocking sizes for blocks */
-  // unsigned int l_n_N[2]     = {0,0};       /* size of blocks */
-  // unsigned int l_ldc_saved  = 0;
   unsigned int a_vnni_factor = 1;
   unsigned int l_perfect_blocking = 32;
   unsigned int l_perfect_m_count = i_xgemm_desc->m / l_perfect_blocking;
@@ -2116,7 +2112,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
       /* allocate memory on stack for transposed B */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_XSP,
-                                                    l_n_blocking * l_xgemm_desc_opa->ldb * 4 );
+                                                    (l_n_blocking > 16 )  ? 32 * l_xgemm_desc_opa->k * 4 : 16 * l_xgemm_desc_opa->k * 4 );
       /* store address of stack pointer to transposed B register ( x3 )*/
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     LIBXSMM_AARCH64_GP_REG_XSP, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_reduce_count ,
