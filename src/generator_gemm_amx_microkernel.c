@@ -1904,7 +1904,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     unsigned int l_unroll_kernel_limit = 256;
     unsigned int l_brgemm_unroll_factor = (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ||
                                            ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ||
-                                           ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0)) ? i_xgemm_desc->c3 : 1;
+                                           ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0)) ? LIBXSMM_MAX(1,i_xgemm_desc->c3) : 1;
     unsigned int l_k_trips = (i_xgemm_desc->k + l_k_blocking - 1)/l_k_blocking;
     if (((l_k_trips * l_brgemm_unroll_factor) > l_unroll_kernel_limit) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) == 0)) {
       unsigned int l_k_gp_reg = i_gp_reg_mapping->gp_reg_help_1;

@@ -6,6 +6,8 @@ bf8f16f32f16gemm_nn_eqld
 bf8f16f32f16gemm_nn_gtld
 bf8f16f32f32gemm_nn_eqld
 bf8f16f32f32gemm_nn_gtld
+mxfp4f32gemm_nn_eqld
+mxfp4f32gemm_nn_gtld
 mxfp4bf16f32gemm_nn_eqld
 mxfp4bf16f32gemm_nn_gtld
 mxfp4bf16gemm_nn_eqld
