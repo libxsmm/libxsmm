@@ -41,7 +41,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   if ( l_is_Amxfp4_Bbf16_gemm > 0 ) {
     if (io_generated_code->arch >= LIBXSMM_X86_AVX2 && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) {
-      io_generated_code->arch = LIBXSMM_X86_AVX2;
+      if ((io_generated_code->arch >= LIBXSMM_X86_AVX2_SRF) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX)) {
+        io_generated_code->arch = LIBXSMM_X86_AVX2_SRF;
+      } else {
+        io_generated_code->arch = LIBXSMM_X86_AVX2;
+      }
     }
   }
 
