@@ -114,8 +114,8 @@ void libxsmm_generator_gemm_ppc64le_m_loop_vsx( libxsmm_generated_code        * 
  * @param i_xgemm_desc description of the matrix-operation.
  **/
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * io_generated_code,
-                                               libxsmm_gemm_descriptor const * i_xgemm_desc );
+void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * io_generated_code,
+                                                libxsmm_gemm_descriptor const * i_xgemm_desc );
 
 /**
  * Generates a matrix kernel for PPC64LE.
@@ -123,7 +123,7 @@ int libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * i
  * @param i_xgemm_desc description of the matrix-operation.
  **/
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        * io_generated_code,
-                                           libxsmm_gemm_descriptor const * i_xgemm_desc );
+void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        * io_generated_code,
+                                            libxsmm_gemm_descriptor const * i_xgemm_desc );
 
 #endif

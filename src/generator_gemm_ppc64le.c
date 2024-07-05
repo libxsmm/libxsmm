@@ -378,7 +378,7 @@ void libxsmm_generator_gemm_ppc64le_m_loop_vsx( libxsmm_generated_code        * 
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * io_generated_code,
+void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * io_generated_code,
                                                libxsmm_gemm_descriptor const * i_xgemm_desc ) {
   /* derive if FP32 or FP64 and respective vector length */
   unsigned int l_bytes_per_val = 0;
@@ -392,7 +392,8 @@ int libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * i
     l_vector_length = 2;
   }
   else {
-    return 1;
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
   }
 
   /* loop labels */
@@ -532,12 +533,25 @@ int libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * i
                                             l_gprMax,
                                             l_fprMax,
                                             l_vsrMax );
-  return 0;
+  return;
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        * io_generated_code,
+void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code * io_generated_code,
                                            libxsmm_gemm_descriptor const * i_xgemm_desc ) {
-  return libxsmm_generator_gemm_ppc64le_kernel_vsx( io_generated_code,
-                                                    i_xgemm_desc );
+  void (*l_generator_kernel)( libxsmm_generated_code * io_generated_code,
+                             libxsmm_gemm_descriptor const * i_xgemm_desc);
+
+  if (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) {
+    l_generator_kernel = libxsmm_generator_gemm_ppc64le_kernel_vsx;
+  } else if (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  l_generator_kernel( io_generated_code, i_xgemm_desc );
+  return;
 }
