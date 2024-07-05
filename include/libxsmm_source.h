@@ -120,6 +120,7 @@
 #include "../src/libxsmm_barrier.c"
 #include "../src/libxsmm_cpuid_arm.c"
 #include "../src/libxsmm_cpuid_rv64.c"
+#include "../src/libxsmm_cpuid_ppc.c"
 #include "../src/libxsmm_cpuid_x86.c"
 #include "../src/libxsmm_ext.c"
 #include "../src/libxsmm_ext_gemm.c"
