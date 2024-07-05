@@ -1,16 +1,18 @@
 /******************************************************************************
-* Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
+* Copyright (c) 2021, Friedrich Schiller University Jena                      *
+* Copyright (c) 2024, IBM Corporation                                         *
+* - All rights reserved.                                                      *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer (Univ. Jena)
+/* Alexander Breuer (Univ. Jena), Will Trojak (IBM Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_GEMM_POWER_H
-#define GENERATOR_GEMM_POWER_H
+#ifndef GENERATOR_GEMM_PPC64LE_H
+#define GENERATOR_GEMM_PPC64LE_H
 
 #include "generator_common.h"
 #include "../include/libxsmm_typedefs.h"
@@ -33,17 +35,17 @@
  * @return number of VSR which were written.
  **/
 LIBXSMM_API_INTERN
-unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_code * io_generated_code,
-                                                           unsigned int             i_m_blocking_full,
-                                                           unsigned int             i_n_blocking,
-                                                           unsigned int             i_remainder_size,
-                                                           unsigned int             i_stride,
-                                                           unsigned char            i_load_store,
-                                                           unsigned char            i_precision,
-                                                           unsigned char            i_endianness,
-                                                           unsigned char            i_gpr_ptr,
-                                                           unsigned char          * i_gpr_scratch,
-                                                           unsigned char            i_vsr_first );
+unsigned char libxsmm_generator_gemm_ppc64le_load_store_vsx( libxsmm_generated_code * io_generated_code,
+                                                             unsigned int             i_m_blocking_full,
+                                                             unsigned int             i_n_blocking,
+                                                             unsigned int             i_remainder_size,
+                                                             unsigned int             i_stride,
+                                                             unsigned char            i_load_store,
+                                                             unsigned char            i_precision,
+                                                             unsigned char            i_endianness,
+                                                             unsigned char            i_gpr_ptr,
+                                                             unsigned char          * i_gpr_scratch,
+                                                             unsigned char            i_vsr_first );
 
 /**
  * Generates a microkernel using VSX.
@@ -73,14 +75,14 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
  * @param i_k_blocking used blokcing for K.
  */
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code        * io_generated_code,
-                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
-                                                   unsigned char                   i_gpr_a,
-                                                   unsigned char                   i_gpr_b,
-                                                   unsigned char                   i_gpr_c,
-                                                   unsigned int                    i_m_blocking,
-                                                   unsigned int                    i_n_blocking,
-                                                   unsigned int                    i_k_blocking );
+void libxsmm_generator_gemm_ppc64le_microkernel_vsx( libxsmm_generated_code        * io_generated_code,
+                                                     libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                     unsigned char                   i_gpr_a,
+                                                     unsigned char                   i_gpr_b,
+                                                     unsigned char                   i_gpr_c,
+                                                     unsigned int                    i_m_blocking,
+                                                     unsigned int                    i_n_blocking,
+                                                     unsigned int                    i_k_blocking );
 
 /**
  * Generates a kernel which loops over M-blocks.
@@ -96,32 +98,32 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
  * @param i_n used size of the blocks w.r.t. N.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_power_m_loop_vsx( libxsmm_generated_code        * io_generated_code,
-                                              libxsmm_gemm_descriptor const * i_xgemm_desc,
-                                              unsigned int                    i_bytes_per_val,
-                                              unsigned char                   i_gpr_a,
-                                              unsigned char                   i_gpr_b,
-                                              unsigned char                   i_gpr_c,
-                                              unsigned char                   i_gpr_scratch,
-                                              unsigned int                    i_max_block_m,
-                                              unsigned int                    i_n );
+void libxsmm_generator_gemm_ppc64le_m_loop_vsx( libxsmm_generated_code        * io_generated_code,
+                                                libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                unsigned int                    i_bytes_per_val,
+                                                unsigned char                   i_gpr_a,
+                                                unsigned char                   i_gpr_b,
+                                                unsigned char                   i_gpr_c,
+                                                unsigned char                   i_gpr_scratch,
+                                                unsigned int                    i_max_block_m,
+                                                unsigned int                    i_n );
 
 /**
- * Generates a matrix kernel for POWER-VSX.
+ * Generates a matrix kernel for PPC64LE-VSX.
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param i_xgemm_desc description of the matrix-operation.
  **/
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_power_kernel_vsx( libxsmm_generated_code        * io_generated_code,
-                                             libxsmm_gemm_descriptor const * i_xgemm_desc );
+int libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * io_generated_code,
+                                               libxsmm_gemm_descriptor const * i_xgemm_desc );
 
 /**
- * Generates a matrix kernel for POWER.
+ * Generates a matrix kernel for PPC64LE.
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param i_xgemm_desc description of the matrix-operation.
  **/
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_power_kernel( libxsmm_generated_code        * io_generated_code,
-                                         libxsmm_gemm_descriptor const * i_xgemm_desc );
+int libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        * io_generated_code,
+                                           libxsmm_gemm_descriptor const * i_xgemm_desc );
 
 #endif
