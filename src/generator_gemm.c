@@ -14,6 +14,7 @@
 #include "generator_gemm_amx.h"
 #include "generator_gemm_aarch64.h"
 #include "generator_gemm_noarch.h"
+#include "generator_gemm_ppc64le.h"
 
 
 LIBXSMM_API
@@ -813,6 +814,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_SVE512) || (io_generated_code->arch == LIBXSMM_AARCH64_A64FX) ) {
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
+  } else if ( (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) ||
+            (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) ) {
+    libxsmm_generator_gemm_ppc64le_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -978,4 +982,3 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   /* free code memory */
   free( l_generated_code.generated_code );
 }
-
