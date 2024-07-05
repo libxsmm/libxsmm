@@ -61,11 +61,22 @@
     (defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64))
 # define LIBXSMM_PLATFORM_AARCH64
 #endif
+#if !defined(LIBXSMM_PLATFORM_PPC64LE) && ( \
+    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) || \
+    (defined(_LITTLE_ENDIAN) && 0 != (_LITTLE_ENDIAN))) && ( \
+    (defined(__PPC64__) && 0 != (__PPC64__)) || \
+    (defined(_ARCH_PPC64) && 0 != (_ARCH_PPC64)) || \
+    (defined(__powerpc64__) && 0 != (__powerpc64__)))
+# define LIBXSMM_PLATFORM_PPC64LE
+#endif
+
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64)
+# if defined(LIBXSMM_PLATFORM_X86) || \
+     defined(LIBXSMM_PLATFORM_AARCH64) || \
+     defined(LIBXSMM_PLATFORM_PPC64LE)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error LIBXSMM requires X86_64, AArch64, or compatible CPUs!
+#   error LIBXSMM requires X86_64, AArch64, ppcle64, or compatible CPUs!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
@@ -76,7 +87,9 @@
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
       (defined(_WIN64) || defined(_M_ARM64)) || \
-      (defined(__powerpc64))
+      (defined(__PPC64__) && 0 != (__PPC64__)) || \
+      (defined(_ARCH_PPC64) && 0 != (_ARCH_PPC64)) || \
+      (defined(__powerpc64__) && 0 != (__powerpc64__))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)

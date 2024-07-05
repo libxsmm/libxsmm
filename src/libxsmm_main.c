@@ -1721,12 +1721,32 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
     }
 #endif
+#if defined(LIBXSMM_PLATFORM_PPC64LE) || defined(LIBXSMM_PLATFORM_FORCE)
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_PPC64LE_VSX + jit;
+      }
+      else
+# endif
+      if (arch == libxsmm_stristr(arch, "power8") || arch == libxsmm_stristr(arch, "power9"))
+      {
+        target_archid = LIBXSMM_PPC64LE_VSX;
+      }
+      else if (arch == libxsmm_stristr(arch, "power10")) {
+        target_archid = LIBXSMM_PPC64LE_MMA;
+      }
+    }
+#endif
+
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
       if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
         target_archid = LIBXSMM_X86_GENERIC;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
         target_archid = LIBXSMM_AARCH64_V81;
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+        target_archid = LIBXSMM_PPC64LE_VSX;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
