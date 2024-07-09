@@ -1554,7 +1554,10 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_SVE512:
     case LIBXSMM_AARCH64_A64FX:
     case LIBXSMM_RV64_MVL256:
-    case LIBXSMM_RV64_MVL128: {
+    case LIBXSMM_RV64_MVL128:
+    case LIBXSMM_PPC64LE_FPF:
+    case LIBXSMM_PPC64LE_VSX:
+    case LIBXSMM_PPC64LE_MMA: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1604,6 +1607,7 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+
   if (NULL != arch && '\0' != *arch
     && arch != libxsmm_stristr(arch, "default")
     && arch != libxsmm_stristr(arch, "cpuid")
