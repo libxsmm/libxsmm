@@ -15,7 +15,6 @@
 #define GENERATOR_PPC64LE_INSTRUCTIONS_H
 
 #include "generator_common.h"
-#include "../include/libxsmm_typedefs.h"
 
 
 /* general purpose registers */
@@ -54,8 +53,47 @@
 
 
 /* special registers */
-#define LIBXSMM_PPC64LE_GPR_SP 1
-#define LIBXSMM_PPC64LE_SPR_CTR 288 /* reversed 5-bit parts: 01001 00000 */
+#define LIBXSMM_PPC64LE_GPR_SP 1 /* Stack pointer (GPR R1) */
+
+/* 5-bit chunks reversed for SPR */
+#define LIBXSMM_PPC64LE_SPR_XER 0x00000020 /* REG 1 64-bit */
+#define LIBXSMM_PPC64LE_SPR_DSCR 0x00000060 /* REG 3 64-bit */
+#define LIBXSMM_PPC64LE_SPR_LR 0x00000100 /* REG 8 64-bit */
+#define LIBXSMM_PPC64LE_SPR_CTR 0x00000120 /* REG 9 64-bit */
+#define LIBXSMM_PPC64LE_SPR_AMR 0x000001a0 /* REG 13 64-bit */
+#define LIBXSMM_PPC64LE_SPR_CTRL 0x00000104 /* REG 136 32-bit */
+#define LIBXSMM_PPC64LE_SPR_VRSAVE 0x00000008 /* REG 256 32-bit */
+#define LIBXSMM_PPC64LE_SPR_SPRG3 0x00000068 /* REG 259 64-bit */
+#define LIBXSMM_PPC64LE_SPR_TB 0x00000188 /* REG 268 64-bit */
+#define LIBXSMM_PPC64LE_SPR_TBU 0x000001a8 /* REG 269 32-bit */
+#define LIBXSMM_PPC64LE_SPR_HDEXCR 0x000000ee /* REG 455 32-bit */
+#define LIBXSMM_PPC64LE_SPR_SIER2 0x00000017 /* REG 736 64-bit */
+#define LIBXSMM_PPC64LE_SPR_SIER3 0x00000037 /* REG 737 64-bit */
+#define LIBXSMM_PPC64LE_SPR_MMCR3 0x00000057 /* REG 738 64-bit */
+#define LIBXSMM_PPC64LE_SPR_SIER 0x00000018 /* REG 768 64-bit */
+#define LIBXSMM_PPC64LE_SPR_MMCR2 0x00000038 /* REG 769 64-bit */
+#define LIBXSMM_PPC64LE_SPR_MMCRA 0x00000058 /* REG 770 64-bit */
+#define LIBXSMM_PPC64LE_SPR_PMC1 0x00000078 /* REG 771 32-bit */
+#define LIBXSMM_PPC64LE_SPR_PMC2 0x00000098 /* REG 772 32-bit */
+#define LIBXSMM_PPC64LE_SPR_PMC3 0x000000b8 /* REG 773 32-bit */
+#define LIBXSMM_PPC64LE_SPR_PMC4 0x000000d8 /* REG 774 32-bit */
+#define LIBXSMM_PPC64LE_SPR_PMC5 0x000000f8 /* REG 775 32-bit */
+#define LIBXSMM_PPC64LE_SPR_PMC6 0x00000118 /* REG 776 32-bit */
+#define LIBXSMM_PPC64LE_SPR_MMCR0 0x00000178 /* REG 779 64-bit */
+#define LIBXSMM_PPC64LE_SPR_SIAR 0x00000198 /* REG 780 64-bit */
+#define LIBXSMM_PPC64LE_SPR_SDAR 0x000001b8 /* REG 781 64-bit */
+#define LIBXSMM_PPC64LE_SPR_MMCR1 0x000001d8 /* REG 782 64-bit */
+#define LIBXSMM_PPC64LE_SPR_BESCRS15 0x00000019 /* REG 800 64-bit */
+#define LIBXSMM_PPC64LE_SPR_BESCRSU16 0x00000039 /* REG 801 32-bit */
+#define LIBXSMM_PPC64LE_SPR_BESCRR15 0x00000059 /* REG 802 64-bit */
+#define LIBXSMM_PPC64LE_SPR_BESCRRU16 0x00000079 /* REG 803 32-bit */
+#define LIBXSMM_PPC64LE_SPR_EBBHR 0x00000099 /* REG 804 64-bit */
+#define LIBXSMM_PPC64LE_SPR_EBBRR 0x000000b9 /* REG 805 64-bit */
+#define LIBXSMM_PPC64LE_SPR_BESCR 0x000000d9 /* REG 806 64-bit */
+#define LIBXSMM_PPC64LE_SPR_DEXCR 0x00000199 /* REG 812 32-bit */
+#define LIBXSMM_PPC64LE_SPR_TAR 0x000001d9 /* REG 815 64-bit */
+#define LIBXSMM_PPC64LE_SPR_PPR 0x0000001c /* REG 896 64-bit */
+#define LIBXSMM_PPC64LE_SPR_PPR32 0x0000005c /* REG 898 32-bit */
 
 
 /* floating-point registers */
@@ -482,26 +520,34 @@
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_b_form( unsigned int  i_instr,
-                                     unsigned char i_bo,
-                                     unsigned char i_bi,
-                                     unsigned int  i_bd );
+unsigned int libxsmm_ppc64le_instr_b_form( unsigned int  i_instr,
+                                           unsigned char i_bo,
+                                           unsigned char i_bi,
+                                           unsigned int  i_bd );
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_b_form_al( unsigned int  i_instr,
-                                        unsigned char i_bo,
-                                        unsigned char i_bi,
-                                        unsigned int  i_bd,
-                                        unsigned char i_aa,
-                                        unsigned char i_lk );
+unsigned int libxsmm_ppc64le_instr_b_form_al( unsigned int  i_instr,
+                                              unsigned char i_bo,
+                                              unsigned char i_bi,
+                                              unsigned int  i_bd,
+                                              unsigned char i_aa,
+                                              unsigned char i_lk );
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_d_form( unsigned int  i_instr,
-                                     unsigned char i_t,
-                                     unsigned char i_a,
-                                     unsigned int  i_d );
+unsigned int libxsmm_ppc64le_instr_d_form( unsigned int  i_instr,
+                                           unsigned char i_t,
+                                           unsigned char i_a,
+                                           unsigned int  i_d );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_d_form_bf( unsigned int  i_instr,
+                                              unsigned char i_bf,
+                                              unsigned char i_l,
+                                              unsigned char i_a,
+                                              unsigned int  i_d );
 
 
 LIBXSMM_API_INTERN
@@ -513,10 +559,10 @@ unsigned int libxsmm_ppc64le_instr_dq_form_x( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_ds_form( unsigned int  i_instr,
-                                      unsigned char i_s,
-                                      unsigned char i_a,
-                                      unsigned int  i_d );
+unsigned int libxsmm_ppc64le_instr_ds_form( unsigned int  i_instr,
+                                            unsigned char i_s,
+                                            unsigned char i_a,
+                                            unsigned int  i_d );
 
 
 LIBXSMM_API_INTERN
@@ -540,11 +586,11 @@ unsigned int libxsmm_ppc64le_instr_vx_form_vrt( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_x_form( unsigned int  i_instr,
-                                     unsigned char i_t,
-                                     unsigned char i_a,
-                                     unsigned char i_b,
-                                     unsigned char i_x );
+unsigned int libxsmm_ppc64le_instr_x_form( unsigned int  i_instr,
+                                           unsigned char i_t,
+                                           unsigned char i_a,
+                                           unsigned char i_b,
+                                           unsigned char i_x );
 
 
 LIBXSMM_API_INTERN
@@ -581,7 +627,6 @@ unsigned int libxsmm_ppc64le_instr_xfx_form( unsigned int  i_instr,
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xx2_form_2( unsigned int  i_instr,
                                                unsigned char i_rt,
-                                               unsigned char i_eo,
                                                unsigned char i_b,
                                                unsigned char i_bx );
 
@@ -600,7 +645,7 @@ unsigned int libxsmm_ppc64le_instr_xx2_form_4( unsigned int  i_instr,
                                                unsigned char i_b,
                                                unsigned char i_uim,
                                                unsigned char i_bx,
-                                               unsigned char i_tx, );
+                                               unsigned char i_tx );
 
 
 LIBXSMM_API_INTERN
@@ -635,13 +680,13 @@ unsigned int libxsmm_ppc64le_instr_xx3_form_5( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_xx3_form_6( unsigned int  i_instr,
-                                         unsigned char i_t,
-                                         unsigned char i_a,
-                                         unsigned char i_b,
-                                         unsigned char i_ax,
-                                         unsigned char i_bx,
-                                         unsigned char i_tx );
+unsigned int libxsmm_ppc64le_instr_xx3_form_6( unsigned int  i_instr,
+                                               unsigned char i_t,
+                                               unsigned char i_a,
+                                               unsigned char i_b,
+                                               unsigned char i_ax,
+                                               unsigned char i_bx,
+                                               unsigned char i_tx );
 
 
 LIBXSMM_API_INTERN
