@@ -60,6 +60,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
+  printf("Arch %d\n", io_generated_code->arch);
+  printf("Flags %d\n", l_xgemm_desc_mod.flags);
+
   /* Check if it is a supported spmm with bitmap */
   if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0) {
     if ((io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )) {
@@ -85,6 +88,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
+
       if ( !((l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 32) && (l_xgemm_desc_mod.n <= 32) && (l_xgemm_desc_mod.lda == l_xgemm_desc_mod.m) && (l_xgemm_desc_mod.k % 32 == 0)) ) {
         if ( !(l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 32)) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
@@ -747,6 +751,20 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_vector_length = libxsmm_cpuid_mvl_rv64() / 32;
   } else if ( ( io_generated_code->arch == LIBXSMM_RV64 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = libxsmm_cpuid_mvl_rv64() / 64;
+  } else if ( ( io_generated_code->arch >= LIBXSMM_PPC64LE_FPF     )  &&
+              ( io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT ) ) {
+    /* checks probably needed for fp16/bf16 availabilty */
+    if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ||
+         LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+      l_vector_length = 8;
+    } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+      l_vector_length = 4;
+    } else if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+      l_vector_length = 2;
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;
