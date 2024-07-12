@@ -18,16 +18,14 @@
 #include "../include/libxsmm_typedefs.h"
 
 /**
- * Loads or stores a block of a matrix to vector status and control registers.
+ * Loads a block of a matrix to vector status and control registers.
  *
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param i_m_blocking_full number of full vectors (each 128-bit) in M-dimension.
  * @param i_n_blocking number of entries in N-dimension.
  * @param i_remainder_size size in bytes of the remainder in M-dimension.
  * @param i_stride stride in N-dimension.
- * @param i_load_store 0: load, !=0: store.
  * @param i_precision 0: FP32, !=0: FP64
- * @param i_endianness 0: little endian, !=0 big endian.
  * @param i_gpr_ptr GPR which has the address from which we load or to which we store data.
  * @param i_gpr_scratch GPRs which are used as scratch registers.
  *                      2+#chunks are required (see chunk desc. below).
@@ -35,17 +33,41 @@
  * @return number of VSR which were written.
  **/
 LIBXSMM_API_INTERN
-unsigned char libxsmm_generator_gemm_ppc64le_load_store_vsx( libxsmm_generated_code * io_generated_code,
-                                                             unsigned int             i_m_blocking_full,
-                                                             unsigned int             i_n_blocking,
-                                                             unsigned int             i_remainder_size,
-                                                             unsigned int             i_stride,
-                                                             unsigned char            i_load_store,
-                                                             unsigned char            i_precision,
-                                                             unsigned char            i_endianness,
-                                                             unsigned char            i_gpr_ptr,
-                                                             unsigned char          * i_gpr_scratch,
-                                                             unsigned char            i_vsr_first );
+unsigned char libxsmm_generator_gemm_ppc64le_load_vsx( libxsmm_generated_code * io_generated_code,
+                                                       unsigned int             i_m_blocking_full,
+                                                       unsigned int             i_n_blocking,
+                                                       unsigned int             i_remainder_size,
+                                                       unsigned int             i_stride,
+                                                       unsigned char            i_precision,
+                                                       unsigned char            i_gpr_ptr,
+                                                       unsigned char          * i_gpr_scratch,
+                                                       unsigned char            i_vsr_first );
+
+/**
+ * Stores a block of a matrix to vector status and control registers.
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param i_m_blocking_full number of full vectors (each 128-bit) in M-dimension.
+ * @param i_n_blocking number of entries in N-dimension.
+ * @param i_remainder_size size in bytes of the remainder in M-dimension.
+ * @param i_stride stride in N-dimension.
+ * @param i_precision 0: FP32, !=0: FP64
+ * @param i_gpr_ptr GPR which has the address from which we load or to which we store data.
+ * @param i_gpr_scratch GPRs which are used as scratch registers.
+ *                      2+#chunks are required (see chunk desc. below).
+ * @param i_vsr_first first VSR to which data is loaded or to which data is written.
+ * @return number of VSR which were written.
+ **/
+LIBXSMM_API_INTERN
+unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code * io_generated_code,
+                                                        unsigned int             i_m_blocking_full,
+                                                        unsigned int             i_n_blocking,
+                                                        unsigned int             i_remainder_size,
+                                                        unsigned int             i_stride,
+                                                        unsigned char            i_precision,
+                                                        unsigned char            i_gpr_ptr,
+                                                        unsigned char          * i_gpr_scratch,
+                                                        unsigned char            i_vsr_first );
 
 /**
  * Generates a microkernel using VSX.
