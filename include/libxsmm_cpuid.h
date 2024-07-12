@@ -52,6 +52,7 @@
 #define LIBXSMM_PPC64LE_FPF           3001 /* Generic floating-point facility */
 #define LIBXSMM_PPC64LE_VSX           3002 /* Vector scalar extension */
 #define LIBXSMM_PPC64LE_MMA           3003 /* Matrix-multiply assist */
+#define LIBXSMM_PPC64LE_ALLFEAT       3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {

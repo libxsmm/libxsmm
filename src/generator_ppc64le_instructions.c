@@ -517,6 +517,23 @@ unsigned int libxsmm_ppc64le_instr_xx4_form( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_0_wrapper( unsigned int i_instr ) {
+  unsigned int op;
+
+  switch( i_instr ) {
+    case LIBXSMM_PPC64LE_INSTR_BLR: {
+      op = i_instr;
+    } break;
+    default: {
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
+      exit(-1);
+    }
+  }
+
+  return op;
+}
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_1_wrapper( unsigned int i_instr,
                                               unsigned int i_1 ) {
   unsigned int op;
@@ -537,7 +554,7 @@ unsigned int libxsmm_ppc64le_instr_1_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_x_form_3( i_instr, (unsigned char)i_1 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -562,7 +579,7 @@ unsigned int libxsmm_ppc64le_instr_2_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xfx_form( i_instr, (unsigned char)i_1, (unsigned int)i_2 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -627,7 +644,7 @@ unsigned int libxsmm_ppc64le_instr_3_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xx2_form_2( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3);
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -748,7 +765,7 @@ unsigned int libxsmm_ppc64le_instr_4_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xx2_form_3( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -813,7 +830,7 @@ unsigned int libxsmm_ppc64le_instr_5_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xx3_form_0( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -903,7 +920,7 @@ unsigned int libxsmm_ppc64le_instr_6_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xx3_form_6( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -938,7 +955,7 @@ unsigned int libxsmm_ppc64le_instr_7_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xx3_form_5( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6, (unsigned char)i_7 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction: 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -965,7 +982,7 @@ unsigned int libxsmm_ppc64le_instr_8_wrapper( unsigned int i_instr,
       op = libxsmm_ppc64le_instr_xx4_form( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6, (unsigned char)i_7, (unsigned char)i_8 );
     } break;
     default: {
-      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction\n");
+      fprintf(stderr, "LIBXSMM PPC64LE, unsupported instruction 0x%x\n", i_instr);
       exit(-1);
     }
   }
@@ -1325,24 +1342,242 @@ unsigned int libxsmm_ppc64le_instruction_generic_4( unsigned int i_instr,
   return l_instr;
 }
 
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_0_wrapper( i_instr );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_1( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_1_wrapper( i_instr,
+                                                           i_0 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_1: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_2( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_2_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_2: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_3( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_3_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1,
+                                                           i_2);
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_3: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_4( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_4_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1,
+                                                           i_2,
+                                                           i_3 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_4: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_5( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_5_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1,
+                                                           i_2,
+                                                           i_3,
+                                                           i_4 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_5: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_6( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4,
+                              unsigned int             i_5 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_6_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1,
+                                                           i_2,
+                                                           i_3,
+                                                           i_4,
+                                                           i_5 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_6: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_7( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4,
+                              unsigned int             i_5,
+                              unsigned int             i_6 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_7_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1,
+                                                           i_2,
+                                                           i_3,
+                                                           i_4,
+                                                           i_5,
+                                                           i_6 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_7: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_8( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4,
+                              unsigned int             i_5,
+                              unsigned int             i_6,
+                              unsigned int             i_7 ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_code_head = io_generated_code->code_size / 4;
+    unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
+    l_code[l_code_head] = libxsmm_ppc64le_instr_8_wrapper( i_instr,
+                                                           i_0,
+                                                           i_1,
+                                                           i_2,
+                                                           i_3,
+                                                           i_4,
+                                                           i_5,
+                                                           i_6,
+                                                           i_7 );
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_8: inline/pure assembly print is not supported\n");
+    exit(-1);
+  }
+}
+
+
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instruction_2( libxsmm_generated_code * io_generated_code,
-                                    unsigned int             i_instr,
-                                    unsigned int             i_arg0,
-                                    unsigned int             i_arg1 ) {
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1 ) {
   if ( io_generated_code->code_type > 1 ) {
     unsigned int   l_code_head = io_generated_code->code_size / 4;
     unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
     l_code[l_code_head] = libxsmm_ppc64le_instruction_generic_2( i_instr,
-                                                                 i_arg0,
-                                                                 i_arg1 );
+                                                           i_0,
+                                                           i_1 );
     io_generated_code->code_size += 4;
   }
   else {
-    fprintf(stderr, "libxsmm_ppc64le_instruction_2: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_ppc64le_instr_2: inline/pure assembly print is not supported\n");
     exit(-1);
   }
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instruction_3( libxsmm_generated_code * io_generated_code,
@@ -1389,128 +1624,138 @@ void libxsmm_ppc64le_instruction_4( libxsmm_generated_code * io_generated_code,
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_open_stream( libxsmm_generated_code * io_generated_code,
-                                              unsigned short           i_gprMax,
-                                              unsigned short           i_fprMax,
-                                              unsigned short           i_vsrMax ) {
+void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_code,
+                                        unsigned short           i_gprMax,
+                                        unsigned short           i_fprMax,
+                                        unsigned short           i_vsrMax ) {
+  int n_gpr_reserved = 13;
+  int n_fpr_reserved = 14;
+  int n_vsr_reserved = 20;
+
+  int gpr_offset = 0;
+  int fpr_offset = (LIBXSMM_PPC64LE_NMAX_GPR - n_gpr_reserved)*8;
+  int vsr_offset = fpr_offset + (LIBXSMM_PPC64LE_NMAX_FPR - n_fpr_reserved)*8;
+
   /* decrease stack pointer */
-  libxsmm_ppc64le_instruction_3( io_generated_code,
-                                 LIBXSMM_PPC64LE_INSTR_ADDI,
-                                 LIBXSMM_PPC64LE_GPR_SP,
-                                 LIBXSMM_PPC64LE_GPR_SP,
-                                 -512 );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_ADDI,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           -512 );
 
   /* save general purpose registers */
-  for( int l_gp = 13; l_gp <= i_gprMax; l_gp++ ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_STD,
-                                   l_gp,
-                                   LIBXSMM_PPC64LE_GPR_SP,
-                                   (l_gp-13)*8 );
+  for( int l_gp = n_gpr_reserved; l_gp <= i_gprMax; l_gp++ ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_STD,
+                             l_gp,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             (l_gp - n_gpr_reserved)*8 + gpr_offset);
   }
 
   /* save floating point registers */
-  for( int l_fl = 14; l_fl <= i_fprMax; l_fl++ ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_STFD,
-                                   l_fl,
-                                   LIBXSMM_PPC64LE_GPR_SP,
-                                   (l_fl-14)*8 + 152 );
+  for( int l_fl = n_fpr_reserved; l_fl <= i_fprMax; l_fl++ ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_STFD,
+                             l_fl,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             (l_fl - n_fpr_reserved)*8 + fpr_offset );
   }
 
   /* save vector registers */
-  if( i_vsrMax >= 20 ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_ADDI,
-                                   LIBXSMM_PPC64LE_GPR_R11,
-                                   LIBXSMM_PPC64LE_GPR_SP,
-                                   304 );
+  if( i_vsrMax >= n_vsr_reserved ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_ADDI,
+                             LIBXSMM_PPC64LE_GPR_R11,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             vsr_offset );
   }
 
-  for( int l_ve = 20; l_ve <= i_vsrMax; l_ve++ ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_STVX,
-                                   l_ve,
-                                   0,
-                                   LIBXSMM_PPC64LE_GPR_R11 );
+  for( int l_ve = n_vsr_reserved; l_ve <= i_vsrMax; l_ve++ ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_STVX,
+                             l_ve,
+                             0,
+                             LIBXSMM_PPC64LE_GPR_R11 );
     if( l_ve != 31 ) {
-      libxsmm_ppc64le_instruction_3( io_generated_code,
-                                     LIBXSMM_PPC64LE_INSTR_ADDI,
-                                     LIBXSMM_PPC64LE_GPR_R11,
-                                     LIBXSMM_PPC64LE_GPR_R11,
-                                     16 );
+      libxsmm_ppc64le_instr_3( io_generated_code,
+                               LIBXSMM_PPC64LE_INSTR_ADDI,
+                               LIBXSMM_PPC64LE_GPR_R11,
+                               LIBXSMM_PPC64LE_GPR_R11,
+                               16 );
     }
   }
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_close_stream( libxsmm_generated_code * io_generated_code,
-                                               unsigned short           i_gprMax,
-                                               unsigned short           i_fprMax,
-                                               unsigned short           i_vsrMax ) {
+void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_code,
+                                         unsigned short           i_gprMax,
+                                         unsigned short           i_fprMax,
+                                         unsigned short           i_vsrMax ) {
+  int n_gpr_reserved = 13;
+  int n_fpr_reserved = 14;
+  int n_vsr_reserved = 20;
+
+  int fpr_offset = (LIBXSMM_PPC64LE_NMAX_GPR - n_gpr_reserved)*8;
+  int vsr_offset = fpr_offset + (LIBXSMM_PPC64LE_NMAX_FPR - n_fpr_reserved)*8;
+
   /* restore general purpose registers */
-  for( int l_gp = 13; l_gp <= i_gprMax; l_gp++ ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_LD,
-                                   l_gp,
-                                   LIBXSMM_PPC64LE_GPR_SP,
-                                   (l_gp-13)*8 );
+  for( int l_gp = n_gpr_reserved; l_gp <= i_gprMax; l_gp++ ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LD,
+                             l_gp,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             (l_gp - n_gpr_reserved)*8 + 0);
   }
 
   /* restore floating point registers */
-  for( int l_fl = 14; l_fl <= i_fprMax; l_fl++ ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_LFD,
-                                   l_fl,
-                                   LIBXSMM_PPC64LE_GPR_SP,
-                                   (l_fl-14)*8 + 152 );
+  for( int l_fl = n_fpr_reserved; l_fl <= i_fprMax; l_fl++ ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LFD,
+                             l_fl,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             (l_fl - n_fpr_reserved)*8 + fpr_offset );
   }
 
   /* restore vector register */
-  if( i_vsrMax >= 20 ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_ADDI,
-                                   LIBXSMM_PPC64LE_GPR_R11,
-                                   LIBXSMM_PPC64LE_GPR_SP,
-                                   304 );
+  if( i_vsrMax >= n_vsr_reserved ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_ADDI,
+                             LIBXSMM_PPC64LE_GPR_R11,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             vsr_offset + 8 );
   }
 
-  for( int l_ve = 20; l_ve <= i_vsrMax; l_ve++ ) {
-    libxsmm_ppc64le_instruction_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_LVX,
-                                   l_ve,
-                                   0,
-                                   LIBXSMM_PPC64LE_GPR_R11 );
+  for( int l_ve = n_vsr_reserved; l_ve <= i_vsrMax; l_ve++ ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LVX,
+                             l_ve,
+                             0,
+                             LIBXSMM_PPC64LE_GPR_R11 );
     if( l_ve != 31 ) {
-      libxsmm_ppc64le_instruction_3( io_generated_code,
-                                     LIBXSMM_PPC64LE_INSTR_ADDI,
-                                     LIBXSMM_PPC64LE_GPR_R11,
-                                     LIBXSMM_PPC64LE_GPR_R11,
-                                     16 );
+      libxsmm_ppc64le_instr_3( io_generated_code,
+                               LIBXSMM_PPC64LE_INSTR_ADDI,
+                               LIBXSMM_PPC64LE_GPR_R11,
+                               LIBXSMM_PPC64LE_GPR_R11,
+                               16 );
     }
   }
 
   /* increase stack pointer */
-  libxsmm_ppc64le_instruction_3( io_generated_code,
-                                 LIBXSMM_PPC64LE_INSTR_ADDI,
-                                 1,
-                                 1,
-                                 512 );
+  libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI,
+                           1,
+                           1,
+                           512 );
 
   /* return statement */
-  unsigned int   l_code_head = io_generated_code->code_size / 4;
-  unsigned int * l_code      = (unsigned int*) io_generated_code->generated_code;
-  l_code[l_code_head] = 0x4e800020;
-  io_generated_code->code_size += 4;
+  libxsmm_ppc64le_instr( io_generated_code, LIBXSMM_PPC64LE_INSTR_BLR);
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
-                                                           libxsmm_loop_label_tracker * io_loop_label_tracker ) {
+void libxsmm_ppc64le_instr_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
+                                                     libxsmm_loop_label_tracker * io_loop_label_tracker ) {
   /* check if we still have label we can jump to */
   if ( io_loop_label_tracker->label_count == 512 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code,
-                          LIBXSMM_ERR_EXCEED_JMPLBL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
 
@@ -1520,69 +1765,52 @@ void libxsmm_ppc64le_instruction_register_jump_back_label( libxsmm_generated_cod
     io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
   }
   else {
-    fprintf(stderr, "libxsmm_ppc64le_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_ppc64le_instr_cond_jump_back_to_label: inline/pure assembly print is not supported\n");
     exit(-1);
   }
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_cond_jump_back_to_label( libxsmm_generated_code     * io_generated_code,
-                                                          unsigned int                 i_gpr,
-                                                          libxsmm_loop_label_tracker * io_loop_label_tracker ) {
+void libxsmm_ppc64le_instr_cond_jump_back_to_label( libxsmm_generated_code     * io_generated_code,
+                                                    unsigned int                 i_gpr,
+                                                    libxsmm_loop_label_tracker * io_loop_label_tracker ) {
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int   l_lab = --io_loop_label_tracker->label_count;
-    unsigned int   l_b_dst = (io_loop_label_tracker->label_address[l_lab])/4;
-    unsigned int   l_code_head = io_generated_code->code_size/4;
-    unsigned int * l_code = (unsigned int *)io_generated_code->generated_code;
+    unsigned int l_lab = --io_loop_label_tracker->label_count;
+    unsigned int l_b_dst = (io_loop_label_tracker->label_address[l_lab]) / 4;
+    unsigned int l_code_head = io_generated_code->code_size / 4;
 
     /* branch immediate */
     int l_b_imm = (int)l_b_dst - (int)l_code_head;
 
     /* compare GPR to 0 */
-    l_code[l_code_head] = libxsmm_ppc64le_instruction_fip_compare( LIBXSMM_PPC64LE_INSTR_CMPI,
-                                                                   0,
-                                                                   0,
-                                                                   i_gpr,
-                                                                   0 );
+    libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_CMPI, 0, 0, i_gpr, 0 );
 
     /* branch if equal */
-    l_code[l_code_head+1] = libxsmm_ppc64le_instruction_b_conditional( LIBXSMM_PPC64LE_INSTR_BC,
-                                                                       4,
-                                                                       2,
-                                                                       l_b_imm-1 );
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_BC, 4, 2, l_b_imm - 1 );
 
-    /* advance code head */
-    io_generated_code->code_size += 4+4;
   }
   else {
-    fprintf(stderr, "libxsmm_ppc64le_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_ppc64le_instr_cond_jump_back_to_label: inline/pure assembly print is not supported\n");
     exit(-1);
   }
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_cond_jump_back_to_label_ctr( libxsmm_generated_code     * io_generated_code,
-                                                              libxsmm_loop_label_tracker * io_loop_label_tracker ) {
+void libxsmm_ppc64le_instr_cond_jump_back_to_label_ctr( libxsmm_generated_code     * io_generated_code,
+                                                        libxsmm_loop_label_tracker * io_loop_label_tracker ) {
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int   l_lab = --io_loop_label_tracker->label_count;
-    unsigned int   l_b_dst = (io_loop_label_tracker->label_address[l_lab])/4;
-    unsigned int   l_code_head = io_generated_code->code_size/4;
-    unsigned int * l_code = (unsigned int *)io_generated_code->generated_code;
+    unsigned int l_lab = --io_loop_label_tracker->label_count;
+    unsigned int l_b_dst = (io_loop_label_tracker->label_address[l_lab]) / 4;
+    unsigned int l_code_head = io_generated_code->code_size/4;
 
     /* branch immediate */
     int l_b_imm = (int)l_b_dst - (int)l_code_head;
 
     /* bdnz */
-    l_code[l_code_head] = libxsmm_ppc64le_instruction_generic_3( LIBXSMM_PPC64LE_INSTR_BC,
-                                                                 16,
-                                                                 0,
-                                                                 l_b_imm );
-
-    /* advance code head */
-    io_generated_code->code_size += 4;
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_BC, 16, 0, l_b_imm );
   }
   else {
-    fprintf(stderr, "libxsmm_ppc64le_instruction_cond_jump_back_to_label_ctr: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_ppc64le_instr_cond_jump_back_to_label_ctr: inline/pure assembly print is not supported\n");
     exit(-1);
   }
 }

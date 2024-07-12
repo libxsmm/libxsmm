@@ -16,6 +16,9 @@
 
 #include "generator_common.h"
 
+#define LIBXSMM_PPC64LE_NMAX_GPR 32
+#define LIBXSMM_PPC64LE_NMAX_FPR 32
+#define LIBXSMM_PPC64LE_NMAX_VSR 64
 
 /* general purpose registers */
 #define LIBXSMM_PPC64LE_GPR_R0   0
@@ -130,7 +133,6 @@
 #define LIBXSMM_PPC64LE_FPR_F30 30
 #define LIBXSMM_PPC64LE_FPR_F31 31
 
-
 /* vector status and control register */
 #define LIBXSMM_PPC64LE_VSR_VS0   0
 #define LIBXSMM_PPC64LE_VSR_VS1   1
@@ -220,6 +222,7 @@
 
 /* logic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_BC 0x40000000 /* Branch Conditional B-form */
+#define LIBXSMM_PPC64LE_INSTR_BLR  0x4e800020 /* Branch Unconditionally to LR */
 
 #define LIBXSMM_PPC64LE_INSTR_ANDI 0x70000000 /* AND Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_ORI 0x60000000 /* OR Immediate D-form */
@@ -701,6 +704,158 @@ unsigned int libxsmm_ppc64le_instr_xx4_form( unsigned int  i_instr,
                                              unsigned char i_tx );
 
 
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_0_wrapper( unsigned int i_instr );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_1_wrapper( unsigned int i_instr,
+                                              unsigned int i_1 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_2_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_3_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2,
+                                              unsigned int i_3 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_4_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2,
+                                              unsigned int i_3,
+                                              unsigned int i_4 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_5_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2,
+                                              unsigned int i_3,
+                                              unsigned int i_4,
+                                              unsigned int i_5 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_6_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2,
+                                              unsigned int i_3,
+                                              unsigned int i_4,
+                                              unsigned int i_5,
+                                              unsigned int i_6 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_7_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2,
+                                              unsigned int i_3,
+                                              unsigned int i_4,
+                                              unsigned int i_5,
+                                              unsigned int i_6,
+                                              unsigned int i_7 );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_8_wrapper( unsigned int i_instr,
+                                              unsigned int i_1,
+                                              unsigned int i_2,
+                                              unsigned int i_3,
+                                              unsigned int i_4,
+                                              unsigned int i_5,
+                                              unsigned int i_6,
+                                              unsigned int i_7,
+                                              unsigned int i_8 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr( libxsmm_generated_code * io_generated_code,
+                            unsigned int             i_instr);
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_1( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0  );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_2( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_3( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_4( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_5( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_6( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4,
+                              unsigned int             i_5 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_7( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4,
+                              unsigned int             i_5,
+                              unsigned int             i_6 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_8( libxsmm_generated_code * io_generated_code,
+                              unsigned int             i_instr,
+                              unsigned int             i_0,
+                              unsigned int             i_1,
+                              unsigned int             i_2,
+                              unsigned int             i_3,
+                              unsigned int             i_4,
+                              unsigned int             i_5,
+                              unsigned int             i_6,
+                              unsigned int             i_7 );
+
+
 /**
  * Generates a conditional branch instruction.
  *
@@ -881,104 +1036,6 @@ unsigned int libxsmm_ppc64le_instruction_vsx_vector_permute_byte_reverse( unsign
                                                                           unsigned char i_xt,
                                                                           unsigned char i_xb );
 
-/**
- * Generates a generic PPC64LE-instruction with two arguments
- * following the syntax of the mnemonics.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_arg0 first argument.
- * @param i_arg1 second argument.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_generic_2( unsigned int i_instr,
-                                                    unsigned int i_arg0,
-                                                    unsigned int i_arg1 );
-
-/**
- * Generates a generic PPC64LE-instruction with three arguments
- * following the syntax of the mnemonics.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_arg0 first argument.
- * @param i_arg1 second argument.
- * @param i_arg2 third argument.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_generic_3( unsigned int i_instr,
-                                                    unsigned int i_arg0,
-                                                    unsigned int i_arg1,
-                                                    unsigned int i_arg2 );
-
-/**
- * Generates a generic PPC64LE-instruction with four arguments
- * following the syntax of the mnemonics.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_arg0 first argument.
- * @param i_arg1 second argument.
- * @param i_arg2 third argument.
- * @param i_arg3 fourth argument
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_generic_4( unsigned int i_instr,
-                                                    unsigned int i_arg0,
-                                                    unsigned int i_arg1,
-                                                    unsigned int i_arg2,
-                                                    unsigned int i_arg3 );
-
-/**
- * Generates a generic PPC64LE-instruction with two arguments
- * following the syntax of the mnemonics.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_arg0 first argument.
- * @param i_arg1 second argument.
- **/
-LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_2( libxsmm_generated_code * io_generated_code,
-                                    unsigned int             i_instr,
-                                    unsigned int             i_arg0,
-                                    unsigned int             i_arg1 );
-
-/**
- * Generates a generic PPC64LE-instruction with three arguments
- * following the syntax of the mnemonics.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_arg0 first argument.
- * @param i_arg1 second argument.
- * @param i_arg2 third argument.
- **/
-LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_3( libxsmm_generated_code * io_generated_code,
-                                    unsigned int             i_instr,
-                                    unsigned int             i_arg0,
-                                    unsigned int             i_arg1,
-                                    unsigned int             i_arg2 );
-
-/**
- * Generates a generic PPC64LE-instruction with four arguments
- * following the syntax of the mnemonics.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_arg0 first argument.
- * @param i_arg1 second argument.
- * @param i_arg2 third argument.
- * @param i_arg3 fourth argument.
- **/
-LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_4( libxsmm_generated_code * io_generated_code,
-                                    unsigned int             i_instr,
-                                    unsigned int             i_arg0,
-                                    unsigned int             i_arg1,
-                                    unsigned int             i_arg2,
-                                    unsigned int             i_arg3 );
 
 /**
  * Opens the inline assembly section / jit stream.
@@ -989,10 +1046,10 @@ void libxsmm_ppc64le_instruction_4( libxsmm_generated_code * io_generated_code,
  * @param i_vsrMax max vector register which is saved on the stack.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_open_stream( libxsmm_generated_code * io_generated_code,
-                                              unsigned short           i_gprMax,
-                                              unsigned short           i_fprMax,
-                                              unsigned short           i_vsrMax );
+void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_code,
+                                        unsigned short           i_gprMax,
+                                        unsigned short           i_fprMax,
+                                        unsigned short           i_vsrMax );
 
 /**
  * Closes the inline assembly section / jit stream.
@@ -1003,10 +1060,10 @@ void libxsmm_ppc64le_instruction_open_stream( libxsmm_generated_code * io_genera
  * @param i_vsrMax max vector register which is restored from the stack.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_close_stream( libxsmm_generated_code * io_generated_code,
-                                               unsigned short           i_gprMax,
-                                               unsigned short           i_fprMax,
-                                               unsigned short           i_vsrMax );
+void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_code,
+                                         unsigned short           i_gprMax,
+                                         unsigned short           i_fprMax,
+                                         unsigned short           i_vsrMax );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack.
@@ -1015,8 +1072,8 @@ void libxsmm_ppc64le_instruction_close_stream( libxsmm_generated_code * io_gener
  * @param io_loop_label_tracker data structure to handle loop labels, nested loops are supported, but not overlapping loops.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
-                                                           libxsmm_loop_label_tracker * io_loop_label_tracker );
+void libxsmm_ppc64le_instr_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
+                                                     libxsmm_loop_label_tracker * io_loop_label_tracker );
 
 /**
  * Pops the latest from the loop label stack and jumps there based on the condition.
@@ -1026,9 +1083,9 @@ void libxsmm_ppc64le_instruction_register_jump_back_label( libxsmm_generated_cod
  * @param io_loop_label_tracker data structure to handle loop labels will jump to latest registered label.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_cond_jump_back_to_label( libxsmm_generated_code     * io_generated_code,
-                                                          unsigned int                 i_gpr,
-                                                          libxsmm_loop_label_tracker * io_loop_label_tracker );
+void libxsmm_ppc64le_instr_cond_jump_back_to_label( libxsmm_generated_code     * io_generated_code,
+                                                    unsigned int                 i_gpr,
+                                                    libxsmm_loop_label_tracker * io_loop_label_tracker );
 
 /**
  * Pops the latest from the loop label stack and adds a jump based on the value of the count register, i.e., ctr==0.
@@ -1037,7 +1094,7 @@ void libxsmm_ppc64le_instruction_cond_jump_back_to_label( libxsmm_generated_code
  * @param io_loop_label_tracker data structure to handle loop labels will jump to latest registered label.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instruction_cond_jump_back_to_label_ctr( libxsmm_generated_code     * io_generated_code,
-                                                              libxsmm_loop_label_tracker * io_loop_label_tracker );
+void libxsmm_ppc64le_instr_cond_jump_back_to_label_ctr( libxsmm_generated_code     * io_generated_code,
+                                                        libxsmm_loop_label_tracker * io_loop_label_tracker );
 
 #endif
