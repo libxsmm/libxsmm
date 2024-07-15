@@ -15,6 +15,7 @@
 #define GENERATOR_GEMM_PPC64LE_H
 
 #include "generator_common.h"
+#include "generator_ppc64le_instructions.h"
 #include "../include/libxsmm_typedefs.h"
 
 /**
@@ -129,6 +130,21 @@ void libxsmm_generator_gemm_ppc64le_m_loop_vsx( libxsmm_generated_code        * 
                                                 unsigned char                   i_gpr_scratch,
                                                 unsigned int                    i_max_block_m,
                                                 unsigned int                    i_n );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_ppc64le_vsx_bytes( libxsmm_generated_code        * io_generated_code,
+                                                       libxsmm_gemm_descriptor const * i_xgemm_desc );
+
+/**
+ * Generates a matrix kernel for PPC64LE-VSX.
+ * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param i_xgemm_desc description of the matrix-operation.
+ **/
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_kernel_vsx_wt( libxsmm_generated_code        * io_generated_code,
+                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                   libxsmm_ppc64le_reg           * reg_tracker );
 
 /**
  * Generates a matrix kernel for PPC64LE-VSX.
