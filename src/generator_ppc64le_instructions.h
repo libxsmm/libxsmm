@@ -524,11 +524,46 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_STXSSP 0xf4000003 /* Store VSX Scalar Single DS-form */
 #define LIBXSMM_PPC64LE_INSTR_LXV 0xf4000001 /* Load VSX Vector DQ-form */
 #define LIBXSMM_PPC64LE_INSTR_STXV 0xf4000005 /* Store VSX Vector DQ-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVW4X  0x7c000618 /* Load VSX Vector Word*4 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVW4X 0x7c000718 /* Store VSX Vector Word*4 Indexed X-form */
+
+#define LIBXSMM_PPC64LE_INSTR_LXSIWZX 0x7c000018 /* Load VSX Scalar as Integer Word & Zero Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIWAX 0x7c000098 /* Load VSX Scalar as Integer Word Algebraic IndexedX-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSIWX 0x7c000118 /* Store VSX Scalar as Integer Word Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVX 0x7c000218 /* Load VSX Vector Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVDSX 0x7c000298 /* Load VSX Vector Doubleword & Splat Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_LXVWSX 0x7c0002d8 /* Load VSX Vector Word & Splat Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVX 0x7c000318 /* Store VSX Vector Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSSPX 0x7c000418 /* Load VSX Scalar Single-Precision Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSDX 0x7c000498 /* Load VSX Scalar Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSSPX 0x7c000518 /* Store VSX Scalar Single-Precision Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSDX 0x7c000598 /* Store VSX Scalar Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVW4X 0x7c000618 /* Load VSX Vector Word*4 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVH8X 0x7c000658 /* Load VSX Vector Halfword*8 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVD2X 0x7c000698 /* Load VSX Vector Doubleword*2 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVB16X 0x7c0006d8 /* Load VSX Vector Byte*16 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVW4X 0x7c000718 /* Store VSX Vector Word*4 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVH8X 0x7c000758 /* Store VSX Vector Halfword*8 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVD2X 0x7c000798 /* Store VSX Vector Doubleword*2 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVB16X 0x7c0007d8 /* Store VSX Vector Byte*16 Indexed X-form */
+
+#define LIBXSMM_PPC64LE_INSTR_LXVRBX 0x7c00001a /* Load VSX Vector Rightmost Byte Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRHX 0x7c00005a /* Load VSX Vector Rightmost Halfword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRWX 0x7c00009a /* Load VSX Vector Rightmost Word Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRDX 0x7c0000da /* Load VSX Vector Rightmost Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRBX 0x7c00011a /* Store VSX Vector Rightmost Byte Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRHX 0x7c00015a /* Store VSX Vector Rightmost Halfword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRWX 0x7c00019a /* Store VSX Vector Rightmost Word Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRDX 0x7c0001da /* Store VSX Vector Rightmost Doubleword Indexed X-form */
+
+#define LIBXSMM_PPC64LE_INSTR_LXVL 0x7c00021a /* Load VSX Vector with Length X-form */
 #define LIBXSMM_PPC64LE_INSTR_LXVLL 0x7c00025a /* Load VSX Vector with Length Left-justified X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVPX 0x7c00029a /* Load VSX Vector Paired Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVL 0x7c00031a /* Store VSX Vector with Length X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXVLL 0x7c00035a /* Store VSX Vector with Length Left-justified X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVPX 0x7c00039a /* Store VSX Vector Paired Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIBZX 0x7c00061a /* Load VSX Scalar as Integer Byte & Zero Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIHZX 0x7c00065a /* Load VSX Scalar as Integer Halfword & Zero Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSIBX 0x7c00071a /* Store VSX Scalar as Integer Byte Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSIHX 0x7c00075a /* Store VSX Scalar as Integer Halfword Indexed X-form */
 
 #define LIBXSMM_PPC64LE_INSTR_FCMPU 0xfc000000 /* Floating Compare Unordered X-form */
 #define LIBXSMM_PPC64LE_INSTR_FCMPO 0xfc000040 /* Floating Compare Ordered X-form */
@@ -872,6 +907,12 @@ unsigned int libxsmm_ppc64le_instr_x_form_355( unsigned int  i_instr,
                                                unsigned char i_a,
                                                unsigned char i_b );
 
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_x_form_4155( unsigned int  i_instr,
+                                                unsigned char i_t,
+                                                unsigned char i_x,
+                                                unsigned char i_a,
+                                                unsigned char i_b );
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_x_form_555( unsigned int  i_instr,
