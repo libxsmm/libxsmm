@@ -70,6 +70,17 @@ unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code *
                                                         unsigned char          * i_gpr_scratch,
                                                         unsigned char            i_vsr_first );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        * io_generated_code,
+                                                libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                libxsmm_ppc64le_reg           * reg_tracker,
+                                                unsigned int                  * blocking,
+                                                unsigned char                   i_a_ptr_gpr,
+                                                unsigned char                   i_b_ptr_gpr,
+                                                unsigned char                   i_c_ptr_gpr );
+
+
 /**
  * Generates a microkernel using VSX.
  *
@@ -133,8 +144,20 @@ void libxsmm_generator_gemm_ppc64le_m_loop_vsx( libxsmm_generated_code        * 
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_ppc64le_vsx_bytes( libxsmm_generated_code        * io_generated_code,
-                                                       libxsmm_gemm_descriptor const * i_xgemm_desc );
+unsigned int libxsmm_generator_gemm_ppc64le_bytes( libxsmm_generated_code * io_generated_code,
+                                                   libxsmm_datatype const   i_xgemm_desc );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_gnerator_gemm_ppc64le_vsx_load( libxsmm_generated_code * io_generated_code,
+                                             libxsmm_datatype const   datatype,
+                                             libxsmm_datatype const   comptype, /* currently unsuded */
+                                             libxsmm_ppc64le_reg    * reg_tracker,
+                                             unsigned char          * loaded_regs,
+                                             unsigned char            i_ptr_gpr,
+                                             unsigned int             n_rows,
+                                             unsigned int             n_cols,
+                                             unsigned int             stride );
 
 /**
  * Generates a matrix kernel for PPC64LE-VSX.
