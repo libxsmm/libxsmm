@@ -72,14 +72,25 @@ unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code *
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        * io_generated_code,
-                                                libxsmm_gemm_descriptor const * i_xgemm_desc,
-                                                libxsmm_ppc64le_reg           * reg_tracker,
-                                                unsigned int                  * blocking,
-                                                unsigned char                   i_a_ptr_gpr,
-                                                unsigned char                   i_b_ptr_gpr,
-                                                unsigned char                   i_c_ptr_gpr );
+void libxsmm_generator_gemm_ppc64le_vsx_m_loop_wt( libxsmm_generated_code        * io_generated_code,
+                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                   libxsmm_ppc64le_reg           * reg_tracker,
+                                                   libxsmm_loop_label_tracker    * loop_labels,
+                                                   unsigned int                  * blocking,
+                                                   unsigned char const             i_a_ptr_gpr,
+                                                   unsigned char const             i_b_ptr_gpr,
+                                                   unsigned char const             i_c_ptr_gpr );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_vsx_k_loop_wt( libxsmm_generated_code        * io_generated_code,
+                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                   libxsmm_ppc64le_reg           * reg_tracker,
+                                                   libxsmm_loop_label_tracker    * loop_labels,
+                                                   unsigned int                  * blocking,
+                                                   unsigned char const             i_a_ptr_gpr,
+                                                   unsigned char const             i_b_ptr_gpr,
+                                                   unsigned char const             i_c_ptr_gpr );
 
 /**
  * Generates a microkernel using VSX.
@@ -149,12 +160,24 @@ unsigned int libxsmm_generator_gemm_ppc64le_bytes( libxsmm_generated_code * io_g
 
 
 LIBXSMM_API_INTERN
+void libxsmm_gnerator_gemm_ppc64le_vsx_load_trans( libxsmm_generated_code * io_generated_code,
+                                                   libxsmm_datatype const   datatype,
+                                                   libxsmm_datatype const   comptype,
+                                                   libxsmm_ppc64le_reg    * reg_tracker,
+                                                   unsigned int           * loaded_regs,
+                                                   unsigned int             i_ptr_gpr,
+                                                   unsigned int             n_rows,
+                                                   unsigned int             n_cols,
+                                                   unsigned int             stride );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_gnerator_gemm_ppc64le_vsx_load( libxsmm_generated_code * io_generated_code,
                                              libxsmm_datatype const   datatype,
-                                             libxsmm_datatype const   comptype, /* currently unsuded */
+                                             libxsmm_datatype const   comptype,
                                              libxsmm_ppc64le_reg    * reg_tracker,
-                                             unsigned char          * loaded_regs,
-                                             unsigned char            i_ptr_gpr,
+                                             unsigned int           * loaded_regs,
+                                             unsigned int             i_ptr_gpr,
                                              unsigned int             n_rows,
                                              unsigned int             n_cols,
                                              unsigned int             stride );
