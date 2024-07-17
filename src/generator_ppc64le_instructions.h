@@ -1356,6 +1356,18 @@ void libxsmm_ppc64le_instr_close_stream_wt( libxsmm_generated_code * io_generate
                                             libxsmm_ppc64le_reg    * reg_tracker );
 
 
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_4x4_inplace( libxsmm_generated_code * io_generated_code,
+                                                      libxsmm_ppc64le_reg    * reg_tracker,
+                                                      unsigned int           * v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64_2x2_inplace( libxsmm_generated_code * io_generated_code,
+                                                      libxsmm_ppc64le_reg    * reg_tracker,
+                                                      unsigned int           * v );
+
+
 /**
  * Opens the inline assembly section / jit stream.
  *
