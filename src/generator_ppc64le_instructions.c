@@ -2054,6 +2054,132 @@ void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_c
   libxsmm_ppc64le_instr( io_generated_code, LIBXSMM_PPC64LE_INSTR_BLR);
 }
 
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_4x4_inplace( libxsmm_generated_code * io_generated_code,
+                                                      libxsmm_ppc64le_reg    * reg_tracker,
+                                                      unsigned int           * v ) {
+
+  unsigned int trans_scratch[4];
+  trans_scratch[0] = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_VSR );
+  trans_scratch[1] = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_VSR );
+  trans_scratch[2] = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_VSR );
+  trans_scratch[3] = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_VSR );
+
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGHW,
+                           trans_scratch[0],
+                           v[0],
+                           v[2],
+                           (0x0020 & v[0]) >> 5,
+                           (0x0020 & v[2]) >> 5,
+                           (0x0020 & trans_scratch[0]) >> 5 );
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGHW,
+                           trans_scratch[2],
+                           v[1],
+                           v[3],
+                           (0x0020 & v[1]) >> 5,
+                           (0x0020 & v[3]) >> 5,
+                           (0x0020 & trans_scratch[2]) >> 5 );
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGLW,
+                           trans_scratch[1],
+                           v[0],
+                           v[2],
+                           (0x0020 & v[0]) >> 5,
+                           (0x0020 & v[2]) >> 5,
+                           (0x0020 & trans_scratch[1]) >> 5 );
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGLW,
+                           trans_scratch[3],
+                           v[1],
+                           v[3],
+                           (0x0020 & v[1]) >> 5,
+                           (0x0020 & v[3]) >> 5,
+                           (0x0020 & trans_scratch[3]) >> 5 );
+
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGHW,
+                           v[0],
+                           trans_scratch[0],
+                           trans_scratch[2],
+                           (0x0020 & trans_scratch[0]) >> 5,
+                           (0x0020 & trans_scratch[2]) >> 5,
+                           (0x0020 & v[0]) >> 5 );
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGHW,
+                           v[2],
+                           trans_scratch[1],
+                           trans_scratch[3],
+                           (0x0020 & trans_scratch[1]) >> 5,
+                           (0x0020 & trans_scratch[3]) >> 5,
+                           (0x0020 & v[2]) >> 5 );
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGLW,
+                           v[1],
+                           trans_scratch[0],
+                           trans_scratch[2],
+                           (0x0020 & trans_scratch[0]) >> 5,
+                           (0x0020 & trans_scratch[2]) >> 5,
+                           (0x0020 & v[1]) >> 5 );
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXMRGLW,
+                           v[3],
+                           trans_scratch[1],
+                           trans_scratch[3],
+                           (0x0020 & trans_scratch[1]) >> 5,
+                           (0x0020 & trans_scratch[3]) >> 5,
+                           (0x0020 & v[3]) >> 5 );
+
+  libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_VSR, trans_scratch[0] );
+  libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_VSR, trans_scratch[1] );
+  libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_VSR, trans_scratch[2] );
+  libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_VSR, trans_scratch[3] );
+
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64_2x2_inplace( libxsmm_generated_code * io_generated_code,
+                                                      libxsmm_ppc64le_reg    * reg_tracker,
+                                                      unsigned int           * v ) {
+  unsigned int scratch = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_VSR );
+
+  /* high double-words */
+  libxsmm_ppc64le_instr_7( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXPERMDI,
+                           scratch,
+                           v[0],
+                           v[1],
+                           0x0000,
+                           (0x0020 & v[0]) >> 5,
+                           (0x0020 & v[1]) >> 5,
+                           (0x0020 & scratch) >> 5 );
+  /* low double-words inplace */
+  libxsmm_ppc64le_instr_7( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXPERMDI,
+                           v[1],
+                           v[0],
+                           v[1],
+                           0x0003,
+                           (0x0020 & v[0]) >> 5,
+                           (0x0020 & v[1]) >> 5,
+                           (0x0020 & v[1]) >> 5 );
+  /* */
+  libxsmm_ppc64le_instr_6( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_XXLOR,
+                           v[0],
+                           scratch,
+                           scratch,
+                           (0x0020 & scratch) >> 5,
+                           (0x0020 & scratch) >> 5,
+                           (0x0020 & v[0]) >> 5 );
+
+  libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_VSR, scratch );
+}
+
+
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
                                                      libxsmm_loop_label_tracker * io_loop_label_tracker ) {
