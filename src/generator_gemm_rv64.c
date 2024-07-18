@@ -360,7 +360,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   LIBXSMM_UNUSED(lda_transpose);
 
   /* define gp register mapping */
-  libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
+  //libxsmm_reset_rv64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_RV64_GP_REG_X10;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_RV64_GP_REG_X11;
@@ -377,12 +377,12 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_RV64_GP_REG_X31;
   l_gp_reg_mapping.gp_reg_scf    = LIBXSMM_RV64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_RV64_GP_REG_X5;
-  l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_RV64_GP_REG_X6;
+  l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_RV64_GP_REG_X6;      /* Offset reg are same as used for stride */
   l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_RV64_GP_REG_X7;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_RV64_GP_REG_X5;      /* storing forward counting BRGEMM interations */
-  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_RV64_GP_REG_X6;      /* for a ptr updates in BRGEMM */
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_RV64_GP_REG_X7;      /* for b ptr updates in BRGEMM */
-  l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_RV64_GP_REG_X31; /* BRGEMM loop */
+  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_RV64_GP_REG_X14;       /* storing forward counting BRGEMM interations */
+  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_RV64_GP_REG_X6;        /* for a ptr updates in BRGEMM */
+  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_RV64_GP_REG_X7;        /* for b ptr updates in BRGEMM */
+  l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_RV64_GP_REG_X15;  /* BRGEMM loop */
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -456,6 +456,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
       libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
                                        l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b_prefetch, 88 );
     }
+
     /* batch reduce count & offset arrays */
     if ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
       libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
@@ -480,8 +481,6 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
     }
 #endif
   }
-
-
 
 #if 0
   /* setting up the stack frame */
@@ -549,9 +548,106 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
           return;
         }
 
+        /* handle BRGEMM */
+        if ( ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ||
+             ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) >  0) ||
+             ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) >  0)    ) {
+          /* we need to load the real address */
+          if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0 ) {
+            libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_4, 0 );
+            libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, 0 );
+          } else {
+            libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_3, 0 );
+            libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                           l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_4, 0 );
+            libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                           l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_5, 0 );
+          }
+
+          /* open BR loop */
+          libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_reduce_count,
+                                                l_gp_reg_mapping.gp_reg_reduce_loop, 0 );
+
+          libxsmm_rv64_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
+
+          /* we need to load the real address of A and B for this reduce operation */
+          if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
+            libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a,
+              l_gp_reg_mapping.gp_reg_help_3 );
+
+            libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_b,
+              l_gp_reg_mapping.gp_reg_help_3 );
+          }
+
+          if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0 ) {
+            /* Compute the effective address */
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_a_offset,
+                                                                 l_gp_reg_mapping.gp_reg_help_3, l_gp_reg_mapping.gp_reg_help_1 );
+
+            libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_0,
+              0);
+#if 0
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_help_4,
+                                                                 l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a );
+
+#endif
+
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_b_offset,
+                                                                 l_gp_reg_mapping.gp_reg_help_3, l_gp_reg_mapping.gp_reg_help_0 );
+            libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1,
+              0);
+#if 0
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_help_5,
+                                                                 l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b );
+#endif
+          }
+        }
+
         /* compute outer product */
         libxsmm_generator_gemm_rv64_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
                                               l_xgemm_desc_opa, l_m_blocking, l_n_blocking );
+
+        if ( ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ||
+             ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) >  0) ||
+             ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) >  0)    ) {
+          /* increment forward counting BRGEMM count */
+          if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0 ) {
+            /* nothing to do */
+          } else {
+            libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                           l_gp_reg_mapping.gp_reg_help_3, l_gp_reg_mapping.gp_reg_help_3, 8 );
+          }
+
+          if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0 ) {
+            libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_0, l_xgemm_desc_opa->c1 );
+            libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_1, l_xgemm_desc_opa->c2 );
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_help_0,
+                                                                 l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_a );
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_help_1,
+                                                                 l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_b );
+
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_help_0,
+                                                                 l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_help_4 );
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, l_gp_reg_mapping.gp_reg_help_1,
+                                                                 l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_help_5 );
+          }
+
+          /* close BRGEMM loop */
+          libxsmm_generator_loop_footer_rv64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_reduce_loop, 1 );
+
+          /* restore A and B register */
+          if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0 ) {
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB, l_gp_reg_mapping.gp_reg_a,
+                                                                 l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a );
+            libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB, l_gp_reg_mapping.gp_reg_b,
+                                                                 l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_b );
+          } else {
+            libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                           l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a, 0 );
+            libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                           l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_b, 0 );
+          }
+        }
 
         /* store block of C */
         if ( io_generated_code->arch == LIBXSMM_RV64 ) {
@@ -569,10 +665,41 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                        l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
                                                        (long long)l_m_blocking*l_micro_kernel_config.datatype_size_out );
 
-        if ((l_m_done != (unsigned int)l_xgemm_desc_opa->m) || (l_m_blocking < (unsigned int)l_xgemm_desc_opa->m)){
-          libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                                    l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,  (long long)l_m_blocking*l_micro_kernel_config.datatype_size_in);
-          l_m_blocking_old += l_m_done - l_m_done_old;
+        /* advance A pointer */
+        if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
+          libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_3, 0 );
+          libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                         l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_4, 0 );
+
+          /* open BR loop */
+          libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_reduce_count,
+            l_gp_reg_mapping.gp_reg_reduce_loop, 0 );
+          libxsmm_rv64_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
+
+          /* update A pointer */
+          libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_3 );
+
+          libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                         l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
+                                                         (long long)l_m_blocking*l_micro_kernel_config.datatype_size_in*a_vnni_factor );
+
+          libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a,
+                                                l_gp_reg_mapping.gp_reg_help_3 );
+
+          libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                         l_gp_reg_mapping.gp_reg_help_3, l_gp_reg_mapping.gp_reg_help_3, 8 );
+          /* close BRGEMM loop */
+          libxsmm_generator_loop_footer_rv64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_reduce_loop, 1 );
+
+          /* reset A */
+          libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                         l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a, 0 );
+        } else {
+          if ((l_m_done != (unsigned int)l_xgemm_desc_opa->m) || (l_m_blocking < (unsigned int)l_xgemm_desc_opa->m)){
+            libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+                l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,  (long long)l_m_blocking*l_micro_kernel_config.datatype_size_in);
+            l_m_blocking_old += l_m_done - l_m_done_old;
+          }
         }
 
         /* close M loop */
@@ -589,6 +716,27 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                    l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
                                                    ((long long)l_n_blocking * l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out) -
                                                    ((long long)l_xgemm_desc_opa->m * l_micro_kernel_config.datatype_size_out) );
+
+    if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
+      libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_3, 0 );
+      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                    l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_4, 0 );
+      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                    l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_5, 0 );
+
+      /* open BR loop */
+      libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_reduce_count,
+                                          l_gp_reg_mapping.gp_reg_reduce_loop, 0);
+      libxsmm_rv64_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
+
+      /* update A pointer */
+      libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_4,
+                                          l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_3 );
+
+      /* update B pointer */
+      libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_help_5,
+                                          l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_3 );
+    }
 
     /* reset A pointer */
     /* TODO (MMLA): hardcoded MMLA fix */
@@ -616,6 +764,23 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
     if (l_m_blocking_old){
         libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
           l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,  (long long)l_m_blocking_old*l_micro_kernel_config.datatype_size_in);
+    }
+
+    if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
+      libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_3 );
+
+      libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_3 );
+
+      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                     l_gp_reg_mapping.gp_reg_help_3, l_gp_reg_mapping.gp_reg_help_3, 8 );
+      /* close BRGEMM loop */
+      libxsmm_generator_loop_footer_rv64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_reduce_loop, 1 );
+
+      /* reset A and B */
+      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                     l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_a, 0 );
+      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                     l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_b, 0 );
     }
 
     /* close N loop */
