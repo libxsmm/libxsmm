@@ -422,6 +422,24 @@ unsigned int libxsmm_ppc64le_instr_x_form_555( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_x_form_581( unsigned int  i_instr,
+                                               unsigned char i_t,
+                                               unsigned char i_imm,
+                                               unsigned char i_tx ) {
+  unsigned int l_instr = i_instr;
+
+  /* Set T */
+  l_instr |= (unsigned int)( (0x1f & i_t) << (31 - 6 - 4) );
+  /* Set IMM8 */
+  l_instr |= (unsigned int)( (0xff & i_imm) << (31 - 13 - 7) );
+  /* Set TX */
+  l_instr |= (unsigned int)( (0x01 & i_tx) << (31 - 31 - 0) );
+
+  return l_instr;
+}
+
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xfx_form( unsigned int  i_instr,
                                              unsigned char i_t,
                                              unsigned int  i_r ) {
@@ -780,8 +798,17 @@ unsigned int libxsmm_ppc64le_instr_3_wrapper( unsigned int i_instr,
     case LIBXSMM_PPC64LE_INSTR_STVEHX:
     case LIBXSMM_PPC64LE_INSTR_STVEWX:
     case LIBXSMM_PPC64LE_INSTR_LVX:
-    case LIBXSMM_PPC64LE_INSTR_LVXL: {
+    case LIBXSMM_PPC64LE_INSTR_LVXL:
+    case LIBXSMM_PPC64LE_INSTR_AND:
+    case LIBXSMM_PPC64LE_INSTR_NAND:
+    case LIBXSMM_PPC64LE_INSTR_OR:
+    case LIBXSMM_PPC64LE_INSTR_NOR:
+    case LIBXSMM_PPC64LE_INSTR_ADD: {
       op = libxsmm_ppc64le_instr_x_form_555( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3 );
+    } break;
+    /* X (581) form */
+    case LIBXSMM_PPC64LE_INSTR_XXSPLTIB: {
+        op = libxsmm_ppc64le_instr_x_form_581( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3 );
     } break;
     /* XX2 (2) form */
     case LIBXSMM_PPC64LE_INSTR_XSXEXPDP:
@@ -968,7 +995,8 @@ unsigned int libxsmm_ppc64le_instr_5_wrapper( unsigned int i_instr,
     } break;
     /* XX2 (4) form */
     case LIBXSMM_PPC64LE_INSTR_XXEXTRACTUW:
-    case LIBXSMM_PPC64LE_INSTR_XXINSERTW: {
+    case LIBXSMM_PPC64LE_INSTR_XXINSERTW:
+    case LIBXSMM_PPC64LE_INSTR_XXSPLTW: {
       op = libxsmm_ppc64le_instr_xx2_form_4( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5 );
     } break;
     /* XX3 (0) form */
@@ -1093,7 +1121,13 @@ unsigned int libxsmm_ppc64le_instr_6_wrapper( unsigned int i_instr,
     case LIBXSMM_PPC64LE_INSTR_XXLXOR:
     case LIBXSMM_PPC64LE_INSTR_XSCMPEQDP:
     case LIBXSMM_PPC64LE_INSTR_XSCMPGTDP:
-    case LIBXSMM_PPC64LE_INSTR_XSCMPGEDP: {
+    case LIBXSMM_PPC64LE_INSTR_XSCMPGEDP:
+    case LIBXSMM_PPC64LE_INSTR_XVADDDP:
+    case LIBXSMM_PPC64LE_INSTR_XVADDSP:
+    case LIBXSMM_PPC64LE_INSTR_XVMULDP:
+    case LIBXSMM_PPC64LE_INSTR_XVMULSP:
+    case LIBXSMM_PPC64LE_INSTR_XVSUBDP:
+    case LIBXSMM_PPC64LE_INSTR_XVSUBSP: {
       op = libxsmm_ppc64le_instr_xx3_form_6( i_instr, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6 );
     } break;
     default: {
@@ -1988,6 +2022,33 @@ void libxsmm_ppc64le_instr_close_stream_wt( libxsmm_generated_code * io_generate
   libxsmm_ppc64le_instr( io_generated_code, LIBXSMM_PPC64LE_INSTR_BLR );
 }
 
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_bytes( libxsmm_generated_code * io_generated_code,
+                                          libxsmm_datatype const   datatype ) {
+  unsigned int bytes = 0;
+
+  switch ( datatype ) {
+    case LIBXSMM_DATATYPE_F32: {
+      bytes = 4;
+    } break;
+    case LIBXSMM_DATATYPE_F64: {
+      bytes = 8;
+    } break;
+    case LIBXSMM_DATATYPE_F16: {
+      bytes = 2;
+    } break;
+    case LIBXSMM_DATATYPE_BF16: {
+      bytes = 2;
+    } break;
+    default: {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return -1;
+    }
+  }
+
+  return bytes;
+}
 
 
 LIBXSMM_API_INTERN

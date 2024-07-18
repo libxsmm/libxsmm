@@ -15,6 +15,7 @@
 #define GENERATOR_GEMM_PPC64LE_H
 
 #include "generator_common.h"
+#include "generator_gemm_vsx_microkernel.h"
 #include "generator_ppc64le_instructions.h"
 #include "../include/libxsmm_typedefs.h"
 
@@ -81,16 +82,6 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop_wt( libxsmm_generated_code       
                                                    unsigned char const             i_b_ptr_gpr,
                                                    unsigned char const             i_c_ptr_gpr );
 
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_vsx_k_loop_wt( libxsmm_generated_code        * io_generated_code,
-                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
-                                                   libxsmm_ppc64le_reg           * reg_tracker,
-                                                   libxsmm_loop_label_tracker    * loop_labels,
-                                                   unsigned int                  * blocking,
-                                                   unsigned char const             i_a_ptr_gpr,
-                                                   unsigned char const             i_b_ptr_gpr,
-                                                   unsigned char const             i_c_ptr_gpr );
 
 /**
  * Generates a microkernel using VSX.
@@ -181,6 +172,19 @@ void libxsmm_gnerator_gemm_ppc64le_vsx_load( libxsmm_generated_code * io_generat
                                              unsigned int             n_rows,
                                              unsigned int             n_cols,
                                              unsigned int             stride );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_gnerator_gemm_ppc64le_vsx_load_bcast( libxsmm_generated_code * io_generated_code,
+                                                   libxsmm_datatype const   datatype,
+                                                   libxsmm_datatype const   comptype,
+                                                   libxsmm_ppc64le_reg    * reg_tracker,
+                                                   unsigned int           * loaded_regs,
+                                                   unsigned int             i_ptr_gpr,
+                                                   unsigned int             n_rows,
+                                                   unsigned int             n_cols,
+                                                   unsigned int             stride );
+
 
 /**
  * Generates a matrix kernel for PPC64LE-VSX.
