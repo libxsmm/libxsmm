@@ -454,7 +454,7 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 /* basic arithmetic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_ADDI 0x38000000 /* Add Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_RLDICR 0x78000004 /* Rotate Left Doubleword Immediate then Clear Right MD-form */
-
+#define LIBXSMM_PPC64LE_INSTR_ADD 0x7c000214 /* Add XO-form */
 
 /* logic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_BC 0x40000000 /* Branch Conditional B-form */
@@ -462,6 +462,10 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 
 #define LIBXSMM_PPC64LE_INSTR_ANDI 0x70000000 /* AND Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_ORI 0x60000000 /* OR Immediate D-form */
+#define LIBXSMM_PPC64LE_INSTR_OR 0x7c000378 /* OR X-form */
+#define LIBXSMM_PPC64LE_INSTR_NOR 0x7c0000f8 /* NOR X-form */
+#define LIBXSMM_PPC64LE_INSTR_AND 0x7c000038 /* AND X-form */
+#define LIBXSMM_PPC64LE_INSTR_NAND 0x7c0003b8 /* NAND X-form */
 
 #define LIBXSMM_PPC64LE_INSTR_CMPI 0x2c000000 /* Compare Immediate D-form */
 
@@ -713,6 +717,15 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_XVCPSGNSP 0xf0000680 /* VSX Vector Copy Sign Single-Precision XX3-form */
 
 
+/* vector arithmetic opcodes */
+#define LIBXSMM_PPC64LE_INSTR_XVADDDP 0xf0000300 /* VSX Vector Add Double-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVADDSP 0xf0000200 /* VSX Vector Add Single-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMULDP 0xf0000380 /* VSX Vector Multiply Double-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMULSP 0xf0000280 /* VSX Vector Multiply Single-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVSUBDP 0xf0000340 /* VSX Vector Subtract Double-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVSUBSP 0xf0000240 /* VSX Vector Subtract Single-Precision XX3-form */
+
+
 /* FMA type opcodes */
 #define LIBXSMM_PPC64LE_INSTR_XSMADDASP 0xf0000008 /* VSX Scalar Multiply-Add Type-A Single-Precision XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XSMADDMSP 0xf0000048 /* VSX Scalar Multiply-Add Type-M Single-Precision XX3-form */
@@ -723,8 +736,8 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_XSMSUBADP 0xf0000188 /* VSX Scalar Multiply-Subtract Type-A Double-Precision XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XSMSUBMDP 0xf00001c8 /* VSX Scalar Multiply-Subtract Type-M Double-Precision XX3-form */
 
-#define LIBXSMM_PPC64LE_INSTR_XVMADDASP 0xf0000208 /* VSX Vector Multiply-Add Type-A Single-Precision XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMADDMSP 0xf0000248 /* VSX Vector Multiply-Add Type-M Single-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMADDASP 0xf0000208 /* VSX Vector Multiply-Add Type-A Single-Precision XX3-form T = T + A*B */
+#define LIBXSMM_PPC64LE_INSTR_XVMADDMSP 0xf0000248 /* VSX Vector Multiply-Add Type-M Single-Precision XX3-form T = B + A*T */
 #define LIBXSMM_PPC64LE_INSTR_XVMSUBASP 0xf0000288 /* VSX Vector Multiply-Subtract Type-A Single-Precision XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVMSUBMSP 0xf00002c8 /* VSX Vector Multiply-Subtract Type-M Single-Precision XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVMADDADP 0xf0000308 /* VSX Vector Multiply-Add Type-A Double-Precision XX3-form */
@@ -750,6 +763,8 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_XVNMSUBADP 0xf0000788 /* VSX Vector Negative Multiply-Subtract Type-A Double-Precision XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVNMSUBMDP 0xf00007c8 /* VSX Vector Negative Multiply-Subtract Type-M Double-Precision XX3-form */
 
+
+/* MMA opcodes */
 #define LIBXSMM_PPC64LE_INSTR_XVBF16GER2 0xec000198 /* VSX Vector bfloat16 GER (Rank-2 Update) XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVBF16GER2NN 0xec000790 /* VSX Vector bfloat16 GER (Rank-2 Update) Negative multiply, Negative accumulate XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVBF16GER2NP 0xec000390 /* VSX Vector bfloat16 GER (Rank-2 Update) Negative multiply, Positive accumulate XX3-form */
@@ -914,11 +929,19 @@ unsigned int libxsmm_ppc64le_instr_x_form_4155( unsigned int  i_instr,
                                                 unsigned char i_a,
                                                 unsigned char i_b );
 
+
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_x_form_555( unsigned int  i_instr,
                                                unsigned char i_t,
                                                unsigned char i_a,
                                                unsigned char i_b );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_x_form_581( unsigned int  i_instr,
+                                               unsigned char i_t,
+                                               unsigned char i_imm,
+                                               unsigned char i_tx );
 
 
 LIBXSMM_API_INTERN
@@ -1354,6 +1377,11 @@ void libxsmm_ppc64le_instr_open_stream_wt( libxsmm_generated_code * io_generated
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_close_stream_wt( libxsmm_generated_code * io_generated_code,
                                             libxsmm_ppc64le_reg    * reg_tracker );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_bytes( libxsmm_generated_code * io_generated_code,
+                                          libxsmm_datatype const   datatype );
 
 
 LIBXSMM_API_INTERN
