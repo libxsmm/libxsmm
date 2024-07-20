@@ -23,7 +23,12 @@
 #define LIBXSMM_PPC64LE_ACC_NMAX 8
 
 /* number of volatile registers */
-#define LIBXSMM_PPC64LE_GPR_IVOL 14
+/* From "64-Bit ELF V2 ABI Specification: Power Architecture"
+ * A number of registers are either volatile or non-volatile.
+ * The numbers below are the number of the first non-volatile
+ * register
+ */
+#define LIBXSMM_PPC64LE_GPR_IVOL 13
 #define LIBXSMM_PPC64LE_FPR_IVOL 14
 #define LIBXSMM_PPC64LE_VR_IVOL  20
 
@@ -286,9 +291,9 @@ struct libxsmm_ppc64le_reg {
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
-  LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_RESV, \
   LIBXSMM_PPC64LE_REG_RESV, \
+  LIBXSMM_PPC64LE_REG_RESV, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
@@ -306,7 +311,7 @@ struct libxsmm_ppc64le_reg {
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
-  LIBXSMM_PPC64LE_REG_FREE }, { /* FPR */ \
+  LIBXSMM_PPC64LE_REG_FREE }, /* FPR */ { \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \

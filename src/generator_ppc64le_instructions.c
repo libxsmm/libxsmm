@@ -496,8 +496,8 @@ unsigned int libxsmm_ppc64le_instr_xx2_form_3( unsigned int  i_instr,
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xx2_form_4( unsigned int  i_instr,
                                                unsigned char i_t,
-                                               unsigned char i_b,
                                                unsigned char i_uim,
+                                               unsigned char i_b,
                                                unsigned char i_bx,
                                                unsigned char i_tx ) {
   unsigned int l_instr = i_instr;
@@ -1897,9 +1897,15 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_co
   }
 }
 
+
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_open_stream_wt( libxsmm_generated_code *io_generated_code,
                                            libxsmm_ppc64le_reg    *reg_tracker ) {
+  /* From "64-Bit ELF V2 ABI Specification: Power Architecture"
+   * GPR3 contains the pointer to the first arguement
+   * The first arg to the gemm is a point to a libxsmm_gemm_param struct, which we
+   * can then unpack, into the standard
+   */
 
   unsigned int gpr_offset = 0;
   unsigned int fpr_offset = (LIBXSMM_PPC64LE_GPR_NMAX - LIBXSMM_PPC64LE_GPR_IVOL)*8;
@@ -1957,12 +1963,37 @@ void libxsmm_ppc64le_instr_open_stream_wt( libxsmm_generated_code *io_generated_
 
   libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_GPR, index);
 
+  /* Set up input args */
+  unsigned int struct_ptr = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_GPR );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_OR,
+                           LIBXSMM_PPC64LE_GPR_R3,
+                           struct_ptr,
+                           LIBXSMM_PPC64LE_GPR_R3 );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_ADDI,
+                           LIBXSMM_PPC64LE_GPR_R3,
+                           struct_ptr,
+                           0x0020 );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_ADDI,
+                           LIBXSMM_PPC64LE_GPR_R4,
+                           struct_ptr,
+                           0x0040 );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_ADDI,
+                           LIBXSMM_PPC64LE_GPR_R5,
+                           struct_ptr,
+                           0x0060 );
+
+  libxsmm_ppc64le_free_reg( reg_tracker, LIBXSMM_PPC64LE_GPR, struct_ptr );
 }
 
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_close_stream_wt( libxsmm_generated_code * io_generated_code,
                                             libxsmm_ppc64le_reg    * reg_tracker ) {
+  /* From "64-Bit ELF V2 ABI Specification: Power Architecture" */
 
   unsigned int gpr_offset = 0;
   unsigned int fpr_offset = (LIBXSMM_PPC64LE_GPR_NMAX - LIBXSMM_PPC64LE_GPR_IVOL)*8;
