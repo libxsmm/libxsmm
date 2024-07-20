@@ -627,19 +627,18 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop_wt( libxsmm_generated_code       
   /* Create local pointer for a */
   unsigned int l_a_ptr_gpr = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_GPR );
   libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_ADDI,
-                           l_a_ptr_gpr,
+                           LIBXSMM_PPC64LE_INSTR_OR,
                            i_a_ptr_gpr,
-                           0 );
+                           l_a_ptr_gpr,
+                           i_a_ptr_gpr );
 
   /* Set jump point if required */
-  if ( m_iters > 1) {
+  if ( m_iters > 1 ) {
     m_loop = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_GPR );
-    /* Load imediate */
     libxsmm_ppc64le_instr_3( io_generated_code,
                              LIBXSMM_PPC64LE_INSTR_ADDI,
                              m_loop,
-                             LIBXSMM_PPC64LE_GPR_R0,
+                             0,
                              m_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code,
                                                     loop_labels );
@@ -681,7 +680,7 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop_wt( libxsmm_generated_code       
 
 /*
 
-n m k
+m n k
 
 A[m * k] * B[k * n] = C[m * n]
 
@@ -705,9 +704,9 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx_wt( libxsmm_generated_code       
   unsigned int bytes = libxsmm_ppc64le_instr_bytes( io_generated_code, a_datatype );
   unsigned int v_len = ( LIBXSMM_PPC64LE_VSR_WIDTH / 8 ) / bytes;
   unsigned int blocking[3];
-  blocking[0] = 16 / bytes < i_xgemm_desc->n ? 16 / bytes : i_xgemm_desc->n; /* n-blocking */
-  blocking[1] = 32 / bytes < i_xgemm_desc->m ? 32 / bytes : i_xgemm_desc->m; /* m-blocking */
-  blocking[2] = 32 / bytes < i_xgemm_desc->k ? 32 / bytes : i_xgemm_desc->k; /* k-blocking */
+  blocking[0] = 16 / bytes < i_xgemm_desc->n ? 16 / bytes : i_xgemm_desc->n; /* n-blocking */ // 4
+  blocking[1] = 32 / bytes < i_xgemm_desc->m ? 32 / bytes : i_xgemm_desc->m; /* m-blocking */ // 8
+  blocking[2] = 32 / bytes < i_xgemm_desc->k ? 32 / bytes : i_xgemm_desc->k; /* k-blocking */ // 8
 
   unsigned int n_vsr = ( ( blocking[1] / v_len )*blocking[2] + /* a registers */
                          ( blocking[1] / v_len )*blocking[0] + /* c registers */
@@ -744,11 +743,10 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx_wt( libxsmm_generated_code       
   /* Set jump point if required */
   if ( n_iters > 1 ) {
     n_loop = libxsmm_ppc64le_get_reg( reg_tracker, LIBXSMM_PPC64LE_GPR );
-    /* Load imediate */
     libxsmm_ppc64le_instr_3( io_generated_code,
                              LIBXSMM_PPC64LE_INSTR_ADDI,
                              n_loop,
-                             LIBXSMM_PPC64LE_GPR_R0,
+                             0,
                              n_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code,
                                                     &l_loop_labels );

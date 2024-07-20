@@ -41,15 +41,27 @@ void libxsmm_generator_gemm_vsx_mk_load( libxsmm_generated_code * io_generated_c
 
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vsx_mk_store( libxsmm_generated_code * io_generated_code,
+                                          libxsmm_datatype const   datatype,
+                                          libxsmm_datatype const   comptype, /* currently unsuded */
+                                          libxsmm_ppc64le_reg    * reg_tracker,
+                                          unsigned int           * loaded_regs,
+                                          unsigned int             i_ptr_gpr,
+                                          unsigned int             n_rows,
+                                          unsigned int             n_cols,
+                                          unsigned int             stride );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_vsx_mk_load_bcast( libxsmm_generated_code * io_generated_code,
-                                                   libxsmm_datatype const   datatype,
-                                                   libxsmm_datatype const   comptype, /* currently unsuded */
-                                                   libxsmm_ppc64le_reg    * reg_tracker,
-                                                   unsigned int           * loaded_regs,
-                                                   unsigned int             i_ptr_gpr,
-                                                   unsigned int             n_rows,
-                                                   unsigned int             n_cols,
-                                                   unsigned int             stride );
+                                               libxsmm_datatype const   datatype,
+                                               libxsmm_datatype const   comptype, /* currently unsuded */
+                                               libxsmm_ppc64le_reg    * reg_tracker,
+                                               unsigned int           * loaded_regs,
+                                               unsigned int             i_ptr_gpr,
+                                               unsigned int             n_rows,
+                                               unsigned int             n_cols,
+                                               unsigned int             stride );
 
 
 LIBXSMM_API_INTERN
