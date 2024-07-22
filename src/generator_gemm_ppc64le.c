@@ -305,14 +305,15 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * 
   unsigned int l_v_len = ( LIBXSMM_PPC64LE_VSR_WIDTH / 8 ) / l_bytes;
   unsigned int l_blocking[3];
   l_blocking[0] = 16 / l_bytes < i_xgemm_desc->n ? 16 / l_bytes : i_xgemm_desc->n; /* n-blocking */
-  l_blocking[1] = 32 / l_bytes < i_xgemm_desc->m ? 32 / l_bytes : i_xgemm_desc->m; /* m-blocking */
-  l_blocking[2] = 32 / l_bytes < i_xgemm_desc->k ? 32 / l_bytes : i_xgemm_desc->k; /* k-blocking */
+  l_blocking[1] = 64 / l_bytes < i_xgemm_desc->m ? 64 / l_bytes : i_xgemm_desc->m; /* m-blocking */
+  l_blocking[2] = 16 / l_bytes < i_xgemm_desc->k ? 16 / l_bytes : i_xgemm_desc->k; /* k-blocking */
 
-  unsigned int n_vsr = ( ( l_blocking[1] / l_v_len )*l_blocking[2] + /* a registers */
-                         ( l_blocking[1] / l_v_len )*l_blocking[0] + /* c registers */
-                         l_blocking[0]*l_blocking[2] );              /* b registers */
+  unsigned int l_n_a_reg = ( l_blocking[1] / l_v_len )*l_blocking[2]; /* a registers */
+  unsigned int l_n_c_reg = ( l_blocking[1] / l_v_len )*l_blocking[0]; /* c registers */
+  unsigned int l_n_b_reg =   l_blocking[0]*l_blocking[2];             /* b registers */
+  unsigned int l_n_vsr = l_n_a_reg + l_n_b_reg + l_n_c_reg;
 
-  if ( n_vsr > LIBXSMM_PPC64LE_VSR_NMAX ) {
+  if ( l_n_vsr > LIBXSMM_PPC64LE_VSR_NMAX ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
     return;
   }
