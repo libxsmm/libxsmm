@@ -492,6 +492,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER           0x25207810
 #define LIBXSMM_AARCH64_INSTR_GP_LSL                          0xd379e063
 #define LIBXSMM_AARCH64_INSTR_GP_LSR                          0xd347fc63
+#define LIBXSMM_AARCH64_INSTR_SME_FMAX_2                      0xc1a0a100
+#define LIBXSMM_AARCH64_INSTR_SME_FMAX_4                      0xc1a0a900
 
 /**
  * shift mode */
@@ -1046,5 +1048,11 @@ void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_co
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_shift( libxsmm_generated_code* io_generated_code,
                                         unsigned int            i_instr );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_code,
+                                          unsigned int             i_instr,
+                                          unsigned int             i_vec_src_reg_0,
+                                          unsigned int             i_vec_src_dst_reg );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */

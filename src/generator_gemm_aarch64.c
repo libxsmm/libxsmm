@@ -2054,6 +2054,17 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
   libxsmm_gemm_descriptor*          l_xgemm_desc_opa;
   libxsmm_gemm_descriptor           l_new_xgemm_desc_opa;
 
+  if (i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
+      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
+        l_micro_kernel_config.has_colbias_act_fused = 1;
+        if ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) {
+          l_micro_kernel_config.fused_relu = 1;
+        } else {
+          l_micro_kernel_config.fused_relu_nobitmask = 1;
+        }
+      }
+  }
+
   /* define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
@@ -2236,13 +2247,23 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
                                                     l_xgemm_desc_opa->ldc * 16*4  );
 
       /* store block of C */
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
-                                                     l_gp_reg_mapping.gp_reg_c,
-                                                     l_gp_reg_mapping.gp_reg_help_0,
-                                                     l_m_blocking,
-                                                     l_n_blocking,
-                                                     l_xgemm_desc_opa->ldc,
-                                                     1 );
+      if(l_micro_kernel_config.fused_relu_nobitmask == 1){
+        libxsmm_generator_store_2dregblock_aarch64_sme_relu( io_generated_code,
+                                                             l_gp_reg_mapping.gp_reg_c,
+                                                             l_gp_reg_mapping.gp_reg_help_0,
+                                                             l_m_blocking,
+                                                             l_n_blocking,
+                                                             l_xgemm_desc_opa->ldc,
+                                                             1 );
+      } else {
+        libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
+                                                        l_gp_reg_mapping.gp_reg_c,
+                                                        l_gp_reg_mapping.gp_reg_help_0,
+                                                        l_m_blocking,
+                                                        l_n_blocking,
+                                                        l_xgemm_desc_opa->ldc,
+                                                        1 );
+      }
 
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
                                                            LIBXSMM_AARCH64_INSTR_GP_ORR_SR,

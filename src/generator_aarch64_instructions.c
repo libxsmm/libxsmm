@@ -1168,7 +1168,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_has_immediate = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM) == LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM;
   unsigned int l_vec_instr = i_vec_instr;
 
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 && 0) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM SVE needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -2419,6 +2419,45 @@ void libxsmm_aarch64_instruction_shift( libxsmm_generated_code* io_generated_cod
   unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
   /* fix bits */
   code[code_head] = i_instr;
+
+  /* advance code head */
+  io_generated_code->code_size += 4;
+
+  return;
+
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_code,
+                                          unsigned int             i_instr,
+                                          unsigned int             i_vec_src_reg_0,
+                                          unsigned int             i_vec_src_dst_reg ){
+   switch ( i_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SME_FMAX_2:
+    case LIBXSMM_AARCH64_INSTR_SME_FMAX_4:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_sme_fmax: unexpected instruction number: %u\n", i_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+  }
+  /* Ensure we have enough space */
+  if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
+  unsigned int code_head = io_generated_code->code_size/4;
+  unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+  /* fix bits */
+  code[code_head] = i_instr;
+  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_FMAX_2 ){
+    code[code_head] |= (unsigned int)( 0x1e  & i_vec_src_dst_reg);
+    code[code_head] |= (unsigned int)((0xf & i_vec_src_reg_0) << 16 );
+  } else {
+    code[code_head] |= (unsigned int)( 0x1c  & i_vec_src_dst_reg);
+    code[code_head] |= (unsigned int)((0xf & i_vec_src_reg_0) << 16 );
+  }
 
   /* advance code head */
   io_generated_code->code_size += 4;
