@@ -819,21 +819,21 @@ libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init();
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_get_reg( libxsmm_ppc64le_reg * reg_tracker,
-                                      unsigned char         reg_type );
+unsigned int libxsmm_ppc64le_get_reg( libxsmm_ppc64le_reg * io_reg_tracker,
+                                      unsigned int const     i_reg_type );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_set_reg( libxsmm_ppc64le_reg * reg_tracker,
-                              unsigned char         reg_type,
-                              unsigned int          reg,
-                              unsigned int          value );
+void libxsmm_ppc64le_set_reg( libxsmm_ppc64le_reg * io_reg_tracker,
+                              unsigned int const    io_reg_type,
+                              unsigned int const    i_reg,
+                              unsigned int const    i_value );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_free_reg( libxsmm_ppc64le_reg * reg_tracker,
-                               unsigned char         reg_type,
-                               unsigned int          reg );
+void libxsmm_ppc64le_free_reg( libxsmm_ppc64le_reg * io_reg_tracker,
+                               unsigned int const    i_reg_type,
+                               unsigned int const    i_reg );
 
 
 LIBXSMM_API_INTERN
@@ -1185,173 +1185,6 @@ void libxsmm_ppc64le_instr_8( libxsmm_generated_code * io_generated_code,
 
 
 /**
- * Generates a conditional branch instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_bo conditions under which the branch is taken.
- * @param i_bi condition register bit (bi+32).
- * @param i_bd 14-bit immediate relative or absolute branch address.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_b_conditional( unsigned int  i_instr,
-                                                        unsigned char i_bo,
-                                                        unsigned char i_bi,
-                                                        unsigned int  i_bd );
-
-/**
- * Generates a fixed-point storage access instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_rs destination (load) or source (store) GPR.
- * @param i_ra source GPR holding the address.
- * @param i_d 16-bit immediate address offset.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_fip_storage_access( unsigned int  i_instr,
-                                                             unsigned char i_rs,
-                                                             unsigned char i_ra,
-                                                             unsigned int  i_d );
-
-/**
- * Generates an arithmetic scalar fixed-point instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_rt destination GPR.
- * @param i_ra source GPR.
- * @param i_si 16-bit immediate.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_fip_arithmetic( unsigned int  i_instr,
-                                                         unsigned char i_rt,
-                                                         unsigned char i_ra,
-                                                         unsigned int  i_si );
-
-/**
- * Generates compare fixed-point instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_bf destination SI field.
- * @param i_l 0: RA[32:63] are extended to 64 bits, 1: all of RA's bits are used.
- * @param i_ra source register which is compared.
- * @param i_si 16-bit immediate.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_fip_compare( unsigned int  i_instr,
-                                                      unsigned char i_bf,
-                                                      unsigned char i_l,
-                                                      unsigned char i_ra,
-                                                      unsigned int  i_si );
-
-/**
- * Generates a logical scalar fixed-point instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_ra destination GPR.
- * @param i_rs source GPR.
- * @param i_ui 16-bit immediate.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_fip_logical( unsigned int  i_instr,
-                                                      unsigned char i_ra,
-                                                      unsigned char i_rs,
-                                                      unsigned int  i_ui );
-
-/**
- * Generates a rotate fixed-point instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_ra destination GPR.
- * @param i_rs source GPR.
- * @param i_sh 6-bit immediate.
- * @param i_mb 6-bit immediate.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_fip_rotate( unsigned int  i_instr,
-                                                     unsigned char i_ra,
-                                                     unsigned char i_rs,
-                                                     unsigned int  i_sh,
-                                                     unsigned int  i_mb );
-
-/**
- * Generates a move to/from system register instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_rs source/destination GPR.
- * @param i_spr destination/source SPR.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_fip_system( unsigned int  i_instr,
-                                                     unsigned char i_rs,
-                                                     unsigned int  i_spr );
-
-/**
- * Generates a floating-point storage access instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_frs destination (load) or source (store) floating-point register.
- * @param i_ra source GPR holding the address.
- * @param i_d 16-bit immediate address offset.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_flp_storage_access( unsigned int  i_instr,
-                                                             unsigned char i_frs,
-                                                             unsigned char i_ra,
-                                                             unsigned int  i_d );
-
-/**
- * Generates a vector storage access instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_vrt destination (load) or source (store) VRT.
- * @param i_ra GPR containing the address offset, offset is 0 if id 0 is given.
- * @param i_rb GPR containing the address.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_vec_storage_access( unsigned int  i_instr,
-                                                             unsigned char i_vrt,
-                                                             unsigned char i_ra,
-                                                             unsigned char i_rb );
-
-/**
- * Generates a VSX storage access instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_xt destination (load) or source (store) VSR.
- * @param i_ra GPR containing the address offset, offset is 0 if id 0 is given.
- * @param i_rb GPR containing the address.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_vsx_storage_access( unsigned int  i_instr,
-                                                             unsigned char i_xt,
-                                                             unsigned char i_ra,
-                                                             unsigned char i_rb );
-
-/**
- * Generates a VSX binary floating-point arithmetic operation performing multiply-add.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_xt destination VSR.
- * @param i_xa first source VSR.
- * @param i_xb second source VSR.
- * @return machine code.
- **/
-LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_vsx_vector_bfp_madd( unsigned int  i_instr,
-                                                              unsigned char i_xt,
-                                                              unsigned char i_xa,
-                                                              unsigned char i_xb );
-
-/**
  * Generates a VSX byte-reverse instruction.
  *
  * @param i_instr input-instruction with zeroed arguments.
@@ -1371,8 +1204,8 @@ unsigned int libxsmm_ppc64le_instruction_vsx_vector_permute_byte_reverse( unsign
  * @param io_generated_code pointer to the pointer of the generated code structure.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_open_stream_wt( libxsmm_generated_code * io_generated_code,
-                                           libxsmm_ppc64le_reg    * reg_tracker );
+void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_code,
+                                        libxsmm_ppc64le_reg    * io_reg_tracker );
 
 /**
  * Closes the inline assembly section / jit stream.
@@ -1380,54 +1213,26 @@ void libxsmm_ppc64le_instr_open_stream_wt( libxsmm_generated_code * io_generated
  * @param io_generated_code pointer to the pointer of the generated code structure.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_close_stream_wt( libxsmm_generated_code * io_generated_code,
-                                            libxsmm_ppc64le_reg    * reg_tracker );
+void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_code,
+                                         libxsmm_ppc64le_reg    * io_reg_tracker );
 
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_bytes( libxsmm_generated_code * io_generated_code,
-                                          libxsmm_datatype const   datatype );
+                                          libxsmm_datatype const   i_datatype );
 
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_transpose_f32_4x4_inplace( libxsmm_generated_code * io_generated_code,
-                                                      libxsmm_ppc64le_reg    * reg_tracker,
-                                                      unsigned int           * v );
+                                                      libxsmm_ppc64le_reg    * io_reg_tracker,
+                                                      unsigned int           * io_v );
 
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_transpose_f64_2x2_inplace( libxsmm_generated_code * io_generated_code,
-                                                      libxsmm_ppc64le_reg    * reg_tracker,
-                                                      unsigned int           * v );
+                                                      libxsmm_ppc64le_reg    * io_reg_tracker,
+                                                      unsigned int           * io_v );
 
-
-/**
- * Opens the inline assembly section / jit stream.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_gprMax max general purpose register which is saved on the stack.
- * @param i_fprMax max floating point register which is saved on the stack.
- * @param i_vsrMax max vector register which is saved on the stack.
- **/
-LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_code,
-                                        unsigned short           i_gprMax,
-                                        unsigned short           i_fprMax,
-                                        unsigned short           i_vsrMax );
-
-/**
- * Closes the inline assembly section / jit stream.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_gprMax max general purpose register which is restored from the stack.
- * @param i_fprMax max floating point register which is restored from the stack.
- * @param i_vsrMax max vector register which is restored from the stack.
- **/
-LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_code,
-                                         unsigned short           i_gprMax,
-                                         unsigned short           i_fprMax,
-                                         unsigned short           i_vsrMax );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack.
