@@ -73,14 +73,14 @@ unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code *
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_vsx_m_loop_wt( libxsmm_generated_code        * io_generated_code,
-                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
-                                                   libxsmm_ppc64le_reg           * reg_tracker,
-                                                   libxsmm_loop_label_tracker    * loop_labels,
-                                                   unsigned int                  * blocking,
-                                                   unsigned char const             i_a_ptr_gpr,
-                                                   unsigned char const             i_b_ptr_gpr,
-                                                   unsigned char const             i_c_ptr_gpr );
+void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        * io_generated_code,
+                                                libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                libxsmm_ppc64le_reg           * io_reg_tracker,
+                                                libxsmm_loop_label_tracker    * io_loop_labels,
+                                                unsigned int                  * i_blocking,
+                                                unsigned char const             i_a_ptr_gpr,
+                                                unsigned char const             i_b_ptr_gpr,
+                                                unsigned char const             i_c_ptr_gpr );
 
 
 /**
@@ -145,65 +145,17 @@ void libxsmm_generator_gemm_ppc64le_m_loop_vsx( libxsmm_generated_code        * 
                                                 unsigned int                    i_n );
 
 
-LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_ppc64le_bytes( libxsmm_generated_code * io_generated_code,
-                                                   libxsmm_datatype const   i_xgemm_desc );
-
-
-LIBXSMM_API_INTERN
-void libxsmm_gnerator_gemm_ppc64le_vsx_load_trans( libxsmm_generated_code * io_generated_code,
-                                                   libxsmm_datatype const   datatype,
-                                                   libxsmm_datatype const   comptype,
-                                                   libxsmm_ppc64le_reg    * reg_tracker,
-                                                   unsigned int           * loaded_regs,
-                                                   unsigned int             i_ptr_gpr,
-                                                   unsigned int             n_rows,
-                                                   unsigned int             n_cols,
-                                                   unsigned int             stride );
-
-
-LIBXSMM_API_INTERN
-void libxsmm_gnerator_gemm_ppc64le_vsx_load( libxsmm_generated_code * io_generated_code,
-                                             libxsmm_datatype const   datatype,
-                                             libxsmm_datatype const   comptype,
-                                             libxsmm_ppc64le_reg    * reg_tracker,
-                                             unsigned int           * loaded_regs,
-                                             unsigned int             i_ptr_gpr,
-                                             unsigned int             n_rows,
-                                             unsigned int             n_cols,
-                                             unsigned int             stride );
-
-
-LIBXSMM_API_INTERN
-void libxsmm_gnerator_gemm_ppc64le_vsx_load_bcast( libxsmm_generated_code * io_generated_code,
-                                                   libxsmm_datatype const   datatype,
-                                                   libxsmm_datatype const   comptype,
-                                                   libxsmm_ppc64le_reg    * reg_tracker,
-                                                   unsigned int           * loaded_regs,
-                                                   unsigned int             i_ptr_gpr,
-                                                   unsigned int             n_rows,
-                                                   unsigned int             n_cols,
-                                                   unsigned int             stride );
-
-
 /**
  * Generates a matrix kernel for PPC64LE-VSX.
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param i_xgemm_desc description of the matrix-operation.
- **/
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_kernel_vsx_wt( libxsmm_generated_code        * io_generated_code,
-                                                   libxsmm_gemm_descriptor const * i_xgemm_desc,
-                                                   libxsmm_ppc64le_reg           * reg_tracker );
-
-/**
- * Generates a matrix kernel for PPC64LE-VSX.
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_xgemm_desc description of the matrix-operation.
+ * @param io_reg_tracker register tracking structure.
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        * io_generated_code,
-                                                libxsmm_gemm_descriptor const * i_xgemm_desc );
+                                                libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                libxsmm_ppc64le_reg           * io_reg_tracker );
+
 
 /**
  * Generates a matrix kernel for PPC64LE.
