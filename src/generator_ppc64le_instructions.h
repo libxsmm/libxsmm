@@ -455,6 +455,8 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 /* undefined instruction */
 #define LIBXSMM_PPC64LE_INSTR_UNDEF 9999
 
+/* nop */
+#define LIBXSMM_PPC64LE_INSTR_NOP 0x60000000 /* NOP */
 
 /* basic arithmetic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_ADDI 0x38000000 /* Add Immediate D-form */
@@ -722,6 +724,17 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_XVCPSGNSP 0xf0000680 /* VSX Vector Copy Sign Single-Precision XX3-form */
 
 
+/* Prefixed masking, insertion and extraction opcodes */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVB 0x0500000084000000 /* VSX Vector Blend Variable Byte 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVD 0x0500000084000030 /* VSX Vector Blend Variable Doubleword 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVH 0x0500000084000010 /* VSX Vector Blend Variable Halfword 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVW 0x0500000084000020 /* VSX Vector Blend Variable Word 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXEVAL 0x0500000088000010 /* VSX Vector Evaluate 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTI32DX 0x0500000080000000 /* VSX Vector Splat Immediate32 Doubleword Indexed 8RR:D-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTIDP 0x0500000080040000 /* VSX Vector Splat Immediate Double-Precision 8RR:D-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTIW 0x0500000080060000 /* VSX Vector Splat Immediate Word 8RR:D-form */
+
+
 /* vector arithmetic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_XVADDDP 0xf0000300 /* VSX Vector Add Double-Precision XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVADDSP 0xf0000200 /* VSX Vector Add Single-Precision XX3-form */
@@ -805,6 +818,37 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_XVI8GER4 0xec000018 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVI8GER4PP 0xec000010 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) Positive multiply, Positive accumulate XX3-form */
 #define LIBXSMM_PPC64LE_INSTR_XVI8GER4SPP 0xec000318 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturate Positive multiply, Positive accumulate XX3-form */
+
+/* Prefixed MMA opcodes */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2 0x07900000ec000198 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2NN 0x07900000ec000790 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2NP 0x07900000ec000390 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2PN 0x07900000ec000590 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2PP 0x07900000ec000190 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2 0x07900000ec000098 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2NN 0x07900000ec000690 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2NP 0x07900000ec000290 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2PN 0x07900000ec000490 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2PP 0x07900000ec000090 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GER 0x07900000ec0000d8 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERNN 0x07900000ec0006d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERNP 0x07900000ec0002d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERPN 0x07900000ec0004d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERPP 0x07900000ec0000d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GER 0x07900000ec0001d8 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERNN 0x07900000ec0007d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERNP 0x07900000ec0003d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERPN 0x07900000ec0005d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERPP 0x07900000ec0001d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2 0x07900000ec000258 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2PP 0x07900000ec000358 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2S 0x07900000ec000158 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2SPP 0x07900000ec000150 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI4GER8 0x07900000ec000118 /* Prefixed Masked VSX Vector 4-bit Signed Integer GER (rank-8 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI4GER8PP 0x07900000ec000110 /* Prefixed Masked VSX Vector 4-bit Signed Integer GER (rank-8 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4 0x07900000ec000018 /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4PP 0x07900000ec000010 /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4SPP 0x07900000ec000318 /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturation Positive multiply, Positive accumulate MMIRR:XX3-form */
 
 
 /* MMA Register opcodes */
@@ -1104,6 +1148,59 @@ unsigned int libxsmm_ppc64le_instr_8_wrapper( unsigned int i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_4l_wrapper( unsigned long i_instr,
+                                                unsigned int i_1,
+                                                unsigned int i_2,
+                                                unsigned int i_3,
+                                                unsigned int i_4 );
+
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_5l_wrapper( unsigned long i_instr,
+                                                unsigned int i_1,
+                                                unsigned int i_2,
+                                                unsigned int i_3,
+                                                unsigned int i_4,
+                                                unsigned int i_5 );
+
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_7l_wrapper( unsigned long i_instr,
+                                                unsigned int i_1,
+                                                unsigned int i_2,
+                                                unsigned int i_3,
+                                                unsigned int i_4,
+                                                unsigned int i_5,
+                                                unsigned int i_6,
+                                                unsigned int i_7 );
+
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_8l_wrapper( unsigned long i_instr,
+                                                unsigned int i_1,
+                                                unsigned int i_2,
+                                                unsigned int i_3,
+                                                unsigned int i_4,
+                                                unsigned int i_5,
+                                                unsigned int i_6,
+                                                unsigned int i_7,
+                                                unsigned int i_8 );
+
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_9l_wrapper( unsigned long i_instr,
+                                                unsigned int i_1,
+                                                unsigned int i_2,
+                                                unsigned int i_3,
+                                                unsigned int i_4,
+                                                unsigned int i_5,
+                                                unsigned int i_6,
+                                                unsigned int i_7,
+                                                unsigned int i_8,
+                                                unsigned int i_9 );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr( libxsmm_generated_code * io_generated_code,
                             unsigned int             i_instr);
 
@@ -1184,18 +1281,63 @@ void libxsmm_ppc64le_instr_8( libxsmm_generated_code * io_generated_code,
                               unsigned int             i_7 );
 
 
-/**
- * Generates a VSX byte-reverse instruction.
- *
- * @param i_instr input-instruction with zeroed arguments.
- * @param i_xt destination VSR.
- * @param i_xb source VSR.
- * @return machine code.
- **/
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instruction_vsx_vector_permute_byte_reverse( unsigned int  i_instr,
-                                                                          unsigned char i_xt,
-                                                                          unsigned char i_xb );
+void libxsmm_ppc64le_instr_prefix_4( libxsmm_generated_code * io_generated_code,
+                                     unsigned long            i_instr,
+                                     unsigned int             i_0,
+                                     unsigned int             i_1,
+                                     unsigned int             i_2,
+                                     unsigned int             i_3 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_prefix_5( libxsmm_generated_code * io_generated_code,
+                                     unsigned long            i_instr,
+                                     unsigned int             i_0,
+                                     unsigned int             i_1,
+                                     unsigned int             i_2,
+                                     unsigned int             i_3,
+                                     unsigned int             i_4 );
+
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_prefix_7( libxsmm_generated_code * io_generated_code,
+                                     unsigned long            i_instr,
+                                     unsigned int             i_0,
+                                     unsigned int             i_1,
+                                     unsigned int             i_2,
+                                     unsigned int             i_3,
+                                     unsigned int             i_4,
+                                     unsigned int             i_5,
+                                     unsigned int             i_6 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_prefix_8( libxsmm_generated_code * io_generated_code,
+                                     unsigned long            i_instr,
+                                     unsigned int             i_0,
+                                     unsigned int             i_1,
+                                     unsigned int             i_2,
+                                     unsigned int             i_3,
+                                     unsigned int             i_4,
+                                     unsigned int             i_5,
+                                     unsigned int             i_6,
+                                     unsigned int             i_7 );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_prefix_9( libxsmm_generated_code * io_generated_code,
+                                     unsigned long            i_instr,
+                                     unsigned int             i_0,
+                                     unsigned int             i_1,
+                                     unsigned int             i_2,
+                                     unsigned int             i_3,
+                                     unsigned int             i_4,
+                                     unsigned int             i_5,
+                                     unsigned int             i_6,
+                                     unsigned int             i_7,
+                                     unsigned int             i_8 );
 
 
 /**
