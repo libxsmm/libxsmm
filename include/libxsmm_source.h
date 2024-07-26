@@ -43,6 +43,7 @@
 #include "../src/generator_gemm_ppc64le.c"
 #include "../src/generator_gemm_sse_avx_avx2_avx512.c"
 #include "../src/generator_gemm_sse_microkernel.c"
+#include "../src/generator_gemm_vsx_microkernel.c"
 #include "../src/generator_mateltwise.c"
 #include "../src/generator_mateltwise_aarch64.c"
 #include "../src/generator_mateltwise_common.c"
