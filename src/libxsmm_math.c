@@ -462,7 +462,12 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
     output->l1_ref += input->l1_ref;
     output->l1_tst += input->l1_tst;
-    ++output->r;
+    if (0 != output->r || 0 == input->r) {
+      ++output->r;
+    }
+    else {
+      output->r = input->r;
+    }
   }
   else {
     libxsmm_matdiff_clear(output);
