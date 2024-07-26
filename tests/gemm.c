@@ -23,9 +23,6 @@
 #if !defined(GEMM)
 # define GEMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #endif
-#if !defined(SMM)
-# define SMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
-#endif
 #if !defined(GEMM_NO_BYPASS)
 # define SMM_NO_BYPASS(FLAGS, ALPHA, BETA) LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)
 #endif
@@ -47,33 +44,20 @@ int main(void)
   libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3,  3, 1, 4, 8, 4096, 240,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9, 13, 5 };
   REALTYPE alpha[]      = { 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 1 };
   REALTYPE beta[]       = { 0, 0, 0, 0, 1, 1, 1, 1, 0,  1, 0, 1, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  1, 1 };
-#if defined(LIBXSMM_PLATFORM_X86) && (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
+#if (!defined(__BLAS) || (0 != __BLAS))
   char transa[] = "NNNTT";
 #else
   char transa[] = "NN";
 #endif
-#if defined(LIBXSMM_PLATFORM_X86)
   char transb[] = "NNTNT";
-  const int begin = 0;
-#else
-  char transb[] = "NN";
-  const int begin = 4;
-#endif
   const int end = sizeof(m) / sizeof(*m);
   const int i0 = 0, i1 = sizeof(transa) - 1;
   libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, block = 1;
 #if defined(_DEBUG)
   libxsmm_matdiff_info diff;
 #endif
-  REALTYPE *a = NULL, *b = NULL;
-  REALTYPE *c = NULL;
-#if defined(GEMM)
-  REALTYPE *d = NULL;
-#endif
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-  REALTYPE *gold = NULL;
-#endif
-  int result = EXIT_SUCCESS, test, i;
+  REALTYPE *a = NULL, *b = NULL, *c = NULL, *d = NULL, *gold = NULL;
+  int result = EXIT_SUCCESS, begin = 0, test, i;
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
   const unsigned int fpemask = _MM_GET_EXCEPTION_MASK(); /* backup FPE mask */
   const unsigned int fpcheck = _MM_MASK_INVALID | _MM_MASK_OVERFLOW;
@@ -99,31 +83,33 @@ int main(void)
   a = (REALTYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(REALTYPE)));
   b = (REALTYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(REALTYPE)));
   c = (REALTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REALTYPE)));
-#if defined(GEMM)
   d = (REALTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REALTYPE)));
-  LIBXSMM_ASSERT(NULL != d);
-#endif
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   gold = (REALTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REALTYPE)));
-  LIBXSMM_ASSERT(NULL != gold);
-#endif
-  LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
+  LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != d && NULL != gold);
   LIBXSMM_MATINIT(REALTYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
   LIBXSMM_MATINIT(REALTYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(_DEBUG)
   libxsmm_matdiff_clear(&diff);
 #endif
+#if (defined(__BLAS) && (0 == __BLAS))
+  begin = end;
+# if defined(_DEBUG)
+  fprintf(stderr, "WARNING: skipped tests due to missing BLAS support!\n");
+# endif
+#endif
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
       libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
-      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | ((beta[i] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
-      const int smm = SMM_NO_BYPASS(flags, alpha[test], beta[test]);
-#if (0 == LIBXSMM_JIT)
-      LIBXSMM_UNUSED(flags);
-#endif
+      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | ((beta[test] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
+      const int init = (LIBXSMM_FEQ(0, beta[test]) ? -1 : 0);
+      libxsmm_xmmfunction kernel = { NULL };
+      libxsmm_gemm_shape gemm_shape;
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       _MM_SET_EXCEPTION_STATE(0);
 #endif
+      memset(gold, init, (size_t)(sizeof(REALTYPE) * max_size_c));
+      memset(c, init, (size_t)(sizeof(REALTYPE) * max_size_c));
+      memset(d, init, (size_t)(sizeof(REALTYPE) * max_size_c));
       if ('N' != transa[i] && 'N' == transb[i]) { /* TN */
         mi = ki = LIBXSMM_MIN(mi, ki);
       }
@@ -134,56 +120,36 @@ int main(void)
         const libxsmm_blasint ti = LIBXSMM_MIN(mi, ni);
         mi = ni = ki = LIBXSMM_MIN(ti, ki);
       }
-      if (LIBXSMM_FEQ(0, beta[test])) {
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-        memset(gold, -1, (size_t)(sizeof(REALTYPE) * max_size_c));
-#endif
-        memset(c, -1, (size_t)(sizeof(REALTYPE) * max_size_c));
-#if defined(GEMM)
-        memset(d, -1, (size_t)(sizeof(REALTYPE) * max_size_c));
-#endif
-      }
-      else {
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-        memset(gold, 0, (size_t)(sizeof(REALTYPE) * max_size_c));
-#endif
-        memset(c, 0, (size_t)(sizeof(REALTYPE) * max_size_c));
-#if defined(GEMM)
-        memset(d, 0, (size_t)(sizeof(REALTYPE) * max_size_c));
-#endif
-      }
-      if (0 != smm) {
-        SMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
-          alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
-      }
-#if defined(GEMM)
-      else {
-        GEMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
-          alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
-      }
       GEMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
-        alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
-#endif
-#if (0 != LIBXSMM_JIT)
-      if (0 != smm) { /* dispatch kernel and check that it is available */
-        libxsmm_xmmfunction kernel = { NULL };
-        const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-          mi, ni, ki, lda[test], ldb[test], ldc[test],
-          LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
-          LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
-        kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
-        if (NULL == kernel.ptr_const) {
-# if defined(_DEBUG)
-          fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
-          libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
-            alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
-          fprintf(stderr, "\n");
-# endif
-          result = EXIT_FAILURE;
-          break;
-        }
+        alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
+      gemm_shape = libxsmm_create_gemm_shape(
+        mi, ni, ki, lda[test], ldb[test], ldc[test],
+        LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
+        LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
+      kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
+      if (NULL != kernel.ptr_const) {
+        libxsmm_gemm_param gemm_param;
+        gemm_param.a.primary = a;
+        gemm_param.b.primary = b;
+        gemm_param.c.primary = d;
+        kernel.gemm(&gemm_param);
       }
+      else if (SMM_NO_BYPASS(flags, alpha[test], beta[test])) {
+#if (0 != LIBXSMM_JIT)
+# if defined(_DEBUG)
+        fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
+        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
+          alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
+        fprintf(stderr, "\n");
+# endif
+        result = EXIT_FAILURE;
 #endif
+        break;
+      }
+      else {
+        fprintf(stderr, "WARNING: skipped tests due to bypass!\n");
+        break;
+      }
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
       result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -194,76 +160,43 @@ int main(void)
           0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 # endif
       }
-# if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
       else
-# endif
 #endif
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-# if !defined(GEMM)
-      if (0 != smm)
-# endif
       {
-# if defined(GEMM_GOLD)
         libxsmm_matdiff_info diff_test;
         GEMM_GOLD(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, gold, ldc + test);
-
         result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result) {
-#   if defined(_DEBUG)
+          libxsmm_matdiff_info diff_test_kernel;
+          LIBXSMM_ASSERT(NULL != kernel.ptr_const);
+          result = libxsmm_matdiff(&diff_test_kernel, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, d, ldc + test, ldc + test);
+          if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff_test, &diff_test_kernel);
+        }
+        if (EXIT_SUCCESS == result) {
+#if defined(_DEBUG)
           libxsmm_matdiff_reduce(&diff, &diff_test);
-#   endif
+#endif
           if (1.0 < (1000.0 * diff_test.normf_rel)) {
-#   if defined(_DEBUG)
-            if (0 != smm) {
-              fprintf(stderr, "\nERROR: SMM test %i.%i failed!\n\t", test + 1, i + 1);
-            }
-            else {
-              fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
-            }
+#if defined(_DEBUG)
+            const char *const target = libxsmm_get_target_arch();
+            fprintf(stderr, "\nERROR (%s): test %i.%i failed!\n\t", target, test + 1, i + 1);
             libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
               alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
             fprintf(stderr, "\n");
-#   endif
+#endif
             result = EXIT_FAILURE;
           }
-#   if defined(GEMM)
-          else {
-            result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, d, ldc + test, ldc + test);
-            if (EXIT_SUCCESS == result) {
-#     if defined(_DEBUG)
-              libxsmm_matdiff_reduce(&diff, &diff_test);
-#     endif
-              if (1.0 < (1000.0 * diff_test.normf_rel)) {
-#     if defined(_DEBUG)
-                fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
-                libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
-                  alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
-                fprintf(stderr, "\n");
-#     endif
-                result = EXIT_FAILURE;
-              }
-            }
-          }
-#   endif
+          /* avoid drift between Gold and test-results */
+          memcpy(c, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
+          memcpy(d, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
         }
-# endif
       }
-# if defined(GEMM_GOLD)
-      /* avoid drift between Gold and test-results */
-      memcpy(c, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
-#   if defined(GEMM)
-      memcpy(d, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
-#   endif
-# endif
-#elif defined(_DEBUG)
-      fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
-#endif
     }
   }
-
 #if defined(_DEBUG)
-  fprintf(stderr, "Diff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+  fprintf(stderr, "Diff (%g vs %g): L2abs=%g Linf=%g Similarity=%g\n",
+    diff.v_ref, diff.v_tst, diff.l2_abs, diff.linf_abs, diff.rsq);
 #endif
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
   _MM_SET_EXCEPTION_MASK(fpemask); /* restore FPE mask */
@@ -272,11 +205,7 @@ int main(void)
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);
-#if defined(GEMM)
   libxsmm_free(d);
-#endif
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   libxsmm_free(gold);
-#endif
   return result;
 }
