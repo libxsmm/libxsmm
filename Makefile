@@ -363,14 +363,15 @@ SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_generator_gemm_driver
 OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
-OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext.o \
-                $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
+OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                 $(BLDDIR)/intel64/libxsmm_ext_gemm.o
+OBJFILES_EXD := $(BLDDIR)/intel64/libxsmm_ext.o \
+                $(OBJFILES_EXT)
 NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_LIB) \
-           $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
+           $(KRNOBJS) $(OBJFILES_EXD) $(NOBLAS_OBJ)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o
 endif
@@ -760,7 +761,7 @@ $(foreach OBJ,$(KRNOBJS),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
-$(foreach OBJ,$(OBJFILES_EXT),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(OBJFILES_EXD),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTSRC)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(EXTCFLAGS) $(CFLAGS))))
@@ -880,9 +881,9 @@ else
 .PHONY: $(OUTDIR)/libxsmmext.$(SLIBEXT)
 endif
 ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
-$(OUTDIR)/libxsmmext.$(DLIBEXT): $(OUTDIR)/libxsmm.$(DLIBEXT) $(OBJFILES_EXT)
+$(OUTDIR)/libxsmmext.$(DLIBEXT): $(OUTDIR)/libxsmm.$(DLIBEXT) $(OBJFILES_EXD)
 	$(LIB_SOLD) $(EXTLDFLAGS) $(call solink,$(OUTDIR)/libxsmmext.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(OBJFILES_EXT) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
+		$(OBJFILES_EXD) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmmext.$(DLIBEXT)
 endif
