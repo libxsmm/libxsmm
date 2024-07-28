@@ -73,7 +73,7 @@
       LIBXSMM_BLAS_FNTYPE(TYPE, KIND) pfout; \
     } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
     dlerror(); /* clear an eventual error status */ \
-    libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, "mkl_blas_" LIBXSMM_STRINGIFY(LIBXSMM_CBLAS_SYMBOL(TYPE, KIND))); \
+    libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
     if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
       ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
     } \
@@ -81,14 +81,10 @@
       /*const*/ LIBXSMM_BLAS_FNTYPE(TYPE, KIND)(*libxsmm_blas_wrapper_dynamic_next_)(void) = NEXT; \
       libxsmm_blas_wrapper_dynamic_.pfin = (NULL == libxsmm_blas_wrapper_dynamic_next_ ? \
         dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
-      if  (NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain \
-        || libxsmm_blas_wrapper_dynamic_next_ == libxsmm_blas_wrapper_dynamic_.chain \
-        || NULL == libxsmm_blas_wrapper_dynamic_.chain()) \
+      if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.chain \
+        && libxsmm_blas_wrapper_dynamic_next_ != libxsmm_blas_wrapper_dynamic_.chain) \
       { \
-        libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
-        if (NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
-          ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); /* LIBXSMM_ATOMIC_STORE */ \
-        } \
+        LIBXSMM_EXPECT(NULL != libxsmm_blas_wrapper_dynamic_.chain()); \
       } \
     } \
   } while(0)
