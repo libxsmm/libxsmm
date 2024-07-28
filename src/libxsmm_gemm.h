@@ -73,7 +73,7 @@
       LIBXSMM_BLAS_FNTYPE(TYPE, KIND) pfout; \
     } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
     dlerror(); /* clear an eventual error status */ \
-    libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_DEFAULT, "mkl_blas." LIBXSMM_STRINGIFY(LIBXSMM_CBLAS_SYMBOL(TYPE, KIND))); \
+    libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, "mkl_blas_" LIBXSMM_STRINGIFY(LIBXSMM_CBLAS_SYMBOL(TYPE, KIND))); \
     if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
       ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
     } \
