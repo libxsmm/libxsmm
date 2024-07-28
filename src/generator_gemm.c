@@ -651,7 +651,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDA */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) == LIBXSMM_GEMM_FLAG_TRANS_A ) {
-    if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
+    if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA_TRANS );
       return;
     }
@@ -669,7 +669,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDB */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-    if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
+    if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.n ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB_TRANS );
       return;
     }
