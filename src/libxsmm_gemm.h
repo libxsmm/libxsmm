@@ -97,14 +97,10 @@
   LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL); \
 } while(0)
 
-/** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */
-#if !defined(LIBXSMM_XGEMM_FALLBACK0)
-# define LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-     LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-#endif
-#if !defined(LIBXSMM_XGEMM_FALLBACK1)
-# define LIBXSMM_XGEMM_FALLBACK1(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-     LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+/** Fall-back code path (macro template). */
+#if !defined(LIBXSMM_XGEMM_FALLBACK)
+# define LIBXSMM_XGEMM_FALLBACK(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+    LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #endif
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
@@ -121,11 +117,7 @@
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS);
 #endif
 
-/**
- * Execute a specialized function, or use a fallback code path depending on threshold (macro template).
- * LIBXSMM_XGEMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
- * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
- */
+/** Execute a specialized function, or use a fallback code path (macro template). */
 #define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   const OTYPE libxsmm_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_xgemm_beta_ = (NULL != ((const void*)(BETA)) ? (*(const OTYPE*)(BETA)) : ((OTYPE)LIBXSMM_BETA)); \
@@ -146,27 +138,18 @@
       LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE)); \
     const libxsmm_gemmfunction libxsmm_xgemm_function_ = libxsmm_dispatch_gemm(libxsmm_xgemm_shape_, \
       (libxsmm_bitfield)libxsmm_xgemm_flags_, (libxsmm_bitfield)(LIBXSMM_PREFETCH)); \
-    if (NULL != libxsmm_xgemm_function_) { \
-      libxsmm_gemm_param libxsmm_xgemm_param_; libxsmm_xgemm_param_.c.primary = (OTYPE*)(C); \
-      LIBXSMM_VALUE_ASSIGN(libxsmm_xgemm_param_.a.primary, A); \
-      LIBXSMM_VALUE_ASSIGN(libxsmm_xgemm_param_.b.primary, B); \
-      LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_param_); \
-      libxsmm_xgemm_function_(&libxsmm_xgemm_param_); \
-    } \
-    else { \
-      const char libxsmm_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? 'n' : 't'); \
-      const char libxsmm_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? 'n' : 't'); \
-      LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
-        M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
-        &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
-                               B, &libxsmm_xgemm_ldb_, \
-         &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_ldc_); \
-    } \
+    libxsmm_gemm_param libxsmm_xgemm_param_; \
+    LIBXSMM_ASSERT(NULL != libxsmm_xgemm_function_); \
+    libxsmm_xgemm_param_.c.primary = (OTYPE*)(C); \
+    LIBXSMM_VALUE_ASSIGN(libxsmm_xgemm_param_.a.primary, A); \
+    LIBXSMM_VALUE_ASSIGN(libxsmm_xgemm_param_.b.primary, B); \
+    LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_param_); \
+    libxsmm_xgemm_function_(&libxsmm_xgemm_param_); \
   } \
   else { \
     const char libxsmm_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? 'n' : 't'); \
     const char libxsmm_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? 'n' : 't'); \
-    LIBXSMM_XGEMM_FALLBACK1(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
+    LIBXSMM_XGEMM_FALLBACK(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
       M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
       &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
                              B, &libxsmm_xgemm_ldb_, \
