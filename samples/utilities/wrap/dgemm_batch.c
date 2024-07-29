@@ -45,24 +45,8 @@ void GEMM_BATCH(const char /*transa_array*/[], const char /*transb_array*/[],
   const double  /*beta_array*/[],       double* /*c_array*/[], const BLASINT_TYPE /*ldc_array*/[],
   const BLASINT_TYPE* /*group_count*/, const BLASINT_TYPE /*group_size*/[]);
 
-
 void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale);
-void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  BLASINT_TYPE i = 0;
-  for (i = 0; i < ncols; ++i) {
-    BLASINT_TYPE j = 0;
-    for (; j < nrows; ++j) {
-      const BLASINT_TYPE k = i * ld + j;
-      dst[k] = (double)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const BLASINT_TYPE k = i * ld + j;
-      dst[k] = (double)seed;
-    }
-  }
-}
+double checksum(const double* src, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld);
 
 
 int main(int argc, char* argv[])
@@ -88,7 +72,7 @@ int main(int argc, char* argv[])
   double *const b = (double*)malloc(sizeof(double) * nb * batchsize);
   double *const c = (double*)malloc(sizeof(double) * nc * batchsize);
   const double scale = 1.0 / batchsize;
-  int i = 0;
+  int i;
 
   assert(NULL != a && NULL != b && NULL != c && NULL != pa && NULL != pb && NULL != pc);
 #if defined(GEMM_BATCH)
@@ -140,6 +124,14 @@ int main(int argc, char* argv[])
     else fprintf(stderr, "Not executed!\n");
   }
 
+  { /* calculate final checksum */
+    double checkbatch = 0;
+    for (i = 0; i < batchsize; ++i) {
+      checkbatch += checksum(c + i * nc, m, n, ldc);
+    }
+    printf("\n%f (check)\n", checkbatch);
+  }
+
   free(pa);
   free(pb);
   free(pc);
@@ -148,4 +140,39 @@ int main(int argc, char* argv[])
   free(c);
 
   return EXIT_SUCCESS;
+}
+
+
+void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale)
+{
+  const double seed1 = scale * (seed + 1);
+  BLASINT_TYPE i = 0;
+  for (i = 0; i < ncols; ++i) {
+    BLASINT_TYPE j = 0;
+    for (; j < nrows; ++j) {
+      const BLASINT_TYPE k = i * ld + j;
+      dst[k] = (double)(seed1 / (k + 1));
+    }
+    for (; j < ld; ++j) {
+      const BLASINT_TYPE k = i * ld + j;
+      dst[k] = (double)seed;
+    }
+  }
+}
+
+
+double checksum(const double* src, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld)
+{
+  BLASINT_TYPE i, j;
+  double result = 0, comp = 0;
+  for (i = 0; i < ncols; ++i) {
+    for (j = 0; j < nrows; ++j) {
+      const double v = src[i * ld + j];
+      const double x = (0 <= v ? v : -v) - comp;
+      const double y = result + x;
+      comp = (y - result) - x;
+      result = y;
+    }
+  }
+  return result;
 }
