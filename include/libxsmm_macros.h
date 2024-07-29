@@ -795,6 +795,7 @@ LIBXSMM_PRAGMA_DIAG_POP()
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_LO2((N) + ((NPOT) - 1), NPOT)
 /** Examples: N+10%->UPF(N,1,10), N-10%->UPF(N,-1,10), N*90%->UPF(N,-1,10) */
 #define LIBXSMM_UPF(N, NOM, DEN) (((N) * ((DEN) + (NOM))) / (DEN))
+#define LIBXSMM_SIGN(A) (0 < (A) ? (1) : ( 0 == (A) ? (0) : (-1)))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
