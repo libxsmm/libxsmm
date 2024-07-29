@@ -127,6 +127,7 @@
  * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
 #define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
+  const OTYPE libxsmm_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_xgemm_beta_ = (NULL != ((const void*)(BETA)) ? (*(const OTYPE*)(BETA)) : ((OTYPE)LIBXSMM_BETA)); \
   const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS) | \
     (LIBXSMM_NEQ(0, libxsmm_xgemm_beta_) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0); \
@@ -137,7 +138,9 @@
   const libxsmm_blasint libxsmm_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((const void*)(LDB)) ? *(LDB) : \
     *(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_), 1); \
   const libxsmm_blasint libxsmm_xgemm_ldc_ = LIBXSMM_MAX(NULL != (LDC) ? *(LDC) : *(M), 1); \
-  if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, 2/*RFO*/, sizeof(OTYPE))) { \
+  if  (LIBXSMM_GEMM_NO_BYPASS(libxsmm_xgemm_flags_, libxsmm_xgemm_alpha_, libxsmm_xgemm_beta_) \
+    && LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, 2/*RFO*/, sizeof(OTYPE))) \
+  { \
     const libxsmm_gemm_shape libxsmm_xgemm_shape_ = libxsmm_create_gemm_shape( \
       *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_, \
       LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE)); \
@@ -153,7 +156,6 @@
     else { \
       const char libxsmm_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? 'n' : 't'); \
       const char libxsmm_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? 'n' : 't'); \
-      const OTYPE libxsmm_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
       LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
         M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
         &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
@@ -164,7 +166,6 @@
   else { \
     const char libxsmm_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? 'n' : 't'); \
     const char libxsmm_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? 'n' : 't'); \
-    const OTYPE libxsmm_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
     LIBXSMM_XGEMM_FALLBACK1(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
       M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
       &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
