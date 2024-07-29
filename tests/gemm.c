@@ -42,8 +42,8 @@ int main(void)
   libxsmm_blasint lda[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3,  3, 1, 4, 8,   64,  64,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9, 13, 5 };
   libxsmm_blasint ldb[] = { 1, 1, 1, 1, 1, 2, 2, 3, 2, 25, 2, 4, 8, 9216, 240,    16,  1,  3,  5,  5,    16,   1,   3,   5,   7,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742, 13, 5 };
   libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3,  3, 1, 4, 8, 4096, 240,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9, 13, 5 };
-  REALTYPE alpha[]      = { 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 1 };
-  REALTYPE beta[]       = { 0, 0, 0, 0, 1, 1, 1, 1, 0,  1, 0, 1, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  1, 1 };
+  REALTYPE alpha[]      = { 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 2 };
+  REALTYPE beta[]       = { 0, 0, 0, 0, 1, 1, 1, 1, 0,  1, 0, 1, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  2, 1 };
 #if (!defined(__BLAS) || (0 != __BLAS))
   char transa[] = "NNNTT";
 #else
@@ -100,7 +100,9 @@ int main(void)
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
       libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
-      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | ((beta[test] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
+      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | \
+        ((beta[test] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
+      const int no_bypass = SMM_NO_BYPASS(flags, alpha[test], beta[test]);
       const int init = (LIBXSMM_FEQ(0, beta[test]) ? -1 : 0);
       libxsmm_xmmfunction kernel = { NULL };
       libxsmm_gemm_shape gemm_shape;
@@ -126,29 +128,15 @@ int main(void)
         mi, ni, ki, lda[test], ldb[test], ldc[test],
         LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
         LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
-      kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
+      kernel.gemm = (0 != no_bypass
+        ? libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE)
+        : NULL);
       if (NULL != kernel.ptr_const) {
         libxsmm_gemm_param gemm_param;
         gemm_param.a.primary = a;
         gemm_param.b.primary = b;
         gemm_param.c.primary = d;
         kernel.gemm(&gemm_param);
-      }
-      else if (SMM_NO_BYPASS(flags, alpha[test], beta[test])) {
-#if (0 != LIBXSMM_JIT)
-# if defined(_DEBUG)
-        fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
-        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
-          alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
-        fprintf(stderr, "\n");
-# endif
-        result = EXIT_FAILURE;
-#endif
-        break;
-      }
-      else {
-        fprintf(stderr, "WARNING: skipped tests due to bypass!\n");
-        break;
       }
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
@@ -159,17 +147,17 @@ int main(void)
           0 != (_MM_MASK_INVALID  & fpstate) ? "true" : "false",
           0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 # endif
+        break;
       }
-      else
 #endif
-      {
+      LIBXSMM_ASSERT(EXIT_SUCCESS == result);
+      if (0 == no_bypass || NULL != kernel.ptr_const) {
         libxsmm_matdiff_info diff_test;
         GEMM_GOLD(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, gold, ldc + test);
         result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, c, ldc + test, ldc + test);
-        if (EXIT_SUCCESS == result) {
+        if (EXIT_SUCCESS == result && NULL != kernel.ptr_const) {
           libxsmm_matdiff_info diff_test_kernel;
-          LIBXSMM_ASSERT(NULL != kernel.ptr_const);
           result = libxsmm_matdiff(&diff_test_kernel, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, d, ldc + test, ldc + test);
           if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff_test, &diff_test_kernel);
         }
@@ -191,6 +179,17 @@ int main(void)
           memcpy(c, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
           memcpy(d, gold, (size_t)(sizeof(REALTYPE) * max_size_c));
         }
+      }
+      else {
+#if (0 != LIBXSMM_JIT)
+# if defined(_DEBUG)
+        fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
+        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(REALTYPE), transa + i, transb + i, &mi, &ni, &ki,
+          alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
+        fprintf(stderr, "\n");
+# endif
+        result = EXIT_FAILURE;
+#endif
       }
     }
   }
