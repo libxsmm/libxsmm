@@ -15,7 +15,7 @@
 
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
   (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \
-  (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
+  (LIBXSMM_GEMM_FLAG_BETA_0 & (FLAGS) || LIBXSMM_FEQ(1, BETA)))
 
 /** Initialize GEMM descriptor (generic). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
