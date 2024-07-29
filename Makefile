@@ -128,6 +128,7 @@ endif
 # negative: BLAS provides DGEMM_BATCH and SGEMM_BATCH
 # 0: disabled
 WRAP ?= 1
+WRAP_STATIC ?= $(WRAP)
 
 # Attempts to pin OpenMP based threads
 AUTOPIN ?= 0
@@ -363,10 +364,11 @@ SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_generator_gemm_driver
 OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
-OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
+OBJFILES_EXS := $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                 $(BLDDIR)/intel64/libxsmm_ext_gemm.o
 OBJFILES_EXD := $(BLDDIR)/intel64/libxsmm_ext.o \
-                $(OBJFILES_EXT)
+                $(OBJFILES_EXS)
+OBJFILES_EXT := $(if $(filter-out 0,$(WRAP_STATIC)),$(OBJFILES_EXD),$(OBJFILES_EXS))
 NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
