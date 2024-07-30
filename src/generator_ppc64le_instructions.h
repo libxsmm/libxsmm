@@ -490,6 +490,7 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_ADDI 0x38000000 /* Add Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_RLDICR 0x78000004 /* Rotate Left Doubleword Immediate then Clear Right MD-form */
 #define LIBXSMM_PPC64LE_INSTR_ADD 0x7c000214 /* Add XO-form */
+#define LIBXSMM_PPC64LE_INSTR_PADDI 0x0600000038000000 /* Prefixed Add Immediate MLS:D-form */
 
 /* logic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_BC 0x40000000 /* Branch Conditional B-form */
@@ -941,6 +942,8 @@ unsigned int libxsmm_ppc64le_instr_d_form_bf( unsigned int  i_instr,
                                               unsigned int  i_d );
 
 
+
+
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_dq_form_x( unsigned int  i_instr,
                                               unsigned char i_t,
@@ -1061,7 +1064,6 @@ unsigned int libxsmm_ppc64le_instr_xx3_form_0( unsigned int  i_instr,
                                                unsigned char i_ax,
                                                unsigned char i_bx );
 
-
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xx3_form_3( unsigned int  i_instr,
                                                unsigned char i_t,
@@ -1071,7 +1073,6 @@ unsigned int libxsmm_ppc64le_instr_xx3_form_3( unsigned int  i_instr,
                                                unsigned char i_ax,
                                                unsigned char i_bx,
                                                unsigned char i_tx );
-
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xx3_form_5( unsigned int  i_instr,
@@ -1083,7 +1084,6 @@ unsigned int libxsmm_ppc64le_instr_xx3_form_5( unsigned int  i_instr,
                                                unsigned char i_bx,
                                                unsigned char i_tx );
 
-
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xx3_form_6( unsigned int  i_instr,
                                                unsigned char i_t,
@@ -1092,7 +1092,6 @@ unsigned int libxsmm_ppc64le_instr_xx3_form_6( unsigned int  i_instr,
                                                unsigned char i_ax,
                                                unsigned char i_bx,
                                                unsigned char i_tx );
-
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xx4_form( unsigned int  i_instr,
@@ -1105,6 +1104,82 @@ unsigned int libxsmm_ppc64le_instr_xx4_form( unsigned int  i_instr,
                                              unsigned char i_bx,
                                              unsigned char i_tx );
 
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_d_form_mls( unsigned long i_instr,
+                                                unsigned char i_r,
+                                                unsigned int  i_si0,
+                                                unsigned char i_t,
+                                                unsigned char i_a,
+                                                unsigned int  i_si1 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_d_form_0_8rr3( unsigned long i_instr,
+                                                   unsigned int  i_imm0,
+                                                   unsigned char i_t,
+                                                   unsigned char i_ix,
+                                                   unsigned char i_tx,
+                                                   unsigned int  i_imm1 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_d_form_1_8rr3( unsigned long i_instr,
+                                                   unsigned int  i_imm0,
+                                                   unsigned char i_t,
+                                                   unsigned char i_tx,
+                                                   unsigned int  i_imm1 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_xx3_form_0_mmirr0( unsigned long i_instr,
+                                                       unsigned char i_xmsk,
+                                                       unsigned char i_ymsk,
+                                                       unsigned char i_at,
+                                                       unsigned char i_a,
+                                                       unsigned char i_b,
+                                                       unsigned char i_ax,
+                                                       unsigned char i_bx );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_xx3_form_0_mmirr1( unsigned long i_instr,
+                                                       unsigned char i_xmsk,
+                                                       unsigned char i_ymsk,
+                                                       unsigned char i_at,
+                                                       unsigned char i_a,
+                                                       unsigned char i_b,
+                                                       unsigned char i_ax,
+                                                       unsigned char i_bx );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_xx3_form_0_mmirr3( unsigned long i_instr,
+                                                       unsigned char i_pmsk,
+                                                       unsigned char i_xmsk,
+                                                       unsigned char i_ymsk,
+                                                       unsigned char i_at,
+                                                       unsigned char i_a,
+                                                       unsigned char i_b,
+                                                       unsigned char i_ax,
+                                                       unsigned char i_bx );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_xx4_form_8rr0( unsigned long i_instr,
+                                                   unsigned char i_t,
+                                                   unsigned char i_a,
+                                                   unsigned char i_b,
+                                                   unsigned char i_c,
+                                                   unsigned char i_cx,
+                                                   unsigned char i_ax,
+                                                   unsigned char i_bx,
+                                                   unsigned char i_tx );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_xx4_form_8rr2( unsigned long i_instr,
+                                                   unsigned char i_imm,
+                                                   unsigned char i_t,
+                                                   unsigned char i_a,
+                                                   unsigned char i_b,
+                                                   unsigned char i_c,
+                                                   unsigned char i_cx,
+                                                   unsigned char i_ax,
+                                                   unsigned char i_bx,
+                                                   unsigned char i_tx );
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_0_wrapper( unsigned int i_instr );
@@ -1371,22 +1446,25 @@ void libxsmm_ppc64le_instr_prefix_9( libxsmm_generated_code * io_generated_code,
 
 
 /**
- * Opens the inline assembly section / jit stream.
+ * Opens the stream, sets up the stack frame according to the ABI and stores the
+ * values of non-volatile register.
  *
  * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param io_reg_tracker pointer to register tracking structure.
  **/
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_code,
                                         libxsmm_ppc64le_reg    * io_reg_tracker );
 
 /**
- * Closes the inline assembly section / jit stream.
+ * Colapses the stack frame, resetting non-volatile registers.
  *
  * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param io_reg_tracker pointer to register tracking structure.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_code,
-                                         libxsmm_ppc64le_reg    * io_reg_tracker );
+void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code * io_generated_code,
+                                          libxsmm_ppc64le_reg    * io_reg_tracker );
 
 
 LIBXSMM_API_INTERN

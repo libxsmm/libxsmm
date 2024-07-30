@@ -39,6 +39,7 @@
 #include "../src/generator_gemm_avx_microkernel.c"
 #include "../src/generator_gemm_common.c"
 #include "../src/generator_gemm_common_aarch64.c"
+#include "../src/generator_gemm_mma_microkernel.c"
 #include "../src/generator_gemm_noarch.c"
 #include "../src/generator_gemm_ppc64le.c"
 #include "../src/generator_gemm_sse_avx_avx2_avx512.c"

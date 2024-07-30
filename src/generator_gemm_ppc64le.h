@@ -88,12 +88,12 @@ unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code *
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *io_generated_code,
                                                 libxsmm_gemm_descriptor const *i_xgemm_desc,
+                                                libxsmm_ppc64le_blocking      *io_blocking,
                                                 libxsmm_ppc64le_reg           *io_reg_tracker,
                                                 libxsmm_loop_label_tracker    *io_loop_labels,
-                                                unsigned int                  *i_blocking,
-                                                unsigned char const            i_a_ptr_gpr,
-                                                unsigned char const            i_b_ptr_gpr,
-                                                unsigned char const            i_c_ptr_gpr );
+                                                unsigned char const            i_a,
+                                                unsigned char const            i_b,
+                                                unsigned char const            i_c );
 
 
 /**
@@ -115,9 +115,9 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code        *i
                                                 libxsmm_ppc64le_reg           *io_reg_tracker,
                                                 libxsmm_loop_label_tracker    *io_loop_labels,
                                                 unsigned int                  *i_acc,
-                                                unsigned char const            i_a_ptr_gpr,
-                                                unsigned char const            i_b_ptr_gpr,
-                                                unsigned char const            i_c_ptr_gpr );
+                                                unsigned char const            i_a,
+                                                unsigned char const            i_b,
+                                                unsigned char const            i_c );
 
 /**
  * Generates a matrix kernel for PPC64LE VSX.
@@ -128,6 +128,7 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code        *i
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        *io_generated_code,
                                                 libxsmm_gemm_descriptor const *i_xgemm_desc,
+                                                libxsmm_ppc64le_blocking      *io_blocking,
                                                 libxsmm_ppc64le_reg           *io_reg_tracker );
 
 /**
