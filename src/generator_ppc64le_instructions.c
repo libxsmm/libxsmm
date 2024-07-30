@@ -686,6 +686,29 @@ unsigned int libxsmm_ppc64le_instr_xx4_form( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned long libxsmm_ppc64le_instr_d_form_mls( unsigned long i_instr,
+                                                unsigned char i_r,
+                                                unsigned int  i_si0,
+                                                unsigned char i_t,
+                                                unsigned char i_a,
+                                                unsigned int  i_si1 ) {
+  unsigned long l_instr = i_instr;
+
+  /* Set R */
+  l_instr |= (unsigned long)(0x01 & i_r) << (32 + 31 - 11 - 0);
+  /* Set SI0 */
+  l_instr |= (unsigned long)(0x0003ffff & i_si0) << (32 + 31 - 14 - 17);
+  /* Set T */
+  l_instr |= (unsigned long)(0x1f & i_t) << (31 - 6 - 4);
+  /* Set A */
+  l_instr |= (unsigned long)(0x01 & i_a) << (31 - 11 - 4);
+  /* Set S10 */
+  l_instr |= (unsigned long)(0x0000ffff & i_si1) << (31 - 16 - 15);
+  return l_instr;
+}
+
+
+LIBXSMM_API_INTERN
 unsigned long libxsmm_ppc64le_instr_d_form_0_8rr3( unsigned long i_instr,
                                                    unsigned int  i_imm0,
                                                    unsigned char i_t,
@@ -1410,17 +1433,17 @@ unsigned int libxsmm_ppc64le_instr_8_wrapper( unsigned int i_instr,
 
 LIBXSMM_API_INTERN
 unsigned long libxsmm_ppc64le_instr_4l_wrapper( unsigned long i_instr,
-                                                unsigned int i_1,
-                                                unsigned int i_2,
-                                                unsigned int i_3,
-                                                unsigned int i_4 ) {
+                                                unsigned int  i_1,
+                                                unsigned int  i_2,
+                                                unsigned int  i_3,
+                                                unsigned int  i_4 ) {
   unsigned long op;
 
   switch( i_instr ) {
     /* D-8RR (0, 3) form */
     case LIBXSMM_PPC64LE_INSTR_XXSPLTIDP:
     case LIBXSMM_PPC64LE_INSTR_XXSPLTIW: {
-      op = libxsmm_ppc64le_instr_d_form_1_8rr3( i_instr, (unsigned int)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned int)i_4);
+      op = libxsmm_ppc64le_instr_d_form_1_8rr3( i_instr, (unsigned int)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned int)i_4 );
     } break;
     default: {
       return -1;
@@ -1432,17 +1455,21 @@ unsigned long libxsmm_ppc64le_instr_4l_wrapper( unsigned long i_instr,
 
 LIBXSMM_API_INTERN
 unsigned long libxsmm_ppc64le_instr_5l_wrapper( unsigned long i_instr,
-                                                unsigned int i_1,
-                                                unsigned int i_2,
-                                                unsigned int i_3,
-                                                unsigned int i_4,
-                                                unsigned int i_5 ) {
+                                                unsigned int  i_1,
+                                                unsigned int  i_2,
+                                                unsigned int  i_3,
+                                                unsigned int  i_4,
+                                                unsigned int  i_5 ) {
   unsigned long op;
 
   switch( i_instr ) {
+    /* D-MLS form */
+    case LIBXSMM_PPC64LE_INSTR_PADDI: {
+      op = libxsmm_ppc64le_instr_d_form_mls( i_instr, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned int)i_5 );
+    } break;
     /* D-8RR (0, 3) form */
     case LIBXSMM_PPC64LE_INSTR_XXSPLTI32DX: {
-      op = libxsmm_ppc64le_instr_d_form_0_8rr3( i_instr, (unsigned int)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned int)i_5);
+      op = libxsmm_ppc64le_instr_d_form_0_8rr3( i_instr, (unsigned int)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned int)i_5 );
     } break;
     default: {
       return -1;
@@ -1454,13 +1481,13 @@ unsigned long libxsmm_ppc64le_instr_5l_wrapper( unsigned long i_instr,
 
 LIBXSMM_API_INTERN
 unsigned long libxsmm_ppc64le_instr_7l_wrapper( unsigned long i_instr,
-                                                unsigned int i_1,
-                                                unsigned int i_2,
-                                                unsigned int i_3,
-                                                unsigned int i_4,
-                                                unsigned int i_5,
-                                                unsigned int i_6,
-                                                unsigned int i_7 ) {
+                                                unsigned int  i_1,
+                                                unsigned int  i_2,
+                                                unsigned int  i_3,
+                                                unsigned int  i_4,
+                                                unsigned int  i_5,
+                                                unsigned int  i_6,
+                                                unsigned int  i_7 ) {
   unsigned long op;
 
   switch( i_instr ) {
@@ -1490,14 +1517,14 @@ unsigned long libxsmm_ppc64le_instr_7l_wrapper( unsigned long i_instr,
 
 LIBXSMM_API_INTERN
 unsigned long libxsmm_ppc64le_instr_8l_wrapper( unsigned long i_instr,
-                                                unsigned int i_1,
-                                                unsigned int i_2,
-                                                unsigned int i_3,
-                                                unsigned int i_4,
-                                                unsigned int i_5,
-                                                unsigned int i_6,
-                                                unsigned int i_7,
-                                                unsigned int i_8 ) {
+                                                unsigned int  i_1,
+                                                unsigned int  i_2,
+                                                unsigned int  i_3,
+                                                unsigned int  i_4,
+                                                unsigned int  i_5,
+                                                unsigned int  i_6,
+                                                unsigned int  i_7,
+                                                unsigned int  i_8 ) {
   unsigned long op;
 
   switch( i_instr ) {
@@ -1535,15 +1562,15 @@ unsigned long libxsmm_ppc64le_instr_8l_wrapper( unsigned long i_instr,
 
 LIBXSMM_API_INTERN
 unsigned long libxsmm_ppc64le_instr_9l_wrapper( unsigned long i_instr,
-                                                unsigned int i_1,
-                                                unsigned int i_2,
-                                                unsigned int i_3,
-                                                unsigned int i_4,
-                                                unsigned int i_5,
-                                                unsigned int i_6,
-                                                unsigned int i_7,
-                                                unsigned int i_8,
-                                                unsigned int i_9 ) {
+                                                unsigned int  i_1,
+                                                unsigned int  i_2,
+                                                unsigned int  i_3,
+                                                unsigned int  i_4,
+                                                unsigned int  i_5,
+                                                unsigned int  i_6,
+                                                unsigned int  i_7,
+                                                unsigned int  i_8,
+                                                unsigned int  i_9 ) {
   unsigned long op;
 
   switch( i_instr ) {
@@ -2140,8 +2167,8 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code * io_generated_co
 
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_close_stream( libxsmm_generated_code * io_generated_code,
-                                         libxsmm_ppc64le_reg    * io_reg_tracker ) {
+void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code * io_generated_code,
+                                          libxsmm_ppc64le_reg    * io_reg_tracker ) {
   /* From "64-Bit ELF V2 ABI Specification: Power Architecture" */
 
   unsigned int gpr_offset = 0;
