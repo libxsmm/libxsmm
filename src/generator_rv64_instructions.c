@@ -17,19 +17,147 @@
 #define REG_VALID_2(r1, r2)     (REG_VALID_1(r1) && REG_VALID_1(r2))
 #define REG_VALID_3(r1, r2, r3) (REG_VALID_2(r1, r2) && REG_VALID_1(r3))
 
+/* Save X18 X19 X20 X21 X22 X23 X24 X25 X26 X27 */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
-                                              const unsigned short    i_callee_save_bitmask )
-{
-  return;
+                                              const unsigned short    i_callee_save_bitmask ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_close_stream: at least RV64 needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  /* allocate callee save space on the stack */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                               LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
+                                               -80 );
+
+  /* save x18-x27 to stack */
+  if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X18, 72 );
+  }
+  if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X19, 64 );
+  }
+  if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X20, 56 );
+  }
+  if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X21, 48 );
+  }
+  if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X22, 40 );
+  }
+  if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X23, 32 );
+  }
+  if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X24, 24 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X25, 16);
+  }
+
+  if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X26, 8 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X27, 0 );
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated_code,
+                                               const unsigned short    i_callee_save_bitmask ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_restore_regs: at least RV64 needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  /* save x18-x27 to stack */
+  if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X18, 72 );
+  }
+  if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X19, 64 );
+  }
+  if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X20, 56 );
+  }
+  if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X21, 48 );
+  }
+  if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X22, 40 );
+  }
+  if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X23, 32 );
+  }
+  if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X24, 24 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X25, 16);
+  }
+
+  if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X26, 8 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X27, 0 );
+  }
+
+  /* deallocate calle save space on stack */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
+                                                 LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
+                                                 80 );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
-                                               const unsigned short    i_callee_save_bitmask )
-{
-  libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X0, LIBXSMM_RV64_GP_REG_X1, 0);
-  return;
+                                               const unsigned short    i_callee_save_bitmask ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  libxsmm_rv64_instruction_restore_regs( io_generated_code, i_callee_save_bitmask );
+
+  /* generate return instruction */
+  if ( io_generated_code->code_type > 1 ) {
+    libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X0, LIBXSMM_RV64_GP_REG_X1, 0);
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_rv64_instruction_close_stream: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
 }
 
 /* RVV VL config */
