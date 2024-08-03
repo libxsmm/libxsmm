@@ -124,7 +124,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   }
   /* remainder load on a */
   if ( l_m_blocks[1] > 0) {
-
     /* Set vector length */
     /* libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, i_gp_reg_mapping->gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1); */
     libxsmm_rv64_instruction_rvv_move( io_generated_code,
@@ -206,6 +205,10 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
                                                      i_gp_reg_mapping->gp_reg_b,
                                                      l_b_next_k );
     }
+  }
+  for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    printf("In b broadcast\n");
+
 
     /* issue FMAs */
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
