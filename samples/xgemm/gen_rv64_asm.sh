@@ -1,8 +1,11 @@
 #!/bin/env bash
 
-file=`basename $1 .mxm`
-echo $file
+rm -rf *.asm
+rm -rf *.elf
 
-~/nfs_home_old/llvm-project/build/bin/llvm-objcopy -I binary -O elf64-littleriscv -B rv64gvc --rename-section=.data=.text,code $1 $file.elf
+for i in `ls libxsmm_*`;
+do
+  llvm-objcopy -I binary -O elf64-littleriscv -B rv64gvc --rename-section=.data=.text,code $i $i.elf
+  llvm-objdump -d --mattr=+V $i.elf > $i.asm
+done
 
-~/nfs_home_old/llvm-project/build/bin/llvm-objdump -d --mattr=+V $file.elf > $file.asm
