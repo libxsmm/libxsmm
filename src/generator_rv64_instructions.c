@@ -373,8 +373,42 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 #define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
 #define RVV_I(i)    (RVV_LUI(i) || RVV_LOI(i) || RVV_SUI(i) || RVV_SOI(i))
 
+  if ( i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VL4RE32_V ) {
+    if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
+      fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+
+    if ( io_generated_code->code_type > 1 ) {
+      unsigned int code_head = io_generated_code->code_size/4;
+      unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+      /* Ensure we have enough space */
+      if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+        return;
+      }
+
+      /* fix bits */
+      code[code_head]  = i_vmove_instr;
+
+      /* setting RS1 */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_addr, LIBXSMM_RV64_INSTR_FIELD_RS1);
+
+      /* setting RD */
+      code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
+
+      /* advance code head */
+      io_generated_code->code_size += 4;
+    } else {
+      /* assembly not supported right now */
+      fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: inline/pure assembly print is not supported!\n");
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
   /* Unit stride and mask memory ops */
-  if ( RVV_U(i_vmove_instr)||(RVV_M(i_vmove_instr)) ) {
+  } else if ( RVV_U(i_vmove_instr)||(RVV_M(i_vmove_instr)) ) {
     if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
       fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -411,10 +445,8 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
-  }
-
   /* Stride and Indexed memory ops */
-  if ( RVV_S(i_vmove_instr) || RVV_I(i_vmove_instr)) {
+  } else if ( RVV_S(i_vmove_instr) || RVV_I(i_vmove_instr)) {
     if ( !REG_VALID_3(i_vec_reg_addr, i_vec_reg_offset, i_vec_reg_dst) ) {
       fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -454,6 +486,10 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
+  } else {
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid instruction!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
 #undef RVV_LU
