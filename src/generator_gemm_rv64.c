@@ -221,6 +221,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
 #endif
     }
     else {
+      LIBXSMM_UNUSED( l_b_next_k );
       /* @TODO this code doesn't work for transposed B */
       libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code,
                                                   LIBXSMM_RV64_INSTR_GP_ADDI,
