@@ -452,6 +452,12 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                     l_n,
                                                     l_vec_reg_acc_start + l_n );
         } else {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                    LIBXSMM_X86_INSTR_VPDPBSSD,
+                                                    i_micro_kernel_config->vector_name,
+                                                    i_n_blocking,
+                                                    l_n,
+                                                    l_vec_reg_acc_start + l_n );
           /* should not happen */
         }
       } else {
@@ -555,6 +561,12 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                         l_n,
                                                         l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
             } else {
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        LIBXSMM_X86_INSTR_VPDPBSSD,
+                                                        i_micro_kernel_config->vector_name,
+                                                        i_n_blocking,
+                                                        l_n,
+                                                        l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
               /* should not happen */
             }
           } else {
@@ -609,6 +621,12 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                         l_n,
                                                         l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
             } else {
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        LIBXSMM_X86_INSTR_VPDPBSSD,
+                                                        i_micro_kernel_config->vector_name,
+                                                        i_n_blocking+l_m,
+                                                        l_n,
+                                                        l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
               /* should not happen */
             }
           } else {
