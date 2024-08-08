@@ -257,6 +257,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     }
   }
 
+  /* handle A VNNI on stack */
+  if ( ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) ) {
+    l_xgemm_desc->lda = l_xgemm_desc->m;
+    l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_micro_kernel_config.avnni_gemm_stack_alloc_tensors = 1;
+  }
+
   /* block according to the number of available registers or given limits */
   l_max_n_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( &l_micro_kernel_config, l_xgemm_desc, io_generated_code->arch );
 #if 1
