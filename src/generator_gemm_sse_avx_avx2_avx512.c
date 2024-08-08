@@ -223,6 +223,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     l_xgemm_desc->ldb = l_xgemm_desc->k;
   }
 
+  /* @TODO check if we can make this smarter and don't need two times the same if */
+  if ( ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) ) {
+    l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+  }
+
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc, 0 );
 
@@ -258,9 +263,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* handle A VNNI on stack */
-  if ( ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) ) {
+  if ( ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) ) {
     l_xgemm_desc->lda = l_xgemm_desc->m;
-    l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
     l_micro_kernel_config.avnni_gemm_stack_alloc_tensors = 1;
   }
 
