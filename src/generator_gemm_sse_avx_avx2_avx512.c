@@ -160,6 +160,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int l_is_Ai4_Bi8_gemm = libxsmm_x86_is_Ai4_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bfp32_gemm = libxsmm_x86_is_Amxfp4_Bfp32_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
+  unsigned int l_avnni_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
+                                                   ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                   (l_xgemm_desc->k % 2 == 0) &&
+                                                   ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) &&
+                                                   (io_generated_code->arch >= LIBXSMM_X86_AVX));
 
   /* initialize n-blocking */
   unsigned int l_n_count = 0;          /* array counter for blocking arrays */
@@ -224,7 +229,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* @TODO check if we can make this smarter and don't need two times the same if */
-  if ( ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) && (l_xgemm_desc->k % 2 == 0) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) && (io_generated_code->arch >= LIBXSMM_X86_AVX) ) {
+  if ( l_avnni_gemm_stack_alloc_tensors != 0 ) {
     l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
 
@@ -263,7 +268,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* handle A VNNI on stack */
-  if ( ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) && (i_xgemm_desc->k % 2 == 0) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) && (io_generated_code->arch >= LIBXSMM_X86_AVX) ) {
+  if ( l_avnni_gemm_stack_alloc_tensors != 0 ) {
     l_xgemm_desc->lda = l_xgemm_desc->m;
     l_micro_kernel_config.avnni_gemm_stack_alloc_tensors = 1;
   }
