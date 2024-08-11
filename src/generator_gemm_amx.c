@@ -3028,7 +3028,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int hf8_output_gemm = (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ) ) ? 1 : 0;
   int l_defer_relu_bitmask_compute = 0;
   int l_defer_c_vnni_format = 0;
-  int l_save_m, l_save_k, l_save_n;
+  int l_save_m = 0, l_save_k = 0, l_save_n = 0;
 
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
