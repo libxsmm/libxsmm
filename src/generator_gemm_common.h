@@ -60,7 +60,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_t
                                                                                                       libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                                                       libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                                                       const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                                                      libxsmm_datatype               i_in_dtype );
+                                                                                                      libxsmm_datatype               i_in_dtype,
+                                                                                                      unsigned int                   i_is_amx );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack(   libxsmm_generated_code*        io_generated_code,
                                                                                     libxsmm_loop_label_tracker*    io_loop_label_tracker,
