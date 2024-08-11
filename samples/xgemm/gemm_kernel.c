@@ -1462,7 +1462,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
                 tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
               } else if ( (i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b == 0) ) {
-                /* @TODO */
+                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (((l_s*l_k_block) + l_k2) * ldb) + l_j];
               } else if ( (i_gemm_def->trans_b == 0) && (i_gemm_def->vnni_b == 0 ) ) {
                 tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {

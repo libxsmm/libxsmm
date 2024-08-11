@@ -1532,6 +1532,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int atrans_gemm_stack_alloc_tensors;
   unsigned int avnni_gemm_stack_alloc_tensors;
   unsigned int atvnni_gemm_stack_alloc_tensors;
+  unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int bvnni_btrans_gemm_stack_alloc_tensors;
 } libxsmm_micro_kernel_config;
 

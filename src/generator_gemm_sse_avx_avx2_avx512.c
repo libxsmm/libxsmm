@@ -162,15 +162,26 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_avnni_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                   ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) &&
+                                                   ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                    (l_xgemm_desc->k % 2 == 0) &&
                                                    ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) &&
                                                    (io_generated_code->arch >= LIBXSMM_X86_AVX));
   unsigned int l_atvnni_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) &&
                                                     ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) &&
+                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                     (l_xgemm_desc->k % 2 == 0) &&
                                                     ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) &&
                                                     (io_generated_code->arch >= LIBXSMM_X86_AVX));
-  /* initialize n-blocking */
+  unsigned int l_avnni_btrans_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
+                                                          ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                          ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) &&
+                                                          ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
+                                                          (l_xgemm_desc->k % 2 == 0) &&
+                                                          ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) &&
+                                                          (io_generated_code->arch >= LIBXSMM_X86_AVX));
+   /* initialize n-blocking */
   unsigned int l_n_count = 0;          /* array counter for blocking arrays */
   unsigned int l_n_done = 0;           /* progress tracker */
   unsigned int l_n_n[2] = {0,0};       /* blocking sizes for blocks */
@@ -233,11 +244,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* @TODO check if we can make this smarter and don't need two times the same if */
-  if ( (l_avnni_gemm_stack_alloc_tensors != 0) || (l_atvnni_gemm_stack_alloc_tensors != 0) ) {
+  if ( (l_avnni_gemm_stack_alloc_tensors != 0) || (l_atvnni_gemm_stack_alloc_tensors != 0) || (l_avnni_btrans_gemm_stack_alloc_tensors != 0) ) {
     l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
   if ( l_atvnni_gemm_stack_alloc_tensors != 0 ) {
     l_xgemm_desc->flags = (unsigned int)((unsigned int)(l_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
+  }
+  if ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) {
+    l_xgemm_desc->flags = (unsigned int)((unsigned int)(l_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_B));
   }
 
   /* define the micro kernel code gen properties */
@@ -282,6 +296,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   if ( l_atvnni_gemm_stack_alloc_tensors != 0 ) {
     l_xgemm_desc->lda = l_xgemm_desc->m;
     l_micro_kernel_config.atvnni_gemm_stack_alloc_tensors = 1;
+  }
+  if ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) {
+    l_xgemm_desc->lda = l_xgemm_desc->m;
+    l_xgemm_desc->ldb = l_xgemm_desc->k;
+    l_micro_kernel_config.avnni_btrans_gemm_stack_alloc_tensors = 1;
   }
 
   /* block according to the number of available registers or given limits */
