@@ -55,12 +55,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
                                                                                       libxsmm_datatype               i_out2_dtype );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( libxsmm_generated_code*       io_generated_code,
-                                                                                    libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                                    const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                                    libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                                    libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                                    const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                                    libxsmm_datatype               i_in_dtype );
+                                                                              libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                              const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                              libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                                              libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                                              const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
+                                                                              libxsmm_datatype               i_in_dtype );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_norm_to_vnni_into_stack( libxsmm_generated_code*       io_generated_code,
                                                                                 libxsmm_loop_label_tracker*    io_loop_label_tracker,
