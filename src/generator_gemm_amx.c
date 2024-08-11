@@ -3028,6 +3028,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int hf8_output_gemm = (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ) ) ? 1 : 0;
   int l_defer_relu_bitmask_compute = 0;
   int l_defer_c_vnni_format = 0;
+  int l_save_m, l_save_k, l_save_n;
 
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
@@ -3172,9 +3173,31 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   l_micro_kernel_config.bf8_gemm_via_stack_alloc_tensors = bf8_gemm_via_stack_alloc_tensors;
   l_micro_kernel_config.hf8_gemm_via_stack_alloc_tensors = hf8_gemm_via_stack_alloc_tensors;
 
+  if ( ( l_avnni_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_gemm_stack_alloc_tensors != 0 ) || ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_btrans_gemm_stack_alloc_tensors != 0 ) ) {
+    l_save_m = l_xgemm_desc->m;
+    l_save_n = l_xgemm_desc->n;
+    l_save_k = l_xgemm_desc->k;
+    l_xgemm_desc->m = i_xgemm_desc->m;
+    l_xgemm_desc->n = i_xgemm_desc->n;
+    l_xgemm_desc->k = i_xgemm_desc->k;
+  }
+
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0))     ) {
     libxsmm_generator_gemm_setup_stack_frame( io_generated_code, l_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
+  }
+
+  if ( ( l_avnni_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_gemm_stack_alloc_tensors != 0 ) || ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_btrans_gemm_stack_alloc_tensors != 0 ) ) {
+    if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
+        (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0))     ) {
+      libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ), 1);
+    }
+  }
+
+  if ( ( l_avnni_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_gemm_stack_alloc_tensors != 0 ) || ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_btrans_gemm_stack_alloc_tensors != 0 ) ) {
+    l_xgemm_desc->m = l_save_m;
+    l_xgemm_desc->n = l_save_n;
+    l_xgemm_desc->k = l_save_k;
   }
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) {
@@ -3192,13 +3215,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
       l_micro_kernel_config.vnni_format_C = 0;
     }
     libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
-  }
-
-  if ( ( l_avnni_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_gemm_stack_alloc_tensors != 0 ) || ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) || ( l_atvnni_btrans_gemm_stack_alloc_tensors != 0 ) ) {
-    if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
-        (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0))     ) {
-      libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ), 1);
-    }
   }
 
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
