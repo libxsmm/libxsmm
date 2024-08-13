@@ -405,14 +405,20 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # trB we need to switch LDB
-                    if [ "$TRA" == '1' ] ; then
+                    if [[ ("$TRA" == '1') && ("$TRB" == '0') ]] ; then
                       sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(k) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
                     # trB we need to switch LDB
-                    if [ "$TRB" == '1' ] ; then
+                    if [[ ("$TRA" == '0') && ("$TRB" == '1') ]] ; then
                       sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${OUTNAME}
+                    fi
+
+                    # trA,trB we need to switch LDB
+                    if [[ ("$TRA" == '1') && ("$TRB" == '1') ]] ; then
+                      sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(n) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
