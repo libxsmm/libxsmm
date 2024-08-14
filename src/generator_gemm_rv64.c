@@ -1192,7 +1192,8 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
         /* store block of C */
         if ( io_generated_code->arch == LIBXSMM_RV64 ) {
-
+        printf("Storing C block relu fusion set to %d\n", l_micro_kernel_config.fused_relu);
+         libxsmm_generator_gemm_apply_fusion_2dregblock_rv64( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking  );
         libxsmm_generator_store_2dregblock_rv64_rvv( io_generated_code, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_4,
                                                             l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                             l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
@@ -1213,8 +1214,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                          l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_4, 0 );
 
           /* open BR loop */
-          libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_reduce_count,
-            l_gp_reg_mapping.gp_reg_reduce_loop, 0 );
+          libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, l_gp_reg_mapping.gp_reg_reduce_count, l_gp_reg_mapping.gp_reg_reduce_loop, 0 );
           libxsmm_rv64_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
 
           /* update A pointer */

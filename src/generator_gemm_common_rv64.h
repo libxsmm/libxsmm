@@ -100,7 +100,19 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_rv64_asimd(  libxsmm
                                                               const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64_sve(  libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64(  libxsmm_generated_code*         io_generated_code,
+                                                                const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                                libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                                const unsigned int              i_gp_reg_scratch0,
+                                                                const unsigned int              i_gp_reg_scratch1,
+                                                                const unsigned int              i_vec_length,
+                                                                const unsigned int              i_vec_reg_count,
+                                                                const unsigned int              i_m_blocking,
+                                                                const unsigned int              i_n_blocking );
+#endif
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64(  libxsmm_generated_code*         io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                               const unsigned int              i_gp_reg_scratch0,
@@ -111,7 +123,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64_sve(  libxsmm_gene
                                                               const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64_asimd(  libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_gemm_apply_fusion_2dregblock_rv64(  libxsmm_generated_code*         io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                               const unsigned int              i_gp_reg_scratch0,
@@ -120,18 +132,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64_asimd(  libxsmm_ge
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_apply_fusion_2dregblock_rv64_asimd(  libxsmm_generated_code*         io_generated_code,
-                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                              libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                              const unsigned int              i_gp_reg_scratch0,
-                                                              const unsigned int              i_gp_reg_scratch1,
-                                                              const unsigned int              i_vec_length,
-                                                              const unsigned int              i_vec_reg_count,
-                                                              const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking );
-
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_rv64_sve(  libxsmm_generated_code*         io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
