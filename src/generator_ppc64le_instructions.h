@@ -490,7 +490,7 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_ADDI 0x38000000 /* Add Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_RLDICR 0x78000004 /* Rotate Left Doubleword Immediate then Clear Right MD-form */
 #define LIBXSMM_PPC64LE_INSTR_ADD 0x7c000214 /* Add XO-form */
-#define LIBXSMM_PPC64LE_INSTR_PADDI 0x0600000038000000 /* Prefixed Add Immediate MLS:D-form */
+#define LIBXSMM_PPC64LE_INSTR_PADDI 0x0600000038000000UL /* Prefixed Add Immediate MLS:D-form */
 
 /* logic opcodes */
 #define LIBXSMM_PPC64LE_INSTR_BC 0x40000000 /* Branch Conditional B-form */
@@ -754,14 +754,14 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 
 
 /* Prefixed masking, insertion and extraction opcodes */
-#define LIBXSMM_PPC64LE_INSTR_XXBLENDVB 0x0500000084000000 /* VSX Vector Blend Variable Byte 8RR:XX4-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBLENDVD 0x0500000084000030 /* VSX Vector Blend Variable Doubleword 8RR:XX4-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBLENDVH 0x0500000084000010 /* VSX Vector Blend Variable Halfword 8RR:XX4-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBLENDVW 0x0500000084000020 /* VSX Vector Blend Variable Word 8RR:XX4-form */
-#define LIBXSMM_PPC64LE_INSTR_XXEVAL 0x0500000088000010 /* VSX Vector Evaluate 8RR:XX4-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSPLTI32DX 0x0500000080000000 /* VSX Vector Splat Immediate32 Doubleword Indexed 8RR:D-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSPLTIDP 0x0500000080040000 /* VSX Vector Splat Immediate Double-Precision 8RR:D-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSPLTIW 0x0500000080060000 /* VSX Vector Splat Immediate Word 8RR:D-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVB 0x0500000084000000UL /* VSX Vector Blend Variable Byte 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVD 0x0500000084000030UL /* VSX Vector Blend Variable Doubleword 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVH 0x0500000084000010UL /* VSX Vector Blend Variable Halfword 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBLENDVW 0x0500000084000020UL /* VSX Vector Blend Variable Word 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXEVAL 0x0500000088000010UL /* VSX Vector Evaluate 8RR:XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTI32DX 0x0500000080000000UL /* VSX Vector Splat Immediate32 Doubleword Indexed 8RR:D-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTIDP 0x0500000080040000UL /* VSX Vector Splat Immediate Double-Precision 8RR:D-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTIW 0x0500000080060000UL /* VSX Vector Splat Immediate Word 8RR:D-form */
 
 
 /* vector arithmetic opcodes */
@@ -849,35 +849,35 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_XVI8GER4SPP 0xec000318 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturate Positive multiply, Positive accumulate XX3-form */
 
 /* Prefixed MMA opcodes */
-#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2 0x07900000ec000198 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2NN 0x07900000ec000790 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2NP 0x07900000ec000390 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2PN 0x07900000ec000590 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2PP 0x07900000ec000190 /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2 0x07900000ec000098 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2NN 0x07900000ec000690 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2NP 0x07900000ec000290 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2PN 0x07900000ec000490 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2PP 0x07900000ec000090 /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF32GER 0x07900000ec0000d8 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERNN 0x07900000ec0006d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERNP 0x07900000ec0002d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERPN 0x07900000ec0004d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERPP 0x07900000ec0000d0 /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF64GER 0x07900000ec0001d8 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERNN 0x07900000ec0007d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERNP 0x07900000ec0003d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERPN 0x07900000ec0005d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERPP 0x07900000ec0001d0 /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2 0x07900000ec000258 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2PP 0x07900000ec000358 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2S 0x07900000ec000158 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2SPP 0x07900000ec000150 /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI4GER8 0x07900000ec000118 /* Prefixed Masked VSX Vector 4-bit Signed Integer GER (rank-8 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI4GER8PP 0x07900000ec000110 /* Prefixed Masked VSX Vector 4-bit Signed Integer GER (rank-8 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4 0x07900000ec000018 /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4PP 0x07900000ec000010 /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4SPP 0x07900000ec000318 /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturation Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2 0x07900000ec000198UL /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2NN 0x07900000ec000790UL /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2NP 0x07900000ec000390UL /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2PN 0x07900000ec000590UL /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2PP 0x07900000ec000190UL /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2 0x07900000ec000098UL /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2NN 0x07900000ec000690UL /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2NP 0x07900000ec000290UL /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2PN 0x07900000ec000490UL /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF16GER2PP 0x07900000ec000090UL /* Prefixed Masked VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GER 0x07900000ec0000d8UL /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERNN 0x07900000ec0006d0UL /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERNP 0x07900000ec0002d0UL /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERPN 0x07900000ec0004d0UL /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF32GERPP 0x07900000ec0000d0UL /* Prefixed Masked VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GER 0x07900000ec0001d8UL /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERNN 0x07900000ec0007d0UL /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERNP 0x07900000ec0003d0UL /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERPN 0x07900000ec0005d0UL /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVF64GERPP 0x07900000ec0001d0UL /* Prefixed Masked VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2 0x07900000ec000258UL /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2PP 0x07900000ec000358UL /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2S 0x07900000ec000158UL /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI16GER2SPP 0x07900000ec000150UL /* Prefixed Masked VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI4GER8 0x07900000ec000118UL /* Prefixed Masked VSX Vector 4-bit Signed Integer GER (rank-8 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI4GER8PP 0x07900000ec000110UL /* Prefixed Masked VSX Vector 4-bit Signed Integer GER (rank-8 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4 0x07900000ec000018UL /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4PP 0x07900000ec000010UL /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) Positive multiply, Positive accumulate MMIRR:XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_PMXVI8GER4SPP 0x07900000ec000318UL /* Prefixed Masked VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturation Positive multiply, Positive accumulate MMIRR:XX3-form */
 
 
 /* MMA Register opcodes */
@@ -894,6 +894,14 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_get_reg( libxsmm_generated_code *io_generated_code,
                                       libxsmm_ppc64le_reg    *io_reg_tracker,
                                       unsigned int const      i_reg_type );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_get_sequential_reg( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_ppc64le_reg    *io_reg_tracker,
+                                         unsigned int const      i_reg_type,
+                                         unsigned int const      i_n,
+                                         unsigned int           *o_reg );
 
 
 LIBXSMM_API_INTERN
@@ -1479,9 +1487,167 @@ void libxsmm_ppc64le_instr_transpose_f32_4x4_inplace( libxsmm_generated_code * i
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32( libxsmm_generated_code *io_generated_code,
+                                          libxsmm_ppc64le_reg    *io_reg_tracker,
+                                          unsigned int           *i_v,
+                                          unsigned int            i_n,
+                                          unsigned int           *o_v,
+                                          unsigned int            i_m );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_4x4( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_3x4( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_2x4( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_1x4( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_4x3( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_3x3( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_2x3( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_1x3( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_4x2( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_3x2( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_2x2( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_1x2( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_4x1( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_3x1( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_2x1( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f32_1x1( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_transpose_f64_2x2_inplace( libxsmm_generated_code * io_generated_code,
                                                       libxsmm_ppc64le_reg    * io_reg_tracker,
                                                       unsigned int           * io_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64( libxsmm_generated_code *io_generated_code,
+                                          libxsmm_ppc64le_reg    *io_reg_tracker,
+                                          unsigned int           *i_v,
+                                          unsigned int            i_n,
+                                          unsigned int           *o_v,
+                                          unsigned int            i_m );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64_2x2( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64_1x2( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64_2x1( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_transpose_f64_1x1( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_ppc64le_reg    *io_reg_tracker,
+                                              unsigned int           *i_v,
+                                              unsigned int           *o_v );
 
 
 /**
