@@ -88,7 +88,6 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr( libxsmm_generated_code *io_generate
     }
   }
 
-
   for ( unsigned int l_n = 0; l_n < i_n; ++l_n ) {
     if ( ( l_m_blocks > 1 ) || ( l_m_blocks > 0 && !l_packed ) ) {
       libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, l_a, l_a_row, l_a );
@@ -140,6 +139,9 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr( libxsmm_generated_code *io_generate
   }
   if ( ( l_m_blocks > 1 ) || ( l_m_blocks > 0 && !l_packed ) ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_row );
+  }
+  if ( !l_packed ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_m_part );
   }
 }
 
@@ -268,6 +270,9 @@ void libxsmm_generator_gemm_vsx_mk_store_vsr( libxsmm_generated_code *io_generat
   }
   if ( ( l_m_blocks > 1 ) || ( l_m_blocks > 0 && !l_packed ) ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_row );
+  }
+  if ( !l_packed ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_m_part );
   }
 }
 
@@ -405,111 +410,6 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr_splat( libxsmm_generated_code *io_ge
   if ( ( l_m_blocks > 1 ) || !l_packed ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_row );
   }
-}
-
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vsx_mk_load_trans( libxsmm_generated_code * io_generated_code,
-                                               libxsmm_datatype const   i_datatype,
-                                               libxsmm_datatype const   i_comptype, /* currently unsuded */
-                                               libxsmm_ppc64le_reg    * io_reg_tracker,
-                                               unsigned int           * i_loaded_regs,
-                                               unsigned int const       i_ptr_gpr,
-                                               unsigned int const       i_n_rows,
-                                               unsigned int const       i_n_cols,
-                                               unsigned int const       i_stride ) {
-
-  unsigned int l_databytes = libxsmm_ppc64le_instr_bytes( io_generated_code, i_datatype );
-  unsigned int l_vec_len = LIBXSMM_PPC64LE_VSR_WIDTH / (l_databytes * 8);
-  unsigned int l_n_col_blocks = i_n_cols / l_vec_len;
-  unsigned int l_n_row_blocks = i_n_rows / l_vec_len;
-  unsigned int l_block_ld = ( i_n_cols + l_vec_len - 1 ) / l_vec_len;
-
-  /* local copy of pointer */
-  unsigned int l_ptr = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-  unsigned int l_col_ptr = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_OR,
-                           i_ptr_gpr,
-                           l_ptr,
-                           i_ptr_gpr );
-
-  if( l_databytes*i_stride > (unsigned int)(0xffff) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
-  /* load the fully packed part */
-  for ( unsigned int l_row_block = 0; l_row_block < l_n_row_blocks; ++l_row_block ) {
-    libxsmm_ppc64le_instr_3( io_generated_code,
-                             LIBXSMM_PPC64LE_INSTR_OR,
-                             l_ptr,
-                             l_col_ptr,
-                             l_ptr );
-
-    for ( unsigned int l_col_block = 0; l_col_block < l_n_col_blocks; ++l_col_block ) {
-      /* vector load */
-      if ( i_datatype == LIBXSMM_DATATYPE_F32 ) {
-        for ( unsigned int l_vec = 0; l_vec < l_vec_len; ++l_vec ) {
-          unsigned int l_reg_idx = l_col_block + (l_row_block*l_vec_len + l_vec)*l_block_ld;
-          libxsmm_ppc64le_instr_4( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_LXVW4X,
-                                   i_loaded_regs[l_reg_idx],
-                                   0,
-                                   l_col_ptr,
-                                   (0x0020 & i_loaded_regs[l_reg_idx]) >> 5 );
-          if ( l_vec < l_vec_len - 1 || l_col_block < l_n_col_blocks - 1){
-            libxsmm_ppc64le_instr_3( io_generated_code,
-                                     LIBXSMM_PPC64LE_INSTR_ADDI,
-                                     l_col_ptr,
-                                     l_col_ptr,
-                                     l_databytes*i_stride );
-          }
-        }
-        unsigned int l_v_reg[l_vec_len];
-        for ( unsigned int l_i = 0; l_i < l_vec_len; ++l_i) {
-          l_v_reg[l_i] = i_loaded_regs[l_col_block + (l_row_block*l_vec_len + l_i)*l_block_ld];
-        }
-
-        libxsmm_ppc64le_instr_transpose_f32_4x4_inplace( io_generated_code,
-                                                         io_reg_tracker,
-                                                         l_v_reg );
-      } else if ( i_datatype == LIBXSMM_DATATYPE_F64 ) {
-        for ( unsigned int l_vec = 0; l_vec < l_vec_len; ++l_vec ) {
-          unsigned int l_reg_idx = l_col_block + (l_row_block*l_vec_len + l_vec)*l_block_ld;
-          libxsmm_ppc64le_instr_4( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_LXVD2X,
-                                   i_loaded_regs[l_reg_idx],
-                                   0,
-                                   l_col_ptr,
-                                   (0x0020 & i_loaded_regs[l_reg_idx]) >> 5 );
-          libxsmm_ppc64le_instr_3( io_generated_code,
-                                   LIBXSMM_PPC64LE_INSTR_ADDI,
-                                   l_col_ptr,
-                                   l_col_ptr,
-                                   l_databytes*i_stride );
-        }
-      } else {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-        return;
-      }
-    }
-
-    /* increament if not last */
-    if ( l_row_block < l_n_row_blocks - 1) {
-      libxsmm_ppc64le_instr_3( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_ADDI,
-                               l_ptr,
-                               l_ptr,
-                               l_vec_len*l_databytes);
-    }
-  }
-
-  /* todo: the remainders */
-
-  /* free GPR */
-  libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_col_ptr );
-  libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_ptr );
 }
 
 
