@@ -439,15 +439,17 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code        *i
   }
 
   /* Call k-loop */
-  libxsmm_generator_mma_microkernel( io_generated_code,
-                                     i_xgemm_desc,
-                                     io_blocking,
-                                     io_reg_tracker,
-                                     io_loop_labels,
-                                     i_acc,
-                                     l_a,
-                                     i_b,
-                                     l_c );
+  if ( l_m_iters > 0 ) {
+    libxsmm_generator_mma_microkernel( io_generated_code,
+                                       i_xgemm_desc,
+                                       io_blocking,
+                                       io_reg_tracker,
+                                       io_loop_labels,
+                                       i_acc,
+                                       l_a,
+                                       i_b,
+                                       l_c );
+  }
 
   /* Increment a and c pointers if required */
   if ( l_m_iters > 1 || ( l_m_iters > 0 && !l_packed ) ) {
