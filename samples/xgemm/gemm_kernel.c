@@ -2389,6 +2389,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   free( (void*)l_a_addr );
   free( (void*)l_a_scf_addr );
+  free( (void*)l_a_zpt_addr );
   free( (void*)l_b_addr );
   free( (void*)l_a_offs );
   free( (void*)l_b_offs );
