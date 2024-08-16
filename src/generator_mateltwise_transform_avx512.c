@@ -4657,6 +4657,8 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                      libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                      const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                      const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+  libxsmm_generator_transform_sse_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
+#if 0
   unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
   unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
   unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
@@ -4969,5 +4971,6 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
+#endif
 }
 
