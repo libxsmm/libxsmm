@@ -635,8 +635,8 @@ void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_ge
   if (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) {
     l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_vsx;
   } else if (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) {
-    l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_mma;
-    //l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_vsx;
+    //l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_mma;
+    l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_vsx;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
@@ -669,7 +669,7 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
   io_blocking->comp_bytes = libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
   io_blocking->vector_len_comp = l_v_bytes / io_blocking->comp_bytes;
 
-  if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
+  if ( 1 ) { //io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
     io_blocking->block_m = ( 64 / io_blocking->comp_bytes < i_xgemm_desc->m ) ?
       64 / io_blocking->comp_bytes :
       io_blocking->vector_len_comp*( ( i_xgemm_desc->m + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
@@ -684,15 +684,21 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
     io_blocking->n_block_n_full = i_xgemm_desc->n / io_blocking->block_n;
     io_blocking->n_block_k_full = i_xgemm_desc->k / io_blocking->block_k;
 
-    if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) ) {
-      io_blocking->reg_lda = (io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
-      io_blocking->reg_ldb = io_blocking->block_k;
-      io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+    switch ( LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) ) {
+      case LIBXSMM_DATATYPE_F32:
+      case LIBXSMM_DATATYPE_F64: {
+        io_blocking->reg_lda = (io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+        io_blocking->reg_ldb = io_blocking->block_k;
+        io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
 
-      io_blocking->n_reg_a = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_k;
-      io_blocking->n_reg_b = io_blocking->block_n*io_blocking->block_k;
-      io_blocking->n_reg_c = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_n;
-
+        io_blocking->n_reg_a = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_k;
+        io_blocking->n_reg_b = io_blocking->block_n*io_blocking->block_k;
+        io_blocking->n_reg_c = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_n;
+      } break;
+      default: {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+        return;
+      }
     }
   } else if ( io_generated_code->arch == LIBXSMM_PPC64LE_MMA ) {
     io_blocking->block_m = ( 64 / io_blocking->comp_bytes < i_xgemm_desc->m ) ?

@@ -487,9 +487,7 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
   libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_v_len = i_blocking->vector_len_comp;
 
-  unsigned int l_n_k_blocks = i_xgemm_desc->k / i_blocking->block_k;
-  unsigned int l_packed = ( ( i_blocking->block_k % l_v_len ) == 0 &&
-                            ( i_xgemm_desc->k % i_blocking->block_k ) == 0 ) ? 1 : 0;
+  unsigned int l_n_k_blocks = ( i_xgemm_desc->k + i_blocking->block_k - 1 ) / i_blocking->block_k;
 
   /* Local pointers registers for A and B */
   unsigned int l_a, l_b;
@@ -535,6 +533,9 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
   }
 
   for ( unsigned int l_k_block = 0; l_k_block < l_n_k_blocks; ++l_k_block) {
+    unsigned int l_k_rem = i_xgemm_desc->k - l_k_block*i_blocking->block_k;
+    unsigned int l_block_k = ( l_k_rem < i_blocking->block_k ) ? l_k_rem : i_blocking->block_k;
+
     /* Load block of A */
     libxsmm_generator_gemm_vsx_mk_load_vsr( io_generated_code,
                                             io_reg_tracker,
@@ -542,7 +543,7 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                             l_comptype,
                                             l_a,
                                             i_blocking->block_m,
-                                            i_blocking->block_k,
+                                            l_block_k,
                                             i_xgemm_desc->lda,
                                             l_a_reg,
                                             i_blocking->reg_lda );
@@ -553,19 +554,19 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                                   l_b_datatype,
                                                   l_comptype,
                                                   l_b,
-                                                  i_blocking->block_k,
+                                                  l_block_k,
                                                   i_blocking->block_n,
                                                   i_xgemm_desc->ldb,
                                                   l_b_reg,
                                                   i_blocking->reg_ldb );
 
-    /* block FMA */
+    /* Block FMA */
     unsigned int l_beta = ( ( l_k_block == 0 ) && ( l_beta_zero ) ) ? 0 : 1;
     libxsmm_generator_vsx_block_fma_b_splat( io_generated_code,
                                              l_comptype,
                                              ( i_blocking->block_m + l_v_len - 1 ) / l_v_len,
                                              i_blocking->block_n,
-                                             i_blocking->block_k,
+                                             l_block_k,
                                              l_a_reg,
                                              i_blocking->reg_lda,
                                              l_b_reg,
@@ -574,8 +575,8 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                              l_c_reg,
                                              i_blocking->reg_ldc );
 
-    /* Increament if not last or not packed */
-    if ( l_k_block < l_n_k_blocks - 1 || !l_packed ) {
+    /* Increament if not last */
+    if ( l_k_block < l_n_k_blocks - 1 ) {
       libxsmm_ppc64le_instr_3( io_generated_code,
                                LIBXSMM_PPC64LE_INSTR_ADDI,
                                l_a,
@@ -589,49 +590,6 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                i_blocking->block_k*i_blocking->comp_bytes );
     }
   }
-  /* Partial dot product */
-  if ( !l_packed ) {
-    unsigned int l_k_part = i_xgemm_desc->k % i_blocking->block_k;
-    /* Load block of A */
-    libxsmm_generator_gemm_vsx_mk_load_vsr( io_generated_code,
-                                            io_reg_tracker,
-                                            l_a_datatype,
-                                            l_comptype,
-                                            l_a,
-                                            i_blocking->block_m,
-                                            l_k_part,
-                                            i_xgemm_desc->lda,
-                                            l_a_reg,
-                                            i_blocking->reg_lda );
-
-    /* Load block of B and broadcast values to vector */
-    libxsmm_generator_gemm_vsx_mk_load_vsr_splat( io_generated_code,
-                                                  io_reg_tracker,
-                                                  l_b_datatype,
-                                                  l_comptype,
-                                                  l_b,
-                                                  l_k_part,
-                                                  i_blocking->block_n,
-                                                  i_xgemm_desc->ldb,
-                                                  l_b_reg,
-                                                  i_blocking->reg_ldb );
-
-    /* block FMA */
-    unsigned int l_beta = ( ( l_n_k_blocks == 0 ) && ( l_beta_zero ) ) ? 0 : 1;
-    libxsmm_generator_vsx_block_fma_b_splat( io_generated_code,
-                                             l_comptype,
-                                             ( i_blocking->block_m + l_v_len - 1 ) / l_v_len,
-                                             i_blocking->block_n,
-                                             l_k_part,
-                                             l_a_reg,
-                                             i_blocking->reg_lda,
-                                             l_b_reg,
-                                             i_blocking->reg_ldb,
-                                             l_beta,
-                                             l_c_reg,
-                                             i_blocking->reg_ldc );
-  }
-
 
   /* Store result block in C */
   libxsmm_generator_gemm_vsx_mk_store_vsr( io_generated_code,
@@ -644,7 +602,6 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                            i_xgemm_desc->ldc,
                                            l_c_reg,
                                            i_blocking->reg_ldc );
-
 
   /* Free A and B registers */
   for ( unsigned int l_i = 0; l_i < i_blocking->n_reg_a; ++l_i ) {
