@@ -60,9 +60,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
-  printf("Arch %d\n", io_generated_code->arch);
-  printf("Flags %d\n", l_xgemm_desc_mod.flags);
-
   /* Check if it is a supported spmm with bitmap */
   if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0) {
     if ((io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )) {
