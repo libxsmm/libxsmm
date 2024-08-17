@@ -4679,8 +4679,9 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                 LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) )  ) {
     if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT ) {
       libxsmm_generator_transform_sse_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
+      return;
     }
-  } else {
+  }
   /* load pointers from struct */
   libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_param_struct,
@@ -4978,7 +4979,6 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
-  }
   }
 }
 
