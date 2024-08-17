@@ -4657,8 +4657,6 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                      libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                      const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                      const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
-  libxsmm_generator_transform_sse_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
-#if 0
   unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
   unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
   unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
@@ -4673,6 +4671,16 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
   unsigned int l_mask_reg_5 = 6;
   unsigned int l_mask_reg_6 = 7;
 
+  if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
+                LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ||
+              ( LIBXSMM_DATATYPE_F16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
+                LIBXSMM_DATATYPE_F16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ||
+              ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
+                LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) )  ) {
+    if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT ) {
+      libxsmm_generator_transform_sse_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
+    }
+  } else {
   /* load pointers from struct */
   libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_param_struct,
@@ -4971,6 +4979,6 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
-#endif
+  }
 }
 
