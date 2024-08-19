@@ -38,7 +38,7 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
     int l_remainder_size = i_m_blocking % i_micro_kernel_config->vector_length;
     l_m_blocks[1] = (l_remainder_size > 0);
     int u_loop_index_local = (u_loop_index > -1) ? u_loop_index : 0;
-    
+
     if (u_loop_index > -1){
       /* full vector loads on a */
       if ( (l_m_blocks[0] == 2) && (l_m_blocks[1] == 0) ) {
@@ -116,8 +116,8 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
       unsigned int l_b_stride = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
       unsigned int l_b_next = 0;
 
-      for ( int l_n = 0; l_n < i_n_blocking; l_n++ ) {
-         printf("Loading B for kloop %d %d\n", u_loop_index, u_loop_index_local);       
+      for ( unsigned int l_n = 0; l_n < i_n_blocking; l_n++ ) {
+         printf("Loading B for kloop %d %d\n", u_loop_index, u_loop_index_local);
          libxsmm_rv64_instruction_alu_move( io_generated_code,
                                             LIBXSMM_RV64_INSTR_GP_FLW,
                                             i_gp_reg_mapping->gp_reg_b,
@@ -126,8 +126,8 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
          if ( l_n != i_n_blocking - 1 ) {
            /* move on to next entry of B */
            l_b_next += l_b_stride;
-          
-           /* Since FLW offset can be atmost 12 bits, whenever l_b_next execeeds 
+
+           /* Since FLW offset can be atmost 12 bits, whenever l_b_next execeeds
             * 12 bits we increment gp_reg_b and reset the l_b_next */
            if (l_b_next >= ((1 << 11) - 1)) {
              /* move on to next entry of B */
@@ -197,16 +197,12 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
   unsigned int l_b_stride = i_xgemm_desc->ldb;
-  unsigned int l_b_next = 0;
   /* prep of B-ptr for next k-iteration */
   unsigned int l_b_next_k = 0;
-  unsigned int l_b_next_k_inst = 0;
   unsigned int l_k_pack_factor = 1;
 
   /* datatype dependent instructions */
-  unsigned int l_a_part_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_b_load_instr = LIBXSMM_RV64_INSTR_GP_VRGATHER_VV;
-  unsigned int l_b_load_scalar_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_b_load_bcast_instr = LIBXSMM_RV64_INSTR_GP_VFMV_V_F;
   unsigned int l_compute_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_compute_is_pred = 1;
@@ -227,9 +223,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
   LIBXSMM_UNUSED(l_b_load_bcast_instr);
   LIBXSMM_UNUSED(l_compute_is_pred);
 
-  l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VLE64_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
-
-  l_b_load_scalar_instr = LIBXSMM_RV64_INSTR_GP_FLW;
 
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||
        (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))    ) {
@@ -277,8 +270,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
-  
-  /* Load A and B matrices */  
+
+  /* Load A and B matrices */
   libxsmm_generator_gemm_rv64_swpld( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, u_loop_index);
 
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -541,7 +534,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
     libxsmm_generator_gemm_rv64_setup_k_strides(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
                                                    i_xgemm_desc, i_m_blocking, i_n_blocking);
 
-    /* Load A and B matrices */  
+    /* Load A and B matrices */
     libxsmm_generator_gemm_rv64_swpld( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, u_loop_index);
 
     libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, (unsigned int)i_xgemm_desc->k );
