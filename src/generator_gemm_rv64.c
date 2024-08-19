@@ -198,7 +198,6 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
   unsigned int l_remainder_size = 0;
   unsigned int l_b_stride = i_xgemm_desc->ldb;
   /* prep of B-ptr for next k-iteration */
-  unsigned int l_b_next_k = 0;
   unsigned int l_k_pack_factor = 1;
 
   /* datatype dependent instructions */
@@ -257,16 +256,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
       l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUBI;
     }
   }
-  else
 #endif
-
-  {
-    l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
-#if 0
-    l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUB;
-#endif
-  }
-  l_b_next_k *= i_micro_kernel_config->datatype_size_in;
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
