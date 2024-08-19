@@ -276,5 +276,22 @@ int main(void)
     if (b[3*diff.m+diff.n] != diff.v_tst) result = EXIT_FAILURE;
   }
 
+  /* test inputs legally leading to an infinite large difference */
+  if (EXIT_SUCCESS == result) {
+    const ELEMTYPE u = 0.851375, v = 1.01863e+196;
+    libxsmm_matdiff_info d;
+    result = libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ELEMTYPE), 1/*m*/, 1/*n*/,
+      &u/*ref*/, &v/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+    if (EXIT_SUCCESS == result) {
+      const double epsilon = libxsmm_matdiff_epsilon(&d);
+      /* Epsilon */
+      if (epsilon != LIBXSMM_ABS(epsilon - v)) result = EXIT_FAILURE; /* infinity */
+      /* R-squared */
+      if (0 < d.rsq - 0) result = EXIT_FAILURE;
+      /* Location of maximum absolute error */
+      if (0 != d.m || 0 != d.n) result = EXIT_FAILURE;
+    }
+  }
+
   return result;
 }
