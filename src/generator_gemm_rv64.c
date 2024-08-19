@@ -218,6 +218,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
   printf("Kernel called with blocking m=%d n=%d vl=%d\n", i_m_blocking, i_n_blocking, i_micro_kernel_config->vector_length);
   printf("Generating kloop with index %d reg_offset %d\n", u_loop_index, u_loop_reg_offset);
 
+  LIBXSMM_UNUSED(l_b_stride);
+  LIBXSMM_UNUSED(l_k_pack_factor);
   LIBXSMM_UNUSED(l_b_load_instr);
   LIBXSMM_UNUSED(l_b_load_bcast_instr);
   LIBXSMM_UNUSED(l_compute_is_pred);
