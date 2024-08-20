@@ -24,42 +24,21 @@ void libxsmm_generator_gemm_aarch64_microkernel_sme( libxsmm_generated_code*    
                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                      const unsigned int                 i_m_blocking,
                                                      const unsigned int                 i_n_blocking ){
-  /* TODO make predication for i_m_blocking and i_n_blocking */
   /* load A and B */
+  libxsmm_aarch64_instruction_sme_mov( io_generated_code,
+                                       LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2,
+                                       0,
+                                       i_gp_reg_mapping->gp_reg_a,
+                                       0,
+                                       LIBXSMM_AARCH64_SVE_REG_P8);
 
-  libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                        LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
-                                        i_gp_reg_mapping->gp_reg_a,
-                                        LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                        0,
-                                        0,
-                                        LIBXSMM_AARCH64_SVE_REG_P0 );
-  if( i_m_blocking > 16 ){
-    libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
-                                          i_gp_reg_mapping->gp_reg_a,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                          1,
-                                          1,
-                                          LIBXSMM_AARCH64_SVE_REG_P2 );
-  }
+  libxsmm_aarch64_instruction_sme_mov( io_generated_code,
+                                       LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2,
+                                       2,
+                                       ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? i_gp_reg_mapping->gp_reg_b : i_gp_reg_mapping->gp_reg_reduce_count,
+                                       0,
+                                       LIBXSMM_AARCH64_SVE_REG_P9);
 
-  libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                        LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
-                                        ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? i_gp_reg_mapping->gp_reg_b : i_gp_reg_mapping->gp_reg_reduce_count,
-                                        LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                        0,
-                                        2,
-                                        LIBXSMM_AARCH64_SVE_REG_P1 );
-  if( i_n_blocking > 16 ){
-    libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
-                                          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? i_gp_reg_mapping->gp_reg_b : i_gp_reg_mapping->gp_reg_reduce_count,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                          1,
-                                          3,
-                                          LIBXSMM_AARCH64_SVE_REG_P3 );
-  }
   /* update pointer */
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
                                                         i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
@@ -1961,6 +1940,18 @@ void libxsmm_generator_gemm_aarch64_kloop_sme( libxsmm_generated_code*          
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
                                                (i_n_blocking > 16 ) ? ((long long)32  * 4) : ((long long)16  * 4) );
   }
+
+  /* set pn register for loads */
+  libxsmm_generator_set_pn_register_aarch64_sve2( io_generated_code,
+                                                  LIBXSMM_AARCH64_SVE_REG_P8,
+                                                  (i_m_blocking)*4,
+                                                  i_gp_reg_mapping->gp_reg_help_2,
+                                                  0 );
+  libxsmm_generator_set_pn_register_aarch64_sve2( io_generated_code,
+                                                  LIBXSMM_AARCH64_SVE_REG_P9,
+                                                  (i_n_blocking)*4,
+                                                  i_gp_reg_mapping->gp_reg_help_2,
+                                                  0 );
 
   /* set p register */
   if( i_m_blocking == 32  ){
