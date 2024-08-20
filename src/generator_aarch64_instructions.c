@@ -2399,9 +2399,9 @@ void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_code,
-                                          unsigned int             i_instr,
-                                          unsigned int             i_vec_src_reg_0,
-                                          unsigned int             i_vec_src_dst_reg ){
+                                           unsigned int             i_instr,
+                                           unsigned int             i_vec_src_reg_0,
+                                           unsigned int             i_vec_src_dst_reg ){
    switch ( i_instr ) {
     case LIBXSMM_AARCH64_INSTR_SME_FMAX_2:
     case LIBXSMM_AARCH64_INSTR_SME_FMAX_4:
@@ -2434,4 +2434,41 @@ void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_
 
   return;
 
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_set_predication_as_counter( libxsmm_generated_code* io_generated_code,
+                                                             unsigned int             i_instr,
+                                                             unsigned int             i_pred_reg,
+                                                             unsigned int             i_gp_reg_0,
+                                                             unsigned int             i_vl,
+                                                             unsigned int             i_gp_reg_1,
+                                                             unsigned int             i_size ){
+  switch ( i_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SVE2_WHILELT:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_set_predication_as_counter: unexpected instruction: %u\n", i_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+  }
+  /* Ensure we have enough space */
+  if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
+  unsigned int code_head = io_generated_code->code_size/4;
+  unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+  code[code_head] = i_instr;
+  code[code_head] |= (unsigned int)(0x7 & i_pred_reg);
+  code[code_head] |= (unsigned int)((0x1f & i_gp_reg_0) << 5);
+  code[code_head] |= (unsigned int)((0x1 & i_vl) << 13);
+  code[code_head] |= (unsigned int)((0x1f & i_gp_reg_1) << 16);
+  code[code_head] |= (unsigned int)((0x3 & i_size) << 22);
+
+  /* advance code head */
+  io_generated_code->code_size += 4;
+
+  return;
 }

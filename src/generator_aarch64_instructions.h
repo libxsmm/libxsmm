@@ -477,6 +477,7 @@
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
+#define LIBXSMM_AARCH64_INSTR_SVE2_WHILELT       0x25204410
 
 /* define SME instructions */
 #define LIBXSMM_AARCH64_INSTR_SME_FMOPA_SP                    0x80800000 /* compute outer product */
@@ -1045,8 +1046,17 @@ void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_code,
-                                          unsigned int             i_instr,
-                                          unsigned int             i_vec_src_reg_0,
-                                          unsigned int             i_vec_src_dst_reg );
+                                           unsigned int             i_instr,
+                                           unsigned int             i_vec_src_reg_0,
+                                           unsigned int             i_vec_src_dst_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_set_predication_as_counter( libxsmm_generated_code* io_generated_code,
+                                                             unsigned int             i_instr,
+                                                             unsigned int             i_pred_reg,
+                                                             unsigned int             i_gp_reg_0,
+                                                             unsigned int             i_vl,
+                                                             unsigned int             i_gp_reg_1,
+                                                             unsigned int             i_size );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */

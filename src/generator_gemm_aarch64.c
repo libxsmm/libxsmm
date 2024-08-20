@@ -2116,9 +2116,6 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
 
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
-  // if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) printf( "*********\n B Trans erkannt!!!! \n *************\n");
-
-
   /* apply n_blocking */
   for( int l_n_2 = 0 ; l_n_2 < 2 ; l_n_2++){
     if( (l_rest_n == 0 && l_n_2 == 1) || (l_perfect_n_count == 0 && l_n_2 == 0)){
