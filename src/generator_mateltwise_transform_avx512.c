@@ -1488,7 +1488,6 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
   const unsigned int l_m_8mul =  i_mateltwise_desc->m - l_m_8rem;
 
   const unsigned int l_m_8rem_odd = (l_m_8rem % 2);
-  const unsigned int l_ld_instr = ( l_m_8rem_odd ) ? LIBXSMM_X86_INSTR_VMOVDQU16 : LIBXSMM_X86_INSTR_VBROADCASTI32X4;
 
   unsigned int l_mask_regs[4] = { 0 };
 
@@ -1512,8 +1511,8 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
   /* set the masks for the load+blend stage for partial 32x8 blocks */
   if ( l_m_8rem > 0 ) {
-    const unsigned int l_m_8rem_mask  = ( l_m_8rem_odd ) ? (1 << l_m_8rem) - 1 : (1 << (l_m_8rem >> 1)) - 1;
-    const unsigned int l_m_8rem_masks = ( l_m_8rem_odd ) ? 1 : 4;
+    const unsigned int l_m_8rem_mask  = (1 << l_m_8rem) - 1;
+    const unsigned int l_m_8rem_masks = 4;
     unsigned int l_i = 0;
 
     l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
@@ -1633,7 +1632,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       /* load 8 registers with four quarter rows */
       libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                   i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
-                                                                  l_ld_instr, 8, l_mask_regs, 32, l_m_8rem_odd );
+                                                                  LIBXSMM_X86_INSTR_VMOVDQU16, 8, l_mask_regs, 32, 1 );
 
       /* advance input pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1661,7 +1660,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       /* load 8 registers with four quarter rows */
       libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                   i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
-                                                                  l_ld_instr, 8, l_mask_regs, l_n_32rem, l_m_8rem_odd );
+                                                                  LIBXSMM_X86_INSTR_VMOVDQU16, LIBXSMM_MIN(8,l_n_32rem), l_mask_regs, l_n_32rem, 1 );
 
       /* 3-stage shuffle */
       libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
