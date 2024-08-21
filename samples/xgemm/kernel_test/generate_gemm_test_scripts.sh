@@ -48,14 +48,12 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # TODO: all the "continue" ifs should be handled by allow list outside of this script
-                    # transpose A AND B at the same time is right now not supported
-                    if [[ ( "$TRA" == '1'  &&  "$TRB" == '1') ]]; then
-                      continue
-                    fi
-
                     # TODO fix BVNNI supprt in the script
                     if [ "$BVNNI" == '1' ] ; then
                       continue
+                    fi
+                    if [[ ("$AVNNI" == '1' || "$BVNNI" = '1') && ("$TRA" == '1' || "$TRB" == '1') ]] ; then
+                      continue;
                     fi
 
                     # some precision don't support fusion at all
@@ -96,7 +94,7 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # low precision has no transpose support
-                    if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' || (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
+                    if [[ ( (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
                       continue
                     fi
 
@@ -407,14 +405,20 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # trB we need to switch LDB
-                    if [ "$TRA" == '1' ] ; then
+                    if [[ ("$TRA" == '1') && ("$TRB" == '0') ]] ; then
                       sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(k) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
                     # trB we need to switch LDB
-                    if [ "$TRB" == '1' ] ; then
+                    if [[ ("$TRA" == '0') && ("$TRB" == '1') ]] ; then
                       sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${OUTNAME}
+                    fi
+
+                    # trA,trB we need to switch LDB
+                    if [[ ("$TRA" == '1') && ("$TRB" == '1') ]] ; then
+                      sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(n) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
