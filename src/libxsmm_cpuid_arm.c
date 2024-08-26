@@ -123,8 +123,7 @@ LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void)
 
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
-  static int result = LIBXSMM_AARCH64_V81;
-  return result;
+  static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
   libxsmm_cpuid_info cpuid_info;
   size_t model_size = 0;
@@ -145,7 +144,8 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 # else
     void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
 #   if defined(__APPLE__) && defined(__arm64__)
-    result = LIBXSMM_AARCH64_APPL_M1;
+    result = LIBXSMM_AARCH64_APPL_M4;
+    return result;
 #   else
     result = LIBXSMM_AARCH64_V81;
 #   endif

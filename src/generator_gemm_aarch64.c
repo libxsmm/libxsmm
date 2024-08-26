@@ -2141,7 +2141,8 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
           l_trans_rest = l_xgemm_desc_opa->k % 16;;
         }
 
-        for( int i = 0 ; i < l_trans_loop ; i++){
+        if( l_trans_loop > 0 ){
+        libxsmm_generator_loop_header_aarch64(io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_help_2, l_trans_loop);
           libxsmm_generator_transpose_sme( io_generated_code,
                                             l_gp_reg_mapping.gp_reg_b,
                                             l_xgemm_desc_opa->ldb,
@@ -2152,6 +2153,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                           l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b ,
                                                           16*4);
+        libxsmm_generator_loop_footer_aarch64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_help_2, 1 );
         }
         if(l_trans_rest > 0 ){
           libxsmm_generator_transpose_sme( io_generated_code,
