@@ -411,6 +411,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_SVE128: {
       target_arch = "sve128";
     } break;
+    case LIBXSMM_AARCH64_NEOV2: {
+      target_arch = "neov2";
+    } break;
     case LIBXSMM_AARCH64_SVE256: {
       target_arch = "sve256";
     } break;
@@ -451,7 +454,8 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   if (LIBXSMM_AARCH64_V81 == id
         || LIBXSMM_AARCH64_V82 == id
         || LIBXSMM_AARCH64_APPL_M1 == id
-        || LIBXSMM_AARCH64_SVE128  == id)
+        || LIBXSMM_AARCH64_SVE128  == id
+        || LIBXSMM_AARCH64_NEOV2 == id )
   {
     result = 4;
   }

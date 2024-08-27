@@ -29,6 +29,7 @@ void libxsmm_generator_matequation_kernel( libxsmm_generated_code*         io_ge
        io_generated_code->arch == LIBXSMM_AARCH64_V82 ||
        io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||

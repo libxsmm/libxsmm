@@ -1718,7 +1718,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
     } else {
       /* should not happend */
     }
-  }  else if ( i_arch == LIBXSMM_AARCH64_SVE128 ) {
+  }  else if ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) {
       io_micro_kernel_config->instruction_set = i_arch;
       io_micro_kernel_config->vector_reg_count = 32;
       io_micro_kernel_config->use_masking_a_c = 0;
@@ -1794,7 +1794,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_max_n_blocking( const libxsmm_mi
 
   if ( i_arch == LIBXSMM_AARCH64_V81 ||  i_arch == LIBXSMM_AARCH64_V82 ||  i_arch == LIBXSMM_AARCH64_APPL_M1 ) {
     return 30;
-  } else if ( i_arch == LIBXSMM_AARCH64_SVE128 ) {
+  } else if ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) {
     return 30;
   } else if ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) {
     return 30;
@@ -1868,16 +1868,9 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
-  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
-    /* TODO: check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 8 ) {
-      l_m_blocking = 8;
-    } else {
-      l_m_blocking = i_xgemm_desc->m;
-    }
-  } else if ( i_arch == LIBXSMM_AARCH64_SVE128 && ( ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
-                                                    ( LIBXSMM_DATATYPE_I32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
-                                                    ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )    ) ) {
+  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) && ( ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
+                                                                                           ( LIBXSMM_DATATYPE_I32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
+                                                                                           ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )    ) ) {
     /* TODO: add support for fp64*/
     /* new for sve128 */
     if ( i_xgemm_desc->m >= 16 ) {
@@ -1885,7 +1878,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
-  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
+  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 8 ) {
       l_m_blocking = 8;
@@ -1962,14 +1955,14 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( i_arch == LIBXSMM_AARCH64_SVE128 && (( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_I32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )) ) {
+  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 )&& (( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_I32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )) ) {
 
     if (i_current_m_blocking == 16 ) {
       l_m_blocking = i_xgemm_desc->m % 16;
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
+  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     if (i_current_m_blocking == 8) {
       l_m_blocking = i_xgemm_desc->m % 8;
     } else {

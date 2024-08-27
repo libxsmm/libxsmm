@@ -164,7 +164,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       }
       /* TODO: Check for A in VNNI and C in VNNI */
       /* TODO: Check provided bk and bn in BCSC format */
-    } else if (io_generated_code->arch == LIBXSMM_AARCH64_SVE128) {
+    } else if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) {
           char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
           if (l_use_bfdot == 0) {
             if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
@@ -269,7 +269,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       }
       /* TODO: Check for A in VNNI and C in VNNI */
       /* TODO: Check provided bk and bn in BCSC format */
-    } else if (io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ) {
+    } else if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) {
       char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
       if (l_use_bfdot == 0) {
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
@@ -437,7 +437,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     }
   }
 
-  if (((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ))) && ((io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) || (io_generated_code->arch == LIBXSMM_AARCH64_SVE128))) {
+  if (((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ))) && ((io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV2))) {
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
       int l_nnz_bits2 = 16;
       if (l_is_mmla_kernel > 0) {
@@ -493,7 +493,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
-  } else if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ((io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) || (io_generated_code->arch == LIBXSMM_AARCH64_SVE128))) {
+  } else if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ((io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV2))) {
     /* mask for M remainder  */
     if ( l_simd_packed_remainder != 0 ) {
       int m_nnz_bits = l_simd_packed_remainder * 4;
