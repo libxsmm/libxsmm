@@ -443,13 +443,13 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         const libxsmm_bitfield gemm_flags = LIBXSMM_GEMM_PFLAGS(ta, tb, LIBXSMM_FLAGS) |
           (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
         const libxsmm_blasint im = m[i], in = n[i], ik = k[i];
-        const libxsmm_blasint ilda = (NULL != lda ? lda[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? im : ik));
-        const libxsmm_blasint ildb = (NULL != ldb ? ldb[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in));
-        const libxsmm_blasint ildc = (NULL != ldc ? ldc[i] : im);
-        if  (LIBXSMM_GEMM_NO_BYPASS(gemm_flags, dalpha, dbeta)
+        const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(im, in, ik,
+          NULL != lda ? lda[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? im : ik),
+          NULL != ldb ? ldb[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in),
+          NULL != ldc ? ldc[i] : im, iprec, iprec, oprec, oprec);
+        if  (LIBXSMM_GEMM_NO_BYPASS(shape, dalpha, dbeta, gemm_flags)
           && LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, otypesize))
         {
-          const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(im, in, ik, ilda, ildb, ildc, iprec, iprec, oprec, oprec);
           kernel.gemm = libxsmm_dispatch_gemm(shape, gemm_flags, prefetch);
         }
         else kernel.ptr_const = NULL;
@@ -529,8 +529,8 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         }
         else { /* trigger fallback */
           libxsmm_gemm_batch_blas(iprec, oprec, ta, tb, im, in, ik,
-            ialpha, (const char*)a + j * sa, &ilda, stride_a, (const char*)b + j * sb, &ildb, stride_b,
-            ibeta, (char*)c + j * sc, &ildc, stride_c, index_stride, index_base, batchsize[i]);
+            ialpha, (const char*)a + j * sa, &shape.lda, stride_a, (const char*)b + j * sb, &shape.ldb, stride_b,
+            ibeta, (char*)c + j * sc, &shape.ldc, stride_c, index_stride, index_base, batchsize[i]);
           if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
             const size_t threshold = LIBXSMM_MNK_SIZE(im, in, im);
             static size_t threshold_max = 0;

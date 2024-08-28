@@ -125,17 +125,16 @@
     (LIBXSMM_NEQ(0, libxsmm_xgemm_beta_) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0); \
   const libxsmm_blasint *const libxsmm_xgemm_k_ = (NULL != (K) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_xgemm_n_ = (NULL != (N) ? (N) : libxsmm_xgemm_k_); \
-  const libxsmm_blasint libxsmm_xgemm_lda_ = LIBXSMM_MAX(NULL != ((const void*)(LDA)) ? *(LDA) : \
-    *(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? (M) : libxsmm_xgemm_k_), 1); \
-  const libxsmm_blasint libxsmm_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((const void*)(LDB)) ? *(LDB) : \
-    *(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_), 1); \
-  const libxsmm_blasint libxsmm_xgemm_ldc_ = LIBXSMM_MAX(NULL != (LDC) ? *(LDC) : *(M), 1); \
-  if  (LIBXSMM_GEMM_NO_BYPASS(libxsmm_xgemm_flags_, libxsmm_xgemm_alpha_, libxsmm_xgemm_beta_) \
+  const libxsmm_gemm_shape libxsmm_xgemm_shape_ = libxsmm_create_gemm_shape(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, \
+    LIBXSMM_MAX(NULL != ((const void*)(LDA)) ? *(LDA) : \
+      *(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? (M) : libxsmm_xgemm_k_), 1), \
+    LIBXSMM_MAX(NULL != ((const void*)(LDB)) ? *(LDB) : \
+      *(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_), 1), \
+    LIBXSMM_MAX(NULL != (LDC) ? *(LDC) : *(M), 1), \
+    LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE)); \
+  if  (LIBXSMM_GEMM_NO_BYPASS(libxsmm_xgemm_shape_, libxsmm_xgemm_alpha_, libxsmm_xgemm_beta_, libxsmm_xgemm_flags_) \
     && LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, 2/*RFO*/, sizeof(OTYPE))) \
   { \
-    const libxsmm_gemm_shape libxsmm_xgemm_shape_ = libxsmm_create_gemm_shape( \
-      *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_, \
-      LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), LIBXSMM_DATATYPE(OTYPE)); \
     const libxsmm_gemmfunction libxsmm_xgemm_function_ = libxsmm_dispatch_gemm(libxsmm_xgemm_shape_, \
       (libxsmm_bitfield)libxsmm_xgemm_flags_, (libxsmm_bitfield)(LIBXSMM_PREFETCH)); \
     libxsmm_gemm_param libxsmm_xgemm_param_; \
@@ -151,9 +150,9 @@
     const char libxsmm_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? 'n' : 't'); \
     LIBXSMM_XGEMM_FALLBACK(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
       M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
-      &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
-                             B, &libxsmm_xgemm_ldb_, \
-       &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_ldc_); \
+      &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_shape_.lda, \
+                             B, &libxsmm_xgemm_shape_.ldb, \
+       &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_shape_.ldc); \
   } \
 } while(0)
 

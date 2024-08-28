@@ -462,7 +462,7 @@ LIBXSMM_PRAGMA_DIAG_POP()
 #if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
 # define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
 #else /* threshold based on arithmetic intensity */
-# define LIBXSMM_SMM LIBXSMM_SMM_AI
+# define LIBXSMM_SMM(M, N, K, S, TYPESIZE) LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE)
 #endif
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || \

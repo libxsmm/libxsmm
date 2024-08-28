@@ -23,9 +23,6 @@
 #if !defined(GEMM)
 # define GEMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #endif
-#if !defined(GEMM_NO_BYPASS)
-# define SMM_NO_BYPASS(FLAGS, ALPHA, BETA) LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)
-#endif
 #if (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double)) \
   && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
 LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
@@ -100,14 +97,11 @@ int main(void)
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
       libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
-      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | \
-        ((beta[test] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
-      const int no_bypass = SMM_NO_BYPASS(flags, alpha[test], beta[test]);
       const int init = (LIBXSMM_FEQ(0, beta[test]) ? -1 : 0);
+      int no_bypass = 1;
       libxsmm_xmmfunction kernel = { NULL };
-      libxsmm_gemm_shape gemm_shape;
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
-      _MM_SET_EXCEPTION_STATE(0);
+      _MM_SET_EXCEPTION_STATE(0); /* adjust prior to any SMM */
 #endif
       memset(gold, init, (size_t)(sizeof(REALTYPE) * max_size_c));
       memset(c, init, (size_t)(sizeof(REALTYPE) * max_size_c));
@@ -124,22 +118,27 @@ int main(void)
       }
       GEMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
         alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
-      gemm_shape = libxsmm_create_gemm_shape(
-        mi, ni, ki, lda[test], ldb[test], ldc[test],
-        LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
-        LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
-      kernel.gemm = (0 != no_bypass
-        ? libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE)
-        : NULL);
-      if (NULL != kernel.ptr_const) {
-        libxsmm_gemm_param gemm_param;
-        gemm_param.a.primary = a;
-        gemm_param.b.primary = b;
-        gemm_param.c.primary = d;
-        kernel.gemm(&gemm_param);
+      {
+        const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | \
+          ((beta[test] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
+        const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+          mi, ni, ki, lda[test], ldb[test], ldc[test],
+          LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
+          LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
+        no_bypass = LIBXSMM_GEMM_NO_BYPASS(gemm_shape, alpha[test], beta[test], flags);
+        kernel.gemm = (0 != no_bypass
+          ? libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE)
+          : NULL);
+        if (NULL != kernel.ptr_const) { /* later, check no_bypass yields non-NULL */
+          libxsmm_gemm_param gemm_param;
+          gemm_param.a.primary = a;
+          gemm_param.b.primary = b;
+          gemm_param.c.primary = d;
+          kernel.gemm(&gemm_param);
+        }
       }
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
-      fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
+      fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck; /* reset after all SMMs */
       result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
       if (EXIT_SUCCESS != result) {
 # if defined(_DEBUG)

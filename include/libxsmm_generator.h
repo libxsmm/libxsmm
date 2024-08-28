@@ -13,9 +13,17 @@
 
 #include "libxsmm_typedefs.h"
 
-#define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
+/** Signal if dummy-kernel is generated for an empty shape. */
+#if defined(LIBXSMM_PLATFORM_X86)
+# define LIBXSMM_GEMM_NULL_KERNEL(M, N, K) 1
+#else
+# define LIBXSMM_GEMM_NULL_KERNEL(M, N, K) (0 < (M) && 0 < (N) && 0 < (K))
+#endif
+/** Determine if libxsmm_dispatch_gemm yields non-NULL kernel. */
+#define LIBXSMM_GEMM_NO_BYPASS(SHAPE, ALPHA, BETA, FLAGS) ( \
   ((LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/)) && \
-  ((LIBXSMM_GEMM_FLAG_BETA_0 & (FLAGS)) || LIBXSMM_FEQ(1, BETA)))
+  ((LIBXSMM_GEMM_FLAG_BETA_0 & (FLAGS)) || LIBXSMM_FEQ(1, BETA)) && \
+  ((LIBXSMM_GEMM_NULL_KERNEL((SHAPE).m, (SHAPE).n, (SHAPE).k))))
 
 /** Initialize GEMM descriptor (generic). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
