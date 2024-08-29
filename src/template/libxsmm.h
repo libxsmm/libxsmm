@@ -454,36 +454,45 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = libxsmm_dispatch_gemm(gemm_shape, 0/*flags*/,
-      static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT));
-  }
-  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch = PREFETCH_DEFAULT) {
-    const libxsmm_blasint lda = m, ldb = k, ldc = m;
-    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
-      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = libxsmm_dispatch_gemm(gemm_shape,
-      static_cast<libxsmm_bitfield>(flags),
-      static_cast<libxsmm_bitfield>(prefetch));
-  }
-  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta, int prefetch = PREFETCH_DEFAULT) {
-    const libxsmm_blasint lda = m, ldb = k, ldc = m;
-    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
-      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
-      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, alpha, beta, flags) ? libxsmm_dispatch_gemm(gemm_shape,
-      static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
-      static_cast<libxsmm_bitfield>(prefetch)) : NULL);
+    const libxsmm_bitfield flags = LIBXSMM_FLAGS | (LIBXSMM_NEQ(0, LIBXSMM_BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, LIBXSMM_ALPHA, LIBXSMM_BETA, flags)
+      ? libxsmm_dispatch_gemm(gemm_shape, flags, static_cast<libxsmm_bitfield>(PREFETCH_DEFAULT))
+      : NULL);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, int prefetch = PREFETCH_DEFAULT)
+    int prefetch = PREFETCH_DEFAULT)
+  {
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, LIBXSMM_ALPHA, LIBXSMM_BETA, flags)
+      ? libxsmm_dispatch_gemm(gemm_shape, static_cast<libxsmm_bitfield>(flags), static_cast<libxsmm_bitfield>(prefetch))
+      : NULL);
+  }
+  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta,
+    int prefetch = PREFETCH_DEFAULT)
+  {
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
+      libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
+    const libxsmm_bitfield gemm_flags = flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, alpha, beta, gemm_flags)
+      ? libxsmm_dispatch_gemm(gemm_shape, gemm_flags, static_cast<libxsmm_bitfield>(prefetch))
+      : NULL);
+  }
+  libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+    int prefetch = PREFETCH_DEFAULT)
   {
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = libxsmm_dispatch_gemm(gemm_shape,
-      static_cast<libxsmm_bitfield>(flags),
-      static_cast<libxsmm_bitfield>(prefetch));
+    const libxsmm_bitfield gemm_flags = flags | (LIBXSMM_NEQ(0, LIBXSMM_BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, LIBXSMM_ALPHA, LIBXSMM_BETA, gemm_flags)
+      ? libxsmm_dispatch_gemm(gemm_shape, gemm_flags, static_cast<libxsmm_bitfield>(prefetch))
+      : NULL);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, otype alpha, otype beta,
@@ -492,9 +501,10 @@ public:
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<itype>::value,
       libxsmm_datatype_enum<otype>::value, libxsmm_datatype_enum<otype>::value);
-    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, alpha, beta, flags) ? libxsmm_dispatch_gemm(gemm_shape,
-      static_cast<libxsmm_bitfield>(flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)),
-      static_cast<libxsmm_bitfield>(prefetch)) : NULL);
+    const libxsmm_bitfield gemm_flags = flags | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+    m_function = (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, alpha, beta, gemm_flags)
+      ? libxsmm_dispatch_gemm(gemm_shape, gemm_flags, static_cast<libxsmm_bitfield>(prefetch))
+      : NULL);
   }
 public:
   const libxsmm_gemmfunction& kernel() const {
