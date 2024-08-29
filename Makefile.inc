@@ -875,20 +875,22 @@ else
 endif
 DYNAMIC ?= 0
 
-# enable MKL (if available)
-ifeq (,$(strip $(MKLROOT)))
-  BLAS_INCFILE := $(wildcard /opt/intel/oneapi/mkl/latest/include/mkl.h)
-  ifeq (,$(BLAS_INCFILE))
-    BLAS_INCFILE := $(call wildcard1,/opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)
+# enable MKL automatically (if available)
+ifneq (,$(filter x86_64,$(MNAME)))
+  ifeq (,$(strip $(MKLROOT)))
+    BLAS_INCFILE := $(wildcard /opt/intel/oneapi/mkl/latest/include/mkl.h)
+    ifeq (,$(BLAS_INCFILE))
+      BLAS_INCFILE := $(call wildcard1,/opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)
+    endif
+    ifneq (,$(BLAS_INCFILE))
+      MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/..)
+    endif
   endif
-  ifneq (,$(BLAS_INCFILE))
-    MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/..)
-  endif
-endif
-ifeq (,$(strip $(MKLROOT)))
-  BLAS_INCFILE := $(strip $(wildcard /usr/include/mkl/mkl.h))
-  ifneq (,$(BLAS_INCFILE))
-    MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/../..)
+  ifeq (,$(strip $(MKLROOT)))
+    BLAS_INCFILE := $(strip $(wildcard /usr/include/mkl/mkl.h))
+    ifneq (,$(BLAS_INCFILE))
+      MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/../..)
+    endif
   endif
 endif
 
