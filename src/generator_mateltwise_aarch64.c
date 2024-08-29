@@ -37,6 +37,7 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ||
        io_generated_code->arch == LIBXSMM_AARCH64_V82 ||
        io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_SVE128 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
