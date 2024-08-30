@@ -586,6 +586,13 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
             libxsmm_generator_vcvt_i8f32_aarch64( io_generated_code, cur_vreg, i_micro_kernel_config->quant_vreg_scf,  0);
           }
         }
+        if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT)) {
+          if ( ( LIBXSMM_DATATYPE_I8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ) &&
+               ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ) ) {
+            libxsmm_generator_vcvt_f32i8_aarch64( io_generated_code, cur_vreg, i_micro_kernel_config->quant_vreg_scf,  0);
+          }
+        }
+
       } else {
         if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
           offset = (bcast_scalar == 1) ?  i_micro_kernel_config->datatype_size_in:l_ld_bytes*i_n_blocking;
