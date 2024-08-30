@@ -174,8 +174,8 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
 
   in                  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  short_data          = (short*) libxsmm_aligned_malloc( sizeof(short)*N*ldi, 64);
-  short_data_gold     = (short*) libxsmm_aligned_malloc( sizeof(short)*N*ldi, 64);
+  short_data          = (short*) libxsmm_aligned_malloc( sizeof(short)*N*ldo, 64);
+  short_data_gold     = (short*) libxsmm_aligned_malloc( sizeof(short)*N*ldo, 64);
   f32_short_data      = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
   f32_short_data_gold = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
 
@@ -196,7 +196,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      short_data_gold[(i*ldi)+j] = (short)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+      short_data_gold[(i*ldo)+j] = (short)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
     }
   }
 
@@ -204,7 +204,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   scf_dequant = libxsmm_sexp2_i8i(maxexp);
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      f32_short_data_gold[(i*ldi)+j] = ((float)short_data_gold[(i*ldi)+j]) * scf_dequant ;
+      f32_short_data_gold[(i*ldi)+j] = ((float)short_data_gold[(i*ldo)+j]) * scf_dequant ;
     }
   }
 
@@ -227,6 +227,10 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_kernel_quant( &unary_param );
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldo;
+  unary_shape.ldo = ldi;
   unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
@@ -246,8 +250,8 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   s = 0;
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
-      if ( short_data_gold[(i*ldo)+j] != short_data[(i*ldo)+j] ) {
-        printf("error at position i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(i*ldo)+j], short_data[(i*ldo)+j]);
+      if ( short_data_gold[(j*ldo)+i] != short_data[(j*ldo)+i] ) {
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(j*ldo)+i], short_data[(j*ldo)+i]);
         s = 1;
       }
     }
@@ -261,8 +265,8 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   s = 0;
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
-      if ( f32_short_data_gold[(i*ldo)+j] != f32_short_data[(i*ldo)+j] ) {
-        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(i*ldo)+j], f32_short_data[(i*ldo)+j]);
+      if ( f32_short_data_gold[(j*ldi)+i] != f32_short_data[(j*ldi)+i] ) {
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(j*ldi)+i], f32_short_data[(j*ldi)+i]);
         s = 1;
       }
     }
@@ -308,8 +312,8 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
 
   in                = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  int_data          = (int*)   libxsmm_aligned_malloc( sizeof(int)*N*ldi,   64);
-  int_data_gold     = (int*)   libxsmm_aligned_malloc( sizeof(int)*N*ldi,   64);
+  int_data          = (int*)   libxsmm_aligned_malloc( sizeof(int)*N*ldo,   64);
+  int_data_gold     = (int*)   libxsmm_aligned_malloc( sizeof(int)*N*ldo,   64);
   f32_int_data      = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
   f32_int_data_gold = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
 
@@ -330,7 +334,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      int_data_gold[(i*ldi)+j] = (int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+      int_data_gold[(i*ldo)+j] = (int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
     }
   }
 
@@ -338,7 +342,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   scf_dequant = libxsmm_sexp2_i8i(maxexp);
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      f32_int_data_gold[(i*ldi)+j] = ((float)int_data_gold[(i*ldi)+j]) * scf_dequant ;
+      f32_int_data_gold[(i*ldi)+j] = ((float)int_data_gold[(i*ldo)+j]) * scf_dequant ;
     }
   }
 
@@ -361,6 +365,10 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_kernel_quant( &unary_param );
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldo;
+  unary_shape.ldo = ldi;
   unary_shape.in0_type = LIBXSMM_DATATYPE_I32;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
@@ -380,8 +388,8 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   s = 0;
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
-      if ( int_data_gold[(i*ldo)+j] != int_data[(i*ldo)+j] ) {
-        printf("error at position i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(i*ldo)+j], int_data[(i*ldo)+j]);
+      if ( int_data_gold[(j*ldo)+i] != int_data[(j*ldo)+i] ) {
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(j*ldo)+i], int_data[(j*ldo)+i]);
         s = 1;
       }
     }
@@ -395,8 +403,8 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   s = 0;
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
-      if ( f32_int_data_gold[(i*ldo)+j] != f32_int_data[(i*ldo)+j] ) {
-        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(i*ldo)+j], f32_int_data[(i*ldo)+j]);
+      if ( f32_int_data_gold[(j*ldi)+i] != f32_int_data[(j*ldi)+i] ) {
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(j*ldi)+i], f32_int_data[(j*ldi)+i]);
         s = 1;
       }
     }
