@@ -190,7 +190,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
-  maxexp -= 14;
+  maxexp -= 6;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   /* run quantization */
@@ -328,7 +328,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
-  maxexp -= 30;
+  maxexp -= 6;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   /* run quantization */
