@@ -1977,7 +1977,7 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
   unsigned long long l_jump_block_n_last = 0; /* this is the jump size to be performed after a n-block is complete */
   unsigned int l_datatype_size = LIBXSMM_TYPESIZE(i_datatype);
   unsigned int l_store_instr =  LIBXSMM_RV64_INSTR_GP_VS4R_V;
-  unsigned int l_masked_store_instr = LIBXSMM_RV64_INSTR_GP_VS4R_V;
+  unsigned int l_masked_store_instr = LIBXSMM_RV64_INSTR_GP_VSE32_V;
   unsigned int l_tmp_vreg = 0;
   unsigned int l_tmp_vreg2 = 0;
 
