@@ -33,11 +33,13 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
                                         const int                          u_loop_index ) {
     int l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VLE64_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
     unsigned int l_k_pack_factor = 1;
-    int l_m_blocks[2] = {0};
-    int l_remainder_size = i_m_blocking % i_micro_kernel_config->vector_length;
-    int u_loop_index_local = (u_loop_index > -1) ? u_loop_index : 0;
+    unsigned int l_m_blocks[2] = {0};
+    unsigned int l_remainder_size = i_m_blocking % i_micro_kernel_config->vector_length;
+    unsigned int u_loop_index_local = (u_loop_index > -1) ? u_loop_index : 0;
     unsigned int l_m = 0;
     unsigned int l_n = 0;
+    unsigned int l_b_stride;
+    unsigned int l_b_next;
 
     l_m_blocks[1] = (l_remainder_size > 0);
     l_m_blocks[0] = i_m_blocking / i_micro_kernel_config->vector_length;
@@ -116,8 +118,8 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
         }
       }
 
-      unsigned int l_b_stride = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
-      unsigned int l_b_next = 0;
+      l_b_stride = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
+      l_b_next = 0;
 
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
          libxsmm_rv64_instruction_alu_move( io_generated_code,
