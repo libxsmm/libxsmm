@@ -34,10 +34,13 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
     int l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VLE64_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
     unsigned int l_k_pack_factor = 1;
     int l_m_blocks[2] = {0};
-    l_m_blocks[0] = i_m_blocking / i_micro_kernel_config->vector_length;
     int l_remainder_size = i_m_blocking % i_micro_kernel_config->vector_length;
-    l_m_blocks[1] = (l_remainder_size > 0);
     int u_loop_index_local = (u_loop_index > -1) ? u_loop_index : 0;
+    unsigned int l_m = 0;
+    unsigned int l_n = 0;
+
+    l_m_blocks[1] = (l_remainder_size > 0);
+    l_m_blocks[0] = i_m_blocking / i_micro_kernel_config->vector_length;
 
     if (u_loop_index > -1){
       /* full vector loads on a */
@@ -78,7 +81,7 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
                                                     i_gp_reg_mapping->gp_reg_a,
                                                     8 * i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in * l_k_pack_factor);
       } else {
-        for ( int l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+        for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
           libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                              LIBXSMM_RV64_INSTR_GP_VLE32_V,
                                              i_gp_reg_mapping->gp_reg_a,
@@ -116,7 +119,7 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
       unsigned int l_b_stride = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
       unsigned int l_b_next = 0;
 
-      for ( unsigned int l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
          libxsmm_rv64_instruction_alu_move( io_generated_code,
                                             LIBXSMM_RV64_INSTR_GP_FLW,
                                             i_gp_reg_mapping->gp_reg_b,
@@ -452,6 +455,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
   unsigned int l_k_threshold = 8;
   unsigned int l_k_stride = 1;
   int u_loop_index = -1;
+  int a_offset;
 
   void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,
                                    const unsigned int, const unsigned int, const unsigned int );
@@ -522,7 +526,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
   }
 
   /* reset A pointer */
-  int a_offset = (u_loop_index > -1) ? 1 : 0;
+  a_offset = (u_loop_index > -1) ? 1 : 0;
 
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
                                                i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_a,
