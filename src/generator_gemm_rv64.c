@@ -21,7 +21,7 @@
 
 #define MAX_FP_REG (20)
 
-int fp_regid[MAX_FP_REG] = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 28, 29, 30, 31};
+int fp_regid_rv64[MAX_FP_REG] = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 28, 29, 30, 31};
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_code,
@@ -125,7 +125,7 @@ void libxsmm_generator_gemm_rv64_swpld( libxsmm_generated_code*   io_generated_c
          libxsmm_rv64_instruction_alu_move( io_generated_code,
                                             LIBXSMM_RV64_INSTR_GP_FLW,
                                             i_gp_reg_mapping->gp_reg_b,
-                                            fp_regid[((u_loop_index_local % 2) * i_n_blocking + l_n) % MAX_FP_REG],
+                                            fp_regid_rv64[((u_loop_index_local % 2) * i_n_blocking + l_n) % MAX_FP_REG],
                                             l_b_next );
          if ( l_n != i_n_blocking - 1 ) {
            /* move on to next entry of B */
@@ -248,7 +248,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                             l_compute_instr,
-                                            fp_regid[(((u_loop_index_local + u_loop_reg_offset) % 2) * i_n_blocking + l_n) % MAX_FP_REG],
+                                            fp_regid_rv64[(((u_loop_index_local + u_loop_reg_offset) % 2) * i_n_blocking + l_n) % MAX_FP_REG],
                                             ((u_loop_index_local + u_loop_reg_offset) % 2) * l_m_blocks[0] + l_m,
                                             l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
                                             1 );
@@ -257,7 +257,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv_vf( libxsmm_generated_code*    
     if ( l_m_blocks[1] > 0 ) {
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                                l_compute_instr,
-                                               fp_regid[(((u_loop_index_local + u_loop_reg_offset) % 2) * i_n_blocking + l_n) % MAX_FP_REG],
+                                               fp_regid_rv64[(((u_loop_index_local + u_loop_reg_offset) % 2) * i_n_blocking + l_n) % MAX_FP_REG],
                                                ((u_loop_index_local + u_loop_reg_offset) % 2) * l_m_blocks[1] + l_m,
                                                l_vec_reg_acc_start + (l_m_total_blocks * l_n) + l_m_blocks[0],
                                                1
