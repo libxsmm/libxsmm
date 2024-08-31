@@ -502,6 +502,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPMOVSDB:
     case LIBXSMM_X86_INSTR_VPMOVSWB:
     case LIBXSMM_X86_INSTR_VPMOVUSDB:
+    case LIBXSMM_X86_INSTR_VPMOVUSDW:
     case LIBXSMM_X86_INSTR_VPMOVUSWB:
     case LIBXSMM_X86_INSTR_VPMOVSXBW:
     case LIBXSMM_X86_INSTR_VPMOVSXBD:
@@ -509,6 +510,10 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPMOVZXWD:
     case LIBXSMM_X86_INSTR_VPMOVZXBW:
     case LIBXSMM_X86_INSTR_VPMOVZXBD:
+    case LIBXSMM_X86_INSTR_VPACKSSWB:
+    case LIBXSMM_X86_INSTR_VPACKSSDW:
+    case LIBXSMM_X86_INSTR_VPACKUSWB:
+    case LIBXSMM_X86_INSTR_VPACKUSDW:
     case LIBXSMM_X86_INSTR_VMOVD_LD:
     case LIBXSMM_X86_INSTR_VMOVQ_LD:
     case LIBXSMM_X86_INSTR_VMOVD_ST:
