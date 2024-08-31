@@ -419,15 +419,19 @@
 #define LIBXSMM_X86_INSTR_VPMOVDB          0x28062431
 #define LIBXSMM_X86_INSTR_VPMOVSDB         0x28062421
 #define LIBXSMM_X86_INSTR_VPMOVUSDB        0x28062411
+#define LIBXSMM_X86_INSTR_VPMOVUSDW        0x28062513
 #define LIBXSMM_X86_INSTR_VPMOVZXWD        0x20052533
 #define LIBXSMM_X86_INSTR_VPMOVSXBW        0x20052520
 #define LIBXSMM_X86_INSTR_VPMOVZXBW        0x20052530
-
 #define LIBXSMM_X86_INSTR_VPMOVSXBD        0x20052421
 #define LIBXSMM_X86_INSTR_VPMOVZXBD        0x20052431
 #define LIBXSMM_X86_INSTR_VPMOVUSWB        0xe0062510
 #define LIBXSMM_X86_INSTR_VPMOVSWB         0xe0062520
 #define LIBXSMM_X86_INSTR_VPMOVWB          0xe0062530
+#define LIBXSMM_X86_INSTR_VPACKSSWB        0x30051663
+#define LIBXSMM_X86_INSTR_VPACKSSDW        0x3005166b
+#define LIBXSMM_X86_INSTR_VPACKUSWB        0x30051667
+#define LIBXSMM_X86_INSTR_VPACKUSDW        0x3005262b
 
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
@@ -1530,6 +1534,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int bf8_gemm_via_stack_alloc_tensors;
   unsigned int hf8_gemm_via_stack_alloc_tensors;
   unsigned int atrans_gemm_stack_alloc_tensors;
+  unsigned int avnni_gemm_stack_alloc_tensors;
+  unsigned int atvnni_gemm_stack_alloc_tensors;
+  unsigned int avnni_btrans_gemm_stack_alloc_tensors;
+  unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
   unsigned int bvnni_btrans_gemm_stack_alloc_tensors;
 } libxsmm_micro_kernel_config;
 
