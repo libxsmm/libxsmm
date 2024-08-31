@@ -952,7 +952,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_uu_ss_vnni_emu( libxsmm_genera
                                      i_micro_kernel_config->vector_name,
                                      i_n_blocking, 0, 0, 0 );
 
-        /* in the firs pass we conver the higher BF16 values to FP32; in the second the lower Bf16 values */
+        /* build the right zero-ed out tuples of int8 values */
         if ( l_pass == 0 ) {
           libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
                                                          i_micro_kernel_config->vector_name,

@@ -1257,7 +1257,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_i8_ss_uu_emu_n
           }
         }
         /* issue fma */
-                /* issue fma */
         if ( io_generated_code->arch == LIBXSMM_X86_AVX512_SKX ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                     LIBXSMM_X86_INSTR_VPMADDWD,
