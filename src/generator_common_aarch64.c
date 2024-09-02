@@ -4418,7 +4418,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                 i_help_register );
 
   /* load block of B */
-  for( int l_i = 0; l_i < i_n_blocking; l_i++){
+  for( unsigned int l_i = 0; l_i < i_n_blocking; l_i++){
     libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                           LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
                                           i_gp_reg_addr,
@@ -4526,7 +4526,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                   i_n_blocking *4,
                                                   i_help_register );
   }
-  for( int l_str = 0; l_str < l_k_blocksize ; l_str++){
+  for( unsigned int l_str = 0; l_str < l_k_blocksize ; l_str++){
     libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                           LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
                                           LIBXSMM_AARCH64_GP_REG_XSP,
@@ -4567,7 +4567,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme_relu( libxsmm_generated_code
                                                           const unsigned int      i_m_blocking,
                                                           const unsigned int      i_n_blocking,
                                                           const unsigned int      i_ldc,
-                                                          const unsigned int      i_ho ){ // this parameter is not needed!! delete it! TODO
+                                                          const unsigned int      i_ho ){
   /* set w12-15 to 0-3*/
   for( int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
@@ -4788,7 +4788,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme_relu( libxsmm_generated_code
                                                              LIBXSMM_AARCH64_GP_REG_X17,
                                                              LIBXSMM_AARCH64_GP_REG_X2,
                                                              0,
-                                                             0 );
+                                                             LIBXSMM_AARCH64_SHIFTMODE_LSL );
       } else {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
