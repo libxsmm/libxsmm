@@ -141,9 +141,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
   int l_b_offset = 0;
   /* index for fmla */
   unsigned int l_k_index = i_k_index;
-  if( i_micro_kernel_config->datatype_size_in == 8){
-    l_k_index = l_k_index % 2;
-  }
+
   /* VLEN per l_m interations */
   unsigned int l_m_blocks[3] = { 0 };  /* 0: 128bit, 1: 64bit, 2: 32bit */
   unsigned int l_m_total_blocks = 0;
@@ -162,6 +160,9 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
     l_a_load_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2;
   } else if( l_m_blocks[0] == 1 ){
     l_a_load_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1;
+  }
+  if( i_micro_kernel_config->datatype_size_in == 8){
+    l_k_index = l_k_index % 2;
   }
 
   /* start register of accumulator */
@@ -820,7 +821,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   unsigned int l_k = 0;
 
   /* operate on four 2x4 blocks at a time */
-  // this just supports 128 and 256 SVE
   unsigned int l_a_stride = (io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ) ? 64 : 32;
   unsigned int l_b_vnnit = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 &&  (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 1 : 0;
   unsigned int l_b_stride = (l_b_vnnit == 0) ? i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in : 2 * 4 * i_micro_kernel_config->datatype_size_in;
