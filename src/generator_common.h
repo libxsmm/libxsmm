@@ -419,15 +419,19 @@
 #define LIBXSMM_X86_INSTR_VPMOVDB          0x28062431
 #define LIBXSMM_X86_INSTR_VPMOVSDB         0x28062421
 #define LIBXSMM_X86_INSTR_VPMOVUSDB        0x28062411
+#define LIBXSMM_X86_INSTR_VPMOVUSDW        0x28062513
 #define LIBXSMM_X86_INSTR_VPMOVZXWD        0x20052533
 #define LIBXSMM_X86_INSTR_VPMOVSXBW        0x20052520
 #define LIBXSMM_X86_INSTR_VPMOVZXBW        0x20052530
-
 #define LIBXSMM_X86_INSTR_VPMOVSXBD        0x20052421
 #define LIBXSMM_X86_INSTR_VPMOVZXBD        0x20052431
 #define LIBXSMM_X86_INSTR_VPMOVUSWB        0xe0062510
 #define LIBXSMM_X86_INSTR_VPMOVSWB         0xe0062520
 #define LIBXSMM_X86_INSTR_VPMOVWB          0xe0062530
+#define LIBXSMM_X86_INSTR_VPACKSSWB        0x30051663
+#define LIBXSMM_X86_INSTR_VPACKSSDW        0x3005166b
+#define LIBXSMM_X86_INSTR_VPACKUSWB        0x30051667
+#define LIBXSMM_X86_INSTR_VPACKUSDW        0x3005262b
 
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
@@ -1387,6 +1391,13 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
   unsigned int const_data_nload_insns;
 } libxsmm_const_data_tracker;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
+  unsigned int tiles;
+  unsigned int sizes[4];
+  unsigned int blocking;
+  unsigned int block_size;
+} libxsmm_blocking_info_t;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -1494,6 +1505,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _C_tile_mate_id[4];
   int _im_offset_prefix_sums[4];
   int _in_offset_prefix_sums[4];
+  libxsmm_blocking_info_t m_blocking_info[2];
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
@@ -1522,6 +1534,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int bf8_gemm_via_stack_alloc_tensors;
   unsigned int hf8_gemm_via_stack_alloc_tensors;
   unsigned int atrans_gemm_stack_alloc_tensors;
+  unsigned int avnni_gemm_stack_alloc_tensors;
+  unsigned int atvnni_gemm_stack_alloc_tensors;
+  unsigned int avnni_btrans_gemm_stack_alloc_tensors;
+  unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
   unsigned int bvnni_btrans_gemm_stack_alloc_tensors;
 } libxsmm_micro_kernel_config;
 
@@ -1901,13 +1917,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   char vector_name;
 } libxsmm_transpose_kernel_config;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
-  unsigned int tiles;
-  unsigned int sizes[4];
-  unsigned int blocking;
-  unsigned int block_size;
-} libxsmm_blocking_info_t;
-
 typedef enum libxsmm_meltw_field_type {
   LIBXSMM_MELTW_FIELD_IN0              =  0,
   LIBXSMM_MELTW_FIELD_IN1              =  1,
@@ -2032,7 +2041,9 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR       = 30,
   LIBXSMM_GEMM_STACK_VAR_ZPT_PTR                = 31,
   LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32,
-  LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33
+  LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33,
+  LIBXSMM_GEMM_STACK_VAR_SCF_BRGEMM_PTR         = 34,
+  LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35
 } libxsmm_gemm_stack_var;
 
 #if 0

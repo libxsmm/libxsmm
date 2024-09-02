@@ -13,7 +13,7 @@ trap 'rm ${TMPFILE}' EXIT
 
 for BINARY_POSTOP in 0 1; do
   for UNARY_POSTOP in 0 1 2 3; do
-    for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF8_F32_F32' 'BF8_BF8_F32_BF8' 'HF8_HF8_F32_F32' 'HF8_HF8_F32_HF8' 'I16_I16_I32_I32' 'U8_I8_I32_I32' 'I8_U8_I32_I32' 'U8_I8_I32_F32' 'I8_U8_I32_F32' 'F16_F16_F16_F16' 'I8_F16_F16_F16' 'BF8_F16_F16_F16' 'F16_F16_F32_F16' 'I8_F16_F32_F16' 'BF8_F16_F32_F16' 'F16_F16_IMPLICIT_F16' 'I8_F16_IMPLICIT_F16' 'BF8_F16_IMPLICIT_F16' 'F16_F16_F16_F32' 'I8_F16_F16_F32' 'BF8_F16_F16_F32' 'F16_F16_F32_F32' 'I8_F16_F32_F32' 'BF8_F16_F32_F32' 'F16_F16_IMPLICIT_F32' 'I8_F16_IMPLICIT_F32' 'BF8_F16_IMPLICIT_F32' 'I8_BF16_F32_F32' 'I8_BF16_F32_BF16' 'I4_F16_IMPLICIT_F16' 'I4_F16_F32_F16' 'I4_F16_F16_F16' 'I4_F16_IMPLICIT_F32' 'I4_F16_F16_F32' 'I4_F16_F32_F32' 'U4_U8_I32_I32' 'U4_F16_IMPLICIT_F16' 'U4_F16_F32_F16' 'U4_F16_F16_F16' 'U4_F16_IMPLICIT_F32' 'U4_F16_F16_F32' 'U4_F16_F32_F32' 'U8_F16_F16_F16' 'U8_F16_F32_F16' 'U8_F16_IMPLICIT_F16' 'U8_F16_F16_F32' 'U8_F16_F32_F32' 'U8_F16_IMPLICIT_F32' 'U8_BF16_F32_F32' 'U8_BF16_F32_BF16' 'BF8_BF16_F32_F32' 'BF8_BF16_F32_BF16' 'HF8_BF16_F32_F32' 'HF8_BF16_F32_BF16' 'MXFP4_BF16_F32_F32' 'MXFP4_BF16_F32_BF16' 'MXFP4_F32_F32_F32'; do
+    for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF8_F32_F32' 'BF8_BF8_F32_BF8' 'HF8_HF8_F32_F32' 'HF8_HF8_F32_HF8' 'I16_I16_I32_I32' 'U8_I8_I32_I32' 'I8_U8_I32_I32' 'U8_U8_I32_I32' 'I8_I8_I32_I32' 'U8_I8_I32_F32' 'I8_U8_I32_F32' 'U8_U8_I32_F32' 'I8_I8_I32_F32' 'F16_F16_F16_F16' 'I8_F16_F16_F16' 'BF8_F16_F16_F16' 'F16_F16_F32_F16' 'I8_F16_F32_F16' 'BF8_F16_F32_F16' 'F16_F16_IMPLICIT_F16' 'I8_F16_IMPLICIT_F16' 'BF8_F16_IMPLICIT_F16' 'F16_F16_F16_F32' 'I8_F16_F16_F32' 'BF8_F16_F16_F32' 'F16_F16_F32_F32' 'I8_F16_F32_F32' 'BF8_F16_F32_F32' 'F16_F16_IMPLICIT_F32' 'I8_F16_IMPLICIT_F32' 'BF8_F16_IMPLICIT_F32' 'I8_BF16_F32_F32' 'I8_BF16_F32_BF16' 'I4_F16_IMPLICIT_F16' 'I4_F16_F32_F16' 'I4_F16_F16_F16' 'I4_F16_IMPLICIT_F32' 'I4_F16_F16_F32' 'I4_F16_F32_F32' 'U4_U8_I32_I32' 'U4_F16_IMPLICIT_F16' 'U4_F16_F32_F16' 'U4_F16_F16_F16' 'U4_F16_IMPLICIT_F32' 'U4_F16_F16_F32' 'U4_F16_F32_F32' 'U8_F16_F16_F16' 'U8_F16_F32_F16' 'U8_F16_IMPLICIT_F16' 'U8_F16_F16_F32' 'U8_F16_F32_F32' 'U8_F16_IMPLICIT_F32' 'U8_BF16_F32_F32' 'U8_BF16_F32_BF16' 'BF8_BF16_F32_F32' 'BF8_BF16_F32_BF16' 'HF8_BF16_F32_F32' 'HF8_BF16_F32_BF16' 'MXFP4_BF16_F32_F32' 'MXFP4_BF16_F32_BF16' 'MXFP4_F32_F32_F32'; do
       for LD in 'eqld' 'gtld'; do
         for AVNNI in 0 1; do
           for BVNNI in 0 1; do
@@ -48,18 +48,16 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # TODO: all the "continue" ifs should be handled by allow list outside of this script
-                    # transpose A AND B at the same time is right now not supported
-                    if [[ ( "$TRA" == '1'  &&  "$TRB" == '1') ]]; then
-                      continue
-                    fi
-
                     # TODO fix BVNNI supprt in the script
                     if [ "$BVNNI" == '1' ] ; then
                       continue
                     fi
+                    if [[ ("$AVNNI" == '1' || "$BVNNI" = '1') && ("$TRA" == '1' || "$TRB" == '1') ]] ; then
+                      continue;
+                    fi
 
                     # some precision don't support fusion at all
-                    if [[ ( "$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32'  || "$PREC" == 'I8_F16_F32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'BF8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_F16_F16_F16' || "$PREC" == 'BF8_F16_IMPLICIT_F32' || "$PREC" == 'BF8_F16_F16_F32' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'I4_F16_IMPLICIT_F16' || "$PREC" == 'I4_F16_F32_F16' || "$PREC" == 'I4_F16_F16_F16' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I4_F16_IMPLICIT_F32' || "$PREC" == 'I4_F16_F16_F32' || "$PREC" == 'I4_F16_F32_F32' || "$PREC" == 'U4_F16_IMPLICIT_F16' || "$PREC" == 'U4_F16_F32_F16' || "$PREC" == 'U4_F16_F16_F16' || "$PREC" == 'U4_F16_IMPLICIT_F32' || "$PREC" == 'U4_F16_F16_F32' || "$PREC" == 'U4_F16_F32_F32' || "$PREC" == 'U8_F16_F16_F16' || "$PREC" == 'U8_F16_F32_F16' || "$PREC" == 'U8_F16_IMPLICIT_F32' || "$PREC" == 'U8_F16_F16_F32' || "$PREC" == 'U8_F16_F32_F32' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'U8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32') && ( "$NOFUSION" == '0' ) ]] ; then
+                    if [[ ( "$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32'  || "$PREC" == 'I8_F16_F32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'BF8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_F16_F16_F16' || "$PREC" == 'BF8_F16_IMPLICIT_F32' || "$PREC" == 'BF8_F16_F16_F32' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'I4_F16_IMPLICIT_F16' || "$PREC" == 'I4_F16_F32_F16' || "$PREC" == 'I4_F16_F16_F16' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I4_F16_IMPLICIT_F32' || "$PREC" == 'I4_F16_F16_F32' || "$PREC" == 'I4_F16_F32_F32' || "$PREC" == 'U4_F16_IMPLICIT_F16' || "$PREC" == 'U4_F16_F32_F16' || "$PREC" == 'U4_F16_F16_F16' || "$PREC" == 'U4_F16_IMPLICIT_F32' || "$PREC" == 'U4_F16_F16_F32' || "$PREC" == 'U4_F16_F32_F32' || "$PREC" == 'U8_F16_F16_F16' || "$PREC" == 'U8_F16_F32_F16' || "$PREC" == 'U8_F16_IMPLICIT_F32' || "$PREC" == 'U8_F16_F16_F32' || "$PREC" == 'U8_F16_F32_F32' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'U8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32') && ( "$NOFUSION" == '0' ) ]] ; then
                       continue
                     fi
 
@@ -75,12 +73,12 @@ for BINARY_POSTOP in 0 1; do
 
 
                     # loading B in VNNI layout is only supported/makes sense for select precision
-                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'F16_F16_F32_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32' || "$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'I8_F16_F32_F32'|| "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'BF8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_F16_F16_F16' || "$PREC" == 'BF8_F16_IMPLICIT_F32' || "$PREC" == 'BF8_F16_F16_F32' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'I4_F16_IMPLICIT_F16' || "$PREC" == 'I4_F16_F32_F16' || "$PREC" == 'I4_F16_F16_F16' || "$PREC" == 'I4_F16_IMPLICIT_F32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I4_F16_F16_F32' || "$PREC" == 'I4_F16_F32_F32' || "$PREC" == 'U4_F16_IMPLICIT_F16' || "$PREC" == 'U4_F16_F32_F16' || "$PREC" == 'U4_F16_F16_F16' || "$PREC" == 'U4_F16_IMPLICIT_F32' || "$PREC" == 'U4_F16_F16_F32' || "$PREC" == 'U4_F16_F32_F32' || "$PREC" == 'U8_F16_F16_F16' || "$PREC" == 'U8_F16_F32_F16' || "$PREC" == 'U8_F16_IMPLICIT_F32' || "$PREC" == 'U8_F16_F16_F32' || "$PREC" == 'U8_F16_F32_F32' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'U8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32') && ( "$BVNNI" == '1' ) ]]; then
+                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'F16_F16_F32_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32' || "$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'I8_F16_F32_F32'|| "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'BF8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_F16_F16_F16' || "$PREC" == 'BF8_F16_IMPLICIT_F32' || "$PREC" == 'BF8_F16_F16_F32' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'I4_F16_IMPLICIT_F16' || "$PREC" == 'I4_F16_F32_F16' || "$PREC" == 'I4_F16_F16_F16' || "$PREC" == 'I4_F16_IMPLICIT_F32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I4_F16_F16_F32' || "$PREC" == 'I4_F16_F32_F32' || "$PREC" == 'U4_F16_IMPLICIT_F16' || "$PREC" == 'U4_F16_F32_F16' || "$PREC" == 'U4_F16_F16_F16' || "$PREC" == 'U4_F16_IMPLICIT_F32' || "$PREC" == 'U4_F16_F16_F32' || "$PREC" == 'U4_F16_F32_F32' || "$PREC" == 'U8_F16_F16_F16' || "$PREC" == 'U8_F16_F32_F16' || "$PREC" == 'U8_F16_IMPLICIT_F32' || "$PREC" == 'U8_F16_F16_F32' || "$PREC" == 'U8_F16_F32_F32' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'U8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32') && ( "$BVNNI" == '1' ) ]]; then
                       continue
                     fi
 
                     # loading A in VNNI layout is mandatory for select precision
-                    if [[ ("$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U4_U8_I32_I32') && ( "$AVNNI" == '0' ) ]]; then
+                    if [[ ("$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'U4_U8_I32_I32') && ( "$AVNNI" == '0' ) ]]; then
                       continue
                     fi
 
@@ -91,12 +89,12 @@ for BINARY_POSTOP in 0 1; do
 
 
                     # storing in VNNI layout is only supported/makes sense for select precision
-                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' || "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32' || "$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'I8_F16_F32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'BF8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_F16_F16_F16' || "$PREC" == 'BF8_F16_IMPLICIT_F32' || "$PREC" == 'BF8_F16_F16_F32' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'I4_F16_IMPLICIT_F16' || "$PREC" == 'I4_F16_F32_F16' || "$PREC" == 'I4_F16_F16_F16' || "$PREC" == 'I4_F16_IMPLICIT_F32' || "$PREC" == 'I4_F16_F16_F32' || "$PREC" == 'I4_F16_F32_F32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'U4_F16_IMPLICIT_F16' || "$PREC" == 'U4_F16_F32_F16' || "$PREC" == 'U4_F16_F16_F16' || "$PREC" == 'U4_F16_IMPLICIT_F32' || "$PREC" == 'U4_F16_F16_F32' || "$PREC" == 'U4_F16_F32_F32' || "$PREC" == 'U8_F16_F16_F16' || "$PREC" == 'U8_F16_F32_F16' || "$PREC" == 'U8_F16_IMPLICIT_F32' || "$PREC" == 'U8_F16_F16_F32' || "$PREC" == 'U8_F16_F32_F32' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'U8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' ) && ( "$CVNNI" == '1' ) ]]; then
+                    if [[ ("$PREC" == 'F64_F64_F64_F64' || "$PREC" == 'F32_F32_F32_F32' || "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'F16_F16_IMPLICIT_F16' || "$PREC" == 'I8_F16_IMPLICIT_F16' || "$PREC" == 'F16_F16_F16_F16' || "$PREC" == 'I8_F16_F16_F16' || "$PREC" == 'I8_F16_F32_F16' || "$PREC" == 'F16_F16_IMPLICIT_F32' || "$PREC" == 'I8_F16_IMPLICIT_F32' || "$PREC" == 'F16_F16_F16_F32' || "$PREC" == 'I8_F16_F16_F32' || "$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'I8_F16_F32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'BF8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_F16_F16_F16' || "$PREC" == 'BF8_F16_IMPLICIT_F32' || "$PREC" == 'BF8_F16_F16_F32' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'I4_F16_IMPLICIT_F16' || "$PREC" == 'I4_F16_F32_F16' || "$PREC" == 'I4_F16_F16_F16' || "$PREC" == 'I4_F16_IMPLICIT_F32' || "$PREC" == 'I4_F16_F16_F32' || "$PREC" == 'I4_F16_F32_F32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'U4_F16_IMPLICIT_F16' || "$PREC" == 'U4_F16_F32_F16' || "$PREC" == 'U4_F16_F16_F16' || "$PREC" == 'U4_F16_IMPLICIT_F32' || "$PREC" == 'U4_F16_F16_F32' || "$PREC" == 'U4_F16_F32_F32' || "$PREC" == 'U8_F16_F16_F16' || "$PREC" == 'U8_F16_F32_F16' || "$PREC" == 'U8_F16_IMPLICIT_F32' || "$PREC" == 'U8_F16_F16_F32' || "$PREC" == 'U8_F16_F32_F32' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'U8_F16_IMPLICIT_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' ) && ( "$CVNNI" == '1' ) ]]; then
                       continue
                     fi
 
                     # low precision has no transpose support
-                    if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' || (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
+                    if [[ ( (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
                       continue
                     fi
 
@@ -250,12 +248,28 @@ for BINARY_POSTOP in 0 1; do
                       OUTNAME="sui8i32gemm_"
                       KSTART=4
                       KSTEP=4
+                    elif [ "$PREC" == 'U8_U8_I32_I32' ] ; then
+                      OUTNAME="uui8i32gemm_"
+                      KSTART=4
+                      KSTEP=4
+                    elif [ "$PREC" == 'I8_I8_I32_I32' ] ; then
+                      OUTNAME="ssi8i32gemm_"
+                      KSTART=4
+                      KSTEP=4
                     elif [ "$PREC" == 'U8_I8_I32_F32' ] ; then
                       OUTNAME="usi8f32gemm_"
                       KSTART=4
                       KSTEP=4
                     elif [ "$PREC" == 'I8_U8_I32_F32' ] ; then
                       OUTNAME="sui8f32gemm_"
+                      KSTART=4
+                      KSTEP=4
+                    elif [ "$PREC" == 'U8_U8_I32_F32' ] ; then
+                      OUTNAME="uui8f32gemm_"
+                      KSTART=4
+                      KSTEP=4
+                    elif [ "$PREC" == 'I8_I8_I32_F32' ] ; then
+                      OUTNAME="ssi8f32gemm_"
                       KSTART=4
                       KSTEP=4
                     elif [[ ("$PREC" == 'BF16_BF16_F32_BF16') && ("$AVNNI" == '1') ]] ; then
@@ -407,14 +421,20 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # trB we need to switch LDB
-                    if [ "$TRA" == '1' ] ; then
+                    if [[ ("$TRA" == '1') && ("$TRB" == '0') ]] ; then
                       sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(k) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
                     # trB we need to switch LDB
-                    if [ "$TRB" == '1' ] ; then
+                    if [[ ("$TRA" == '0') && ("$TRB" == '1') ]] ; then
                       sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${OUTNAME}
+                    fi
+
+                    # trA,trB we need to switch LDB
+                    if [[ ("$TRA" == '1') && ("$TRB" == '1') ]] ; then
+                      sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(n) + ' ' + str(m)/g" ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
 
@@ -443,7 +463,7 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # Export IDOT variable
-                    if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
+                    if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
                       sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_I8DOT/g' ${HERE}/${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/${OUTNAME}
                     fi
@@ -481,7 +501,7 @@ for BINARY_POSTOP in 0 1; do
                     fi
 
                     # MMLA for I8
-                    if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
+                    if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' ||  "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
                       cp ${HERE}/${OUTNAME} ${HERE}/mmla_${OUTNAME}
                       sed 's/randnumk = rnd.sample(range(4,101,4)/randnumk = rnd.sample(range(8,201,8)/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
                       cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
