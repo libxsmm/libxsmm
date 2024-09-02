@@ -1,3 +1,5 @@
+mxfp4f32gemm_nn_eqld
+mxfp4f32gemm_nn_gtld
 mxfp4bf16f32gemm_nn_eqld
 mxfp4bf16f32gemm_nn_gtld
 mxfp4bf16gemm_nn_eqld

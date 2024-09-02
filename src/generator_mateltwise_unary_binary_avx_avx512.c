@@ -303,7 +303,14 @@ void libxsmm_generator_configure_avx512_vlens(const libxsmm_meltw_descriptor* i_
   if ( LIBXSMM_DATATYPE_IMPLICIT == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
     i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_in;
   } else  if ( LIBXSMM_DATATYPE_I8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-    i_micro_kernel_config->vlen_out = 64;
+    /* if the computation is done in F32 or the input is in F32, then set vlen_out to 16 */
+    if ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
+        LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) )
+    {
+      i_micro_kernel_config->vlen_out = 16;
+    } else {
+      i_micro_kernel_config->vlen_out = 64;
+    }
   } else if ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
        LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) ||
        LIBXSMM_DATATYPE_F16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
