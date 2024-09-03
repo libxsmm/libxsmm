@@ -60,9 +60,6 @@ int main(int argc, char* argv[])
   const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : static_cast<int>(((sizeof(T) * m + PAD - 1) & ~(PAD - 1)) / sizeof(T)));
   /* Eigen specifies leading dimensions per "outer stride" */
   stride_helper<(sizeof(T)<PAD)> stride(lda, ldb, ldc);
-#if 0
-  const char transa = 'n', transb = 'n';
-#endif
   const T alpha = ALPHA, beta = BETA;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = ((sizeof(T) * lda * k + PAD - 1) & ~(PAD - 1)) / sizeof(T);
@@ -142,26 +139,25 @@ int main(int argc, char* argv[])
        * materialize the effect. Ideally, a complex expression is mapped to the
        * best possible implementation, e.g., c = alpha * a * b + beta * c may be
        * mapped to GEMM or definitely omits alpha*a in case of alpha=1, or similar
-       * for special cases for beta=0 and beta=1. However, to not rely on an ideal
-       * transformation a *manually specialized* expression is written for, e.g.,
-       * alpha=1 and beta=1 (c += a * b) or tweaked manually ("noalias").
-       * NOTE: changing alpha or beta from above may not have an effect
-       *       depending on what is selected below (expression).
+       * for special cases for beta=0 and beta=1.
+       * NOTE: using "noalias" is a tweak to avoid a potential copy.
        */
-#if 0 /* alpha=1 anyway */
-      c.noalias() = alpha * a * b + beta * c;
-#elif 0
-      (void)alpha; /* unused */
-      c.noalias() = a * b + beta * c;
-#elif 0 /* beta=0 */
-      (void)alpha; /* unused */
-      (void)beta; /* unused */
-      c.noalias() = a * b;
-#else /* beta=1 */
-      (void)alpha; /* unused */
-      (void)beta; /* unused */
-      c.noalias() += a * b;
-#endif
+      if (TRANSA) {
+        if (TRANSB) {
+          c.noalias() = alpha * a.transpose() * b.transpose() + beta * c;
+        }
+        else {
+          c.noalias() = alpha * a.transpose() * b + beta * c;
+        }
+      }
+      else {
+        if (TRANSB) {
+          c.noalias() = alpha * a * b.transpose() + beta * c;
+        }
+        else {
+          c.noalias() = alpha * a * b + beta * c;
+        }
+      }
     }
   }
 #if defined(__EIGEN_TIMER)

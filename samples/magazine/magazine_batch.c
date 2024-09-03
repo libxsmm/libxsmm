@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldb = (6 < argc ? LIBXSMM_MAX(atoi(argv[6]), k) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * k, PAD) / sizeof(TYPE)));
   const libxsmm_blasint ldc = (7 < argc ? LIBXSMM_MAX(atoi(argv[7]), m) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * m, PAD) / sizeof(TYPE)));
   /* micro-kernels are limited to certain alpha- and beta-values */
-  const char transa = 'n', transb = 'n';
+  const char transa = ((TRANSA) ? 'T' : 'N'), transb = ((TRANSB) ? 'T' : 'N');
   const TYPE alpha = ALPHA, beta = BETA;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, PAD) / sizeof(TYPE);

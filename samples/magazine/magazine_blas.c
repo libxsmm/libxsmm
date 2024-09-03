@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (int)(((sizeof(TYPE) * k + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
   const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : (int)(((sizeof(TYPE) * m + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
   /* micro-kernels are limited to certain alpha- and beta-values */
-  const char transa = 'n', transb = 'n';
+  const char transa = ((TRANSA) ? 'T' : 'N'), transb = ((TRANSB) ? 'T' : 'N');
   const TYPE alpha = ALPHA, beta = BETA;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = ((sizeof(TYPE) * lda * k + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE);

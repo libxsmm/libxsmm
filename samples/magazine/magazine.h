@@ -32,6 +32,13 @@
 # define BETA 1
 #endif
 
+#if !defined(TRANSA)
+# define TRANSA 0
+#endif
+#if !defined(TRANSB)
+# define TRANSB 0
+#endif
+
 #if 1
 # define STREAM_A(EXPR) (EXPR)
 #else
