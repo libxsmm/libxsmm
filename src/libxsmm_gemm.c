@@ -433,11 +433,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(void)
   { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     const char *const env_wrap = getenv("LIBXSMM_GEMM_WRAP");
     libxsmm_gemm_wrap = ((NULL == env_wrap || 0 == *env_wrap) ? (LIBXSMM_WRAP) : atoi(env_wrap));
-# if defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && (0 < LIBXSMM_WRAP)
-    if (0 < libxsmm_gemm_wrap && NULL != dlsym(LIBXSMM_RTLD_NEXT, "mkl_blas_dgemm")) {
-      libxsmm_gemm_wrap = 0;
-    }
-# endif
   }
 #endif
 #if (0 != LIBXSMM_SYNC)
