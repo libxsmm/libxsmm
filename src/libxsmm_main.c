@@ -2186,12 +2186,12 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             kernabi = 0;
           }
           /* query A/B sign combinations */
-          if ( (LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.gemm->flags) > 1 ) {
-            typesigns = 1;
-          } else if ( (LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.gemm->flags) > 1 ) {
-            typesigns = 2;
-          } else if ( (LIBXSMM_GEMM_FLAG_AB_UNSIGNED & request->descriptor.gemm->flags) > 1 ) {
+          if ( (LIBXSMM_GEMM_FLAG_AB_UNSIGNED & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_AB_UNSIGNED ) {
             typesigns = 3;
+          } else  if ( (LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_A_UNSIGNED ) {
+            typesigns = 1;
+          } else if ( (LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_B_UNSIGNED ) {
+            typesigns = 2;
           } else {
             typesigns = 0;
           }
