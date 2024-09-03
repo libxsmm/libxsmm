@@ -26,7 +26,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generate
                                                                 const unsigned int                 i_m_blocking,
                                                                 const unsigned int                 i_n_blocking,
                                                                 const unsigned int                 i_k_index ) {
-  LIBXSMM_UNUSED(i_k_index);
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
@@ -47,6 +46,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generate
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
+
+  LIBXSMM_UNUSED(i_k_index);
 
   for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
     libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
@@ -266,7 +267,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_a64fx( libxsmm_generated_c
                                                              const unsigned int                 i_m_blocking,
                                                              const unsigned int                 i_n_blocking,
                                                              const unsigned int                 i_k_index ) {
-  LIBXSMM_UNUSED(i_k_index);
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
@@ -286,6 +286,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_a64fx( libxsmm_generated_c
   l_m_blocks[1] = (i_m_blocking%i_micro_kernel_config->vector_length)/(i_micro_kernel_config->vector_length/2);  /* number of  64 bit stores */
   l_m_blocks[2] = (i_m_blocking%i_micro_kernel_config->vector_length)%(i_micro_kernel_config->vector_length/2);  /* number of  32 but stores */
   l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1] + l_m_blocks[2];
+
+  LIBXSMM_UNUSED(i_k_index);
 
   /* setting up the a load instructions */
   l_m_total = 0;
@@ -481,7 +483,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
                                                             const unsigned int                 i_m_blocking,
                                                             const unsigned int                 i_n_blocking,
                                                             const unsigned int                 i_k_index ) {
-  LIBXSMM_UNUSED(i_k_index);
   unsigned int l_m_blocks = 0;
   unsigned int l_n_blocks = 0;
   unsigned int l_k_blocks = 2;
@@ -514,6 +515,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
   for (l_n = 0; l_n < 6; l_n++) {
     l_vr_b[l_n] = l_n;
   }
+  LIBXSMM_UNUSED(i_k_index);
 
   l_m_blocks = i_m_blocking / 4;
   l_n_blocks = i_n_blocking / 2;
@@ -642,7 +644,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                            const unsigned int                 i_m_blocking,
                                                            const unsigned int                 i_n_blocking,
                                                            const unsigned int                 i_k_index ) {
-  LIBXSMM_UNUSED(i_k_index);
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
@@ -664,6 +665,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   unsigned int l_compute_instr = LIBXSMM_AARCH64_INSTR_UNDEF;
   unsigned int l_compute_is_pred = 1;
   libxsmm_aarch64_sve_type l_compute_type = LIBXSMM_AARCH64_SVE_TYPE_S;
+
+  LIBXSMM_UNUSED(i_k_index);
 
   l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF;
   l_b_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF;
@@ -820,7 +823,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                           const unsigned int                 i_m_blocking,
                                                           const unsigned int                 i_n_blocking,
                                                           const unsigned int                 i_k_index ) {
-  LIBXSMM_UNUSED(i_k_index);
   unsigned int l_m_blocks = 0;
   unsigned int l_m_blocks_remainder = 0;
   unsigned int l_m_remainder = 0;
@@ -861,6 +863,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   unsigned int l_instr_mmla = 0;
 
   unsigned int l_k_blocking = 0;
+
+  LIBXSMM_UNUSED(i_k_index);
 
   for (l_n = 0; l_n < 6; l_n++) {
     l_vr_b[l_n] = l_n;
@@ -1262,12 +1266,19 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
     }
   }
   /* select micro kernel based on aarch64 variant */
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
-    /* TODO (MMLA) */
+  if( io_generated_code->arch == LIBXSMM_AARCH64_V81 ){
     if ( l_use_mmla ) {
       l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
     } else {
       l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2;
+    }
+  }
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+    /* TODO (MMLA) */
+    if ( l_use_mmla ) {
+      l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
+    } else {
+      l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse;
     }
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 || io_generated_code->arch == LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) {
     /* TODO (MMLA) */
