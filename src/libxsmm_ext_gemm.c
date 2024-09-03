@@ -288,25 +288,23 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemv)(const c
 {
   LIBXSMM_ASSERT(NULL != trans && NULL != m && NULL != n && NULL != lda && NULL != incx && NULL != incy && NULL != alpha && NULL != beta);
   LIBXSMM_INIT
-  if ((2 < libxsmm_gemm_wrap || 2 > libxsmm_gemm_wrap) && 1 == *incx && 1 == *incy && LIBXSMM_SMM(*m, 1, *n, 2/*RFO*/, sizeof(double))) {
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(*m, 1/*n*/, *n/*k*/, *lda, *n/*ldb*/, *m/*ldc*/,
-        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-      const libxsmm_gemmfunction xgemv = libxsmm_dispatch_gemm(gemm_shape,
-        LIBXSMM_GEMM_FLAGS(*trans, 'N'), (libxsmm_bitfield)LIBXSMM_PREFETCH);
-      if (NULL != xgemv) {
-        libxsmm_gemm_param param;
-        LIBXSMM_VALUE_ASSIGN(param.a.primary, a);
-        LIBXSMM_VALUE_ASSIGN(param.b.primary, x);
-        param.c.primary = y;
-        LIBXSMM_XGEMM_PREFETCH(double, double, *m, 1/*n*/, *n/*k*/, param);
-        xgemv(&param);
-      }
-      else {
-        LIBXSMM_GEMV_SYMBOL(double)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
-      }
+  if (2 < LIBXSMM_ABS(libxsmm_gemm_wrap) && 1 == *incx && 1 == *incy && LIBXSMM_SMM(*m, 1, *n, 2/*RFO*/, sizeof(double))) {
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(*m, 1/*n*/, *n/*k*/, *lda, *n/*ldb*/, *m/*ldc*/,
+      LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
+    const int flags = (('n' == *trans || *"N" == *trans) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_A) |
+      (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+    if (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, *alpha, *beta, flags)) { /* TODO: parallelized */
+      const libxsmm_gemmfunction xgemv = libxsmm_dispatch_gemm(gemm_shape, flags, (libxsmm_bitfield)LIBXSMM_PREFETCH);
+      libxsmm_gemm_param param;
+      LIBXSMM_VALUE_ASSIGN(param.a.primary, a);
+      LIBXSMM_VALUE_ASSIGN(param.b.primary, x);
+      param.c.primary = y;
+      LIBXSMM_XGEMM_PREFETCH(double, double, *m, 1/*n*/, *n/*k*/, param);
+      LIBXSMM_ASSERT(NULL != xgemv);
+      xgemv(&param);
+
     }
-    else { /* TODO: parallelized */
+    else {
       LIBXSMM_GEMV_SYMBOL(double)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
     }
   }
@@ -322,25 +320,23 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemv)(const c
 {
   LIBXSMM_ASSERT(NULL != trans && NULL != m && NULL != n && NULL != lda && NULL != incx && NULL != incy && NULL != alpha && NULL != beta);
   LIBXSMM_INIT
-  if ((2 < libxsmm_gemm_wrap || 2 > libxsmm_gemm_wrap) && 1 == *incx && 1 == *incy && LIBXSMM_SMM(*m, 1, *n, 2/*RFO*/, sizeof(float))) {
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(*m, 1/*n*/, *n/*k*/, *lda, *n/*ldb*/, *m/*ldc*/,
-        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-      const libxsmm_gemmfunction xgemv = libxsmm_dispatch_gemm(gemm_shape,
-        LIBXSMM_GEMM_FLAGS(*trans, 'N'), (libxsmm_bitfield)LIBXSMM_PREFETCH);
-      if (NULL != xgemv) {
-        libxsmm_gemm_param param;
-        LIBXSMM_VALUE_ASSIGN(param.a.primary, a);
-        LIBXSMM_VALUE_ASSIGN(param.b.primary, x);
-        param.c.primary = y;
-        LIBXSMM_XGEMM_PREFETCH(float, float, *m, 1/*n*/, *n/*k*/, param);
-        xgemv(&param);
-      }
-      else {
-        LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
-      }
+  if (2 < LIBXSMM_ABS(libxsmm_gemm_wrap) && 1 == *incx && 1 == *incy && LIBXSMM_SMM(*m, 1, *n, 2/*RFO*/, sizeof(float))) {
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(*m, 1/*n*/, *n/*k*/, *lda, *n/*ldb*/, *m/*ldc*/,
+      LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    const int flags = (('n' == *trans || *"N" == *trans) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_A) |
+      (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+    if (LIBXSMM_GEMM_NO_BYPASS(gemm_shape, *alpha, *beta, flags)) { /* TODO: parallelized */
+      const libxsmm_gemmfunction xgemv = libxsmm_dispatch_gemm(gemm_shape, flags, (libxsmm_bitfield)LIBXSMM_PREFETCH);
+      libxsmm_gemm_param param;
+      LIBXSMM_VALUE_ASSIGN(param.a.primary, a);
+      LIBXSMM_VALUE_ASSIGN(param.b.primary, x);
+      param.c.primary = y;
+      LIBXSMM_XGEMM_PREFETCH(float, float, *m, 1/*n*/, *n/*k*/, param);
+      LIBXSMM_ASSERT(NULL != xgemv);
+      xgemv(&param);
+
     }
-    else { /* TODO: parallelized */
+    else {
       LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
     }
   }
