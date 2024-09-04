@@ -73,8 +73,10 @@
       LIBXSMM_BLAS_FNTYPE(TYPE, KIND) pfout; \
     } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
     dlerror(); /* clear an eventual error status */ \
-    libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
-    if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
+    libxsmm_blas_wrapper_dynamic_.pfin = (NULL != (NEXT) \
+      ? dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))) \
+      : NULL); \
+    if (NULL != (NEXT) && NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
       ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
     } \
     else { \
@@ -92,9 +94,9 @@
 # define LIBXSMM_BLAS_WRAPPER_DYNAMIC(TYPE, KIND, ORIGINAL, NEXT)
 #endif
 
-#define LIBXSMM_BLAS_WRAPPER(CONDITION, TYPE, KIND, ORIGINAL, NEXT) if (NULL == (ORIGINAL)) do { \
+#define LIBXSMM_BLAS_WRAPPER(STATIC, TYPE, KIND, ORIGINAL, NEXT) if (NULL == (ORIGINAL)) do { \
   LIBXSMM_BLAS_WRAPPER_DYNAMIC(TYPE, KIND, ORIGINAL, NEXT); \
-  LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL); \
+  LIBXSMM_BLAS_WRAPPER_STATIC(STATIC, TYPE, KIND, ORIGINAL); \
 } while(0)
 
 /** Fall-back code path (macro template). */
