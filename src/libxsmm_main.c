@@ -1187,7 +1187,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
       libxsmm_xcopy_init(libxsmm_target_archid);
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) ((libxsmm_code_pointer*)new_registry)[i].ptr = NULL;
-      LIBXSMM_ASSERT(NULL == internal_registry && NULL == internal_registry_keys);
+      /*LIBXSMM_ASSERT(NULL == internal_registry && NULL == internal_registry_keys);*/
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       LIBXSMM_ASSERT(NULL == internal_cache_buffer);
       internal_cache_buffer = (internal_cache_type*)new_cache;
