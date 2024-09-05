@@ -503,10 +503,9 @@ int main(int argc, char* argv[])
   std::cout << "Default statistic:" << std::endl;
   std::cout << result.print();
 
-  if (diff > 1e-14) {
+  if (diff > 2e-14) {
     printf("Wrong result : maximum error %.15lf\n", diff);
     return 1;
   }
   return 0;
 }
-

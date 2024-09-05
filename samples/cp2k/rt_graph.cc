@@ -542,4 +542,3 @@ auto TimingResult::print(std::vector<Stat> statistic) const -> std::string {
 }
 
 }  // namespace rt_graph
-

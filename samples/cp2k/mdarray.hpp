@@ -1122,4 +1122,3 @@ std::ostream& operator<<(std::ostream& out, mdarray<T, N>& v)
 }
 
 #endif // __MDARRAY_HPP__
-
