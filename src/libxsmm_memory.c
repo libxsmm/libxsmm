@@ -503,20 +503,22 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 
 LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data)
 {
-  const unsigned int hash = libxsmm_hash16(data);
-  return libxsmm_crc32_u8(hash >> 8, &hash) & 0xFF;
+  const unsigned char hash = (unsigned char)libxsmm_hash16(data);
+  return libxsmm_crc32_u8(data >> 8, &hash) & 0xFF;
 }
 
 
 LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
 {
-  return libxsmm_crc32_u16(data >> 16, &data) & 0xFFFF;
+  const unsigned short hash = (unsigned short)data;
+  return libxsmm_crc32_u16(data >> 16, &hash) & 0xFFFF;
 }
 
 
 LIBXSMM_API unsigned int libxsmm_hash32(unsigned long long data)
 {
-  return libxsmm_crc32_u32(data >> 32, &data) & 0xFFFFFFFF;
+  const unsigned int hash = (unsigned int)data;
+  return libxsmm_crc32_u32(data >> 32, &hash) /*& 0xFFFFFFFF*/;
 }
 
 
