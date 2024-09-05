@@ -157,8 +157,8 @@ void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
     LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
   else {
-    LIBXSMM_INLINE_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_INLINE_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
@@ -176,8 +176,8 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
     LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
   else {
-    LIBXSMM_INLINE_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_INLINE_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
@@ -328,8 +328,8 @@ void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc) LIBXSMM_BLAS_NOEXCEPT(gemm)
 {
-  LIBXSMM_INLINE_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   internal_noblas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  LIBXSMM_INLINE_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -340,8 +340,8 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc) LIBXSMM_BLAS_NOEXCEPT(gemm)
 {
-  LIBXSMM_INLINE_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   internal_noblas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  LIBXSMM_INLINE_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
