@@ -33,7 +33,8 @@ do
   echo ${M} ${N} ${LDI} ${LDI}
   PREC_IN=`echo ${PREC} | awk -F"_" '{print $1}'`
   PREC_OUT=`echo ${PREC} | awk -F"_" '{print $2}'`
-  ./eltwise_unary_quantization ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+  ./eltwise_unary_quantization ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO} 0
+  ./eltwise_unary_quantization ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO} 1
 done
 
 rm ${TESTFILE1}

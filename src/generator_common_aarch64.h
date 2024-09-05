@@ -41,13 +41,15 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32i8_aarch64( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_scf_vec_reg,
-    const unsigned int i_pred_reg);
+    const unsigned int i_pred_reg,
+    unsigned int       i_skip_scaling );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_i8f32_aarch64( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_scf_vec_reg,
-    const unsigned int i_pred_reg);
+    const unsigned int i_pred_reg,
+    unsigned int       i_skip_scaling );
 
 /**
  * Sets the given predicate register.
