@@ -49,6 +49,9 @@
     <ClCompile Include="..\src\libxsmm_ext_gemm.c" />
     <ClCompile Include="..\src\libxsmm_ext_xcopy.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\libxsmm_ext_gemm.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>libxsmmext</ProjectName>
     <ProjectGuid>{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}</ProjectGuid>

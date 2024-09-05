@@ -22,4 +22,9 @@
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\libxsmm_ext_gemm.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
