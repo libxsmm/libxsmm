@@ -224,15 +224,15 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
         }
       }
     }
-      if (l_n == i_n_blocking - 1) {
-        libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
-                                                            i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
-                                                            0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    if (l_n == i_n_blocking - 1) {
+      libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
+                                                          i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
+                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
 
-        libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
-                                                            i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
-                                                            0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-      }
+      libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
+                                                          i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
+                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    }
 
     /* issude FMAs */
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
@@ -1270,10 +1270,14 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
     if ( l_use_mmla ) {
       l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
     } else {
-      l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2;
+      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ){
+        l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2;
+      } else {
+        l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse;
+      }
     }
   }
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+  else if ( io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO (MMLA) */
     if ( l_use_mmla ) {
       l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
@@ -1320,7 +1324,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
 
       /* TODO (MMLA): strided k loop breaks with original idea */
       for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k+=l_k_stride ) {
-          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, l_k);
+          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, l_k % 4 );
       }
     /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
@@ -1344,7 +1348,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
 
       /* now we handle the remainder handling */
       for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k+=l_k_stride) {
-        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, l_k);
+        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, l_k - l_max_blocked_k );
       }
     }
   }
