@@ -12,7 +12,7 @@
 
 
 #if defined(LIBXSMM_BUILD)
-#if defined(LIBXSMM_BUILD_EXT) && !defined(_WIN32)
+#if defined(LIBXSMM_BUILD_EXT) && defined(LIBXSMM_WRAP) && (0 != LIBXSMM_WRAP) && !defined(_WIN32)
 
 LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_ATTRIBUTE_WEAK
 void LIBXSMM_FSYMBOL(dgemm_batch_strided)(const char* transa, const char* transb,
