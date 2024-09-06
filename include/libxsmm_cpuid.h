@@ -43,6 +43,7 @@
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
 #define LIBXSMM_AARCH64_APPL_M1       2101 /* Apple M1 */
 #define LIBXSMM_AARCH64_SVE128        2201 /* SVE 128 */
+#define LIBXSMM_AARCH64_NEOV2         2202 /* Neoverse V2, NVIDIA Grace, Graviton 4 */
 #define LIBXSMM_AARCH64_SVE256        2301 /* SVE 256 */
 #define LIBXSMM_AARCH64_NEOV1         2302 /* Neoverse V1, Graviton 3 */
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
