@@ -61,7 +61,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      char_data_gold[(i*ldo)+j] = (char)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+      char_data_gold[(i*ldo)+j] = (char) (0x000000ff & ((int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
     }
   }
 
@@ -211,7 +211,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      short_data_gold[(i*ldo)+j] = (short)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+      short_data_gold[(i*ldo)+j] = (short) ( 0x0000ffff & ((int)IBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
     }
   }
 
