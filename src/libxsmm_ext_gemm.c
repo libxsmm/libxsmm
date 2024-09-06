@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#include "libxsmm_ext_gemm.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_gemm.h"
 
