@@ -29,6 +29,14 @@ void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code* 
     unsigned int                       n_iters);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_decompress_dyn_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       n_iters,
+    unsigned int                       step);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
 
 LIBXSMM_API_INTERN
@@ -99,6 +107,15 @@ void libxsmm_generator_gemm_amx_decompress_32x32_A_block(libxsmm_generated_code*
     long long                          a_lookahead_br_index);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_decompress_Kx32_A_block_kloop(libxsmm_generated_code*     io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
+    long long                          i_k_iter,
+    unsigned int                       i_k_CL);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -120,6 +137,19 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
                                                      unsigned int                       is_last_k,
                                                      long long                          i_brgemm_loop,
                                                      unsigned int                       fully_unrolled_brloop  );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_header_k_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_k_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       n_iters);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*            io_generated_code,

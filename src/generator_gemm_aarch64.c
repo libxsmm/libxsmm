@@ -1137,7 +1137,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                        i_gp_reg_mapping->gp_reg_a,
                                                        l_a_stride );
       } else {
-        if (l_m_remainder >= (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4 : 2)) {
+        if (l_m_remainder >= (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4U : 2U)) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                                 i_gp_reg_mapping->gp_reg_a,
@@ -1145,7 +1145,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                 0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
                                                 l_vr_a[0],
                                                 l_pr_all );
-          if (l_m_remainder > (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4 : 2)) {
+          if (l_m_remainder > (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4U : 2U)) {
             libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                   LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                                   i_gp_reg_mapping->gp_reg_a,
@@ -1181,7 +1181,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                  l_vr_c[8*l_n + 2*l_m],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  (libxsmm_aarch64_sve_type)0 );
-        if (((l_m <= l_m_blocks - 1) && (l_m_blocks > 0))  || (l_m_remainder > (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4 : 2))) {
+        if (((l_m <= l_m_blocks - 1) && (l_m_blocks > 0))  || (l_m_remainder > (((io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1)) ? 4U : 2U))) {
           libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                    l_instr_mmla ,
                                                    (l_flip_mmla_src == 0 ) ? l_vr_b[2*l_n+l_k] : l_vr_a[1],
