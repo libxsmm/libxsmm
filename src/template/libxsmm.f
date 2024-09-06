@@ -133,6 +133,7 @@
      &    LIBXSMM_AARCH64_V82           = 2002,                         &
      &    LIBXSMM_AARCH64_APPL_M1       = 2101,                         &
      &    LIBXSMM_AARCH64_SVE128        = 2201,                         &
+     &    LIBXSMM_AARCH64_NEOV2         = 2202,                         &
      &    LIBXSMM_AARCH64_SVE256        = 2301,                         &
      &    LIBXSMM_AARCH64_NEOV1         = 2302,                         &
      &    LIBXSMM_AARCH64_SVE512        = 2401,                         &
