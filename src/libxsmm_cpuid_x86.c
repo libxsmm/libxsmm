@@ -343,6 +343,8 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
   return libxsmm_cpuid_x86(info);
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
   return libxsmm_cpuid_arm(info);
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+  return libxsmm_cpuid_ppc(info);
 #else
   memset(info, 0, sizeof(info));
   return LIBXSMM_TARGET_ARCH_UNKNOWN;
