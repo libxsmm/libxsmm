@@ -2247,6 +2247,8 @@ void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_c
   switch ( i_instr ) {
     case LIBXSMM_AARCH64_INSTR_SME_LD1W_2:
     case LIBXSMM_AARCH64_INSTR_SME_ST1W_2:
+    case LIBXSMM_AARCH64_INSTR_SME_LD1W_4:
+    case LIBXSMM_AARCH64_INSTR_SME_ST1W_4:
     case LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2:
     case LIBXSMM_AARCH64_INSTR_SVE2_LD1W_4:
       break;
