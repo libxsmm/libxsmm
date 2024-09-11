@@ -8,13 +8,17 @@ else
   PYTHON=$(command -v python)
 fi
 
+if [ -z "${SSIZE}" ]; then
+  SSIZE=18
+fi
+
 TESTFILE1=$(mktemp)
 
 ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(1,101), 18)
+randnum = rnd.sample(range(1,101), ${SSIZE})
 ldoffset = [0] + rnd.sample(range(1,99), 3)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
