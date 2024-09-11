@@ -34,9 +34,9 @@ for i in $(cat ${TESTFILE1}); do
   for PREC in ${EQN_PREC_LIST}; do
     for IDXTYPE in 0 1; do
       if [ ! "${PEXEC_NI}" ]; then
-        ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0
+        ${BIN_INSTR_TOOL} ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0
       else
-        ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0 &
+        ${BIN_INSTR_TOOL} ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0 &
         PEXEC_PID+=("$!")
         if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
           for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID

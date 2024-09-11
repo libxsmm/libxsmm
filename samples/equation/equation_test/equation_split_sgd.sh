@@ -32,9 +32,9 @@ for i in $(cat ${TESTFILE1}); do
   LD=$(echo ${i} | awk -F"_" '{print $3}')
   echo ${M} ${N} ${LD}
   if [ ! "${PEXEC_NI}" ]; then
-    ./equation_splitSGD ${M} ${N} ${LD} 0
+    ${BIN_INSTR_TOOL} ./equation_splitSGD ${M} ${N} ${LD} 0
   else
-    ./equation_splitSGD ${M} ${N} ${LD} 0 &
+    ${BIN_INSTR_TOOL} ./equation_splitSGD ${M} ${N} ${LD} 0 &
     PEXEC_PID+=("$!")
     if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
       for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID

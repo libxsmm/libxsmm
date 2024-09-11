@@ -32,9 +32,9 @@ for i in $(cat ${TESTFILE1}); do
   echo ${M} ${N} ${K}
   for PREC in ${EQN_PREC_LIST}; do
     if [ ! "${PEXEC_NI}" ]; then
-      ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0
+      ${BIN_INSTR_TOOL} ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0
     else
-      ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0 &
+      ${BIN_INSTR_TOOL} ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0 &
       PEXEC_PID+=("$!")
       if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
         for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID

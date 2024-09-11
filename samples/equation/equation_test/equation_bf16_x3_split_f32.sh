@@ -33,9 +33,9 @@ for i in $(cat ${TESTFILE1}); do
   echo ${M} ${N} ${LD}
   for PREC in ${EQN_PREC_LIST}; do
     if [ ! "${PEXEC_NI}" ]; then
-      ./equation_bf16_x3_split_f32 ${M} ${N} ${LD}
+      ${BIN_INSTR_TOOL} ./equation_bf16_x3_split_f32 ${M} ${N} ${LD}
     else
-      ./equation_bf16_x3_split_f32 ${M} ${N} ${LD} &
+      ${BIN_INSTR_TOOL} ./equation_bf16_x3_split_f32 ${M} ${N} ${LD} &
       PEXEC_PID+=("$!")
       if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
         for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID
