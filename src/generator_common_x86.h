@@ -14,6 +14,38 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_cvt_bf8_to_bf16_lut_prep_regs_avx512( libxsmm_generated_code* io_generated_code,
+                                         const char              i_vname,
+                                         const unsigned int      io_luth_reg0,
+                                         const unsigned int      io_luth_reg1,
+                                         const unsigned int      io_lutl_reg0,
+                                         const unsigned int      io_lutl_reg1,
+                                         const unsigned int      io_sign_reg,
+                                         const unsigned int      io_blend_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_cvt_hf8_to_bf16_lut_prep_regs_avx512( libxsmm_generated_code* io_generated_code,
+                                         const char              i_vname,
+                                         const unsigned int      io_luth_reg0,
+                                         const unsigned int      io_luth_reg1,
+                                         const unsigned int      io_lutl_reg0,
+                                         const unsigned int      io_lutl_reg1,
+                                         const unsigned int      io_sign_reg,
+                                         const unsigned int      io_blend_reg);
+LIBXSMM_API_INTERN
+void libxsmm_generator_cvt_8bit_to_16bit_lut_prepped_regs_avx512( libxsmm_generated_code* io_generated_code,
+                                         const char              i_vname,
+                                         const unsigned int      i_vec_reg,
+                                         const unsigned int      o_vec_reg,
+                                         const unsigned int      i_luth_reg0,
+                                         const unsigned int      i_luth_reg1,
+                                         const unsigned int      i_lutl_reg0,
+                                         const unsigned int      i_lutl_reg1,
+                                         const unsigned int      i_sign_reg,
+                                         const unsigned int      i_blend_reg,
+                                         const unsigned int      i_tmp_reg0,
+                                         const unsigned int      i_tmp_reg1 );
+LIBXSMM_API_INTERN
 void libxsmm_generator_exp_ps_5dts_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_src,
     const unsigned int                             i_vec_aux1,
@@ -594,6 +626,13 @@ void libxsmm_generator_store_prng_state_avx_avx512( libxsmm_generated_code* io_g
                                                     const unsigned int      prng_state1_vreg,
                                                     const unsigned int      prng_state2_vreg,
                                                     const unsigned int      prng_state3_vreg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_load_vreg_signmask(libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_vreg_signmask,
+                                                   libxsmm_datatype        i_dtype);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_vreg_infinity(libxsmm_generated_code* io_generated_code,
