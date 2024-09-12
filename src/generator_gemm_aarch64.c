@@ -2170,7 +2170,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme( libxsmm_generated_code*        i
       }
   }
   /* Heuristics for the best blocking */
-  if( i_xgemm_desc->n % 32 < 17 && i_xgemm_desc->n % 32 != 0 && i_xgemm_desc->n % 64 > 32 ){
+  if( i_xgemm_desc->n % 32 < 17 && i_xgemm_desc->n % 32 != 0 && (i_xgemm_desc->n % 64 > 32 || i_xgemm_desc->n < 32)){
     l_blocking_scheme = 1;
     l_perfect_blocking_m = 64;
     l_perfect_blocking_n = 16;
