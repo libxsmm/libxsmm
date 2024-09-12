@@ -8,13 +8,17 @@ else
   PYTHON=$(command -v python)
 fi
 
+if [ -z "${SSIZE}" ]; then
+  SSIZE=18
+fi
+
 TESTFILE1=$(mktemp)
 
 ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(1,101), 18)
+randnum = rnd.sample(range(1,101), ${SSIZE})
 ldoffset = [0] + rnd.sample(range(1,99), 3)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
@@ -34,9 +38,9 @@ for i in $(cat ${TESTFILE1}); do
   for PREC in ${EQN_PREC_LIST}; do
     for IDXTYPE in 0 1; do
       if [ ! "${PEXEC_NI}" ]; then
-        ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0
+        ${BIN_INSTR_TOOL} ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0
       else
-        ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0 &
+        ${BIN_INSTR_TOOL} ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0 &
         PEXEC_PID+=("$!")
         if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
           for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID
