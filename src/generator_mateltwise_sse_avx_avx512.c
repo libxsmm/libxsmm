@@ -826,20 +826,20 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
     }
   }
 
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
     is_valid_arch_prec = 0;
   }
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) ) {
     is_valid_arch_prec = 0;
   }
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1) ||
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1) ||
        (is_unary_reduce_col_idx_tpp == 1) || (is_gather_scatter_tpp == 1) || (is_unary_relu_tpp == 1) || (is_unary_replicate_col_tpp == 1)) ) {
     is_valid_arch_prec = 0;
   }
-  if ( ((has_inp_or_out_fp16 > 0) || (has_inp_or_out_bf16 > 0)) && (io_generated_code->arch < LIBXSMM_X86_AVX) && (is_transform_tpp == 0)) {
+  if ( ((has_inp_or_out_fp16 > 0) || (has_inp_or_out_bf16 > 0)) && (io_generated_code->arch < LIBXSMM_X86_AVX2) && (is_transform_tpp == 0)) {
     is_valid_arch_prec = 0;
   }
-  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV)) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
+  if ((io_generated_code->arch == LIBXSMM_X86_AVX) && (is_transform_tpp == 0)) {
     is_valid_arch_prec = 0;
   }
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX)) {
