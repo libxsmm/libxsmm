@@ -760,25 +760,35 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4)         ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4))       ) ? 1 : 0;
   unsigned int is_unary_simple_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
-                 ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY)     ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)     ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2)   ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SQRT)    ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_NEGATE) ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_INC)     ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL)     ||
+                 ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY)           ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)                ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2)                 ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SQRT)               ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_NEGATE)             ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_INC)                ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL)         ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT)    ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD)   ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD)    ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD) ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP)         ||
-                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN)   )       ) ? 1 : 0;
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP) )       ) ? 1 : 0;
+  unsigned int is_unary_relu_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
+                 ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU)           ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)       ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU)     ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV) ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU)            ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV) )       ) ? 1 : 0;
+  unsigned int is_unary_replicate_col_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR)       ) ? 1 : 0;
   unsigned int is_unary_reduce_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
                  ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD)        ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX)        ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN)        ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX)     ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD)       ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)     ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD) ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX))       ) ? 1 : 0;
+  unsigned int is_unary_reduce_col_idx_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
+                  (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param) > 0)       ) ? 1 : 0;
   unsigned int is_unary_approx_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
                  ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH)               ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV)           ||
@@ -819,13 +829,14 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
     is_valid_arch_prec = 0;
   }
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1)) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) ) {
+    is_valid_arch_prec = 0;
+  }
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1) ||
+       (is_unary_reduce_col_idx_tpp == 1) || (is_gather_scatter_tpp == 1) || (is_unary_relu_tpp == 1) || (is_unary_replicate_col_tpp == 1)) ) {
     is_valid_arch_prec = 0;
   }
   if ( ((has_inp_or_out_fp16 > 0) || (has_inp_or_out_bf16 > 0)) && (io_generated_code->arch < LIBXSMM_X86_AVX) && (is_transform_tpp == 0)) {
-    is_valid_arch_prec = 0;
-  }
-  if ((io_generated_code->arch < LIBXSMM_X86_AVX2) && (is_transform_tpp == 0)) {
     is_valid_arch_prec = 0;
   }
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV)) && (io_generated_code->arch < LIBXSMM_X86_AVX2)) {
