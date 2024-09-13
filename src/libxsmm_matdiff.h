@@ -39,7 +39,7 @@ for (ii = 0; ii < nn; ++ii) {
     if (ri > info->max_ref) info->max_ref = ri;
 
     if (LIBXSMM_NOTNAN(ti) && (inf > ta || ti == ri)) {
-      const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
+      const double di = ((NULL != real_tst && ta != ra) ? LIBXSMM_DELTA(ri, ti) : 0);
       const double dri = LIBXSMM_MATDIFF_DIV(di, ra, ta);
 
       /* minimum/maximum of test set */
@@ -143,11 +143,11 @@ if (0 == result_nan) {
 #else
       const libxsmm_blasint i = ii, j = jj;
 #endif
+      const double ti = (NULL != real_tst ? LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_tst[i * ldt + j]) : 0);
       const double ri = LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_ref[i*ldr+j]);
-      const double ti = (NULL != real_tst ? LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_tst[i*ldt+j]) : 0);
-      const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
+      const double ta = LIBXSMM_ABS(ti), ra = LIBXSMM_ABS(ri);
+      const double di = ((NULL != real_tst && ta != ra) ? LIBXSMM_DELTA(ri, ti) : 0);
       const double rd = ri - info->avg_ref, td = ti - info->avg_tst;
-      const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
       /* variance of reference set with Kahan compensation */
       LIBXSMM_PRAGMA_FORCEINLINE
