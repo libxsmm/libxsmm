@@ -34,9 +34,9 @@ do
   PREC_IN=`echo ${PREC} | awk -F"_" '{print $1}'`
   PREC_OUT=`echo ${PREC} | awk -F"_" '{print $2}'`
   PREC_COMP=`echo ${PREC} | awk -F"_" '{print $3}'`
-  ./eltwise_unary_dropout F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
-  ./eltwise_unary_dropout F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
-  ./eltwise_unary_dropout B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+  ${BIN_INSTR_TOOL} ./eltwise_unary_dropout F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+  ${BIN_INSTR_TOOL} ./eltwise_unary_dropout F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+  ${BIN_INSTR_TOOL} ./eltwise_unary_dropout B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
 done
 
 rm ${TESTFILE1}

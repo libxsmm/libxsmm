@@ -30,9 +30,9 @@ for i in $(cat ${TESTFILE1}); do
   echo ${M} ${COLS}
   for PREC in ${EQN_PREC_LIST}; do
     if [ ! "${PEXEC_NI}" ]; then
-      ./equation_gather_bcstmul_add ${COLS} ${M} 256 16 0
+      ${BIN_INSTR_TOOL} ./equation_gather_bcstmul_add ${COLS} ${M} 256 16 0
     else
-      ./equation_gather_bcstmul_add ${COLS} ${M} 256 16 0 &
+      ${BIN_INSTR_TOOL} ./equation_gather_bcstmul_add ${COLS} ${M} 256 16 0 &
       PEXEC_PID+=("$!")
       if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
         for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID

@@ -36,7 +36,7 @@ do
   do
     for IDXTYPE in 0 1
     do
-      ./eltwise_unary_gather_scatter ${M} ${N} ${LDI} ${LDO} ${GS_OP} ${ROWSCOLSOFFS} ${NUMPREC} ${IDXTYPE} 1
+      ${BIN_INSTR_TOOL} ./eltwise_unary_gather_scatter ${M} ${N} ${LDI} ${LDO} ${GS_OP} ${ROWSCOLSOFFS} ${NUMPREC} ${IDXTYPE} 1
     done
   done
 done
