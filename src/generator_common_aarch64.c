@@ -5029,7 +5029,6 @@ void libxsmm_generator_store_2dregblock_aarch64_sme_relu( libxsmm_generated_code
         }
       }
 
-      /* do relu !! */
       /* setting z0 to zero */
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
@@ -5079,7 +5078,6 @@ void libxsmm_generator_store_2dregblock_aarch64_sme_relu( libxsmm_generated_code
       }
       l_n_count -= 16;
 
-      /* do the z0 vector */
       /* move 0 into w12 */
       libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                   LIBXSMM_AARCH64_INSTR_GP_MOVZ,

@@ -1993,9 +1993,9 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
         if (MAP_FAILED != buffer && NULL != buffer) {
           internal_xmalloc_mhint(buffer, alloc_size);
 # if defined(__APPLE__) && defined(__arm64__)
-          // if (0 != (LIBXSMM_MALLOC_FLAG_W & flags)) {
-          //   pthread_jit_write_protect_np(0/*false*/);
-          // }
+          if (0 != (LIBXSMM_MALLOC_FLAG_W & flags)) {
+            pthread_jit_write_protect_np(0/*false*/);
+          }
 # endif
         }
 #endif /* !defined(_WIN32) */
@@ -2220,7 +2220,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_xattrib(void* buffer, int flags, size_t si
 #if defined(_WIN32)
       /* TODO: implement memory protection under Microsoft Windows */
 #else /* treat memory protection errors as soft error; ignore return value */
-# if defined(__APPLE__) && defined(__arm64__) && 0
+# if defined(__APPLE__) && defined(__arm64__)
       if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
         pthread_jit_write_protect_np(1/*true*/);
       }
@@ -2322,9 +2322,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 # endif   /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
 # if defined(__APPLE__) && defined(__arm64__)
-          // if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
-          //   pthread_jit_write_protect_np(1/*true*/);
-          // }
+          if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
+            pthread_jit_write_protect_np(1/*true*/);
+          }
 # endif
 #endif
         }
