@@ -72,16 +72,16 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr( libxsmm_generated_code *io_generate
     case LIBXSMM_DATATYPE_F32: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVW4X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRW;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F64: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVD2X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRD;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F16:
     case LIBXSMM_DATATYPE_BF16: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVH8X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRH;
-    }  break;
+    } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
@@ -319,11 +319,11 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr_splat( libxsmm_generated_code *io_ge
     case LIBXSMM_DATATYPE_F32: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVW4X;
       l_vec_sp = LIBXSMM_PPC64LE_INSTR_LXVWSX;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F64: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVD2X;
       l_vec_sp = LIBXSMM_PPC64LE_INSTR_LXVDSX;
-    }  break;
+    } break;
     default: {
       l_vec_ld = -1;
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
@@ -349,7 +349,7 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr_splat( libxsmm_generated_code *io_ge
         unsigned int l_t_idx = l_vec + l_m*l_vec_ele + l_n*i_ldt;
         /* Splat */
         switch ( i_datatype ) {
-          case LIBXSMM_DATATYPE_F32:
+          case LIBXSMM_DATATYPE_F32: {
             libxsmm_ppc64le_instr_5( io_generated_code,
                                      LIBXSMM_PPC64LE_INSTR_XXSPLTW,
                                      io_t[l_t_idx],
@@ -357,8 +357,8 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr_splat( libxsmm_generated_code *io_ge
                                      l_scratch,
                                      (0x0020 & l_scratch) >> 5,
                                      (0x0020 & io_t[l_t_idx]) >> 5 );
-            break;
-          case LIBXSMM_DATATYPE_F64:
+          } break;
+          case LIBXSMM_DATATYPE_F64: {
             libxsmm_ppc64le_instr_7( io_generated_code,
                                      LIBXSMM_PPC64LE_INSTR_XXPERMDI,
                                      io_t[l_t_idx],
@@ -368,10 +368,11 @@ void libxsmm_generator_gemm_vsx_mk_load_vsr_splat( libxsmm_generated_code *io_ge
                                      (0x0020 & l_scratch) >> 5,
                                      (0x0020 & l_scratch) >> 5,
                                      (0x0020 & io_t[l_t_idx]) >> 5 );
-            break;
-          default:
+          } break;
+          default: {
             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
             return;
+          }
         }
       }
 
@@ -432,11 +433,11 @@ void libxsmm_generator_vsx_block_fma_b_splat( libxsmm_generated_code * io_genera
     case LIBXSMM_DATATYPE_F32: {
       l_vec_mul = LIBXSMM_PPC64LE_INSTR_XVMULSP;
       l_vec_fma = LIBXSMM_PPC64LE_INSTR_XVMADDASP;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F64: {
       l_vec_mul = LIBXSMM_PPC64LE_INSTR_XVMULDP;
       l_vec_fma = LIBXSMM_PPC64LE_INSTR_XVMADDADP;
-    }  break;
+    } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
