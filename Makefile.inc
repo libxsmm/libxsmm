@@ -2016,14 +2016,17 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
   else # macOS
-    SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr
+    SDKROOT := $(xcrun --show-sdk-path 2>/dev/null)
+    ifeq (,$(wildcard $(SDKROOT)))
+      SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+    endif
     ifneq (,$(wildcard $(SDKROOT)))
       ifeq (0,$(CLANG))
-        IFLAGS += -I$(SDKROOT)/include
-        LDFLAGS += -L$(SDKROOT)/lib
+        IFLAGS += -I$(SDKROOT)/usr/include
+        LDFLAGS += -L$(SDKROOT)/usr/lib
       endif
       ifneq (0,$(FORTRAN))
-        FLDFLAGS += -L$(SDKROOT)/lib
+        FLDFLAGS += -L$(SDKROOT)/usr/lib
       endif
     else  # SDK path not found
       LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
