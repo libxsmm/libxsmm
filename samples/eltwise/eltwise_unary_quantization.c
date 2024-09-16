@@ -211,7 +211,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      short_data_gold[(i*ldo)+j] = (short) ( 0x0000ffff & ((int)IBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
+      short_data_gold[(i*ldo)+j] = (short) ( 0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
     }
   }
 
