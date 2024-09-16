@@ -21,57 +21,51 @@
 #include "../include/libxsmm_typedefs.h"
 
 
-/**
- * Loads a block of a matrix to vector status and control registers.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_m_blocking_full number of full vectors (each 128-bit) in M-dimension.
- * @param i_n_blocking number of entries in N-dimension.
- * @param i_remainder_size size in bytes of the remainder in M-dimension.
- * @param i_stride stride in N-dimension.
- * @param i_precision 0: FP32, !=0: FP64
- * @param i_gpr_ptr GPR which has the address from which we load or to which we store data.
- * @param i_gpr_scratch GPRs which are used as scratch registers.
- *                      2+#chunks are required (see chunk desc. below).
- * @param i_vsr_first first VSR to which data is loaded or to which data is written.
- * @return number of VSR which were written.
- **/
-LIBXSMM_API_INTERN
-unsigned char libxsmm_generator_gemm_ppc64le_load_vsx( libxsmm_generated_code *io_generated_code,
-                                                       unsigned int            i_m_blocking_full,
-                                                       unsigned int            i_n_blocking,
-                                                       unsigned int            i_remainder_size,
-                                                       unsigned int            i_stride,
-                                                       unsigned char           i_precision,
-                                                       unsigned char           i_gpr_ptr,
-                                                       unsigned char          *i_gpr_scratch,
-                                                       unsigned char           i_vsr_first );
+typedef void (*libxsmm_ppc64le_reg_func)( unsigned int const i_vec_len,
+                                          unsigned int      *i_blocking,
+                                          unsigned int      *o_reg );
 
-/**
- * Stores a block of a matrix to vector status and control registers.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_m_blocking_full number of full vectors (each 128-bit) in M-dimension.
- * @param i_n_blocking number of entries in N-dimension.
- * @param i_remainder_size size in bytes of the remainder in M-dimension.
- * @param i_stride stride in N-dimension.
- * @param i_precision 0: FP32, !=0: FP64
- * @param i_gpr_ptr GPR which has the address from which we load or to which we store data.
- * @param i_gpr_scratch GPRs which are used as scratch registers.
- *                      2+#chunks are required (see chunk desc. below).
- * @param i_vsr_first first VSR to which data is loaded or to which data is written.
- * @return number of VSR which were written.
- **/
+
 LIBXSMM_API_INTERN
-unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code *io_generated_code,
-                                                        unsigned int            i_m_blocking_full,
-                                                        unsigned int            i_n_blocking,
-                                                        unsigned int            i_remainder_size,
-                                                        unsigned int            i_stride,
-                                                        unsigned char           i_precision,
-                                                        unsigned char           i_gpr_ptr,
-                                                        unsigned char          *i_gpr_scratch,
-                                                        unsigned char           i_vsr_first );
+void libxsmm_generator_gemm_ppc64le_reg_vsx( unsigned int const i_vec_len,
+                                             unsigned int      *i_blocking,
+                                             unsigned int      *o_reg);
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_reg_mma( unsigned int const i_vec_len,
+                                             unsigned int      *i_blocking,
+                                             unsigned int      *o_reg );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_ppc64le_n_reg( unsigned int const       i_vec_len,
+                                                   unsigned int            *i_blocking,
+                                                   libxsmm_ppc64le_reg_func i_reg_func );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const       i_reg_max,
+                                                   unsigned int const       i_vec_len,
+                                                   unsigned int const       i_comp_bytes,
+                                                   unsigned int            *i_dims,
+                                                   unsigned int            *i_increment,
+                                                   unsigned int            *i_weights,
+                                                   unsigned int const       i_nweight,
+                                                   unsigned int            *o_blocking,
+                                                   libxsmm_ppc64le_reg_func i_reg_func );
+
+
+void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code        *io_generated_code,
+                                                     libxsmm_gemm_descriptor const *i_xgemm_desc,
+                                                     libxsmm_ppc64le_blocking      *io_blocking );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code        *io_generated_code,
+                                                    libxsmm_gemm_descriptor const *i_xgemm_desc,
+                                                    libxsmm_ppc64le_blocking      *io_blocking );
+
 
 
 /**
@@ -153,10 +147,5 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_generated_code,
                                             libxsmm_gemm_descriptor const *i_xgemm_desc );
 
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code        *io_generated_code,
-                                                    const libxsmm_gemm_descriptor *i_xgemm_desc,
-                                                    libxsmm_ppc64le_blocking      *io_blocking );
 
 #endif

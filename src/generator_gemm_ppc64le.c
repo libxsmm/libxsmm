@@ -14,181 +14,176 @@
 #include "generator_gemm_ppc64le.h"
 
 
-unsigned char libxsmm_generator_gemm_ppc64le_load_vsx( libxsmm_generated_code * io_generated_code,
-                                                       unsigned int             i_m_blocking_full,
-                                                       unsigned int             i_n_blocking,
-                                                       unsigned int             i_remainder_size,
-                                                       unsigned int             i_stride,
-                                                       unsigned char            i_precision,
-                                                       unsigned char            i_gpr_ptr,
-                                                       unsigned char          * i_gpr_scratch,
-                                                       unsigned char            i_vsr_first ) {
-  unsigned int l_vsr = i_vsr_first;
-
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_ORI,
-                           i_gpr_scratch[0],
-                           i_gpr_ptr,
-                           0 );
-
-  if( i_remainder_size > 0 ) {
-    libxsmm_ppc64le_instr_3( io_generated_code,
-                             LIBXSMM_PPC64LE_INSTR_ADDI,
-                             i_gpr_scratch[1],
-                             0,
-                             i_remainder_size );
-    libxsmm_ppc64le_instr_4( io_generated_code,
-                             LIBXSMM_PPC64LE_INSTR_RLDICR,
-                             i_gpr_scratch[1],
-                             i_gpr_scratch[1],
-                             64 - 8,
-                             63 );
-  }
-
-  for( unsigned int l_bn = 0; l_bn < i_n_blocking; l_bn++ ) {
-    /* prep the GPRs for the storage accesses */
-    unsigned int l_n_ops = i_m_blocking_full;
-    if( i_remainder_size > 0 ) {
-      l_n_ops++;
-    }
-    for( unsigned int l_gp = 0; l_gp < l_n_ops; l_gp++ ) {
-      libxsmm_ppc64le_instr_3( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_ADDI,
-                               i_gpr_scratch[2 + l_gp],
-                               i_gpr_scratch[0],
-                               16*l_gp );
-    }
-
-    if( l_bn != i_n_blocking - 1 ) {
-      libxsmm_ppc64le_instr_3( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_ADDI,
-                               i_gpr_scratch[0],
-                               i_gpr_scratch[0],
-                               i_stride );
-    }
-
-    /* 128bit loads/stores */
-    for( unsigned int l_bm = 0; l_bm < i_m_blocking_full; l_bm++ ) {
-      libxsmm_ppc64le_instr_4( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_LXVW4X,
-                               l_vsr,
-                               0,
-                               i_gpr_scratch[2 + l_bm],
-                               (0x0020 & l_vsr) >> 5 );
-      l_vsr++;
-    }
-
-    /* remainder load (if required) */
-    if( i_remainder_size > 0 ) {
-      libxsmm_ppc64le_instr_4( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_LXVLL,
-                               l_vsr,
-                               i_gpr_scratch[2 + i_m_blocking_full],
-                               i_gpr_scratch[1],
-                               (0x0020 & l_vsr) >> 5 );
-
-      /* reverse byte-order after loading for LE */
-      libxsmm_ppc64le_instr_4( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_XXBRW,
-                               l_vsr,
-                               l_vsr,
-                               (0x0020 & l_vsr) >> 5,
-                               (0x0020 & l_vsr) >> 5 );
-      l_vsr++;
-    }
-  }
-
-  return l_vsr - i_vsr_first;
-
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_reg_vsx( unsigned int const i_vec_len,
+                                             unsigned int      *i_blocking,
+                                             unsigned int      *o_reg ) {
+  o_reg[0] = ( ( i_blocking[0] + i_vec_len - 1 ) / i_vec_len )*i_blocking[2];
+  o_reg[1] = i_blocking[1]*i_blocking[2];
+  o_reg[2] = ( ( i_blocking[0] + i_vec_len - 1 ) / i_vec_len )*i_blocking[1];
 }
 
 
 LIBXSMM_API_INTERN
-unsigned char libxsmm_generator_gemm_ppc64le_store_vsx( libxsmm_generated_code * io_generated_code,
-                                                        unsigned int             i_m_blocking_full,
-                                                        unsigned int             i_n_blocking,
-                                                        unsigned int             i_remainder_size,
-                                                        unsigned int             i_stride,
-                                                        unsigned char            i_precision,
-                                                        unsigned char            i_gpr_ptr,
-                                                        unsigned char          * i_gpr_scratch,
-                                                        unsigned char            i_vsr_first ) {
-  unsigned int l_vsr = i_vsr_first;
+void libxsmm_generator_gemm_ppc64le_reg_mma( unsigned int const i_vec_len,
+                                             unsigned int      *i_blocking,
+                                             unsigned int      *o_reg ) {
+  unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
+  o_reg[0] = ( ( i_blocking[0] + i_vec_len - 1 ) / i_vec_len )*i_blocking[2];
+  o_reg[1] = ( ( i_blocking[1] + i_vec_len - 1 ) / i_vec_len )*i_blocking[2];
+  unsigned int l_n_acc_c = ( ( ( i_blocking[1] + i_vec_len - 1 ) / i_vec_len ) *
+                             ( ( i_blocking[0] + i_vec_len - 1 ) / i_vec_len ) );
+  o_reg[2] = l_n_acc_c*l_acc_vec_len;
+}
 
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_ORI,
-                           i_gpr_scratch[0],
-                           i_gpr_ptr,
-                           0 );
 
-  if( i_remainder_size > 0 ) {
-    libxsmm_ppc64le_instr_3( io_generated_code,
-                             LIBXSMM_PPC64LE_INSTR_ADDI,
-                             i_gpr_scratch[1],
-                             0,
-                             i_remainder_size );
-    libxsmm_ppc64le_instr_4( io_generated_code,
-                             LIBXSMM_PPC64LE_INSTR_RLDICR,
-                             i_gpr_scratch[1],
-                             i_gpr_scratch[1],
-                             64 - 8,
-                             63 );
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_ppc64le_n_reg( unsigned int const       i_vec_len,
+                                                   unsigned int            *i_blocking,
+                                                   libxsmm_ppc64le_reg_func i_reg_func ) {
+  unsigned int l_reg[3];
+  i_reg_func( i_vec_len, i_blocking, l_reg );
+  return l_reg[0] + l_reg[1] + l_reg[2];
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const       i_reg_max,
+                                                   unsigned int const       i_vec_len,
+                                                   unsigned int const       i_comp_bytes,
+                                                   unsigned int            *i_dims,
+                                                   unsigned int            *i_increment,
+                                                   unsigned int            *i_weights,
+                                                   unsigned int const       i_nweight,
+                                                   unsigned int            *o_blocking,
+                                                   libxsmm_ppc64le_reg_func i_reg_func ) {
+  /* Initial blocking */
+  o_blocking[0] = i_increment[0];
+  o_blocking[1] = i_increment[1];
+  o_blocking[2] = i_increment[2];
+
+  unsigned int l_nreg = libxsmm_generator_gemm_ppc64le_n_reg( i_vec_len, o_blocking, i_reg_func );
+  unsigned int l_full[] = {0, 0, 0};
+
+  for ( unsigned int i = 0; i < 3; ++i )
+    l_full[i] |= (o_blocking[i] >= i_dims[i]);
+
+  unsigned int l_maxed = ((l_full[0] != 0) & (l_full[1] != 0) & (l_full[2] != 0));
+
+  unsigned int l_step = 0;
+  while (l_nreg < i_reg_max && l_maxed == 0) {
+    unsigned int l_b = i_weights[l_step % i_nweight];
+
+    if( l_full[l_b] == 0 ) {
+      o_blocking[l_b] += i_increment[l_b];
+      unsigned int l_temp_nreg = libxsmm_generator_gemm_ppc64le_n_reg( i_vec_len, o_blocking, i_reg_func );
+
+      if ( l_temp_nreg > i_reg_max ) {
+        o_blocking[l_b] -= i_increment[l_b];
+        l_full[l_b] = 1;
+      } else {
+        l_nreg = l_temp_nreg;
+      }
+
+      l_full[l_b] |= (o_blocking[l_b] >= i_dims[l_b]);
+    }
+
+    l_maxed |= ((l_full[0] != 0) & (l_full[1] != 0) & (l_full[2] !=0));
+
+    ++l_step;
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code        *io_generated_code,
+                                                     const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                                     libxsmm_ppc64le_blocking      *io_blocking ) {
+  unsigned int l_dims[] = {i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k};
+  unsigned int l_reg_max = LIBXSMM_PPC64LE_VSR_NMAX - 4;
+  unsigned int l_vector_len = io_blocking->vector_len_comp;
+  unsigned int l_comp_bytes = io_blocking->comp_bytes;
+  libxsmm_ppc64le_reg_func l_reg_func = NULL;
+
+  unsigned int l_inc[3];
+  if (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) {
+    l_inc[0] = l_vector_len;
+    l_inc[1] = l_vector_len;
+    l_inc[2] = l_vector_len;
+    l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_vsx;
+  } else if (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) {
+    l_inc[0] = l_vector_len;
+    l_inc[1] = (LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_F64) ? 2*l_vector_len : l_vector_len;
+    l_inc[2] = l_vector_len;
+    l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_mma;
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
   }
 
-  for( unsigned int l_bn = 0; l_bn < i_n_blocking; l_bn++ ) {
-    /* prep the GPRs for the storage accesses */
-    unsigned int l_n_ops = i_m_blocking_full;
-    if( i_remainder_size > 0 ) {
-      l_n_ops++;
-    }
-    for( unsigned int l_gp = 0; l_gp < l_n_ops; l_gp++ ) {
-      libxsmm_ppc64le_instr_3( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_ADDI,
-                               i_gpr_scratch[2 + l_gp],
-                               i_gpr_scratch[0],
-                               16*l_gp );
-    }
+  unsigned int l_weight[] = {0, 1, 0, 1, 2};
+  unsigned int l_nweight = (unsigned int)(sizeof(l_weight)/sizeof(l_weight[0]));
 
-    if( l_bn != i_n_blocking - 1 ) {
-      libxsmm_ppc64le_instr_3( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_ADDI,
-                               i_gpr_scratch[0],
-                               i_gpr_scratch[0],
-                               i_stride );
-    }
+  unsigned int l_blocking[] = {0, 0, 0};
+  libxsmm_generator_gemm_ppc64le_blocking_iter( l_reg_max, l_vector_len, l_comp_bytes, l_dims, l_inc, l_weight, l_nweight, l_blocking, l_reg_func );
 
-    /* 128bit loads/stores */
-    for( unsigned int l_bm = 0; l_bm < i_m_blocking_full; l_bm++ ) {
-      libxsmm_ppc64le_instr_4( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_STXVW4X,
-                               l_vsr,
-                               0,
-                               i_gpr_scratch[2 + l_bm],
-                               (0x0020 & l_vsr) >> 5 );
-      l_vsr++;
-    }
+  io_blocking->block_m = l_blocking[0];
+  io_blocking->block_n = l_blocking[1];
+  io_blocking->block_k = l_blocking[2];
+}
 
-    /* remainder load/store (if required) */
-    if( i_remainder_size > 0 ) {
-      /* reverse byte-order before storing for LE */
-      libxsmm_ppc64le_instr_4( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_XXBRW,
-                               l_vsr,
-                               l_vsr,
-                               (0x0020 & l_vsr) >> 5,
-                               (0x0020 & l_vsr) >> 5 );
 
-      libxsmm_ppc64le_instr_4( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_STXVLL,
-                               l_vsr,
-                               i_gpr_scratch[2 + i_m_blocking_full],
-                               i_gpr_scratch[1],
-                               (0x0020 & l_vsr) >> 5 );
-      l_vsr++;
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code        *io_generated_code,
+                                                    const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                                    libxsmm_ppc64le_blocking      *io_blocking ) {
+  unsigned int l_v_bytes = LIBXSMM_PPC64LE_VSR_WIDTH / 8;
+  libxsmm_ppc64le_reg_func l_reg_func = NULL;
+
+  io_blocking->vector_len_a = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_b = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_c = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->comp_bytes = libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_comp = l_v_bytes / io_blocking->comp_bytes;
+
+  libxsmm_generator_gemm_ppc64le_create_blocking( io_generated_code, i_xgemm_desc, io_blocking );
+  io_blocking->n_block_m_full = i_xgemm_desc->m / io_blocking->block_m;
+  io_blocking->n_block_n_full = i_xgemm_desc->n / io_blocking->block_n;
+  io_blocking->n_block_k_full = i_xgemm_desc->k / io_blocking->block_k;
+
+  switch ( io_generated_code->arch ) {
+    case LIBXSMM_PPC64LE_VSX: {
+      l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_vsx;
+
+      io_blocking->reg_lda = (io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+      io_blocking->reg_ldb = io_blocking->block_k;
+      io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+    } break;
+    case LIBXSMM_PPC64LE_MMA: {
+      l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_vsx;
+
+      io_blocking->reg_lda = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+      io_blocking->reg_ldb = io_blocking->block_k;
+      io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+    } break;
+    default: {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
     }
   }
 
-  return l_vsr - i_vsr_first;
+  unsigned int l_blocking[] = { io_blocking->block_m, io_blocking->block_n, io_blocking->block_k };
+  unsigned int l_reg[3];
+  l_reg_func( io_blocking->vector_len_comp, l_blocking, l_reg );
+  io_blocking->n_reg_a = l_reg[0];
+  io_blocking->n_reg_b = l_reg[1];
+  io_blocking->n_reg_c = l_reg[2];
+
+  unsigned int l_n_reg = libxsmm_generator_gemm_ppc64le_n_reg( io_blocking->vector_len_comp, l_blocking, l_reg_func );
+  if ( l_n_reg > LIBXSMM_PPC64LE_VSR_NMAX ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
 }
 
 
@@ -492,7 +487,6 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code        *i
                                        l_a,
                                        i_b,
                                        l_c );
-
     io_blocking->block_m = l_block_m;
   }
 
@@ -531,6 +525,8 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code        *i
                             ( i_xgemm_desc->n % io_blocking->block_n ) == 0 ) ? 1 : 0;
 
   /* Allocate C accumaltors early as contiguous VSR are needed */
+  unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
+  io_blocking->n_acc_c = io_blocking->n_reg_c / l_acc_vec_len;
   unsigned int l_c_acc[io_blocking->n_acc_c];
   for ( int l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
     l_c_acc[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC );
@@ -652,99 +648,4 @@ void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_ge
 
   l_generator_kernel( io_generated_code, i_xgemm_desc, &l_blocking, &l_reg_tracker );
   return;
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code        *io_generated_code,
-                                                    const libxsmm_gemm_descriptor *i_xgemm_desc,
-                                                    libxsmm_ppc64le_blocking      *io_blocking ) {
-
-  unsigned int l_v_bytes = LIBXSMM_PPC64LE_VSR_WIDTH / 8;
-
-  io_blocking->vector_len_a = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->vector_len_b = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->vector_len_c = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->comp_bytes = libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->vector_len_comp = l_v_bytes / io_blocking->comp_bytes;
-
-  if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
-    io_blocking->block_m = ( 64 / io_blocking->comp_bytes < i_xgemm_desc->m ) ?
-      64 / io_blocking->comp_bytes :
-      io_blocking->vector_len_comp*( ( i_xgemm_desc->m + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
-    io_blocking->block_n = ( 16 / io_blocking->comp_bytes < i_xgemm_desc->n ) ?
-      16 / io_blocking->comp_bytes :
-      io_blocking->vector_len_comp*( ( i_xgemm_desc->n + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
-    io_blocking->block_k = ( 16 / io_blocking->comp_bytes < i_xgemm_desc->k ) ?
-      16 / io_blocking->comp_bytes :
-      io_blocking->vector_len_comp*( ( i_xgemm_desc->k + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
-
-    io_blocking->n_block_m_full = i_xgemm_desc->m / io_blocking->block_m;
-    io_blocking->n_block_n_full = i_xgemm_desc->n / io_blocking->block_n;
-    io_blocking->n_block_k_full = i_xgemm_desc->k / io_blocking->block_k;
-
-    switch ( LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) ) {
-      case LIBXSMM_DATATYPE_F32:
-      case LIBXSMM_DATATYPE_F64: {
-        io_blocking->reg_lda = (io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
-        io_blocking->reg_ldb = io_blocking->block_k;
-        io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
-
-        io_blocking->n_reg_a = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_k;
-        io_blocking->n_reg_b = io_blocking->block_n*io_blocking->block_k;
-        io_blocking->n_reg_c = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_n;
-      } break;
-      default: {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-        return;
-      }
-    }
-  } else if ( io_generated_code->arch == LIBXSMM_PPC64LE_MMA ) {
-    unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
-
-    io_blocking->block_m = ( 64 / io_blocking->comp_bytes < i_xgemm_desc->m ) ?
-      64 / io_blocking->comp_bytes :
-      io_blocking->vector_len_comp*( ( i_xgemm_desc->m + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
-
-    io_blocking->block_n = ( 32 / io_blocking->comp_bytes < i_xgemm_desc->n ) ?
-      32 / io_blocking->comp_bytes :
-      io_blocking->vector_len_comp*( ( i_xgemm_desc->n + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
-
-    io_blocking->block_k = ( 16 / io_blocking->comp_bytes < i_xgemm_desc->k ) ?
-      16 / io_blocking->comp_bytes :
-      io_blocking->vector_len_comp*( ( i_xgemm_desc->k + io_blocking->vector_len_comp - 1) / io_blocking->vector_len_comp );
-
-    switch ( LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) ) {
-      case LIBXSMM_DATATYPE_F32:
-      case LIBXSMM_DATATYPE_F64: {
-        io_blocking->n_reg_a = ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_k;
-        io_blocking->n_reg_b = ( ( io_blocking->block_n + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp )*io_blocking->block_k;
-        io_blocking->n_acc_c = ( ( ( io_blocking->block_n + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp ) *
-                                 ( ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp ) );
-        io_blocking->n_reg_c = io_blocking->n_acc_c*l_acc_vec_len;
-
-        io_blocking->reg_lda = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
-        io_blocking->reg_ldb = io_blocking->block_k;
-        io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
-      } break;
-      default: {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-        return;
-      }
-    }
-
-    io_blocking->n_block_m_full = i_xgemm_desc->m / io_blocking->block_m;
-    io_blocking->n_block_n_full = i_xgemm_desc->n / io_blocking->block_n;
-    io_blocking->n_block_k_full = i_xgemm_desc->k / io_blocking->block_k;
-
-  } else {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
-  unsigned int l_n_reg = io_blocking->n_reg_a + io_blocking->n_reg_b + io_blocking->n_reg_c;
-  if ( l_n_reg > LIBXSMM_PPC64LE_VSR_NMAX ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-    exit(-1);
-  }
 }
