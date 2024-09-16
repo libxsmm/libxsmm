@@ -275,16 +275,16 @@ void libxsmm_generator_gemm_mma_mk_load_acc( libxsmm_generated_code *io_generate
     case LIBXSMM_DATATYPE_F32: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVW4X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRW;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F64: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVD2X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRD;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F16:
     case LIBXSMM_DATATYPE_BF16: {
       l_vec_ld = LIBXSMM_PPC64LE_INSTR_LXVH8X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRH;
-    }  break;
+    } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
@@ -426,16 +426,16 @@ void libxsmm_generator_gemm_mma_mk_store_acc( libxsmm_generated_code *io_generat
     case LIBXSMM_DATATYPE_F32: {
       l_vec_st = LIBXSMM_PPC64LE_INSTR_STXVW4X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRW;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F64: {
       l_vec_st = LIBXSMM_PPC64LE_INSTR_STXVD2X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRD;
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F16:
     case LIBXSMM_DATATYPE_BF16: {
       l_vec_st = LIBXSMM_PPC64LE_INSTR_STXVH8X;
       l_vec_br = LIBXSMM_PPC64LE_INSTR_XXBRH;
-    }  break;
+    } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
@@ -507,15 +507,15 @@ void libxsmm_generator_mma_block_ger( libxsmm_generated_code *io_generated_code,
   switch ( i_comptype ) {
     case LIBXSMM_DATATYPE_F32: {
       libxsmm_generator_mma_block_ger_f32( io_generated_code, i_m, i_n, i_k, i_a, i_lda, i_b, i_ldb, i_beta, io_c, i_ldc );
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F64: {
       libxsmm_generator_mma_block_ger_f64( io_generated_code, i_m, i_n, i_k, i_a, i_lda, i_b, i_ldb, i_beta, io_c, i_ldc );
-    }  break;
+    } break;
     case LIBXSMM_DATATYPE_F16:
     case LIBXSMM_DATATYPE_BF16: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       /*libxsmm_generator_mma_block_ger_xf16( io_generated_code, i_comptype, i_m, i_n, i_k, i_a, i_lda, i_B, i_ldb, i_beta, io_c, i_ldc );*/
-    }  break;
+    } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
