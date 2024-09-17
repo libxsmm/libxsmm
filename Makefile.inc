@@ -1582,9 +1582,11 @@ else # GCC assumed
           OMPFLAG_FORCE := -fopenmp
           OMPRT := omp
         endif
-      else # Darwin
+      else ifneq (0,$(CLANG)) # Darwin
         OMPFLAG_FORCE := -Xpreprocessor -fopenmp
         OMPRT := omp
+      else # Darwin/GCC
+        OMPFLAG_FORCE := -fopenmp
       endif
     endif
   endif
@@ -2124,7 +2126,7 @@ endif
 ifneq (,$(OMPFLAG_FORCE))
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
     printf "$(CHAR_HASH)if defined(_OPENMP)\n$(CHAR_HASH) include <omp.h>\nint main() { return 0; }\n$(CHAR_HASH)endif\n" >$${INFILE} && \
-    if [ "$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
+    if [ "$$($(CC) $(SLDFLAGS) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
   OMPFLAG := $(OMPFLAG_FORCE)
 endif
