@@ -1510,7 +1510,7 @@ else ifneq (Darwin,$(UNAME))
     ALIAS_PRIVLIBS := $(LIBDL) $(LIBM) $(LIBC)
   endif
 endif
-ifneq (Darwin,$(UNAME))
+ifneq (,$(OMPFLAG_FORCE))
   ALIAS_PRIVLIBS_EXT := -fopenmp
 endif
 
