@@ -24,7 +24,7 @@
      (defined(LIBXSMM_PLATFORM_X86))
 #   include <mkl.h>
 # else
-LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
+LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
 # endif
 # define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
 #endif

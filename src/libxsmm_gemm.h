@@ -30,8 +30,14 @@
 # if defined(sgemm_)
 #   undef sgemm_
 # endif
+# if defined(sgemm)
+#   undef sgemm
+# endif
 # if defined(dgemm_)
 #   undef dgemm_
+# endif
+# if defined(dgemm)
+#   undef dgemm
 # endif
 #endif
 
@@ -58,7 +64,7 @@
   } while(0)
 #else
 # define LIBXSMM_BLAS_WRAPPER_STATIC1(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) do { \
-    ORIGINAL = (LIBXSMM_BLAS_FNTYPE(TYPE, KIND))LIBXSMM_BLAS_SYMBOL(TYPE, KIND); \
+    ORIGINAL = (LIBXSMM_BLAS_FNTYPE(TYPE, KIND))LIBXSMM_BLAS_FSYMBOL(TYPE, KIND); \
   } while(0)
 #endif
 #define LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL) \
@@ -80,7 +86,7 @@
     } \
     if (NULL == (ORIGINAL)) { \
       libxsmm_blas_wrapper_dynamic_.pfin = dlsym(0 != (EXTLIB) ? LIBXSMM_RTLD_NEXT : RTLD_DEFAULT, \
-        LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
+        LIBXSMM_STRINGIFY(LIBXSMM_BLAS_FSYMBOL(TYPE, KIND))); \
       if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
         ORIGINAL = libxsmm_blas_wrapper_dynamic_.pfout; /* LIBXSMM_ATOMIC_STORE */ \
       } \
@@ -222,18 +228,18 @@ LIBXSMM_API void __real_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, dou
 LIBXSMM_API void __real_sgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 #endif
 
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemm_batch_strided);
-LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_BLAS_CONST*, *, double, gemm_batch_strided);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm_batch_strided);
-LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_BLAS_CONST*, *, float, gemm_batch_strided);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_BLAS_CONST*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_BLAS_CONST*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemm);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemv);
-LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, double, gemm_batch_strided);
+LIBXSMM_BLAS_SYMBOL_CDECL_FORCE(LIBXSMM_BLAS_CONST*, *, double, gemm_batch_strided);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, float, gemm_batch_strided);
+LIBXSMM_BLAS_SYMBOL_CDECL_FORCE(LIBXSMM_BLAS_CONST*, *, float, gemm_batch_strided);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL_FORCE(LIBXSMM_BLAS_CONST*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL_FORCE(LIBXSMM_BLAS_CONST*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, double, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, float, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, double, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL_FORCE(LIBXSMM_BLAS_CONST*, *, float, gemv);
 
 LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_blasint index_base,
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],

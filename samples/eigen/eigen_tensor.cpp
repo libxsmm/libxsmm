@@ -51,7 +51,7 @@
 
 #if !defined(CHECK) && (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double))
 # if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
+LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
 # endif
 # define CHECK
 #endif

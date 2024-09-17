@@ -18,14 +18,14 @@
 # define CHECK_FPE
 #endif
 #if !defined(GEMM_GOLD)
-# define GEMM_GOLD LIBXSMM_GEMM_SYMBOL
+# define GEMM_GOLD LIBXSMM_GEMM_SYMBOL(REALTYPE)
 #endif
 #if !defined(GEMM)
-# define GEMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
+# define GEMM LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REALTYPE, gemm))
 #endif
 #if (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double)) \
   && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
+LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
 #endif
 
 
@@ -116,7 +116,7 @@ int main(void)
         const libxsmm_blasint ti = LIBXSMM_MIN(mi, ni);
         mi = ni = ki = LIBXSMM_MIN(ti, ki);
       }
-      GEMM(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
+      GEMM(transa + i, transb + i, &mi, &ni, &ki,
         alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       {
         const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | \
@@ -152,7 +152,7 @@ int main(void)
       LIBXSMM_ASSERT(EXIT_SUCCESS == result);
       if (0 == no_bypass || NULL != kernel.ptr_const) {
         libxsmm_matdiff_info diff_test;
-        GEMM_GOLD(REALTYPE)(transa + i, transb + i, &mi, &ni, &ki,
+        GEMM_GOLD(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, gold, ldc + test);
         result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(REALTYPE), mi, ni, gold, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result && NULL != kernel.ptr_const) {
