@@ -62,7 +62,14 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if (signed_sat > 0) {
-        char_data_gold[(i*ldo)+j] = (char) ((LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
+        float tmp = LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+        if (tmp < -128) {
+          tmp = -128.0;
+        }
+        if (tmp > 127) {
+          tmp = 127.0;
+        }
+        char_data_gold[(i*ldo)+j] = (char) tmp;
       } else {
         char_data_gold[(i*ldo)+j] = (char) (0x000000ff & ((int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
       }
@@ -216,7 +223,14 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if (signed_sat > 0) {
-        short_data_gold[(i*ldo)+j] = (short) ((LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
+        float tmp = LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+        if (tmp < -32768) {
+          tmp = -32768.0;
+        }
+        if (tmp > 32767) {
+          tmp = 32767.0;
+        }
+        short_data_gold[(i*ldo)+j] = (short) tmp;
       } else {
         short_data_gold[(i*ldo)+j] = (short) ( 0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
       }
