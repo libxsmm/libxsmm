@@ -48,6 +48,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 #define LIBXSMM_PPC64LE_VR_NMAX  32
 #define LIBXSMM_PPC64LE_VSR_NMAX 64
 #define LIBXSMM_PPC64LE_ACC_NMAX 8
+#define LIBXSMM_PPC64LE_VSR_SCRATCH 6
 
 /* number of volatile registers */
 /* From "64-Bit ELF V2 ABI Specification: Power Architecture"
