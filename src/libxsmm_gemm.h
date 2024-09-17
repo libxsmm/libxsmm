@@ -20,9 +20,8 @@
 #if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
-#if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD) && \
-    (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
-    (defined(LIBXSMM_BLAS_WRAP_DYNAMIC) || !defined(NDEBUG) || defined(_WIN32)) /* debug */
+#if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && \
+    (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP))
 # define LIBXSMM_WRAP LIBXSMM_CONFIG_WRAP
 #endif
 
