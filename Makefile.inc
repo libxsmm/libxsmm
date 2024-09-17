@@ -1612,12 +1612,12 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT := gomp
   endif
-  OMPLIBFILE := $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
+  OMPLIBFILE := $(call libpath,$(LD),$(LDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
   ifeq (0,$(CRAY))
   ifeq (,$(OMPLIBFILE))
   ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" >$${INFILE} && \
-      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
+      $(LD) $(LDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
     CLDFLAGS += $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))
     OMPLIBFILE := -l$(OMPRT)
@@ -2116,7 +2116,7 @@ ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
 endif
 GLIBC ?= 0
 
-OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
+OMPLIBFILE ?= $(call libpath,$(LD),$(LDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB ?= $(call abslib,$(OMPLIBFILE))
 else ifneq (0,$(INTEL))
@@ -2126,9 +2126,10 @@ endif
 ifneq (,$(OMPFLAG_FORCE))
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
     printf "$(CHAR_HASH)if defined(_OPENMP)\n$(CHAR_HASH) include <omp.h>\nint main() { return 0; }\n$(CHAR_HASH)endif\n" >$${INFILE} && \
-    if [ "$$($(CC) $(SLDFLAGS) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
+    if [ "$$($(CC) $(IFLAGS) $(LDFLAGS) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
   OMPFLAG := $(OMPFLAG_FORCE)
+  OMPLIB ?= $(OMPFLAG)
 endif
 endif
 ifeq (0,$(OMP))
