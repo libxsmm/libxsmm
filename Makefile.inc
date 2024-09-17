@@ -1008,29 +1008,6 @@ ifneq (0,$(DYNAMIC))
   endif
 endif
 
-LIBDEP := $(LIBNAME).$(LIBEXT)
-MAINLIB := $(call abslib,$(LIBDEP))
-
-EXTDEP := $(LIBDEP) $(LIBNAME)ext.$(LIBEXT)
-EXTLIB := $(call abslib,$(LIBNAME)ext.$(LIBEXT)) $(MAINLIB)
-
-FORTDEP := $(EXTDEP) $(LIBNAME)f.$(LIBEXT)
-FORTLIB := $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(EXTLIB)
-
-# provides libxsmmnoblas to satisfy BLAS symbols
-NOBLASDEP := $(LIBNAME)noblas.$(LIBEXT)
-NOBLASLIB := $(call abslib,$(NOBLASDEP))
-
-ifeq (0,$(BLAS))
-  FORTDEP := $(FORTDEP) $(NOBLASDEP)
-  EXTDEP := $(EXTDEP) $(NOBLASDEP)
-  LIBDEP := $(LIBDEP) $(NOBLASDEP)
-
-  FORTLIB := $(FORTLIB) $(NOBLASLIB)
-  EXTLIB := $(EXTLIB) $(NOBLASLIB)
-  MAINLIB := $(MAINLIB) $(NOBLASLIB)
-endif
-
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
     solink = -o "$(basename $1).$(DLIBEXT).$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$(basename $1))).$(DLIBEXT).$5)
@@ -2136,10 +2113,28 @@ ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   OMPLIB ?= $(OMPFLAG)
 endif
 endif
-ifeq (0,$(OMP))
-  EXTLIB += $(OMPLIB)
-endif
 OMPFLAG ?= $(NULL)
+
+# LIBXSMM link dependencies and libraries
+LIBDEP := $(LIBNAME).$(LIBEXT)
+MAINLIB := $(call abslib,$(LIBDEP))
+# LIBXSMM/EXT link dependencies and libraries
+EXTDEP := $(LIBDEP) $(LIBNAME)ext.$(LIBEXT)
+EXTLIB := $(call abslib,$(LIBNAME)ext.$(LIBEXT)) $(MAINLIB) $(OMPLIB)
+# LIBXSMM/F link dependencies and libraries
+FORTDEP := $(EXTDEP) $(LIBNAME)f.$(LIBEXT)
+FORTLIB := $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(EXTLIB)
+# LIBXSMM/NOBLAS dependencies and libraries
+NOBLASDEP := $(LIBNAME)noblas.$(LIBEXT)
+NOBLASLIB := $(call abslib,$(NOBLASDEP))
+ifeq (0,$(BLAS))
+  FORTDEP := $(FORTDEP) $(NOBLASDEP)
+  EXTDEP := $(EXTDEP) $(NOBLASDEP)
+  LIBDEP := $(LIBDEP) $(NOBLASDEP)
+  FORTLIB := $(FORTLIB) $(NOBLASLIB)
+  EXTLIB := $(EXTLIB) $(NOBLASLIB)
+  MAINLIB := $(MAINLIB) $(NOBLASLIB)
+endif
 
 # some stand-alone libomp versions can cause warnings
 ifneq (,$(filter 1 2,$(PEDANTIC)))
