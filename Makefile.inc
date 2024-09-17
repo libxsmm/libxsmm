@@ -1590,6 +1590,9 @@ else # GCC assumed
       endif
     endif
   endif
+  ifeq (,$(strip $(OMPRT))) # fallback
+    OMPRT := gomp
+  endif
   ifeq (,$(OMPFLAG_FORCE))
     ifneq (,$(filter environment% override command%,$(origin OMP)))
       OMPFLAG_FORCE := -fopenmp
@@ -1598,19 +1601,20 @@ else # GCC assumed
     # avoid include path at begin of compile line
     OMPFLAG_FORCE += -I/usr/local/include
   else ifneq (0,$(CLANG))
-    TESTRESB := $(call qapath,$(call qdir,$(call which,$(CC)))/../compiler)
-    TESTRESB := $(wildcard $(TESTRESB)/include/omp.h)
-    ifneq (,$(TESTRESB))
-      OMPFLAG_FORCE += -I$(call qdir,$(TESTRESB))
+    ifneq (Darwin,$(UNAME))
+      COMPLIBDIR := $(call qapath,$(call qdir,$(call which,$(CC)))/../compiler)
+    else
+      COMPLIBDIR := $(shell brew --prefix 2>/dev/null)
+    endif
+    ifneq (,$(wildcard $(COMPLIBDIR)/include/omp.h))
+      OMPFLAG_FORCE += -I$(COMPLIBDIR)/include
+      OMPLIB ?= -L$(COMPLIBDIR)/lib -l$(OMPRT)
     endif
   endif
   # account for missing TLS/OMP
   ifeq (,$(OMPFLAG_FORCE))
     THREADS ?= 0
     OMP := 0
-  endif
-  ifeq (,$(strip $(OMPRT))) # fallback
-    OMPRT := gomp
   endif
   OMPLIBFILE := $(call libpath,$(LD),$(LDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
   ifeq (0,$(CRAY))
@@ -1650,16 +1654,16 @@ else # GCC assumed
         FLDFLAGS := -fopenmp $(FLDFLAGS)
         FCFLAGS += -fopenmp
       else # mixed toolchain
-        TESTRESC := $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
-        ifeq (,$(TESTRESC))
-          TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
+        FOMPLIBDIR := $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
+        ifeq (,$(FOMPLIBDIR))
+          FOMPLIBDIR := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
         endif
-        ifneq (,$(TESTRESC))
-          FLDFLAGS += $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) $(TESTRESC)
+        ifneq (,$(FOMPLIBDIR))
+          FLDFLAGS += $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) $(FOMPLIBDIR)
         else
-          TESTRESC := $(call ftest,$(FLD),$(NULL),-fopenmp)
-          ifneq (,$(TESTRESC))
-            FLDFLAGS += $(TESTRESC)
+          FOMPLIBDIR := $(call ftest,$(FLD),$(NULL),-fopenmp)
+          ifneq (,$(FOMPLIBDIR))
+            FLDFLAGS += $(FOMPLIBDIR)
           else # last try
             FLDFLAGS := $(OMPFLAG_FORCE) $(FLDFLAGS)
           endif
@@ -2021,17 +2025,17 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
   else # macOS
-    SDKROOT := $(xcrun --show-sdk-path 2>/dev/null)
-    ifeq (,$(wildcard $(SDKROOT)))
-      SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+    MACOSSDKDIR := $(shell xcrun --show-sdk-path 2>/dev/null)
+    ifeq (,$(wildcard $(MACOSSDKDIR)))
+      MACOSSDKDIR := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
     endif
-    ifneq (,$(wildcard $(SDKROOT)))
+    ifneq (,$(wildcard $(MACOSSDKDIR)))
       ifeq (0,$(CLANG))
-        IFLAGS += -I$(SDKROOT)/usr/include
-        LDFLAGS += -L$(SDKROOT)/usr/lib
+        IFLAGS += -I$(MACOSSDKDIR)/usr/include
+        LDFLAGS += -L$(MACOSSDKDIR)/usr/lib
       endif
       ifneq (0,$(FORTRAN))
-        FLDFLAGS += -L$(SDKROOT)/usr/lib
+        FLDFLAGS += -L$(MACOSSDKDIR)/usr/lib
       endif
     else  # SDK path not found
       LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
@@ -2120,7 +2124,7 @@ OMPLIBFILE ?= $(call libpath,$(LD),$(LDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(L
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB ?= $(call abslib,$(OMPLIBFILE))
 else ifneq (0,$(INTEL))
-  OMPLIB ?= $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT))
+  OMPLIB ?= $(call ldclib,$(LD),$(LDFLAGS),$(OMPRT))
 endif
 
 ifneq (,$(OMPFLAG_FORCE))
