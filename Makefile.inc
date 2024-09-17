@@ -1422,6 +1422,9 @@ else # GCC assumed
                  -Wconversion -Wintrinsics-std \
                  -Wcharacter-truncation
     ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION_NUM)))"))
+      ifneq (0,$(shell echo "$$((70200<=$(CC_VERSION_NUM)))"))
+        CPEDANTIC += -Wno-expansion-to-defined
+      endif
       CPEDANTIC += -Wno-overlength-strings
       ifneq (0,$(shell echo "$$((40600<=$(CC_VERSION_NUM)))"))
         # can yield false positives with older GCC
