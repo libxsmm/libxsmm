@@ -272,6 +272,9 @@ VERSION_RELEASED ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py -1 $(VERSI
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
+# Link shared library with correct version stamp
+solink_version = $(call solink,$1,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API))
+
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)))
   TGT ?= 1
@@ -808,8 +811,7 @@ else
 endif
 ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
 $(OUTDIR)/libxsmmgen.$(DLIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
-	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmgen.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
+	$(LIB_SOLD) $(call solink_version,$(OUTDIR)/libxsmmgen.$(DLIBEXT)) $(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmmgen.$(DLIBEXT)
 endif
@@ -817,8 +819,7 @@ endif
 .PHONY: generator
 generator: $(BINDIR)/libxsmm_gemm_generator
 $(BINDIR)/libxsmm_gemm_generator: $(BINDIR)/.make $(OBJFILES_GEN_GEMM_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
-	$(LD) -o $@ $(OBJFILES_GEN_GEMM_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) \
-		$(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
+	$(LD) -o $@ $(OBJFILES_GEN_GEMM_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 
 ifneq (,$(strip $(LIBJITPROFILING)))
 $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
@@ -837,8 +838,7 @@ else
 endif
 ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
 $(OUTDIR)/libxsmm.$(DLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
-	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmm.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(call tailwords,$^) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
+	$(LIB_SOLD) $(call solink_version,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(call tailwords,$^) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmm.$(DLIBEXT)
 endif
@@ -855,15 +855,15 @@ endif
 ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
 $(OUTDIR)/libxsmmf.$(DLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/libxsmmext.$(DLIBEXT)
 ifneq (Darwin,$(UNAME))
-	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) $(FCMTFLAGS) $(call solink_version,$(OUTDIR)/libxsmmf.$(DLIBEXT)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
 		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else ifneq (0,$(LNKSOFT)) # macOS
-	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) $(FCMTFLAGS) $(call solink_version,$(OUTDIR)/libxsmmf.$(DLIBEXT)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
 		$(call cleanld,$(LDFLAGS) $(FLDFLAGS)) $(call linkopt,-U,_libxsmm_gemm_batch_omp_)
 else # macOS
-	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) $(FCMTFLAGS) $(call solink_version,$(OUTDIR)/libxsmmf.$(DLIBEXT)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmmext.$(ILIBEXT)) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
 		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 endif
@@ -884,8 +884,8 @@ else
 endif
 ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
 $(OUTDIR)/libxsmmext.$(DLIBEXT): $(OUTDIR)/libxsmm.$(DLIBEXT) $(OBJFILES_EXD)
-	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmext.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(OBJFILES_EXD) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS) $(EXTLDFLAGS))
+	$(LIB_SOLD) $(call solink_version,$(OUTDIR)/libxsmmext.$(DLIBEXT)) $(OBJFILES_EXD) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
+		$(call cleanld,$(LDFLAGS) $(CLDFLAGS) $(EXTLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmmext.$(DLIBEXT)
 endif
@@ -900,8 +900,7 @@ else
 endif
 ifeq (0,$(filter-out 1 2,$(BUILD))$(ANALYZE))
 $(OUTDIR)/libxsmmnoblas.$(DLIBEXT): $(NOBLAS_OBJ)
-	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmnoblas.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_OBJ) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
+	$(LIB_SOLD) $(call solink_version,$(OUTDIR)/libxsmmnoblas.$(DLIBEXT)) $(NOBLAS_OBJ) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)
 endif
