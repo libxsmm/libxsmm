@@ -100,7 +100,7 @@ void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code     
                                                      const libxsmm_gemm_descriptor *i_xgemm_desc,
                                                      libxsmm_ppc64le_blocking      *io_blocking ) {
   unsigned int l_dims[] = {i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k};
-  unsigned int l_reg_max = LIBXSMM_PPC64LE_VSR_NMAX - 4;
+  unsigned int l_reg_max = LIBXSMM_PPC64LE_VSR_NMAX - LIBXSMM_PPC64LE_VSR_SCRATCH;
   unsigned int l_vector_len = io_blocking->vector_len_comp;
   unsigned int l_comp_bytes = io_blocking->comp_bytes;
   libxsmm_ppc64le_reg_func l_reg_func = NULL;
@@ -160,7 +160,7 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
       io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
     } break;
     case LIBXSMM_PPC64LE_MMA: {
-      l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_vsx;
+      l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_mma;
 
       io_blocking->reg_lda = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
       io_blocking->reg_ldb = io_blocking->block_k;
@@ -180,6 +180,7 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
   io_blocking->n_reg_c = l_reg[2];
 
   unsigned int l_n_reg = libxsmm_generator_gemm_ppc64le_n_reg( io_blocking->vector_len_comp, l_blocking, l_reg_func );
+
   if ( l_n_reg > LIBXSMM_PPC64LE_VSR_NMAX ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
