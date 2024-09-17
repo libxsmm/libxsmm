@@ -40,7 +40,7 @@ endif
 #MAKEINC := $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 MAKEINC := $(patsubst %/,%,$(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
-WHICH := $(shell which which 2>/dev/null || echo "command -v")
+WHICH := $(shell which which >/dev/null 2>&1 && echo "which" || echo "command -v")
 which = $(shell $(WHICH) 2>/dev/null $(firstword $1))
 
 # ensure a number or instead return zero (by default) or 2nd argument (if given)
