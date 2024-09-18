@@ -304,6 +304,20 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
     }
   }
 
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT) &&
+       ((io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) ||
+        (LIBXSMM_DATATYPE_I8 != libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ||
+        (LIBXSMM_DATATYPE_F32 != libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)))) {
+    is_valid_arch_prec = 0;
+  }
+
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DEQUANT) &&
+       ((io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) ||
+        (LIBXSMM_DATATYPE_I8 != libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ||
+        (LIBXSMM_DATATYPE_F32 != libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)))) {
+    is_valid_arch_prec = 0;
+  }
+
   return is_valid_arch_prec;
 }
 

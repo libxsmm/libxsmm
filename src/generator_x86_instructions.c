@@ -501,6 +501,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPMOVDW:
     case LIBXSMM_X86_INSTR_VPMOVSDB:
     case LIBXSMM_X86_INSTR_VPMOVSWB:
+    case LIBXSMM_X86_INSTR_VPMOVSDW:
     case LIBXSMM_X86_INSTR_VPMOVUSDB:
     case LIBXSMM_X86_INSTR_VPMOVUSDW:
     case LIBXSMM_X86_INSTR_VPMOVUSWB:
