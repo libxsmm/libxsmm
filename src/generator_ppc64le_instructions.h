@@ -485,33 +485,39 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_INSTR_NOP 0x60000000 /* NOP */
 #define LIBXSMM_PPC64LE_INSTR_BLR 0x4e800020 /* Branch Unconditionally to LR */
 
+
 #define LIBXSMM_PPC64LE_32FMASK 0xfc1f07ff /* 32-bit opcode form index mask */
 #define LIBXSMM_PPC64LE_64FMASK 0xfff00000ffffffffUL /* 64-bit opcode form index mask */
 
-#define LIBXSMM_PPC64LE_FORM_VX_VRB 0x00000800
-#define LIBXSMM_PPC64LE_FORM_X_4155 0x00001000
-#define LIBXSMM_PPC64LE_FORM_DS 0x00001800
-#define LIBXSMM_PPC64LE_FORM_XX4 0x00002000
-#define LIBXSMM_PPC64LE_FORM_D 0x00002800
-#define LIBXSMM_PPC64LE_FORM_X_555 0x00003000
-#define LIBXSMM_PPC64LE_FORM_XX3 0x00003800
-#define LIBXSMM_PPC64LE_FORM_XX2 0x00004000
-#define LIBXSMM_PPC64LE_FORM_XX2_2 0x00004800
-#define LIBXSMM_PPC64LE_FORM_B 0x00005000
-#define LIBXSMM_PPC64LE_FORM_X_581 0x00005800
-#define LIBXSMM_PPC64LE_FORM_X 0x00006000
-#define LIBXSMM_PPC64LE_FORM_XX2_4 0x00006800
-#define LIBXSMM_PPC64LE_FORM_X_3 0x00007000
-#define LIBXSMM_PPC64LE_FORM_D_BF 0x00007800
-#define LIBXSMM_PPC64LE_FORM_XX2_30 0x00008000
-#define LIBXSMM_PPC64LE_FORM_XX3_3 0x00008800
-#define LIBXSMM_PPC64LE_FORM_X_33 0x00009000
-#define LIBXSMM_PPC64LE_FORM_XX3_6 0x00009800
-#define LIBXSMM_PPC64LE_FORM_MD 0x0000a000
-#define LIBXSMM_PPC64LE_FORM_XX2_3 0x0000a800
-#define LIBXSMM_PPC64LE_FORM_VX_VRT 0x0000b000
-#define LIBXSMM_PPC64LE_FORM_DQ_X 0x0000b800
-#define LIBXSMM_PPC64LE_FORM_XX3_0 0x0000c000
+
+#define LIBXSMM_PPC64LE_FORM_VX_VRT 0x00000800
+#define LIBXSMM_PPC64LE_FORM_XX3 0x00001000
+#define LIBXSMM_PPC64LE_FORM_X 0x00001800
+#define LIBXSMM_PPC64LE_FORM_XX3_6 0x00002000
+#define LIBXSMM_PPC64LE_FORM_XX2_3 0x00002800
+#define LIBXSMM_PPC64LE_FORM_XL_2 0x00003000
+#define LIBXSMM_PPC64LE_FORM_MD 0x00003800
+#define LIBXSMM_PPC64LE_FORM_XX3_3 0x00004000
+#define LIBXSMM_PPC64LE_FORM_D_BF 0x00004800
+#define LIBXSMM_PPC64LE_FORM_XX2_4 0x00005000
+#define LIBXSMM_PPC64LE_FORM_XX2_2 0x00005800
+#define LIBXSMM_PPC64LE_FORM_XX2_30 0x00006000
+#define LIBXSMM_PPC64LE_FORM_VX_VRB 0x00006800
+#define LIBXSMM_PPC64LE_FORM_X_33 0x00007000
+#define LIBXSMM_PPC64LE_FORM_D 0x00007800
+#define LIBXSMM_PPC64LE_FORM_DQ_X 0x00008000
+#define LIBXSMM_PPC64LE_FORM_X_581 0x00008800
+#define LIBXSMM_PPC64LE_FORM_X_3 0x00009000
+#define LIBXSMM_PPC64LE_FORM_X_555 0x00009800
+#define LIBXSMM_PPC64LE_FORM_B 0x0000a000
+#define LIBXSMM_PPC64LE_FORM_DS 0x0000a800
+#define LIBXSMM_PPC64LE_FORM_XX2 0x0000b000
+#define LIBXSMM_PPC64LE_FORM_XX3_0 0x0000b800
+#define LIBXSMM_PPC64LE_FORM_XX4 0x0000c000
+#define LIBXSMM_PPC64LE_FORM_X_4155 0x0000c800
+#define LIBXSMM_PPC64LE_FORM_XFX_4 0x0000d000
+#define LIBXSMM_PPC64LE_FORM_XFX_2 0x0000d800
+
 
 #define LIBXSMM_PPC64LE_FORM_MMIRR_XX3_0_1 0x0000000100000000UL
 #define LIBXSMM_PPC64LE_FORM_8LS_D 0x0000000200000000UL
@@ -525,271 +531,276 @@ typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 #define LIBXSMM_PPC64LE_FORM_MLS_D 0x0000000a00000000UL
 
 
-#define LIBXSMM_PPC64LE_INSTR_ADD 0x7c003214 /* Add X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_OR 0x7c003378 /* OR X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_NOR 0x7c0030f8 /* NOR X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_AND 0x7c003038 /* AND X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_NAND 0x7c0033b8 /* NAND X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_BC 0x40005000 /* Branch Conditional B-form */
-#define LIBXSMM_PPC64LE_INSTR_LFD 0xc8002800 /* Load Floating-Point Double D-form */
-#define LIBXSMM_PPC64LE_INSTR_STFD 0xd8002800 /* Store Floating-Point Double D-form */
-#define LIBXSMM_PPC64LE_INSTR_ORI 0x60002800 /* OR Immediate D-form */
-#define LIBXSMM_PPC64LE_INSTR_ADDI 0x38002800 /* Add Immediate D-form */
-#define LIBXSMM_PPC64LE_INSTR_ANDI 0x70002800 /* AND Immediate D-form */
-#define LIBXSMM_PPC64LE_INSTR_LD 0xe8001800 /* Load Doubleword DS-form */
-#define LIBXSMM_PPC64LE_INSTR_CMPI 0x2c007800 /* Compare Immediate D(BF)-form */
-#define LIBXSMM_PPC64LE_INSTR_RLDICR 0x7800a004 /* Rotate Left Doubleword Immediate then Clear Right MD-form */
+#define LIBXSMM_PPC64LE_INSTR_ADD 0x7c009a14 /* Add X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_OR 0x7c009b78 /* OR X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_NOR 0x7c0098f8 /* NOR X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_AND 0x7c009838 /* AND X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_NAND 0x7c009bb8 /* NAND X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_BC 0x4000a000 /* Branch Conditional B-form */
+#define LIBXSMM_PPC64LE_INSTR_LFD 0xc8007800 /* Load Floating-Point Double D-form */
+#define LIBXSMM_PPC64LE_INSTR_STFD 0xd8007800 /* Store Floating-Point Double D-form */
+#define LIBXSMM_PPC64LE_INSTR_ORI 0x60007800 /* OR Immediate D-form */
+#define LIBXSMM_PPC64LE_INSTR_ADDI 0x38007800 /* Add Immediate D-form */
+#define LIBXSMM_PPC64LE_INSTR_ANDI 0x70007800 /* AND Immediate D-form */
+#define LIBXSMM_PPC64LE_INSTR_LD 0xe800a800 /* Load Doubleword DS-form */
+#define LIBXSMM_PPC64LE_INSTR_CMPI 0x2c004800 /* Compare Immediate D(BF)-form */
+#define LIBXSMM_PPC64LE_INSTR_RLDICR 0x78003804 /* Rotate Left Doubleword Immediate then Clear Right MD-form */
+#define LIBXSMM_PPC64LE_INSTR_MFSPR 0x7c00d2a6 /* Move From Special Purpose Register XFX(4)-form */
+#define LIBXSMM_PPC64LE_INSTR_MTSPR 0x7c00d3a6 /* Move To Special Purpose Register XFX(4)-form */
+#define LIBXSMM_PPC64LE_INSTR_MCRF 0x4c003000 /* Move Condition Register Field XL(2)-form */
+#define LIBXSMM_PPC64LE_INSTR_MTCRF 0x7c00d920 /* Move To Condition Register Fields XFX(2)-form */
 
-#define LIBXSMM_PPC64LE_INSTR_XSMAXCDP 0xf0009c00 /* VSX Scalar Maximum Type-C Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMINCDP 0xf0009c40 /* VSX Scalar Minimum Type-C Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMAXDP 0xf0009d00 /* VSX Scalar Maximum Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMINDP 0xf0009d40 /* VSX Scalar Minimum Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCPSGNDP 0xf0009d80 /* VSX Scalar Copy Sign Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMAXSP 0xf0009e00 /* VSX Vector Maximum Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMINSP 0xf0009e40 /* VSX Vector Minimum Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCPSGNSP 0xf0009e80 /* VSX Vector Copy Sign Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVIEXPSP 0xf0009ec0 /* VSX Vector Insert Exponent Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMAXDP 0xf0009f00 /* VSX Vector Maximum Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMINDP 0xf0009f40 /* VSX Vector Minimum Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCPSGNDP 0xf0009f80 /* VSX Vector Copy Sign Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVIEXPDP 0xf0009fc0 /* VSX Vector Insert Exponent Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMADDASP 0xf0009808 /* VSX Scalar Multiply-Add Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMADDMSP 0xf0009848 /* VSX Scalar Multiply-Add Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMSUBASP 0xf0009888 /* VSX Scalar Multiply-Subtract Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMSUBMSP 0xf00098c8 /* VSX Scalar Multiply-Subtract Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMADDADP 0xf0009908 /* VSX Scalar Multiply-Add Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMADDMDP 0xf0009948 /* VSX Scalar Multiply-Add Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMSUBADP 0xf0009988 /* VSX Scalar Multiply-Subtract Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSMSUBMDP 0xf00099c8 /* VSX Scalar Multiply-Subtract Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMADDASP 0xf0003a08 /* VSX Vector Multiply-Add Type-A Single-Precision XX3-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMADDMSP 0xf0009a48 /* VSX Vector Multiply-Add Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMSUBASP 0xf0009a88 /* VSX Vector Multiply-Subtract Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMSUBMSP 0xf0009ac8 /* VSX Vector Multiply-Subtract Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMADDADP 0xf0009b08 /* VSX Vector Multiply-Add Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMADDMDP 0xf0009b48 /* VSX Vector Multiply-Add Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMSUBADP 0xf0009b88 /* VSX Vector Multiply-Subtract Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMSUBMDP 0xf0009bc8 /* VSX Vector Multiply-Subtract Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMADDASP 0xf0009c08 /* VSX Scalar Negative Multiply-Add Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMADDMSP 0xf0009c48 /* VSX Scalar Negative Multiply-Add Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMSUBASP 0xf0009c88 /* VSX Scalar Negative Multiply-Subtract Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMSUBMSP 0xf0009cc8 /* VSX Scalar Negative Multiply-Subtract Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMADDADP 0xf0009d08 /* VSX Scalar Negative Multiply-Add Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMADDMDP 0xf0009d48 /* VSX Scalar Negative Multiply-Add Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMSUBADP 0xf0009d88 /* VSX Scalar Negative Multiply-Subtract Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNMSUBMDP 0xf0009dc8 /* VSX Scalar Negative Multiply-Subtract Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMADDASP 0xf0009e08 /* VSX Vector Negative Multiply-Add Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMADDMSP 0xf0009e48 /* VSX Vector Negative Multiply-Add Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMSUBASP 0xf0009e88 /* VSX Vector Negative Multiply-Subtract Type-A Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMSUBMSP 0xf0009ec8 /* VSX Vector Negative Multiply-Subtract Type-M Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMADDADP 0xf0009f08 /* VSX Vector Negative Multiply-Add Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMADDMDP 0xf0009f48 /* VSX Vector Negative Multiply-Add Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMSUBADP 0xf0009f88 /* VSX Vector Negative Multiply-Subtract Type-A Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNMSUBMDP 0xf0009fc8 /* VSX Vector Negative Multiply-Subtract Type-M Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXMRGHW 0xf0009890 /* VSX Vector Merge High Word XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXPERM 0xf00098d0 /* VSX Vector Permute XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXMRGLW 0xf0009990 /* VSX Vector Merge Low Word XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXPERMR 0xf00099d0 /* VSX Vector Permute Right-indexed XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLAND 0xf0009c10 /* VSX Vector Logical AND XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLANDC 0xf0009c50 /* VSX Vector Logical AND with Complement XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLOR 0xf0009c90 /* VSX Vector Logical OR XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLXOR 0xf0009cd0 /* VSX Vector Logical XOR XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLNOR 0xf0009d10 /* VSX Vector Logical NOR XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLORC 0xf0009d50 /* VSX Vector Logical OR with Complement XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLNAND 0xf0009d90 /* VSX Vector Logical NAND XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXLEQV 0xf0009dd0 /* VSX Vector Logical Equivalence XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSLDWI 0xf0008810 /* VSX Vector Shift Left Double by Word Immediate XX3(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXPERMDI 0xf0008850 /* VSX Vector Permute Doubleword Immediate XX3(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSPLTW 0xf0006a90 /* VSX Vector Splat Word XX2(4)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSPLTIB 0xf0005ad0 /* VSX Vector Splat Immediate Byte X(581)-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVKQ 0xf01f62d0 /* Load VSX Vector Special Value Quadword X-form */
-#define LIBXSMM_PPC64LE_INSTR_XXINSERTW 0xf00042d4 /* VSX Vector Insert Word XX2-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPUXWS 0xf000a920 /* VSX Scalar Convert with round to zero Double-Precision to Unsigned Word format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPSXWS 0xf000a960 /* VSX Scalar Convert with round to zero Double-Precision to Signed Word format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPUXWS 0xf000aa20 /* VSX Vector Convert with round to zero Single-Precision to Unsigned Word format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPSXWS 0xf000aa60 /* VSX Vector Convert with round to zero Single-Precision to Signed Word format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVUXWSP 0xf000aaa0 /* VSX Vector Convert with round Unsigned Word to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSXWSP 0xf000aae0 /* VSX Vector Convert with round Signed Word to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVDPUXWS 0xf000ab20 /* VSX Vector Convert with round to zero Double-Precision to Unsigned Word format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVDPSXWS 0xf000ab60 /* VSX Vector Convert with round to zero Double-Precision to Signed Word format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVUXWDP 0xf000aba0 /* VSX Vector Convert Unsigned Word to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSXWDP 0xf000abe0 /* VSX Vector Convert Signed Word to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVUXDSP 0xf000aca0 /* VSX Scalar Convert with round Unsigned Doubleword to Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVSXDSP 0xf000ace0 /* VSX Scalar Convert with round Signed Doubleword to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPUXDS 0xf000ad20 /* VSX Scalar Convert with round to zero Double-Precision to Unsigned Doubleword format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPSXDS 0xf000ad60 /* VSX Scalar Convert with round to zero Double-Precision to Signed Doubleword format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVUXDDP 0xf000ada0 /* VSX Scalar Convert with round Unsigned Doubleword to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVSXDDP 0xf000ade0 /* VSX Scalar Convert with round Signed Doubleword to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPUXDS 0xf000ae20 /* VSX Vector Convert with round to zero Single-Precision to Unsigned Doubleword format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPSXDS 0xf000ae60 /* VSX Vector Convert with round to zero Single-Precision to Signed Doubleword format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVUXDSP 0xf000aea0 /* VSX Vector Convert with round Unsigned Doubleword to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSXDSP 0xf000aee0 /* VSX Vector Convert with round Signed Doubleword to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVDPUXDS 0xf000af20 /* VSX Vector Convert with round to zero Double-Precision to Unsigned Doubleword format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVDPSXDS 0xf000af60 /* VSX Vector Convert with round to zero Double-Precision to Signed Doubleword format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVUXDDP 0xf000afa0 /* VSX Vector Convert with round Unsigned Doubleword to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSXDDP 0xf000afe0 /* VSX Vector Convert with round Signed Doubleword to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRDPI 0xf000a924 /* VSX Scalar Round to Double-Precision Integer using round to Nearest Away XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRDPIZ 0xf000a964 /* VSX Scalar Round to Double-Precision Integer using round toward Zero XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRDPIP 0xf000a9a4 /* VSX Scalar Round to Double-Precision Integer using round toward +Infinity XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRDPIM 0xf000a9e4 /* VSX Scalar Round to Double-Precision Integer using round toward -Infinity XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSPI 0xf000aa24 /* VSX Vector Round to Single-Precision Integer using round to Nearest Away XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSPIZ 0xf000aa64 /* VSX Vector Round to Single-Precision Integer using round toward Zero XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSPIP 0xf000aaa4 /* VSX Vector Round to Single-Precision Integer using round toward +Infinity XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSPIM 0xf000aae4 /* VSX Vector Round to Single-Precision Integer using round toward -Infinity XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRDPI 0xf000ab24 /* VSX Vector Round to Double-Precision Integer using round to Nearest Away XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRDPIZ 0xf000ab64 /* VSX Vector Round to Double-Precision Integer using round toward Zero XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRDPIP 0xf000aba4 /* VSX Vector Round to Double-Precision Integer using round toward +Infinity XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRDPIM 0xf000abe4 /* VSX Vector Round to Double-Precision Integer using round toward -Infinity XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPSP 0xf000ac24 /* VSX Scalar Convert with round Double-Precision to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRSP 0xf0008464 /* VSX Scalar Round to Single-Precision XX2(30-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVSPDP 0xf000ad24 /* VSX Scalar Convert Single-Precision to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSABSDP 0xf000ad64 /* VSX Scalar Absolute Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNABSDP 0xf000ada4 /* VSX Scalar Negative Absolute Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSNEGDP 0xf000ade4 /* VSX Scalar Negate Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVDPSP 0xf000ae24 /* VSX Vector Convert with round Double-Prec   ision to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVABSSP 0xf000ae64 /* VSX Vector Absolute Value Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNABSSP 0xf000aea4 /* VSX Vector Negative Absolute Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNEGSP 0xf000aee4 /* VSX Vector Negate Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPDP 0xf000af24 /* VSX Vector Convert Single-Precision to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVABSDP 0xf000af64 /* VSX Vector Absolute Value Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNABSDP 0xf000afa4 /* VSX Vector Negative Absolute Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVNEGDP 0xf000afe4 /* VSX Vector Negate Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRSQRTESP 0xf000a828 /* VSX Scalar Reciprocal Square Root Estimate Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRESP 0xf000a868 /* VSX Scalar Reciprocal Estimate Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRSQRTEDP 0xf000a928 /* VSX Scalar Reciprocal Square Root Estimate Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSREDP 0xf000a968 /* VSX Scalar Reciprocal Estimate Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSQRTESP 0xf000aa28 /* VSX Vector Reciprocal Square Root Estimate Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRESP 0xf000aa68 /* VSX Vector Reciprocal Estimate Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSQRTEDP 0xf000ab28 /* VSX Vector Reciprocal Square Root Estimate Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVREDP 0xf000ab68 /* VSX Vector Reciprocal Estimate Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXGENPCVBM 0xf0006728 /* VSX Vector Generate PCV from Byte Mask X-form */
-#define LIBXSMM_PPC64LE_INSTR_XXGENPCVWM 0xf0006768 /* VSX Vector Generate PCV from Word Mask X-form */
-#define LIBXSMM_PPC64LE_INSTR_XXGENPCVHM 0xf000672a /* VSX Vector Generate PCV from Halfword Mask X-form */
-#define LIBXSMM_PPC64LE_INSTR_XXGENPCVDM 0xf000676a /* VSX Vector Generate PCV from Doubleword Mask X-form */
-#define LIBXSMM_PPC64LE_INSTR_XSSQRTSP 0xf000a82c /* VSX Scalar Square Root Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSSQRTDP 0xf000a92c /* VSX Scalar Square Root Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSRDPIC 0xf000a9ac /* VSX Scalar Round to Double-Precision Integer exact using Current rounding mode XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVSQRTSP 0xf000aa2c /* VSX Vector Square Root Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRSPIC 0xf000aaac /* VSX Vector Round to Single-Precision Integer Exact using Current rounding mode XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVSQRTDP 0xf000ab2c /* VSX Vector Square Root Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVRDPIC 0xf000abac /* VSX Vector Round to Double-Precision Integer Exact using Current rounding mode XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPSPN 0xf000ac2c /* VSX Scalar Convert Scalar Single-Precision to Vector Single-Precision format Non-signalling XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVSPDPN 0xf000ad2c /* VSX Scalar Convert Single-Precision to Double-Precision format Non-signalling XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSXEXPDP 0xf0004d6c /* VSX Scalar Extract Exponent Double-Precision XX2(2)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSXSIGDP 0xf0014d6c /* VSX Scalar Extract Significand Double-Precision XX2(2)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVHPDP 0xf010ad6c /* VSX Scalar Convert Half-Precision to Double-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSCVDPHP 0xf011ad6c /* VSX Scalar Convert with round Double-Precision to Half-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVXEXPDP 0xf000af6c /* VSX Vector Extract Exponent Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVXSIGDP 0xf001af6c /* VSX Vector Extract Significand Double-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBRH 0xf007af6c /* VSX Vector Byte-Reverse Halfword XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVXEXPSP 0xf008af6c /* VSX Vector Extract Exponent Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVXSIGSP 0xf009af6c /* VSX Vector Extract Significand Single-Precision XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBRW 0xf00faf6c /* VSX Vector Byte-Reverse Word XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVBF16SP 0xf010af6c /* VSX Vector Convert bfloat16 to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPBF16 0xf011af6c /* VSX Vector Convert with round Single-Precision to bfloat16 format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBRD 0xf017af6c /* VSX Vector Byte-Reverse Doubleword XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVHPSP 0xf018af6c /* VSX Vector Convert Half-Precision to Single-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVCVSPHP 0xf019af6c /* VSX Vector Convert with round Single-Precision to Half-Precision format XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXBRQ 0xf01faf6c /* VSX Vector Byte-Reverse Quadword XX2(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XSIEXPDP 0xf000672c /* VSX Scalar Insert Exponent Double-Precision X-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSEL 0xf0002030 /* VSX Vector Select XX4-form */
-#define LIBXSMM_PPC64LE_INSTR_STFDP 0xf4001800 /* Store Floating-Point Double Pair DS-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSD 0xf4001802 /* Store VSX Scalar Doubleword DS-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSSP 0xf4001803 /* Store VSX Scalar Single DS-form */
-#define LIBXSMM_PPC64LE_INSTR_LXV 0xf400b801 /* Load VSX Vector DQ(X)-form */
-#define LIBXSMM_PPC64LE_INSTR_STXV 0xf400b805 /* Store VSX Vector DQ(X)-form */
-#define LIBXSMM_PPC64LE_INSTR_STD 0xf8001800 /* Store Doubleword DS-form */
-#define LIBXSMM_PPC64LE_INSTR_STDU 0xf8001801 /* Store Doubleword with Update DS-form */
-#define LIBXSMM_PPC64LE_INSTR_STQ 0xf8001802 /* Store Quadword DS-form */
-#define LIBXSMM_PPC64LE_INSTR_MCRFS 0xfc009080 /* Move to Condition Register from FPSCR X(33)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2 0xec00c198 /* VSX Vector bfloat16 GER (Rank-2 Update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2NN 0xec00c790 /* VSX Vector bfloat16 GER (Rank-2 Update) Negative multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2NP 0xec00c390 /* VSX Vector bfloat16 GER (Rank-2 Update) Negative multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2PN 0xec00c590 /* VSX Vector bfloat16 GER (Rank-2 Update) Positive multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2PP 0xec00c190 /* VSX Vector bfloat16 GER (Rank-2 Update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF16GER2 0xec00c098 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF16GER2NN 0xec00c690 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF16GER2NP 0xec00c290 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF16GER2PN 0xec00c490 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF16GER2PP 0xec00c090 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF32GER 0xec00c0d8 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF32GERNN 0xec00c6d0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF32GERNP 0xec00c2d0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF32GERPN 0xec00c4d0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF32GERPP 0xec00c0d0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF64GER 0xec00c1d8 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF64GERNN 0xec00c7d0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF64GERNP 0xec00c3d0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF64GERPN 0xec00c5d0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVF64GERPP 0xec00c1d0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI16GER2 0xec00c258 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI16GER2PP 0xec00c358 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI16GER2S 0xec00c158 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI16GER2SPP 0xec00c150 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI4GER8 0xec00c118 /* VSX Vector 4-bit Signed Integer GER (rank-8 update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI4GER8PP 0xec00c110 /* VSX Vector 4-bit Signed Integer GER (rank-8 update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI8GER4 0xec00c018 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI8GER4PP 0xec00c010 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVI8GER4SPP 0xec00c318 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturate Positive multiply, Positive accumulate XX3(0)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXMFACC 0x7c007162 /* VSX Move From Accumulator X(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXMTACC 0x7c017162 /* VSX Move To Accumulator X(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_XXSETACCZ 0x7c037162 /* VSX Set Accumulator to Zero X(3)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVEBX 0x7c00300e /* Load Vector Element Byte Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVEHX 0x7c00304e /* Load Vector Element Halfword Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVEWX 0x7c00308e /* Load Vector Element Word Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVSL 0x7c00300c /* Load Vector for Shift Left Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVSR 0x7c00304c /* Load Vector for Shift Right Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVX 0x7c0030ce /* Load Vector Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LVXL 0x7c0032ce /* Load Vector Indexed Last X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_MFVSCR 0x1000b604 /* Move From Vector Status and Control Register VX(VRT)-form */
-#define LIBXSMM_PPC64LE_INSTR_MTVSCR 0x10000e44 /* Move To Vector Status and Control Register VX(VRB)-form */
-#define LIBXSMM_PPC64LE_INSTR_STVEBX 0x7c00310e /* Store Vector Element Byte Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_STVEHX 0x7c00314e /* Store Vector Element Halfword Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_STVEWX 0x7c00318e /* Store Vector Element Word Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_STVX 0x7c0031ce /* Store Vector Indexed X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_STVXL 0x7c0033ce /* Store Vector Indexed Last X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_LXSIWZX 0x7c006018 /* Load VSX Scalar as Integer Word & Zero Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXSIWAX 0x7c006098 /* Load VSX Scalar as Integer Word Algebraic Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSIWX 0x7c006118 /* Store VSX Scalar as Integer Word Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVX 0x7c006218 /* Load VSX Vector Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVDSX 0x7c006298 /* Load VSX Vector Doubleword & Splat Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVWSX 0x7c0062d8 /* Load VSX Vector Word & Splat Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVX 0x7c006318 /* Store VSX Vector Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXSSPX 0x7c006418 /* Load VSX Scalar Single-Precision Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXSDX 0x7c006498 /* Load VSX Scalar Doubleword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSSPX 0x7c006518 /* Store VSX Scalar Single-Precision Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSDX 0x7c006598 /* Store VSX Scalar Doubleword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVW4X 0x7c006618 /* Load VSX Vector Word*4 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVH8X 0x7c006658 /* Load VSX Vector Halfword*8 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVD2X 0x7c006698 /* Load VSX Vector Doubleword*2 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVB16X 0x7c0066d8 /* Load VSX Vector Byte*16 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVW4X 0x7c006718 /* Store VSX Vector Word*4 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVH8X 0x7c006758 /* Store VSX Vector Halfword*8 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVD2X 0x7c006798 /* Store VSX Vector Doubleword*2 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVB16X 0x7c0067d8 /* Store VSX Vector Byte*16 Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVRBX 0x7c00601a /* Load VSX Vector Rightmost Byte Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVRHX 0x7c00605a /* Load VSX Vector Rightmost Halfword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVRWX 0x7c00609a /* Load VSX Vector Rightmost Word Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVRDX 0x7c0060da /* Load VSX Vector Rightmost Doubleword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVRBX 0x7c00611a /* Store VSX Vector Rightmost Byte Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVRHX 0x7c00615a /* Store VSX Vector Rightmost Halfword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVRWX 0x7c00619a /* Store VSX Vector Rightmost Word Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVRDX 0x7c0061da /* Store VSX Vector Rightmost Doubleword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVL 0x7c00621a /* Load VSX Vector with Length X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVLL 0x7c00625a /* Load VSX Vector with Length Left-justified X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXVPX 0x7c00129a /* Load VSX Vector Paired Indexed X(4155)-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVL 0x7c00631a /* Store VSX Vector with Length X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVLL 0x7c00635a /* Store VSX Vector with Length Left-justified X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXVPX 0x7c00139a /* Store VSX Vector Paired Indexed X(4155)-form */
-#define LIBXSMM_PPC64LE_INSTR_LXSIBZX 0x7c00661a /* Load VSX Scalar as Integer Byte & Zero Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_LXSIHZX 0x7c00665a /* Load VSX Scalar as Integer Halfword & Zero Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSIBX 0x7c00671a /* Store VSX Scalar as Integer Byte Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSIHX 0x7c00675a /* Store VSX Scalar as Integer Halfword Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_XVADDDP 0xf0009b00 /* VSX Vector Add Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVADDSP 0xf0009a00 /* VSX Vector Add Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMULDP 0xf0009b80 /* VSX Vector Multiply Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVMULSP 0xf0009a80 /* VSX Vector Multiply Single-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVSUBDP 0xf0009b40 /* VSX Vector Subtract Double-Precision XX3(6)-form */
-#define LIBXSMM_PPC64LE_INSTR_XVSUBSP 0xf0009a40 /* VSX Vector Subtract Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMAXCDP 0xf0002400 /* VSX Scalar Maximum Type-C Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMINCDP 0xf0002440 /* VSX Scalar Minimum Type-C Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMAXDP 0xf0002500 /* VSX Scalar Maximum Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMINDP 0xf0002540 /* VSX Scalar Minimum Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCPSGNDP 0xf0002580 /* VSX Scalar Copy Sign Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMAXSP 0xf0002600 /* VSX Vector Maximum Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMINSP 0xf0002640 /* VSX Vector Minimum Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCPSGNSP 0xf0002680 /* VSX Vector Copy Sign Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVIEXPSP 0xf00026c0 /* VSX Vector Insert Exponent Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMAXDP 0xf0002700 /* VSX Vector Maximum Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMINDP 0xf0002740 /* VSX Vector Minimum Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCPSGNDP 0xf0002780 /* VSX Vector Copy Sign Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVIEXPDP 0xf00027c0 /* VSX Vector Insert Exponent Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMADDASP 0xf0002008 /* VSX Scalar Multiply-Add Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMADDMSP 0xf0002048 /* VSX Scalar Multiply-Add Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMSUBASP 0xf0002088 /* VSX Scalar Multiply-Subtract Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMSUBMSP 0xf00020c8 /* VSX Scalar Multiply-Subtract Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMADDADP 0xf0002108 /* VSX Scalar Multiply-Add Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMADDMDP 0xf0002148 /* VSX Scalar Multiply-Add Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMSUBADP 0xf0002188 /* VSX Scalar Multiply-Subtract Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSMSUBMDP 0xf00021c8 /* VSX Scalar Multiply-Subtract Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMADDASP 0xf0001208 /* VSX Vector Multiply-Add Type-A Single-Precision XX3-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMADDMSP 0xf0002248 /* VSX Vector Multiply-Add Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMSUBASP 0xf0002288 /* VSX Vector Multiply-Subtract Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMSUBMSP 0xf00022c8 /* VSX Vector Multiply-Subtract Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMADDADP 0xf0002308 /* VSX Vector Multiply-Add Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMADDMDP 0xf0002348 /* VSX Vector Multiply-Add Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMSUBADP 0xf0002388 /* VSX Vector Multiply-Subtract Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMSUBMDP 0xf00023c8 /* VSX Vector Multiply-Subtract Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMADDASP 0xf0002408 /* VSX Scalar Negative Multiply-Add Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMADDMSP 0xf0002448 /* VSX Scalar Negative Multiply-Add Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMSUBASP 0xf0002488 /* VSX Scalar Negative Multiply-Subtract Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMSUBMSP 0xf00024c8 /* VSX Scalar Negative Multiply-Subtract Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMADDADP 0xf0002508 /* VSX Scalar Negative Multiply-Add Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMADDMDP 0xf0002548 /* VSX Scalar Negative Multiply-Add Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMSUBADP 0xf0002588 /* VSX Scalar Negative Multiply-Subtract Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNMSUBMDP 0xf00025c8 /* VSX Scalar Negative Multiply-Subtract Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMADDASP 0xf0002608 /* VSX Vector Negative Multiply-Add Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMADDMSP 0xf0002648 /* VSX Vector Negative Multiply-Add Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMSUBASP 0xf0002688 /* VSX Vector Negative Multiply-Subtract Type-A Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMSUBMSP 0xf00026c8 /* VSX Vector Negative Multiply-Subtract Type-M Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMADDADP 0xf0002708 /* VSX Vector Negative Multiply-Add Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMADDMDP 0xf0002748 /* VSX Vector Negative Multiply-Add Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMSUBADP 0xf0002788 /* VSX Vector Negative Multiply-Subtract Type-A Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNMSUBMDP 0xf00027c8 /* VSX Vector Negative Multiply-Subtract Type-M Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXMRGHW 0xf0002090 /* VSX Vector Merge High Word XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXPERM 0xf00020d0 /* VSX Vector Permute XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXMRGLW 0xf0002190 /* VSX Vector Merge Low Word XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXPERMR 0xf00021d0 /* VSX Vector Permute Right-indexed XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLAND 0xf0002410 /* VSX Vector Logical AND XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLANDC 0xf0002450 /* VSX Vector Logical AND with Complement XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLOR 0xf0002490 /* VSX Vector Logical OR XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLXOR 0xf00024d0 /* VSX Vector Logical XOR XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLNOR 0xf0002510 /* VSX Vector Logical NOR XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLORC 0xf0002550 /* VSX Vector Logical OR with Complement XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLNAND 0xf0002590 /* VSX Vector Logical NAND XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXLEQV 0xf00025d0 /* VSX Vector Logical Equivalence XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSLDWI 0xf0004010 /* VSX Vector Shift Left Double by Word Immediate XX3(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXPERMDI 0xf0004050 /* VSX Vector Permute Doubleword Immediate XX3(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTW 0xf0005290 /* VSX Vector Splat Word XX2(4)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSPLTIB 0xf0008ad0 /* VSX Vector Splat Immediate Byte X(581)-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVKQ 0xf01f1ad0 /* Load VSX Vector Special Value Quadword X-form */
+#define LIBXSMM_PPC64LE_INSTR_XXINSERTW 0xf000b2d4 /* VSX Vector Insert Word XX2-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPUXWS 0xf0002920 /* VSX Scalar Convert with round to zero Double-Precision to Unsigned Word format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPSXWS 0xf0002960 /* VSX Scalar Convert with round to zero Double-Precision to Signed Word format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPUXWS 0xf0002a20 /* VSX Vector Convert with round to zero Single-Precision to Unsigned Word format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPSXWS 0xf0002a60 /* VSX Vector Convert with round to zero Single-Precision to Signed Word format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVUXWSP 0xf0002aa0 /* VSX Vector Convert with round Unsigned Word to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSXWSP 0xf0002ae0 /* VSX Vector Convert with round Signed Word to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVDPUXWS 0xf0002b20 /* VSX Vector Convert with round to zero Double-Precision to Unsigned Word format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVDPSXWS 0xf0002b60 /* VSX Vector Convert with round to zero Double-Precision to Signed Word format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVUXWDP 0xf0002ba0 /* VSX Vector Convert Unsigned Word to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSXWDP 0xf0002be0 /* VSX Vector Convert Signed Word to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVUXDSP 0xf0002ca0 /* VSX Scalar Convert with round Unsigned Doubleword to Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVSXDSP 0xf0002ce0 /* VSX Scalar Convert with round Signed Doubleword to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPUXDS 0xf0002d20 /* VSX Scalar Convert with round to zero Double-Precision to Unsigned Doubleword format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPSXDS 0xf0002d60 /* VSX Scalar Convert with round to zero Double-Precision to Signed Doubleword format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVUXDDP 0xf0002da0 /* VSX Scalar Convert with round Unsigned Doubleword to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVSXDDP 0xf0002de0 /* VSX Scalar Convert with round Signed Doubleword to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPUXDS 0xf0002e20 /* VSX Vector Convert with round to zero Single-Precision to Unsigned Doubleword format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPSXDS 0xf0002e60 /* VSX Vector Convert with round to zero Single-Precision to Signed Doubleword format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVUXDSP 0xf0002ea0 /* VSX Vector Convert with round Unsigned Doubleword to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSXDSP 0xf0002ee0 /* VSX Vector Convert with round Signed Doubleword to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVDPUXDS 0xf0002f20 /* VSX Vector Convert with round to zero Double-Precision to Unsigned Doubleword format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVDPSXDS 0xf0002f60 /* VSX Vector Convert with round to zero Double-Precision to Signed Doubleword format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVUXDDP 0xf0002fa0 /* VSX Vector Convert with round Unsigned Doubleword to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSXDDP 0xf0002fe0 /* VSX Vector Convert with round Signed Doubleword to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRDPI 0xf0002924 /* VSX Scalar Round to Double-Precision Integer using round to Nearest Away XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRDPIZ 0xf0002964 /* VSX Scalar Round to Double-Precision Integer using round toward Zero XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRDPIP 0xf00029a4 /* VSX Scalar Round to Double-Precision Integer using round toward +Infinity XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRDPIM 0xf00029e4 /* VSX Scalar Round to Double-Precision Integer using round toward -Infinity XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSPI 0xf0002a24 /* VSX Vector Round to Single-Precision Integer using round to Nearest Away XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSPIZ 0xf0002a64 /* VSX Vector Round to Single-Precision Integer using round toward Zero XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSPIP 0xf0002aa4 /* VSX Vector Round to Single-Precision Integer using round toward +Infinity XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSPIM 0xf0002ae4 /* VSX Vector Round to Single-Precision Integer using round toward -Infinity XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRDPI 0xf0002b24 /* VSX Vector Round to Double-Precision Integer using round to Nearest Away XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRDPIZ 0xf0002b64 /* VSX Vector Round to Double-Precision Integer using round toward Zero XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRDPIP 0xf0002ba4 /* VSX Vector Round to Double-Precision Integer using round toward +Infinity XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRDPIM 0xf0002be4 /* VSX Vector Round to Double-Precision Integer using round toward -Infinity XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPSP 0xf0002c24 /* VSX Scalar Convert with round Double-Precision to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRSP 0xf0006464 /* VSX Scalar Round to Single-Precision XX2(30-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVSPDP 0xf0002d24 /* VSX Scalar Convert Single-Precision to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSABSDP 0xf0002d64 /* VSX Scalar Absolute Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNABSDP 0xf0002da4 /* VSX Scalar Negative Absolute Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSNEGDP 0xf0002de4 /* VSX Scalar Negate Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVDPSP 0xf0002e24 /* VSX Vector Convert with round Double-Prec   ision to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVABSSP 0xf0002e64 /* VSX Vector Absolute Value Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNABSSP 0xf0002ea4 /* VSX Vector Negative Absolute Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNEGSP 0xf0002ee4 /* VSX Vector Negate Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPDP 0xf0002f24 /* VSX Vector Convert Single-Precision to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVABSDP 0xf0002f64 /* VSX Vector Absolute Value Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNABSDP 0xf0002fa4 /* VSX Vector Negative Absolute Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVNEGDP 0xf0002fe4 /* VSX Vector Negate Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRSQRTESP 0xf0002828 /* VSX Scalar Reciprocal Square Root Estimate Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRESP 0xf0002868 /* VSX Scalar Reciprocal Estimate Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRSQRTEDP 0xf0002928 /* VSX Scalar Reciprocal Square Root Estimate Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSREDP 0xf0002968 /* VSX Scalar Reciprocal Estimate Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSQRTESP 0xf0002a28 /* VSX Vector Reciprocal Square Root Estimate Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRESP 0xf0002a68 /* VSX Vector Reciprocal Estimate Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSQRTEDP 0xf0002b28 /* VSX Vector Reciprocal Square Root Estimate Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVREDP 0xf0002b68 /* VSX Vector Reciprocal Estimate Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXGENPCVBM 0xf0001f28 /* VSX Vector Generate PCV from Byte Mask X-form */
+#define LIBXSMM_PPC64LE_INSTR_XXGENPCVWM 0xf0001f68 /* VSX Vector Generate PCV from Word Mask X-form */
+#define LIBXSMM_PPC64LE_INSTR_XXGENPCVHM 0xf0001f2a /* VSX Vector Generate PCV from Halfword Mask X-form */
+#define LIBXSMM_PPC64LE_INSTR_XXGENPCVDM 0xf0001f6a /* VSX Vector Generate PCV from Doubleword Mask X-form */
+#define LIBXSMM_PPC64LE_INSTR_XSSQRTSP 0xf000282c /* VSX Scalar Square Root Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSSQRTDP 0xf000292c /* VSX Scalar Square Root Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSRDPIC 0xf00029ac /* VSX Scalar Round to Double-Precision Integer exact using Current rounding mode XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVSQRTSP 0xf0002a2c /* VSX Vector Square Root Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRSPIC 0xf0002aac /* VSX Vector Round to Single-Precision Integer Exact using Current rounding mode XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVSQRTDP 0xf0002b2c /* VSX Vector Square Root Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVRDPIC 0xf0002bac /* VSX Vector Round to Double-Precision Integer Exact using Current rounding mode XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPSPN 0xf0002c2c /* VSX Scalar Convert Scalar Single-Precision to Vector Single-Precision format Non-signalling XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVSPDPN 0xf0002d2c /* VSX Scalar Convert Single-Precision to Double-Precision format Non-signalling XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSXEXPDP 0xf0005d6c /* VSX Scalar Extract Exponent Double-Precision XX2(2)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSXSIGDP 0xf0015d6c /* VSX Scalar Extract Significand Double-Precision XX2(2)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVHPDP 0xf0102d6c /* VSX Scalar Convert Half-Precision to Double-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSCVDPHP 0xf0112d6c /* VSX Scalar Convert with round Double-Precision to Half-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVXEXPDP 0xf0002f6c /* VSX Vector Extract Exponent Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVXSIGDP 0xf0012f6c /* VSX Vector Extract Significand Double-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBRH 0xf0072f6c /* VSX Vector Byte-Reverse Halfword XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVXEXPSP 0xf0082f6c /* VSX Vector Extract Exponent Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVXSIGSP 0xf0092f6c /* VSX Vector Extract Significand Single-Precision XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBRW 0xf00f2f6c /* VSX Vector Byte-Reverse Word XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVBF16SP 0xf0102f6c /* VSX Vector Convert bfloat16 to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPBF16 0xf0112f6c /* VSX Vector Convert with round Single-Precision to bfloat16 format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBRD 0xf0172f6c /* VSX Vector Byte-Reverse Doubleword XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVHPSP 0xf0182f6c /* VSX Vector Convert Half-Precision to Single-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVCVSPHP 0xf0192f6c /* VSX Vector Convert with round Single-Precision to Half-Precision format XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXBRQ 0xf01f2f6c /* VSX Vector Byte-Reverse Quadword XX2(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XSIEXPDP 0xf0001f2c /* VSX Scalar Insert Exponent Double-Precision X-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSEL 0xf000c030 /* VSX Vector Select XX4-form */
+#define LIBXSMM_PPC64LE_INSTR_STFDP 0xf400a800 /* Store Floating-Point Double Pair DS-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSD 0xf400a802 /* Store VSX Scalar Doubleword DS-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSSP 0xf400a803 /* Store VSX Scalar Single DS-form */
+#define LIBXSMM_PPC64LE_INSTR_LXV 0xf4008001 /* Load VSX Vector DQ(X)-form */
+#define LIBXSMM_PPC64LE_INSTR_STXV 0xf4008005 /* Store VSX Vector DQ(X)-form */
+#define LIBXSMM_PPC64LE_INSTR_STD 0xf800a800 /* Store Doubleword DS-form */
+#define LIBXSMM_PPC64LE_INSTR_STDU 0xf800a801 /* Store Doubleword with Update DS-form */
+#define LIBXSMM_PPC64LE_INSTR_STQ 0xf800a802 /* Store Quadword DS-form */
+#define LIBXSMM_PPC64LE_INSTR_MCRFS 0xfc007080 /* Move to Condition Register from FPSCR X(33)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2 0xec00b998 /* VSX Vector bfloat16 GER (Rank-2 Update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2NN 0xec00bf90 /* VSX Vector bfloat16 GER (Rank-2 Update) Negative multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2NP 0xec00bb90 /* VSX Vector bfloat16 GER (Rank-2 Update) Negative multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2PN 0xec00bd90 /* VSX Vector bfloat16 GER (Rank-2 Update) Positive multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVBF16GER2PP 0xec00b990 /* VSX Vector bfloat16 GER (Rank-2 Update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF16GER2 0xec00b898 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF16GER2NN 0xec00be90 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF16GER2NP 0xec00ba90 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Negative multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF16GER2PN 0xec00bc90 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF16GER2PP 0xec00b890 /* VSX Vector 16-bit Floating-Point GER (rank-2 update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF32GER 0xec00b8d8 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF32GERNN 0xec00bed0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF32GERNP 0xec00bad0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF32GERPN 0xec00bcd0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF32GERPP 0xec00b8d0 /* VSX Vector 32-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF64GER 0xec00b9d8 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF64GERNN 0xec00bfd0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF64GERNP 0xec00bbd0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Negative multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF64GERPN 0xec00bdd0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Negative accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVF64GERPP 0xec00b9d0 /* VSX Vector 64-bit Floating-Point GER (rank-1 update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI16GER2 0xec00ba58 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI16GER2PP 0xec00bb58 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI16GER2S 0xec00b958 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI16GER2SPP 0xec00b950 /* VSX Vector 16-bit Signed Integer GER (rank-2 update) with Saturation Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI4GER8 0xec00b918 /* VSX Vector 4-bit Signed Integer GER (rank-8 update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI4GER8PP 0xec00b910 /* VSX Vector 4-bit Signed Integer GER (rank-8 update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI8GER4 0xec00b818 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI8GER4PP 0xec00b810 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVI8GER4SPP 0xec00bb18 /* VSX Vector 8-bit Signed/Unsigned Integer GER (rank-4 update) with Saturate Positive multiply, Positive accumulate XX3(0)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXMFACC 0x7c009162 /* VSX Move From Accumulator X(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXMTACC 0x7c019162 /* VSX Move To Accumulator X(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_XXSETACCZ 0x7c039162 /* VSX Set Accumulator to Zero X(3)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVEBX 0x7c00980e /* Load Vector Element Byte Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVEHX 0x7c00984e /* Load Vector Element Halfword Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVEWX 0x7c00988e /* Load Vector Element Word Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVSL 0x7c00980c /* Load Vector for Shift Left Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVSR 0x7c00984c /* Load Vector for Shift Right Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVX 0x7c0098ce /* Load Vector Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LVXL 0x7c009ace /* Load Vector Indexed Last X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_MFVSCR 0x10000e04 /* Move From Vector Status and Control Register VX(VRT)-form */
+#define LIBXSMM_PPC64LE_INSTR_MTVSCR 0x10006e44 /* Move To Vector Status and Control Register VX(VRB)-form */
+#define LIBXSMM_PPC64LE_INSTR_STVEBX 0x7c00990e /* Store Vector Element Byte Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_STVEHX 0x7c00994e /* Store Vector Element Halfword Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_STVEWX 0x7c00998e /* Store Vector Element Word Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_STVX 0x7c0099ce /* Store Vector Indexed X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_STVXL 0x7c009bce /* Store Vector Indexed Last X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIWZX 0x7c001818 /* Load VSX Scalar as Integer Word & Zero Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIWAX 0x7c001898 /* Load VSX Scalar as Integer Word Algebraic Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSIWX 0x7c001918 /* Store VSX Scalar as Integer Word Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVX 0x7c001a18 /* Load VSX Vector Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVDSX 0x7c001a98 /* Load VSX Vector Doubleword & Splat Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVWSX 0x7c001ad8 /* Load VSX Vector Word & Splat Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVX 0x7c001b18 /* Store VSX Vector Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSSPX 0x7c001c18 /* Load VSX Scalar Single-Precision Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSDX 0x7c001c98 /* Load VSX Scalar Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSSPX 0x7c001d18 /* Store VSX Scalar Single-Precision Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSDX 0x7c001d98 /* Store VSX Scalar Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVW4X 0x7c001e18 /* Load VSX Vector Word*4 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVH8X 0x7c001e58 /* Load VSX Vector Halfword*8 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVD2X 0x7c001e98 /* Load VSX Vector Doubleword*2 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVB16X 0x7c001ed8 /* Load VSX Vector Byte*16 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVW4X 0x7c001f18 /* Store VSX Vector Word*4 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVH8X 0x7c001f58 /* Store VSX Vector Halfword*8 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVD2X 0x7c001f98 /* Store VSX Vector Doubleword*2 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVB16X 0x7c001fd8 /* Store VSX Vector Byte*16 Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRBX 0x7c00181a /* Load VSX Vector Rightmost Byte Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRHX 0x7c00185a /* Load VSX Vector Rightmost Halfword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRWX 0x7c00189a /* Load VSX Vector Rightmost Word Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVRDX 0x7c0018da /* Load VSX Vector Rightmost Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRBX 0x7c00191a /* Store VSX Vector Rightmost Byte Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRHX 0x7c00195a /* Store VSX Vector Rightmost Halfword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRWX 0x7c00199a /* Store VSX Vector Rightmost Word Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVRDX 0x7c0019da /* Store VSX Vector Rightmost Doubleword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVL 0x7c001a1a /* Load VSX Vector with Length X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVLL 0x7c001a5a /* Load VSX Vector with Length Left-justified X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXVPX 0x7c00ca9a /* Load VSX Vector Paired Indexed X(4155)-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVL 0x7c001b1a /* Store VSX Vector with Length X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVLL 0x7c001b5a /* Store VSX Vector with Length Left-justified X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXVPX 0x7c00cb9a /* Store VSX Vector Paired Indexed X(4155)-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIBZX 0x7c001e1a /* Load VSX Scalar as Integer Byte & Zero Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_LXSIHZX 0x7c001e5a /* Load VSX Scalar as Integer Halfword & Zero Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSIBX 0x7c001f1a /* Store VSX Scalar as Integer Byte Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_STXSIHX 0x7c001f5a /* Store VSX Scalar as Integer Halfword Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_XVADDDP 0xf0002300 /* VSX Vector Add Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVADDSP 0xf0002200 /* VSX Vector Add Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMULDP 0xf0002380 /* VSX Vector Multiply Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVMULSP 0xf0002280 /* VSX Vector Multiply Single-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVSUBDP 0xf0002340 /* VSX Vector Subtract Double-Precision XX3(6)-form */
+#define LIBXSMM_PPC64LE_INSTR_XVSUBSP 0xf0002240 /* VSX Vector Subtract Single-Precision XX3(6)-form */
+
 
 #define LIBXSMM_PPC64LE_INSTR_PLXVP 0x4000002e8000000UL /* Prefixed Load VSX Vector Paired 8LS:D-form */
 #define LIBXSMM_PPC64LE_INSTR_PMXVBF16GER2 0x7900009ec000198UL /* Prefixed Masked VSX Vector bfloat16 GER (rank-2 update) MMIRR:XX3(0,3)-form */
@@ -981,9 +992,20 @@ unsigned int libxsmm_ppc64le_instr_x_form_581( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instr_xfx_form( unsigned int  i_instr,
-                                             unsigned char i_t,
-                                             unsigned int  i_r );
+unsigned int libxsmm_ppc64le_instr_xl_form_2( unsigned int  i_instr,
+                                              unsigned char i_ba,
+                                              unsigned char i_bfa );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_xfx_form_2( unsigned int  i_instr,
+                                               unsigned char i_rs,
+                                               unsigned char i_fxm );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_xfx_form_4( unsigned int  i_instr,
+                                               unsigned char i_rs,
+                                               unsigned int  i_spr );
 
 
 LIBXSMM_API_INTERN

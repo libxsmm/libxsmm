@@ -78,14 +78,14 @@ unsigned int libxsmm_ppc64le_get_reg( libxsmm_generated_code *io_generated_code,
     for ( unsigned int i = LIBXSMM_PPC64LE_ACC_NMAX - 1; i >= 0; --i ) {
       if ( io_reg_tracker->acc[i] == LIBXSMM_PPC64LE_REG_FREE ) {
         unsigned char is_free = 1;
-        for ( unsigned int j = i*4; j > (i + 1)*4; ++j ) {
+        for ( unsigned int j = i*4; j < (i + 1)*4; ++j ) {
           is_free &= ( io_reg_tracker->fpr[j] == LIBXSMM_PPC64LE_REG_FREE );
           is_free &= ( io_reg_tracker->vsr[j] == LIBXSMM_PPC64LE_REG_FREE );
         }
 
         if ( is_free ) {
           io_reg_tracker->acc[i] = LIBXSMM_PPC64LE_REG_USED;
-          for ( unsigned int j = i*4; j > (i + 1)*4; ++j ) {
+          for ( unsigned int j = i*4; j < (i + 1)*4; ++j ) {
             io_reg_tracker->fpr[j] = LIBXSMM_PPC64LE_REG_USED;
             io_reg_tracker->vsr[j] = LIBXSMM_PPC64LE_REG_USED;
           }
@@ -586,15 +586,45 @@ unsigned int libxsmm_ppc64le_instr_x_form_581( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_ppc64le_instr_xfx_form( unsigned int  i_instr,
-                                             unsigned char i_t,
-                                             unsigned int  i_r ) {
+unsigned int libxsmm_ppc64le_instr_xl_form_2( unsigned int  i_instr,
+                                              unsigned char i_ba,
+                                              unsigned char i_bfa ) {
   unsigned int l_instr = i_instr;
 
-  /* Set T */
-  l_instr |= (unsigned int)( (0x07 & i_t) << (31 - 6 - 4) );
-  /* Set R */
-  l_instr |= (unsigned int)( (0x000003ff & i_r) << (31 - 11 - 9) );
+  /* Set BA */
+  l_instr |= (unsigned int)( (0x07 & i_ba) << (31 - 6 - 2) );
+  /* Set BFA */
+  l_instr |= (unsigned int)( (0x07 & i_bfa) << (31 - 11 - 2) );
+
+  return l_instr;
+}
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_xfx_form_2( unsigned int  i_instr,
+                                               unsigned char i_rs,
+                                               unsigned char i_fxm ) {
+  unsigned int l_instr = i_instr;
+
+  /* Set RS */
+  l_instr |= (unsigned int)( (0x1f & i_rs) << (31 - 6 - 4) );
+  /* Set FXM */
+  l_instr |= (unsigned int)( (0xff & i_fxm) << (31 - 12 - 7) );
+
+  return l_instr;
+}
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_xfx_form_4( unsigned int  i_instr,
+                                               unsigned char i_rs,
+                                               unsigned int  i_spr ) {
+  unsigned int l_instr = i_instr;
+
+  /* Set RS */
+  l_instr |= (unsigned int)( (0x07 & i_rs) << (31 - 6 - 4) );
+  /* Set spr */
+  l_instr |= (unsigned int)( (0x000003ff & i_spr) << (31 - 11 - 9) );
 
   return l_instr;
 }
@@ -1141,6 +1171,18 @@ void libxsmm_ppc64le_instr_2( libxsmm_generated_code *io_generated_code,
       case LIBXSMM_PPC64LE_FORM_X_33: {
         l_op = libxsmm_ppc64le_instr_x_form_33( l_instr, (unsigned char)i_0, (unsigned char)i_1 );
       } break;
+      /* XL (2) form */
+      case LIBXSMM_PPC64LE_FORM_XL_2: {
+        l_op = libxsmm_ppc64le_instr_xl_form_2( l_instr, (unsigned char)i_0, (unsigned char)i_1 );
+      } break;
+      /* XFX (2) form */
+      case LIBXSMM_PPC64LE_FORM_XFX_2: {
+        l_op = libxsmm_ppc64le_instr_xfx_form_2( l_instr, (unsigned char)i_0, (unsigned char)i_1 );
+      } break;
+      /* XFX (4) form */
+      case LIBXSMM_PPC64LE_FORM_XFX_4: {
+        l_op = libxsmm_ppc64le_instr_xfx_form_4( l_instr, (unsigned char)i_0, (unsigned int)i_1 );
+      } break;
       default: {
         l_op = -1;
       }
@@ -1186,10 +1228,6 @@ void libxsmm_ppc64le_instr_3( libxsmm_generated_code *io_generated_code,
       /* X (555) form */
       case LIBXSMM_PPC64LE_FORM_X_555: {
         l_op = libxsmm_ppc64le_instr_x_form_555( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2 );
-      } break;
-      /* X (581) form */
-      case LIBXSMM_PPC64LE_FORM_X_581: {
-        l_op = libxsmm_ppc64le_instr_x_form_581( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2 );
       } break;
       /* XX2 (2) form */
       case LIBXSMM_PPC64LE_FORM_XX2_2: {
@@ -1654,13 +1692,24 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                                         libxsmm_ppc64le_reg    *io_reg_tracker ) {
   /* From "64-Bit ELF V2 ABI Specification: Power Architecture"
    * GPR3 contains the pointer to the first arguement
-   * The first arg to the gemm is a point to a libxsmm_gemm_param struct, which we
-   * can then unpack, into the standard
+   * The first arg to the gemm is a pointer to a libxsmm_gemm_param struct, which we
+   * can then unpack, into the standard register locations
    */
 
   unsigned int gpr_offset = 0;
   unsigned int fpr_offset = (LIBXSMM_PPC64LE_GPR_NMAX - LIBXSMM_PPC64LE_GPR_IVOL)*8;
   unsigned int vsr_offset = fpr_offset + (LIBXSMM_PPC64LE_FPR_NMAX - LIBXSMM_PPC64LE_FPR_IVOL)*8;
+
+  /* Get the LR and store it in the previous stackframe */
+  libxsmm_ppc64le_instr_2( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_MFSPR,
+                           0,
+                           LIBXSMM_PPC64LE_SPR_LR );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_STD,
+                           0,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           4 );
 
   /* decrease stack pointer */
   libxsmm_ppc64le_instr_3( io_generated_code,
@@ -1675,7 +1724,7 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                              LIBXSMM_PPC64LE_INSTR_STD,
                              gpr,
                              LIBXSMM_PPC64LE_GPR_SP,
-                             (gpr - LIBXSMM_PPC64LE_GPR_IVOL)*8 + gpr_offset);
+                             (gpr - LIBXSMM_PPC64LE_GPR_IVOL)*2 + gpr_offset);
   }
 
   /* save non-volatile floating point registers */
@@ -1684,7 +1733,7 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                              LIBXSMM_PPC64LE_INSTR_STFD,
                              fpr,
                              LIBXSMM_PPC64LE_GPR_SP,
-                             (fpr - LIBXSMM_PPC64LE_FPR_IVOL)*8 + fpr_offset );
+                             (fpr - LIBXSMM_PPC64LE_FPR_IVOL)*2 + fpr_offset );
   }
 
   /* save non-volatile vector registers */
@@ -1755,7 +1804,7 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
                              LIBXSMM_PPC64LE_INSTR_LD,
                              gpr,
                              LIBXSMM_PPC64LE_GPR_SP,
-                             (gpr - LIBXSMM_PPC64LE_GPR_IVOL)*8 + gpr_offset );
+                             (gpr - LIBXSMM_PPC64LE_GPR_IVOL)*2 + gpr_offset );
   }
 
   /* restore non-volatile floating point registers */
@@ -1764,7 +1813,7 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
                              LIBXSMM_PPC64LE_INSTR_LFD,
                              fpr,
                              LIBXSMM_PPC64LE_GPR_SP,
-                             (fpr - LIBXSMM_PPC64LE_FPR_IVOL)*8 + fpr_offset );
+                             (fpr - LIBXSMM_PPC64LE_FPR_IVOL)*2 + fpr_offset );
   }
 
   /* save non-volatile vector registers */
@@ -1797,6 +1846,17 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
                            LIBXSMM_PPC64LE_GPR_SP,
                            LIBXSMM_PPC64LE_GPR_SP,
                            512 );
+
+  /* Get the LR from previous stackframe and restore */
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_STD,
+                           0,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           4 );
+  libxsmm_ppc64le_instr_2( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_MTSPR,
+                           0,
+                           LIBXSMM_PPC64LE_SPR_LR );
 
   /* return statement */
   libxsmm_ppc64le_instr_blr( io_generated_code );
