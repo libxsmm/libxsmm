@@ -449,6 +449,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P      0x650c80a2 /* divide, b/a, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I       0x25a8c026
+#define LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I       0x25aac026
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188086 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
