@@ -56,7 +56,7 @@ then
     ${CP} /dev/null ${ABINEW}
     for LIBFILE in "${LIBS}"/*."${LIBTYPE}"; do
       LIB=$(${BASENAME} "${LIBFILE}" .${LIBTYPE})
-      if [ ! "${EXCLUDE}" ] || [ "$(echo "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
+      if [ ! "${EXCLUDE}" ] || [ "$(${SED} "/\b${LIB}\b/d" <<<"${EXCLUDE}")" ]; then
         if [ ! "${CMD}" ]; then # try certain flags only once
           if ${NM} --defined-only -p "${LIBARGS}" "${LIBFILE}" >/dev/null 2>/dev/null; then
             CMD="${NM} --defined-only --no-sort ${LIBARGS}"
@@ -66,26 +66,27 @@ then
         fi
         echo "Checking ${LIB}..."
         for LINE in $(eval "${CMD} ${LIBFILE} 2>/dev/null"); do
-          SYMBOL=$(echo "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
+          SYMBOL=$(${SED} -n "/ T /p" <<<"${LINE}" | ${CUT} -d" " -f3)
           if [ "${SYMBOL}" ]; then
             # cleanup compiler-specific symbols (Intel Fortran, GNU Fortran)
-            SYMBOL=$(echo "${SYMBOL}" | ${SED} \
+            SYMBOL=$(${SED} <<<"${SYMBOL}" \
               -e "s/^libxsmm_mp_libxsmm_\(..*\)_/libxsmm_\1/" \
               -e "s/^__libxsmm_MOD_libxsmm_/libxsmm_/")
-            if [ "$(echo "${SYMBOL}" | ${SED} -n "/^libxsmm[^.]/p")" ]; then
+            if [ "$(${SED} -n "/^libxsmm[^.]/p" <<<"${SYMBOL}")" ]; then
               echo "${SYMBOL}" >>${ABINEW}
-            elif [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^__libxsmm_MOD___/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^__wrap_..*/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^internal_/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^libxsmm._/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^.gem._/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^memalign/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^realloc/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^malloc/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^free/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^_init/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^_fini/p")" ] && \
-                 [ ! "$(echo "${SYMBOL}" | ${SED} -n "/^iJIT_/p")" ];
+            elif [ "libxsmmnoblas" != "${LIB}" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^__libxsmm_MOD___/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^__wrap_..*/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^internal_/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^libxsmm._/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^.gem._/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^memalign/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^realloc/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^malloc/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^free/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^_init/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^_fini/p")" ] && \
+                 [ ! "$(${SED} <<<"${SYMBOL}" -n "/^iJIT_/p")" ];
             then
               >&2 echo "ERROR: non-conforming function name"
               echo "${LIB} ->${SYMBOL}"
