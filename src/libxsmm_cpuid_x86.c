@@ -431,6 +431,15 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
+    case LIBXSMM_PPC64LE_FPF: {
+      target_arch = "power8-";
+    } break;
+    case LIBXSMM_PPC64LE_VSX: {
+      target_arch = "power9";
+    } break;
+    case LIBXSMM_PPC64LE_MMA: {
+      target_arch = "power10";
+    } break;
     default: if (LIBXSMM_X86_GENERIC <= id
               && LIBXSMM_X86_ALLFEAT >= id)
     {
@@ -470,6 +479,11 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
         || LIBXSMM_AARCH64_A64FX  == id)
   {
     result = 16;
+  }
+  else if ( LIBXSMM_PPC64LE_VSX == id
+         || LIBXSMM_PPC64LE_MMA == id)
+  {
+    result = 4;
   }
   else if (LIBXSMM_X86_AVX512_SKX <= id) {
     result = 16;

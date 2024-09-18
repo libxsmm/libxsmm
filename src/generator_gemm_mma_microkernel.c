@@ -554,7 +554,6 @@ void libxsmm_generator_mma_block_ger_f32( libxsmm_generated_code *io_generated_c
       unsigned int l_m_rem = i_m - l_m*l_vec_ele;
       for ( int l_k = 0 ; l_k < i_k; ++l_k ) {
         unsigned int l_full = ( l_n_rem < l_vec_ele || l_m_rem < l_vec_ele ) ? 0 : 1;
-
         if ( l_full ) {
           if ( i_beta == 0 && l_k == 0 ) {
             libxsmm_ppc64le_instr_5( io_generated_code,
