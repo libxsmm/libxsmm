@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 13);
-  const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : 5);
-  const libxsmm_blasint k = (4 < argc ? atoi(argv[4]) : 7);
+  const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : (2 < argc ? m : 5));
+  const libxsmm_blasint k = (4 < argc ? atoi(argv[4]) : (2 < argc ? m : 7));
   /* leading dimensions are made multiples of the size of a cache-line */
   const libxsmm_blasint lda = (5 < argc ? LIBXSMM_MAX(atoi(argv[5]), m) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * m, PAD) / sizeof(TYPE)));
   const libxsmm_blasint ldb = (6 < argc ? LIBXSMM_MAX(atoi(argv[6]), k) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * k, PAD) / sizeof(TYPE)));

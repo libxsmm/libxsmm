@@ -37,9 +37,6 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 # define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
 # define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
-#if !defined(__INTEL_MKL__) || (20190003 <= (10000*__INTEL_MKL__+__INTEL_MKL_UPDATE__))
-# define NOFALLBACK
-#endif
 
 
 int main(int argc, char* argv[])
@@ -48,8 +45,8 @@ int main(int argc, char* argv[])
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const int m = (2 < argc ? atoi(argv[2]) : 13);
-  const int n = (3 < argc ? atoi(argv[3]) : 5);
-  const int k = (4 < argc ? atoi(argv[4]) : 7);
+  const int n = (3 < argc ? atoi(argv[3]) : (2 < argc ? m : 5));
+  const int k = (4 < argc ? atoi(argv[4]) : (2 < argc ? m : 7));
   /* leading dimensions are made multiples of the size of a cache-line */
   const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : (int)(((sizeof(TYPE) * m + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
   const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (int)(((sizeof(TYPE) * k + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
@@ -133,9 +130,6 @@ int main(int argc, char* argv[])
     duration = seconds() - duration;
   }
   else
-# if defined(NOFALLBACK)
-  if (0/*false*/)
-# endif
 #endif
   {
 #if defined(_OPENMP)

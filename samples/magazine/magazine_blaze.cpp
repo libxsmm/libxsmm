@@ -36,8 +36,8 @@ int main(int argc, char* argv[])
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const int m = (2 < argc ? atoi(argv[2]) : 13);
-  const int n = (3 < argc ? atoi(argv[3]) : 5);
-  const int k = (4 < argc ? atoi(argv[4]) : 7);
+  const int n = (3 < argc ? atoi(argv[3]) : (2 < argc ? m : 5));
+  const int k = (4 < argc ? atoi(argv[4]) : (2 < argc ? m : 7));
   /* leading dimensions are used to each pad (row-major!) */
   const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : static_cast<int>(((sizeof(T) * m + PAD - 1) & ~(PAD - 1)) / sizeof(T)));
   const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : static_cast<int>(((sizeof(T) * k + PAD - 1) & ~(PAD - 1)) / sizeof(T)));
