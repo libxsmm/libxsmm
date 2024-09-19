@@ -10,9 +10,13 @@
 ******************************************************************************/
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+    (defined(LIBXSMM_PLATFORM_X86))
+# include <mkl.h>
+#endif
 
-#if !defined(TYPE)
-# define TYPE double
+#if !defined(REALTYPE)
+# define REALTYPE double
 #endif
 #if !defined(ALPHA)
 # define ALPHA 1
@@ -22,20 +26,26 @@
 #endif
 
 #if !defined(GEMM)
-# if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
-     (defined(LIBXSMM_PLATFORM_X86))
-#   include <mkl.h>
-#   if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
-#     define GEMM_BATCH_STRIDED LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(TYPE)
-#   endif
-#   if defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2)
-#     define GEMM_BATCH LIBXSMM_GEMM_BATCH_SYMBOL(TYPE)
-#   endif
-# else
-LIBXSMM_BLAS_SYMBOL_CDECL(TYPE, gemm)
+# if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm)
 # endif
-# define GEMM LIBXSMM_GEMM_SYMBOL(TYPE)
+# define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
 #endif
+
+#if !defined(GEMM_BATCH) && (defined(__OPENBLAS) || ( \
+  (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+  (defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2))))
+# define GEMM_BATCH LIBXSMM_GEMM_BATCH_SYMBOL(REALTYPE)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm_batch)
+#endif
+
+#if !defined(GEMM_BATCH_STRIDED) && ( \
+  (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+  (defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)))
+# define GEMM_BATCH_STRIDED LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(REALTYPE)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm_batch_strided)
+#endif
+
 
 #if !defined(PRINT) && (defined(_DEBUG) || 0)
 # define PRINT
@@ -73,26 +83,26 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldb = (6 < argc ? LIBXSMM_MAX(atoi(argv[6]), k) : k);
   const libxsmm_blasint ldc = (7 < argc ? LIBXSMM_MAX(atoi(argv[7]), m) : LIBXSMM_UP(m, 8));
   const libxsmm_blasint dup = (8 < argc ? LIBXSMM_CLMP(atoi(argv[8]), 0, 100) : 33);
-  const libxsmm_datatype iprec = LIBXSMM_DATATYPE(TYPE), oprec = LIBXSMM_DATATYPE(TYPE);
+  const libxsmm_datatype iprec = LIBXSMM_DATATYPE(REALTYPE), oprec = LIBXSMM_DATATYPE(REALTYPE);
   /* micro-kernels are limited to certain alpha- and beta-values */
-  const TYPE alpha = ALPHA, beta = BETA;
+  const REALTYPE alpha = ALPHA, beta = BETA;
   const char transa = 'n', transb = 'n';
   /* calculate matrix sizes incl. padded elements */
   const libxsmm_blasint na = lda * k, nb = ldb * n, nc = ldc * n;
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const libxsmm_blasint size = (0 >= batchsize
     ? (libxsmm_blasint)(((0 == batchsize ? 512ULL : (unsigned long long)(-batchsize)) << 20/*512 MB*/) /
-      (sizeof(TYPE) * ((size_t)na + nb + nc)))
+      (sizeof(REALTYPE) * ((size_t)na + nb + nc)))
     : batchsize);
   /* process batch of A, B, and C in "random" order */
   const size_t shuffle = (0 != (9 < argc ? atoi(argv[9]) : 1)
     ? libxsmm_coprime2(size)
     : 0);
   /* allocate A, B, C, and D/Gold matrix buffers */
-  TYPE *const a = (TYPE*)MALLOC(sizeof(TYPE) * na * size);
-  TYPE *const b = (TYPE*)MALLOC(sizeof(TYPE) * nb * size);
-  TYPE *const c = (TYPE*)MALLOC(sizeof(TYPE) * nc * size);
-  TYPE *const d = (TYPE*)MALLOC(sizeof(TYPE) * nc * size);
+  REALTYPE *const a = (REALTYPE*)MALLOC(sizeof(REALTYPE) * na * size);
+  REALTYPE *const b = (REALTYPE*)MALLOC(sizeof(REALTYPE) * nb * size);
+  REALTYPE *const c = (REALTYPE*)MALLOC(sizeof(REALTYPE) * nc * size);
+  REALTYPE *const d = (REALTYPE*)MALLOC(sizeof(REALTYPE) * nc * size);
   libxsmm_blasint *const psize = (libxsmm_blasint*)MALLOC(sizeof(libxsmm_blasint) * size);
   libxsmm_blasint *const plda = (libxsmm_blasint*)MALLOC(sizeof(libxsmm_blasint) * size);
   libxsmm_blasint *const pldb = (libxsmm_blasint*)MALLOC(sizeof(libxsmm_blasint) * size);
@@ -104,12 +114,12 @@ int main(int argc, char* argv[])
   libxsmm_blasint *const ib = (libxsmm_blasint*)MALLOC(sizeof(libxsmm_blasint) * size);
   libxsmm_blasint *const ic = (libxsmm_blasint*)MALLOC(sizeof(libxsmm_blasint) * size);
   char* const ta = (char*)MALLOC(size), * const tb = (char*)MALLOC(size);
-  const TYPE** const pa = (const TYPE**)MALLOC(sizeof(TYPE*) * size);
-  const TYPE** const pb = (const TYPE**)MALLOC(sizeof(TYPE*) * size);
-  TYPE** const pc = (TYPE**)MALLOC(sizeof(TYPE*) * size);
-  TYPE** const pd = (TYPE**)MALLOC(sizeof(TYPE*) * size);
-  TYPE* const palpha = (TYPE*)MALLOC(sizeof(TYPE) * size);
-  TYPE* const pbeta = (TYPE*)MALLOC(sizeof(TYPE) * size);
+  const REALTYPE** const pa = (const REALTYPE**)MALLOC(sizeof(REALTYPE*) * size);
+  const REALTYPE** const pb = (const REALTYPE**)MALLOC(sizeof(REALTYPE*) * size);
+  REALTYPE** const pc = (REALTYPE**)MALLOC(sizeof(REALTYPE*) * size);
+  REALTYPE** const pd = (REALTYPE**)MALLOC(sizeof(REALTYPE*) * size);
+  REALTYPE* const palpha = (REALTYPE*)MALLOC(sizeof(REALTYPE) * size);
+  REALTYPE* const pbeta = (REALTYPE*)MALLOC(sizeof(REALTYPE) * size);
   int result = EXIT_SUCCESS;
 
   if (NULL != a && NULL != b && NULL != c && NULL != d
@@ -136,11 +146,11 @@ int main(int argc, char* argv[])
     for (i = 0; i < size; ++i) {
       const libxsmm_blasint j = (0 != shuffle ? (libxsmm_blasint)((i * shuffle) % size) : i);
       ia[i] = j * na; ib[i] = j * nb; ic[i] = j * nc;
-      LIBXSMM_MATINIT(TYPE, 25 + i, &a[i*na], m, k, lda, scale);
-      LIBXSMM_MATINIT(TYPE, 75 + i, &b[i*nb], k, n, ldb, scale);
+      LIBXSMM_MATINIT(REALTYPE, 25 + i, &a[i*na], m, k, lda, scale);
+      LIBXSMM_MATINIT(REALTYPE, 75 + i, &b[i*nb], k, n, ldb, scale);
       if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-        LIBXSMM_MATINIT(TYPE, 42 + i, &c[i*nc], m, n, ldc, scale);
-        LIBXSMM_MATINIT(TYPE, 42 + i, &d[i*nc], m, n, ldc, scale);
+        LIBXSMM_MATINIT(REALTYPE, 42 + i, &c[i*nc], m, n, ldc, scale);
+        LIBXSMM_MATINIT(REALTYPE, 42 + i, &d[i*nc], m, n, ldc, scale);
       }
     }
 
@@ -176,7 +186,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -209,44 +219,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
-          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
-        }
-        else {
-          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
-          result = EXIT_FAILURE;
-        }
-      }
-    }
-
-    if (EXIT_SUCCESS == result) {
-#if defined(PRINT)
-      start = libxsmm_timer_tick();
-#endif
-#if defined(_OPENMP) /* external parallelization */
-#     pragma omp parallel
-#     pragma omp single nowait
-#endif
-      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
-        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
-#if defined(PRINT)
-      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      start = libxsmm_timer_tick();
-#endif
-      for (i = 0; i < size; ++i) {
-        GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + ia[i], &lda, b + ib[i], &ldb,
-          &beta, d + ic[i], &ldc);
-      }
-#if defined(PRINT)
-      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#endif
-      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
-      if (EXIT_SUCCESS == result) {
-        const double epsilon = libxsmm_matdiff_epsilon(&di);
-        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -283,7 +256,44 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
+          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
+        }
+        else {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+      }
+    }
+
+    if (EXIT_SUCCESS == result) {
+#if defined(PRINT)
+      start = libxsmm_timer_tick();
+#endif
+#if defined(_OPENMP) /* external parallelization */
+#     pragma omp parallel
+#     pragma omp single nowait
+#endif
+      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
+#if defined(PRINT)
+      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      start = libxsmm_timer_tick();
+#endif
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, a + ia[i], &lda, b + ib[i], &ldb,
+          &beta, d + ic[i], &ldc);
+      }
+#if defined(PRINT)
+      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+#endif
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -317,7 +327,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -351,7 +361,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -389,7 +399,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -424,46 +434,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
-          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
-        }
-        else {
-          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
-          result = EXIT_FAILURE;
-        }
-      }
-    }
-
-    if (EXIT_SUCCESS == result) {
-      const libxsmm_blasint ptrsize = sizeof(void*);
-#if defined(PRINT)
-      start = libxsmm_timer_tick();
-#endif
-#if defined(_OPENMP) /* external parallelization */
-#     pragma omp parallel
-#     pragma omp single nowait
-#endif
-      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
-        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
-#if defined(PRINT)
-      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      start = libxsmm_timer_tick();
-#endif
-      for (i = 0; i < size; ++i) {
-        GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, pa[i], &lda, pb[i], &ldb,
-          &beta, pd[i], &ldc);
-      }
-#if defined(PRINT)
-      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#endif
-      libxsmm_matdiff_reduce(&diff, &di);
-      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
-      if (EXIT_SUCCESS == result) {
-        const double epsilon = libxsmm_matdiff_epsilon(&di);
-        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -502,7 +473,46 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
+          FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
+        }
+        else {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+      }
+    }
+
+    if (EXIT_SUCCESS == result) {
+      const libxsmm_blasint ptrsize = sizeof(void*);
+#if defined(PRINT)
+      start = libxsmm_timer_tick();
+#endif
+#if defined(_OPENMP) /* external parallelization */
+#     pragma omp parallel
+#     pragma omp single nowait
+#endif
+      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
+#if defined(PRINT)
+      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      start = libxsmm_timer_tick();
+#endif
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, pa[i], &lda, pb[i], &ldb,
+          &beta, pd[i], &ldc);
+      }
+#if defined(PRINT)
+      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+#endif
+      libxsmm_matdiff_reduce(&diff, &di);
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        const double epsilon = libxsmm_matdiff_epsilon(&di);
+        FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -537,7 +547,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -572,7 +582,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -606,7 +616,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -644,7 +654,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -678,7 +688,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -712,7 +722,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -745,7 +755,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -778,7 +788,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -811,7 +821,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -850,7 +860,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -882,7 +892,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -918,7 +928,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -954,7 +964,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -986,7 +996,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -1018,7 +1028,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -1052,7 +1062,7 @@ int main(int argc, char* argv[])
       if (EXIT_SUCCESS == result) {
         const double epsilon = libxsmm_matdiff_epsilon(&di);
         FPRINTF(stderr, "Line #%04i abs=%f eps=%f", __LINE__, di.linf_abs, epsilon);
-        if (EPSILON(TYPE) >= epsilon) {
+        if (EPSILON(REALTYPE) >= epsilon) {
           FPRINTF(stderr, " (%.0f vs %.0f ms)\n", d1 * 1E3, d2 * 1E3);
         }
         else {
@@ -1068,7 +1078,7 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &di);
       epsilon = libxsmm_matdiff_epsilon(&diff);
       FPRINTF(stderr, "Summary    abs=%f eps=%f", diff.linf_abs, epsilon);
-      if (EPSILON(TYPE) >= epsilon) FPRINTF(stderr, "\n");
+      if (EPSILON(REALTYPE) >= epsilon) FPRINTF(stderr, "\n");
       else {
         FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
         result = EXIT_FAILURE;

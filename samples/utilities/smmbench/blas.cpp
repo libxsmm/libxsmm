@@ -33,23 +33,25 @@
 #if !defined(REALTYPE)
 # define REALTYPE double
 #endif
+
 #if !defined(GEMM)
+# if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm)
+# endif
 # define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
 #endif
-#if !defined(GEMM_BATCH) && \
+
+#if !defined(GEMM_BATCH) && (defined(__OPENBLAS) || ( \
   (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
-  (defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2))
+  (defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2))))
 # define GEMM_BATCH LIBXSMM_GEMM_BATCH_SYMBOL(REALTYPE)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm_batch)
 #endif
+
 #if 0 /* enable padding on a per-matrix basis */
 # define PAD(VALUE) (LIBXSMM_UP2((VALUE) * sizeof(REALTYPE), LIBXSMM_ALIGNMENT) / sizeof(REALTYPE))
 #else
 # define PAD(VALUE) (VALUE)
-#endif
-
-#if (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double)) \
-  && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
 #endif
 
 

@@ -51,7 +51,7 @@
 
 #if !defined(CHECK) && (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double))
 # if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm)
 # endif
 # define CHECK
 #endif
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     tensor_type ta(m, k), tb(k, n), tc(m, n);
     LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
     LIBXSMM_BLAS_CONST REALTYPE alpha(1), beta(0);
-    libxsmm_timer_tickint start
+    libxsmm_timer_tickint start;
     double d1;
     {
       std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {

@@ -21,6 +21,10 @@
 #include <cassert>
 #include <cstdio>
 #include <cmath>
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+    (defined(LIBXSMM_PLATFORM_X86))
+# include <mkl.h>
+#endif
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -29,9 +33,11 @@
 # define REALTYPE double
 #endif
 
-#if (LIBXSMM_EQUAL(REALTYPE, float) || LIBXSMM_EQUAL(REALTYPE, double)) \
-  && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
+#if !defined(GEMM)
+# define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
+# if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm)
+# endif
 #endif
 
 #if !defined(MAX_SIZE)
@@ -185,7 +191,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          LIBXSMM_GEMM_SYMBOL(REALTYPE)(&transa, &transb, &m, &n, &k,
+          GEMM(&transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
@@ -206,7 +212,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          LIBXSMM_GEMM_SYMBOL(REALTYPE)(&transa, &transb, &m, &n, &k,
+          GEMM(&transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;

@@ -10,24 +10,25 @@
 ******************************************************************************/
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+    (defined(LIBXSMM_PLATFORM_X86))
+# include <mkl.h>
+#endif
 
 #if !defined(REALTYPE)
 # define REALTYPE double
 #endif
 
+#if !defined(GEMM)
+# define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
+# if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+LIBXSMM_BLAS_SYMBOL_FDECL(REALTYPE, gemm)
+# endif
+#endif
+
 #define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
 #define EPSILON_double 1e-8
 #define EPSILON_float 1e-4
-
-#if !defined(GEMM)
-# if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
-     (defined(LIBXSMM_PLATFORM_X86))
-#   include <mkl.h>
-# else
-LIBXSMM_BLAS_SYMBOL_CDECL(REALTYPE, gemm)
-# endif
-# define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
-#endif
 
 
 LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
