@@ -24,12 +24,16 @@ if [ ! "${GREP}" ] || [ ! "${SED}" ] || [ ! "${TR}" ] || [ ! "${WC}" ]; then
   exit 1
 fi
 
-#Eventually disable a set of tests e.g., TESTS_DISABLED="headeronly"
+# disable interceptor to actually test against real LAPACK/BLAS
+export LIBXSMM_GEMM_WRAP=${LIBXSMM_GEMM_WRAP:-0}
+
+# disabled set of tests
+#TESTS_DISABLED="headeronly"
 
 # list of tests that produce "application shall be linked against LAPACK/BLAS" in case of BLAS=0
 TESTS_NEEDBLAS="gemm.c gemmbatch.c wrap.sh"
 # grep pattern based on TESTS_NEEDBLAS
-TESTS_NEEDBLAS_GREP=$(echo "${TESTS_NEEDBLAS}" | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
+TESTS_NEEDBLAS_GREP=$(${SED} <<<"${TESTS_NEEDBLAS}" "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
   TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
@@ -37,14 +41,14 @@ if [ ! "$*" ]; then
     fsspmdm.sh memcmp.sh \
     packed.sh smm.sh wrap.sh"
   if [ "${SORT}" ]; then
-    TESTS=$(echo "${TESTS}" | ${TR} -s " " "\n" | ${SORT})
+    TESTS=$(${TR} <<<"${TESTS}" -s " " "\n" | ${SORT})
   fi
 else
   TESTS="$*"
 fi
 
 if [ "${TESTS}" ] && [ "$(${GREP} 'BLAS=0' "${HERE}/../.state" 2>/dev/null)" ]; then
-  TESTS=$(echo "${TESTS}" | ${GREP} -v "${TESTS_NEEDBLAS_GREP}")
+  TESTS=$(${GREP} <<<"${TESTS}" -v "${TESTS_NEEDBLAS_GREP}")
 fi
 
 if [ "Windows_NT" = "${OS}" ]; then
@@ -68,11 +72,11 @@ echo "Running tests"
 echo "============="
 
 NTEST=1
-NMAX=$(echo "${TESTS}" | ${WC} -w | ${TR} -d " ")
+NMAX=$(${WC} <<<"${TESTS}" -w | ${TR} -d " ")
 for TEST in ${TESTS}; do
-  NAME=$(echo "${TEST}" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
+  NAME=$(${SED} <<<"${TEST}" 's/.*\///;s/\(.*\)\..*/\1/')
   printf "%02d of %02d: %-12s " "${NTEST}" "${NMAX}" "${NAME}"
-  if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
+  if [ "0" != "$(${GREP} <<<"${TESTS_DISABLED}" -q "${NAME}"; echo $?)" ]; then
     cd "${HERE}" || exit 1
     if [ -e "${HERE}/${NAME}.sh" ]; then
       RESULT=0
