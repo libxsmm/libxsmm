@@ -60,14 +60,26 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32i8_aarch64_sve( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_scf_vec_reg,
-    const unsigned int i_pred_reg) {
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                           i_vec_inout, i_scf_vec_reg, 0, i_vec_inout, i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+    const unsigned int i_pred_reg,
+    const unsigned int i_skip_scaling,
+    const unsigned int i_sign_sat ) {
+  if (i_skip_scaling == 0) {
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                             i_vec_inout, i_scf_vec_reg, 0, i_vec_inout, i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+  }
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P,
                                            i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout, i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS,
                                            i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout,
                                            i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+  if (i_sign_sat > 0) {
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I,
+                                            i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, -128, i_vec_inout,
+                                            0, libxsmm_generator_aarch64_get_sve_type(4) );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I,
+                                            i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 127, i_vec_inout,
+                                            0, libxsmm_generator_aarch64_get_sve_type(4) );
+  }
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, i_vec_inout, i_vec_inout, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(2) );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, i_vec_inout, i_vec_inout, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(1) );
 }
@@ -76,7 +88,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_i8f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_scf_vec_reg,
-    const unsigned int i_pred_reg) {
+    const unsigned int i_pred_reg,
+    unsigned int       i_skip_scaling ) {
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(2) );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(4) );
   /* Convert to ps  */
@@ -84,19 +97,23 @@ void libxsmm_generator_vcvt_i8f32_aarch64_sve( libxsmm_generated_code* io_genera
                                            i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout,
                                            i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
   /* Scale  */
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                           i_vec_inout, i_scf_vec_reg, 0, i_vec_inout, i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+  if (i_skip_scaling == 0) {
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                             i_vec_inout, i_scf_vec_reg, 0, i_vec_inout, i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+  }
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32i8_aarch64( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_scf_vec_reg,
-    const unsigned int i_pred_reg) {
+    const unsigned int i_pred_reg,
+    const unsigned int i_skip_scaling,
+    const unsigned int i_sign_sat ) {
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO  */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
-    libxsmm_generator_vcvt_f32i8_aarch64_sve( io_generated_code, i_vec_inout, i_scf_vec_reg, i_pred_reg );
+    libxsmm_generator_vcvt_f32i8_aarch64_sve( io_generated_code, i_vec_inout, i_scf_vec_reg, i_pred_reg, i_skip_scaling, i_sign_sat );
   }
 }
 
@@ -104,11 +121,12 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_i8f32_aarch64( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_scf_vec_reg,
-    const unsigned int i_pred_reg) {
+    const unsigned int i_pred_reg,
+    unsigned int       i_skip_scaling ) {
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO  */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
-    libxsmm_generator_vcvt_i8f32_aarch64_sve( io_generated_code, i_vec_inout, i_scf_vec_reg, i_pred_reg );
+    libxsmm_generator_vcvt_i8f32_aarch64_sve( io_generated_code, i_vec_inout, i_scf_vec_reg, i_pred_reg, i_skip_scaling );
   }
 }
 

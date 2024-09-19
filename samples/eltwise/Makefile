@@ -48,7 +48,7 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts  $(TSTDIR)/.generate_ternary_test_scripts
+scripts: $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_quant_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts  $(TSTDIR)/.generate_ternary_test_scripts
 
 $(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_test_scripts.sh Makefile
 	$(info Creating unary simple test scripts...)
@@ -73,6 +73,11 @@ $(TSTDIR)/.generate_unary_relu_test_scripts: $(TSTDIR)/generate_unary_relu_test_
 $(TSTDIR)/.generate_unary_dropout_test_scripts: $(TSTDIR)/generate_unary_dropout_test_scripts.sh Makefile
 	$(info Creating unary dropout test scripts...)
 	@cd $(TSTDIR) && ./generate_unary_dropout_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_quant_test_scripts: $(TSTDIR)/generate_unary_quant_test_scripts.sh Makefile
+	$(info Creating unary quant test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_quant_test_scripts.sh >/dev/null
 	@-touch $@
 
 $(TSTDIR)/.generate_unary_gather_scatter_test_scripts: $(TSTDIR)/generate_unary_gather_scatter_test_scripts.sh Makefile
@@ -151,6 +156,7 @@ endif
 	@-rm -f $(TSTDIR)/.generate_unary_reduce_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_relu_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_dropout_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_quant_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_gather_scatter_test_scripts
 	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
 	@-rm -f $(TSTDIR)/.generate_ternary_test_scripts
