@@ -51,7 +51,7 @@ void libxsmm_generator_gemm_mma_mk_load_trans( libxsmm_generated_code   *io_gene
   unsigned int l_vec_ele = l_vec_len / l_databytes;
   unsigned int l_m_blocks = i_m / l_vec_ele;
   unsigned int l_n_blocks = (i_n + l_vec_ele - 1) / l_vec_ele;
-  unsigned int l_m_part;
+  unsigned int l_m_part = -1;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
   /* Local copy of pointer */
@@ -232,7 +232,7 @@ void libxsmm_generator_gemm_mma_mk_load_acc( libxsmm_generated_code *io_generate
   unsigned int l_vec_ele = l_vec_len / l_databytes;
   unsigned int l_acc_vec = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
   unsigned int l_m_blocks = i_m / l_vec_ele;
-  unsigned int l_m_part;
+  unsigned int l_m_part = -1;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
   /* Local copies of pointer */
@@ -370,7 +370,7 @@ void libxsmm_generator_gemm_mma_mk_store_acc( libxsmm_generated_code *io_generat
   unsigned int l_vec_ele = l_vec_len / l_databytes;
   unsigned int l_acc_vec = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
   unsigned int l_m_blocks = i_m / l_vec_ele;
-  unsigned int l_m_part;
+  unsigned int l_m_part = -1;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
   /* Local copies of pointer */
