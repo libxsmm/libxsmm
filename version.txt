@@ -1,1 +1,1 @@
-feature_quant_dequant_i8_avx2-1.17-3749
+fix_eqn_tmp_size-1.17-3738
