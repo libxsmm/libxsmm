@@ -802,6 +802,9 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
   unsigned int is_gather_scatter_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
                                        ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)     ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER)) ) ? 1 : 0;
+  unsigned int is_quant_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
+                               ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT)     ||
+                                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DEQUANT)) ) ? 1 : 0;
   unsigned int has_inp_or_out_fp8 = (libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_BF8) > 0 || libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_HF8) > 0) ? 1 : 0;
   unsigned int has_inp_or_out_fp64 = (libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_F64) > 0) ? 1 : 0;
   unsigned int has_all_inp_and_out_fp64 = (libxsmm_generator_mateltwise_all_inp_comp_out_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_F64) > 0) ? 1 : 0;
@@ -832,7 +835,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
     is_valid_arch_prec = 0;
   }
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1) ||
-       (is_unary_reduce_col_idx_tpp == 1) || (is_gather_scatter_tpp == 1) || (is_unary_relu_tpp == 1) || (is_unary_replicate_col_tpp == 1)) ) {
+       (is_unary_reduce_col_idx_tpp == 1) || (is_gather_scatter_tpp == 1) || (is_unary_relu_tpp == 1) || (is_unary_replicate_col_tpp == 1) || (is_quant_tpp == 1 )) ) {
     is_valid_arch_prec = 0;
   }
   if ( (has_inp_or_out_fp16 > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2) && (is_transform_tpp == 0) ) {
