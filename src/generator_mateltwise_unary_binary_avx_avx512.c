@@ -2324,33 +2324,62 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
     }
   }
 
-  switch (i_mateltwise_desc->param) {
-    case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VADDPS : LIBXSMM_X86_INSTR_VADDPD;
-    } break;
-    case LIBXSMM_MELTW_TYPE_BINARY_MUL: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMULPS : LIBXSMM_X86_INSTR_VMULPD;
-    } break;
-    case LIBXSMM_MELTW_TYPE_BINARY_SUB: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VSUBPS : LIBXSMM_X86_INSTR_VSUBPD;
-    } break;
-    case LIBXSMM_MELTW_TYPE_BINARY_DIV: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VDIVPS : LIBXSMM_X86_INSTR_VDIVPD;
-    } break;
-    case LIBXSMM_MELTW_TYPE_BINARY_MULADD: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VFMADD213PS : LIBXSMM_X86_INSTR_VFMADD213PD;
-    } break;
-    case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMAXPS : LIBXSMM_X86_INSTR_VMAXPD;
-    } break;
-    case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
-      binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMINPS : LIBXSMM_X86_INSTR_VMINPD;
-    } break;
-    default:;
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    switch (i_mateltwise_desc->param) {
+      case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_ADDPS : LIBXSMM_X86_INSTR_ADDPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MUL: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_MULPS : LIBXSMM_X86_INSTR_MULPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_SUB: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_SUBPS : LIBXSMM_X86_INSTR_SUBPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_DIV: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_DIVPS : LIBXSMM_X86_INSTR_DIVPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MULADD: {
+        binary_op_instr = LIBXSMM_X86_INSTR_UNDEF;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_MAXPS : LIBXSMM_X86_INSTR_MAXPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_MINPS : LIBXSMM_X86_INSTR_MINPD;
+      } break;
+      default: {
+      } break;
+    }
+  } else {
+    switch (i_mateltwise_desc->param) {
+      case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VADDPS : LIBXSMM_X86_INSTR_VADDPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MUL: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMULPS : LIBXSMM_X86_INSTR_VMULPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_SUB: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VSUBPS : LIBXSMM_X86_INSTR_VSUBPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_DIV: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VDIVPS : LIBXSMM_X86_INSTR_VDIVPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MULADD: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VFMADD213PS : LIBXSMM_X86_INSTR_VFMADD213PD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMAXPS : LIBXSMM_X86_INSTR_VMAXPD;
+      } break;
+      case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+        binary_op_instr = ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ) ? LIBXSMM_X86_INSTR_VMINPS : LIBXSMM_X86_INSTR_VMINPD;
+      } break;
+      default: {
+      } break;
+    }
   }
 
   if (libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) {
-    binary_op_instr = LIBXSMM_X86_INSTR_VCMPPS;
+    binary_op_instr = ( io_generated_code->arch < LIBXSMM_X86_AVX ) ? LIBXSMM_X86_INSTR_CMPPS : LIBXSMM_X86_INSTR_VCMPPS;
     switch (i_mateltwise_desc->param) {
       case LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT: {
         l_cmp_imm = 6;
