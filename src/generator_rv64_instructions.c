@@ -487,7 +487,7 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
       return;
     }
   } else {
-    fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid instruction!\n");
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid instruction! %x\n", i_vmove_instr);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -1239,7 +1239,7 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
       }
 
       /* Generate immediate */
-      imm_lo = ((a_imm >> 11) & 0x1) | ((a_imm & 0xf) << 1);
+      imm_lo = ((a_imm >> 10) & 0x1) | ((a_imm & 0xf) << 1);
       imm_hi = ((a_imm & 0x3f0) >> 4) | (((i_sign)) << 6);
 
       /* fix bits */
