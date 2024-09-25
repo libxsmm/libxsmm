@@ -805,16 +805,18 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
   unsigned int is_unary_quant_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
                                      ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT)     ||
                                       (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DEQUANT)) ) ? 1 : 0;
+#if 0
   unsigned int is_binary_simple_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY )  &&
                                        ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ADD)     ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MUL)     ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_SUB)     ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV)     ||
-                                        (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD)  ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MIN)     ||
                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MAX)) ) ? 1 : 0;
+#endif
   unsigned int is_binary_complex_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY )  &&
                                         ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)                              ||
+                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD)                              ||
                                          (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD)     ||
                                          (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)                                ||
                                          (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_BRGEMM)                              ||
@@ -862,14 +864,11 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
     }
   }
 
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && ((is_binary_simple_tpp == 1) || (is_binary_complex_tpp == 1)) ) {
-    is_valid_arch_prec = 0;
-  }
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) ) {
     is_valid_arch_prec = 0;
   }
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX2) && ((is_unary_approx_tpp == 1) || (is_unary_reduce_tpp == 1) ||
-       (is_unary_reduce_col_idx_tpp == 1) || (is_unary_gather_scatter_tpp == 1) || (is_unary_relu_tpp == 1) || (is_unary_replicate_col_tpp == 1) || (is_unary_quant_tpp == 1 )) ) {
+       (is_unary_reduce_col_idx_tpp == 1) || (is_unary_gather_scatter_tpp == 1) || (is_unary_relu_tpp == 1) || (is_unary_replicate_col_tpp == 1) || (is_unary_quant_tpp == 1 ) || (is_binary_complex_tpp == 1)) ) {
     is_valid_arch_prec = 0;
   }
   if ( (has_inp_or_out_fp16 > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX2) && (is_transform_tpp == 0) ) {
