@@ -1,3 +1,7 @@
+mxfp4i8bf16gemm_nn_eqld
+mxfp4i8bf16gemm_nn_gtld
+mxfp4i8f32gemm_nn_eqld
+mxfp4i8f32gemm_nn_gtld
 bf16bf16_spmm_eqld
 bf16bf16_spmm_gtld
 bf16f32_flatgemm_nn_eqld

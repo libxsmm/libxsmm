@@ -1,3 +1,7 @@
+mxfp4i8bf16gemm_nn_eqld
+mxfp4i8bf16gemm_nn_gtld
+mxfp4i8f32gemm_nn_eqld
+mxfp4i8f32gemm_nn_gtld
 f16f16f32f32gemm_nn_eqld_bop0_uop1_cvnni0
 f16f16f32f32gemm_nn_eqld_bop0_uop2_cvnni0
 f16f16f32f32gemm_nn_eqld_bop0_uop3_cvnni0
