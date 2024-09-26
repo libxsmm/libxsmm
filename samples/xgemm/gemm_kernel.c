@@ -3485,10 +3485,6 @@ int main(int argc, char* argv []) {
           if (l_gemm_def.is_Amxfp4Bi8_gemm > 0) {
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0, l_akk = 0;
             char *l_a_mxfp4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * ((size_t)l_k/2) * (size_t)l_br, 64);
-            unsigned char scale_exp = 0;
-            unsigned int scale_exp_u32 = 0;
-            float *scalef_ptr = (float*)&scale_exp_u32;
-            float scale_expf = 0.0;
             char *l_a_new = NULL;
             libxsmm_free(l_a);
             l_a  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(char), 64);

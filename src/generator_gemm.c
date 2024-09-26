@@ -42,6 +42,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   if ( l_is_Amxfp4_Bi8_gemm > 0 ) {
     if (io_generated_code->arch != LIBXSMM_X86_AVX2_SRF) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
     }
   }
 
