@@ -816,7 +816,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
 #endif
   unsigned int is_binary_complex_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY )  &&
                                         ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)                              ||
-                                         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD)                              ||
                                          (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD)     ||
                                          (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)                                ||
                                          (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_BRGEMM)                              ||
