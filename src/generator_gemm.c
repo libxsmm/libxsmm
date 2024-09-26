@@ -563,6 +563,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_vector_length = 4;
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 2;
+  } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+    l_vector_length = 4;
+  } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+    l_vector_length = 2;
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 8;
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
@@ -601,6 +605,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     /* SVE256 + BFDOT */
     else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
       l_vector_length = 8;
+    }
+    /* SVE128 + BFDOT */
+    else if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) {
+      l_vector_length = 4;
     }
     else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -642,7 +650,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
       l_vector_length = 8;
     }
-    else {
+    /* SVE128 + MMLA */
+    else if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV2) {
+      l_vector_length = 4;
+    } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }
@@ -662,9 +673,16 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       return;
     }
     if ((LIBXSMM_DATATYPE_F32 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
-        (LIBXSMM_DATATYPE_F64 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
+        (LIBXSMM_DATATYPE_F64 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
+        (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
+    } else {
+      /* BF16 A transpose is supported forflat A */
+      if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+        return;
+      }
     }
   } else {
     if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
@@ -695,11 +713,16 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   /* check for trans A cases which are not supported in the generator */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 ) {
     if ( (LIBXSMM_DATATYPE_F32 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
-         (LIBXSMM_DATATYPE_F64 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
+         (LIBXSMM_DATATYPE_F64 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
+         (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
       return;
     } else {
-      /* we are fine, we have transpose support */
+      /* BF16 A transpose is supported forflat A */
+      if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+        return;
+      }
     }
   }
 
@@ -777,9 +800,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     /* TODO: check for VNNI format */
     if ( ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) && ( io_generated_code->arch < LIBXSMM_X86_ALLFEAT ) ) &&
          ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) ||
-           ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) && io_generated_code->arch >= LIBXSMM_X86_AVX512_GNR) ||
-           ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) ) &&
-         ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
+           ( (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_GNR)) ||
+           ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) ) ) {
       libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     } else if ( ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) && ( io_generated_code->arch < LIBXSMM_X86_ALLFEAT ) ) &&
                 ( (l_is_Abf8_Bbf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ||  ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) || ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )))) {
@@ -792,6 +814,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_V81) || (io_generated_code->arch == LIBXSMM_AARCH64_V82) ) {
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+    libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
+  } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_SVE128) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV2) ) {
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_SVE256) || (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) ) {
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
