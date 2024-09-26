@@ -160,6 +160,11 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4( libxsmm_generated_code*    
       if (i_n_blocking == 1) {
         l_m_vreg_k0 = l_vreg_m_start + 0;
         l_m_vreg_k1 = l_vreg_m_start + 1;
+        if (l_is_Amxfp4_Bi8_gemm > 0) {
+          l_m_vreg_k1 = l_vreg_m_start + 1 + l_m;
+          l_n_vreg_k0 = l_vreg_m_start + 1 + l_m_blocking;
+          l_n_vreg_k1 = l_vreg_m_start + 1 + l_m_blocking;
+        }
         l_tmp_vreg  = l_vreg_m_start + 2;
       }
 
@@ -386,8 +391,8 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4( libxsmm_generated_code*    
   /* Scale actual F32 accumulators with partial result and scaling factor */
   if (l_is_Amxfp4_Bi8_gemm > 0) {
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-      unsigned int l_scf_vreg = l_vreg_scf_start + l_m;
-      unsigned int l_scf_b_vreg = l_vreg_n_start;
+      unsigned int l_scf_vreg = l_vreg_scf_start;
+      unsigned int l_scf_b_vreg = l_vreg_scf_start + 1;
       /* Load weight scale factor */
       if ( ( l_m == (l_m_blocking - 1) ) && (i_micro_kernel_config->use_masking_a_c != 0) ) {
         libxsmm_generator_maskedload_8bit_avx2( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
