@@ -544,8 +544,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   if ( l_is_Amxfp4_Bi8_gemm > 0 ) {
     /* Set to 0 lo mask and to 1 hi mask */
-    char lut_mxfp4[32] = { 0, 11, 21, 32, 42, 64, 85, 127, 0, -11, -21, -32, -42, -64, -85, -127,
-                           0, 11, 21, 32, 42, 64, 85, 127, 0, -11, -21, -32, -42, -64, -85, -127  };
+    char lut_mxfp4[32] = { 0, 11, 21, 32, 42, 64, 85, 127, 0, (char)-11, (char)-21, (char)-32, (char)-42, (char)-64, (char)-85, (char)-127,
+                           0, 11, 21, 32, 42, 64, 85, 127, 0, (char)-11, (char)-21, (char)-32, (char)-42, (char)-64, (char)-85, (char)-127 };
     unsigned int mask_idx[8] = { 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f };
     l_micro_kernel_config.io_loop_label_tracker = io_loop_label_tracker;
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
