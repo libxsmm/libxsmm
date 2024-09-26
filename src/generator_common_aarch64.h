@@ -984,4 +984,26 @@ void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_gener
                                                 const unsigned int      i_m_blocking,
                                                 const unsigned int      i_n_blocking,
                                                 const unsigned int      i_ldc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_code,
+                                         const unsigned int       i_gp_reg_addr,
+                                         unsigned int             i_k,
+                                         unsigned int             i_k_rest,
+                                         unsigned int             i_n_blocking,
+                                         unsigned int             i_help_register );
+
+LIBXSMM_API_INTERN
+void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_addr,
+                                               const unsigned int      i_m_blocking,
+                                               const unsigned int      i_n_blocking,
+                                               const unsigned int      i_ldc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_addr,
+                                               const unsigned int      i_m_blocking,
+                                               const unsigned int      i_n_blocking,
+                                               const unsigned int      i_ldc );
 #endif /* GENERATOR_COMMON_AARCH64_H */

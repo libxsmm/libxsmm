@@ -936,11 +936,13 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg ) {
-  // if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
-  //   fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
-  //   LIBXSMM_EXIT_ERROR(io_generated_code);
-  //   return;
-  // }
+  /*
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+  */
 
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF:

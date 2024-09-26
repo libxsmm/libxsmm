@@ -2000,3 +2000,21 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_aarch64_setup_blocking_sme( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                        unsigned int*                  o_m,
+                                                        unsigned int*                  o_n) {
+  unsigned int tmp = 0;
+  o_n[0] = i_xgemm_desc->n / 64;
+  tmp = i_xgemm_desc->n % 64;
+  if( tmp > 0 ){
+    o_n[1] = 1;
+  }
+
+  o_m[0] = i_xgemm_desc->m / 32;
+  tmp = i_xgemm_desc->m % 32;
+  if( tmp > 0 ){
+    o_m[1]++;
+  }
+
+}
