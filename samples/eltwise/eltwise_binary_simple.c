@@ -552,8 +552,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   if (is_cmp_op(op) > 0) {
     libxsmm_blasint i, j;
     for (j = 0; j < N; j++) {
-      for (i = M; i < l_ldo; i++) {
+      for (i = M; i < ((M+15)/16)*16; i++) {
         zero_bit((unsigned char *)out, i, j, l_ldo);
+        zero_bit((unsigned char *)out_gold, i, j, l_ldo);
       }
     }
     norms_out = check_matrix( dtype_out, out_gold, out, l_ldo/8, LIBXSMM_UPDIV(M, 8), N );
