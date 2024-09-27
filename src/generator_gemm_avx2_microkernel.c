@@ -170,6 +170,14 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4( libxsmm_generated_code*    
 
       if (l_is_Amxfp4_Bi8_gemm > 0) {
         if (l_k % 2 == 0) {
+          if ((i_n_blocking == 1) && (i_micro_kernel_config->use_masking_a_c != 0) && (l_m == (l_m_blocking - 1)) && (l_m_blocking == 4)) {
+            l_andmask_vreg = l_m_vreg_k0;
+            libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+            libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
+            libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
+                i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', l_andmask_vreg, 0, 0, 0 );
+            libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+          }
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
                                         i_micro_kernel_config->a_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_a,
