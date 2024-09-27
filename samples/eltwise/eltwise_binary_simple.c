@@ -462,8 +462,8 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
   init_random_matrix( dtype_in1, in2,      1, ldi, N, 0 );
-  init_zero_matrix(   dtype_out, out,      1, l_ldo, N );
-  init_zero_matrix(   dtype_out, out_gold, 1, l_ldo, N );
+  init_random_matrix( dtype_out, out,      1, l_ldo, N, 0 );
+  init_random_matrix( dtype_out, out_gold, 1, l_ldo, N, 0 );
 
   if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
