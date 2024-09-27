@@ -3769,7 +3769,13 @@ int main(int argc, char* argv []) {
     printf("\n\n Total Max Error bitmask %f\n\n", l_total_max_error_bitmask );
   }
 
-  if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
+  if (l_gemm_def.is_Amxfp4Bi8_gemm > 0 && l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16) {
+    if ( l_total_max_error >= 0.01 ) {
+      return EXIT_FAILURE;
+    } else {
+      return EXIT_SUCCESS;
+    }
+  } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
     if (l_gemm_def.unary_postop == SIGMOID) {
       if ( l_total_max_error >= 0.007 ) {
         return EXIT_FAILURE;
