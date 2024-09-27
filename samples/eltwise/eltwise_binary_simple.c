@@ -365,6 +365,8 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           unsigned char result_bit = (out_value > 0.1) ? 1 : 0;
           if (result_bit > 0) {
             set_bit((unsigned char*)out, i, j, ldo);
+          } else {
+            zero_bit((unsigned char*)out, i, j, ldo);
           }
         } else {
           if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
