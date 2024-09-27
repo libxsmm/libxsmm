@@ -990,6 +990,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
+        float f32_accum = 0.0;
         if ( i_gemm_def->beta == 0 ) {
           if (i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) {
             i_c_f[(l_j * ldc) + l_i] = 0.0f;
@@ -1000,36 +1001,33 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            float scale_mxfp4 = 0.0;
+            float scale_b = 0.0;
+            unsigned char scale_mxfp4_uchar = 0;
+            unsigned int scale_mxfp4_u32 = 0;
+            float *scalef_ptr = (float*)&scale_mxfp4_u32;
             tmp_val = 0;
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               tmp_val += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
                          c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
             /* Now we have to apply the scaling */
-            float partial_res = 0.0;
-            float scale_mxfp4 = 0.0;
-            float scale_b = 0.0;
-            unsigned char scale_mxfp4_uchar = 0;
-            unsigned int scale_mxfp4_u32 = 0;
-            float *scalef_ptr = (float*)&scale_mxfp4_u32;
-
             scale_mxfp4_uchar = i_gemm_def->scf_u8[l_r * lda * (k/l_k_block) + l_s * lda + l_i];
             scale_mxfp4_u32 = (unsigned int) scale_mxfp4_uchar;
             scale_mxfp4_u32 = scale_mxfp4_u32 << 23;
             scale_mxfp4 = *scalef_ptr;
             scale_b = i_gemm_def->scf_b_f32[l_r * (ldb/32) * n + l_j * (ldb/32) + l_s];
-
-            partial_res = ((float)tmp_val) * scale_mxfp4 * scale_b;
-            if (i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) {
-              i_c_f[(l_j * ldc) + l_i] += partial_res;
-            }
-            if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16) {
-              float up_tmp;
-              libxsmm_convert_bf16_f32( &i_c_bf16[(l_j * ldc) + l_i], &up_tmp, 1 );
-              up_tmp += partial_res;
-              libxsmm_rne_convert_fp32_bf16(&up_tmp, &i_c_bf16[(l_j * ldc) + l_i], 1);
-            }
+            f32_accum += ((float)tmp_val) * scale_mxfp4 * scale_b;
           }
+        }
+        if (i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) {
+          i_c_f[(l_j * ldc) + l_i] += f32_accum;
+        }
+        if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16) {
+          float up_tmp;
+          libxsmm_convert_bf16_f32( &i_c_bf16[(l_j * ldc) + l_i], &up_tmp, 1 );
+          up_tmp += f32_accum;
+          libxsmm_rne_convert_fp32_bf16(&up_tmp, &i_c_bf16[(l_j * ldc) + l_i], 1);
         }
       }
     }
@@ -3769,13 +3767,7 @@ int main(int argc, char* argv []) {
     printf("\n\n Total Max Error bitmask %f\n\n", l_total_max_error_bitmask );
   }
 
-  if (l_gemm_def.is_Amxfp4Bi8_gemm > 0 && l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16) {
-    if ( l_total_max_error >= 0.01 ) {
-      return EXIT_FAILURE;
-    } else {
-      return EXIT_SUCCESS;
-    }
-  } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
+  if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
     if (l_gemm_def.unary_postop == SIGMOID) {
       if ( l_total_max_error >= 0.007 ) {
         return EXIT_FAILURE;
