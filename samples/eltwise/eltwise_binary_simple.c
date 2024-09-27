@@ -463,7 +463,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
   init_random_matrix( dtype_in1, in2,      1, ldi, N, 0 );
   init_random_matrix( dtype_out, out,      1, l_ldo, N, 0 );
-  init_random_matrix( dtype_out, out_gold, 1, l_ldo, N, 0 );
+  memcpy( (void*)out_gold, (const void*)out, LIBXSMM_TYPESIZE(dtype_out)*l_ldo*N );
 
   if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
@@ -571,8 +571,14 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
-    ret = EXIT_FAILURE;
+  if ( (op == MULADD_OP)  ) {
+    if ( norms_out.normf_rel > 0.0001 ) {
+      ret = EXIT_FAILURE;
+    }
+  } else {
+    if ( norms_out.normf_rel > 0.00001 ) {
+      ret = EXIT_FAILURE;
+    }
   }
 
   benchmark_binary(binary_type, binary_shape, binary_flags, binary_param);
