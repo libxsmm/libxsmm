@@ -189,6 +189,8 @@ for BINARY_POSTOP in 0 1; do
                       OUTNAME="bf8f16f32f16flatgemm_"
                     elif [[ ("$PREC" == 'BF8_F16_F32_F16') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf8f16f32f16gemm_"
+                      KSTART=2
+                      KSTEP=2
                     elif [ "$PREC" == 'I4_F16_F32_F16' ] ; then
                       OUTNAME="i4f16f32f16gemm_"
                       KSTART=2
@@ -247,6 +249,8 @@ for BINARY_POSTOP in 0 1; do
                       OUTNAME="bf8f16f32f32flatgemm_"
                     elif [[ ("$PREC" == 'BF8_F16_F32_F32') && ("$AVNNI" == '1') ]] ; then
                       OUTNAME="bf8f16f32f32gemm_"
+                      KSTART=2
+                      KSTEP=2
                     elif [ "$PREC" == 'I4_F16_F32_F32' ] ; then
                       OUTNAME="i4f16f32f32gemm_"
                       KSTART=2
