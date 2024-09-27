@@ -571,8 +571,8 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( (op == MULADD_OP)  ) {
-    if ( norms_out.normf_rel > 0.0001 ) {
+  if ( (op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF16) || (dtype_out == LIBXSMM_DATATYPE_F16) || (dtype_out == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_HF8)) ) {
+    if ( norms_out.normf_rel > 0.001 ) {
       ret = EXIT_FAILURE;
     }
   } else {
