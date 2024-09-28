@@ -93,38 +93,6 @@ void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_dat
 }
 
 LIBXSMM_INLINE
-void scale_down_10x( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
-  float *in_f = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
-  libxsmm_blasint i;
-
-  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
-    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
-  } else if (dtype_in == LIBXSMM_DATATYPE_BF8) {
-    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)in, in_f, N*ldi );
-  } else if (dtype_in == LIBXSMM_DATATYPE_F16) {
-    libxsmm_convert_f16_f32( (libxsmm_float16*)in, in_f, N*ldi );
-  } else if (dtype_in == LIBXSMM_DATATYPE_BF16) {
-    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)in, in_f, N*ldi );
-  }
-
-  for ( i = 0; i < N*ldi; i++ ) {
-    in_f[i] /= 10.0;
-  }
-
-  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
-    libxsmm_rne_convert_fp32_hf8( in_f, (libxsmm_hfloat8*)in, N*ldi );
-  } else if (dtype_in == LIBXSMM_DATATYPE_BF8) {
-    libxsmm_rne_convert_fp32_bf8( in_f, (libxsmm_bfloat8*)in, N*ldi );
-  } else if (dtype_in == LIBXSMM_DATATYPE_F16) {
-    libxsmm_rne_convert_fp32_f16( in_f, (libxsmm_float16*)in, N*ldi );
-  } else if (dtype_in == LIBXSMM_DATATYPE_BF16) {
-    libxsmm_rne_convert_fp32_bf16( in_f, (libxsmm_bfloat16*)in, N*ldi );
-  }
-
-  libxsmm_free(in_f);
-}
-
-LIBXSMM_INLINE
 void round_to_bf8( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
   float *in_f = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
   libxsmm_bfloat8 *round = (libxsmm_bfloat8*) libxsmm_aligned_malloc(sizeof(libxsmm_bfloat8)*N*ldi, 64);
@@ -534,6 +502,8 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
   }
   if ((op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF16) || (dtype_out == LIBXSMM_DATATYPE_F16) || (dtype_out == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
+    round_to_bf8( dtype_in,  in,  ldi, N );
+    round_to_bf8( dtype_in1, in2, ldi, N );
     round_to_bf8( dtype_out, out, l_ldo, N );
   }
 
