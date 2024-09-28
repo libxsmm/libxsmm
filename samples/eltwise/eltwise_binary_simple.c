@@ -93,7 +93,7 @@ void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_dat
 }
 
 LIBXSMM_INLINE
-void scale_down_100x( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
+void scale_down_10x( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
   float *in_f = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
   libxsmm_blasint i;
 
@@ -108,7 +108,7 @@ void scale_down_100x( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, 
   }
 
   for ( i = 0; i < N*ldi; i++ ) {
-    in_f[i] /= 100.0;
+    in_f[i] /= 10.0;
   }
 
   if (dtype_in == LIBXSMM_DATATYPE_HF8) {
@@ -500,7 +500,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
   }
   if ((op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF16) || (dtype_out == LIBXSMM_DATATYPE_F16) || (dtype_out == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
-    scale_down_100x( dtype_out, out, l_ldo, N );
+    scale_down_10x( dtype_out, out, l_ldo, N );
   }
 
   memcpy( (void*)out_gold, (const void*)out, LIBXSMM_TYPESIZE(dtype_out)*l_ldo*N );
