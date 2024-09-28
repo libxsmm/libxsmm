@@ -235,12 +235,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_t
   unsigned int l_trans_ldi = i_xgemm_desc_orig->lda;
   unsigned int l_trans_ldo = i_xgemm_desc_orig->m;
 
-  /* In this case we have to call Unary TPP (copy) for B and it is not supported for arch < avx */
-  if ((i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX) && (is_offset_brgemm > 0 || is_address_brgemm > 0)) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
-    return;
-  }
-
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
   if ( (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors !=0) || (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors !=0) ) {
@@ -335,12 +329,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
   unsigned int bound_reg      = LIBXSMM_X86_GP_REG_R12;
   unsigned int tmp_reg2       = LIBXSMM_X86_GP_REG_RDX;
   unsigned short gp_save_bitmask = 0x2 | 0x4 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000;
-
-  /* In this case we have to call Unary TPP (copy) for B and it is not supported for arch < avx */
-  if ((i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX) && (is_offset_brgemm > 0 || is_address_brgemm > 0)) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
-    return;
-  }
 
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
