@@ -10,6 +10,7 @@ bf8bf16f32_spmm_eqld
 bf8bf16f32_spmm_gtld
 bf8bf16gemm_nn_eqld
 bf8bf16gemm_nn_gtld
+<<<<<<< HEAD
 bf8f16f16f16gemm_nn_eqld
 bf8f16f16f16gemm_nn_gtld
 bf8f16f16f16gemm_nt_eqld
@@ -18,12 +19,31 @@ bf8f16f16f32gemm_nn_eqld
 bf8f16f16f32gemm_nn_gtld
 bf8f16f16f32gemm_nt_eqld
 bf8f16f16f32gemm_nt_gtld
+=======
+bf8f16f16f16flatgemm_nn_eqld
+bf8f16f16f16flatgemm_nn_gtld
+bf8f16f16f16flatgemm_nt_eqld
+bf8f16f16f16flatgemm_nt_gtld
+bf8f16f16f32flatgemm_nn_eqld
+bf8f16f16f32flatgemm_nn_gtld
+bf8f16f16f32flatgemm_nt_eqld
+bf8f16f16f32flatgemm_nt_gtld
+bf8f16f16_spmm_eqld
+bf8f16f16_spmm_gtld
+bf8f16f32f16flatgemm_nn_eqld
+bf8f16f32f16flatgemm_nn_gtld
+bf8f16f32f16flatgemm_nt_eqld
+bf8f16f32f16flatgemm_nt_gtld
+>>>>>>> main
 bf8f16f32f16gemm_nn_eqld
 bf8f16f32f16gemm_nn_gtld
-bf8f16f32f16gemm_nt_eqld
-bf8f16f32f16gemm_nt_gtld
+bf8f16f32f32flatgemm_nn_eqld
+bf8f16f32f32flatgemm_nn_gtld
+bf8f16f32f32flatgemm_nt_eqld
+bf8f16f32f32flatgemm_nt_gtld
 bf8f16f32f32gemm_nn_eqld
 bf8f16f32f32gemm_nn_gtld
+<<<<<<< HEAD
 bf8f16f32f32gemm_nt_eqld
 bf8f16f32f32gemm_nt_gtld
 bf8f16implicitf16gemm_nn_eqld
@@ -34,6 +54,18 @@ bf8f16implicitf32gemm_nn_eqld
 bf8f16implicitf32gemm_nn_gtld
 bf8f16implicitf32gemm_nt_eqld
 bf8f16implicitf32gemm_nt_gtld
+=======
+bf8f16f32_spmm_eqld
+bf8f16f32_spmm_gtld
+bf8f16implicitf16flatgemm_nn_eqld
+bf8f16implicitf16flatgemm_nn_gtld
+bf8f16implicitf16flatgemm_nt_eqld
+bf8f16implicitf16flatgemm_nt_gtld
+bf8f16implicitf32flatgemm_nn_eqld
+bf8f16implicitf32flatgemm_nn_gtld
+bf8f16implicitf32flatgemm_nt_eqld
+bf8f16implicitf32flatgemm_nt_gtld
+>>>>>>> main
 bf8f32_flatgemm_nn_eqld
 bf8f32_flatgemm_nn_eqld_bop0_uop1_cvnni0
 bf8f32_flatgemm_nn_eqld_bop0_uop2_cvnni0
@@ -486,6 +518,13 @@ i8f16implicitf32gemm_nn_eqld
 i8f16implicitf32gemm_nn_gtld
 i8f16implicitf32gemm_nt_eqld
 i8f16implicitf32gemm_nt_gtld
+<<<<<<< HEAD
+=======
+mxfp4bf16f32gemm_nn_eqld
+mxfp4bf16f32gemm_nn_gtld
+mxfp4bf16gemm_nn_eqld
+mxfp4bf16gemm_nn_gtld
+>>>>>>> main
 u4f16f16f16gemm_nn_eqld
 u4f16f16f16gemm_nn_gtld
 u4f16f16f16gemm_nt_eqld
