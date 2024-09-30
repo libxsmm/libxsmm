@@ -1020,16 +1020,6 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
       libxsmm_gemm_batch_blas(iprec, oprec, transa, transb, m, n, k,
         alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
         index_stride, index_base, batchsize);
-      if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        const size_t threshold = LIBXSMM_MNK_SIZE(m, n, m);
-        static size_t threshold_max = 0;
-        if (threshold_max != threshold) {
-          LIBXSMM_STDIO_ACQUIRE();
-          fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back!\n");
-          LIBXSMM_STDIO_RELEASE();
-          threshold_max = threshold;
-        }
-      }
     }
   }
 #if defined(LIBXSMM_BATCH_CHECK)
