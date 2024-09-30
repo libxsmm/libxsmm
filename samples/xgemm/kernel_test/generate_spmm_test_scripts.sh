@@ -11,7 +11,7 @@ fi
 TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
-for PREC in 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF16_F32_F32' 'BF8_BF16_F32_BF16' 'HF8_BF16_F32_F32' 'HF8_BF16_F32_BF16'; do
+for PREC in 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF16_F32_F32' 'BF8_BF16_F32_BF16' 'BF8_F16_F32_F32' 'BF8_F16_F32_F16' 'HF8_BF16_F32_F32' 'HF8_BF16_F32_BF16'; do
   for LD in 'eqld' 'gtld'; do
     for AVNNI in 0 1; do
       # check if the current experiment has eltwise fusion
@@ -32,7 +32,7 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF16
       fi
 
       # loading A in VNNI layout is mandatory for select precision
-      if [[ ("$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16') && ( "$AVNNI" == '0' ) ]]; then
+      if [[ ("$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' || "$PREC" == 'BF8_F16_F32_F32' || "$PREC" == 'BF8_F16_F32_F16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16'  || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16') && ( "$AVNNI" == '0' ) ]]; then
         continue
       fi
 
@@ -46,6 +46,10 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F32_BF16' 'BF8_BF16
         OUTNAME="bf8bf16f32_spmm_"
       elif [ "$PREC" == 'BF8_BF16_F32_BF16' ] ; then
         OUTNAME="bf8bf16bf16_spmm_"
+      elif [ "$PREC" == 'BF8_F16_F32_F32' ] ; then
+        OUTNAME="bf8f16f32_spmm_"
+      elif [ "$PREC" == 'BF8_F16_F32_F16' ] ; then
+        OUTNAME="bf8f16f16_spmm_"
       elif [ "$PREC" == 'HF8_BF16_F32_F32' ] ; then
         OUTNAME="hf8bf16f32_spmm_"
       elif [ "$PREC" == 'HF8_BF16_F32_BF16' ] ; then

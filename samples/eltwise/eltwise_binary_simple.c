@@ -93,6 +93,38 @@ void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_dat
 }
 
 LIBXSMM_INLINE
+void round_to_bf8( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
+  float *in_f = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  libxsmm_bfloat8 *round = (libxsmm_bfloat8*) libxsmm_aligned_malloc(sizeof(libxsmm_bfloat8)*N*ldi, 64);
+
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)in, in_f, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_F16) {
+    libxsmm_convert_f16_f32( (libxsmm_float16*)in, in_f, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_BF16) {
+    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)in, in_f, N*ldi );
+  }
+
+  libxsmm_rne_convert_fp32_bf8( in_f, round, N*ldi );
+  libxsmm_convert_bf8_f32( round, in_f, N*ldi );
+
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_hf8( in_f, (libxsmm_hfloat8*)in, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_rne_convert_fp32_bf8( in_f, (libxsmm_bfloat8*)in, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_F16) {
+    libxsmm_rne_convert_fp32_f16( in_f, (libxsmm_float16*)in, N*ldi );
+  } else if (dtype_in == LIBXSMM_DATATYPE_BF16) {
+    libxsmm_rne_convert_fp32_bf16( in_f, (libxsmm_bfloat16*)in, N*ldi );
+  }
+
+  libxsmm_free(round);
+  libxsmm_free(in_f);
+}
+
+LIBXSMM_INLINE
 int is_cmp_op(unsigned int op) {
   int result = 0;
   if (op == CMP_GT_OP || op == CMP_GE_OP || op == CMP_LT_OP || op == CMP_LE_OP || op == CMP_EQ_OP || op == CMP_NE_OP) {
@@ -365,6 +397,8 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
           unsigned char result_bit = (out_value > 0.1) ? 1 : 0;
           if (result_bit > 0) {
             set_bit((unsigned char*)out, i, j, ldo);
+          } else {
+            zero_bit((unsigned char*)out, i, j, ldo);
           }
         } else {
           if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
@@ -462,12 +496,18 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
   init_random_matrix( dtype_in1, in2,      1, ldi, N, 0 );
-  init_zero_matrix(   dtype_out, out,      1, l_ldo, N );
-  init_zero_matrix(   dtype_out, out_gold, 1, l_ldo, N );
+  init_random_matrix( dtype_out, out,      1, l_ldo, N, 0 );
 
   if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
   }
+  if ((op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF16) || (dtype_out == LIBXSMM_DATATYPE_F16) || (dtype_out == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
+    round_to_bf8( dtype_in,  in,  ldi, N );
+    round_to_bf8( dtype_in1, in2, ldi, N );
+    round_to_bf8( dtype_out, out, l_ldo, N );
+  }
+
+  memcpy( (void*)out_gold, (const void*)out, LIBXSMM_TYPESIZE(dtype_out)*l_ldo*N );
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
@@ -552,8 +592,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   if (is_cmp_op(op) > 0) {
     libxsmm_blasint i, j;
     for (j = 0; j < N; j++) {
-      for (i = M; i < l_ldo; i++) {
+      for (i = M; i < ((M+15)/16)*16; i++) {
         zero_bit((unsigned char *)out, i, j, l_ldo);
+        zero_bit((unsigned char *)out_gold, i, j, l_ldo);
       }
     }
     norms_out = check_matrix( dtype_out, out_gold, out, l_ldo/8, LIBXSMM_UPDIV(M, 8), N );
@@ -571,8 +612,18 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.00001 ) {
-    ret = EXIT_FAILURE;
+  if ( (op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF16) || (dtype_out == LIBXSMM_DATATYPE_F16)) ) {
+    if ( norms_out.normf_rel > 0.001 ) {
+      ret = EXIT_FAILURE;
+    }
+  } else if ( (op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_HF8)) ) {
+    if ( norms_out.normf_rel > 0.01 ) {
+      ret = EXIT_FAILURE;
+    }
+  } else {
+    if ( norms_out.normf_rel > 0.00001 ) {
+      ret = EXIT_FAILURE;
+    }
   }
 
   benchmark_binary(binary_type, binary_shape, binary_flags, binary_param);
