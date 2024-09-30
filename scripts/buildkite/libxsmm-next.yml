@@ -6,11 +6,11 @@ env:
   SYM: 2
 
 steps:
-  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_bf16only.sh"
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_srf.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
       LIBXSMM_TARGET: srf
-    label: "SMMs BF16 (SRF)"
+    label: "SMMs SRF Prec. (SRF)"
 
   - command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
