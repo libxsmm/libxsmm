@@ -2498,6 +2498,12 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
         libxsmm_generator_mateltwise_kernel(&generated_code, request->descriptor.meltw);
+        /* Try reference code JITer */
+        if (0 != generated_code.last_error) {
+          generated_code.code_size = 0;
+          generated_code.last_error = 0;
+          libxsmm_generator_mateltwise_reference_kernel(&generated_code, request->descriptor.meltw);
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif

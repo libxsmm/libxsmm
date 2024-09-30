@@ -162,6 +162,10 @@ void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_
                                           const libxsmm_meltw_descriptor*    i_mateltw_desc );
 
 LIBXSMM_API
+void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*            io_generated_code,
+                                          const libxsmm_meltw_descriptor*    i_mateltw_desc );
+
+LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*        io_generated_code,
                                            const libxsmm_meqn_descriptor* i_mateqn_desc );
 
