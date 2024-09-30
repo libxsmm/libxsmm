@@ -61,6 +61,7 @@
 #include "../src/generator_mateltwise_transform_sse.c"
 #include "../src/generator_mateltwise_unary_binary_aarch64.c"
 #include "../src/generator_mateltwise_unary_binary_avx_avx512.c"
+#include "../src/generator_mateltwise_x86_reference.c"
 #include "../src/generator_matequation.c"
 #include "../src/generator_matequation_aarch64.c"
 #include "../src/generator_matequation_avx_avx512.c"
