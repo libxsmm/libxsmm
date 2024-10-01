@@ -62,5 +62,9 @@ hf8bf16f32_spmm_eqld
 hf8bf16f32_spmm_gtld
 hf8bf16gemm_nn_eqld
 hf8bf16gemm_nn_gtld
+mxfp4i8bf16gemm_nn_eqld
+mxfp4i8bf16gemm_nn_gtld
+mxfp4i8f32gemm_nn_eqld
+mxfp4i8f32gemm_nn_gtld
 u4u8i32i32gemm_nn_eqld
 u4u8i32i32gemm_nn_gtld
