@@ -20,8 +20,7 @@
 #if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
-#if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && \
-    (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP))
+#if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_CONFIG_WRAP) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
 # define LIBXSMM_WRAP LIBXSMM_CONFIG_WRAP
 #endif
 
@@ -321,6 +320,8 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_tasks);
  * - [>=4 and even]: GEMV is intercepted; all problem sizes
  * - [0]: disabled
  */
+#if defined(LIBXSMM_WRAP)
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
+#endif
 
 #endif /*LIBXSMM_GEMM_H*/

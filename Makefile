@@ -127,7 +127,7 @@ endif
 # >=4 and even: GEMV is intercepted; all problem sizes
 # negative: BLAS provides DGEMM_BATCH and SGEMM_BATCH
 # 0: disabled
-WRAP ?= 1
+WRAP ?= 0
 WRAP_STATIC ?= $(WRAP)
 
 # Attempts to pin OpenMP based threads
