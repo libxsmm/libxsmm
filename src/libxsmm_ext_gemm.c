@@ -128,7 +128,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_st
     }
   }
   else {
-    LIBXSMM_BLAS_FUNCTION(double, double, gemm_batch_strided)(transa, transb, m, n, k,
+    LIBXSMM_FSYMBOL(__real_dgemm_batch_strided)(transa, transb, m, n, k,
       alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
       batchsize);
   }
@@ -161,7 +161,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_st
     }
   }
   else {
-    LIBXSMM_BLAS_FUNCTION(float, float, gemm_batch_strided)(transa, transb, m, n, k,
+    LIBXSMM_FSYMBOL(__real_sgemm_batch_strided)(transa, transb, m, n, k,
       alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
       batchsize);
   }
@@ -192,7 +192,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(
     }
   }
   else {
-    LIBXSMM_BLAS_FUNCTION(double, double, gemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    LIBXSMM_FSYMBOL(__real_dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
       alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
       group_count, group_size);
   }
@@ -223,7 +223,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(
     }
   }
   else {
-    LIBXSMM_BLAS_FUNCTION(float, float, gemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    LIBXSMM_FSYMBOL(__real_sgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
       alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
       group_count, group_size);
   }
@@ -247,7 +247,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   else
 #endif
   {
-    LIBXSMM_BLAS_FUNCTION(double, double, gemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_FSYMBOL(__real_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
@@ -269,7 +269,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   else
 #endif
   {
-    LIBXSMM_BLAS_FUNCTION(float, float, gemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_FSYMBOL(__real_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
@@ -297,11 +297,11 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemv)(const c
 
     }
     else {
-      LIBXSMM_BLAS_FUNCTION(double, double, gemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+      LIBXSMM_FSYMBOL(__real_dgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
     }
   }
   else {
-    LIBXSMM_BLAS_FUNCTION(double, double, gemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+    LIBXSMM_FSYMBOL(__real_dgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
 }
 
@@ -329,11 +329,11 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemv)(const c
 
     }
     else {
-      LIBXSMM_BLAS_FUNCTION(float, float, gemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+      LIBXSMM_FSYMBOL(__real_sgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
     }
   }
   else {
-    LIBXSMM_BLAS_FUNCTION(float, float, gemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+    LIBXSMM_FSYMBOL(__real_sgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
 }
 
