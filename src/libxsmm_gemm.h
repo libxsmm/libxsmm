@@ -41,6 +41,40 @@
 # endif
 #endif
 
+/** Map to appropriate BLAS function (or fallback). */
+#define LIBXSMM_BLAS_FUNCTION2(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
+#if (0 != LIBXSMM_BLAS)
+# if defined(LIBXSMM_INIT_COMPLETED)
+#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided_function
+#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
+#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
+#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
+# else
+#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided()
+#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided()
+#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch()
+#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch()
+#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
+#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
+#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv()
+#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
+# endif
+#else /* no BLAS */
+# define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_blas_error("dgemm_batch_strided")
+# define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_blas_error("sgemm_batch_strided")
+# define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_blas_error("dgemm_batch")
+# define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_blas_error("sgemm_batch")
+# define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_blas_error("dgemm")
+# define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_blas_error("sgemm")
+# define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_blas_error("dgemv")
+# define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_blas_error("sgemv")
+#endif
+#define LIBXSMM_BLAS_FUNCTION(TYPE, FUNCTION) LIBXSMM_BLAS_FUNCTION2(TYPE, TYPE, FUNCTION)
+
 /** Construct symbol name from a given real type name (float, double, etc.). */
 #define LIBXSMM_BLAS_FNTYPE(TYPE, KIND) LIBXSMM_CONCATENATE3(libxsmm_, LIBXSMM_TPREFIX(TYPE, KIND), _function)
 
@@ -57,10 +91,13 @@
   } while(0)
 #endif
 
+#define LIBXSMM_BLAS_FSYMBOL_WRAP(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(TYPE, KIND)))
+#define LIBXSMM_BLAS_FSYMBOL_REAL(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, KIND)))
+
 #define LIBXSMM_BLAS_WRAPPER_STATIC0(TYPE, KIND, ORIGINAL)
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_BLAS_WRAPPER_STATIC1(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) do { \
-    ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, KIND))); \
+    ORIGINAL = LIBXSMM_BLAS_FSYMBOL_REAL(TYPE, KIND); \
   } while(0)
 #else
 # define LIBXSMM_BLAS_WRAPPER_STATIC1(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) do { \
@@ -107,12 +144,6 @@
   } while(0)
 #endif
 
-/** Fall-back code path (macro template). */
-#if !defined(LIBXSMM_XGEMM_FALLBACK)
-# define LIBXSMM_XGEMM_FALLBACK(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-    LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-#endif
-
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
 #if (LIBXSMM_PREFETCH_NONE != LIBXSMM_PREFETCH) /* LIBXSMM_GEMM_PREFETCH_NONE is an enumerator! */
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) do { \
@@ -127,8 +158,8 @@
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS);
 #endif
 
-/** Execute a specialized function, or use a fallback code path (macro template). */
-#define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
+/** Execute a specialized function, or use a fallback code path. */
+#define LIBXSMM_XGEMM2(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   const OTYPE libxsmm_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_xgemm_beta_ = (NULL != ((const void*)(BETA)) ? (*(const OTYPE*)(BETA)) : ((OTYPE)LIBXSMM_BETA)); \
   const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS) | \
@@ -155,19 +186,21 @@
     LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_param_); \
     libxsmm_xgemm_function_(&libxsmm_xgemm_param_); \
   } \
-  else { \
+  else { /* fallback */ \
     const char libxsmm_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? 'n' : 't'); \
     const char libxsmm_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? 'n' : 't'); \
-    LIBXSMM_XGEMM_FALLBACK(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
+    LIBXSMM_BLAS_FSYMBOL_REAL(OTYPE, gemm)(&libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
       M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
       &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_shape_.lda, \
                              B, &libxsmm_xgemm_shape_.ldb, \
        &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_shape_.ldc); \
   } \
 } while(0)
+#define  LIBXSMM_XGEMM(TYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  LIBXSMM_XGEMM2(TYPE, TYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (macro template). */
-#define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
+#define LIBXSMM_BLAS_XGEMM2(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
   const char libxsmm_blas_xgemm_transa_ = (char)(NULL != ((const void*)(TRANSA)) ? (*(const char*)(TRANSA)) : \
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS) ? 'n' : 't')); \
@@ -182,12 +215,14 @@
   const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = LIBXSMM_MAX(NULL != ((const void*)(LDC)) ? *(LDC) : *(M), 1); \
   const OTYPE libxsmm_blas_xgemm_alpha_ = (NULL != ((const void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_blas_xgemm_beta_  = (NULL != ((const void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
-  LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
+  LIBXSMM_BLAS_FUNCTION(OTYPE, gemm)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
     M, libxsmm_blas_xgemm_n_, libxsmm_blas_xgemm_k_, \
     &libxsmm_blas_xgemm_alpha_, (const ITYPE*)(A), &libxsmm_blas_xgemm_lda_, \
                                 (const ITYPE*)(B), &libxsmm_blas_xgemm_ldb_, \
      &libxsmm_blas_xgemm_beta_,       (ITYPE*)(C), &libxsmm_blas_xgemm_ldc_); \
 } while(0)
+#define  LIBXSMM_BLAS_XGEMM(TYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  LIBXSMM_BLAS_XGEMM2(TYPE, TYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
@@ -201,27 +236,27 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
 
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT)
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(double, gemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(float, gemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(double, gemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(float, gemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(double, gemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(float, gemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(double, gemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
+LIBXSMM_APIEXT void LIBXSMM_BLAS_FSYMBOL_WRAP(float, gemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
 LIBXSMM_APIEXT void __wrap_dgemm_batch_strided(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
 LIBXSMM_APIEXT void __wrap_sgemm_batch_strided(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
 LIBXSMM_APIEXT void __wrap_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
 LIBXSMM_APIEXT void __wrap_sgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 #endif
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_batch_strided)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
+LIBXSMM_API void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
 LIBXSMM_API void __real_dgemm_batch_strided(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
 LIBXSMM_API void __real_sgemm_batch_strided(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
 LIBXSMM_API void __real_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));

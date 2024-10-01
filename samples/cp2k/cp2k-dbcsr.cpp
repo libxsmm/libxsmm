@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
         const T *ai = a + i * asize, *bi = b + i * bsize;
         for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
           const T *const aij = ai + asize, *const bij = bi + bsize;
-          LIBXSMM_INLINE_XGEMM(REALTYPE, REALTYPE, &transa, &transb, &m, &n, &k,
+          LIBXSMM_INLINE_XGEMM(REALTYPE, &transa, &transb, &m, &n, &k,
             &alpha, ai, &m, bi, &k, &beta, tmp, &m);
           ai = aij;
           bi = bij;
