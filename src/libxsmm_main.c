@@ -1234,7 +1234,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 
 LIBXSMM_API_CTOR void libxsmm_init(void)
 {
-  if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST)) {
+  if (NULL == (const void*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST)) {
     static unsigned int counter = 0, gid = 0;
     const unsigned int tid = LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
     LIBXSMM_ASSERT(0 < tid);
@@ -1400,9 +1400,8 @@ LIBXSMM_API_CTOR void libxsmm_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void libxsmm_finalize(void);
 LIBXSMM_API_DTOR void libxsmm_finalize(void)
 {
-  void *const regaddr = &internal_registry;
-  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
-  libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
+  libxsmm_code_pointer* registry = (libxsmm_code_pointer*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(
+    &internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
   if (NULL != registry) {
     int i;
 #if (0 != LIBXSMM_SYNC)
@@ -1421,8 +1420,8 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
 #endif
-    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
-    registry = (libxsmm_code_pointer*)regptr;
+    registry = (libxsmm_code_pointer*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(
+      &internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
     if (NULL != registry) {
       internal_regkey_type *const registry_keys = internal_registry_keys;
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1446,7 +1445,7 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
       internal_cache_buffer = NULL;
 #endif
       internal_registry_keys = NULL; /* make registry keys unavailable */
-      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
+      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_nbytes = 0; internal_registry_nleaks = 0;
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
