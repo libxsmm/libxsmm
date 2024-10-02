@@ -13,37 +13,7 @@
 #include "generator_mateltwise_common.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
-
-void my_libxsmm_reference_elementwise(libxsmm_meltw_unary_param *param, libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  if (1) {
-    int i, j;
-    float in, out;
-    for ( j = 0; j < i_mateltwise_desc->n; ++j ) {
-      for ( i = 0; i < i_mateltwise_desc->m; ++i ) {
-        libxsmm_bfloat16* bf16_in = (libxsmm_bfloat16*)(param->in.primary);
-        libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)(param->out.primary);
-        in = libxsmm_convert_bf16_to_f32(bf16_in[(j*i_mateltwise_desc->ldi) + i]);
-        out = LIBXSMM_EXPF(in);
-        bf16_out[(j*i_mateltwise_desc->ldo) + i] = libxsmm_convert_f32_to_bf16_rne(out);
-      }
-    }
-  } else {
-    int i, j;
-    float *in, *out;
-    in = (float*)(param->in.primary);
-    out = (float*)(param->out.primary);
-
-    for ( j = 0; j < i_mateltwise_desc->n; ++j ) {
-      for ( i = 0; i < i_mateltwise_desc->m; ++i ) {
-        float in_value = in[(j*i_mateltwise_desc->ldi) + i];
-        float out_value = LIBXSMM_EXPF(in_value);
-        out[(j*i_mateltwise_desc->ldo) + i] = out_value;
-      }
-    }
-  }
-  return;
-}
-
+#include "generator_mateltwise_reference_impl.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_reference_kernel( libxsmm_generated_code*         io_generated_code,
@@ -72,7 +42,7 @@ void libxsmm_generator_mateltwise_aarch64_reference_kernel( libxsmm_generated_co
   libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16, l_temp_reg, l_temp_reg2 );
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, l_temp_reg, 0, 0 );
   /* We set the address of the function */
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, (unsigned long long) my_libxsmm_reference_elementwise  );
+  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, (unsigned long long) libxsmm_reference_elementwise  );
   /* We call the function  */
   l_code_buffer[io_generated_code->code_size++] = 0x40;
   l_code_buffer[io_generated_code->code_size++] = 0x00;
