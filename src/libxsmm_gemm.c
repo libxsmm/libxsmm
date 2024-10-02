@@ -60,7 +60,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
 #endif
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_batch_strided)(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_batch_strided)(
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
   const double* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
@@ -84,7 +84,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_b
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_batch_strided)(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_batch_strided)(
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
   const float* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
@@ -108,7 +108,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_ba
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_batch)(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_batch)(
   const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
   const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
@@ -134,7 +134,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm_b
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_batch)(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_batch)(
   const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[], const float* b_array[], const libxsmm_blasint ldb_array[],
   const float beta_array[], float* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
@@ -159,10 +159,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm_ba
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm)(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm)(
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
 #if (0 != LIBXSMM_BLAS)
@@ -180,10 +179,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm)(
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm)(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm)(
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
 #if (0 != LIBXSMM_BLAS)
@@ -201,7 +199,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm)(c
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv)(
+  const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
   const double* alpha, const double* a, const libxsmm_blasint* lda, const double* x, const libxsmm_blasint* incx,
   const double* beta, double* y, const libxsmm_blasint* incy)
 {
@@ -219,7 +218,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv)(
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv)(
+  const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
   const float* alpha, const float* a, const libxsmm_blasint* lda, const float* x, const libxsmm_blasint* incx,
   const float* beta, float* y, const libxsmm_blasint* incy)
 {
@@ -237,7 +237,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv)(c
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_dgemm_batch_strided(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void __real_dgemm_batch_strided(
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
   const double* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
@@ -250,7 +250,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_dgemm_batch_strided(
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_sgemm_batch_strided(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void __real_sgemm_batch_strided(
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
   const float* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
@@ -263,7 +263,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_sgemm_batch_strided(
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_dgemm_batch(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void __real_dgemm_batch(
   const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
   const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
@@ -274,7 +274,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_dgemm_batch(
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_sgemm_batch(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_INLINE_NEVER void __real_sgemm_batch(
   const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[], const float* b_array[], const libxsmm_blasint ldb_array[],
   const float beta_array[], float* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
