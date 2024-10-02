@@ -166,11 +166,18 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm)(
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
 #if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_FUNCTION(double, gemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-#else
-  LIBXSMM_INLINE_XGEMM(double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  if (libxsmm_original_dgemm_function != LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm) &&
+      libxsmm_original_dgemm_function != LIBXSMM_FSYMBOL(dgemm) &&
+      libxsmm_original_dgemm_function != NULL)
+  {
+    libxsmm_original_dgemm_function(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else
 #endif
+  {
+    libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_INLINE_XGEMM(double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
 }
 
 
@@ -181,11 +188,18 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm)(c
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
 #if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_FUNCTION(float, gemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-#else
-  LIBXSMM_INLINE_XGEMM(float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  if (libxsmm_original_sgemm_function != LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm) &&
+      libxsmm_original_sgemm_function != LIBXSMM_FSYMBOL(sgemm) &&
+      libxsmm_original_sgemm_function != NULL)
+  {
+    libxsmm_original_sgemm_function(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else
 #endif
+  {
+    libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_INLINE_XGEMM(float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
 }
 
 
@@ -194,10 +208,17 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv)(
   const double* beta, double* y, const libxsmm_blasint* incy)
 {
 #if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_FUNCTION(double, gemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
-#else
-  libxsmm_blas_error("dgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  if (libxsmm_original_dgemv_function != LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv) &&
+      libxsmm_original_dgemv_function != LIBXSMM_FSYMBOL(dgemv) &&
+      libxsmm_original_dgemv_function != NULL)
+  {
+    libxsmm_original_dgemv_function(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  }
+  else
 #endif
+  {
+    libxsmm_blas_error("dgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  }
 }
 
 
@@ -206,10 +227,17 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv)(c
   const float* beta, float* y, const libxsmm_blasint* incy)
 {
 #if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_FUNCTION(float, gemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
-#else
-  libxsmm_blas_error("sgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  if (libxsmm_original_sgemv_function != LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv) &&
+      libxsmm_original_sgemv_function != LIBXSMM_FSYMBOL(sgemv) &&
+      libxsmm_original_sgemv_function != NULL)
+  {
+    libxsmm_original_sgemv_function(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  }
+  else
 #endif
+  {
+    libxsmm_blas_error("sgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  }
 }
 
 
@@ -991,7 +1019,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype opr
 }
 
 
-LIBXSMM_API void libxsmm_sink(const void* arg, ...)
+LIBXSMM_API_INTERN void libxsmm_sink(const void* arg, ...)
 { /* does nothing else but sinking given arguments */
   LIBXSMM_UNUSED(arg);
 }
