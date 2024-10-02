@@ -13,6 +13,7 @@
 #include "generator_common.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_x86_reference.h"
+#include "generator_mateltwise_aarch64_reference.h"
 #include "generator_mateltwise_aarch64.h"
 
 LIBXSMM_API
@@ -38,7 +39,7 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
-    /*libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );*/
+    libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
   } else {
     /* TODO fix this error and support for more architectures */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );

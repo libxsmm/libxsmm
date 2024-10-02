@@ -27,17 +27,39 @@ void read_descriptor(libxsmm_meltw_unary_param *param,  const libxsmm_meltw_desc
       out[(j*i_mateltwise_desc->ldo) + i] = out_value;
     }
   }
-#if 0
-  binary_op_ref( i_mateltwise_desc->m, i_mateltwise_desc->n, i_mateltwise_desc->ldi, i_mateltwise_desc->ldi2, i_mateltwise_desc->ldo,
-                 param->in0.primary, param->in1.primary, param->out.primary, 32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_IMPLICIT, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT, NULL );
-  float *tmp_ptr = (float*)(param->in1.primary);
-  float the_val = tmp_ptr[0];
-  printf("The TPP was dispatched with m = %d and n = %d\n", i_mateltwise_desc->m, i_mateltwise_desc->n);
-  printf("The struct pointer is %p and the argument pointer is %p and ldi2 is %d\n", param, tmp_ptr, i_mateltwise_desc->ldi2);
-  printf("The value at TPP location m=4, n=2 of input 2 is %.5f\n", the_val);
-#endif
   return;
 }
+
+void libxsmm_reference_elementwise(libxsmm_meltw_unary_param *param,  const libxsmm_meltw_descriptor *i_mateltwise_desc) {
+  if (1) {
+    int i, j;
+    float in, out;
+    for ( j = 0; j < i_mateltwise_desc->n; ++j ) {
+      for ( i = 0; i < i_mateltwise_desc->m; ++i ) {
+        libxsmm_bfloat16* bf16_in = (libxsmm_bfloat16*)(param->in.primary);
+        libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)(param->out.primary);
+        in = libxsmm_convert_bf16_to_f32(bf16_in[(j*i_mateltwise_desc->ldi) + i]);
+        out = LIBXSMM_EXPF(in);
+        bf16_out[(j*i_mateltwise_desc->ldo) + i] = libxsmm_convert_f32_to_bf16_rne(out);
+      }
+    }
+  } else {
+    int i, j;
+    float *in, *out;
+    in = (float*)(param->in.primary);
+    out = (float*)(param->out.primary);
+
+    for ( j = 0; j < i_mateltwise_desc->n; ++j ) {
+      for ( i = 0; i < i_mateltwise_desc->m; ++i ) {
+        float in_value = in[(j*i_mateltwise_desc->ldi) + i];
+        float out_value = LIBXSMM_EXPF(in_value);
+        out[(j*i_mateltwise_desc->ldo) + i] = out_value;
+      }
+    }
+  }
+  return;
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
@@ -61,13 +83,22 @@ void libxsmm_generator_mateltwise_x86_reference_kernel( libxsmm_generated_code* 
   libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, 0xFFFFFFFFFFFFFFC0 );
   libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, LIBXSMM_X86_GP_REG_RAX, LIBXSMM_X86_GP_REG_RSP);
   /* Store the descriptor in stack  */
-  libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)i_mateltwise_desc, "l_desc_ptr", 'x', 0);
-  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0, 'x', 0, 0, 0, 1 );
-  libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)i_mateltwise_desc + 16, "l_desc_ptr", 'x', 0);
-  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  16, 'x', 0, 0, 0, 1 );
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)i_mateltwise_desc, "l_desc", 'x', 0);
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0, 'x', 0, 0, 0, 1 );
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)i_mateltwise_desc + 16, "l_desc", 'x', 0);
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  16, 'x', 0, 0, 0, 1 );
+  } else {
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)i_mateltwise_desc, "l_desc", 'y', 0);
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0, 'y', 0, 0, 0, 1 );
+  }
+#if defined(_WIN32) || defined(__CYGWIN__)
+  libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RDX);
+#else /* match calling convention on Linux */
   libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RSI);
+#endif
   /* We set the address of the function  */
-  libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, (unsigned long long) read_descriptor );
+  libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, (unsigned long long) libxsmm_reference_elementwise );
   /* We call the function  */
   l_code_buffer[io_generated_code->code_size++] = 0xff;
   l_code_buffer[io_generated_code->code_size++] = 0xd0;
