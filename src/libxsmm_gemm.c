@@ -167,7 +167,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm)(
 {
 #if (0 != LIBXSMM_BLAS)
   if (libxsmm_original_dgemm_function != LIBXSMM_BLAS_FSYMBOL_REAL(double, gemm) &&
-      libxsmm_original_dgemm_function != LIBXSMM_FSYMBOL(dgemm) &&
       libxsmm_original_dgemm_function != NULL)
   {
     libxsmm_original_dgemm_function(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -189,7 +188,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm)(c
 {
 #if (0 != LIBXSMM_BLAS)
   if (libxsmm_original_sgemm_function != LIBXSMM_BLAS_FSYMBOL_REAL(float, gemm) &&
-      libxsmm_original_sgemm_function != LIBXSMM_FSYMBOL(sgemm) &&
       libxsmm_original_sgemm_function != NULL)
   {
     libxsmm_original_sgemm_function(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -209,7 +207,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv)(
 {
 #if (0 != LIBXSMM_BLAS)
   if (libxsmm_original_dgemv_function != LIBXSMM_BLAS_FSYMBOL_REAL(double, gemv) &&
-      libxsmm_original_dgemv_function != LIBXSMM_FSYMBOL(dgemv) &&
       libxsmm_original_dgemv_function != NULL)
   {
     libxsmm_original_dgemv_function(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
@@ -228,7 +225,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv)(c
 {
 #if (0 != LIBXSMM_BLAS)
   if (libxsmm_original_sgemv_function != LIBXSMM_BLAS_FSYMBOL_REAL(float, gemv) &&
-      libxsmm_original_sgemv_function != LIBXSMM_FSYMBOL(sgemv) &&
       libxsmm_original_sgemv_function != NULL)
   {
     libxsmm_original_sgemv_function(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
