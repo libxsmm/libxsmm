@@ -11,7 +11,7 @@
 #ifndef GENERATOR_MATELTWISE_REFERENCE_IMPL_H
 #define GENERATOR_MATELTWISE_REFERENCE_IMPL_H
 
-void libxsmm_reference_elementwise(libxsmm_meltw_unary_param *param,  const libxsmm_meltw_descriptor *i_mateltwise_desc);
+void libxsmm_reference_elementwise(void *param,  const libxsmm_meltw_descriptor *i_mateltwise_desc);
 
 #endif /* GENERATOR_MATELTWISE_REFERENCE_IMPL_H */
 
