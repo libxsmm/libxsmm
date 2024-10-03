@@ -135,7 +135,8 @@
       } \
     } \
     if (NULL == LIBXSMM_BLAS_WRAPPER_LOAD(ORIGINAL)) { \
-      libxsmm_blas_wrapper_dynamic_.pfin = dlsym(0 != (EXTLIB) ? LIBXSMM_RTLD_NEXT : RTLD_DEFAULT, \
+      libxsmm_blas_wrapper_dynamic_.pfin = dlsym( \
+        (0 != (EXTLIB) || 0 == (LIBXSMM_WRAP)) ? LIBXSMM_RTLD_NEXT : RTLD_DEFAULT, \
         LIBXSMM_STRINGIFY(LIBXSMM_BLAS_FSYMBOL(TYPE, KIND))); \
       if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.pfout) { \
         LIBXSMM_BLAS_WRAPPER_STORE(ORIGINAL, libxsmm_blas_wrapper_dynamic_.pfout); \
