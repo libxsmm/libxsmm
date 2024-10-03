@@ -46,25 +46,15 @@
 /** Map to appropriate BLAS function (or fallback). */
 #define LIBXSMM_BLAS_FUNCTION2(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
 #if (0 != LIBXSMM_BLAS)
-# if defined(LIBXSMM_INIT_COMPLETED) || 1/* take care internally to ensure prior initialization*/
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
-# else
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided()
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch()
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv()
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
-# endif
+/* if defined(LIBXSMM_INIT_COMPLETED): take care internally to ensure prior initialization */
+# define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided_function
+# define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided_function
+# define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
+# define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
+# define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
+# define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
+# define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
+# define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
 #else /* no BLAS */
 # define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_blas_error("dgemm_batch_strided")
 # define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_blas_error("sgemm_batch_strided")
@@ -129,7 +119,7 @@
     dlerror(); /* clear an eventual error status */ \
     if (0 == (EXTLIB)) { \
       libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_DEFAULT, \
-        "libxsmmext_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))); \
+        "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))); \
       if (NULL == dlerror() && NULL != libxsmm_blas_wrapper_dynamic_.chain) { \
         libxsmm_blas_wrapper_dynamic_.chain(); \
       } \
@@ -148,16 +138,22 @@
 #endif
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_BLAS_WRAPPER(STATIC, TYPE, KIND, ORIGINAL) \
+# define LIBXSMM_BLAS_WRAPPER_AUX(STATIC, TYPE, KIND, ORIGINAL) \
   if (NULL == LIBXSMM_BLAS_WRAPPER_LOAD(ORIGINAL)) do { \
     LIBXSMM_BLAS_WRAPPER_DYNAMIC(1, TYPE, KIND, ORIGINAL); \
   } while(0)
 #else
-# define LIBXSMM_BLAS_WRAPPER(STATIC, TYPE, KIND, ORIGINAL) \
+# define LIBXSMM_BLAS_WRAPPER_AUX(STATIC, TYPE, KIND, ORIGINAL) \
   if (NULL == LIBXSMM_BLAS_WRAPPER_LOAD(ORIGINAL)) do { \
     LIBXSMM_BLAS_WRAPPER_DYNAMIC(0, TYPE, KIND, ORIGINAL); \
     LIBXSMM_BLAS_WRAPPER_STATIC(STATIC, TYPE, KIND, ORIGINAL); \
   } while(0)
+#endif
+
+#if (0 != LIBXSMM_BLAS) && defined(LIBXSMM_WRAP)
+# define LIBXSMM_BLAS_WRAPPER(TYPE, KIND, ORIGINAL) LIBXSMM_BLAS_WRAPPER_AUX(1, TYPE, KIND, ORIGINAL)
+#else
+# define LIBXSMM_BLAS_WRAPPER(TYPE, KIND, ORIGINAL) LIBXSMM_BLAS_WRAPPER_AUX(0, TYPE, KIND, ORIGINAL)
 #endif
 
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
@@ -345,14 +341,6 @@ LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_
 LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
 LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
 LIBXSMM_APIVAR_PUBLIC(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
-LIBXSMM_API libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided(void);
-LIBXSMM_API libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided(void);
-LIBXSMM_API libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void);
-LIBXSMM_API libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void);
-LIBXSMM_API libxsmm_dgemm_function libxsmm_original_dgemm(void);
-LIBXSMM_API libxsmm_sgemm_function libxsmm_original_sgemm(void);
-LIBXSMM_API libxsmm_dgemv_function libxsmm_original_dgemv(void);
-LIBXSMM_API libxsmm_sgemv_function libxsmm_original_sgemv(void);
 
 /** Consume/sink arguments when called. */
 LIBXSMM_EXTERN_C typedef void (*libxsmm_sink_function)(const void*, ...);

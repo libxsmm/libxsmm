@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include "libxsmm_ext_gemm.h"
 #include "libxsmm_xcopy.h"
-#include "libxsmm_gemm.h"
 
 #if defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD_EXT)
 # include "libxsmm_trace.h"
@@ -19,87 +18,55 @@
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
-#if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
-LIBXSMM_APIEXT libxsmm_dgemm_batch_strided_function libxsmmext_original_dgemm_batch_strided(void)
+#if defined(LIBXSMM_WRAP)
+LIBXSMM_APIEXT libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, double, gemm_batch_strided, libxsmm_original_dgemm_batch_strided_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, double, gemm_batch_strided, libxsmm_original_dgemm_batch_strided_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(double, gemm_batch_strided, libxsmm_original_dgemm_batch_strided_function);
   return libxsmm_original_dgemm_batch_strided_function;
 }
 
-LIBXSMM_APIEXT libxsmm_sgemm_batch_strided_function libxsmmext_original_sgemm_batch_strided(void)
+LIBXSMM_APIEXT libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, float, gemm_batch_strided, libxsmm_original_sgemm_batch_strided_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, float, gemm_batch_strided, libxsmm_original_sgemm_batch_strided_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(float, gemm_batch_strided, libxsmm_original_sgemm_batch_strided_function);
   return libxsmm_original_sgemm_batch_strided_function;
 }
 
-LIBXSMM_APIEXT libxsmm_dgemm_batch_function libxsmmext_original_dgemm_batch(void)
+LIBXSMM_APIEXT libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, double, gemm_batch, libxsmm_original_dgemm_batch_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, double, gemm_batch, libxsmm_original_dgemm_batch_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(double, gemm_batch, libxsmm_original_dgemm_batch_function);
   return libxsmm_original_dgemm_batch_function;
 }
 
-LIBXSMM_APIEXT libxsmm_sgemm_batch_function libxsmmext_original_sgemm_batch(void)
+LIBXSMM_APIEXT libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, float, gemm_batch, libxsmm_original_sgemm_batch_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, float, gemm_batch, libxsmm_original_sgemm_batch_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(float, gemm_batch, libxsmm_original_sgemm_batch_function);
   return libxsmm_original_sgemm_batch_function;
 }
 
-LIBXSMM_APIEXT libxsmm_dgemm_function libxsmmext_original_dgemm(void)
+LIBXSMM_APIEXT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, double, gemm, libxsmm_original_dgemm_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, double, gemm, libxsmm_original_dgemm_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(double, gemm, libxsmm_original_dgemm_function);
   return libxsmm_original_dgemm_function;
 }
 
-LIBXSMM_APIEXT libxsmm_sgemm_function libxsmmext_original_sgemm(void)
+LIBXSMM_APIEXT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, float, gemm, libxsmm_original_sgemm_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, float, gemm, libxsmm_original_sgemm_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(float, gemm, libxsmm_original_sgemm_function);
   return libxsmm_original_sgemm_function;
 }
 
-LIBXSMM_APIEXT libxsmm_dgemv_function libxsmmext_original_dgemv(void)
+LIBXSMM_APIEXT libxsmm_dgemv_function libxsmm_original_dgemv(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, double, gemv, libxsmm_original_dgemv_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, double, gemv, libxsmm_original_dgemv_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(double, gemv, libxsmm_original_dgemv_function);
   return libxsmm_original_dgemv_function;
 }
 
-LIBXSMM_APIEXT libxsmm_sgemv_function libxsmmext_original_sgemv(void)
+LIBXSMM_APIEXT libxsmm_sgemv_function libxsmm_original_sgemv(void)
 {
-# if (0 != LIBXSMM_BLAS)
-  LIBXSMM_BLAS_WRAPPER(1, float, gemv, libxsmm_original_sgemv_function);
-# else
-  LIBXSMM_BLAS_WRAPPER(0, float, gemv, libxsmm_original_sgemv_function);
-# endif
+  LIBXSMM_BLAS_WRAPPER(float, gemv, libxsmm_original_sgemv_function);
   return libxsmm_original_sgemv_function;
 }
-#endif /*defined(LIBXSMM_BLAS_WRAP_DYNAMIC)*/
+#endif /*defined(LIBXSMM_WRAP)*/
 
 
 LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_BLAS_FSYMBOL_WRAP(double, gemm_batch_strided)(

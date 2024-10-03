@@ -11,17 +11,17 @@
 #ifndef LIBXSMM_EXT_GEMM_H
 #define LIBXSMM_EXT_GEMM_H
 
-#include <libxsmm.h>
+#include "libxsmm_gemm.h"
 
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
-LIBXSMM_APIEXT libxsmm_dgemm_batch_strided_function libxsmmext_original_dgemm_batch_strided(void);
-LIBXSMM_APIEXT libxsmm_sgemm_batch_strided_function libxsmmext_original_sgemm_batch_strided(void);
-LIBXSMM_APIEXT libxsmm_dgemm_batch_function libxsmmext_original_dgemm_batch(void);
-LIBXSMM_APIEXT libxsmm_sgemm_batch_function libxsmmext_original_sgemm_batch(void);
-LIBXSMM_APIEXT libxsmm_dgemm_function libxsmmext_original_dgemm(void);
-LIBXSMM_APIEXT libxsmm_sgemm_function libxsmmext_original_sgemm(void);
-LIBXSMM_APIEXT libxsmm_dgemv_function libxsmmext_original_dgemv(void);
-LIBXSMM_APIEXT libxsmm_sgemv_function libxsmmext_original_sgemv(void);
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && defined(LIBXSMM_WRAP)
+LIBXSMM_APIEXT libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided(void);
+LIBXSMM_APIEXT libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided(void);
+LIBXSMM_APIEXT libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void);
+LIBXSMM_APIEXT libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void);
+LIBXSMM_APIEXT libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_APIEXT libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_APIEXT libxsmm_dgemv_function libxsmm_original_dgemv(void);
+LIBXSMM_APIEXT libxsmm_sgemv_function libxsmm_original_sgemv(void);
 #endif
 
 #endif /*LIBXSMM_EXT_GEMM_H*/
