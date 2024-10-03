@@ -149,7 +149,7 @@
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",         &
      &        1D3 * dxsmm / REAL(nrepeat, T), " ms"
             IF (0.LT.dfort) THEN
-              WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "baseline:    ",      &
+              WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "baseline:   ",       &
      &          1D3 * dfort / REAL(nrepeat, T), " ms"
             END IF
           END IF
