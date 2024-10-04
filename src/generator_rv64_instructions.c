@@ -1327,10 +1327,6 @@ void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generate
       imm_lo = (((a_imm & 0x400) >> 2)| ((a_imm >> 11) & 0xff));
       imm_f  = imm_hi | imm_lo;
 
-      printf("JAL immediate %d %x %x %x %x\n", i_imm, a_imm, imm_hi, imm_lo, imm_f);
-      fflush(stdout);
-      //imm_f  = 1 << 8;
-
       /* fix bits */
       code[code_head]  = i_jmp_instr;
       /* setting RS1 */

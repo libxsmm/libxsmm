@@ -427,7 +427,7 @@ unsigned int libxsmm_generator_gemm_rv64_get_max_n_blocking( const libxsmm_micro
   LIBXSMM_UNUSED( i_xgemm_desc );
 
   if ( i_arch == LIBXSMM_RV64 ) {
-    //return libxsmm_cpuid_mvl_rv64();
+    /* return libxsmm_cpuid_mvl_rv64(); */
     return 10;
   } else {
     return 0;
