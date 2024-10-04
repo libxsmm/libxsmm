@@ -1603,8 +1603,6 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
     unsigned int code_head = io_generated_code->code_size;
     int l_jmp_imm = (int)l_jmp_dst - (int)code_head; /* computing jump immediate */
 
-    printf("Jump address [%d] %x %x %d\n", l_lab, l_jmp_dst, code_head, l_jmp_imm);
-    fflush(stdout);
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
@@ -1613,13 +1611,13 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
     }
 
     if (abs(l_jmp_imm) > 0x7ff) {
-      // Jump to PC + 8
+      /* Jump to PC + 8 */
       libxsmm_rv64_instruction_jump_and_link(io_generated_code, LIBXSMM_RV64_INSTR_GP_JAL, LIBXSMM_RV64_GP_REG_X0, 4);
 
-      // Unconditional jump to actual long target
+      /* Unconditional jump to actual long target */
       libxsmm_rv64_instruction_jump_and_link(io_generated_code, LIBXSMM_RV64_INSTR_GP_JAL, LIBXSMM_RV64_GP_REG_X0, (l_jmp_imm - 4)/2);
 
-      // Conditional jump to previous jump
+      /* Conditional jump to previous jump */
       libxsmm_rv64_instruction_cond_jump(io_generated_code, i_jmp_instr, i_gp_reg_src_1, i_gp_reg_src_2, -2);
     } else {
       libxsmm_rv64_instruction_cond_jump(io_generated_code, i_jmp_instr,
