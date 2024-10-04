@@ -319,7 +319,7 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
   int result_size = (reduce_rows == 1) ? n : ld_in;
   void *in = (void*)param->in.primary;
   void *result_reduce_elts = (void*)param->out.primary;
-  void *result_reduce_elts_sq = (void*)result_reduce_elts + result_size * LIBXSMM_TYPESIZE(dtype_out);
+  void *result_reduce_elts_sq = (char*)result_reduce_elts + result_size * LIBXSMM_TYPESIZE(dtype_out);
   void *cols_ind_array = (void*)param->in.secondary;
   void *ref_argop_off = (void*)param->out.secondary;
   libxsmm_blasint i = 0, j = 0, jj = 0, n_cols = 0;
@@ -442,7 +442,7 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
       } else {
         for (i = 0; i < m; i++) {
           tmp_result_elts[i] = 0.0;
-          for (jj = 0; jj < n_cols_idx; jj++) {
+          for (jj = 0; jj < (libxsmm_blasint)n_cols_idx; jj++) {
             float in_val;
             j = (libxsmm_blasint) ((index_tsize == 4) ? col_idx_32bit[jj] : col_idx_64bit[jj]);
             in_val  = libxsmm_elementwise_get_float_value(in, i, j, ld_in, dtype_in, i_mateltwise_desc, 3);
