@@ -545,7 +545,6 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   LIBXSMM_UNUSED(lda_transpose);
 
   /* define gp register mapping */
-  libxsmm_reset_rv64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_RV64_GP_REG_X10;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_RV64_GP_REG_X11;
