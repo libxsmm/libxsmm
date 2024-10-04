@@ -134,6 +134,17 @@ void libxsmm_zero_bit(unsigned char *bit_matrix, libxsmm_blasint i, libxsmm_blas
 }
 
 LIBXSMM_INLINE
+unsigned char libxsmm_extract_bit(const char *bit_matrix, libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld) {
+  unsigned char result = 0;
+  libxsmm_blasint byte_load = i/8;
+  libxsmm_blasint pos_in_byte = i%8;
+  char byte_loaded = bit_matrix[byte_load + j * (ld/8)];
+  result = ((unsigned char)(byte_loaded << (7-pos_in_byte))) >> 7;
+  result = (result == 0) ? 0 : 1;
+  return result;
+}
+
+LIBXSMM_INLINE
 float libxsmm_fp32_binary_compute(float in0, float in1, float out, libxsmm_meltw_binary_type op) {
   float res = out;
   if ( op == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
@@ -432,6 +443,52 @@ void libxsmm_reference_binary_elementwise(libxsmm_meltw_binary_param *param, con
 
 LIBXSMM_INLINE
 void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
+  libxsmm_blasint i, j;
+  libxsmm_blasint M = i_mateltwise_desc->m;
+  libxsmm_blasint N = i_mateltwise_desc->n;
+  libxsmm_blasint ldi = i_mateltwise_desc->ldi;
+  libxsmm_blasint ldi1 = i_mateltwise_desc->ldi2;
+  libxsmm_blasint ldi2 = i_mateltwise_desc->ldi3;
+  libxsmm_blasint ldo = i_mateltwise_desc->ldo;
+  libxsmm_datatype dtype_in = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0);
+  libxsmm_datatype dtype_in1 = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1);
+  libxsmm_datatype dtype_in2 = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2);
+  libxsmm_datatype dtype_out = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT);
+  libxsmm_datatype dtype_comp = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP);
+  libxsmm_bitfield flags =  i_mateltwise_desc->flags;
+  void *rng_state = (void*) param->op.secondary;
+  void *in = (void*)param->in0.primary;
+  void *in1 = (void*)param->in1.primary;
+  void *in2 = (void*)param->in2.primary;
+  void *out = (void*)param->out.primary;
+  unsigned int seed_idx = 0;
+
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        libxsmm_blasint l_ld2 = LIBXSMM_UPDIV(ldi2, 16)*16;
+        if (dtype_in == LIBXSMM_DATATYPE_F64 && dtype_in1 == LIBXSMM_DATATYPE_F64 && dtype_in2 == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64 && dtype_comp == LIBXSMM_DATATYPE_F64) {
+          double *in_double = (double*)in;
+          double *in1_double = (double*)in1;
+          double *out_double = (double*)out;
+          double in_val_double = in_double[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+          double in1_val_double = in1_double[libxsmm_elementwise_get_index(i, j, ldi1, i_mateltwise_desc, 1)];
+          unsigned char bit_val = libxsmm_extract_bit(in2, i, j, l_ld2);
+          double out_value = (bit_val == 0) ? in_val_double : in1_val_double;
+          out_double[i + j * ldo] = out_value;
+        } else {
+          float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+          float in1_val  = libxsmm_elementwise_get_float_value(in1, i, j, ldi1, dtype_in1, i_mateltwise_desc, 1);
+          unsigned char bit_val = libxsmm_extract_bit(in2, i, j, l_ld2);
+          float out_value = (bit_val == 0) ? in_val : in1_val;
+          libxsmm_elementwise_store_value(out, (void*)&out_value, i, j, ldo, flags, dtype_out, rng_state, seed_idx);
+          seed_idx++;
+        }
+      }
+    }
+  } else {
+
+  }
   return;
 }
 
