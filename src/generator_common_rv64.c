@@ -187,8 +187,9 @@ void libxsmm_generator_loop_footer_rv64( libxsmm_generated_code*     io_generate
                                             const unsigned int          i_loop_blocking ) {
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
                                                  i_gp_reg_loop_cnt, i_gp_reg_loop_cnt, -1 * i_loop_blocking );
+
   libxsmm_rv64_instruction_cond_jump_back_to_label( io_generated_code, LIBXSMM_RV64_INSTR_GP_BNE,
-                                                       i_gp_reg_loop_cnt, LIBXSMM_RV64_GP_REG_X0, io_loop_label_tracker );
+                                                    i_gp_reg_loop_cnt, LIBXSMM_RV64_GP_REG_X0, io_loop_label_tracker );
 }
 
 #if 0
@@ -789,6 +790,8 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
   l_m_blocks[1] = (l_remainder_size > 0);
   l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * l_datatype_size;
+
+  printf("In load 2dregblock %d %d %d\n", l_m_total_blocks, i_m_blocking, i_n_blocking);
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
@@ -1976,7 +1979,6 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
   unsigned int l_remainder_size = 0;
   unsigned long long l_jump_block_n_last = 0; /* this is the jump size to be performed after a n-block is complete */
   unsigned int l_datatype_size = LIBXSMM_TYPESIZE(i_datatype);
-  //unsigned int l_store_instr =  LIBXSMM_RV64_INSTR_GP_VS4R_V;
   unsigned int l_store_instr =  LIBXSMM_RV64_INSTR_GP_VSE32_V;
   unsigned int l_masked_store_instr = LIBXSMM_RV64_INSTR_GP_VSE32_V;
   unsigned int l_tmp_vreg = 0;
@@ -1998,24 +2000,18 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
   l_tmp_vreg2 = l_vec_reg_acc_start - 2;
 
   /* stores C accumulator to memory */
-  printf("m blocking %d n blocking %d\n", i_m_blocking, i_n_blocking);
-
   /* full vector stores */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     /* this is the jump size to be performed after a m-block is complete */
     unsigned long long l_jump_block_m_last = 0;
 
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
-      //if ((l_n * l_m_blocks[0] + l_m) % 4 == 0){
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
-                                         l_store_instr,
-                                         i_gp_reg_addr,
-                                         0,
-                                         l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
-                                         //l_vec_reg_acc_start,
-                                         1);
-      //}
-
+                                            l_store_instr,
+                                            i_gp_reg_addr,
+                                            0,
+                                            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
+                                            1);
       /* increase pointer in m-dimension.
           but only if
             1) remainder follows
@@ -2036,14 +2032,14 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
     }
 
     if ( l_m_blocks[1] != 0 ) {
-      /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
+      /* libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_remainder_size, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1); */
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                             l_masked_store_instr,
                                             i_gp_reg_addr,
                                             0,
                                             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
                                             1 );
-      /*libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vec_length, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);*/
+      /* libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vec_length, LIBXSMM_RV64_GP_REG_X7, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1); */
     }
 
     l_jump_block_m_last += (long long)i_ld - l_m_bytes_full;

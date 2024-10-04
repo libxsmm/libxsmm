@@ -2306,7 +2306,7 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generated_code,
                                      const unsigned int      i_jmp_instr,
                                      const unsigned int      i_gp_reg_dst,
-                                     const unsigned int      i_imm );
+                                     const int               i_imm );
 
 
 /**
