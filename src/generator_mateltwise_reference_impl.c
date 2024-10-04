@@ -312,7 +312,6 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
     unsigned long long offset = *((unsigned long long*)(param->out.secondary));
     libxsmm_bfloat16 *out_lo = (libxsmm_bfloat16*)out;
     libxsmm_bfloat16 *out_hi = (libxsmm_bfloat16*)((char*)out + offset);
-    libxsmm_blasint i, j;
     for (j = 0; j < N; j++) {
       for (i = 0; i < M; i++) {
         libxsmm_bfloat16_f32 bf16_hp;
