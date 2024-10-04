@@ -689,8 +689,6 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
     l_n_count++;
 
     /* open N loop */
-    printf("Staring new n loop %d \n", l_n_done - l_n_done_old);
-
     libxsmm_generator_loop_header_rv64( io_generated_code, &l_loop_label_tracker,
                                                 l_gp_reg_mapping.gp_reg_nloop, l_n_done - l_n_done_old );
 
@@ -966,7 +964,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                      (long long)l_n_blocking * l_xgemm_desc_opa->ldb * l_micro_kernel_config.datatype_size_in );
     }
 
-    // Not sure why is this needed?
+    /* Not sure why is this needed? */
     if (l_m_blocking_old){
         libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
           l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,  (long long)l_m_blocking_old*l_micro_kernel_config.datatype_size_in);
