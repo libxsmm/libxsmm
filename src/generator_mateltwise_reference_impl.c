@@ -263,7 +263,7 @@ float libxsmm_elementwise_get_float_value(const void *in, libxsmm_blasint i, lib
 }
 
 LIBXSMM_INLINE
-void libxsmm_elementwise_store_value(void *out, void* out_value_ptr, libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ldo, libxsmm_bitfield flags, libxsmm_datatype dtype_out, void *rng_state, unsigned int seed_idx) {
+void libxsmm_elementwise_store_value(void *out, void* out_value_ptr, libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ldo, unsigned int use_stoch, libxsmm_datatype dtype_out, void *rng_state, unsigned int seed_idx) {
   float out_value = *((float*)out_value_ptr);
   if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
     float* f_out = (float*)out;
@@ -276,7 +276,7 @@ void libxsmm_elementwise_store_value(void *out, void* out_value_ptr, libxsmm_bla
     f16_out[(j*ldo) + i] = libxsmm_convert_f32_to_f16(out_value);
   } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
     libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
-    if ((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ) {
+    if (use_stoch > 0) {
       libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
     } else {
       bf8_out[(j*ldo) + i] = libxsmm_convert_f32_to_bf8_rne(out_value);
@@ -365,7 +365,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
         } else {
           float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
           float out_val = libxsmm_fp32_unary_compute(in_val, i_mateltwise_desc->param);
-          libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, flags, dtype_out, rng_state, seed_idx);
+          libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
           seed_idx++;
         }
       }
@@ -431,7 +431,7 @@ void libxsmm_reference_binary_elementwise(libxsmm_meltw_binary_param *param, con
           } else {
             float out_in  = libxsmm_elementwise_get_float_value(out, i, j, ldo, dtype_out, i_mateltwise_desc, 3);
             float out_val = libxsmm_fp32_binary_compute(in_val, in1_val, out_in, i_mateltwise_desc->param);
-            libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, flags, dtype_out, rng_state, seed_idx);
+            libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
           }
           seed_idx++;
         }
@@ -481,7 +481,7 @@ void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, c
           float in1_val  = libxsmm_elementwise_get_float_value(in1, i, j, ldi1, dtype_in1, i_mateltwise_desc, 1);
           unsigned char bit_val = libxsmm_extract_bit(in2, i, j, l_ld2);
           float out_value = (bit_val == 0) ? in_val : in1_val;
-          libxsmm_elementwise_store_value(out, (void*)&out_value, i, j, ldo, flags, dtype_out, rng_state, seed_idx);
+          libxsmm_elementwise_store_value(out, (void*)&out_value, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
           seed_idx++;
         }
       }
