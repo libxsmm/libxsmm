@@ -700,7 +700,92 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
     void *out = (void*)param->out.primary;
     unsigned int seed_idx = 0;
 
-    if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP ) {
+    if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT ) {
+      unsigned int skip_scf_cvt = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT) > 0 ) ? 1 : 0;
+      unsigned int signed_sat = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT) > 0 ) ? 1 : 0;
+      float *in_ptr = (float*)in;
+      float scf_quant = (skip_scf_cvt > 0) ? 1.0f : *((float*)(param->in.secondary));
+      if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I8) ) {
+        char *char_data = (char*)out;
+        for ( j = 0; j < N; ++j ) {
+          for ( i = 0; i < M; ++i ) {
+            float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            if (signed_sat > 0) {
+              float tmp = LIBXSMM_NEARBYINTF( in_f * scf_quant );
+              if (tmp < -128) {
+                tmp = -128.0;
+              }
+              if (tmp > 127) {
+                tmp = 127.0;
+              }
+              char_data[(j*ldo)+i] = (char) tmp;
+            } else {
+              char_data[(j*ldo)+i] = (char) (0x000000ff & ((int)LIBXSMM_NEARBYINTF( in_f * scf_quant )));
+            }
+          }
+        }
+      } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I16) ) {
+        short *short_data = (short*)out;
+        for ( j = 0; j < N; ++j ) {
+          for ( i = 0; i < M; ++i ) {
+            float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            if (signed_sat > 0) {
+              float tmp = LIBXSMM_NEARBYINTF( in_f * scf_quant );
+              if (tmp < -32768) {
+                tmp = -32768.0;
+              }
+              if (tmp > 32767) {
+                tmp = 32767.0;
+              }
+              short_data[(j*ldo)+i] = (char) tmp;
+            } else {
+              short_data[(j*ldo)+i] = (char) (0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in_f * scf_quant )));
+            }
+          }
+        }
+      } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I32) ) {
+        int *int_data = (int*)out;
+        for ( j = 0; j < N; ++j ) {
+          for ( i = 0; i < M; ++i ) {
+            float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            int_data[(j*ldo)+i] = LIBXSMM_NEARBYINTF( in_f * scf_quant );
+          }
+        }
+      } else {
+        /* Should not happen  */
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DEQUANT ) {
+      unsigned int skip_scf_cvt = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT) > 0 ) ? 1 : 0;
+      float *out_data = (float*)out;
+      float scf_dequant = (skip_scf_cvt > 0) ? 1.0f : *((float*)(param->in.secondary));
+      if ( (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_in == LIBXSMM_DATATYPE_I8) ) {
+        char *char_data = (char*)in;
+        for ( j = 0; j < N; ++j ) {
+          for ( i = 0; i < M; ++i ) {
+            char in_val = char_data[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            out_data[(j*ldo)+i] = ((float)in_val)* scf_dequant;
+          }
+        }
+      } else if ( (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_in == LIBXSMM_DATATYPE_I16) ) {
+        short *short_data = (short*)in;
+        for ( j = 0; j < N; ++j ) {
+          for ( i = 0; i < M; ++i ) {
+            short in_val = short_data[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            out_data[(j*ldo)+i] = ((float)in_val)* scf_dequant;
+          }
+        }
+      } else if ( (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_in == LIBXSMM_DATATYPE_I32) ) {
+        int *int_data = (int*)in;
+        for ( j = 0; j < N; ++j ) {
+          for ( i = 0; i < M; ++i ) {
+            int in_val = int_data[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            out_data[(j*ldo)+i] = ((float)in_val)* scf_dequant;
+          }
+        }
+      } else {
+        /* Should not happen  */
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP ) {
       /* Special case for unzip TPP */
       float *_in = (float*)in;
       unsigned long long offset = *((unsigned long long*)(param->out.secondary));
