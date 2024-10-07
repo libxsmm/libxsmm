@@ -40,6 +40,39 @@ float libxsmm_gelu_inv(float x) {
 }
 
 LIBXSMM_INLINE
+void libxsmm_lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigned int width ) {
+  union { unsigned int i; float f; } rng_num = { 0 };
+  const unsigned int state_ld = 16;
+  const float one = 1.0f;
+  unsigned int w;
+
+  for ( w = 0 ; w < width; ++w ) {
+    unsigned int state_0 = rng_state[w + (0 * state_ld)];
+    unsigned int state_1 = rng_state[w + (1 * state_ld)];
+    unsigned int state_2 = rng_state[w + (2 * state_ld)];
+    unsigned int state_3 = rng_state[w + (3 * state_ld)];
+    unsigned int tmp_0, tmp_1;
+    rng_num.i = state_3 + state_0;
+    rng_num.i = rng_num.i >> 9;
+    rng_num.i = 0x3f800000 | rng_num.i;
+    prng_out[w] = rng_num.f - one;
+    tmp_0 = state_1 << 9;
+    state_2 = state_2 ^ state_0;
+    state_3 = state_3 ^ state_1;
+    state_1 = state_1 ^ state_2;
+    state_0 = state_0 ^ state_3;
+    state_2 = state_2 ^ tmp_0;
+    tmp_0 = state_3 << 11;
+    tmp_1 = state_3 >> 21;
+    state_3 = tmp_0 | tmp_1;
+    rng_state[w + (0 * state_ld)] = state_0;
+    rng_state[w + (1 * state_ld)] = state_1;
+    rng_state[w + (2 * state_ld)] = state_2;
+    rng_state[w + (3 * state_ld)] = state_3;
+  }
+}
+
+LIBXSMM_INLINE
 float libxsmm_fp32_unary_compute(float in, libxsmm_meltw_unary_type op) {
   float res = 0;
   if ( op == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY || op == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
@@ -784,6 +817,65 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
         }
       } else {
         /* Should not happen  */
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT ) {
+      unsigned int bitm = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) ? 1 : 0;
+      libxsmm_blasint mask_ld = (bitm == 0) ? ldo : LIBXSMM_UPDIV(ldo, 16)*16;
+      float vrng[16];
+      float p = *((float*)(param->op.primary));
+      float pn = 1 - p;
+      float pi = 1/pn;
+      libxsmm_blasint jj;
+      unsigned int w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
+      unsigned char *dropout_mask = (unsigned char*) param->out.secondary;
+      for (j = 0; j < N; j++) {
+        for (i = 0; i < LIBXSMM_LO2(M, w); i+=w) {
+          libxsmm_lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
+          for ( jj = 0; jj < w; ++jj ) {
+            float in_val  = libxsmm_elementwise_get_float_value(in, i+jj, j, ldi, dtype_in, i_mateltwise_desc, 0);
+            float out_val = ( vrng[jj] < pn ) ? pi * in_val : 0.0f;
+            libxsmm_elementwise_store_value(out, (void*)&out_val, i+jj, j, ldo, 0, dtype_out, NULL, 0);
+            if (bitm > 0) {
+              if ( vrng[jj] < pn ) {
+                libxsmm_set_bit((unsigned char*)dropout_mask, i+jj, j, mask_ld);
+              } else {
+                libxsmm_zero_bit((unsigned char*)dropout_mask, i+jj, j, mask_ld);
+              }
+            }
+          }
+        }
+        if (i < M) {
+          libxsmm_lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
+          jj = 0;
+          for ( ; i < M; ++i ) {
+            float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+            float out_val = ( vrng[jj] < pn ) ? pi * in_val : 0.0f;
+            libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, 0, dtype_out, NULL, 0);
+            if (bitm > 0) {
+              if ( vrng[jj] < pn ) {
+                libxsmm_set_bit((unsigned char*)dropout_mask, i, j, mask_ld);
+              } else {
+                libxsmm_zero_bit((unsigned char*)dropout_mask, i, j, mask_ld);
+              }
+            }
+            jj++;
+          }
+        }
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV ) {
+      unsigned int bitm = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) ? 1 : 0;
+      libxsmm_blasint mask_ld = (bitm == 0) ? ldi : LIBXSMM_UPDIV(ldi, 16)*16;
+      float p = *((float*)(param->op.primary));
+      float pn = 1.0f - p;
+      float pi = 1.0f/pn;
+      unsigned char *dropout_mask = (unsigned char*) param->in.secondary;
+      for ( j = 0; j < N; ++j ) {
+        for ( i = 0; i < M; ++i ) {
+          float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0) * pi;
+          unsigned char bit_val = libxsmm_extract_bit((const char*)dropout_mask, i, j, mask_ld);
+          float out_val = (bit_val > 0) ? in_val : 0.0f;
+          libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, 0, dtype_out, NULL, 0);
+        }
       }
     } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNZIP ) {
       /* Special case for unzip TPP */
