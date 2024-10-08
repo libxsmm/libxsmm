@@ -827,9 +827,9 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
               if (tmp > 32767) {
                 tmp = 32767.0;
               }
-              short_data[(j*ldo)+i] = (char) tmp;
+              short_data[(j*ldo)+i] = (short) tmp;
             } else {
-              short_data[(j*ldo)+i] = (char) (0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in_f * scf_quant )));
+              short_data[(j*ldo)+i] = (short) (0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in_f * scf_quant )));
             }
           }
         }
