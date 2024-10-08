@@ -75,7 +75,7 @@ void libxsmm_lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigne
 LIBXSMM_INLINE
 float libxsmm_fp32_unary_compute(float in, libxsmm_meltw_unary_type op) {
   float res = 0;
-  if ( op == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY || op == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+  if ( op == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY || op == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR || op == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
     res = in;
   } else if ( op == LIBXSMM_MELTW_TYPE_UNARY_NEGATE) {
     res = -1.0f * in;
@@ -731,6 +731,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
     void *rng_state = (void*) param->op.secondary;
     void *in = (void*)param->in.primary;
     void *out = (void*)param->out.primary;
+    void *out_dump = (void*)param->out.secondary;
     unsigned int seed_idx = 0;
 
     if (  i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU ||
@@ -989,11 +990,24 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
             double *out_double = (double*)out;
             double in_val_double = in_double[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
             out_double[i + j * ldo] = libxsmm_fp64_unary_compute(in_val_double, i_mateltwise_desc->param);
+            if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
+              double* out1 = (double*)out_dump;
+              out1[i + j * ldo] =  out_double[i + j * ldo];
+            }
           } else {
             float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
             float out_val = libxsmm_fp32_unary_compute(in_val, i_mateltwise_desc->param);
             libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
             seed_idx++;
+            if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
+              if (((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) && (dtype_out == LIBXSMM_DATATYPE_BF8)) {
+                char* out0 = (char*)out;
+                char* out1 = (char*)out_dump;
+                out1[i + j * ldo] = out0[i + j * ldo];
+              } else {
+                libxsmm_elementwise_store_value(out_dump, (void*)&out_val, i, j, ldo, 0, dtype_out, NULL, 0);
+              }
+            }
           }
         }
       }
