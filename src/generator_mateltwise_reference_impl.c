@@ -733,7 +733,64 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
     void *out = (void*)param->out.primary;
     unsigned int seed_idx = 0;
 
-    if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT ) {
+    if (  i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU ||
+          i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU ||
+          i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU ) {
+      unsigned int bitm = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) ? 1 : 0;
+      libxsmm_blasint mask_ld = (bitm == 0) ? ldo : LIBXSMM_UPDIV(ldo, 16)*16;
+      float alpha = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) ? 1.0f : *((float*)(param->op.primary)) ;
+      unsigned char *relu_mask = (unsigned char*) param->out.secondary;
+      for (j = 0; j < N; j++) {
+        for (i = 0; i < M; i++) {
+          float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+          float out_val = 0.0;
+          if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
+            out_val = ( in_val <= 0.0f ) ? 0.0f : in_val;
+          } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU) {
+            out_val = ( in_val <= 0.0f ) ? alpha*in_val : in_val;
+          } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU) {
+            out_val = ( in_val <= 0.0f ) ? alpha*(LIBXSMM_EXPF(in_val)-1.0f) : in_val;
+          } else {
+            /* Should not happen  */
+          }
+          libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, 0, dtype_out, NULL, 0);
+          if (bitm > 0) {
+            if ( ( in_val <= 0.0f ) ) {
+              libxsmm_zero_bit((unsigned char*)relu_mask, i, j, mask_ld);
+            } else {
+              libxsmm_set_bit((unsigned char*)relu_mask, i, j, mask_ld);
+            }
+          }
+        }
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV ||
+                i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV ||
+                i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV ) {
+      unsigned int bitm = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) ? 1 : 0;
+      libxsmm_blasint mask_ld = (bitm == 0) ? ldi : LIBXSMM_UPDIV(ldi, 16)*16;
+      float alpha = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) ? 1.0f : *((float*)(param->op.primary)) ;
+      unsigned char *relu_mask = (unsigned char*) param->in.secondary;
+      void *out_fwd = (void*) param->in.secondary;
+      for (j = 0; j < N; j++) {
+        for (i = 0; i < M; i++) {
+          float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+          float out_val = 0.0;
+          if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) {
+            unsigned char bit_val = libxsmm_extract_bit((const char*)relu_mask, i, j, mask_ld);
+            out_val = ( bit_val == 0 ) ? 0.0f : in_val;
+          } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV) {
+            unsigned char bit_val = libxsmm_extract_bit((const char*)relu_mask, i, j, mask_ld);
+            out_val = ( bit_val == 0 ) ? alpha*in_val : in_val;
+          } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV) {
+            float out_fwd_val = libxsmm_elementwise_get_float_value(out_fwd, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+            out_val = ( out_fwd_val > 0 ) ? in_val : in_val * (out_fwd_val + alpha);
+          } else {
+            /* Should not happen  */
+          }
+          libxsmm_elementwise_store_value(out, (void*)&out_val, i, j, ldo, 0, dtype_out, NULL, 0);
+        }
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT ) {
       unsigned int skip_scf_cvt = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT) > 0 ) ? 1 : 0;
       unsigned int signed_sat = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT) > 0 ) ? 1 : 0;
       float *in_ptr = (float*)in;
@@ -826,10 +883,10 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
       float pn = 1 - p;
       float pi = 1/pn;
       libxsmm_blasint jj;
-      unsigned int w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
+      libxsmm_blasint w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
       unsigned char *dropout_mask = (unsigned char*) param->out.secondary;
       for (j = 0; j < N; j++) {
-        for (i = 0; i < LIBXSMM_LO2(M, w); i+=w) {
+        for (i = 0; i < (libxsmm_blasint)LIBXSMM_LO2(M, w); i+=w) {
           libxsmm_lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
           for ( jj = 0; jj < w; ++jj ) {
             float in_val  = libxsmm_elementwise_get_float_value(in, i+jj, j, ldi, dtype_in, i_mateltwise_desc, 0);
