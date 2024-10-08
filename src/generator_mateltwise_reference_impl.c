@@ -715,9 +715,253 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
 }
 
 LIBXSMM_INLINE
+void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
+  libxsmm_blasint m = i_mateltwise_desc->m;
+  libxsmm_blasint n = i_mateltwise_desc->n;
+  libxsmm_blasint inp_ld = i_mateltwise_desc->ldi;
+  libxsmm_blasint out_ld = i_mateltwise_desc->ldo;
+  libxsmm_datatype dtype_in = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0);
+  libxsmm_blasint i, j, ind, ind2;
+  unsigned int use_16bit_dtype = (dtype_in == LIBXSMM_DATATYPE_I16 || dtype_in == LIBXSMM_DATATYPE_F16 || dtype_in == LIBXSMM_DATATYPE_BF16) ? 1 : 0;
+  unsigned int use_64bit_index = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES) > 0) ? 1 : 0;
+  unsigned long long *ind_array_64bit = (unsigned long long*) ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? param->in.secondary : param->out.secondary);
+  unsigned int *ind_array_32bit = (unsigned int*) ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? param->in.secondary : param->out.secondary);
+  float *sinp = (float*) param->in.primary;
+  float *sout = (float*) param->out.primary;
+  unsigned short *binp = (unsigned short*) param->in.primary;
+  unsigned short *bout = (unsigned short*) param->out.primary;
+  libxsmm_blasint inp_m = 0, inp_n = 0, out_m = 0, out_n = 0;
+
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+      out_m = m;
+      out_n = n;
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+      out_m = m;
+      out_n = n;
+    } else {
+      out_m = m;
+      out_n = n;
+    }
+  } else {
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+      inp_n = n;
+      out_m = m;
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+      inp_m = m;
+      inp_n = n;
+    } else  {
+      inp_m = m;
+      inp_n = n;
+    }
+  }
+
+  if (use_16bit_dtype == 0) {
+    if (use_64bit_index == 1) {
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < out_n; ind++) {
+            j = (libxsmm_blasint)ind_array_64bit[ind];
+            for (i = 0; i < out_m; i++) {
+              sout[i + ind * out_ld] = sinp[i + j * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < out_m; ind++) {
+            i = (libxsmm_blasint)ind_array_64bit[ind];
+            for (j = 0; j < out_n; j++) {
+              sout[ind + j * out_ld] = sinp[i + j * inp_ld];
+            }
+          }
+        } else {
+          for (ind2 = 0; ind2 < out_n; ind2++) {
+            for (ind = 0; ind < out_m; ind++) {
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * out_m];
+              sout[ind + ind2 * out_ld] = sinp[i];
+            }
+          }
+        }
+      } else {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < inp_n; ind++) {
+            j = (libxsmm_blasint)ind_array_64bit[ind];
+            for (i = 0; i < out_m; i++) {
+              sout[i + j * out_ld] = sinp[i + ind * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < inp_m; ind++) {
+            i = (libxsmm_blasint)ind_array_64bit[ind];
+            for (j = 0; j < inp_n; j++) {
+              sout[i + j * out_ld] = sinp[ind + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < inp_n; ind2++) {
+            for (ind = 0; ind < inp_m; ind++) {
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * inp_m];
+              sout[i] = sinp[ind + ind2 * inp_ld ];
+            }
+          }
+        }
+      }
+    } else {
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < out_n; ind++) {
+            j = ind_array_32bit[ind];
+            for (i = 0; i < out_m; i++) {
+              sout[i + ind * out_ld] = sinp[i + j * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < out_m; ind++) {
+            i = ind_array_32bit[ind];
+            for (j = 0; j < out_n; j++) {
+              sout[ind + j * out_ld] = sinp[i + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < out_n; ind2++) {
+            for (ind = 0; ind < out_m; ind++) {
+              i = ind_array_32bit[ind + ind2 * out_m];
+              sout[ind + ind2 * out_ld] = sinp[i];
+            }
+          }
+        }
+      } else {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < inp_n; ind++) {
+            j = ind_array_32bit[ind];
+            for (i = 0; i < out_m; i++) {
+              sout[i + j * out_ld] = sinp[i + ind * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < inp_m; ind++) {
+            i = ind_array_32bit[ind];
+            for (j = 0; j < inp_n; j++) {
+              sout[i + j * out_ld] = sinp[ind + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < inp_n; ind2++) {
+            for (ind = 0; ind < inp_m; ind++) {
+              i = ind_array_32bit[ind + ind2 * inp_m];
+              sout[i] = sinp[ind + ind2 * inp_ld ];
+            }
+          }
+        }
+      }
+    }
+  } else {
+    if (use_64bit_index == 1) {
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < out_n; ind++) {
+            j = (libxsmm_blasint)ind_array_64bit[ind];
+            for (i = 0; i < out_m; i++) {
+              bout[i + ind * out_ld] = binp[i + j * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < out_m; ind++) {
+            i = (libxsmm_blasint)ind_array_64bit[ind];
+            for (j = 0; j < out_n; j++) {
+              bout[ind + j * out_ld] = binp[i + j * inp_ld];
+            }
+          }
+        } else {
+          for (ind2 = 0; ind2 < out_n; ind2++) {
+            for (ind = 0; ind < out_m; ind++) {
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * out_m];
+              bout[ind + ind2 * out_ld] = binp[i];
+            }
+          }
+        }
+      } else {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < inp_n; ind++) {
+            j = (libxsmm_blasint)ind_array_64bit[ind];
+            for (i = 0; i < out_m; i++) {
+              bout[i + j * out_ld] = binp[i + ind * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < inp_m; ind++) {
+            i = (libxsmm_blasint)ind_array_64bit[ind];
+            for (j = 0; j < inp_n; j++) {
+              bout[i + j * out_ld] = binp[ind + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < inp_n; ind2++) {
+            for (ind = 0; ind < inp_m; ind++) {
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * inp_m];
+              bout[i] = binp[ind + ind2 * inp_ld ];
+            }
+          }
+        }
+      }
+    } else {
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < out_n; ind++) {
+            j = ind_array_32bit[ind];
+            for (i = 0; i < out_m; i++) {
+              bout[i + ind * out_ld] = binp[i + j * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < out_m; ind++) {
+            i = ind_array_32bit[ind];
+            for (j = 0; j < out_n; j++) {
+              bout[ind + j * out_ld] = binp[i + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < out_n; ind2++) {
+            for (ind = 0; ind < out_m; ind++) {
+              i = ind_array_32bit[ind + ind2 * out_m];
+              bout[ind + ind2 * out_ld] = binp[i];
+            }
+          }
+        }
+      } else {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < inp_n; ind++) {
+            j = ind_array_32bit[ind];
+            for (i = 0; i < out_m; i++) {
+              bout[i + j * out_ld] = binp[i + ind * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < inp_m; ind++) {
+            i = ind_array_32bit[ind];
+            for (j = 0; j < inp_n; j++) {
+              bout[i + j * out_ld] = binp[ind + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < inp_n; ind2++) {
+            for (ind = 0; ind < inp_m; ind++) {
+              i = ind_array_32bit[ind + ind2 * inp_m];
+              bout[i] = binp[ind + ind2 * inp_ld ];
+            }
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+LIBXSMM_INLINE
 void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
   if (libxsmm_is_reduce_op(i_mateltwise_desc) > 0) {
     libxsmm_elementwise_reduce_kernel( param, i_mateltwise_desc);
+  } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) {
+    libxsmm_elementwise_gather_scatter_kernel( param, i_mateltwise_desc);
   } else {
     libxsmm_blasint i, j;
     libxsmm_blasint M = i_mateltwise_desc->m;
