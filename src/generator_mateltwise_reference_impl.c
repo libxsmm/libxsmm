@@ -1726,7 +1726,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
       libxsmm_blasint bc = i_mateltwise_desc->m;
       libxsmm_blasint bn = i_mateltwise_desc->n;
       libxsmm_blasint C = i_mateltwise_desc->ldi;
-      libxsmm_blasint N = i_mateltwise_desc->ldo;
+      N = i_mateltwise_desc->ldo;
       libxsmm_blasint ic = 0, iC = 0, iN = 0, i_n = 0;
       for (iC = 0; iC < C/bc; iC++) {
         for (ic = 0; ic < bc; ic++) {
