@@ -1701,7 +1701,48 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
     void *out_dump = (void*)param->out.secondary;
     unsigned int seed_idx = 0;
 
-    if (  i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU ||
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD) {
+      float acc_f32 = 0.0f;
+      double acc_f64 = 0.0;
+      for ( j = 0; j < N; ++j ) {
+        for ( i = 0; i < M; ++i ) {
+          if (dtype_in == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64 && dtype_comp == LIBXSMM_DATATYPE_F64) {
+            double *in_double = (double*)in;
+            double in_val_double = in_double[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+            acc_f64 += in_val_double;
+          } else {
+            float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+            acc_f32 += in_val;
+          }
+        }
+      }
+      if (dtype_in == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64 && dtype_comp == LIBXSMM_DATATYPE_F64) {
+        double *out_f64 = (double*)out;
+        out_f64[0] = acc_f64;
+      } else {
+        libxsmm_elementwise_store_value(out, (void*)&acc_f32, 0, 0, ldo, 0, dtype_out, NULL, 0);
+      }
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT ) {
+      libxsmm_blasint bc = i_mateltwise_desc->m;
+      libxsmm_blasint bn = i_mateltwise_desc->n;
+      libxsmm_blasint C = i_mateltwise_desc->ldi;
+      libxsmm_blasint N = i_mateltwise_desc->ldo;
+      libxsmm_blasint ic = 0, iC = 0, iN = 0, i_n = 0;
+      for (iC = 0; iC < C/bc; iC++) {
+        for (ic = 0; ic < bc; ic++) {
+          libxsmm_blasint c = iC*bc+ic;
+          float tmp = 0.0f;
+          for (iN = 0; iN < N/bn; iN++) {
+            for (i_n = 0; i_n < bn; i_n++) {
+              libxsmm_blasint offset = iN * C * bn + iC * bn * bc + i_n * bc + ic;
+              float in_val  = libxsmm_elementwise_get_float_value(in, offset, 0, offset, dtype_in, i_mateltwise_desc, 0);
+              tmp += in_val;
+            }
+          }
+          libxsmm_elementwise_store_value(out, (void*)&tmp, c, 0, ldo, 0, dtype_out, NULL, 0);
+        }
+      }
+    } else if (  i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU ||
           i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU ||
           i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU ) {
       unsigned int bitm = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) ? 1 : 0;
@@ -2002,7 +2043,31 @@ void libxsmm_reference_binary_elementwise(libxsmm_meltw_binary_param *param, con
   void *out = (void*)param->out.primary;
   unsigned int seed_idx = 0;
 
-  if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP ) {
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD) {
+    float acc_f32 = 0.0f;
+    double acc_f64 = 0.0;
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        if (dtype_in == LIBXSMM_DATATYPE_F64 && dtype_in1 == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64 && dtype_comp == LIBXSMM_DATATYPE_F64) {
+          double *in_double = (double*)in;
+          double *in1_double = (double*)in1;
+          double in_val_double = in_double[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
+          double in1_val_double = in1_double[libxsmm_elementwise_get_index(i, j, ldi1, i_mateltwise_desc, 1)];
+          acc_f64 += in_val_double * in1_val_double;
+        } else {
+          float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+          float in1_val  = libxsmm_elementwise_get_float_value(in1, i, j, ldi1, dtype_in1, i_mateltwise_desc, 1);
+          acc_f32 += in_val * in1_val;
+        }
+      }
+    }
+    if (dtype_in == LIBXSMM_DATATYPE_F64 && dtype_in1 == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64 && dtype_comp == LIBXSMM_DATATYPE_F64) {
+      double *out_f64 = (double*)out;
+      out_f64[0] = acc_f64;
+    } else {
+      libxsmm_elementwise_store_value(out, (void*)&acc_f32, 0, 0, ldo, 0, dtype_out, NULL, 0);
+    }
+  } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP ) {
     /* Special case for zip TPP */
     float *out_res = (float*)out;
     libxsmm_bfloat16 *in_lo = (libxsmm_bfloat16*)in;
@@ -2093,6 +2158,23 @@ void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, c
           libxsmm_elementwise_store_value(out, (void*)&out_value, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
           seed_idx++;
         }
+      }
+    }
+  } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_MULADD || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        float out_tmp = 0.0f;
+        float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
+        float in1_val  = libxsmm_elementwise_get_float_value(in1, i, j, ldi1, dtype_in1, i_mateltwise_desc, 1);
+        float in2_val  = ((flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0 ) ? libxsmm_elementwise_get_float_value(out, i, j, ldo, dtype_out, i_mateltwise_desc, 3)
+                                                                                       : libxsmm_elementwise_get_float_value(in2, i, j, ldi2, dtype_in2, i_mateltwise_desc, 2);
+        if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_MULADD) {
+          out_tmp = in2_val + in_val * in1_val;
+        } else {
+          out_tmp = in2_val - in_val * in1_val;
+        }
+        libxsmm_elementwise_store_value(out, (void*)&out_tmp, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
+        seed_idx++;
       }
     }
   } else {
