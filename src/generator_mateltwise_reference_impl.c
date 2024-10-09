@@ -375,7 +375,7 @@ unsigned int libxsmm_is_transform_op(const libxsmm_meltw_descriptor *i_mateltwis
 
 LIBXSMM_INLINE
 void libxsmm_ref_transpose(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   const void *in = (const void*)param->in.primary;
   void* out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -387,33 +387,33 @@ void libxsmm_ref_transpose(libxsmm_meltw_unary_param *param, const libxsmm_meltw
   if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
     const double*  in_data = (const double*)in;
     double*       out_data = (double*)      out;
-    for ( i = 0; i < (size_t)N; ++i ) {
-      for ( j = 0; j < (size_t)M; ++j ) {
-        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+    for ( i = 0; i < (libxsmm_blasint)N; ++i ) {
+      for ( j = 0; j < (libxsmm_blasint)M; ++j ) {
+        out_data[(j*(libxsmm_blasint)ldo)+i] = in_data[(i*(libxsmm_blasint)ldi)+j];
       }
     }
   } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32)) {
     const float*  in_data = (const float*)in;
     float*       out_data = (float*)      out;
-    for ( i = 0; i < (size_t)N; ++i ) {
-      for ( j = 0; j < (size_t)M; ++j ) {
-        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+    for ( i = 0; i < (libxsmm_blasint)N; ++i ) {
+      for ( j = 0; j < (libxsmm_blasint)M; ++j ) {
+        out_data[(j*(libxsmm_blasint)ldo)+i] = in_data[(i*(libxsmm_blasint)ldi)+j];
       }
     }
   } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
     const unsigned short*  in_data = (const unsigned short*)in;
     unsigned short*       out_data = (unsigned short*)      out;
-    for ( i = 0; i < (size_t)N; ++i ) {
-      for ( j = 0; j < (size_t)M; ++j ) {
-        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+    for ( i = 0; i < (libxsmm_blasint)N; ++i ) {
+      for ( j = 0; j < (libxsmm_blasint)M; ++j ) {
+        out_data[(j*(libxsmm_blasint)ldo)+i] = in_data[(i*(libxsmm_blasint)ldi)+j];
       }
     }
   } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
     const unsigned char*  in_data = (const unsigned char*)in;
     unsigned char*       out_data = (unsigned char*)      out;
-    for ( i = 0; i < (size_t)N; ++i ) {
-      for ( j = 0; j < (size_t)M; ++j ) {
-        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+    for ( i = 0; i < (libxsmm_blasint)N; ++i ) {
+      for ( j = 0; j < (libxsmm_blasint)M; ++j ) {
+        out_data[(j*(libxsmm_blasint)ldo)+i] = in_data[(i*(libxsmm_blasint)ldi)+j];
       }
     }
   } else {
@@ -423,7 +423,7 @@ void libxsmm_ref_transpose(libxsmm_meltw_unary_param *param, const libxsmm_meltw
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni2_to_vnni2T_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -452,7 +452,7 @@ void libxsmm_ref_vnni2_to_vnni2T_16bit(libxsmm_meltw_unary_param *param, const l
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni4_to_vnni4T_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -482,7 +482,7 @@ void libxsmm_ref_vnni4_to_vnni4T_16bit(libxsmm_meltw_unary_param *param, const l
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni4_to_vnni4T_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -511,7 +511,7 @@ void libxsmm_ref_vnni4_to_vnni4T_08bit(libxsmm_meltw_unary_param *param, const l
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni8_to_vnni8T_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -542,7 +542,7 @@ void libxsmm_ref_vnni8_to_vnni8T_16bit(libxsmm_meltw_unary_param *param, const l
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni8_to_vnni8T_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -572,7 +572,7 @@ void libxsmm_ref_vnni8_to_vnni8T_08bit(libxsmm_meltw_unary_param *param, const l
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni2_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -598,7 +598,7 @@ void libxsmm_ref_norm_to_vnni2_16bit(libxsmm_meltw_unary_param *param, const lib
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni2T_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, i2;
+  libxsmm_blasint i, j, i2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -620,7 +620,7 @@ void libxsmm_ref_norm_to_vnni2T_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni8T_to_norm_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, i2;
+  libxsmm_blasint i, j, i2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -642,7 +642,7 @@ void libxsmm_ref_vnni8T_to_norm_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni4T_to_norm_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, i2;
+  libxsmm_blasint i, j, i2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -664,7 +664,7 @@ void libxsmm_ref_vnni4T_to_norm_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni2T_to_norm_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, i2;
+  libxsmm_blasint i, j, i2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -685,7 +685,7 @@ void libxsmm_ref_vnni2T_to_norm_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni4T_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, i2;
+  libxsmm_blasint i, j, i2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -706,7 +706,7 @@ void libxsmm_ref_norm_to_vnni4T_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni8T_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, i2;
+  libxsmm_blasint i, j, i2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -727,7 +727,7 @@ void libxsmm_ref_norm_to_vnni8T_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni4_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -752,7 +752,7 @@ void libxsmm_ref_norm_to_vnni4_16bit(libxsmm_meltw_unary_param *param, const lib
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni8_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -777,7 +777,7 @@ void libxsmm_ref_norm_to_vnni8_16bit(libxsmm_meltw_unary_param *param, const lib
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni4_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -802,7 +802,7 @@ void libxsmm_ref_norm_to_vnni4_08bit(libxsmm_meltw_unary_param *param, const lib
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_to_vnni8_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -827,7 +827,7 @@ void libxsmm_ref_norm_to_vnni8_08bit(libxsmm_meltw_unary_param *param, const lib
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni4_to_norm_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -846,7 +846,7 @@ void libxsmm_ref_vnni4_to_norm_08bit(libxsmm_meltw_unary_param *param, const lib
 
 LIBXSMM_INLINE
 void libxsmm_ref_vnni4_to_vnni2_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -865,7 +865,7 @@ void libxsmm_ref_vnni4_to_vnni2_08bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_padn_mod2_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -888,7 +888,7 @@ void libxsmm_ref_norm_padn_mod2_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_padm_mod2_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -911,7 +911,7 @@ void libxsmm_ref_norm_padm_mod2_16bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_padnm_mod2_16bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned short *in = (void*)param->in.primary;
   unsigned short *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -935,7 +935,7 @@ void libxsmm_ref_norm_padnm_mod2_16bit(libxsmm_meltw_unary_param *param, const l
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_padn_mod4_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -959,7 +959,7 @@ void libxsmm_ref_norm_padn_mod4_08bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_padm_mod4_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
@@ -982,7 +982,7 @@ void libxsmm_ref_norm_padm_mod4_08bit(libxsmm_meltw_unary_param *param, const li
 
 LIBXSMM_INLINE
 void libxsmm_ref_norm_padnm_mod4_08bit(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   unsigned char *in = (void*)param->in.primary;
   unsigned char *out = (void*)param->out.primary;
   const libxsmm_blasint M = i_mateltwise_desc->m;
