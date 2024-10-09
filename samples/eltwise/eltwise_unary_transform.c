@@ -2631,7 +2631,7 @@ int main( int argc, char* argv[] ) {
   } else if ( op == 'Z' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 || dtype == LIBXSMM_DATATYPE_HF8 ) ) {
     printf("Testing 08bit NORM PADNM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod4_08bit( M, N, ldi, ldo );
-   } else {
+  } else {
     printf(" Case not implemented! Usage: %s [T/R/S/V/W/Q/F/G/H/I/N/M/X/Y/Z/B/C/D] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
