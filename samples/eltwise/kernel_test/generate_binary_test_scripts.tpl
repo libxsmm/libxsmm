@@ -79,8 +79,14 @@ for TYPE in 1 2 3 4 5 6 9 10 27 28 29 30 31 32; do
         fi
         PRECH_IN0=$(echo "$PREC" |  awk -F"_" '{print $1}')
         PRECH_IN1=$(echo "$PREC" |  awk -F"_" '{print $2}')
+        PRECH_COMP=$(echo "$PREC" |  awk -F"_" '{print $4}')
+        PRECH_OUT=$(echo "$PREC" |  awk -F"_" '{print $3}')
         PRECLC=${PREC_IN0}_${PREC_IN1}_implicit_f32
         PRECSCRIPT=${PRECH_IN0}_${PRECH_IN1}_IMPLICIT_F32
+        # avoiding race condition when writing files with the same filename and precision
+        if [[ ("$PRECH_OUT" != 'F32') || ("$PRECH_COMP" != 'F32') ]]; then
+          continue
+        fi
       else
         if [ "$ROUND" == 'stoch' ]; then
           PREC_OUT=$(echo "$PRECLC" |  awk -F"_" '{print $3}')
