@@ -11,6 +11,7 @@ for PREC in 'F64_F64_F64_F64' 'F32_F32_F32_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_F
 done
 
 echo "wait" >> generate_gemm_test_scripts_gen_parallel.sh
+echo "sync" >> generate_gemm_test_scripts_gen_parallel.sh
 chmod 755 generate_gemm_test_scripts_gen_parallel.sh
 
 ./generate_gemm_test_scripts_gen_parallel.sh
