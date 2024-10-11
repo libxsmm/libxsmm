@@ -501,6 +501,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPMOVDW:
     case LIBXSMM_X86_INSTR_VPMOVSDB:
     case LIBXSMM_X86_INSTR_VPMOVSWB:
+    case LIBXSMM_X86_INSTR_VPMOVSDW:
     case LIBXSMM_X86_INSTR_VPMOVUSDB:
     case LIBXSMM_X86_INSTR_VPMOVUSDW:
     case LIBXSMM_X86_INSTR_VPMOVUSWB:
@@ -1948,7 +1949,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
 
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
-      if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+      if ( ((l_encoder != 0) && (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF)) || ((l_encoder == 0) && ((i_reg_number_src1 != i_reg_number_dst) && (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF))) ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 2 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
         return;
@@ -2242,7 +2243,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
 
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
-      if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+      if ( ((l_encoder != 0) && (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF)) || ((l_encoder == 0) && ((i_reg_number_src1 != i_reg_number_dst) && (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF))) ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 1 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
         return;

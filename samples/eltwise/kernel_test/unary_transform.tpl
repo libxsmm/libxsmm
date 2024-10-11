@@ -32,7 +32,7 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDO}
-  ./eltwise_unary_transform ${TRANS_OP} ${PREC} ${M} ${N} ${LDI} ${LDO}
+  ${BIN_INSTR_TOOL} ./eltwise_unary_transform ${TRANS_OP} ${PREC} ${M} ${N} ${LDI} ${LDO}
 done
 
 rm ${TESTFILE1}
