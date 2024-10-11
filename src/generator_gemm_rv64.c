@@ -100,7 +100,11 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   else
 #endif
 
-  {
+  if ( i_n_blocking == 1 ) {
+      l_b_next_k = l_k_pack_factor;
+      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
+  }
+  else {
     l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
     l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUB;
   }

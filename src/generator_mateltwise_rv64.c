@@ -150,12 +150,13 @@ void libxsmm_generator_meltw_destroy_stack_frame_rv64( libxsmm_generated_code*  
 LIBXSMM_API_INTERN
 libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
                                                                         const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
-#if 1
+#if 0
   libxsmm_blasint is_valid_arch_prec = 1;
   LIBXSMM_UNUSED( io_generated_code );
   LIBXSMM_UNUSED( i_mateltwise_desc );
 #else
-  libxsmm_blasint is_valid_arch_prec = 1;
+  libxsmm_blasint is_valid_arch_prec = 0;
+#if 0
   unsigned int is_transform_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
                  ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2)     ||
                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT)     ||
@@ -255,6 +256,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
       is_valid_arch_prec = 0;
     }
   }
+
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(i_mateltwise_desc->param) > 0) && (has_inp_or_out_fp64 > 0)) {
     is_valid_arch_prec = 0;
   }
@@ -276,6 +278,18 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
       is_valid_arch_prec = 0;
     }
   }
+#endif
+  unsigned int is_fp32_inp = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
+
+  unsigned int is_unary_simple_rv64_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
+                 ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY)     ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)     ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2))) ? 1 : 0;
+
+  unsigned int  is_binary_simple_rv64_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY  &&
+                  i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ADD) ) ? 1 : 0;
+
+  is_valid_arch_prec = (is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp) && is_fp32_inp;
 #endif
 
   return is_valid_arch_prec;
