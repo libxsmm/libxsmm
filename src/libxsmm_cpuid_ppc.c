@@ -35,14 +35,13 @@ LIBXSMM_API int libxsmm_cpuid_ppc(libxsmm_cpuid_info* info)
 # if defined(LIBXSMM_CPUID_PPC_BASELINE)
     result = LIBXSMM_CPUID_PPC_BASELINE;
 # else
-
-#  if defined(_ARCH_PWR10) || defined(__MMA__)
-    result = LIBXSMM_PPC64LE_MMA;
-#  elif defined(_ARCH_PWR9) || defined(__VSX__)
-    result = LIBXSMM_PPC64LE_VSX;
-#  elif defined(_ARCH_PWR8)
-    result = LIBXSMM_PPC64LE_FPF;
-#  endif
+    if ( __builtin_cpu_supports("mma") ) {
+      result = LIBXSMM_PPC64LE_MMA;
+    } else if ( __builtin_cpu_supports("vsx") ) {
+      result = LIBXSMM_PPC64LE_VSX;
+    } else {
+      result = LIBXSMM_PPC64LE_FPF;
+    }
 # endif
   }
 
