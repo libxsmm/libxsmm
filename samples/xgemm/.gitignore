@@ -5,5 +5,4 @@ gemm_kernel_parallel
 kernel_test/.generate_gemm_test_scripts
 kernel_test/.generate_spmm_test_scripts
 kernel_test/*.slurm
-kernel_test/generate_gemm_test_scripts_gen*.sh
-kernel_test/generate_spmm_test_scripts_gen*.sh
+kernel_test/generate*gen*.sh
