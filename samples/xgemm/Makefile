@@ -100,6 +100,7 @@ ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
 	@-rm -f $(TSTDIR)/generate_gemm_test_scripts_gen*.sh
+	@-rm -f $(TSTDIR)/generate_spmm_test_scripts_gen*.sh
 	@-rm -f $(TSTDIR)/*.slurm
 	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 	@-rm -f $(TSTDIR)/.generate_spmm_test_scripts
@@ -109,6 +110,7 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 	@-rm -f $(TSTDIR)/generate_gemm_test_scripts_gen*.sh
+	@-rm -f $(TSTDIR)/generate_spmm_test_scripts_gen*.sh
 	@-rm -f $(TSTDIR)/*.slurm
 	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 	@-rm -f $(TSTDIR)/.generate_spmm_test_scripts
@@ -120,6 +122,7 @@ ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
 	@-rm -f $(TSTDIR)/generate_gemm_test_scripts_gen*.sh
+	@-rm -f $(TSTDIR)/generate_spmm_test_scripts_gen*.sh
 	@-rm -f $(TSTDIR)/*.slurm
 	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 	@-rm -f $(TSTDIR)/.generate_spmm_test_scripts
@@ -128,6 +131,7 @@ endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(TSTDIR)/generate_gemm_test_scripts_gen*.sh
+	@-rm -f $(TSTDIR)/generate_spmm_test_scripts_gen*.sh
 	@-rm -f $(TSTDIR)/*.slurm
 	@-rm -f $(XFILES) $(MODULES) $(TSTDIR)/.generate_gemm_test_scripts
 	@-rm -f $(XFILES) $(MODULES) $(TSTDIR)/.generate_spmm_test_scripts
