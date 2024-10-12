@@ -1,0 +1,4 @@
+.generate_gemm_test_scripts
+.generate_spmm_test_scripts
+*.slurm
+generate*gen*.sh
