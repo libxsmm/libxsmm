@@ -10,3 +10,4 @@
 binary_*.sh
 unary_*.sh
 ternary_*.sh
+generate*gen*.sh

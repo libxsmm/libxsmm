@@ -160,6 +160,7 @@ endif
 	@-rm -f $(TSTDIR)/.generate_unary_gather_scatter_test_scripts
 	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
 	@-rm -f $(TSTDIR)/.generate_ternary_test_scripts
+	@-rm -f $(TSTDIR)/generate*gen*.sh
 	@-rm -f $(TSTDIR)/unary_*.sh
 	@-rm -f $(TSTDIR)/binary_*.sh
 	@-rm -f $(TSTDIR)/ternary_*.sh
