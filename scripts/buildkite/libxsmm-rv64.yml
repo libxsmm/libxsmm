@@ -57,7 +57,7 @@ steps:
 #    agents:
 #      queue: "rv64"
 
-#  - label: "Fortran"
-#    command: "scripts/tool_test.sh 5"
-#    agents:
-#      queue: "rv64"
+  - label: "Fortran"
+    command: "scripts/tool_test.sh 5"
+    agents:
+      queue: "rv64"
