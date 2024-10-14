@@ -13,6 +13,7 @@
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
 #include "generator_gemm_aarch64.h"
+#include "generator_gemm_sme.h"
 #include "generator_gemm_noarch.h"
 
 
