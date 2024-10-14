@@ -19,16 +19,14 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
                                                         const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
-  libxsmm_mateltwise_gp_reg_mapping l_gp_reg_mapping;
-  /* define gp register mapping */
-  memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
+  unsigned int input_param_reg = 0;
 #if defined(_WIN32) || defined(__CYGWIN__)
-  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RCX;
+  input_param_reg = LIBXSMM_X86_GP_REG_RCX;
 #else /* match calling convention on Linux */
-  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
+  input_param_reg = LIBXSMM_X86_GP_REG_RDI;
 #endif
   /* open asm */
-  libxsmm_x86_instruction_open_stream_alt( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
+  libxsmm_x86_instruction_open_stream_alt( io_generated_code, input_param_reg, 1 );
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
   /* Here we add some arguments in the stack and pass them in the function by settung to rsi the relevant stack pointer */

@@ -169,6 +169,10 @@ LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*        io_generated_code,
                                            const libxsmm_meqn_descriptor* i_mateqn_desc );
 
+LIBXSMM_API
+void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*        io_generated_code,
+                                           const libxsmm_meqn_descriptor* i_mateqn_desc );
+
 /** Used for system/user specific locking (I/O). */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_stdio_handle);
 /** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */

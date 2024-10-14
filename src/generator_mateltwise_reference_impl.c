@@ -182,7 +182,7 @@ float libxsmm_fp32_binary_compute(float in0, float in1, float out, libxsmm_meltw
   float res = out;
   if ( op == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
     res = in0 + in1;
-  } else  if ( op == LIBXSMM_MELTW_TYPE_BINARY_SUB) {
+  } else if ( op == LIBXSMM_MELTW_TYPE_BINARY_SUB) {
     res = in0 - in1;
   } else if ( op == LIBXSMM_MELTW_TYPE_BINARY_MUL) {
     res = in0 * in1;
@@ -1070,7 +1070,7 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
   libxsmm_datatype dtype_in = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0);
   libxsmm_datatype dtype_out = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT);
   unsigned int reduce_rows = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) ? 1 : 0;
-  int result_size = (reduce_rows == 1) ? n : ld_in;
+  int result_size = (reduce_rows == 1) ? n : ld_out;
   void *in = (void*)param->in.primary;
   void *result_reduce_elts = (void*)param->out.primary;
   void *result_reduce_elts_sq = (char*)result_reduce_elts + result_size * LIBXSMM_TYPESIZE(dtype_out);
@@ -2166,12 +2166,11 @@ void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, c
         float out_tmp = 0.0f;
         float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
         float in1_val  = libxsmm_elementwise_get_float_value(in1, i, j, ldi1, dtype_in1, i_mateltwise_desc, 1);
-        float in2_val  = ((flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0 ) ? libxsmm_elementwise_get_float_value(out, i, j, ldo, dtype_out, i_mateltwise_desc, 3)
-                                                                                       : libxsmm_elementwise_get_float_value(in2, i, j, ldi2, dtype_in2, i_mateltwise_desc, 2);
+        float in2_val  = libxsmm_elementwise_get_float_value(in2, i, j, ldi2, dtype_in2, i_mateltwise_desc, 2);
         if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_TERNARY_MULADD) {
           out_tmp = in2_val + in_val * in1_val;
         } else {
-          out_tmp = in2_val - in_val * in1_val;
+          out_tmp = in1_val - in_val * in2_val;
         }
         libxsmm_elementwise_store_value(out, (void*)&out_tmp, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
         seed_idx++;
