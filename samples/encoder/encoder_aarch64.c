@@ -581,6 +581,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_compute( "sve_comp_UMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V, 0 );
   test_sve_compute( "sve_comp_USMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V, 0 );
   test_sve_compute( "sve_comp_SUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I,    0 );
+  test_sve_compute( "sve_comp_SMAX_V_I",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I,    0 );
+  test_sve_compute( "sve_comp_SMIN_V_I",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I,    0 );
   test_sve_compute( "sve_comp_BFDOT_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V,   0 );
   test_sve_compute( "sve_comp_USDOT_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_USDOT_V,   0 );
   test_sve_compute( "sve_comp_BFDOT_V_I", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I, 0 );

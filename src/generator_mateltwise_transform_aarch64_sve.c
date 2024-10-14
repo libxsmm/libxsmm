@@ -794,6 +794,7 @@ void libxsmm_generator_transform_aarch64_sve_microkernel( libxsmm_generated_code
                                                                                  i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
                                                                                  i_gp_reg_mapping->gp_reg_scratch_0, &l_trans_config, mock_desc);
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T) {
+      /* TODO: check for SVE128 */
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
         libxsmm_generator_transform_vnni2_to_vnni2t_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker,
                                                                                    i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,

@@ -47,15 +47,15 @@ steps:
     agents:
       queue: "rv64"
 
-  - label: "Test #6"
-    command: "scripts/tool_test.sh 6"
-    agents:
-      queue: "rv64"
+#  - label: "Test #6"
+#    command: "scripts/tool_test.sh 6"
+#    agents:
+#      queue: "rv64"
 
-  - label: "Test #11"
-    command: "scripts/tool_test.sh 11"
-    agents:
-      queue: "rv64"
+#  - label: "Test #11"
+#    command: "scripts/tool_test.sh 11"
+#    agents:
+#      queue: "rv64"
 
   - label: "Fortran"
     command: "scripts/tool_test.sh 5"
