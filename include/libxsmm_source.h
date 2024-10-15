@@ -66,6 +66,7 @@
 #include "../src/generator_mateltwise_x86_reference.c"
 #include "../src/generator_matequation.c"
 #include "../src/generator_matequation_aarch64.c"
+#include "../src/generator_matequation_aarch64_reference.c"
 #include "../src/generator_matequation_avx_avx512.c"
 #include "../src/generator_matequation_reference_impl.c"
 #include "../src/generator_matequation_regblocks_aarch64.c"

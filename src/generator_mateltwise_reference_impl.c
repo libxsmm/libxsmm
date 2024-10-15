@@ -1443,7 +1443,9 @@ void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param,
   libxsmm_blasint out_ld = i_mateltwise_desc->ldo;
   libxsmm_datatype dtype_in = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0);
   libxsmm_blasint i, j, ind, ind2;
+  unsigned int use_32bit_dtype = (dtype_in == LIBXSMM_DATATYPE_I32 || dtype_in == LIBXSMM_DATATYPE_F32) ? 1 : 0;
   unsigned int use_16bit_dtype = (dtype_in == LIBXSMM_DATATYPE_I16 || dtype_in == LIBXSMM_DATATYPE_F16 || dtype_in == LIBXSMM_DATATYPE_BF16) ? 1 : 0;
+  unsigned int use_8bit_dtype = (dtype_in == LIBXSMM_DATATYPE_I8 || dtype_in == LIBXSMM_DATATYPE_BF8 || dtype_in == LIBXSMM_DATATYPE_HF8) ? 1 : 0;
   unsigned int use_64bit_index = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES) > 0) ? 1 : 0;
   unsigned long long *ind_array_64bit = (unsigned long long*) ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? param->in.secondary : param->out.secondary);
   unsigned int *ind_array_32bit = (unsigned int*) ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? param->in.secondary : param->out.secondary);
@@ -1451,6 +1453,8 @@ void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param,
   float *sout = (float*) param->out.primary;
   unsigned short *binp = (unsigned short*) param->in.primary;
   unsigned short *bout = (unsigned short*) param->out.primary;
+  unsigned char *cinp = (unsigned char*) param->in.primary;
+  unsigned char *cout = (unsigned char*) param->out.primary;
   libxsmm_blasint inp_m = 0, inp_n = 0, out_m = 0, out_n = 0;
 
   if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
@@ -1477,7 +1481,7 @@ void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param,
     }
   }
 
-  if (use_16bit_dtype == 0) {
+  if (use_32bit_dtype == 1) {
     if (use_64bit_index == 1) {
       if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
         if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
@@ -1575,7 +1579,7 @@ void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param,
         }
       }
     }
-  } else {
+  } else if (use_16bit_dtype == 1) {
     if (use_64bit_index == 1) {
       if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
         if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
@@ -1668,6 +1672,104 @@ void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param,
             for (ind = 0; ind < inp_m; ind++) {
               i = ind_array_32bit[ind + ind2 * inp_m];
               bout[i] = binp[ind + ind2 * inp_ld ];
+            }
+          }
+        }
+      }
+    }
+  } else if (use_8bit_dtype == 1) {
+    if (use_64bit_index == 1) {
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < out_n; ind++) {
+            j = (libxsmm_blasint)ind_array_64bit[ind];
+            for (i = 0; i < out_m; i++) {
+              cout[i + ind * out_ld] = cinp[i + j * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < out_m; ind++) {
+            i = (libxsmm_blasint)ind_array_64bit[ind];
+            for (j = 0; j < out_n; j++) {
+              cout[ind + j * out_ld] = cinp[i + j * inp_ld];
+            }
+          }
+        } else {
+          for (ind2 = 0; ind2 < out_n; ind2++) {
+            for (ind = 0; ind < out_m; ind++) {
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * out_m];
+              cout[ind + ind2 * out_ld] = cinp[i];
+            }
+          }
+        }
+      } else {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < inp_n; ind++) {
+            j = (libxsmm_blasint)ind_array_64bit[ind];
+            for (i = 0; i < out_m; i++) {
+              cout[i + j * out_ld] = cinp[i + ind * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < inp_m; ind++) {
+            i = (libxsmm_blasint)ind_array_64bit[ind];
+            for (j = 0; j < inp_n; j++) {
+              cout[i + j * out_ld] = cinp[ind + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < inp_n; ind2++) {
+            for (ind = 0; ind < inp_m; ind++) {
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * inp_m];
+              cout[i] = cinp[ind + ind2 * inp_ld ];
+            }
+          }
+        }
+      }
+    } else {
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < out_n; ind++) {
+            j = ind_array_32bit[ind];
+            for (i = 0; i < out_m; i++) {
+              cout[i + ind * out_ld] = cinp[i + j * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < out_m; ind++) {
+            i = ind_array_32bit[ind];
+            for (j = 0; j < out_n; j++) {
+              cout[ind + j * out_ld] = cinp[i + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < out_n; ind2++) {
+            for (ind = 0; ind < out_m; ind++) {
+              i = ind_array_32bit[ind + ind2 * out_m];
+              cout[ind + ind2 * out_ld] = cinp[i];
+            }
+          }
+        }
+      } else {
+        if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+          for (ind = 0; ind < inp_n; ind++) {
+            j = ind_array_32bit[ind];
+            for (i = 0; i < out_m; i++) {
+              cout[i + j * out_ld] = cinp[i + ind * inp_ld];
+            }
+          }
+        } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS) > 0) {
+          for (ind = 0; ind < inp_m; ind++) {
+            i = ind_array_32bit[ind];
+            for (j = 0; j < inp_n; j++) {
+              cout[i + j * out_ld] = cinp[ind + j * inp_ld];
+            }
+          }
+        } else  {
+          for (ind2 = 0; ind2 < inp_n; ind2++) {
+            for (ind = 0; ind < inp_m; ind++) {
+              i = ind_array_32bit[ind + ind2 * inp_m];
+              cout[i] = cinp[ind + ind2 * inp_ld ];
             }
           }
         }
