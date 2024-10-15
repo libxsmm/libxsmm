@@ -428,6 +428,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_A64FX: {
       target_arch = "a64fx";
     } break;
+    case LIBXSMM_RV64: {
+      target_arch = "rv64";
+    } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
