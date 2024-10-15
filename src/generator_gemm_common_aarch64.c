@@ -1718,6 +1718,12 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
     } else {
       /* should not happend */
     }
+  } else if ( i_arch == LIBXSMM_AARCH64_APPL_M4 ) {
+      if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+        io_micro_kernel_config->vector_length = 16;
+        io_micro_kernel_config->datatype_size_in = 4;
+        io_micro_kernel_config->datatype_size_out = 4;
+      }
   } else {
     /* that should no happen */
   }
