@@ -445,6 +445,8 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INLINE
 LIBXSMM_ATTRIBUTE_NO_SANITIZE(address)
 internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
@@ -494,7 +496,10 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
       ) { /* mismatch */
 #if !defined(NDEBUG)
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM ERROR: malloc/free mismatch!\n");
+          static int error_once = 0;
+          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+            fprintf(stderr, "LIBXSMM ERROR: malloc/free mismatch!\n");
+          }
         }
 #endif
         result = NULL;
@@ -508,6 +513,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
   }
   return result;
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_type* exclude)
@@ -594,7 +600,10 @@ LIBXSMM_API_INTERN void internal_scratch_free(const void* memory, internal_mallo
   const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
   char *const pool_buffer = pool->instance.buffer;
 # if (!defined(NDEBUG) || defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
   char *const buffer = (char*)memory; /* non-const */
+#pragma GCC diagnostic pop
   LIBXSMM_ASSERT(pool_buffer <= buffer && buffer < pool_buffer + pool->instance.minsize);
 # endif
   LIBXSMM_ASSERT(pool_buffer <= pool->instance.head);
@@ -1145,7 +1154,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
     }
   }
 #if !defined(LIBXSMM_BUILD)
-  else if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+  else if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM WARNING: attempt to release memory from non-matching implementation!\n");
@@ -1848,10 +1857,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
           | (LIBXSMM_MALLOC_ALIGNMAX < size ? 0 : MAP_NORESERVE)
 # endif
 # if defined(MAP_32BIT)
-          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32
-            && (LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid)
-            && (LIBXSMM_X86_AVX512 < libxsmm_target_archid ||
-                LIBXSMM_X86_AVX > libxsmm_target_archid)) ? MAP_32BIT : 0)
+          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32) ? MAP_32BIT : 0)
 # endif
 # if defined(MAP_HUGETLB) && defined(LIBXSMM_MALLOC_HUGE_PAGES)
           | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)
@@ -2195,14 +2201,48 @@ LIBXSMM_API_INTERN int libxsmm_malloc_xattrib(void* buffer, int flags, size_t si
 #if defined(_WIN32)
       /* TODO: implement memory protection under Microsoft Windows */
 #else
-      result = mprotect(buffer, size/*entire memory region*/, PROT_READ);
+      const int result_mprotect = mprotect(buffer, size, PROT_READ);
+# if defined(__APPLE__) && defined(__arm64__)
+      if (EXIT_SUCCESS != result_mprotect) {
+        static int error_once = 0;
+        if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM WARNING: failed to mark buffer as read-only!\n");
+        }
+      }
+# else
+      result = result_mprotect;
+# endif
 #endif
     }
     else { /* executable buffer requested */
 #if defined(_WIN32)
       /* TODO: implement memory protection under Microsoft Windows */
-#else
-      result = mprotect(buffer, size/*entire memory region*/, PROT_READ | PROT_EXEC);
+#else /* treat memory protection errors as soft error; ignore return value */
+# if defined(__APPLE__) && defined(__arm64__)
+      if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
+        pthread_jit_write_protect_np(1/*true*/);
+      }
+# else
+      const int result_mprotect = mprotect(buffer, size, PROT_READ | PROT_EXEC);
+      if (EXIT_SUCCESS != result_mprotect) {
+        static int error_once = 0;
+        if (0 != libxsmm_se) { /* hard-error in case of SELinux */
+          if (0 != libxsmm_verbosity /* library code is expected to be mute */
+            && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
+            fprintf(stderr, "LIBXSMM ERROR: failed to allocate an executable buffer!\n");
+          }
+          result = result_mprotect;
+        }
+        else if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM WARNING: read-only request for JIT-buffer failed!\n");
+        }
+      }
+# endif
 #endif
     }
   }
@@ -2229,15 +2269,8 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const size_t alignment = (size_t)(((const char*)(*memory)) - ((const char*)buffer));
       const size_t alloc_size = apply_size + alignment;
-      int xattrib_result;
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* data-buffer; non-executable */
-        xattrib_result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
-        if (EXIT_SUCCESS != xattrib_result
-          && (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: marking buffer as read-only failed!\n");
-        }
+        result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
       }
       else { /* executable buffer requested */
         void *const code_ptr = (NULL != info->reloc ? ((void*)(((char*)info->reloc) + alignment)) : *memory);
@@ -2305,30 +2338,8 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
             /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info))));
 #   endif
-# endif   /* treat memory protection errors as soft error; ignore return value */
-
-# if defined(__APPLE__) && defined(__arm64__)
-          if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
-            pthread_jit_write_protect_np(1/*true*/);
-          }
-# else
-          xattrib_result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
-          if (EXIT_SUCCESS != xattrib_result) {
-            if (0 != libxsmm_se) { /* hard-error in case of SELinux */
-              if (0 != libxsmm_verbosity /* library code is expected to be mute */
-                && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-              {
-                fprintf(stderr, "LIBXSMM ERROR: failed to allocate an executable buffer!\n");
-              }
-              result = xattrib_result;
-            }
-            else if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-            {
-              fprintf(stderr, "LIBXSMM WARNING: read-only request for JIT-buffer failed!\n");
-            }
-          }
 # endif
+          result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
         }
 #endif
       }

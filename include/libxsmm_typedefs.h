@@ -28,7 +28,6 @@
 #endif
 
 /** Generic prefetch applicable for all domains. */
-#define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 /** Attempt to automatically select a strategy. */
 #define LIBXSMM_PREFETCH_AUTO -1
@@ -223,39 +222,10 @@ typedef enum libxsmm_datatype {
 
 typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_NONE              =  0,
-  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX =  1,
-  LIBXSMM_MELTW_OPERATION_UNARY             =  2,
-  LIBXSMM_MELTW_OPERATION_BINARY            =  3,
-  LIBXSMM_MELTW_OPERATION_TERNARY           =  4
+  LIBXSMM_MELTW_OPERATION_UNARY             =  1,
+  LIBXSMM_MELTW_OPERATION_BINARY            =  2,
+  LIBXSMM_MELTW_OPERATION_TERNARY           =  3
 } libxsmm_meltw_operation;
-
-typedef enum libxsmm_meltw_opreduce_vecs_flags {
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_NONE                           = 0,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX           = 1,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN           = 2,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY                        = 4,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD                         = 8,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB                         = 16,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL                         = 32,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV                         = 64,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT                         = 128,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT                = 256,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE                     = 512,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM                      = 1024,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX                      = 2048,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC                    = 8192,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC           = 16384,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX        = 32768,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0         = 65536,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1         = 131072,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_SUM              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL_REDOP_SUM               = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL  | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MAX              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MIN              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS            = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS_ARGOP      = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0 | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX
-} libxsmm_meltw_opreduce_vecs_flags;
 
 typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_NONE               = 0,
@@ -268,13 +238,16 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INIT_ACC    = 64,
   LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES    = 128,
   LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES    = 256,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS            = 512,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS            = 1024,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS            = 2048,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC = 4096,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP= 8192,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH = 16384,
-  LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND   = 32768
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INF_ACC     = 512,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH = 1024,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP= 2048,
+  LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND   = 4096,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS            = 8192,
+  LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT           = 16384,
+  LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT       = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH,
+  LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT     = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -311,7 +284,7 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T    = 30,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T     = 31,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD  = 32,
-  LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS             = 33,
+  LIBXSMM_MELTW_TYPE_UNARY_UNZIP                        = 33,
   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU                   = 34,
   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV               = 35,
   LIBXSMM_MELTW_TYPE_UNARY_ELU                          = 36,
@@ -345,7 +318,16 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2        = 64,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3        = 65,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM     = 66,
-  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM     = 67
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM     = 67,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN       = 68,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN              = 69,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX           = 70,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8      = 71,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T    = 72,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T     = 73,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD  = 74,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM     = 75,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_NORM      = 76
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -356,34 +338,45 @@ typedef enum libxsmm_meltw_binary_flags {
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1    = 8,
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0 = 16,
   LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1 = 32,
-  LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND  = 64
+  LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND  = 64,
+  LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT = 128,
+  LIBXSMM_MELTW_FLAG_BINARY_NTS_HINT          = 256
 } libxsmm_meltw_binary_flags;
 
 typedef enum libxsmm_meltw_binary_type {
-  LIBXSMM_MELTW_TYPE_BINARY_NONE        =  0,
-  LIBXSMM_MELTW_TYPE_BINARY_ADD         =  1,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL         =  2,
-  LIBXSMM_MELTW_TYPE_BINARY_SUB         =  3,
-  LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
-  LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 7,
-  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  8,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                       =  9,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS               =  10,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS               =  11,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS       =  12,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                =  13,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS        =  14,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS          =  15,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  16,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS               =  17,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS               =  18,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS       =  19,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                =  20,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS        =  21,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS          =  22,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS  =  23
+  LIBXSMM_MELTW_TYPE_BINARY_NONE                            =  0,
+  LIBXSMM_MELTW_TYPE_BINARY_ADD                             =  1,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL                             =  2,
+  LIBXSMM_MELTW_TYPE_BINARY_SUB                             =  3,
+  LIBXSMM_MELTW_TYPE_BINARY_DIV                             =  4,
+  LIBXSMM_MELTW_TYPE_BINARY_MULADD                          =  5,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL                          =  6,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD =  7,
+  LIBXSMM_MELTW_TYPE_BINARY_PACK                            =  8,
+  LIBXSMM_MELTW_TYPE_BINARY_MAX                             =  9,
+  LIBXSMM_MELTW_TYPE_BINARY_MIN                             = 10,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                          = 11,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS                  = 12,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS                  = 13,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS          = 14,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                   = 15,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS           = 16,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS             = 17,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS     = 18,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS                  = 19,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS                  = 20,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS          = 21,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                   = 22,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS           = 23,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS             = 24,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS     = 25,
+  LIBXSMM_MELTW_TYPE_BINARY_ZIP                             = 26,
+  LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GT                       = 27,
+  LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_GE                       = 28,
+  LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LT                       = 29,
+  LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_LE                       = 30,
+  LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_EQ                       = 31,
+  LIBXSMM_MELTW_TYPE_BINARY_CMP_OP_NE                       = 32
 } libxsmm_meltw_binary_type;
 
 typedef enum libxsmm_meltw_ternary_flags {
@@ -397,14 +390,16 @@ typedef enum libxsmm_meltw_ternary_flags {
   LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 =  64,
   LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 =  128,
   LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 =  256,
-  LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT =  512
+  LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT =  512,
+  LIBXSMM_MELTW_FLAG_TERNARY_BITMASK_2BYTEMULT =  1024,
+  LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND  =  2048
 } libxsmm_meltw_ternary_flags;
 
 typedef enum libxsmm_meltw_ternary_type {
   LIBXSMM_MELTW_TYPE_TERNARY_NONE        =  0,
   LIBXSMM_MELTW_TYPE_TERNARY_MULADD      =  1,
   LIBXSMM_MELTW_TYPE_TERNARY_MATMUL      =  2,
-  LIBXSMM_MELTW_TYPE_TERNARY_BLEND       =  3,
+  LIBXSMM_MELTW_TYPE_TERNARY_SELECT      =  3,
   LIBXSMM_MELTW_TYPE_TERNARY_NMULADD     =  4,
   LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM                       =  5,
   LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_B_TRANS               =  6,
@@ -492,7 +487,15 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 131072,
   /** Batch-reduce Ai * Bi. */
   LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 262144,
-
+  LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF = 524288,
+  LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT = 1048576,
+  LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2 = 2097152,
+  LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV = 4194304,
+  LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK = 8388608,
+  LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2 = 16777216,
+  LIBXSMM_GEMM_FLAG_USE_MxK_ZPT = 33554432,
+  LIBXSMM_GEMM_FLAG_USE_MxK_SCF = 67108864,
+  LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI8_INTLV = 134217728,
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0                      = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS        = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
@@ -523,30 +526,28 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_AB_UNSIGNED         = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   /** Marker flag; do not use. */
-  LIBXSMM_GEMM_FLAG_INVALID = 524288
+  LIBXSMM_GEMM_FLAG_INVALID = 268435456
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
   /** No data-prefetch. */
   LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
-  /** Only function prefetch signature. */
-  LIBXSMM_GEMM_PREFETCH_SIGONLY            = LIBXSMM_PREFETCH_SIGONLY,
   /** Prefetch PA using accesses to A. */
-  LIBXSMM_GEMM_PREFETCH_AL2                = 2,
+  LIBXSMM_GEMM_PREFETCH_AL2                = 1,
   /** Prefetch PA (aggressive). */
-  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 4,
+  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 2,
   /** Prefetch A ahead. */
-  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 8,
+  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 4,
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2,
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_AHEAD,
   /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C (Eigen library). */
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
   /** Current B into L1. */
-  LIBXSMM_GEMM_PREFETCH_BL1                = 16,
-  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32,
-  LIBXSMM_GEMM_PREFETCH_C_SCRATCH          = 64,
-  LIBXSMM_GEMM_PREFETCH_C                  = 128
+  LIBXSMM_GEMM_PREFETCH_BL1                = 8,
+  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 16,
+  LIBXSMM_GEMM_PREFETCH_C_SCRATCH          = 32,
+  LIBXSMM_GEMM_PREFETCH_C                  = 64
 } libxsmm_gemm_prefetch_type;
 
 /** Enumeration of the batchreduce type. */
@@ -577,13 +578,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg {
   void* tertiary;
   void* quaternary;
 } libxsmm_matrix_arg;
-
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg_v2 {
-  void* primary;
-  void* secondary;
-  void* tertiary;
-  void* quaternary;
-} libxsmm_matrix_arg_v2;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_op_arg {
   void* primary;
@@ -635,20 +629,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_ternary_shape {
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_ternary_shape;
 
-/** argument struct for matrix-eltwise: opreduce vecs indexed */
-LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_opreduce_vecs_idx_param {
-  unsigned long long n;
-  const void* indices;       /* index array pointer */
-  const void* in_matrix;     /* input matrix pointer */
-  const void* in_vec;        /* input vector pointer */
-  void* out_vec;             /* output pointer */
-  const void* scale_vals;    /* scale values of indexed vectors after ops */
-  const void* indices2;       /* index array pointer */
-  const void* in_matrix2;     /* input matrix pointer */
-  void* argop_off_vec_0;
-  void* argop_off_vec_1;
-} libxsmm_meltw_opreduce_vecs_idx_param;
-
 typedef enum libxsmm_matrix_arg_type {
   LIBXSMM_MATRIX_ARG_TYPE_SINGULAR = 0,
   LIBXSMM_MATRIX_ARG_TYPE_SET      = 1
@@ -668,15 +648,15 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg_attributes {
   libxsmm_blasint             set_stride_hint;
 } libxsmm_matrix_arg_attributes;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_eqn_op_metadata {
+LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_op_metadata {
   libxsmm_blasint eqn_idx;
   libxsmm_blasint op_arg_pos;
-} libxsmm_matrix_eqn_op_metadata;
+} libxsmm_meqn_op_metadata;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_eqn_arg_metadata {
+LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_arg_metadata {
   libxsmm_blasint eqn_idx;
   libxsmm_blasint in_arg_pos;
-} libxsmm_matrix_eqn_arg_metadata;
+} libxsmm_meqn_arg_metadata;
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_unary_param {
@@ -703,23 +683,21 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_meltw_ternary_param {
 } libxsmm_meltw_ternary_param;
 
 /** argument struct for matrix equation */
-LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_eqn_param {
+LIBXSMM_EXTERN_C typedef struct libxsmm_meqn_param {
   const libxsmm_matrix_op_arg* ops_args;    /* op state & parameters */
   const libxsmm_matrix_arg*    inputs;      /* array of input args */
   libxsmm_matrix_arg           output;      /* output arg */
-} libxsmm_matrix_eqn_param;
+} libxsmm_meqn_param;
 
 /** Specialized function for matrix-eltw (weak-typed). */
-LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_opreduce_vecs_idx)(const libxsmm_meltw_opreduce_vecs_idx_param* in_struct);
 LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
 LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
 LIBXSMM_EXTERN_C typedef void (*libxsmm_meltwfunction_ternary)(const libxsmm_meltw_ternary_param* in_struct);
 /* matrix equation function */
-LIBXSMM_EXTERN_C typedef void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
+LIBXSMM_EXTERN_C typedef void (*libxsmm_meqn_function)(const libxsmm_meqn_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
-  libxsmm_meltwfunction_opreduce_vecs_idx meltw_opreduce_vecs_idx;
   libxsmm_meltwfunction_unary meltw_unary;
   libxsmm_meltwfunction_binary meltw_binary;
   libxsmm_meltwfunction_ternary meltw_ternary;
@@ -733,20 +711,20 @@ LIBXSMM_EXTERN_C typedef void (*libxsmm_smmfunction)(const float* a, const float
 /* argument structs for generalized interface */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
-  libxsmm_matrix_arg_v2 a;   /* a matrix  */
-  libxsmm_matrix_arg_v2 b;   /* b matrix  */
-  libxsmm_matrix_arg_v2 c;   /* c matrix  */
+  libxsmm_matrix_arg a;   /* a matrix  */
+  libxsmm_matrix_arg b;   /* b matrix  */
+  libxsmm_matrix_arg c;   /* c matrix  */
 } libxsmm_gemm_param;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
-  libxsmm_matrix_arg_v2 a;   /* a matrix  */
-  libxsmm_matrix_arg_v2 b;   /* b matrix  */
-  libxsmm_matrix_arg_v2 c;   /* c matrix  */
-  libxsmm_matrix_arg_v2 d;   /* additional tensor for binary op on c */
-  libxsmm_matrix_arg_v2 ap;  /* a after applying unary op */
-  libxsmm_matrix_arg_v2 bp;  /* b after applying unary op */
-  libxsmm_matrix_arg_v2 cp;  /* c before applying binary/ternary op after GEMM */
+  libxsmm_matrix_arg a;   /* a matrix  */
+  libxsmm_matrix_arg b;   /* b matrix  */
+  libxsmm_matrix_arg c;   /* c matrix  */
+  libxsmm_matrix_arg d;   /* additional tensor for binary op on c */
+  libxsmm_matrix_arg ap;  /* a after applying unary op */
+  libxsmm_matrix_arg bp;  /* b after applying unary op */
+  libxsmm_matrix_arg cp;  /* c before applying binary/ternary op after GEMM */
 } libxsmm_gemm_ext_param;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_shape {
@@ -768,6 +746,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_batch_reduce_config {
   libxsmm_blasint br_stride_b_hint;        /* mandatory hint for strided BRGEMM */
   unsigned char br_unroll_hint;            /* optional hint containing the BR count */
 } libxsmm_gemm_batch_reduce_config;
+
+LIBXSMM_EXTERN_C typedef struct libxsmm_spgemm_config {
+  libxsmm_blasint packed_width;        /* Packed width for packed spgemm */
+  libxsmm_blasint bk;                  /* Bk size for dense block        */
+  libxsmm_blasint bn;                  /* Bn size for dense block        */
+} libxsmm_spgemm_config;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_unary_argops {
   libxsmm_blasint ldap;                       /* leading dimensions of Ap */
@@ -791,9 +775,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_ext_binary_postops {
   libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_tilecfg_state {
+  unsigned char tileconfig[64];
+} libxsmm_tilecfg_state;
+
 /* generalized and extended functions for everything that is not a basic GEMM as defined above */
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
 LIBXSMM_EXTERN_C typedef void (*libxsmm_gemmfunction_ext)( const libxsmm_gemm_ext_param* in_struct );
+LIBXSMM_EXTERN_C typedef void (*libxsmm_tilecfgfunction) ( const libxsmm_tilecfg_state*  in_struct );
 
 /** Union to convert between different function types or plain pointers (weak-typed). */
 LIBXSMM_EXTERN_C typedef union libxsmm_xmmfunction {
@@ -802,6 +791,7 @@ LIBXSMM_EXTERN_C typedef union libxsmm_xmmfunction {
   void (*xgemm)(const void* in_struct);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm;
   libxsmm_gemmfunction gemm; libxsmm_gemmfunction_ext gemm_ext;
+  libxsmm_tilecfgfunction tilecfg;
 } libxsmm_xmmfunction;
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */

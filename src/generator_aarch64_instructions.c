@@ -523,6 +523,14 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1R:
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4:
+        case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -552,7 +560,7 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     code[code_head] |= (unsigned int)((0x1 & (unsigned int)i_tupletype) << 30);
 
     /* load/store with offset register */
-    if ( (i_vmove_instr & 0x3) == 0x3 ) {
+    if ( (i_vmove_instr & 0x3) == 0x3 && ((i_vmove_instr & 0xff000000) == 0x0d000000)) {
       /* setting Rm */
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
     }
@@ -952,6 +960,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1D_V_OFF64:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF_SCALE:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF64_SCALE:
@@ -1197,24 +1206,32 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS:
+    case LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMNE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H:
@@ -1237,6 +1254,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_USDOT_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
@@ -1272,7 +1290,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   /* special instruction, where only dst = src_0 is supported */
   /* this check could be disabled for performance reasons */
-  if ( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ){
+  if ( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) {
     if ( i_vec_reg_src_0 != i_vec_reg_dst ) {
       if (i_vec_reg_src_1 == i_vec_reg_dst &&
         (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
@@ -1296,7 +1314,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P ||
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P ||
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ||
-               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P ) ){
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P ) ) {
       l_vec_reg_src_0 = l_vec_reg_src_1;
     }
   }
@@ -1353,7 +1371,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
           code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_1) << 16);
         }
       }
-      else if ( l_has_immediate ){
+      else if ( l_has_immediate ) {
         code[code_head] = (code[code_head] & 0xffffe01f) | (unsigned int)(i_index << 5);
       }
     }

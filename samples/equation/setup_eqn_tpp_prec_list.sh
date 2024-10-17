@@ -27,3 +27,11 @@ fi
 if [[ $1 == "equation_bf16_x3_split_f32" ]]; then
   export EQN_PREC_LIST="1";
 fi
+
+if [[ $1 == "equation_gather_bcstmul_add" ]]; then
+  export EQN_PREC_LIST="0";
+fi
+
+if [[ $1 == "equation_gather_dot" ]]; then
+  export EQN_PREC_LIST="0";
+fi

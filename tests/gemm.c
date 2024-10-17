@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 #if !defined(REALTYPE)
@@ -171,7 +171,7 @@ int main(void)
           mi, ni, ki, lda[test], ldb[test], ldc[test],
           LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE),
           LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE));
-        kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
+        kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, LIBXSMM_GEMM_PREFETCH_NONE);
         if (NULL == kernel.ptr_const) {
 # if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);

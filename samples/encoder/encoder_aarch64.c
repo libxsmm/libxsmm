@@ -19,7 +19,6 @@ void reset_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
   mycode->code_size = 0;
   mycode->code_type = 2;
   mycode->last_error = 0;
-  mycode->sf_size = 0;
   memset( (unsigned char*)mycode->generated_code, 0, mycode->buffer_size );
 }
 
@@ -260,7 +259,7 @@ void test_sve_compute( char* test_name, libxsmm_generated_code* mycode, unsigned
       for (t = 0; t < 32; ++t ) {
         for (w = 0; w < 3; ++w ) {
           for (imm = 0; imm <= has_imm * 255; imm++) {
-            if ( (instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST  ){
+            if ( (instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) {
               d = s;
             }
             if ( has_pred == 0 ) {
@@ -553,16 +552,28 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_move( "sve_mov_ST1W_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,    7 );
   test_sve_move( "sve_mov_LD1RD_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,  64 );
   test_sve_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,  64 );
+  test_sve_move( "sve_mov_LD1D_V_OFF64", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_V_OFF64,  64 );
 
   /* test SVE compute instructions */
   test_sve_compute( "sve_comp_FMLA_V_P", &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P, 1 );
+  test_sve_compute( "sve_comp_FCMGT_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V, 1 );
+  test_sve_compute( "sve_comp_FCMGE_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V, 1 );
+  test_sve_compute( "sve_comp_FCMLT_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V, 1 );
+  test_sve_compute( "sve_comp_FCMLE_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V, 1 );
+  test_sve_compute( "sve_comp_FCMEQ_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V, 1 );
+  test_sve_compute( "sve_comp_FCMNE_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_FCMNE_P_V, 1 );
+  test_sve_compute( "sve_comp_CMPGT_Z_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V, 1 );
   test_sve_compute( "sve_comp_TRN1_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_TRN1_V,   0 );
   test_sve_compute( "sve_comp_TRN2_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_TRN2_V,   0 );
   test_sve_compute( "sve_comp_BFCVT_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P,   1 );
   test_sve_compute( "sve_comp_UUNPKLO_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V,   0 );
   test_sve_compute( "sve_comp_UUNPKHI_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V,   0 );
   test_sve_compute( "sve_comp_FMLA_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,   1 );
+  test_sve_compute( "sve_comp_FMAXV_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P,   1 );
+  test_sve_compute( "sve_comp_FMINV_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P,   1 );
   test_sve_compute( "sve_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,    0 );
+  test_sve_compute( "sve_comp_FRINTI_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P,   1 );
+  test_sve_compute( "sve_comp_SCVTF_V_P_SS",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS,   1 );
   /* TODO (MMLA): Fix SVE tests which set size specifiers (not relevant for MMLA-instructions) */
   test_sve_compute( "sve_comp_BFMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V, 0 );
   test_sve_compute( "sve_comp_FMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V, 0 );
@@ -570,7 +581,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_compute( "sve_comp_UMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V, 0 );
   test_sve_compute( "sve_comp_USMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V, 0 );
   test_sve_compute( "sve_comp_SUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I,    0 );
+  test_sve_compute( "sve_comp_SMAX_V_I",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I,    0 );
+  test_sve_compute( "sve_comp_SMIN_V_I",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I,    0 );
   test_sve_compute( "sve_comp_BFDOT_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V,   0 );
+  test_sve_compute( "sve_comp_USDOT_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_USDOT_V,   0 );
   test_sve_compute( "sve_comp_BFDOT_V_I", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I, 0 );
 
   test_sve_pcompute( "sve_pcomp_PTRUE",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_PTRUE );

@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Kirill Voronin (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 
@@ -19,18 +20,19 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint ld = N + 5;
   long i;
   long j;
-  libxsmm_matdiff_info norms, diff;
+  libxsmm_matdiff_info norms;
 
   libxsmm_blasint ld_dump;
 
-  libxsmm_meqn_arg_shape  arg_shape_out;
-  libxsmm_matrix_eqn_op_metadata  op_metadata;
-  libxsmm_bitfield unary_flags;
+  libxsmm_meqn_arg_shape arg_shape_in, arg_shape_out;
+  libxsmm_meqn_arg_metadata arg_metadata;
+  libxsmm_meqn_op_metadata op_metadata;
+  libxsmm_matrix_arg_attributes arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   libxsmm_blasint my_eqn0;
-  libxsmm_matrix_eqn_function func0;
+  libxsmm_meqn_function func0;
   libxsmm_matrix_arg arg_array[2];
   libxsmm_matrix_op_arg op_arg_arr[2];
-  libxsmm_matrix_eqn_param eqn_param;
+  libxsmm_meqn_param eqn_param;
 
   float *naive_input;
   float *naive_output;
@@ -94,45 +96,40 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  my_eqn0 = libxsmm_matrix_eqn_create();
-
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16 ); /* not sure about dtype */
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_F32 ); /* input a */
-
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 ); /* not sure about dtype */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld_dump, 1, 0, LIBXSMM_DATATYPE_BF16 ); /* (fp32)b0 */
-
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 ); /* not sure about dtype */
-
-  unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  op_metadata.eqn_idx      = my_eqn0;
+  my_eqn0 = libxsmm_meqn_create();
+  op_metadata = libxsmm_create_meqn_op_metadata( my_eqn0, -1 );
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE ); /* not sure about dtype */
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_F32 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE ); /* not sure about dtype */
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld_dump, LIBXSMM_DATATYPE_BF16 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 1);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE ); /* not sure about dtype */
   op_metadata.op_arg_pos   = 1;
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, unary_flags); /* b1 */
-
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16 );
-
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_F32 ); /* input a */
-
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 ); /* not sure about dtype */
-
-  unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  op_metadata.eqn_idx      = my_eqn0;
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE ); /* b1 */
+  op_metadata.op_arg_pos   = -1;
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_F32 );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE ); /* not sure about dtype */
   op_metadata.op_arg_pos   = 0;
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, unary_flags); /* b0 */
-
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16 );
-
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_F32 ); /* input a */
-
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE ); /* b0 */
+  op_metadata.op_arg_pos   = -1;
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_F32 ); /* input a */
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_BF16 );
 
-  /* libxsmm_matrix_eqn_tree_print(my_eqn0); */
-  /* libxsmm_matrix_eqn_rpn_print(my_eqn0); */
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  /* libxsmm_meqn_tree_print(my_eqn0); */
+  /* libxsmm_meqn_rpn_print(my_eqn0); */
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);
@@ -163,7 +160,6 @@ int main(int argc, char* argv[]) {
   }
 
   libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
 
   printf("##########################################\n");
   printf("#   Correctness [naive vs naive split]   #\n");
@@ -176,14 +172,11 @@ int main(int argc, char* argv[]) {
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
   printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
 
   if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("#   Correctness [naive vs libxsmm split] #\n");
   printf("##########################################\n");
@@ -195,14 +188,11 @@ int main(int argc, char* argv[]) {
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
   printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
 
   if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("# Correctness [naive0 vs libxsmm0 split] #\n");
   printf("##########################################\n");
@@ -214,14 +204,11 @@ int main(int argc, char* argv[]) {
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
   printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
 
   if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("# Correctness [naive1 vs libxsmm1 split] #\n");
   printf("##########################################\n");
@@ -233,14 +220,11 @@ int main(int argc, char* argv[]) {
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
   printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
 
   if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
   printf("##########################################\n");
   printf("# Correctness [naive2 vs libxsmm2 split] #\n");
   printf("##########################################\n");
@@ -252,7 +236,6 @@ int main(int argc, char* argv[]) {
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
   printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
 
   if ( norms.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;

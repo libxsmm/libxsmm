@@ -8,167 +8,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include "common_edge_proxy.h"
-
-
-LIBXSMM_INLINE
-void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsigned int **colptr, unsigned int **rowidx, REALTYPE **values) {
-  REALTYPE* cm_dense = NULL;
-  REALTYPE* cm_dense_data = NULL;
-  unsigned int  i = 0;
-  unsigned int  j = 0;
-  unsigned int  l_max_reg_block = 28;
-  unsigned int  l_max_cols = 0;
-  unsigned int  l_n_chunks = 0;
-  unsigned int  l_n_chunksize = 0;
-  unsigned int  l_n_limit = 0;
-  unsigned int  l_n_processed = 0;
-  unsigned int  l_nnz = 0;
-  unsigned int* l_colptr = NULL;
-  unsigned int* l_rowidx = NULL;
-  REALTYPE*     l_values = NULL;
-  unsigned int  l_count = 0;
-  unsigned int  l_found_qmadd = 0;
-
-  cm_dense      = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) );
-  cm_dense_data = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) );
-
-  /* set all values in copy to 1 or 0 */
-  assert(NULL != cm_dense && NULL != cm_dense_data);
-  for ( j = 0; j < n; ++j ) {
-    for ( i = 0; i < m; ++i ) {
-      const REALTYPE data = rm_dense_data[(i*n)+j];
-      cm_dense[(j*m)+i]      = (REALTYPE)(LIBXSMM_FEQ(data, 0) ? 0 : 1);
-      cm_dense_data[(j*m)+i] = data;
-    }
-  }
-
-#if 1
-  /* finding max. active columns */
-  l_max_cols = 0;
-  for ( j = 0; j < n; ++j ) {
-    for ( i = 0; i < m; ++i ) {
-      if (cm_dense[(j*m)+i] > 0.0) {
-        l_max_cols = j+1;
-      }
-    }
-  }
-
-  /* calculate n blocking as in the generator */
-  l_n_chunks = ( (l_max_cols % l_max_reg_block) == 0 ) ? (l_max_cols / l_max_reg_block) : (l_max_cols / l_max_reg_block) + 1;
-  assert(0 != l_n_chunks); /* mute static analysis (division-by-zero); such invalid input must be caught upfront */
-  l_n_chunksize = ( (l_max_cols % l_n_chunks) == 0 ) ? (l_max_cols / l_n_chunks) : (l_max_cols / l_n_chunks) + 1;
-
-  /* qmadd padding */
-  l_n_processed = 0;
-  l_n_limit = l_n_chunksize;
-  while ( l_n_processed < l_max_cols ) {
-    /* first pass look for qmadds and potential qmadds in the same rows */
-    for ( i = 0; i < m; ++i ) {
-      if ( i >= m-3 ) continue;
-      l_found_qmadd = 0;
-      for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-        if ( LIBXSMM_FEQ(cm_dense[(j*m)+(i+0)], 1) &&
-             LIBXSMM_FEQ(cm_dense[(j*m)+(i+1)], 1) &&
-             LIBXSMM_FEQ(cm_dense[(j*m)+(i+2)], 1) &&
-             LIBXSMM_FEQ(cm_dense[(j*m)+(i+3)], 1)    ) {
-          cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
-          cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
-          cm_dense[(j*m)+(i+2)] = (REALTYPE)10.0;
-          cm_dense[(j*m)+(i+3)] = (REALTYPE)10.0;
-          l_found_qmadd = 1;
-        }
-      }
-      /* if we found qmadd in at least one column, let's check the other columns in the current block for 3 nnz */
-      /* -> let's pad them to 4 nnz */
-      if (l_found_qmadd == 1) {
-        for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-          if ( LIBXSMM_FEQ( cm_dense[(j*m)+(i+0)] +
-                            cm_dense[(j*m)+(i+1)] +
-                            cm_dense[(j*m)+(i+2)] +
-                            cm_dense[(j*m)+(i+3)], 3) ) {
-            cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
-            cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
-            cm_dense[(j*m)+(i+2)] = (REALTYPE)10.0;
-            cm_dense[(j*m)+(i+3)] = (REALTYPE)10.0;
-          }
-        }
-        i += 3;
-      }
-    }
-    /* second pass look out for consecutive 4 rows which have 3 nnz in a specifc column */
-    for ( i = 0; i < m; ++i ) {
-      if ( i >= m-3 ) continue;
-      l_found_qmadd = 0;
-      /* first check if already a qmadd in that row */
-      for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-        if ( LIBXSMM_FEQ(cm_dense[(j*m)+(i+0)], 10) ) {
-          l_found_qmadd = 1;
-        }
-      }
-      /* we are in a potential candidate row for padding 0 for qmadd */
-      if ( l_found_qmadd == 0 ) {
-        for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-          if ( LIBXSMM_FEQ( cm_dense[(j*m)+(i+0)] +
-                            cm_dense[(j*m)+(i+1)] +
-                            cm_dense[(j*m)+(i+2)] +
-                            cm_dense[(j*m)+(i+3)], 3) ) {
-            cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
-            cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
-            cm_dense[(j*m)+(i+2)] = (REALTYPE)10.0;
-            cm_dense[(j*m)+(i+3)] = (REALTYPE)10.0;
-            l_found_qmadd = 1;
-          }
-        }
-      }
-      if ( l_found_qmadd > 0 ) {
-        i += 3;
-      }
-    }
-    /* adjust n progression */
-    l_n_processed += l_n_chunksize;
-    l_n_limit = LIBXSMM_MIN(l_n_processed + l_n_chunksize, l_max_cols);
-  }
-#endif
-
-  /* creating a new CSC matrix */
-  /* determining new number of NNZ */
-  l_nnz = 0;
-  for ( j = 0; j < n; ++j ) {
-    for ( i = 0; i < m; ++i ) {
-      if (cm_dense[(j*m) + i] > 0.0) {
-        l_nnz++;
-      }
-    }
-  }
-
-  (*colptr) = (unsigned int*) malloc( (n+1)*sizeof(unsigned int) );
-  (*rowidx) = (unsigned int*) malloc( l_nnz*sizeof(unsigned int) );
-  (*values) = (REALTYPE*    ) malloc( l_nnz*sizeof(REALTYPE    ) );
-
-  l_colptr = (*colptr);
-  l_rowidx = (*rowidx);
-  l_values = (*values);
-
-  /* generating CSC from dense padded structure */
-  l_count = 0;
-  for ( j = 0; j < n; ++j ) {
-    l_colptr[j] = l_count;
-    for ( i = 0; i < m; ++i ) {
-      if (cm_dense[(j*m) + i] > (REALTYPE)0.0) {
-        l_rowidx[l_count] = i;
-        l_values[l_count] = (REALTYPE)cm_dense_data[(j*m) + i];
-        l_count++;
-      }
-    }
-  }
-  l_colptr[n] = l_nnz;
-
-  free ( cm_dense );
-  free ( cm_dense_data );
-}
-
 
 int main(int argc, char* argv[]) {
   libxsmm_blasint M = ( argc == 7 ) ? atoi(argv[1]) : 9;
@@ -287,13 +129,6 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    /* pad B to a better qmadd matrix */
-    if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-      qfma_fill_in( l_b_de, K, N, &l_colptr_padded, &l_rowidx_padded, &l_b_sp_padded );
-      printf("qfma padded CSC matrix data structure we just read:\n");
-      printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_colptr_padded[N]);
-    }
-
     /* dense routine */
     l_start = libxsmm_timer_tick();
 #if 1
@@ -317,41 +152,17 @@ int main(int argc, char* argv[]) {
     printf("%fs for dense\n", l_total);
     printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)M * (double)N * (double)K * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
-    /* sparse routine */
-    if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-#if defined(__EDGE_EXECUTE_F32__)
-      mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr_padded, l_rowidx_padded, (const void*)l_b_sp );
-#else
-      mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
-#endif
-    } else {
-      mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
-    }
+    mykernel = libxsmm_create_packed_spgemm_csc( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
 
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
-    if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-      gemm_param.a.primary = (void*)l_a;
-#if defined(__EDGE_EXECUTE_F32__)
-      gemm_param.b.primary = (void*)l_b_sp_padded;
-#else
-      gemm_param.b.primary = (void*)l_b_sp;
-#endif
-      gemm_param.c.primary = (void*)l_c_asm;
-      l_start = libxsmm_timer_tick();
-      for ( l_n = 0; l_n < REPS; l_n++) {
-        mykernel( &gemm_param );
-      }
-      l_end = libxsmm_timer_tick();
-    } else {
-      gemm_param.a.primary = (void*)l_a;
-      gemm_param.b.primary = (void*)l_b_sp;
-      gemm_param.c.primary = (void*)l_c_asm;
-      l_start = libxsmm_timer_tick();
-      for ( l_n = 0; l_n < REPS; l_n++) {
-        mykernel( &gemm_param );
-      }
-      l_end = libxsmm_timer_tick();
+    gemm_param.a.primary = (void*)l_a;
+    gemm_param.b.primary = (void*)l_b_sp;
+    gemm_param.c.primary = (void*)l_c_asm;
+    l_start = libxsmm_timer_tick();
+    for ( l_n = 0; l_n < REPS; l_n++) {
+      mykernel( &gemm_param );
     }
+    l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
     libxsmm_get_kernel_info( LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;

@@ -316,9 +316,9 @@ int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
   double error_bound = 0.00001;
   libxsmm_blasint my_eqn0;
-  libxsmm_matrix_eqn_function func0;
+  libxsmm_meqn_function func0;
   libxsmm_blasint i, j, s, it;
-  libxsmm_matrix_eqn_param eqn_param;
+  libxsmm_meqn_param eqn_param;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
@@ -334,7 +334,10 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg f16_arg_array[4];
   libxsmm_matrix_arg bf8_arg_array[4];
   libxsmm_matrix_arg hf8_arg_array[4];
-  libxsmm_meqn_arg_shape arg_shape_out;
+  libxsmm_meqn_arg_metadata arg_metadata;
+  libxsmm_meqn_op_metadata  op_metadata;
+  libxsmm_meqn_arg_shape          arg_shape_in, arg_shape_out;
+  libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
 
   int M = 64;
   int N = 64;
@@ -508,20 +511,29 @@ int main( int argc, char* argv[] ) {
     eqn0_f64f64(M, N, ld, f64_arg0, f64_arg1, f64_arg2, f64_arg3, f64_out);
   }
 
-  my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, compute_dt );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, compute_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, compute_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, compute_dt );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_X2, LIBXSMM_MELTW_FLAG_UNARY_NONE, compute_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 2, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_tree_print( my_eqn0 );
-  libxsmm_matrix_eqn_rpn_print( my_eqn0 );
+  my_eqn0 = libxsmm_meqn_create();
+  op_metadata = libxsmm_create_meqn_op_metadata(my_eqn0, -1);
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_MUL, compute_dt, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_ADD, compute_dt, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_INC, compute_dt, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 1);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_push_back_binary_op( op_metadata, LIBXSMM_MELTW_TYPE_BINARY_ADD, compute_dt, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  libxsmm_meqn_push_back_unary_op( op_metadata, LIBXSMM_MELTW_TYPE_UNARY_X2, compute_dt, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 2);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 3);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  libxsmm_meqn_tree_print( my_eqn0 );
+  libxsmm_meqn_rpn_print( my_eqn0 );
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, out_dt );
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);
@@ -703,7 +715,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+    printf("Compiler equation time = %.5g\n", l_total);
 
     func0(&eqn_param);
     l_start = libxsmm_timer_tick();
@@ -712,9 +724,8 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
-
-    printf("Speedup is %.5g\n", l_total/l_total2);
+    printf("JITed TPP equation time = %.5g\n", l_total2);
+    if (0 < l_total2) printf("Speedup is = %.5g\n", l_total/l_total2);
   }
 
   libxsmm_free(arg0);

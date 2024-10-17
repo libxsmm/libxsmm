@@ -260,6 +260,14 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST   0x0ddf8002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_R_POST   0x0dc08003
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4        0x0c402000 /* loads 4 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3        0x0c406000 /* loads 3 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2        0x0c40A000 /* loads 2 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1        0x0c407000 /* loads 1 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4        0x0c002000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3        0x0c006000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2        0x0c00a000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1        0x0c007000
 
 /* ASIMD <-> GPR moves */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e
@@ -359,6 +367,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF     0x85004083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF_SCALE 0x85204083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF64_SCALE 0xc560c083
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1D_V_OFF64   0xc5c0c083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF     0x84804083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF_SCALE 0x84a04083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF64_SCALE 0xc4e0c083
@@ -440,20 +449,30 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P      0x650c80a2 /* divide, b/a, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I       0x25a8c026
+#define LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I       0x25aac026
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188086 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P      0x65002082 /* reduce all active elements into a scalar (add), and place result into asimd register, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P      0x65062082 /* reduce all active elements into a scalar (max), and place result into asimd register, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P      0x65072082 /* reduce all active elements into a scalar (min), and place result into asimd register, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P     0x6502a082 /* round float to integral number, towards minus infinity, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P     0x6507a082 /* round float to integral number, (current mode), predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS  0x659ca082 /* convert 32 bit fp to 32 bit signed int, SS = single -> single */
+#define LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS   0x6594a082 /* convert 32 bit signed int to 32 bit fp, SS = single -> single */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V      0x65006083 /* fp compare equal, store result into pred reg (dst is pred reg) */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMNE_P_V      0x65006093 /* fp compare not equal, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004093 /* 0x10 belongs to the instruction, not to the flags! */
                                                             /* fp compare greater than, store result into predicate register (dst is predicate register!) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V      0x65004183 /* fp compare less than, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V      0x65004193 /* fp compare less than, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V      0x65004083 /* fp compare greater than or equal, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V      0x65102092 /* fp compare greather than zero, predicated, dst is result predicate register, 0-15 */
+#define LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V      0x24200092 /* fp compare greather than zero, predicated, dst is result predicate register, 0-15 */
+
 #define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V        0x64608003 /* BF16 dot-product */
+#define LIBXSMM_AARCH64_INSTR_SVE_USDOT_V        0x44807803
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */

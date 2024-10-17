@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include "magazine.h"
 #if !defined(SHUFFLE)
 # include <libxsmm.h>
@@ -46,7 +47,7 @@ int main(int argc, char* argv[])
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
 #if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_coprime2((unsigned int)size);
+  const size_t shuffle = libxsmm_coprime2((size_t)size);
 #endif
   /* allocate A, B, and C matrix buffers */
   TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
@@ -82,7 +83,7 @@ int main(int argc, char* argv[])
   prefetch |= LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
 #   endif
 # endif
-  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+  kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
 
   /* initialize data according to touch-first policy */

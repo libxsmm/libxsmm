@@ -23,9 +23,9 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_copy_opargs_aarch64(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
-    libxsmm_matrix_eqn_elem             *cur_node,
+    libxsmm_meqn_elem             *cur_node,
     unsigned int                        *oparg_id,
-    libxsmm_matrix_eqn_tmp_info         *oparg_info,
+    libxsmm_meqn_tmp_info         *oparg_info,
     unsigned int                        input_reg) {
 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -62,9 +62,9 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_copy_input_args_aarch64(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
-    libxsmm_matrix_eqn_elem             *cur_node,
+    libxsmm_meqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_matrix_eqn_arg_v2           *arg_info,
+    libxsmm_meqn_arg           *arg_info,
     unsigned int                        input_reg) {
 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -147,7 +147,7 @@ void libxsmm_generator_mateqn_adjust_opargs_addr_aarch64(libxsmm_generated_code*
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_tmp_info         *oparg_info) {
+    libxsmm_meqn_tmp_info         *oparg_info) {
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int n_opargs = i_micro_kernel_config->n_opargs;
   unsigned int i;
@@ -182,7 +182,7 @@ void libxsmm_generator_mateqn_adjust_args_addr_aarch64(libxsmm_generated_code*  
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_arg_v2           *arg_info) {
+    libxsmm_meqn_arg           *arg_info) {
 
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
@@ -402,7 +402,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( libxsmm_generate
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   unsigned int temp_reg3 = i_gp_reg_mapping->temp_reg3;
   unsigned int cur_vreg;
-  libxsmm_matrix_eqn_arg_v2  *arg_info = i_micro_kernel_config->arg_info;
+  libxsmm_meqn_arg  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
   unsigned int l_ld_bytes = arg_info[i_arg_id].ld * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype);
@@ -999,10 +999,16 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
             i_micro_kernel_config->vec_halves,
             i_micro_kernel_config->vec_c0,
             i_micro_kernel_config->vec_c01,
+            i_micro_kernel_config->vec_c02,
+            i_micro_kernel_config->vec_c03,
             i_micro_kernel_config->vec_c1,
             i_micro_kernel_config->vec_c11,
+            i_micro_kernel_config->vec_c12,
+            i_micro_kernel_config->vec_c13,
             i_micro_kernel_config->vec_c2,
             i_micro_kernel_config->vec_c21,
+            i_micro_kernel_config->vec_c22,
+            i_micro_kernel_config->vec_c23,
             i_micro_kernel_config->vec_tmp0, /* expmask */
             i_micro_kernel_config->vec_tmp1,
             l_sve_type, LIBXSMM_CAST_UCHAR(l_pred_reg) );
@@ -1044,10 +1050,16 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
             i_micro_kernel_config->vec_halves,
             i_micro_kernel_config->vec_c0,
             i_micro_kernel_config->vec_c01,
+            i_micro_kernel_config->vec_c02,
+            i_micro_kernel_config->vec_c03,
             i_micro_kernel_config->vec_c1,
             i_micro_kernel_config->vec_c11,
+            i_micro_kernel_config->vec_c12,
+            i_micro_kernel_config->vec_c13,
             i_micro_kernel_config->vec_c2,
             i_micro_kernel_config->vec_c21,
+            i_micro_kernel_config->vec_c22,
+            i_micro_kernel_config->vec_c23,
             i_micro_kernel_config->vec_tmp0, /* expmask */
             i_micro_kernel_config->vec_tmp1,
             l_sve_type, LIBXSMM_CAST_UCHAR(l_pred_reg) );
@@ -1113,6 +1125,12 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block_aarch64( libxsmm_ge
     case LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD: {
       binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V;
     } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MAX: {
+      binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
+    } break;
+    case LIBXSMM_MELTW_TYPE_BINARY_MIN: {
+      binary_op_instr = l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V;
+    } break;
     default:;
   }
 
@@ -1124,13 +1142,13 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block_aarch64( libxsmm_ge
       if (i_op_type == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD) {
         dst_vreg = i_meqn_micro_kernel_config->reduce_vreg;
       }
-      if (i_op_type == LIBXSMM_MELTW_TYPE_BINARY_PACK) {
+      if (i_op_type == LIBXSMM_MELTW_TYPE_BINARY_ZIP) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V, left_vreg, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, left_vreg, l_pred_reg, l_sve_type );
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V, right_vreg, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, right_vreg, l_pred_reg, l_sve_type);
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V, right_vreg, LIBXSMM_AARCH64_SVE_REG_UNDEF, 16, right_vreg, l_pred_reg, l_sve_type);
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V, left_vreg, right_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
       } else {
-        if ( l_is_sve ){
+        if ( l_is_sve ) {
           if ((binary_op_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P) && (left_vreg != dst_vreg) && (right_vreg != dst_vreg)) {
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V, left_vreg, left_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, binary_op_instr, dst_vreg, right_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
@@ -1179,7 +1197,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
       right_vreg = i_right_start_vreg + in * i_m_blocking + im;
       dst_vreg = i_dst_start_vreg + in * i_m_blocking + im;
       if (i_op_type == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD) {
-        if ( l_is_sve ){
+        if ( l_is_sve ) {
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, left_vreg, dst_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V, right_vreg, dst_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
         } else {
@@ -1187,7 +1205,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V, right_vreg, dst_vreg, 0, dst_vreg, l_tupletype);
         }
       } else {
-        if ( l_is_sve ){
+        if ( l_is_sve ) {
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, l_pred_reg, l_sve_type );
         } else {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, l_tupletype);
@@ -1246,7 +1264,7 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
 
   /* Traverse equation tree based on optimal execution plan and emit code */
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
-    libxsmm_matrix_eqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(i_eqn->eqn_root, timestamp);
+    libxsmm_meqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(i_eqn->eqn_root, timestamp);
     if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
       if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
         /* We have to load the input from the argument tensor using the node's assigned tmp reg block */
@@ -1277,11 +1295,11 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
         /* We have to load the input from the argument tensor using the node's assigned tmp reg block */
         left_reg_block = cur_op->tmp.id;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_ZIP) ? 1 : 0 );
         arg_id++;
         right_reg_block = aux_reg_block;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, right_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, right_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_ZIP) ? 1 : 0 );
         arg_id++;
       } else if ((cur_op->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_op->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG)) {
         left_reg_block = cur_op->le->tmp.id;
@@ -1292,13 +1310,13 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
           left_reg_block = cur_op->le->tmp.id;
           right_reg_block = aux_reg_block;
           libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_ZIP) ? 1 : 0 );
           arg_id++;
         } else {
           left_reg_block = aux_reg_block;
           right_reg_block = cur_op->ri->tmp.id;
           libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_ZIP) ? 1 : 0 );
           arg_id++;
         }
       }
@@ -1336,8 +1354,8 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
     }
   }
 
-  /* Store the computed register block to output */
-  if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+  /* Store the computed register block to output  */
+  if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
     libxsmm_generator_mateqn_unpackstore_2d_reg_block_aarch64( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
         i_vlen_out, i_eqn->eqn_root->tmp.id, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out );
   } else {
@@ -1498,7 +1516,7 @@ void libxsmm_adjust_required_zmms_aarch64( libxsmm_generated_code*    io_generat
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_mark_reserved_zmms_aarch64( libxsmm_generated_code*    io_generated_code, libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn_elem *cur_node ) {
+void libxsmm_mark_reserved_zmms_aarch64( libxsmm_generated_code*    io_generated_code, libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_meqn_elem *cur_node ) {
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
     libxsmm_adjust_required_zmms_aarch64( io_generated_code,  i_micro_kernel_config, cur_node->info.u_op.type, LIBXSMM_MELTW_TYPE_BINARY_NONE, UNARY_OP_POOL);
     libxsmm_mark_reserved_zmms_aarch64( io_generated_code, i_micro_kernel_config, cur_node->le);
@@ -1552,7 +1570,7 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
       i_micro_kernel_config->reduce_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms += i_micro_kernel_config->reserved_zmms + 1;
 
-      if ( l_is_sve ){
+      if ( l_is_sve ) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
                                                  i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg, 0, i_micro_kernel_config->reduce_vreg,
                                                  0, libxsmm_generator_aarch64_get_sve_type(4) );
@@ -1563,7 +1581,7 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
       }
     }
 
-    if ((i_micro_kernel_config->unary_ops_pool[i] > 0) && (i == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+    if ((i_micro_kernel_config->unary_ops_pool[i] > 0) && (i == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)) {
       i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms += i_micro_kernel_config->reserved_zmms + 1;
     }
@@ -1596,8 +1614,8 @@ void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_ge
     libxsmm_matequation_kernel_config*      i_micro_kernel_config_orig,
     libxsmm_loop_label_tracker*             io_loop_label_tracker,
     libxsmm_matrix_eqn*                     eqn ) {
-  libxsmm_matrix_eqn_arg_v2              *arg_info;
-  libxsmm_matrix_eqn_tmp_info            *oparg_info;
+  libxsmm_meqn_arg              *arg_info;
+  libxsmm_meqn_tmp_info            *oparg_info;
   unsigned int arg_id = 0, i = 0, oparg_id = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
   libxsmm_matequation_kernel_config l_meqn_kernel_config = *i_micro_kernel_config_orig;
@@ -1621,8 +1639,8 @@ void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_ge
 
   /* Iterate over the equation tree and copy the args ptrs in the auxiliary scratch */
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 8, i_gp_reg_mapping->gp_reg_scratch_0 );
-  arg_info = (libxsmm_matrix_eqn_arg_v2*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg_v2));
-  oparg_info = (libxsmm_matrix_eqn_tmp_info*) malloc((eqn->eqn_root->visit_timestamp + 1) * sizeof(libxsmm_matrix_eqn_tmp_info));
+  arg_info = (libxsmm_meqn_arg*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_meqn_arg));
+  oparg_info = (libxsmm_meqn_tmp_info*) malloc((eqn->eqn_root->visit_timestamp + 1) * sizeof(libxsmm_meqn_tmp_info));
   i_micro_kernel_config->contains_binary_op = 0;
   i_micro_kernel_config->contains_ternary_op = 0;
   libxsmm_generator_copy_input_args_aarch64(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, eqn->eqn_root, &arg_id, arg_info, i_gp_reg_mapping->gp_reg_scratch_0);

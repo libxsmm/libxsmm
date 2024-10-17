@@ -55,13 +55,13 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
                                                 unsigned int                  i_prefetch );
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generated_code,
-                                             const unsigned int      i_gp_struct_params,
-                                             const unsigned int      skip_callee_save );
+void libxsmm_x86_instruction_open_stream_alt( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_gp_struct_params,
+                                              const unsigned int      skip_callee_save );
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      skip_callee_save );
+void libxsmm_x86_instruction_close_stream_alt( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      skip_callee_save );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
@@ -271,6 +271,13 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_instr,
                                                     const char              i_vector_name,
                                                     const unsigned int      i_reg_number_src0,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_imm8 );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_1reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
                                                     const unsigned int      i_reg_number_dst,
                                                     const unsigned int      i_imm8 );
 

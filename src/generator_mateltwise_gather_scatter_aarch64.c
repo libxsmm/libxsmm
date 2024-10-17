@@ -14,9 +14,6 @@
 #include "generator_common.h"
 #include "generator_mateltwise_gather_scatter_aarch64.h"
 
-#if !defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-# define LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC
-#endif
 #if 0
 #define USE_ENV_TUNING
 #endif
@@ -43,13 +40,8 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
 #if defined(USE_ENV_TUNING)
   const char *const l_env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
 #endif
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
 #if defined(USE_ENV_TUNING)
   if ( 0 == l_env_max_m_unroll ) {
@@ -107,11 +99,7 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
       /* Calculate mask reg 1 for reading/output-writing */
       if (i_micro_kernel_config->datatype_size_in == 4 || i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_mask_reg, l_m_remainder_elements * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -196,10 +184,6 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
   }
 
   libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
-
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -318,13 +302,8 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
   const char *const l_env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const l_env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
 #endif
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
 #if defined(USE_ENV_TUNING)
   if ( 0 == l_env_max_m_unroll ) {
@@ -404,11 +383,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
       if (i_micro_kernel_config->datatype_size_in == 4 || i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_mask_reg, l_m_remainder_elements * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_idx_maskreg, l_m_remainder_elements * l_idx_tsize, i_gp_reg_mapping->gp_reg_scratch_0 );
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -495,9 +470,6 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
 
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, l_n_unroll_factor);
   }
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -625,13 +597,8 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
   const char *const l_env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const l_env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
 #endif
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
 #if defined(USE_ENV_TUNING)
   if ( 0 == l_env_max_m_unroll ) {
@@ -709,11 +676,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
       if (i_micro_kernel_config->datatype_size_in == 4 || i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_mask_reg, l_m_remainder_elements * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_idx_mask_reg, l_m_remainder_elements * l_idx_tsize, i_gp_reg_mapping->gp_reg_scratch_0 );
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -781,9 +744,6 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
 
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, l_n_unroll_factor);
   }
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN

@@ -90,14 +90,12 @@
      &    LIBXSMM_PREFETCH_AUTO                     = -1,               &
           ! No prefetching and no prefetch function signature.
      &    LIBXSMM_PREFETCH_NONE                     = 0,                &
-          ! Only function prefetch signature.
-     &    LIBXSMM_PREFETCH_SIGONLY                  = 1,                &
           ! Prefetch PA using accesses to A.
-     &    LIBXSMM_GEMM_PREFETCH_AL2                 = 2,                &
+     &    LIBXSMM_GEMM_PREFETCH_AL2                 = 1,                &
           ! Prefetch PB using accesses to C.
-     &    LIBXSMM_GEMM_PREFETCH_BL2_VIA_C           = 4,                &
+     &    LIBXSMM_GEMM_PREFETCH_BL2_VIA_C           = 2,                &
           ! Prefetch A ahead.
-     &    LIBXSMM_GEMM_PREFETCH_AL2_AHEAD           = 8,                &
+     &    LIBXSMM_GEMM_PREFETCH_AL2_AHEAD           = 4,                &
           ! Composed prefetch strategies.
      &    LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C        = IOR(              &
      &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
@@ -106,7 +104,8 @@
      &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
      &        LIBXSMM_GEMM_PREFETCH_AL2_AHEAD),                         &
           ! Current B into L1.
-     &    LIBXSMM_GEMM_PREFETCH_BL1                 = 16
+     &    LIBXSMM_GEMM_PREFETCH_BL1                 = 8,                &
+     &    LIBXSMM_GEMM_PREFETCH_C                   = 64
 
         !> Enumerates the available target architectures and instruction
         !> set extensions as returned by libxsmm_get_target_archid().
@@ -120,18 +119,15 @@
      &    LIBXSMM_X86_AVX2              = 1006,                         &
      &    LIBXSMM_X86_AVX2_ADL          = 1007,                         &
      &    LIBXSMM_X86_AVX2_SRF          = 1008,                         &
-     &    LIBXSMM_X86_AVX512_VL128      = 1041,                         &
-     &    LIBXSMM_X86_AVX512_VL256      = 1051,                         &
+     &    LIBXSMM_X86_AVX512_VL128_SKX  = 1041,                         &
+     &    LIBXSMM_X86_AVX512_VL256_SKX  = 1051,                         &
      &    LIBXSMM_X86_AVX512_VL256_CLX  = 1052,                         &
      &    LIBXSMM_X86_AVX512_VL256_CPX  = 1053,                         &
-     &    LIBXSMM_X86_AVX512            = 1101,                         &
-     &    LIBXSMM_X86_AVX512_MIC        = 1102,                         &
-     &    LIBXSMM_X86_AVX512_KNM        = 1103,                         &
-     &    LIBXSMM_X86_AVX512_CORE       = 1104,                         &
-     &    LIBXSMM_X86_AVX512_CLX        = 1105,                         &
-     &    LIBXSMM_X86_AVX512_CPX        = 1106,                         &
-     &    LIBXSMM_X86_AVX512_SPR        = 1107,                         &
-     &    LIBXSMM_X86_AVX512_GNR        = 1108,                         &
+     &    LIBXSMM_X86_AVX512_SKX        = 1101,                         &
+     &    LIBXSMM_X86_AVX512_CLX        = 1102,                         &
+     &    LIBXSMM_X86_AVX512_CPX        = 1103,                         &
+     &    LIBXSMM_X86_AVX512_SPR        = 1104,                         &
+     &    LIBXSMM_X86_AVX512_GNR        = 1105,                         &
      &    LIBXSMM_X86_ALLFEAT           = 1999,                         &
      &    LIBXSMM_AARCH64_V81           = 2001,                         &
      &    LIBXSMM_AARCH64_V82           = 2002,                         &
@@ -224,7 +220,7 @@
 
           !> Set target architecture for subsequent code
           !> generation (JIT); arch argument can be
-          !> "sse", "snb", "hsw", "knl", "knm", "skx",
+          !> "sse", "snb", "hsw", "skx",
           !> "clx", "cpx", "spr", or "0" to rely on
           !> the CPUID (default).
           !> There are some alternative target names as well:

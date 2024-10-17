@@ -62,9 +62,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                * >0: error code
                                */
   unsigned int arch;          /* target arch for the current code generation task */
-  unsigned int sf_size;       /* offset of RSP to the beginning of the stack frame
-                               * we track this value to have RBP available for general compute
-                               */
 } libxsmm_generated_code;
 
 /** Translate LIBXSMM generator error-codes to error messages */
@@ -140,6 +137,12 @@ void libxsmm_generator_packed_spgemm_csc_kernel( libxsmm_generated_code*        
                                                  const unsigned int             i_packed_width );
 
 LIBXSMM_API
+void libxsmm_generator_packed_spgemm_bcsc_kernel( libxsmm_generated_code*        io_generated_code,
+                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                  const unsigned int             i_packed_width,
+                                                  const unsigned int             i_bk,
+                                                  const unsigned int             i_bn );
+LIBXSMM_API
 void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*         io_generated_code,
                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                           const unsigned int              i_packed_width );
@@ -148,6 +151,11 @@ LIBXSMM_API
 void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_generated_code,
                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                           const unsigned int              i_packed_width );
+
+LIBXSMM_API
+void libxsmm_generator_packed_gemm( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                    const unsigned int              i_packed_width );
 
 LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_generated_code,

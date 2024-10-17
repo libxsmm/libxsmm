@@ -13,6 +13,49 @@
 
 #include "generator_common.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_brgemm_amx_set_gp_reg_a( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+    unsigned int                       i_unrolled_index );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_header_dequant_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_dequant_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       n_iters);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_decompress_i4_vreg ( libxsmm_generated_code*            io_generated_code,
+                                                                    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                    unsigned int                       i_zpt_vreg,
+                                                                    unsigned int                       io_vreg0,
+                                                                    unsigned int                       o_vreg1 );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm_generated_code*            io_generated_code,
+                                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                         unsigned int                       i_m_tiles,
+                                                                         unsigned int                       i_K,
+                                                                         unsigned int                       i_ldi,
+                                                                         unsigned int                       i_ldo,
+                                                                         unsigned int                       i_gp_reg,
+                                                                         unsigned int                       o_gp_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned int *n_cols, libxsmm_tile_config *tc);
+
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(  libxsmm_generated_code*        io_generated_code,
                                                                                         libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                         libxsmm_gp_reg_mapping*        i_gp_reg_mapping,
