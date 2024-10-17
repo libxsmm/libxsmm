@@ -2318,10 +2318,10 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
 
   code[code_head] |= (unsigned int)((0x3 & i_index_reg) << 13);
 
-  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR || i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR ){
+  if( (i_instr & 0x60000) == 0x60000 ){
     code[code_head] |= (unsigned int)((0x3  & i_tile)     << 5);
     code[code_head] |= (unsigned int)((0x7 & i_vec_reg)    << 2);
-  } else if ( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE ){
+  } else {
     code[code_head] |= (unsigned int)( 0x3  & i_tile);
     code[code_head] |= (unsigned int)((0x7 & i_vec_reg)    << 7);
   }
@@ -2430,13 +2430,14 @@ void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_
   unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
   /* fix bits */
   code[code_head] = i_instr;
-  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_FMAX_2 ){
+
+  if( (i_instr & 0x100) == 0x100 ){
     code[code_head] |= (unsigned int)( 0x1e  & i_vec_src_dst_reg);
-    code[code_head] |= (unsigned int)((0xf & i_vec_src_reg_0) << 16 );
   } else {
     code[code_head] |= (unsigned int)( 0x1c  & i_vec_src_dst_reg);
-    code[code_head] |= (unsigned int)((0xf & i_vec_src_reg_0) << 16 );
   }
+
+  code[code_head] |= (unsigned int)((0xf & i_vec_src_reg_0) << 16 );
 
   /* advance code head */
   io_generated_code->code_size += 4;

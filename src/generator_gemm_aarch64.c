@@ -1114,7 +1114,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
   }
 
   /* select micro kernel based on aarch64 variant */
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) {
     /* TODO (MMLA) */
     if ( l_use_mmla ) {
       l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
@@ -1386,7 +1386,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   libxsmm_generator_gemm_apply_opA_opB_aarch64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa, i_xgemm_desc);
 
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+       (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4) ) {
     int l_nnz_bits = l_xgemm_desc_opa->m%l_micro_kernel_config.vector_length;
     /* @TODO this is a hack as we need 32bit masks on A when using BFDOT */
     if ( (l_use_mmla == 0) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
@@ -1457,7 +1457,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
     /* TODO (MMLA): remove, hardcoded */
     if ( l_use_mmla ) {
-      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) {
         l_m_blocking = 16;
       }
       else {
@@ -1484,7 +1484,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
                                                l_gp_reg_mapping.gp_reg_mloop, l_m_done - l_m_done_old );
         /* load block of C */
-        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
           /* TODO: MMLA */
           if ( l_use_mmla ) {
             libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( io_generated_code, &l_micro_kernel_config, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
@@ -1614,7 +1614,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         }
 
         /* store block of C */
-        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
           /* TODO: MMLA */
           if ( l_use_mmla ) {
             libxsmm_generator_store_2dregblock_mmla_aarch64_asimd( io_generated_code, &l_micro_kernel_config, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
