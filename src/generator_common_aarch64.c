@@ -4090,7 +4090,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                                     const unsigned int      i_n_blocking,
                                                     const unsigned int      i_ldc ){
   /* set w12-15 to 0-3*/
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -4101,10 +4101,10 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
     libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( io_generated_code,
                                                            LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER,
                                                            LIBXSMM_AARCH64_SVE_REG_P8 );
-    for( int l = 0; l < 2; l++){
+    for( unsigned int l = 0; l < 2; l++){
       int k = 0;
       /* load values */
-      for( int i = 0; i< 16; i++){
+      for( unsigned int i = 0; i< 16; i++){
         if( i > 7){
           k = i+8;
         } else {
@@ -4125,9 +4125,9 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                                        i_ldc * 4 );
       }
       /* mov to za register */
-      for( int i = 0; i < 4; i++){
+      for( unsigned int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                               l*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+l*2,
                                               (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
@@ -4139,9 +4139,9 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                                       4,
                                                       0);
       }
-      for( int i = 0; i < 4; i++){
+      for( unsigned int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                               1+l*2,
                                               LIBXSMM_AARCH64_GP_REG_W13+l*2,
                                               (i<2) ? i+2 : 4+i );
@@ -4187,9 +4187,9 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
       }
 
       /* mov to za register */
-      for( int i = 0; i < 4; i++){
+      for( unsigned int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                               l_en*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
                                               (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
@@ -4202,9 +4202,9 @@ void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_g
                                                       0);
       }
       if( i_m_blocking > 16 ){
-        for( int i = 0; i < 4; i++){
+        for( unsigned int i = 0; i < 4; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                                 1+l_en*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
                                                 (i<2) ? i+2 : 4+i );
@@ -4229,7 +4229,7 @@ void libxsmm_generated_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
                                                const unsigned int      i_n_blocking,
                                                const unsigned int      i_ldc ){
   /* set w12-15 to 0-3*/
-  for( int i = 0; i < 4 ; i++){
+  for( unsigned int i = 0; i < 4 ; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -4307,7 +4307,7 @@ void libxsmm_generated_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
     /* mov to za register */
     for( unsigned int i = 0; i < 2; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             0,
                                             LIBXSMM_AARCH64_GP_REG_W12,
                                             LIBXSMM_AARCH64_SVE_REG_Z0+i*4 );
@@ -4321,7 +4321,7 @@ void libxsmm_generated_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
     }
     for( unsigned int i = 2; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             LIBXSMM_AARCH64_SVE_REG_Z1+i*4 );
@@ -4335,7 +4335,7 @@ void libxsmm_generated_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
     }
     for( unsigned int i = 4; i < 6; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             2,
                                             LIBXSMM_AARCH64_GP_REG_W14,
                                             LIBXSMM_AARCH64_SVE_REG_Z2+i*4 );
@@ -4349,7 +4349,7 @@ void libxsmm_generated_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
     }
     for( unsigned int i = 6; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             3,
                                             LIBXSMM_AARCH64_GP_REG_W15,
                                             LIBXSMM_AARCH64_SVE_REG_Z3+i*4 );
@@ -4373,7 +4373,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                      const unsigned int      i_ldc,
                                                      const unsigned int      i_ho ){
   /* set w12-15 to 0-3*/
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -4384,13 +4384,13 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
     libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( io_generated_code,
                                                            LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER,
                                                            8 );
-    for( int l = 0; l < 2; l++){
+    for( unsigned int l = 0; l < 2; l++){
       int k = 0;
       /* load values */
         /* mov to za register */
-        for( int i = 0; i < 4; i++){
+        for( unsigned int i = 0; i < 4; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                (i_ho == 1) ? LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR : LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
+                                                (i_ho == 1) ? LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR : LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                                 l*2,
                                                 LIBXSMM_AARCH64_GP_REG_W12+l*2,
                                                 (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
@@ -4402,9 +4402,9 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                         4,
                                                         0);
         }
-        for( int i = 0; i < 4; i++){
+        for( unsigned int i = 0; i < 4; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                (i_ho == 1) ? LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR : LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
+                                                (i_ho == 1) ? LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR : LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                                 1+l*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+l*2,
                                                 (i<2) ? i+2 : 4+i );
@@ -4416,7 +4416,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                         4,
                                                         0);
         }
-        for( int i = 0; i< 16; i++){
+        for( unsigned int i = 0; i< 16; i++){
         if( i > 7){
           k = i+8;
         } else {
@@ -4470,9 +4470,9 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
     for( unsigned int l_en = 0; l_en < l_n_block_count ; l_en++){
       unsigned int l_register_offset = 0;
       /* mov to za register */
-      for( int i = 0; i < 4; i++){
+      for( unsigned int i = 0; i < 4; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                               l_en*2,
                                               LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
                                               (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
@@ -4485,9 +4485,9 @@ void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_
                                                       0);
       }
       if( i_m_blocking > 16 ){
-        for( int i = 0; i < 4; i++){
+        for( unsigned int i = 0; i < 4; i++){
           libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                                 1+l_en*2,
                                                 LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
                                                 (i<2) ? i+2 : 4+i );
@@ -4542,7 +4542,7 @@ void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_gener
                                                 const unsigned int      i_n_blocking,
                                                 const unsigned int      i_ldc ){
   /* set w12-15 to 0-3*/
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -4559,7 +4559,7 @@ void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_gener
     /* mov to za register */
     for( unsigned int i = 0; i < 2; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                             0,
                                             LIBXSMM_AARCH64_GP_REG_W12,
                                             LIBXSMM_AARCH64_SVE_REG_Z0+i*4 );
@@ -4573,7 +4573,7 @@ void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_gener
     }
     for( unsigned int i = 2; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             LIBXSMM_AARCH64_SVE_REG_Z1+i*4 );
@@ -4587,7 +4587,7 @@ void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_gener
     }
     for( unsigned int i = 4; i < 6; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                             2,
                                             LIBXSMM_AARCH64_GP_REG_W14,
                                             LIBXSMM_AARCH64_SVE_REG_Z2+i*4 );
@@ -4601,7 +4601,7 @@ void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_gener
     }
     for( unsigned int i = 6; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                             3,
                                             LIBXSMM_AARCH64_GP_REG_W15,
                                             LIBXSMM_AARCH64_SVE_REG_Z3+i*4 );
@@ -4688,7 +4688,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
 
   /* set w12-13 to 0-1*/
   unsigned int l_k_blocksize = 0;
-  for( int i = 0; i < 2; i++){
+  for( unsigned int i = 0; i < 2; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -4749,9 +4749,9 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
     }
   }
   /* mov to za register */
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                           0,
                                           LIBXSMM_AARCH64_GP_REG_W12,
                                           ( i_n_blocking > 16 || i < 2 ) ? i : i+2 );
@@ -4764,9 +4764,9 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                   0);
   }
   if( i_n_blocking > 16 ){
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             i );
@@ -4779,9 +4779,9 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                     0);
     }
   } else if( i_k_rest > 16 ){
-    for( int i = 0; i < 4; i++){
+    for( unsigned int i = 0; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             ( i < 2 ) ? i+2 : i+4 );
@@ -4801,7 +4801,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
 
   /* mova with vertical look to register */
   /* set w12-13 to 0-1*/
-  for( int i = 0; i < 2; i++){
+  for( unsigned int i = 0; i < 2; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -4809,7 +4809,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                 i );
   }
   /* mov to from tile to register */
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                           LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                           0,
@@ -4824,7 +4824,7 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                                   0);
   }
   if( i_n_blocking > 16 || i_k_rest > 16 ){
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                             1,
@@ -4889,255 +4889,6 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
 
 }
 
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_store_2dregblock_aarch64_sme_relu( libxsmm_generated_code* io_generated_code,
-                                                          const unsigned int      i_gp_reg_addr,
-                                                          const unsigned int      i_gp_reg_help,
-                                                          const unsigned int      i_m_blocking,
-                                                          const unsigned int      i_n_blocking,
-                                                          const unsigned int      i_ldc,
-                                                          const unsigned int      i_ho ){
-  /* set w12-15 to 0-3*/
-  for( int i = 0; i < 4; i++){
-    libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_GP_MOVZ,
-                                                LIBXSMM_AARCH64_GP_REG_W12+i,
-                                                0,
-                                                i );
-  }
-  if( i_m_blocking == 32 && i_n_blocking == 32 && 0 ){
-    libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( io_generated_code,
-                                                           LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER,
-                                                           8 );
-    for( int l = 0; l < 2; l++){
-      int k = 0;
-      /* load values */
-        /* mov to za register */
-        for( int i = 0; i < 4; i++){
-          libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                (i_ho == 1) ? LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR : LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
-                                                l*2,
-                                                LIBXSMM_AARCH64_GP_REG_W12+l*2,
-                                                (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
-
-          libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                        LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                        LIBXSMM_AARCH64_GP_REG_W12+l*2,
-                                                        LIBXSMM_AARCH64_GP_REG_W12+l*2,
-                                                        4,
-                                                        0);
-        }
-        for( int i = 0; i < 4; i++){
-          libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                (i_ho == 1) ? LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR : LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
-                                                1+l*2,
-                                                LIBXSMM_AARCH64_GP_REG_W13+l*2,
-                                                (i<2) ? i+2 : 4+i );
-
-          libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                        LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                        LIBXSMM_AARCH64_GP_REG_W13+l*2,
-                                                        LIBXSMM_AARCH64_GP_REG_W13+l*2,
-                                                        4,
-                                                        0);
-        }
-        for( int i = 0; i< 16; i++){
-        if( i > 7){
-          k = i+8;
-        } else {
-          k = i;
-        }
-        libxsmm_aarch64_instruction_sme_mov( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_ST1W_2,
-                                            LIBXSMM_AARCH64_SVE_REG_Z0+k,
-                                            (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                            0,
-                                            LIBXSMM_AARCH64_SVE_REG_P8);
-        /* adjust pointer */
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                       LIBXSMM_AARCH64_GP_REG_X11,
-                                                       (l==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                       i_ldc * 4 );
-      }
-    }
-  } else {
-
-    /* set p register */
-    if( i_m_blocking == 32  ){
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                    LIBXSMM_AARCH64_SVE_REG_P0,
-                                                    -1,
-                                                    11 );
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                    LIBXSMM_AARCH64_SVE_REG_P2,
-                                                    -1,
-                                                    11 );
-    } else if( i_m_blocking >= 16 ) {
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                    LIBXSMM_AARCH64_SVE_REG_P0,
-                                                    -1,
-                                                    11 );
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                    LIBXSMM_AARCH64_SVE_REG_P2,
-                                                    (i_m_blocking-16)*4,
-                                                    11 );
-    } else {
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
-                                                    LIBXSMM_AARCH64_SVE_REG_P0,
-                                                    (i_m_blocking)*4,
-                                                    11 );
-    }
-
-
-
-    unsigned int l_n_block_count = (i_n_blocking <= 16) ? 1 : 2 ;
-    unsigned int l_n_count = i_n_blocking;
-    for( unsigned int l_en = 0; l_en < l_n_block_count ; l_en++){
-      unsigned int l_register_offset = 0;
-      /* mov to za register */
-      for( int i = 0; i < 4; i++){
-        libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
-                                              l_en*2,
-                                              LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
-                                              (i<2) ? LIBXSMM_AARCH64_SVE_REG_Z0+i : LIBXSMM_AARCH64_SVE_REG_Z0+i+2 );
-
-        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                      LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
-                                                      LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
-                                                      4,
-                                                      0);
-      }
-      if( i_m_blocking > 16 ){
-        for( int i = 0; i < 4; i++){
-          libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
-                                                1+l_en*2,
-                                                LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
-                                                (i<2) ? i+2 : 4+i );
-
-          libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                        LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                        LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
-                                                        LIBXSMM_AARCH64_GP_REG_W13+2*l_en,
-                                                        4,
-                                                        0);
-        }
-      }
-
-      /* setting z0 to zero */
-      libxsmm_aarch64_instruction_sve_compute( io_generated_code,
-                                               LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-                                               LIBXSMM_AARCH64_SVE_REG_Z0,
-                                               LIBXSMM_AARCH64_SVE_REG_Z0,
-                                               0,
-                                               LIBXSMM_AARCH64_SVE_REG_Z0,
-                                               LIBXSMM_AARCH64_SVE_REG_UNDEF,
-                                               LIBXSMM_AARCH64_SVE_TYPE_S );
-      for( unsigned int l_em = 0; l_em < 8; l_em++){
-        /* just fmax all registers no matter if there it is relevant or not */
-        libxsmm_aarch64_instruction_sme_fmax( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_FMAX_4,
-                                              LIBXSMM_AARCH64_SVE_REG_Z0,
-                                              l_em*4 );
-      }
-
-      for( unsigned int l_em = 0; l_em < ((l_n_count > 16 ) ? 16 : l_n_count); l_em++){
-        if( l_em < 8){
-          l_register_offset = 0;
-        } else {
-          l_register_offset = 8;
-        }
-        libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
-                                              (l_en==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                              LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                              0,                          // offset mul vl
-                                              l_em+l_register_offset,     // vector register
-                                              LIBXSMM_AARCH64_SVE_REG_P0 );
-        if( i_m_blocking > 16 ){
-          libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
-                                                (l_en==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                                1,                        // offset mul vl
-                                                l_em+8+l_register_offset, // vector register
-                                                LIBXSMM_AARCH64_SVE_REG_P2 );
-        }
-          /* adjust pointer */
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                      (l_en==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      LIBXSMM_AARCH64_GP_REG_X11,
-                                                      (l_en==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                                      i_ldc * 4 );
-      }
-      l_n_count -= 16;
-
-      /* move 0 into w12 */
-      libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_GP_MOVZ,
-                                                  LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
-                                                  0,
-                                                  2*l_en );
-
-      libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
-                                            l_en*2,
-                                            LIBXSMM_AARCH64_GP_REG_W12+2*l_en,
-                                            LIBXSMM_AARCH64_SVE_REG_Z0 );
-
-      /* set z1 to zero */
-      libxsmm_aarch64_instruction_sve_compute( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-                                                LIBXSMM_AARCH64_SVE_REG_Z1,
-                                                LIBXSMM_AARCH64_SVE_REG_Z1,
-                                                0,
-                                                LIBXSMM_AARCH64_SVE_REG_Z1,
-                                                LIBXSMM_AARCH64_SVE_REG_UNDEF,
-                                                LIBXSMM_AARCH64_SVE_TYPE_S );
-
-      /* compare to z1 */
-      libxsmm_aarch64_instruction_sme_fmax( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_FMAX_4,
-                                            LIBXSMM_AARCH64_SVE_REG_Z1,
-                                            0 );
-
-      /* store z0 */
-      /* restore pointer of x2 */
-      if( l_en == 0){
-        libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
-                                                             LIBXSMM_AARCH64_INSTR_GP_ORR_SR,
-                                                             LIBXSMM_AARCH64_GP_REG_XZR,
-                                                             LIBXSMM_AARCH64_GP_REG_X17,
-                                                             LIBXSMM_AARCH64_GP_REG_X2,
-                                                             0,
-                                                             LIBXSMM_AARCH64_SHIFTMODE_LSL );
-      } else {
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                      LIBXSMM_AARCH64_GP_REG_X17,
-                                                      LIBXSMM_AARCH64_GP_REG_X11,
-                                                      i_gp_reg_help,
-                                                      i_ldc * 16*4  );
-      }
-
-
-      libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
-                                            (l_en==0) ? i_gp_reg_addr : i_gp_reg_help,
-                                            LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                            0,                          // offset mul vl
-                                            0,     // vector register
-                                            LIBXSMM_AARCH64_SVE_REG_P0 );
-    }
-  }
-}
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_set_pn_register_aarch64_sve2( libxsmm_generated_code* io_generated_code,
                                                      unsigned int            i_p_reg,
@@ -5188,7 +4939,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
     l_k_phases[1] = i_k_rest - 8;
   }
 
-  for( int l_en = 0; l_en < l_tile_count; l_en++){
+  for( unsigned int l_en = 0; l_en < l_tile_count; l_en++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+l_en,
@@ -5218,9 +4969,9 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
   }
 
   /* mov to tile */
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                           0,
                                           LIBXSMM_AARCH64_GP_REG_W12,
                                           i );
@@ -5233,9 +4984,9 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                   0);
   }
   if( l_blocking_phase[0] > 16){
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             i );
@@ -5265,9 +5016,9 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                   i_k * 4 );
   }
   if( l_blocking_phase[1] > 0 ){
-    for( int i = 0; i < 4; i++){
+    for( unsigned int i = 0; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             2,
                                             LIBXSMM_AARCH64_GP_REG_W14,
                                             i );
@@ -5281,9 +5032,9 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
     }
   }
   if( l_blocking_phase[1] > 16 ){
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             3,
                                             LIBXSMM_AARCH64_GP_REG_W15,
                                             i );
@@ -5297,7 +5048,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
     }
   }
 
-  for( int l_en = 0; l_en < l_tile_count; l_en++){
+  for( unsigned int l_en = 0; l_en < l_tile_count; l_en++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+l_en,
@@ -5311,7 +5062,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                   (long long)(i_k * i_n_blocking * 4)  );
 
   /* mov to register with vertical view */
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                           LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                           i,
@@ -5325,7 +5076,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                   4,
                                                   0);
   }
-  for( int i = 4; i < 8; i++){
+  for( unsigned int i = 4; i < 8; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                           LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                           i,
@@ -5348,7 +5099,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                     1 );
 
   /* store to stack pointer */
-  for( int i = 0; i < l_k_phases[0]; i++ ){
+  for( unsigned int i = 0; i < l_k_phases[0]; i++ ){
     libxsmm_aarch64_instruction_sme_mov( io_generated_code,
                                         LIBXSMM_AARCH64_INSTR_SME_ST1W_4,
                                         l_vec_register_store[i], // vec reg
@@ -5363,7 +5114,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                   (i_n_blocking > 32) ? 64*4 : 32*4 );
   }
   if( l_k_phases[1] > 0){
-    for( int i = 0; i < 4; i++){
+    for( unsigned int i = 0; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                             i,
@@ -5377,7 +5128,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                     4,
                                                     0);
     }
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR,
                                             i,
@@ -5391,7 +5142,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                     4,
                                                     0);
     }
-    for( int i = 0; i < l_k_phases[1]; i++ ){
+    for( unsigned int i = 0; i < l_k_phases[1]; i++ ){
     libxsmm_aarch64_instruction_sme_mov( io_generated_code,
                                         LIBXSMM_AARCH64_INSTR_SME_ST1W_4,
                                         l_vec_register_store[i], // vec reg
@@ -5420,7 +5171,7 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
     l_tile_count++;
   }
   /* set w12-15 to 0-3*/
-  for( int i = 0; i < l_tile_count ; i++){
+  for( unsigned int i = 0; i < l_tile_count ; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -5451,9 +5202,9 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
   }
 
   /* mov to za register */
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                           0,
                                           LIBXSMM_AARCH64_GP_REG_W12,
                                           i );
@@ -5466,9 +5217,9 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
                                                   0);
   }
   if( i_n_blocking > 16){
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             i );
@@ -5499,9 +5250,9 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
                                                       i_ldc * 4 );
     }
     /* mov to za register */
-    for( int i = 0; i < 4; i++){
+    for( unsigned int i = 0; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                             2,
                                             LIBXSMM_AARCH64_GP_REG_W14,
                                             i );
@@ -5514,9 +5265,9 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
                                                     0);
     }
     if( i_n_blocking > 48){
-      for( int i = 4; i < 8; i++){
+      for( unsigned int i = 4; i < 8; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE,
                                               3,
                                               LIBXSMM_AARCH64_GP_REG_W15,
                                               i );
@@ -5543,7 +5294,7 @@ void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_gener
     l_tile_count++;
   }
   /* set w12-15 to 0-3*/
-  for( int i = 0; i < l_tile_count ; i++){
+  for( unsigned int i = 0; i < l_tile_count ; i++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 LIBXSMM_AARCH64_GP_REG_W12+i,
@@ -5557,9 +5308,9 @@ void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_gener
                                                 (i_m_blocking < 16) ? i_m_blocking * 4 : -1,
                                                 LIBXSMM_AARCH64_GP_REG_X9 );
 
-  for( int i = 0; i < 4; i++){
+  for( unsigned int i = 0; i < 4; i++){
     libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                          LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                           0,
                                           LIBXSMM_AARCH64_GP_REG_W12,
                                           i );
@@ -5572,9 +5323,9 @@ void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_gener
                                                   0);
   }
   if( i_n_blocking > 16 ){
-    for( int i = 4; i < 8; i++){
+    for( unsigned int i = 4; i < 8; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                             1,
                                             LIBXSMM_AARCH64_GP_REG_W13,
                                             i );
@@ -5606,9 +5357,9 @@ void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_gener
 
   /* mov tile 3-4 */
   if(i_n_blocking > 32){
-    for( int i = 0; i < 4; i++){
+    for( unsigned int i = 0; i < 4; i++){
       libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                            LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                             2,
                                             LIBXSMM_AARCH64_GP_REG_W14,
                                             i );
@@ -5621,9 +5372,9 @@ void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_gener
                                                     0);
     }
     if( i_n_blocking > 48 ){
-      for( int i = 4; i < 8; i++){
+      for( unsigned int i = 4; i < 8; i++){
         libxsmm_aarch64_instruction_sme_mova( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR,
+                                              LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR,
                                               3,
                                               LIBXSMM_AARCH64_GP_REG_W15,
                                               i );

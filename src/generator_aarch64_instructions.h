@@ -483,8 +483,8 @@
 #define LIBXSMM_AARCH64_INSTR_SME_FMOPA_SP                    0x80800000 /* compute outer product */
 #define LIBXSMM_AARCH64_INSTR_SME_SMSTART                     0xd503477f /* start SVE streaming mode and za regsiter*/
 #define LIBXSMM_AARCH64_INSTR_SME_SMSTOP                      0xd503467f /* stop  SVE streaming mode and za regsiter*/
-#define LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR  0xc0860400 /* move tile to 4 vectors */
-#define LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE  0xc0840400 /* move 4 vectors to tile */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR       0xc0860400 /* move tile to 4 vectors */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE       0xc0840400 /* move 4 vectors to tile */
 #define LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR       0xc0868400 /* mova vertical */
 #define LIBXSMM_AARCH64_INSTR_SME_LD1W_2                      0xa1404000 /* 0b10100001010000000100000000000000 */
 #define LIBXSMM_AARCH64_INSTR_SME_LD1W_4                      0xa140c000

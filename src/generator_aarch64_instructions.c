@@ -936,13 +936,12 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg ) {
-  /*
+
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
-  */
 
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF:
@@ -1170,7 +1169,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_has_immediate = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM) == LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM;
   unsigned int l_vec_instr = i_vec_instr;
 
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 && 0) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM SVE needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1395,7 +1394,7 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
                                                const unsigned int                i_gp_reg_src_1,
                                                const libxsmm_aarch64_sve_pattern i_pattern,
                                                const libxsmm_aarch64_sve_type    i_type ) {
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 && 0 ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: at least ARM SVE128 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -2278,10 +2277,6 @@ void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_c
   /* setting predicate register */
   code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
 
-  if( io_generated_code->arch == LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2 ){
-    code[code_head] &= 0xfffffffe;
-  }
-
   /* advance code head */
   io_generated_code->code_size += 4;
 
@@ -2301,8 +2296,8 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
     return;
   }
   switch ( i_instr ) {
-    case LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR:
-    case LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE:
+    case LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR:
+    case LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE:
     case LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR:
       break;
     default:
@@ -2321,13 +2316,13 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
   /* fix bits */
   code[code_head] = i_instr;
 
-  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_TILE_TO_VECTOR || i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR ){
+  code[code_head] |= (unsigned int)((0x3 & i_index_reg) << 13);
+
+  if( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR || i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR ){
     code[code_head] |= (unsigned int)((0x3  & i_tile)     << 5);
-    code[code_head] |= (unsigned int)((0x3 & i_index_reg) << 13);
     code[code_head] |= (unsigned int)((0x7 & i_vec_reg)    << 2);
-  } else if ( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_32_BIT_VECTOR_TO_TILE ){
+  } else if ( i_instr == LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE ){
     code[code_head] |= (unsigned int)( 0x3  & i_tile);
-    code[code_head] |= (unsigned int)((0x3 & i_index_reg) << 13);
     code[code_head] |= (unsigned int)((0x7 & i_vec_reg)    << 7);
   }
   /* advance code head */
@@ -2374,6 +2369,11 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_code* io_generated_code,
                                                             unsigned int            i_instr,
                                                             unsigned int            i_pred_reg ){
+  if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sm apple M4 is needed ( or SME )\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
   switch ( i_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER:
       break;
