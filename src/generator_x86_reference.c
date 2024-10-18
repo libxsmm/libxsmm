@@ -33,11 +33,11 @@ void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_
   l_padded_desc = (unsigned char*) malloc(l_padded_desc_size);
   memset(l_padded_desc, 0, l_padded_desc_size);
   if (i_is_gemm_or_eltwise == 0) {
-    libxsmm_gemm_descriptor* i_gemm_desc = (libxsmm_gemm_descriptor*)i_desc;
+    const libxsmm_gemm_descriptor* i_gemm_desc = (const libxsmm_gemm_descriptor*)i_desc;
     libxsmm_gemm_descriptor* desc_dst = (libxsmm_gemm_descriptor*)l_padded_desc;
     *desc_dst = *i_gemm_desc;
   } else {
-    libxsmm_meltw_descriptor* i_mateltwise_desc = (libxsmm_meltw_descriptor*)i_desc;
+    const libxsmm_meltw_descriptor* i_mateltwise_desc = (const libxsmm_meltw_descriptor*)i_desc;
     libxsmm_meltw_descriptor* desc_dst = (libxsmm_meltw_descriptor*)l_padded_desc;
     *desc_dst = *i_mateltwise_desc;
   }
