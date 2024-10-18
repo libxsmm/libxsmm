@@ -13,6 +13,7 @@
 #include "generator_gemm_reference_impl.h"
 #include "generator_mateltwise_reference_impl.h"
 
+LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   printf("Hello world\n");
 }

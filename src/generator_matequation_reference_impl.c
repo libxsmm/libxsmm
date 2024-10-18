@@ -96,6 +96,7 @@ void libxsmm_generator_matequation_setup_inp_ptrs( libxsmm_meqn_elem  *cur_node,
   }
 }
 
+LIBXSMM_API_INTERN
 void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *scratchpad, unsigned long long tmp_size) {
   int i = 0;
   libxsmm_meqn_elem *unfolded_exec_tree = (libxsmm_meqn_elem*) i_execution_plan;
