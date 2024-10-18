@@ -27,6 +27,7 @@
  * public interface as the internal implementation may change without notice.
  */
 #include "../src/generator_aarch64_instructions.c"
+#include "../src/generator_aarch64_reference.c"
 #include "../src/generator_common.c"
 #include "../src/generator_common_aarch64.c"
 #include "../src/generator_common_x86.c"
@@ -40,6 +41,7 @@
 #include "../src/generator_gemm_common.c"
 #include "../src/generator_gemm_common_aarch64.c"
 #include "../src/generator_gemm_noarch.c"
+#include "../src/generator_gemm_reference_impl.c"
 #include "../src/generator_gemm_sse_avx_avx2_avx512.c"
 #include "../src/generator_gemm_sse_microkernel.c"
 #include "../src/generator_mateltwise.c"
@@ -104,6 +106,7 @@
 #include "../src/generator_spgemm_csr_asparse_reg.c"
 #include "../src/generator_spgemm_csr_reader.c"
 #include "../src/generator_x86_instructions.c"
+#include "../src/generator_x86_reference.c"
 #include "../src/libxsmm_barrier.c"
 #include "../src/libxsmm_cpuid_arm.c"
 #include "../src/libxsmm_cpuid_x86.c"
