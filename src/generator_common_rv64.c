@@ -482,7 +482,7 @@ void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_ge
   libxsmm_rv64_instruction_rvv_move( io_generated_code, l_instr, i_gp_reg_addr, i_gp_reg_scratch, i_vec_reg, 1 );
 
   /* Set vector length to full length */
-  //libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X31, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  /* libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X31, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1); */
 
   /* Broadcast loaded value to */
   libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFMV_F_S, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, LIBXSMM_RV64_GP_REG_F10, 1);
