@@ -1994,7 +1994,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
       float pn = 1 - p;
       float pi = 1/pn;
       libxsmm_blasint jj;
-      libxsmm_blasint w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
+      libxsmm_blasint w = libxsmm_cpuid_vlen32(libxsmm_target_archid);
       unsigned char *dropout_mask = (unsigned char*) param->out.secondary;
       for (j = 0; j < N; j++) {
         for (i = 0; i < (libxsmm_blasint)LIBXSMM_LO2(M, w); i+=w) {
