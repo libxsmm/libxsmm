@@ -8,8 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include "utils/libxsmm_lpflt_quant.h"
-#include "utils/libxsmm_math.h"
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 #include "generator_gemm_sse_avx_avx2_avx512.h"
