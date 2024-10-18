@@ -12,8 +12,8 @@
 #include <libxsmm_generator.h>
 #include "generator_common.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
-#include "generator_mateltwise_x86_reference.h"
-#include "generator_mateltwise_aarch64_reference.h"
+#include "generator_x86_reference.h"
+#include "generator_aarch64_reference.h"
 #include "generator_mateltwise_aarch64.h"
 
 LIBXSMM_API

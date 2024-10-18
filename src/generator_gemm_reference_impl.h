@@ -8,11 +8,11 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#ifndef GENERATOR_MATELTWISE_X86_REFERENCE_H
-#define GENERATOR_MATELTWISE_X86_REFERENCE_H
+#ifndef GENERATOR_GEMM_REFERENCE_IMPL_H
+#define GENERATOR_GEMM_REFERENCE_IMPL_H
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
-                                                        const libxsmm_meltw_descriptor* i_mateltw_desc );
-#endif /* GENERATOR_MATELTWISE_X86_REFERENCE_H */
+void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc);
+
+#endif /* GENERATOR_GEMM_REFERENCE_IMPL_H */
+
 

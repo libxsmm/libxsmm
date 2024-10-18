@@ -2145,6 +2145,12 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
 # endif
         libxsmm_generator_gemm_kernel(&generated_code, request->descriptor.gemm);
+        /* Try reference code JITer */
+        if (0 != generated_code.last_error) {
+          generated_code.code_size = 0;
+          generated_code.last_error = 0;
+          libxsmm_generator_gemm_reference_kernel(&generated_code, request->descriptor.gemm);
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif

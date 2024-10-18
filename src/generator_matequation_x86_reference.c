@@ -13,7 +13,7 @@
 #include "generator_matequation_regblocks_avx_avx512.h"
 #include "generator_common_x86.h"
 #include "generator_matequation_x86_reference.h"
-#include "generator_mateltwise_x86_reference.h"
+#include "generator_x86_reference.h"
 #include "generator_mateltwise_common.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"

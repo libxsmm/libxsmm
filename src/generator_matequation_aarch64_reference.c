@@ -11,7 +11,7 @@
 #include "generator_matequation_avx_avx512.h"
 #include "generator_common_aarch64.h"
 #include "generator_matequation_aarch64_reference.h"
-#include "generator_mateltwise_aarch64_reference.h"
+#include "generator_aarch64_reference.h"
 #include "generator_mateltwise_common.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
