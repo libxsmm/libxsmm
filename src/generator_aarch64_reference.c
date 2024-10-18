@@ -94,12 +94,12 @@ void libxsmm_generator_aarch64_reference_kernel( libxsmm_generated_code*        
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_reference_kernel( libxsmm_generated_code* io_generated_code, const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
-  libxsmm_generator_aarch64_reference_kernel( io_generated_code, (void*) i_mateltwise_desc, 1);
+  libxsmm_generator_aarch64_reference_kernel( io_generated_code, (const void*) i_mateltwise_desc, 1);
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_reference_kernel( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor* i_gemm_desc ) {
-  libxsmm_generator_aarch64_reference_kernel( io_generated_code, (void*) i_gemm_desc, 0);
+  libxsmm_generator_aarch64_reference_kernel( io_generated_code, (const void*) i_gemm_desc, 0);
 }
 
 
