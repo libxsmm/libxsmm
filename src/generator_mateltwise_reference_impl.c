@@ -189,7 +189,7 @@ LIBXSMM_API_INTERN void my_libxsmm_stochastic_convert_fp32_bf8(const float* in, 
       unsigned int vrng;
       unsigned short rand;
 
-      hybrid_in.f = libxsmm_convert_f32_to_f16( in[i+j] );
+      hybrid_in.f = my_libxsmm_convert_f32_to_f16( in[i+j] );
       my_libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
       rand = (unsigned short)((vrng >> 24) & 0xff);
 
