@@ -18,7 +18,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
-                                             void*                           i_desc,
+                                             const void*                     i_desc,
                                              unsigned int                    i_is_gemm_or_eltwise ) {
   unsigned long long l_padded_desc_size = (i_is_gemm_or_eltwise == 0) ? (((sizeof(libxsmm_gemm_descriptor)+31)/32) * 32) : (((sizeof(libxsmm_meltw_descriptor)+31)/32) * 32);
   unsigned long long i = 0;
