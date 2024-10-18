@@ -13,6 +13,7 @@
 #include "generator_gemm_reference_impl.h"
 #include "generator_mateltwise_reference_impl.h"
 
+#if 0
 typedef struct libxsmm_gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -976,6 +977,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     }
   }
 }
+
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
