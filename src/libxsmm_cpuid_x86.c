@@ -359,6 +359,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 {
   const char* target_arch = NULL;
   switch (id) {
+    case LIBXSMM_X86_AVX512_DMR: {
+      target_arch = "dmr";
+    } break;
     case LIBXSMM_X86_AVX512_GNR: {
       target_arch = "gnr";
     } break;
