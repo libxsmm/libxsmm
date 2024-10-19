@@ -3335,8 +3335,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
   unsigned int n_gemm_code_blocks = 0;
   int lda_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 2;
-  libxsmm_tile_config tile_config;
-  LIBXSMM_MEMZERO127(&tile_config);
 
   /* Emulating BF8 gemm on AMX */
   int bf8_gemm_via_stack_alloc_tensors = ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch < LIBXSMM_X86_AVX512_DMR)) ? 1 : 0;
@@ -3346,6 +3344,9 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int l_defer_relu_bitmask_compute = 0;
   int l_defer_c_vnni_format = 0;
   int l_save_m = 0, l_save_k = 0, l_save_n = 0;
+
+  libxsmm_tile_config tile_config;
+  LIBXSMM_MEMZERO127(&tile_config);
 
   /* Adjust descriptor to perform GEMM with BF16 inputs and F32 output */
   if ((bf8_gemm_via_stack_alloc_tensors > 0) || (hf8_gemm_via_stack_alloc_tensors > 0) ) {
