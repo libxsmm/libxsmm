@@ -1296,10 +1296,6 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   /*unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;*/
   unsigned int prefetch_C_matrix        = (l_env_pf_c_matrix_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_matrix_dist   = (l_env_pf_c_matrix_dist == 0) ? 3 : atoi(l_env_pf_c_matrix_dist);
-  const char *const env_streaming_tileload_a = getenv("LIBXSMM_X86_AMX_GEMM_STREAMING_A");
-  const char *const env_readshared_tileload_a = getenv("LIBXSMM_X86_AMX_GEMM_READSHARED_A");
-  const char *const env_streaming_tileload_b = getenv("LIBXSMM_X86_AMX_GEMM_STREAMING_B");
-  const char *const env_readshared_tileload_b = getenv("LIBXSMM_X86_AMX_GEMM_READSHARED_B");
   unsigned int streaming_tileload_a = 0;
   unsigned int readshared_tileload_a = 0;
   unsigned int streaming_tileload_b = 0;
@@ -1309,23 +1305,6 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
-  if ( 0 == env_streaming_tileload_a ) {
-  } else {
-    streaming_tileload_a = atoi(env_streaming_tileload_a);
-  }
-  if ( 0 == env_readshared_tileload_a ) {
-  } else {
-    readshared_tileload_a = atoi(env_readshared_tileload_a);
-  }
-  if ( 0 == env_streaming_tileload_b ) {
-  } else {
-    streaming_tileload_b = atoi(env_streaming_tileload_b);
-  }
-  if ( 0 == env_readshared_tileload_b ) {
-  } else {
-    readshared_tileload_b = atoi(env_readshared_tileload_b);
-  }
-
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
    *       C            A        B
@@ -1368,9 +1347,29 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int _im_offset_prefix_sums[4] = { 0 };
   int _in_offset_prefix_sums[4] = { 0 };
 
+  const char *const env_streaming_tileload_a = getenv("LIBXSMM_X86_AMX_GEMM_STREAMING_A");
+  const char *const env_readshared_tileload_a = getenv("LIBXSMM_X86_AMX_GEMM_READSHARED_A");
+  const char *const env_streaming_tileload_b = getenv("LIBXSMM_X86_AMX_GEMM_STREAMING_B");
+  const char *const env_readshared_tileload_b = getenv("LIBXSMM_X86_AMX_GEMM_READSHARED_B");
   const char *const env_pf_dist = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_DIST");
   const char *const env_pf_dist_l1 = getenv("LIBXSMM_X86_AMX_GEMM_SECONDARY_PF_INPUTS_DIST");
 
+  if ( 0 == env_streaming_tileload_a ) {
+  } else {
+    streaming_tileload_a = atoi(env_streaming_tileload_a);
+  }
+  if ( 0 == env_readshared_tileload_a ) {
+  } else {
+    readshared_tileload_a = atoi(env_readshared_tileload_a);
+  }
+  if ( 0 == env_streaming_tileload_b ) {
+  } else {
+    streaming_tileload_b = atoi(env_streaming_tileload_b);
+  }
+  if ( 0 == env_readshared_tileload_b ) {
+  } else {
+    readshared_tileload_b = atoi(env_readshared_tileload_b);
+  }
   if ( 0 == env_pf_dist ) {
   } else {
     pf_dist = atoi(env_pf_dist);
