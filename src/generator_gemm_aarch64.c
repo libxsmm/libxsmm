@@ -1582,6 +1582,10 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   unsigned int a_vnni_factor  = 1;
   unsigned int l_ldc_saved = 0;
   unsigned int l_is_i8f32_gemm  = ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
+  unsigned int l_avnni_gemm_stack_alloc_tensors = 0;
+  unsigned int l_atvnni_gemm_stack_alloc_tensors = 0;
+  unsigned int l_avnni_btrans_gemm_stack_alloc_tensors = 0;
+  unsigned int l_atvnni_btrans_gemm_stack_alloc_tensors = 0;
 
   /* Local variables used for A transpose case */
   libxsmm_gemm_descriptor*          l_xgemm_desc_opa;
@@ -1602,10 +1606,8 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       l_use_mmla = 0;
     }
     a_vnni_factor = ( l_use_mmla == 0 ) ? 2 : 4;
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+    if ((l_use_bfdot) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) ) {
       a_vnni_factor = 1;
-      l_use_mmla = 0;
-      l_use_bfdot = 1;
     }
    }
   if ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
@@ -1616,6 +1618,31 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     }
     a_vnni_factor = ( l_use_mmla == 0 ) ? 4 : 8;
   }
+  l_avnni_gemm_stack_alloc_tensors = (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
+                                                  ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                  ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) &&
+                                                  ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
+                                                  (i_xgemm_desc->k % a_vnni_factor == 0) &&
+                                                  (l_use_bfdot == 0) &&
+                                                  ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) );
+  l_atvnni_gemm_stack_alloc_tensors = (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) &&
+                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) &&
+                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
+                                                   (i_xgemm_desc->k % a_vnni_factor == 0) &&
+                                                   ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) );
+  l_avnni_btrans_gemm_stack_alloc_tensors = (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
+                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) &&
+                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
+                                                   (i_xgemm_desc->k % a_vnni_factor == 0) &&
+                                                   ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) );
+  l_atvnni_btrans_gemm_stack_alloc_tensors = (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) &&
+                                                          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
+                                                          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) &&
+                                                          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
+                                                          (i_xgemm_desc->k % a_vnni_factor == 0) &&
+                                                          ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) );
 
   /* define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
@@ -1680,6 +1707,41 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   } else {
     l_new_xgemm_desc_opa = *i_xgemm_desc;
     l_xgemm_desc_opa = (libxsmm_gemm_descriptor*) &l_new_xgemm_desc_opa;
+  }
+
+  /* @TODO check if we can make this smarter and don't need two times the same if */
+  if ( (l_avnni_gemm_stack_alloc_tensors != 0) || (l_atvnni_gemm_stack_alloc_tensors != 0) || (l_avnni_btrans_gemm_stack_alloc_tensors != 0) || (l_atvnni_btrans_gemm_stack_alloc_tensors != 0) ) {
+    l_xgemm_desc_opa->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+  }
+  if ( (l_atvnni_gemm_stack_alloc_tensors != 0) || (l_atvnni_btrans_gemm_stack_alloc_tensors != 0) ) {
+    l_xgemm_desc_opa->flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
+    if ( l_xgemm_desc_opa->lda%a_vnni_factor != 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
+  }
+  if ( (l_avnni_btrans_gemm_stack_alloc_tensors != 0) || (l_atvnni_btrans_gemm_stack_alloc_tensors != 0) ) {
+    l_xgemm_desc_opa->flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_B));
+  }
+
+  /* handle A VNNI on stack */
+  if ( l_avnni_gemm_stack_alloc_tensors != 0 ) {
+    l_xgemm_desc_opa->lda = i_xgemm_desc->m;
+    l_micro_kernel_config.avnni_gemm_stack_alloc_tensors = 1;
+  }
+  if ( l_atvnni_gemm_stack_alloc_tensors != 0 ) {
+    l_xgemm_desc_opa->lda = i_xgemm_desc->m;
+    l_micro_kernel_config.atvnni_gemm_stack_alloc_tensors = 1;
+  }
+  if ( l_avnni_btrans_gemm_stack_alloc_tensors != 0 ) {
+    l_xgemm_desc_opa->lda = i_xgemm_desc->m;
+    l_xgemm_desc_opa->ldb = i_xgemm_desc->k;
+    l_micro_kernel_config.avnni_btrans_gemm_stack_alloc_tensors = 1;
+  }
+  if ( l_atvnni_btrans_gemm_stack_alloc_tensors != 0 ) {
+    l_xgemm_desc_opa->lda = i_xgemm_desc->m;
+    l_xgemm_desc_opa->ldb = i_xgemm_desc->k;
+    l_micro_kernel_config.atvnni_btrans_gemm_stack_alloc_tensors = 1;
   }
 
   /* implementing load from struct */
