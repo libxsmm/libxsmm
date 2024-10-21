@@ -65,10 +65,10 @@ void libxsmm_generator_matequation_x86_reference_kernel( libxsmm_generated_code*
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_meqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(eqn->eqn_root, timestamp);
     if (cur_op     != NULL) unfolded_exec_tree[timestamp*5+0] = *cur_op;
-    if (cur_op->le != NULL) unfolded_exec_tree[timestamp*5+1] = *(cur_op->le);
-    if (cur_op->ri != NULL) unfolded_exec_tree[timestamp*5+2] = *(cur_op->ri);
-    if (cur_op->r2 != NULL) unfolded_exec_tree[timestamp*5+3] = *(cur_op->r2);
-    if (cur_op->up != NULL) unfolded_exec_tree[timestamp*5+4] = *(cur_op->up);
+    if (cur_op !=NULL && cur_op->le != NULL) unfolded_exec_tree[timestamp*5+1] = *(cur_op->le);
+    if (cur_op !=NULL && cur_op->ri != NULL) unfolded_exec_tree[timestamp*5+2] = *(cur_op->ri);
+    if (cur_op !=NULL && cur_op->r2 != NULL) unfolded_exec_tree[timestamp*5+3] = *(cur_op->r2);
+    if (cur_op !=NULL && cur_op->up != NULL) unfolded_exec_tree[timestamp*5+4] = *(cur_op->up);
     if (timestamp == last_timestamp) {
       unfolded_exec_tree[timestamp*5+0].reg_score = -1;
       unfolded_exec_tree[timestamp*5+0].tmp.ld = i_mateqn_desc->ldo;

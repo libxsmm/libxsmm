@@ -1676,8 +1676,7 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
               }
             }
           }
-        }
-        if (reduce_op == 2) {
+        } else if (reduce_op == 2) {
           for (i = 0; i < m; i++) {
             tmp_result_elts[i] = FLT_MAX;
             for (jj = 0; jj < n_cols; jj++) {
@@ -1701,6 +1700,12 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
                 tmp_result_elts[i] = LIBXSMM_MIN( in_val, tmp_result_elts[i]);
               }
             }
+          }
+        } else {
+          printf("Should not happen\n");
+          for (i = 0; i < result_size; i++) {
+            if (reduce_elts) tmp_result_elts[i] = 0.0;
+            if (reduce_elts_sq) out_elts_sq_f64[i] = 0.0;
           }
         }
       }
@@ -2422,6 +2427,9 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
       libxsmm_blasint jj;
       libxsmm_blasint w = libxsmm_cpuid_vlen32(libxsmm_target_archid);
       unsigned char *dropout_mask = (unsigned char*) param->out.secondary;
+      for (j = 0; j < 16; j++) {
+        vrng[j] = 0.0;
+      }
       for (j = 0; j < N; j++) {
         for (i = 0; i < (libxsmm_blasint)LIBXSMM_LO2(M, w); i+=w) {
           libxsmm_lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
