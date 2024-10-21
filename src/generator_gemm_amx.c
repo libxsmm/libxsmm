@@ -3361,6 +3361,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     if ((bf8_output_gemm > 0) || (hf8_output_gemm > 0)) {
       l_xgemm_desc->ldc = l_xgemm_desc->m;
     }
+    l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
 
   /* @TODO check if we can make this smarter and don't need two times the same if */
@@ -3501,6 +3502,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     l_xgemm_desc->k = i_xgemm_desc->k;
     l_xgemm_desc->ldb = l_xgemm_desc->k;
     l_xgemm_desc->m =  i_xgemm_desc->m;
+    l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
@@ -3608,6 +3610,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     if ((bf8_gemm_via_stack_alloc_tensors > 0) || (hf8_gemm_via_stack_alloc_tensors > 0)) {
       l_xgemm_desc->k = i_xgemm_desc->k;
       l_xgemm_desc->ldb = l_xgemm_desc->k;
+      l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
     }
 
     /* Here compute the 2D blocking info based on the M and N values */
