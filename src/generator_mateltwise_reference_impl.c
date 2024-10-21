@@ -2681,7 +2681,7 @@ void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, c
         } else {
           float in_val  = libxsmm_elementwise_get_float_value(in, i, j, ldi, dtype_in, i_mateltwise_desc, 0);
           float in1_val  = libxsmm_elementwise_get_float_value(in1, i, j, ldi1, dtype_in1, i_mateltwise_desc, 1);
-          unsigned char bit_val = libxsmm_extract_bit(in2, i, j, l_ld2);
+          unsigned char bit_val = libxsmm_extract_bit((const char*)in2, i, j, l_ld2);
           float out_value = (bit_val == 0) ? in_val : in1_val;
           libxsmm_elementwise_store_value(out, (void*)&out_value, i, j, ldo, ((flags & LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND) > 0 ), dtype_out, rng_state, seed_idx);
           seed_idx++;
