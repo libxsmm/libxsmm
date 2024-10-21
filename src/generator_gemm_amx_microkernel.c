@@ -2149,7 +2149,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
           offset_A = k * i_micro_kernel_config->datatype_size_in + A_offs;
         } else {
-          offset_A = (k * i_xgemm_desc->lda * l_a_dtype_size)/i_micro_kernel_config->sparsity_factor_A + A_offs;
+          offset_A = (k * l_lda * l_a_dtype_size)/i_micro_kernel_config->sparsity_factor_A + A_offs;
         }
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
           offset_B = k * i_xgemm_desc->ldb  * i_micro_kernel_config->datatype_size_in2 + B_offs;
@@ -2178,7 +2178,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
           offset_A = k * i_micro_kernel_config->datatype_size_in + A_offs;
         } else {
-          offset_A = (k * i_xgemm_desc->lda * l_a_dtype_size)/i_micro_kernel_config->sparsity_factor_A + A_offs;
+          offset_A = (k * l_lda * l_a_dtype_size)/i_micro_kernel_config->sparsity_factor_A + A_offs;
         }
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
           offset_B = k * i_xgemm_desc->ldb  * i_micro_kernel_config->datatype_size_in + B_offs;
