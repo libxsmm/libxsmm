@@ -936,12 +936,9 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
             i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->lda*i_xgemm_desc->m)*(4/a_vnni_adjustment)) );
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-            i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->m)*(4/a_vnni_adjustment)) );
+            i_gp_reg_mapping->gp_reg_a, ((long long)i_xgemm_desc->m*l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
       }
 
-
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-          i_gp_reg_mapping->gp_reg_a, ((long long)i_xgemm_desc->m*l_a_packed_bytes/*(i_micro_kernel_config->datatype_size)*/) );
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_a_ptrs,
