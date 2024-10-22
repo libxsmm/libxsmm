@@ -31,3 +31,9 @@ steps:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -gnr --"
       LIBXSMM_TARGET: gnr
     label: "SMMs GNR Prec. (GNR)"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_dmr.sh"
+    env:
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -dmr --"
+      LIBXSMM_TARGET: dmr
+    label: "SMMs DMR Prec. (DMR)"
