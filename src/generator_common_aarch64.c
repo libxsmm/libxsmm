@@ -3470,7 +3470,6 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
                                             i_pred_reg, i_sve_type );
   }
 
-
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                            i_vec_xa, i_vec_C2, 0, i_vec_C1,
                                            i_pred_reg, i_sve_type );
