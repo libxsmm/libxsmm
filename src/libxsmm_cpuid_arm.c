@@ -15,7 +15,6 @@
 
 #include <signal.h>
 #include <setjmp.h>
-#include <sys/sysctl.h>
 
 #if !defined(LIBXSMM_CPUID_ARM_BASELINE) && 0
 # define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_NEOV1
@@ -27,6 +26,7 @@
 # if 0
 #   define LIBXSMM_CPUID_ARM_MODEL_FALLBACK
 # elif defined(__APPLE__) && defined(__arm64__)
+#   include <sys/sysctl.h>
 #   define LIBXSMM_CPUID_ARM_MODEL_FALLBACK
 # endif
 #endif

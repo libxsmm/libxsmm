@@ -30,4 +30,3 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                              const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 #endif /* GENERATOR_GEMM_SME_H */
-
