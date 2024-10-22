@@ -12,6 +12,9 @@
 #define GENERATOR_GEMM_COMMON_H
 
 #include "generator_common.h"
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bfp32_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
@@ -20,6 +23,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bbf16_gemm ( const libxsmm
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai4_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Abf8_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Abf8_Bf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ahf8_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
@@ -54,13 +59,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
                                                                                       libxsmm_datatype               i_comp2_dtype,
                                                                                       libxsmm_datatype               i_out2_dtype );
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( libxsmm_generated_code*       io_generated_code,
-                                                                                    libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                                    const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                                    libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                                    libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                                    const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                                    libxsmm_datatype               i_in_dtype );
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( libxsmm_generated_code*       io_generated_code,
+                                                                                                      libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                                                      const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                                                      libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                                                                      libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                                                                      const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
+                                                                                                      libxsmm_datatype               i_in_dtype,
+                                                                                                      unsigned int                   i_is_amx );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack(   libxsmm_generated_code*        io_generated_code,
                                                                                     libxsmm_loop_label_tracker*    io_loop_label_tracker,
