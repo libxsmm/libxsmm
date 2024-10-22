@@ -378,8 +378,10 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
     if (tile1 >= 0) {
       if (col + reserved_zmms < 16) {
         reg_0 = col % (16-reserved_zmms) + reserved_zmms;
+        reg_1 = col % (16-reserved_zmms) + reserved_zmms + 16;
       } else {
-        reg_0 = reserved_zmms + col % (32-reserved_zmms);
+        reg_0 = reserved_zmms + col % (31-reserved_zmms);
+        reg_1 = reg_0 + 1;
       }
       if (i_micro_kernel_config->fused_sigmoid == 1) {
         if (col + reserved_zmms < 16) {
