@@ -1283,7 +1283,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int pf_dist_l1 = 0;
   int ld_adjust_vnni;
   int emit_tilestores = ((i_brgemm_loop == (i_micro_kernel_config->cur_unroll_factor - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1) && (i_micro_kernel_config->is_peeled_br_loop == 1)) ? 1 : (((is_last_k == 1) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0)) ? 1 : 0);
-  unsigned int l_enforce_Mx1_amx_tile_blocking = (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0) ? 1 : (i_xgemm_desc->n <= 16) ? 1 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = i_micro_kernel_config->enforce_Mx1_amx_tile_blocking;
   int use_paired_tilestores = ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0) && (l_enforce_Mx1_amx_tile_blocking == 0)) ? 1 : 0;
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
@@ -1308,7 +1308,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   int lda_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 2;
-  int ldb_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 2 : ((i_xgemm_desc->ldb % 2 == 1) ? 2 : 1);
+  int ldb_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 2 : 1;
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *

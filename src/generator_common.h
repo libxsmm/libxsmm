@@ -1597,6 +1597,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
+  unsigned int enforce_Mx1_amx_tile_blocking;
 
   /* Auxiliary fields for LP emulations and stack-based data prepartion */
   unsigned int bf8_gemm_via_stack_alloc_tensors;
