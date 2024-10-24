@@ -958,21 +958,21 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
                                              const libxsmm_aarch64_sve_type i_sve_type );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_load_2dregblock_aarch64_sme( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_gp_reg_addr,
-                                                    const unsigned int      i_gp_reg_help,
-                                                    const unsigned int      i_m_blocking,
-                                                    const unsigned int      i_n_blocking,
-                                                    const unsigned int      i_ldc );
+void libxsmm_generator_load_32x32_aarch64_sme( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_addr,
+                                               const unsigned int      i_gp_reg_help,
+                                               const unsigned int      i_m_blocking,
+                                               const unsigned int      i_n_blocking,
+                                               const unsigned int      i_ldc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_store_2dregblock_aarch64_sme( libxsmm_generated_code* io_generated_code,
-                                                     const unsigned int      i_gp_reg_addr,
-                                                     const unsigned int      i_gp_reg_help,
-                                                     const unsigned int      i_m_blocking,
-                                                     const unsigned int      i_n_blocking,
-                                                     const unsigned int      i_ldc,
-                                                     const unsigned int      i_hor  );
+void libxsmm_generator_store_32x32_aarch64_sme( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_gp_reg_addr,
+                                                const unsigned int      i_gp_reg_help,
+                                                const unsigned int      i_m_blocking,
+                                                const unsigned int      i_n_blocking,
+                                                const unsigned int      i_ldc,
+                                                const unsigned int      i_hor  );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code,
@@ -983,15 +983,6 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
                                       unsigned int             i_help_register );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_store_2dregblock_aarch64_sme_relu( libxsmm_generated_code* io_generated_code,
-                                                          const unsigned int      i_gp_reg_addr,
-                                                          const unsigned int      i_gp_reg_help,
-                                                          const unsigned int      i_m_blocking,
-                                                          const unsigned int      i_n_blocking,
-                                                          const unsigned int      i_ldc,
-                                                          const unsigned int      i_ho );
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_set_pn_register_aarch64_sve2( libxsmm_generated_code* io_generated_code,
                                                      unsigned int            i_p_reg,
                                                      int                     i_n_bits,
@@ -999,7 +990,7 @@ void libxsmm_generator_set_pn_register_aarch64_sve2( libxsmm_generated_code* io_
                                                      unsigned int            i_vl );
 
 LIBXSMM_API_INTERN
-void libxsmm_generated_load_64x16_aarch64_sme( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_load_64x16_aarch64_sme( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_gp_reg_addr,
                                                const unsigned int      i_m_blocking,
                                                const unsigned int      i_n_blocking,

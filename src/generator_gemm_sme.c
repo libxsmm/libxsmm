@@ -419,7 +419,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     (long long) l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
       /* load C */
-      libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_32x32_aarch64_sme( io_generated_code,
                                                           l_gp_reg_mapping.gp_reg_c,
                                                           l_gp_reg_mapping.gp_reg_help_0,
                                                           32,
@@ -453,13 +453,13 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     (long long) l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
-                                                      l_gp_reg_mapping.gp_reg_c,
-                                                      l_gp_reg_mapping.gp_reg_help_0,
-                                                      32,
-                                                      32,
-                                                      l_xgemm_desc_opa->ldc,
-                                                      1 );
+      libxsmm_generator_store_32x32_aarch64_sme( io_generated_code,
+                                                 l_gp_reg_mapping.gp_reg_c,
+                                                 l_gp_reg_mapping.gp_reg_help_0,
+                                                 32,
+                                                 32,
+                                                 l_xgemm_desc_opa->ldc,
+                                                 1 );
 
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
                                                           LIBXSMM_AARCH64_INSTR_GP_ORR_SR,
@@ -514,7 +514,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
       /* load C */
-      libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_32x32_aarch64_sme( io_generated_code,
                                                           l_gp_reg_mapping.gp_reg_c,
                                                           l_gp_reg_mapping.gp_reg_help_0,
                                                           32,
@@ -547,7 +547,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                         l_gp_reg_mapping.gp_reg_help_0,
                                                         l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_store_32x32_aarch64_sme( io_generated_code,
                                                       l_gp_reg_mapping.gp_reg_c,
                                                       l_gp_reg_mapping.gp_reg_help_0,
                                                       32,
@@ -672,7 +672,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     (long long) l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
       /* load C */
-      libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_32x32_aarch64_sme( io_generated_code,
                                                           l_gp_reg_mapping.gp_reg_c,
                                                           l_gp_reg_mapping.gp_reg_help_0,
                                                           l_m_rest,
@@ -706,7 +706,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     (long long) l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_store_32x32_aarch64_sme( io_generated_code,
                                                       l_gp_reg_mapping.gp_reg_c,
                                                       l_gp_reg_mapping.gp_reg_help_0,
                                                       l_m_rest,
@@ -767,7 +767,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     (long long) l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_in );
 
       /* load C */
-      libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_32x32_aarch64_sme( io_generated_code,
                                                           l_gp_reg_mapping.gp_reg_c,
                                                           l_gp_reg_mapping.gp_reg_help_0,
                                                           l_m_rest,
@@ -800,7 +800,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                         l_gp_reg_mapping.gp_reg_help_0,
                                                         (long long) l_xgemm_desc_opa->ldc * 16*l_micro_kernel_config.datatype_size_out );
 
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_store_32x32_aarch64_sme( io_generated_code,
                                                       l_gp_reg_mapping.gp_reg_c,
                                                       l_gp_reg_mapping.gp_reg_help_0,
                                                       l_m_rest,
@@ -995,7 +995,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
 
 
       /* load block of C */
-      libxsmm_generated_load_64x16_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_64x16_aarch64_sme( io_generated_code,
                                                 l_gp_reg_mapping.gp_reg_c,
                                                 l_m_blocking,
                                                 l_n_rest,
@@ -1173,7 +1173,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
 
 
       /* load block of C */
-      libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_32x32_aarch64_sme( io_generated_code,
                                                     l_gp_reg_mapping.gp_reg_c,
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     l_m_blocking,
@@ -1208,7 +1208,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     (long long) l_xgemm_desc_opa->ldc * 16 * l_micro_kernel_config.datatype_size_out );
 
       /* store block of C */
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_store_32x32_aarch64_sme( io_generated_code,
                                                       l_gp_reg_mapping.gp_reg_c,
                                                       l_gp_reg_mapping.gp_reg_help_0,
                                                       l_m_blocking,
@@ -1354,7 +1354,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
 
 
       /* load block of C */
-      libxsmm_generator_load_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_32x32_aarch64_sme( io_generated_code,
                                                     l_gp_reg_mapping.gp_reg_c,
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     l_m_blocking,
@@ -1389,7 +1389,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     (long long) l_xgemm_desc_opa->ldc * 16 * l_micro_kernel_config.datatype_size_out );
 
       /* store block of C */
-      libxsmm_generator_store_2dregblock_aarch64_sme( io_generated_code,
+      libxsmm_generator_store_32x32_aarch64_sme( io_generated_code,
                                                       l_gp_reg_mapping.gp_reg_c,
                                                       l_gp_reg_mapping.gp_reg_help_0,
                                                       l_m_blocking,
@@ -1570,7 +1570,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
 
 
       /* load block of C */
-      libxsmm_generated_load_64x16_aarch64_sme( io_generated_code,
+      libxsmm_generator_load_64x16_aarch64_sme( io_generated_code,
                                                 l_gp_reg_mapping.gp_reg_c,
                                                 l_m_blocking,
                                                 l_n_rest-32,
