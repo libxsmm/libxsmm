@@ -1620,6 +1620,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
     /* TODO (MMLA): remove, hardcoded */
     if ( l_use_mmla ) {
+
       if ( io_generated_code->arch <= LIBXSMM_AARCH64_NEOV2 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
         l_m_blocking = 16;
       }

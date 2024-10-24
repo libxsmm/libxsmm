@@ -1786,6 +1786,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
         io_micro_kernel_config->datatype_size_in = 4;
         io_micro_kernel_config->datatype_size_out = 4;
       }
+
   } else {
     /* that should no happen */
   }
@@ -1799,6 +1800,8 @@ unsigned int libxsmm_generator_gemm_aarch64_get_max_n_blocking( const libxsmm_mi
   LIBXSMM_UNUSED( i_xgemm_desc );
 
   if ( i_arch == LIBXSMM_AARCH64_V81 ||  i_arch == LIBXSMM_AARCH64_V82 ||  i_arch == LIBXSMM_AARCH64_APPL_M1 || i_arch == LIBXSMM_AARCH64_APPL_M4 ) {
+    return 30;
+  } else if ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) {
     return 30;
   } else if ( i_arch == LIBXSMM_AARCH64_SVE128 || i_arch == LIBXSMM_AARCH64_NEOV2 ) {
     return 30;
