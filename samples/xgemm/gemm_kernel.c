@@ -3399,37 +3399,6 @@ int main(int argc, char* argv []) {
         init_zero_matrix( l_gemm_def.c_type, l_c_gold, 1, l_ldc, l_n );
       }
 
-      {
-        const char *prefetch = NULL, *br_type = NULL;
-        switch (l_prefetch) {
-          case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
-          case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2: prefetch = "AL2"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C: prefetch = "AL2_BL2viaC"; break;
-          default: prefetch = "unknown";
-        }
-        switch (l_br_type) {
-          case 0: br_type = "nobr"; break;
-          case 1: br_type = "addrbr"; break;
-          case 2: br_type = "offsbr"; break;
-          case 3: br_type = "strdbr"; break;
-          case 4: br_type = "spmm"; break;
-          default: br_type = "unknown";
-        }
-#if defined(USE_GEMM_EXT_FRONTEND)
-        printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-          l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
-          prefetch, br_type, l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop);
-#else
-        printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-          l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
-          prefetch, br_type, l_br, l_br_unroll, l_reps, l_tc_config);
-#endif
-      }
-
-
       /* run gold solution */
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
 #     pragma omp master
