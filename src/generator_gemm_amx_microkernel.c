@@ -1554,7 +1554,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
         _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * 2;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb *i_micro_kernel_config->datatype_size_in2;
+        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * (long long)i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
       }
     }
 
