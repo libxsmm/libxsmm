@@ -5131,6 +5131,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                           LIBXSMM_AARCH64_GP_REG_W12,
                                           l_i );
 
+
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                   LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                   LIBXSMM_AARCH64_GP_REG_W12,
@@ -5202,7 +5203,6 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
                                                     0);
     }
   }
-
   for( l_en = 0; l_en < l_tile_count; l_en++){
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_GP_MOVZ,

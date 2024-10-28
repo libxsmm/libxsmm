@@ -130,24 +130,24 @@ void libxsmm_generator_gemm_aarch64_kloop_sme_het( libxsmm_generated_code*      
     /* compute */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
-                                                  (i_m_blocking > 16 ) ? -1 : i_m_blocking * i_micro_kernel_config->datatype_size_in,
+                                                  (i_m_blocking > 16 ) ? -1 : (int)i_m_blocking * i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     if( i_m_blocking > 16 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P1,
-                                                  (i_m_blocking > 32 ) ? -1 : (i_m_blocking - 16)* i_micro_kernel_config->datatype_size_in,
+                                                  (i_m_blocking > 32 ) ? -1 : (int)(i_m_blocking - 16)* i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
     if( i_m_blocking > 32 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P2,
-                                                  (i_m_blocking > 48 ) ? -1 : (i_m_blocking - 32)* i_micro_kernel_config->datatype_size_in,
+                                                  (i_m_blocking > 48 ) ? -1 : (int)(i_m_blocking - 32)* i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
     if( i_m_blocking > 48 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P3,
-                                                  (i_m_blocking == 64 ) ? -1 : (i_m_blocking - 48)* i_micro_kernel_config->datatype_size_in,
+                                                  (i_m_blocking == 64 ) ? -1 : (int)(i_m_blocking - 48)* i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
   } else if( i_blocking_scheme == 2){
@@ -164,24 +164,24 @@ void libxsmm_generator_gemm_aarch64_kloop_sme_het( libxsmm_generated_code*      
     /* compute */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
-                                                  (i_n_blocking > 16 ) ? -1 : i_n_blocking * i_micro_kernel_config->datatype_size_in,
+                                                  (i_n_blocking > 16 ) ? -1 : (int)i_n_blocking * i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     if( i_n_blocking > 16 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P1,
-                                                  (i_n_blocking > 32 ) ? -1 : (i_n_blocking - 16)* i_micro_kernel_config->datatype_size_in,
+                                                  (i_n_blocking > 32 ) ? -1 : (int)(i_n_blocking - 16)* i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
     if( i_n_blocking > 32 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P2,
-                                                  (i_n_blocking > 48 ) ? -1 : (i_n_blocking - 32)* i_micro_kernel_config->datatype_size_in,
+                                                  (i_n_blocking > 48 ) ? -1 : (int)(i_n_blocking - 32)* i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
     if( i_n_blocking > 48 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P3,
-                                                  (i_n_blocking == 64 ) ? -1 : (i_n_blocking - 48)* i_micro_kernel_config->datatype_size_in,
+                                                  (i_n_blocking == 64 ) ? -1 : (int)(i_n_blocking - 48)* i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
   } else {
@@ -1280,10 +1280,8 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_gp_reg_mapping.gp_reg_help_1,
                                                     LIBXSMM_AARCH64_GP_REG_X26,
                                                     0);
-
       l_trans_loop = l_xgemm_desc_opa->k / 16;
       l_trans_rest = l_xgemm_desc_opa->k % 16;
-
       if( l_trans_loop > 0 ){
         libxsmm_generator_loop_header_aarch64(io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_help_2, l_trans_loop);
 
@@ -1677,7 +1675,6 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
 
       l_trans_loop = l_xgemm_desc_opa->k / 16;
       l_trans_rest = l_xgemm_desc_opa->k % 16;
-
       if( l_trans_loop > 0 ){
         libxsmm_generator_loop_header_aarch64(io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_help_2, l_trans_loop);
 

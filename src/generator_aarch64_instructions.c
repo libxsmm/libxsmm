@@ -2204,6 +2204,7 @@ void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generat
                                               unsigned int            i_pred_reg_1 ){
   unsigned int code_head = io_generated_code->code_size/4;
   unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
   if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sme_compute apple M4 is needed ( or SME )\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -2223,6 +2224,7 @@ void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generat
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
     return;
   }
+
   /* fix bits */
   code[code_head] = i_matrix_instr;
 
@@ -2403,7 +2405,6 @@ void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_co
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
     return;
   }
-
   /* fix bits */
   code[code_head] = i_instr;
 
@@ -2439,10 +2440,9 @@ void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_
   }
   /* Ensure we have enough space */
   if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
-    return;
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
   }
-
   /* fix bits */
   code[code_head] = i_instr;
 
