@@ -34,6 +34,6 @@ steps:
 
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test_dmr.sh"
     env:
-      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -future --"
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -dmr --"
       LIBXSMM_TARGET: dmr
     label: "SMMs DMR Prec. (DMR)"

@@ -2237,9 +2237,6 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
   i_micro_kernel_config->config_trans_a_tile = 0;
 
   tile_config->palette_id = 1;
-  if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_DMR) {
-    tile_config->palette_id = 2;
-  }
 
   /* Find K blocking */
   l_k_pack_factor = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ? 2 : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
