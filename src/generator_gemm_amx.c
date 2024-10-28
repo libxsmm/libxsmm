@@ -2297,7 +2297,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     }
 
     /* If A^T and the A tiles are not square, then fallback to 1xN tile blocking*/
-    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) && (tile_config->palette_id > 1) ) {
+    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) && (libxsmm_target_archid >= LIBXSMM_X86_AVX512_DMR) ) {
       i_micro_kernel_config->m_remainder  = 0;
       m_blocking = 16;
       while (i_xgemm_desc->m % m_blocking != 0) {
@@ -2360,7 +2360,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     }
 
     /* If A^T and the A tiles are not square, then fallback to 1xN tile blocking*/
-    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) && (tile_config->palette_id > 1) ) {
+    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) && (libxsmm_target_archid >= LIBXSMM_X86_AVX512_DMR) ) {
       if ((i_xgemm_desc->m % 32 == 0) && (k_blocking == 32)) {
         /* All good */
         /* In this case we can allow 2x2 tileblocking */
@@ -2404,7 +2404,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
       n_blocking_info[0].blocking = n_blocking;
       n_blocking_info[0].block_size = i_xgemm_desc->n;
       n_blocking_info[0].tiles = 2;
-      if (i_micro_kernel_config->vnni_format_C == 0 && !(((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && (tile_config->palette_id > 1))) {
+      if (i_micro_kernel_config->vnni_format_C == 0 && !(((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && (libxsmm_target_archid >= LIBXSMM_X86_AVX512_DMR))) {
         n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
         n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
       } else {
@@ -2490,7 +2490,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
   }
 
   /* Configure tiles for B */
-  if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && (tile_config->palette_id > 1))  {
+  if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && (libxsmm_target_archid >= LIBXSMM_X86_AVX512_DMR)) {
     libxsmm_setup_tile(6, n_blocking_info[0].sizes[0], k_blocking/l_k_pack_factor, tile_config);
     if (n_tiles == 2) {
       libxsmm_setup_tile(7, n_blocking_info[0].sizes[1], k_blocking/l_k_pack_factor, tile_config);
