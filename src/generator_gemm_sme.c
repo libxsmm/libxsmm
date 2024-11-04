@@ -181,6 +181,7 @@ void libxsmm_generator_gemm_aarch64_kloop_sme_het( libxsmm_generated_code*      
     if( i_n_blocking > 48 ){
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P3,
+
                                                   (i_n_blocking == 64 ) ? -1 : (int)(i_n_blocking - 48)* (int)i_micro_kernel_config->datatype_size_in,
                                                   i_gp_reg_mapping->gp_reg_help_2 );
     }
