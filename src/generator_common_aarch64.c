@@ -4404,6 +4404,13 @@ void libxsmm_generator_load_32x32_aarch64_sme( libxsmm_generated_code* io_genera
                                                     const unsigned int      i_m_blocking,
                                                     const unsigned int      i_n_blocking,
                                                     const unsigned int      i_ldc ){
+  unsigned int l_n_count = i_n_blocking;
+  unsigned int l_en = 0;
+  unsigned int l_em = 0;
+  unsigned int l_register_offset = 0;
+  unsigned int l_i = 0;
+  unsigned int l_n_block_count = (i_n_blocking <= 16) ? 1 : 2;
+
   libxsmm_generator_set_w_reg_sme( io_generated_code, 4);
 
   libxsmm_generator_set_pn_register_aarch64_sve2( io_generated_code,
@@ -4412,12 +4419,6 @@ void libxsmm_generator_load_32x32_aarch64_sme( libxsmm_generated_code* io_genera
                                                   LIBXSMM_AARCH64_GP_REG_X11,
                                                   0 );
 
-  unsigned int l_n_block_count = (i_n_blocking <= 16) ? 1 : 2 ;
-  unsigned int l_n_count = i_n_blocking;
-  unsigned int l_en = 0;
-  unsigned int l_em = 0;
-  unsigned int l_register_offset = 0;
-  unsigned int l_i = 0;
   for( l_en = 0; l_en < l_n_block_count ; l_en++){
     for( l_em = 0; l_em < ((l_n_count > 16 ) ? 16 : l_n_count); l_em++){
       if( l_em < 8){
@@ -4888,12 +4889,12 @@ void libxsmm_generator_transpose_sme( libxsmm_generated_code * io_generated_code
   if( i_n_blocking > 16 ){
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
-                                                  (i_k_rest > 0) ? i_k_rest * 4 : -1,
+                                                  (i_k_rest > 0) ? (int)i_k_rest * 4 : -1,
                                                   i_help_register );
   } else {
     libxsmm_generator_set_pn_register_aarch64_sve2( io_generated_code,
                                                     LIBXSMM_AARCH64_SVE_REG_P8,
-                                                    (i_k_rest > 0) ? i_k_rest * 4 : -1,
+                                                    (i_k_rest > 0) ? (int)i_k_rest * 4 : -1,
                                                     i_help_register,
                                                     0 );
   }
@@ -5104,7 +5105,7 @@ void libxsmm_generator_sme_transpose_64( libxsmm_generated_code * io_generated_c
   /* set p register for k blocks*/
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                 LIBXSMM_AARCH64_SVE_REG_P0,
-                                                (i_k_rest > 0) ? i_k_rest * 4 : -1,
+                                                (i_k_rest > 0) ? (int)i_k_rest * 4 : -1,
                                                 i_help_register );
   /* load to registers */
   for( l_i = 0; l_i < l_blocking_phase[0]; l_i++){
@@ -5330,7 +5331,7 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
   /* set predication register */
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                 LIBXSMM_AARCH64_SVE_REG_P0,
-                                                (i_m_blocking < 16) ? i_m_blocking * 4 : -1,
+                                                (i_m_blocking < 16) ? (int)i_m_blocking * 4 : -1,
                                                 LIBXSMM_AARCH64_GP_REG_X9 );
   /* load first 2 tiles of C*/
   for( l_en = 0; l_en < ((i_n_blocking < 32) ? i_n_blocking : 32); l_en++){
@@ -5448,7 +5449,7 @@ void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_gener
   /* set predication register */
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                 LIBXSMM_AARCH64_SVE_REG_P0,
-                                                (i_m_blocking < 16) ? i_m_blocking * 4 : -1,
+                                                (i_m_blocking < 16) ? (int)i_m_blocking * 4 : -1,
                                                 LIBXSMM_AARCH64_GP_REG_X9 );
 
   for( l_i = 0; l_i < 4; l_i++){
