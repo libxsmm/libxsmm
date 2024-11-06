@@ -157,7 +157,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_t
   int is_offset_brgemm        = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm       = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
   int is_brgemm               = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
-  unsigned int struct_gp_reg  = LIBXSMM_AARCH64_GP_REG_X6;
+  unsigned int struct_gp_reg  = LIBXSMM_AARCH64_GP_REG_X12;
   unsigned int tmp_reg        = LIBXSMM_AARCH64_GP_REG_X10;
   unsigned int loop_reg       = LIBXSMM_AARCH64_GP_REG_X28;
   unsigned int bound_reg      = LIBXSMM_AARCH64_GP_REG_X27;
@@ -383,7 +383,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 32, l_gp_reg_in);
     if ( libxsmm_cpuid_arm_use_bfdot() == 0 ) {
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
-        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_param_struct, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
                                                                                  i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
                                                                                  i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
       } else {
