@@ -1717,14 +1717,14 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     l_xgemm_desc_opa->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
   if ( (l_atvnni_gemm_stack_alloc_tensors != 0) || (l_atvnni_btrans_gemm_stack_alloc_tensors != 0) ) {
-    l_xgemm_desc_opa->flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
+    l_xgemm_desc_opa->flags = (unsigned int)((unsigned int)(l_xgemm_desc_opa->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
     if ( l_xgemm_desc_opa->lda%a_vnni_factor != 0 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
       return;
     }
   }
   if ( (l_avnni_btrans_gemm_stack_alloc_tensors != 0) || (l_atvnni_btrans_gemm_stack_alloc_tensors != 0) ) {
-    l_xgemm_desc_opa->flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_B));
+    l_xgemm_desc_opa->flags = (unsigned int)((unsigned int)(l_xgemm_desc_opa->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_B));
   }
 
   /* handle A VNNI on stack */
