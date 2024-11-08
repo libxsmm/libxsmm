@@ -178,11 +178,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_t
     l_trans_dt = (l_use_mmla == 1) ? LIBXSMM_DATATYPE_F64 : LIBXSMM_DATATYPE_F32;
     l_trans_m = (l_use_mmla == 1) ? i_xgemm_desc_orig->k/4 : i_xgemm_desc_orig->k/2;
     l_trans_n = i_xgemm_desc_orig->m;
-    l_trans_ldi = (l_use_mmla) ? i_xgemm_desc_orig->lda/4 : i_xgemm_desc_orig->lda/2;
+    l_trans_ldi = (l_use_mmla == 1) ? i_xgemm_desc_orig->lda/4 : i_xgemm_desc_orig->lda/2;
     l_trans_ldo = i_xgemm_desc_orig->m;
   } else if ( (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors !=0) || (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors !=0) ) {
     unsigned int l_use_mmla = ((libxsmm_cpuid_arm_use_bfdot() == 0) && (i_xgemm_desc_orig->k%4 == 0)) ? 1 : 0;
-    l_trans_unary_type = (l_use_mmla) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2;
+    l_trans_unary_type = (l_use_mmla == 1) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2;
     l_trans_dt = i_in_dtype;
     l_trans_m = i_xgemm_desc_orig->m;
     l_trans_n = i_xgemm_desc_orig->k;
