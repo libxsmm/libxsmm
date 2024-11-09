@@ -1418,7 +1418,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
   char l_use_i8dot = (char)libxsmm_cpuid_arm_use_i8dot();
   char l_use_mmla = 0;
 
-  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+  if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) || ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 && i_xgemm_desc->k % 4 != 0)) {
     l_use_bfdot = 1;
   }
 
@@ -1600,7 +1600,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
   /* enable MMLA settings for supported datatypes */
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && i_xgemm_desc->k % 4 != 0) {
+    if (i_xgemm_desc->k % 4 != 0) {
       l_use_bfdot = 1;
     }
     if ( l_use_bfdot == 0 ) {
