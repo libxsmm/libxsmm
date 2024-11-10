@@ -37,6 +37,18 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_rv64(  libxsmm_generated_cod
                                                               const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated_code*     io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                              const unsigned int              i_gp_reg_addr,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              libxsmm_datatype                colbias_precision,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_ld );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_getval_stack_var_rv64( libxsmm_generated_code*             io_generated_code,
                                                       libxsmm_gemm_stack_var              stack_var,
                                                       unsigned int                        i_gp_reg );
@@ -45,6 +57,16 @@ void libxsmm_generator_gemm_setval_stack_var_rv64( libxsmm_generated_code*      
                                                       libxsmm_gemm_stack_var              stack_var,
                                                       unsigned int                        i_aux_reg,
                                                       unsigned int                        i_gp_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_stack_frame_rv64( libxsmm_generated_code* io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+    libxsmm_micro_kernel_config*        i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_destroy_stack_frame_rv64( libxsmm_generated_code* io_generated_code);
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars_rv64( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,

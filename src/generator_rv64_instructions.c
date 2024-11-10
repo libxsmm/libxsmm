@@ -1084,7 +1084,7 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
                                               const unsigned int      i_gp_reg_dst,
-                                              const long long         i_imm64 ) {
+                                              const unsigned long long i_imm64 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_set_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);

@@ -2155,10 +2155,10 @@ void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code* io_genera
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_move_instr,
-                                           const unsigned int      i_gp_reg_addr,
-                                           const unsigned int      i_gp_reg_dst,
-                                           const int               i_offset );
+                                        const unsigned int      i_move_instr,
+                                        const unsigned int      i_gp_reg_addr,
+                                        const unsigned int      i_gp_reg_dst,
+                                        const int               i_offset );
 
 /**
  * Generates movk, movz instructions
@@ -2209,8 +2209,8 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
-                                                const unsigned int    i_gp_reg_dst,
-                                                const long long       i_imm64 );
+                                             const unsigned int       i_gp_reg_dst,
+                                             const unsigned long long i_imm64 );
 
 /**
  * Generate compute with immediate
