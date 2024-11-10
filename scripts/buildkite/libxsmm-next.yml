@@ -14,12 +14,14 @@ steps:
   - command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
+      LIBXSMM_TARGET: srf
       SSIZE: 3
     label: "Eltwise (SRF)"
 
   - command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
+      LIBXSMM_TARGET: srf
       SSIZE: 3
     label: "Equation (SRF)"
 
