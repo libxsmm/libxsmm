@@ -408,6 +408,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_APPL_M1: {
       target_arch = "appl_m1";
     } break;
+    case LIBXSMM_AARCH64_APPL_M4: {
+      target_arch = "appl_m4";
+    } break;
     case LIBXSMM_AARCH64_SVE128: {
       target_arch = "sve128";
     } break;
@@ -465,7 +468,8 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
     result = 8;
   }
   else if (LIBXSMM_AARCH64_SVE512 == id
-        || LIBXSMM_AARCH64_A64FX  == id)
+        || LIBXSMM_AARCH64_A64FX  == id
+        || LIBXSMM_AARCH64_APPL_M4 == id )
   {
     result = 16;
   }
