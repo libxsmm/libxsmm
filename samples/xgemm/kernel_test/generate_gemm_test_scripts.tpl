@@ -505,7 +505,7 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # MMLA for BF16
-                  if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
+                  if [[ "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ]] ; then
                     cp ${HERE}/${OUTNAME} ${HERE}/mmla_${OUTNAME}
                     sed 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(4,101,4)/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}
@@ -517,15 +517,17 @@ for BINARY_POSTOP in 0 1; do
                     fi
                     chmod 755 ${HERE}/mmla_${OUTNAME}
 
-                    # create MMLA scripts with B in VNNIT
-                    NEWNAME=mmla_bvnni_${OUTNAME}
-                    NEWNAME="${NEWNAME/_nn_/_nt_}"
-                    sed \
-                      -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
-                      -e "s/BVNNI=0/BVNNI=1/g" \
-                      -e 's/TRB=0/TRB=1/g' \
-                      ${HERE}/mmla_${OUTNAME} >${HERE}/${NEWNAME}
-                    chmod 755 ${HERE}/${NEWNAME}
+                    if [[ "$AVNNI" == '1' ]] ; then
+                      # create MMLA scripts with B in VNNIT
+                      NEWNAME=mmla_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        ${HERE}/mmla_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                    fi
                   fi
 
                   # MMLA for I8

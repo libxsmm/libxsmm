@@ -43,6 +43,8 @@
 #include "../src/generator_gemm_common_rv64.c"
 #include "../src/generator_gemm_noarch.c"
 #include "../src/generator_gemm_rv64.c"
+#include "../src/generator_gemm_sme.c"
+#include "../src/generator_gemm_sme_microkernel.c"
 #include "../src/generator_gemm_sse_avx_avx2_avx512.c"
 #include "../src/generator_gemm_sse_microkernel.c"
 #include "../src/generator_mateltwise.c"
