@@ -86,6 +86,7 @@ void libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel_blo
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                               libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                              const unsigned int                      i_gp_reg_param_struct,
                                                                               const unsigned int                      i_gp_reg_in,
                                                                               const unsigned int                      i_gp_reg_out,
                                                                               const unsigned int                      i_gp_reg_m_loop,
@@ -159,9 +160,9 @@ void libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel( li
     }
   }
   if (l_m_remainder > 0) {
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_X0, LIBXSMM_AARCH64_GP_REG_UNDEF, 32,
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 32,
                                           i_gp_reg_in );
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_X0, LIBXSMM_AARCH64_GP_REG_UNDEF, 64,
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 64,
                                           i_gp_reg_out );
     if ((i_mateltwise_desc->m/16) > 0) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -314,6 +315,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel_blo
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                               libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                              const unsigned int                      i_gp_reg_param_struct,
                                                                               const unsigned int                      i_gp_reg_in,
                                                                               const unsigned int                      i_gp_reg_out,
                                                                               const unsigned int                      i_gp_reg_m_loop,
@@ -387,9 +389,9 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( li
     }
   }
   if (l_m_remainder > 0) {
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_X0, LIBXSMM_AARCH64_GP_REG_UNDEF, 32,
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 32,
                                           i_gp_reg_in );
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_X0, LIBXSMM_AARCH64_GP_REG_UNDEF, 64,
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 64,
                                           i_gp_reg_out );
     if ((i_mateltwise_desc->m/16) > 0) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -821,7 +823,7 @@ void libxsmm_generator_transform_aarch64_sve_microkernel( libxsmm_generated_code
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) {
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
         libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                                 i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
+                                                                                 i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
                                                                                  i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
                                                                                  i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc, 0 );
       } else {
@@ -833,7 +835,7 @@ void libxsmm_generator_transform_aarch64_sve_microkernel( libxsmm_generated_code
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD) {
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
         libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                                 i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
+                                                                                 i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
                                                                                  i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
                                                                                  i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc, 1 );
       } else {
@@ -844,7 +846,7 @@ void libxsmm_generator_transform_aarch64_sve_microkernel( libxsmm_generated_code
       }
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4) {
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
-        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker,
+        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_param_struct,
                                                                                  i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
                                                                                  i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
                                                                                  i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc, 0 );
@@ -856,7 +858,7 @@ void libxsmm_generator_transform_aarch64_sve_microkernel( libxsmm_generated_code
       }
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) {
       if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
-        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker,
+        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_param_struct,
                                                                                  i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
                                                                                  i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
                                                                                  i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc, 1 );

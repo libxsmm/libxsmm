@@ -3600,7 +3600,7 @@ int main(int argc, char* argv []) {
         }
         if (l_vnni_c > 0) {
           if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 || l_gemm_def.c_type == LIBXSMM_DATATYPE_F16 ) {
-            if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.c_type) == 4 ) {
+            if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.c_type) == 4 && (l_gemm_def.n % 4 == 0)) {
               convert_output_to_vnni4(&l_gemm_def, l_c_gold);
             } else {
               convert_output_to_vnni2(&l_gemm_def, l_c_gold);
@@ -3648,7 +3648,7 @@ int main(int argc, char* argv []) {
       {
         if (l_vnni_c > 0) {
           if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF16 || l_gemm_def.c_type == LIBXSMM_DATATYPE_F16) {
-            if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.c_type) == 4 ) {
+            if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.c_type) == 4 && (l_gemm_def.n % 4 == 0)) {
               error = check_matrix( l_gemm_def.c_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );
             } else {
               error = check_matrix( l_gemm_def.c_type, l_c_gold, l_c, l_ldc*2, l_m*2, l_n/2 );
