@@ -190,18 +190,17 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                 if (LIBXSMM_CPUID_CHECK(ebx, 0xC0020000)) { /* AVX512-Core */
                   if (LIBXSMM_CPUID_CHECK(ecx2, 0x00000800)) { /* VNNI */
                     unsigned int edx2; /* we need to save edx for AMX check */
-# if 0 /* no check required yet */
-                    unsigned int ecx3;
-                    LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx3, edx);
-# else
                     LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx2, edx2);
-# endif
                     if (LIBXSMM_CPUID_CHECK(eax, 0x00000020)) { /* BF16 */
                       feature_cpu = LIBXSMM_X86_AVX512_CPX;
                       if (LIBXSMM_CPUID_CHECK(edx, 0x03400000)) { /* AMX-TILE, AMX-INT8, AMX-BF16 */
                         feature_cpu = LIBXSMM_X86_AVX512_SPR;
                         if (LIBXSMM_CPUID_CHECK(eax, 0x00200000)) { /* AMX-FP16 */
                           feature_cpu = LIBXSMM_X86_AVX512_GNR;
+                          LIBXSMM_CPUID_X86(0x1e, 1/*ecx*/, eax, ebx, ecx2, edx2);
+                          if (LIBXSMM_CPUID_CHECK(eax, 0x0000000f)) { /* AMX-FP8, AMX-Transpose, AMX-AVX512, AMX-TF32, AMX-MOVRS */
+                            feature_cpu = LIBXSMM_X86_AVX512_DMR;
+                          }
                         }
                       }
                     }
