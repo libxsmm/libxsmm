@@ -1668,6 +1668,8 @@ unary_xor_f32_bf8stoch_f32_eqld
 unary_xor_f32_bf8stoch_f32_gtld
 unary_xor_f32_f16_f32_eqld
 unary_xor_f32_f16_f32_gtld
+unary_xor_f32_bf16_f32_eqld
+unary_xor_f32_bf16_f32_gtld
 unary_xor_f32_hf8_f32_eqld
 unary_xor_f32_hf8_f32_gtld
 unary_xor_f64_f64_f64_eqld
