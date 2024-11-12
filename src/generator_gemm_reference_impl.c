@@ -13,7 +13,7 @@
 #include "generator_gemm_reference_impl.h"
 #include "generator_mateltwise_reference_impl.h"
 
-#if 0
+#if 1
 typedef struct libxsmm_gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -61,12 +61,121 @@ typedef struct libxsmm_gemm_def {
   unsigned int is_Abf8Bf16_gemm;
   unsigned int is_Ahf8Bbf16_gemm;
   unsigned int fuse_zpt_sub;
+
+  /* BRGEMM related fields */
+  long long stride_a;
+  long long stride_b;
+  long long *br_offs_A;
+  long long *br_offs_B;
+  void **br_addr_A;
+  void **br_addr_B;
 } libxsmm_gemm_def;
 
 typedef struct libxsmm_fusion_args {
   char *colbias;
   char *relu_bitmask;
 } libxsmm_fusion_args;
+
+LIBXSMM_API_INTERN
+void libxsmm_calculate_brgemm_offsets(void **a_addr, void **b_addr, long long *offs_a, long long *offs_b, long long l_r, libxsmm_gemm_def* i_gemm_def) {
+  if (i_gemm_def->br_type == 1) {
+    *a_addr = i_gemm_def->br_addr_A[l_r];
+    *b_addr = i_gemm_def->br_addr_B[l_r];
+    *offs_a = 0;
+    *offs_b = 0;
+  } else if (i_gemm_def->br_type == 2) {
+    *offs_a = (i_gemm_def->br_offs_A[l_r])/LIBXSMM_TYPESIZE(i_gemm_def->a_type);
+    *offs_b = (i_gemm_def->br_offs_B[l_r])/LIBXSMM_TYPESIZE(i_gemm_def->b_type);
+  } else if (i_gemm_def->br_type == 3) {
+    *offs_a = i_gemm_def->stride_a * l_r;
+    *offs_b = i_gemm_def->stride_b * l_r;
+  } else {
+    *offs_a = 0;
+    *offs_b = 0;
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
+  libxsmm_gemm_def l_gemm_def;
+  libxsmm_gemm_ext_param *gemm_param_ext = (libxsmm_gemm_ext_param*)param;
+  libxsmm_gemm_param *gemm_param = (libxsmm_gemm_param*)param;
+  libxsmm_datatype l_dtype_a = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_dtype_b = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_dtype_c = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_dtype_comp = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  libxsmm_blasint l_lda = i_xgemm_desc->lda, l_ldb = i_xgemm_desc->ldb, l_ldc = i_xgemm_desc->ldc;
+  libxsmm_blasint l_m = i_xgemm_desc->m, l_n = i_xgemm_desc->n, l_k = i_xgemm_desc->k;
+  int l_aligned_a = 1;
+  int l_aligned_c = 1;
+  int l_trans_a = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ? 1 : 0;
+  int l_trans_b = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 1 : 0;
+  int l_vnni_a = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 0;
+  int l_vnni_b = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) ? 1 : 0;
+  int l_vnni_c = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_C) > 0) ? 1 : 0;
+  double l_alpha = 1.0;
+  double l_beta = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0) > 0) ? 0.0 : 1.0;
+  int l_br = (int) (*(unsigned long long*)gemm_param->op.tertiary);
+  int l_br_type = 0;
+  int l_binary_postop = 0;
+  int l_unary_postop = 0;
+  libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
+    l_br_type = 1;
+    l_gemm_def.br_addr_A = (void**)gemm_param->a.primary;
+    l_gemm_def.br_addr_B = (void**)gemm_param->b.primary;
+  } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
+    l_br_type = 2;
+    l_gemm_def.br_offs_A = (long long *)gemm_param->a.secondary;
+    l_gemm_def.br_offs_B = (long long *)gemm_param->b.secondary;
+  } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
+    l_br_type = 3;
+    l_gemm_def.stride_a = i_xgemm_desc->c1/LIBXSMM_TYPESIZE(l_dtype_a);
+    l_gemm_def.stride_b = i_xgemm_desc->c2/LIBXSMM_TYPESIZE(l_dtype_b);
+  } else {
+    l_br_type = 0;
+    l_br = 1;
+  }
+
+  l_gemm_def.is_Ai4Bf16_gemm = 0;
+  l_gemm_def.is_Ai4Bi8_gemm = 0;
+  l_gemm_def.is_Amxfp4Bbf16_gemm = 0;
+  l_gemm_def.is_Amxfp4Bfp32_gemm = 0;
+  l_gemm_def.is_Abf8Bbf16_gemm = 0;
+  l_gemm_def.is_Abf8Bf16_gemm = 0;
+  l_gemm_def.is_Ahf8Bbf16_gemm = 0;
+  /* setting static GEMM parameters */
+  l_gemm_def.m = l_m;
+  l_gemm_def.n = l_n;
+  l_gemm_def.k = l_k;
+  l_gemm_def.lda = l_lda;
+  l_gemm_def.ldb = l_ldb;
+  l_gemm_def.ldc = l_ldc;
+  l_gemm_def.a_type = l_dtype_a;
+  l_gemm_def.b_type = l_dtype_b;
+  l_gemm_def.comp_type = l_dtype_comp;
+  l_gemm_def.c_type = l_dtype_c;
+  l_gemm_def.alpha = l_alpha;
+  l_gemm_def.beta = l_beta;
+  l_gemm_def.trans_a = l_trans_a;
+  l_gemm_def.trans_b = l_trans_b;
+  l_gemm_def.vnni_a = l_vnni_a;
+  l_gemm_def.vnni_b = l_vnni_b;
+  l_gemm_def.vnni_c = l_vnni_c;
+  l_gemm_def.aligned_a = l_aligned_a;
+  l_gemm_def.aligned_c = l_aligned_c;
+  l_gemm_def.prefetch = l_prefetch;
+  l_gemm_def.br_type = l_br_type;
+  l_gemm_def.br_count = l_br;
+  l_gemm_def.binary_postop = l_binary_postop;
+  l_gemm_def.unary_postop  = l_unary_postop;
+
+
+  *i_gemm_def = l_gemm_def;
+  return;
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, const void* b, void* c ) {
@@ -77,7 +186,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
   libxsmm_blasint m = i_gemm_def->m;
   libxsmm_blasint n = i_gemm_def->n;
   libxsmm_blasint k = i_gemm_def->k;
-
+  long long offs_a = 0;
+  long long offs_b = 0;
   if ( (i_gemm_def->a_type    == LIBXSMM_DATATYPE_F64) &&
        (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F64) &&
        (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F64) &&
@@ -92,22 +202,23 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           d_c[(l_j * ldc) + l_i] = 0.0;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&d_a, (void**)&d_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < k; l_s++) {
             if (i_gemm_def->trans_b == 0) {
               if (i_gemm_def->trans_a == 0) {
-                d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   d_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                d_c[(l_j * ldc) + l_i] += d_a[offs_a + (l_s * lda) + l_i] *
+                                                   d_b[offs_b + (l_j * ldb) + l_s];
               } else {
-                d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   d_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                d_c[(l_j * ldc) + l_i] += d_a[offs_a + (l_i * lda) + l_s] *
+                                                   d_b[offs_b + (l_j * ldb) + l_s];
               } /* if-else l_trans_a */
             } else {
               if (i_gemm_def->trans_a == 0) {
-                d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   d_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+                d_c[(l_j * ldc) + l_i] += d_a[offs_a + (l_s * lda) + l_i] *
+                                                   d_b[offs_b + (l_s * ldb) + l_j];
               } else {
-                d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   d_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+                d_c[(l_j * ldc) + l_i] += d_a[offs_a + (l_i * lda) + l_s] *
+                                                   d_b[offs_b + (l_s * ldb) + l_j];
               } /* if-else l_trans_a */
             } /* if-else l_trans_b */
           }
@@ -128,22 +239,23 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           f_c[(l_j * ldc) + l_i] = 0.0f;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&f_a, (void**)&f_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < k; l_s++) {
             if (i_gemm_def->trans_b == 0) {
               if (i_gemm_def->trans_a == 0) {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                f_c[(l_j * ldc) + l_i] += f_a[offs_a + (l_s * lda) + l_i] *
+                                                   f_b[offs_b + (l_j * ldb) + l_s];
               } else {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                f_c[(l_j * ldc) + l_i] += f_a[offs_a + (l_i * lda) + l_s] *
+                                                   f_b[offs_b + (l_j * ldb) + l_s];
               } /* if-else l_trans_a */
             } else {
               if (i_gemm_def->trans_a == 0) {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+                f_c[(l_j * ldc) + l_i] += f_a[offs_a + (l_s * lda) + l_i] *
+                                                   f_b[offs_b + (l_s * ldb) + l_j];
               } else {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+                f_c[(l_j * ldc) + l_i] += f_a[offs_a + (l_i * lda) + l_s] *
+                                                   f_b[offs_b + (l_s * ldb) + l_j];
               } /* if-else l_trans_a */
             } /* if-else l_trans_b */
           }
@@ -165,10 +277,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           i_c[(l_j * ldc) + l_i] = 0;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&s_a, (void**)&s_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              i_c[(l_j * ldc) + l_i] += s_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                                        s_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              i_c[(l_j * ldc) + l_i] += s_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                        s_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -190,10 +303,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           i_c[(l_j * ldc) + l_i] = 0;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              i_c[(l_j * ldc) + l_i] += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                                        c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              i_c[(l_j * ldc) + l_i] += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                        c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -215,10 +329,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           i_c[(l_j * ldc) + l_i] = 0;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              i_c[(l_j * ldc) + l_i] += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                                        c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              i_c[(l_j * ldc) + l_i] += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                        c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -240,10 +355,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           i_c[(l_j * ldc) + l_i] = 0;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              i_c[(l_j * ldc) + l_i] += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                                        c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              i_c[(l_j * ldc) + l_i] += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                        c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -265,10 +381,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           i_c[(l_j * ldc) + l_i] = 0;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              i_c[(l_j * ldc) + l_i] += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                                        c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              i_c[(l_j * ldc) + l_i] += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                        c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -289,10 +406,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
         int tmp = 0;
         float ftmp;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              tmp += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                     c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                     c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -320,10 +438,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
         int tmp = 0;
         float ftmp;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              tmp += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                     c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                     c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -351,10 +470,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
         int tmp = 0;
         float ftmp;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              tmp += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                     c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                     c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -382,10 +502,11 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
         int tmp = 0;
         float ftmp;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              tmp += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
-                     c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp += c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                     c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -413,16 +534,17 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
       for (l_i = 0; l_i < m; l_i++) {
         float ftmp = 0.0;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&bf16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               float a_use, b_use;
-              char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               int int_a = (int) char_a;
               a_use = (float) int_a;
               a_use = a_use * i_gemm_def->scf_f32[l_i];
               libxsmm_rne_convert_fp32_bf16(&a_use, &tmp_bf16, 1);
               libxsmm_convert_bf16_f32( &tmp_bf16, &a_use, 1 );
-              tmp_bf16 = bf16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp_bf16 = bf16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               libxsmm_convert_bf16_f32( &tmp_bf16, &b_use, 1 );
               ftmp += a_use * b_use;
             }
@@ -468,17 +590,18 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
       for (l_i = 0; l_i < m; l_i++) {
         float ftmp = 0.0, b_use;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&bf8_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               union libxsmm_bfloat8_f16 tmp_a_hf;
               float tmp_a_f;
               tmp_a_hf.i[0] = 0;
-              tmp_a_hf.i[1] = bf8_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              tmp_a_hf.i[1] = bf8_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
               if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
               }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += tmp_a_f * b_use;
@@ -528,9 +651,10 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
       for (l_i = 0; l_i < m; l_i++) {
         float ftmp = 0.0, a_use, b_use;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
               int int_a = (int) char_a;
               if (l_use_replacement_fma > 0) {
@@ -554,9 +678,9 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
               }
 
               if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
               }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
@@ -599,9 +723,10 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
       for (l_i = 0; l_i < m; l_i++) {
         float ftmp = 0.0, a_use, b_use;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              char char_a = c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
               int int_a = (int) char_a;
               if (l_use_replacement_fma > 0) {
@@ -624,9 +749,9 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
                 libxsmm_convert_f16_f32( &c_tmp, &a_use, 1 );
               }
               if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
               }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
@@ -669,14 +794,15 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
       for (l_i = 0; l_i < m; l_i++) {
         float ftmp = 0.0, a_use, b_use;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&f16_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              cur_a = f16_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              cur_a = f16_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
               }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
@@ -719,14 +845,15 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
       for (l_i = 0; l_i < m; l_i++) {
         float ftmp = 0.0, a_use, b_use;
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&f16_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              cur_a = f16_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              cur_a = f16_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               libxsmm_convert_f16_f32( &cur_a, &a_use, 1 );
               if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[(l_r * ldb * k) + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
               }
               libxsmm_convert_f16_f32( &cur_b, &b_use, 1 );
               ftmp += a_use * b_use;
@@ -761,25 +888,26 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           f_c[(l_j * ldc) + l_i] = 0.0f;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&h_a, (void**)&h_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
               union libxsmm_bfloat16_f32 tmp_a_f;
               union libxsmm_bfloat16_f32 tmp_b_f;
               tmp_a_f.i[0] = 0;
               if ( (i_gemm_def->trans_a == 0) ) {
-                tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+                tmp_a_f.i[1] = h_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               } else if ( (i_gemm_def->trans_a > 0) && ( i_gemm_def->vnni_a == 0) ) {
-                tmp_a_f.i[1] = h_a[(l_r * lda * m) + (l_i * lda) + (l_s*l_k_block) + l_k2];
+                tmp_a_f.i[1] = h_a[offs_a + (l_i * lda) + (l_s*l_k_block) + l_k2];
               } else {
                 /* should happen */
               }
               tmp_b_f.i[0] = 0;
               if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
-                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+                tmp_b_f.i[1] = h_b[offs_b + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
               } else if ( (i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b == 0) ) {
-                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (((l_s*l_k_block) + l_k2) * ldb) + l_j];
+                tmp_b_f.i[1] = h_b[offs_b + (((l_s*l_k_block) + l_k2) * ldb) + l_j];
               } else if ( (i_gemm_def->trans_b == 0) && (i_gemm_def->vnni_b == 0 ) ) {
-                tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                tmp_b_f.i[1] = h_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
                 /* should not happen */
               }
@@ -811,25 +939,26 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           acc = tmp.f;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&h_a, (void**)&h_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
               union libxsmm_bfloat16_f32 tmp_a_f;
               union libxsmm_bfloat16_f32 tmp_b_f;
               tmp_a_f.i[0] = 0;
               if ( (i_gemm_def->trans_a == 0) ) {
-                tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+                tmp_a_f.i[1] = h_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               } else if ( (i_gemm_def->trans_a > 0) && ( i_gemm_def->vnni_a == 0) ) {
-                tmp_a_f.i[1] = h_a[(l_r * lda * m) + (l_i * lda) + (l_s*l_k_block) + l_k2];
+                tmp_a_f.i[1] = h_a[offs_a + (l_i * lda) + (l_s*l_k_block) + l_k2];
               } else {
                 /* should happen */
               }
               tmp_b_f.i[0] = 0;
               if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
-                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+                tmp_b_f.i[1] = h_b[offs_b + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
               } else if ( (i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b == 0) ) {
-                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (((l_s*l_k_block) + l_k2) * ldb) + l_j];
+                tmp_b_f.i[1] = h_b[offs_b + (((l_s*l_k_block) + l_k2) * ldb) + l_j];
               } else if ( (i_gemm_def->trans_b == 0) && (i_gemm_def->vnni_b == 0 ) ) {
-                tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                tmp_b_f.i[1] = h_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
                 /* should not happen */
               }
@@ -850,6 +979,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     float*           f_c = (float*)c;
     int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+      libxsmm_calculate_brgemm_offsets((void**)&h_a, (void**)&h_b, &offs_a, &offs_b, l_r, i_gemm_def);
       for (l_j = 0; l_j < n; l_j++) {
         for (l_i = 0; l_i < m; l_i++) {
           if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
@@ -862,9 +992,9 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
               float tmp_a_f;
               float tmp_b_f;
               tmp_a_hf.i[0] = 0;
-              tmp_a_hf.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              tmp_a_hf.i[1] = h_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_b_hf.i[0] = 0;
-              tmp_b_hf.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp_b_hf.i[1] = h_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
               tmp_b_f = libxsmm_convert_f16_to_f32( tmp_b_hf.hf );
 
@@ -883,6 +1013,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     float*           f_c = (float*)c;
     int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+      libxsmm_calculate_brgemm_offsets((void**)&h_a, (void**)&h_b, &offs_a, &offs_b, l_r, i_gemm_def);
       for (l_j = 0; l_j < n; l_j++) {
         for (l_i = 0; l_i < m; l_i++) {
           if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
@@ -891,8 +1022,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               float tmp_a_f, tmp_b_f;
-              libxsmm_convert_hf8_f32(&h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2], &tmp_a_f, 1);
-              libxsmm_convert_hf8_f32(&h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2], &tmp_b_f, 1);
+              libxsmm_convert_hf8_f32(&h_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2], &tmp_a_f, 1);
+              libxsmm_convert_hf8_f32(&h_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2], &tmp_b_f, 1);
               f_c[(l_j * ldc) + l_i] += tmp_a_f * tmp_b_f;
             }
           }
@@ -920,6 +1051,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           acc = libxsmm_convert_f16_to_f32( tmp_c_hf.hf );
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&h_a, (void**)&h_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               union libxsmm_bfloat8_f16 tmp_a_hf;
@@ -927,9 +1059,9 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
               float tmp_a_f;
               float tmp_b_f;
               tmp_a_hf.i[0] = 0;
-              tmp_a_hf.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              tmp_a_hf.i[1] = h_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_b_hf.i[0] = 0;
-              tmp_b_hf.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp_b_hf.i[1] = h_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
               tmp_b_f = libxsmm_convert_f16_to_f32( tmp_b_hf.hf );
 
@@ -961,12 +1093,13 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
           acc = tmp_c_f;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&h_a, (void**)&h_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               float tmp_a_f;
               float tmp_b_f;
-              libxsmm_convert_hf8_f32(&h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2], &tmp_a_f, 1);
-              libxsmm_convert_hf8_f32(&h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2], &tmp_b_f, 1);
+              libxsmm_convert_hf8_f32(&h_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2], &tmp_a_f, 1);
+              libxsmm_convert_hf8_f32(&h_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2], &tmp_b_f, 1);
               acc += tmp_a_f * tmp_b_f;
             }
           }
@@ -982,6 +1115,14 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
 
 LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
-  printf("Hello world\n");
+#if defined(USE_GEMM_EXT_FRONTEND)
+  libxsmm_gemm_ext_param gemm_param;
+#else
+  libxsmm_gemm_param *gemm_param = (libxsmm_gemm_param*)param;
+#endif
+  libxsmm_gemm_def l_gemm_def;
+  libxsmm_setup_gemm_def(&l_gemm_def, param, i_xgemm_desc);
+  libxsmm_ref_matmul( &l_gemm_def, (const void*) gemm_param->a.primary, (const void*) gemm_param->b.primary, (void*) gemm_param->c.primary);
+  return;
 }
 
