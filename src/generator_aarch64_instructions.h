@@ -487,6 +487,24 @@
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
+#define LIBXSMM_AARCH64_INSTR_SVE2_WHILELT       0x25204410
+
+/* define SME instructions */
+#define LIBXSMM_AARCH64_INSTR_SME_FMOPA_SP                    0x80800000 /* compute outer product */
+#define LIBXSMM_AARCH64_INSTR_SME_SMSTART                     0xd503477f /* start SVE streaming mode and za regsiter*/
+#define LIBXSMM_AARCH64_INSTR_SME_SMSTOP                      0xd503467f /* stop  SVE streaming mode and za regsiter*/
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR       0xc0860400 /* move tile to 4 vectors */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE       0xc0840400 /* move 4 vectors to tile */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR       0xc0868400 /* mova vertical */
+#define LIBXSMM_AARCH64_INSTR_SME_LD1W_2                      0xa1404000 /* 0b10100001010000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SME_LD1W_4                      0xa140c000
+#define LIBXSMM_AARCH64_INSTR_SME_ST1W_2                      0xa1604000 /* 0b10100001011000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SME_ST1W_4                      0xa160c000
+#define LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2                     0xa0404000 /* 0b10100000010000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SVE2_LD1W_4                     0xa040c000 /* 0b10100000010000001100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER           0x25207810
+#define LIBXSMM_AARCH64_INSTR_SME_FMAX_2                      0xc1a0a100
+#define LIBXSMM_AARCH64_INSTR_SME_FMAX_4                      0xc1a0a900
 
 /**
  * shift mode */
@@ -991,5 +1009,66 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
                                                      const unsigned int          i_gp_reg_cmp,
                                                      const unsigned int          i_label_no,
                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
+  * Execute sme outer-product operation
+  *
+  * @param io_generated_code pointer to the pointer of the generated code structure
+  * @param i_matrix_instr actual matrix instruction
+  * @param i_tile the tile number 0-3
+  * @param i_vec_reg_src_0 first source register
+  * @param i_vec_reg_src_1 second source register
+  * @param i_pred_reg_0 first predicate register
+  * @param i_pred_reg_1 second predicate register
+  */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generated_code,
+                                              unsigned int            i_matrix_instr,
+                                              unsigned int            i_tile,
+                                              unsigned int            i_vec_reg_src_0,
+                                              unsigned int            i_vec_reg_src_1,
+                                              unsigned int            i_pred_reg_0,
+                                              unsigned int            i_pred_reg_1 );
+/**
+  * mov streaming sve register
+  **/
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_code,
+                                          unsigned int            i_instr,
+                                          unsigned int            i_vec_reg,
+                                          unsigned int            i_gp_reg,
+                                          unsigned int            i_imm4,
+                                          unsigned int            i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_code,
+                                           unsigned int            i_instr,
+                                           unsigned int            i_tile,
+                                           unsigned int            i_index_reg,
+                                           unsigned int            i_vec_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sm( libxsmm_generated_code* io_generated_code,
+                                     unsigned int            i_instr );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_code* io_generated_code,
+                                                            unsigned int            i_instr,
+                                                            unsigned int            i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_code,
+                                           unsigned int             i_instr,
+                                           unsigned int             i_vec_src_reg_0,
+                                           unsigned int             i_vec_src_dst_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_set_predication_as_counter( libxsmm_generated_code* io_generated_code,
+                                                             unsigned int             i_instr,
+                                                             unsigned int             i_pred_reg,
+                                                             unsigned int             i_gp_reg_0,
+                                                             unsigned int             i_vl,
+                                                             unsigned int             i_gp_reg_1,
+                                                             unsigned int             i_size );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */

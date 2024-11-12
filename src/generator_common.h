@@ -1536,6 +1536,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int hf8_gemm_via_stack_alloc_tensors;
   unsigned int atrans_gemm_stack_alloc_tensors;
   unsigned int avnni_gemm_stack_alloc_tensors;
+  unsigned int avnni_gemm_sw_pipeline;
   unsigned int atvnni_gemm_stack_alloc_tensors;
   unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
@@ -2044,7 +2045,10 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32,
   LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33,
   LIBXSMM_GEMM_STACK_VAR_SCF_BRGEMM_PTR         = 34,
-  LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35
+  LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35,
+  LIBXSMM_GEMM_STACK_VAR_BSCALE_PTR             = 36,
+  LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37
+
 } libxsmm_gemm_stack_var;
 
 #if 0
