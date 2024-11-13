@@ -2154,7 +2154,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   LIBXSMM_ASSERT(NULL != code && NULL == code->ptr_const);
   LIBXSMM_ASSERT(0 == LIBXSMM_DESCRIPTOR_ISBIG(request->kind));
 
+#if 0
   printf("Request kind %d\n", request->kind);
+#endif
 
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */

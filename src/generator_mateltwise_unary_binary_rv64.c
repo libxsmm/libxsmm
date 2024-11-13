@@ -533,7 +533,9 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
             i_gp_reg_mapping->gp_reg_in, ((long long)l_ld_bytes - l_m_adjust));
     }
     else if (bcast_row == 1){
+#if 0
         printf("In load2d %d %d\n", l_ld_bytes, i_micro_kernel_config->datatype_size_in);
+#endif
 #if 0
         if ( l_ld_bytes != i_micro_kernel_config->datatype_size_in ) {
 #endif
@@ -1586,8 +1588,9 @@ void libxsmm_compute_binary_rv64_2d_reg_block( libxsmm_generated_code*          
   unsigned int l_m_adjust_in2 = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in1 * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in1 * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   unsigned int offset2 = 0;
   unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
-
+#if 0
   printf("In binary compute %d\n", i_mateltwise_desc->param);
+#endif
 
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
@@ -1821,8 +1824,10 @@ void libxsmm_compute_unary_binary_rv64_2d_reg_block( libxsmm_generated_code*    
                                                         unsigned int                            i_n_blocking,
                                                         unsigned int                            i_mask_last_m_chunk,
                                                         unsigned int                            i_mask_reg) {
+#if 0
   printf("In compute %d %d\n", i_mateltwise_desc->operation, i_mateltwise_desc->param);
   fflush(stdout);
+#endif
 
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {
     switch (i_mateltwise_desc->param) {
@@ -1839,9 +1844,10 @@ void libxsmm_compute_unary_binary_rv64_2d_reg_block( libxsmm_generated_code*    
       case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:
       case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT:
       case LIBXSMM_MELTW_TYPE_UNARY_X2: {
+#if 0
         printf("Calling OP_X2\n");
         fflush(stdout);
-
+#endif
         libxsmm_compute_unary_rv64_2d_reg_block_op( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
             i_vlen, i_start_vreg, i_m_blocking, i_n_blocking, i_mask_last_m_chunk, i_mask_reg);
       } break;
@@ -1898,8 +1904,9 @@ void libxsmm_setup_input_output_rv64_masks( libxsmm_generated_code*             
   *i_use_m_input_masking = i_m % i_vlen_in;
   *i_mask_reg_out = 0;
   *i_use_m_output_masking = i_m % i_vlen_out;
-
+#if 0
   printf("IO masking %u %u %u %u\n", i_m, i_vlen_out, *i_use_m_input_masking, *i_use_m_output_masking);
+#endif
 
   if ( l_is_sve ) {
     /* reserving predicate 0 and 1 for ptrue and remainder (when loading/storing) */
@@ -1956,10 +1963,10 @@ void libxsmm_configure_microkernel_rv64_loops( libxsmm_generated_code*          
   if (m_unroll_factor > max_nm_unrolling) {
     m_unroll_factor = max_nm_unrolling;
   }
-
+#if 0
   printf("Vlen for loop config vlen=%d m=%d n-trip=%d m-trips=%d n-unroll=%d m-unroll=%d\n",
     i_vlen_in, i_m, n_trips, m_trips, m_unroll_factor, m_unroll_factor);
-
+#endif
   while (m_trips % m_unroll_factor != 0) {
     m_unroll_factor--;
   }
@@ -1975,10 +1982,10 @@ void libxsmm_configure_microkernel_rv64_loops( libxsmm_generated_code*          
 
   m_assm_trips = m_trips/m_unroll_factor;
   n_assm_trips = n_trips/n_unroll_factor;
-
+#if 0
   printf("Vlen for loop config vlen=%d m=%d n-trip=%d m-trips=%d n-unroll=%d m-unroll=%d\n",
     i_vlen_in, i_m, n_trips, m_trips, n_unroll_factor, m_unroll_factor);
-
+#endif
   out_loop_trips      = (i_loop_order == NM_LOOP_ORDER) ? n_assm_trips : m_assm_trips;
   out_loop_bound      = (i_loop_order == NM_LOOP_ORDER) ? n_trips : m_trips;
   out_loop_reg        = (i_loop_order == NM_LOOP_ORDER) ? i_gp_reg_mapping->gp_reg_n_loop : i_gp_reg_mapping->gp_reg_m_loop;
@@ -2766,10 +2773,10 @@ void libxsmm_generator_unary_rv64_binary_2d_microkernel( libxsmm_generated_code*
 #if 0
   reserved_zmms = i_micro_kernel_config->reserved_zmms;
 #endif
-
+#if 0
   printf("Generating micro kernels\n");
   fflush(stdout);
-
+#endif
   /* Configure microkernel loops */
   libxsmm_configure_microkernel_rv64_loops( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, i_m, i_n, use_m_input_masking,
     &m_trips, &n_trips, &m_unroll_factor, &n_unroll_factor, &m_assm_trips, &n_assm_trips,

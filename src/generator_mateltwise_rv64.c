@@ -269,10 +269,10 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   libxsmm_generator_unary_binary_rv64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
 
   libxsmm_generator_meltw_destroy_stack_frame_rv64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
-
+#if 0
   printf("Generated RV64 kernels\n");
   fflush(stdout);
-
+#endif
   /* close asm */
   libxsmm_rv64_instruction_close_stream( io_generated_code, 0xe0f );
 }

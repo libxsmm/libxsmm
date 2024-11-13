@@ -790,8 +790,9 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
   l_m_blocks[1] = (l_remainder_size > 0);
   l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * l_datatype_size;
-
+#if 0
   printf("In load 2dregblock %d %d %d\n", l_m_total_blocks, i_m_blocking, i_n_blocking);
+#endif
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
@@ -2043,9 +2044,10 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
     }
 
     l_jump_block_m_last += (long long)i_ld - l_m_bytes_full;
-
+#if 0
     printf("store offset %lld %d %d %d %d\n", l_jump_block_m_last, i_ld, l_m_bytes_full, l_m_blocks[0], i_vec_length);
     fflush(stdout);
+#endif
 
     if ( l_n != i_n_blocking - 1 ) {
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,

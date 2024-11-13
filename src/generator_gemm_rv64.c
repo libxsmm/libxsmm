@@ -53,8 +53,9 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   static int fp_regid[MAX_FP_REG] = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 28, 29, 30, 31};
 
   unsigned int u_loop_index_local = 0;
-
+#if 0
   printf("Kernel called with blocking m=%d n=%d vl=%d\n", i_m_blocking, i_n_blocking, i_micro_kernel_config->vector_length);
+#endif
 
   LIBXSMM_UNUSED(l_b_load_instr);
   LIBXSMM_UNUSED(l_b_load_bcast_instr);
@@ -445,7 +446,9 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
   /* select micro kernel based on rv64 variant */
   l_generator_microkernel = libxsmm_generator_gemm_rv64_microkernel_rvv;
 
+#if 0
   printf("In kloop %d %d \n", i_xgemm_desc->k, l_k_blocking);
+#endif
 
   /* apply multiple k_blocking strategies */
   /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
@@ -472,7 +475,11 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
                                                    i_xgemm_desc, i_m_blocking, i_n_blocking);
 
 #endif
+
+#if 0
       printf("generating micro kernel\n");
+#endif
+
       /* TODO (MMLA): strided k loop breaks with original idea */
       for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k+=l_k_stride ) {
         l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking);
@@ -489,7 +496,9 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
       if ( l_max_blocked_k > 0 ) {
         libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, l_max_blocked_k );
 
+#if 0
         printf("In kloop %d %d %d\n", i_xgemm_desc->k, l_k_blocking, l_k_stride);
+#endif
 
         /* TODO (MMLA): strided k loop breaks with original idea */
         for ( l_k = 0; l_k < l_k_blocking; l_k+=l_k_stride ) {
@@ -704,8 +713,9 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
     /* apply m_blocking */
     while (l_m_done != (unsigned int)l_xgemm_desc_opa->m) {
+#if 0
       printf("In mblock of size %d blocking of size %d\n", l_m_blocking, l_n_blocking);
-
+#endif
       if ( l_m_blocking == 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
         return;

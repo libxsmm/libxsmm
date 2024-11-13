@@ -1180,9 +1180,10 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
                                           const unsigned int      i_gp_reg_src_1,
                                           const unsigned int      i_gp_reg_src_2,
                                           const int               i_imm ) {
+#if 0
   printf("Received imm for jmp = %d %d\n", i_imm, (abs(i_imm) > 0x7ff));
   fflush(stdout);
-
+#endif
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1236,8 +1237,9 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
         i_sign = 1;
         a_imm = (~abs(i_imm) + 1) & 0x7ff;
       }
-
+#if 0
       printf("Jump immediate %d %x\n", a_imm, a_imm);
+#endif
 
       /* Generate immediate */
       imm_lo = ((a_imm >> 10) & 0x1) | ((a_imm & 0xf) << 1);
@@ -1552,11 +1554,12 @@ void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code* 
     int l_lab = io_loop_label_tracker->label_count;
     io_loop_label_tracker->label_count++;
     io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
-
+#if 0
     printf("Added a new label\n");
     printf("Label count %d\n", io_loop_label_tracker->label_count);
     printf("Label address %d\n", io_loop_label_tracker->label_address[l_lab]);
     fflush(stdout);
+#endif
   } else {
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
