@@ -1551,6 +1551,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_DMR:
     case LIBXSMM_X86_AVX512_GNR:
     case LIBXSMM_X86_AVX512_SPR:
     case LIBXSMM_X86_AVX512_CPX:
@@ -1637,6 +1638,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
       target_archid = LIBXSMM_X86_AVX512_VL256_SKX;
+    }
+    else if (arch == libxsmm_stristr(arch, "dmr")) {
+      target_archid = LIBXSMM_X86_AVX512_DMR;
     }
     else if (arch == libxsmm_stristr(arch, "gnr")) {
       target_archid = LIBXSMM_X86_AVX512_GNR;

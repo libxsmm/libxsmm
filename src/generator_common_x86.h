@@ -877,6 +877,12 @@ void libxsmm_generator_cvt_to_ps_avx512( libxsmm_generated_code* io_generated_co
                                                   const unsigned int      i_vec_reg,
                                                   const unsigned int      o_vec_reg );
 LIBXSMM_API_INTERN
+void libxsmm_generator_cvt_from_ps_avx512( libxsmm_generated_code* io_generated_code,
+                                                  const char              i_vname,
+                                                  libxsmm_datatype        i_out_prec,
+                                                  const unsigned int      i_vec_reg,
+                                                  const unsigned int      o_vec_reg );
+LIBXSMM_API_INTERN
 void libxsmm_generator_cvthf8ps_avx512( libxsmm_generated_code* io_generated_code,
                                          const char              i_vname,
                                          const unsigned int      i_vec_reg,

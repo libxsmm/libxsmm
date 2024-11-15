@@ -581,7 +581,7 @@ void test_tile_move( char* test_name, libxsmm_generated_code* mycode, unsigned i
   dump_code_buffer( mycode, test_name );
 }
 
-void test_tile_compute( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+void test_tile_compute( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int twoops ) {
   unsigned int t;
 
   reset_code_buffer( mycode, test_name );
@@ -589,11 +589,39 @@ void test_tile_compute( char* test_name, libxsmm_generated_code* mycode, unsigne
   for (t = 0; t < 8; ++t ) {
     libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, t, 0, 0 );
   }
-  for (t = 0; t < 8; ++t ) {
-    libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, 0, t, 0 );
+  if ( !twoops ) {
+    for (t = 0; t < 8; ++t ) {
+      libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, 0, t, 0 );
+    }
   }
   for (t = 0; t < 8; ++t ) {
     libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, 0, 0, t );
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
+void test_tile_extract( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int i;
+  unsigned int t;
+  unsigned int z;
+  unsigned int g;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (i = 0; i < 16; ++i ) {
+    for (t = 0; t < 8; ++t ) {
+      for (z = 0; z < 32; ++z ) {
+        libxsmm_x86_instruction_tile_extract( mycode, mycode->arch, instr, t, i, LIBXSMM_X86_GP_REG_UNDEF, z );
+      }
+    }
+  }
+  for (g = 0; g < 16; ++g ) {
+    for (t = 0; t < 8; ++t ) {
+      for (z = 0; z < 32; ++z ) {
+        libxsmm_x86_instruction_tile_extract( mycode, mycode->arch, instr, t, 0, g, z );
+      }
+    }
   }
 
   dump_code_buffer( mycode, test_name );
@@ -715,7 +743,7 @@ int main( /*int argc, char* argv[]*/ ) {
   /* init generated code object */
   mycode.generated_code = codebuffer;
   mycode.buffer_size = 8388608;
-  mycode.arch = LIBXSMM_X86_AVX512_GNR;
+  mycode.arch = LIBXSMM_X86_AVX512_DMR;
 
   /* testing ld/st instructions */
   test_evex_load_store( "evex_mov_VMOVAPD", &mycode, LIBXSMM_X86_INSTR_VMOVAPD, 3 );
@@ -1057,6 +1085,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VPSUBB", &mycode, LIBXSMM_X86_INSTR_VPSUBB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPMAXSD", &mycode, LIBXSMM_X86_INSTR_VPMAXSD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPMAXSW", &mycode, LIBXSMM_X86_INSTR_VPMAXSW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPMAXSB", &mycode, LIBXSMM_X86_INSTR_VPMAXSB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPMINSD", &mycode, LIBXSMM_X86_INSTR_VPMINSD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPDPBUSD", &mycode, LIBXSMM_X86_INSTR_VPDPBUSD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPDPBUSDS", &mycode, LIBXSMM_X86_INSTR_VPDPBUSDS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
@@ -1163,6 +1192,22 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VSUBPH", &mycode, LIBXSMM_X86_INSTR_VSUBPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VSUBSH", &mycode, LIBXSMM_X86_INSTR_VSUBSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VCVTW2PH", &mycode, LIBXSMM_X86_INSTR_VCVTW2PH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+
+  /* DME NE Converts */
+  test_evex_compute_3reg_general( "evex_reg_VCVTBIASPH2BF8", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2BF8, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTBIASPH2BF8S", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2BF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTBIASPH2HF8", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2HF8, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTBIASPH2HF8S", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2HF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNEPH2BF8", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2BF8, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNEPH2BF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2BF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNEPH2HF8", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2HF8, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNEPH2HF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2HF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNE2PH2BF8", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2BF8, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNE2PH2BF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2BF8S, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNE2PH2HF8", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2HF8, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNE2PH2HF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2HF8S, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVT2PS2PHX", &mycode, LIBXSMM_X86_INSTR_VCVT2PS2PHX, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCVTNEHF82PH", &mycode, LIBXSMM_X86_INSTR_VCVTNEHF82PH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
 
   /* VEX only encodings, even on EVEX machine */
   test_vex_compute_3reg_general( "vex_reg_VPERM2F128", &mycode, LIBXSMM_X86_INSTR_VPERM2F128, 0, 0x01, 0 );
@@ -1288,7 +1333,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_compute_mem_2reg_general( "vex_mem_VCVTNEPS2BF16", &mycode, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
 
   /* testing compute mem-reg instructions */
-  mycode.arch = LIBXSMM_X86_AVX512_GNR;
+  mycode.arch = LIBXSMM_X86_AVX512_DMR;
   test_evex_compute_mem_2reg_general( "evex_mem_VSHUFPS", &mycode, LIBXSMM_X86_INSTR_VSHUFPS, 2, 0x01, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VSHUFPD", &mycode, LIBXSMM_X86_INSTR_VSHUFPD, 2, 0x01, 32, 0, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSHUFB", &mycode, LIBXSMM_X86_INSTR_VPSHUFB, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
@@ -1518,6 +1563,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VPSUBB", &mycode, LIBXSMM_X86_INSTR_VPSUBB, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPMAXSD", &mycode, LIBXSMM_X86_INSTR_VPMAXSD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPMAXSW", &mycode, LIBXSMM_X86_INSTR_VPMAXSW, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPMAXSB", &mycode, LIBXSMM_X86_INSTR_VPMAXSB, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPMINSD", &mycode, LIBXSMM_X86_INSTR_VPMINSD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPDPBUSD", &mycode, LIBXSMM_X86_INSTR_VPDPBUSD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPDPBUSDS", &mycode, LIBXSMM_X86_INSTR_VPDPBUSDS, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
@@ -1615,6 +1661,22 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VPINSRQ", &mycode, LIBXSMM_X86_INSTR_VPINSRQ, 2, 0x01, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPERMQ", &mycode, LIBXSMM_X86_INSTR_VPERMQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
 
+  /* DMR Converts */
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTBIASPH2BF8", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2BF8, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTBIASPH2BF8S", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2BF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTBIASPH2HF8", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2HF8, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTBIASPH2HF8S", &mycode, LIBXSMM_X86_INSTR_VCVTBIASPH2HF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNEPH2BF8", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2BF8, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNEPH2BF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2BF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNEPH2HF8", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2HF8, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNEPH2HF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNEPH2HF8S, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNE2PH2BF8", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2BF8, 2, LIBXSMM_X86_IMM_UNDEF, 32, 1, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNE2PH2BF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2BF8S, 2, LIBXSMM_X86_IMM_UNDEF, 32, 1, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNE2PH2HF8", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2HF8, 2, LIBXSMM_X86_IMM_UNDEF, 32, 1, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNE2PH2HF8S", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PH2HF8S, 2, LIBXSMM_X86_IMM_UNDEF, 32, 1, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVTNEHF82PH", &mycode, LIBXSMM_X86_INSTR_VCVTNEHF82PH, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VCVT2PS2PHX", &mycode, LIBXSMM_X86_INSTR_VCVT2PS2PHX, 2, LIBXSMM_X86_IMM_UNDEF, 32, 1, 0 );
+
   /* testing AVX512 masking */
   test_mask_move( "mask_move_KMOVB_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVB_GPR_LD );
   test_mask_move( "mask_move_KMOVW_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVW_GPR_LD );
@@ -1695,14 +1757,47 @@ int main( /*int argc, char* argv[]*/ ) {
   test_tile_move( "tile_mov_TILELOADDT1", &mycode, LIBXSMM_X86_INSTR_TILELOADDT1 );
   test_tile_move( "tile_mov_TILESTORED", &mycode, LIBXSMM_X86_INSTR_TILESTORED );
   test_tile_move( "tile_mov_TILEZERO", &mycode, LIBXSMM_X86_INSTR_TILEZERO );
+  test_tile_move( "tile_mov_T2RPNTLVWZ0", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0 );
+  test_tile_move( "tile_mov_T2RPNTLVWZ0T1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1 );
+  test_tile_move( "tile_mov_T2RPNTLVWZ1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ1 );
+  test_tile_move( "tile_mov_T2RPNTLVWZ1T1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ1T1 );
+  test_tile_move( "tile_mov_TILELOADDRS", &mycode, LIBXSMM_X86_INSTR_TILELOADDRS );
+  test_tile_move( "tile_mov_TILELOADDRST1", &mycode, LIBXSMM_X86_INSTR_TILELOADDRST1 );
+  test_tile_move( "tile_mov_T2RPNTLVWZ0RS", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS );
+  test_tile_move( "tile_mov_T2RPNTLVWZ0RST1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0RST1 );
+  test_tile_move( "tile_mov_T2RPNTLVWZ1RS", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ1RS );
+  test_tile_move( "tile_mov_T2RPNTLVWZ1RST1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ1RST1 );
 
   /* testing tile compute */
-  test_tile_compute( "tile_reg_TDPBSSD", &mycode, LIBXSMM_X86_INSTR_TDPBSSD );
-  test_tile_compute( "tile_reg_TDPBSUD", &mycode, LIBXSMM_X86_INSTR_TDPBSUD );
-  test_tile_compute( "tile_reg_TDPBUSD", &mycode, LIBXSMM_X86_INSTR_TDPBUSD );
-  test_tile_compute( "tile_reg_TDPBUUD", &mycode, LIBXSMM_X86_INSTR_TDPBUUD );
-  test_tile_compute( "tile_reg_TDPBF16PS", &mycode, LIBXSMM_X86_INSTR_TDPBF16PS );
-  test_tile_compute( "tile_reg_TDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TDPFP16PS );
+  test_tile_compute( "tile_reg_TDPBSSD", &mycode, LIBXSMM_X86_INSTR_TDPBSSD, 0 );
+  test_tile_compute( "tile_reg_TDPBSUD", &mycode, LIBXSMM_X86_INSTR_TDPBSUD, 0 );
+  test_tile_compute( "tile_reg_TDPBUSD", &mycode, LIBXSMM_X86_INSTR_TDPBUSD, 0 );
+  test_tile_compute( "tile_reg_TDPBUUD", &mycode, LIBXSMM_X86_INSTR_TDPBUUD, 0 );
+  test_tile_compute( "tile_reg_TDPBF8PS", &mycode, LIBXSMM_X86_INSTR_TDPBF8PS, 0 );
+  test_tile_compute( "tile_reg_TDPHBF8PS", &mycode, LIBXSMM_X86_INSTR_TDPHBF8PS, 0 );
+  test_tile_compute( "tile_reg_TDPBHF8PS", &mycode, LIBXSMM_X86_INSTR_TDPBHF8PS, 0 );
+  test_tile_compute( "tile_reg_TDPHF8PS", &mycode, LIBXSMM_X86_INSTR_TDPHF8PS, 0 );
+  test_tile_compute( "tile_reg_TDPBF16PS", &mycode, LIBXSMM_X86_INSTR_TDPBF16PS, 0 );
+  test_tile_compute( "tile_reg_TTDPBF16PS", &mycode, LIBXSMM_X86_INSTR_TTDPBF16PS, 0 );
+  test_tile_compute( "tile_reg_TDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TDPFP16PS, 0 );
+  test_tile_compute( "tile_reg_TTDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TTDPFP16PS, 0 );
+  test_tile_compute( "tile_reg_TMMULTF32PS", &mycode, LIBXSMM_X86_INSTR_TMMULTF32PS, 0 );
+  test_tile_compute( "tile_reg_TTMMULTF32PS", &mycode, LIBXSMM_X86_INSTR_TTMMULTF32PS, 0 );
+  test_tile_compute( "tile_reg_TCMMIMFP16PS", &mycode, LIBXSMM_X86_INSTR_TCMMIMFP16PS, 0 );
+  test_tile_compute( "tile_reg_TCMMRLFP16PS", &mycode, LIBXSMM_X86_INSTR_TCMMRLFP16PS, 0 );
+  test_tile_compute( "tile_reg_TCONJTCMMIMFP16PS", &mycode, LIBXSMM_X86_INSTR_TCONJTCMMIMFP16PS, 0 );
+  test_tile_compute( "tile_reg_TCONJTFP16", &mycode, LIBXSMM_X86_INSTR_TCONJTFP16, 0 );
+  test_tile_compute( "tile_reg_TTCMMIMFP16PS", &mycode, LIBXSMM_X86_INSTR_TTCMMIMFP16PS, 0 );
+  test_tile_compute( "tile_reg_TTCMMRLFP16PS", &mycode, LIBXSMM_X86_INSTR_TTCMMRLFP16PS, 0 );
+  test_tile_compute( "tile_reg_TTRANSPOSED", &mycode, LIBXSMM_X86_INSTR_TTRANSPOSED, 1 );
+
+  /* testing tile extract */
+  test_tile_extract( "tile_zmm_TCVTROWD2PS", &mycode, LIBXSMM_X86_INSTR_TCVTROWD2PS );
+  test_tile_extract( "tile_zmm_TCVTROWPS2BF16L", &mycode, LIBXSMM_X86_INSTR_TCVTROWPS2BF16L );
+  test_tile_extract( "tile_zmm_TCVTROWPS2BF16H", &mycode, LIBXSMM_X86_INSTR_TCVTROWPS2BF16H );
+  test_tile_extract( "tile_zmm_TCVTROWPS2PHL", &mycode, LIBXSMM_X86_INSTR_TCVTROWPS2PHL );
+  test_tile_extract( "tile_zmm_TCVTROWPS2PHH", &mycode, LIBXSMM_X86_INSTR_TCVTROWPS2PHH );
+  test_tile_extract( "tile_zmm_TILEMOVROW", &mycode, LIBXSMM_X86_INSTR_TILEMOVROW );
 
   /* AVX only tests */
   mycode.arch = LIBXSMM_X86_AVX2_SRF;
