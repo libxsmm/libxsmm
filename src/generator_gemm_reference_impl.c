@@ -241,6 +241,9 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
            (l_dtype_c == LIBXSMM_DATATYPE_BF16 || l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
         l_gemm_def.scf_f32 =  (float*)gemm_param->a.tertiary;
     }
+    if ( l_dtype_a == LIBXSMM_DATATYPE_I8 && l_dtype_b == LIBXSMM_DATATYPE_I8 && l_dtype_c == LIBXSMM_DATATYPE_F32 ) {
+      l_gemm_def.scf =  *((float*)gemm_param->c.tertiary);
+    }
   } else {
 
   }
