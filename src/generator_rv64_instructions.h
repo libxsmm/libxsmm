@@ -2023,6 +2023,7 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
                                                const unsigned short    i_callee_save_bitmask );
 
+#if 0
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_data( libxsmm_generated_code*     io_generated_code,
                                              libxsmm_const_data_tracker* io_const_data );
@@ -2040,6 +2041,7 @@ unsigned int libxsmm_rv64_instruction_add_data( libxsmm_generated_code*     io_g
                                                    unsigned int                i_alignment,
                                                    unsigned int                i_append_only,
                                                    libxsmm_const_data_tracker* io_const_data );
+#endif
 
 
 /**
