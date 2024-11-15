@@ -655,8 +655,8 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
   unsigned int l_gp_reg_bias = i_gp_reg_scratch0;
   unsigned int l_bias_tsize = LIBXSMM_TYPESIZE( colbias_precision );
   unsigned int l_matrix_tsize = LIBXSMM_TYPESIZE( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
-  unsigned int l_matrix_load_instr = (LIBXSMM_DATATYPE_BF16 == l_matrix_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE16_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
-  unsigned int l_bias_load_instr = (LIBXSMM_DATATYPE_BF16 == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE16_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
+  unsigned int l_matrix_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_matrix_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE32_V : LIBXSMM_RV64_INSTR_GP_VLE64_V);
+  unsigned int l_bias_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE32_V : LIBXSMM_RV64_INSTR_GP_VLE64_V);
 
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_remainder_size = i_m_blocking % i_vec_length;

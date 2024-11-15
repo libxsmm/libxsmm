@@ -198,8 +198,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* Currently, RVV supports F32 without transpose only */
   if ((io_generated_code->arch >= LIBXSMM_RV64)) {
-    if (!((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  &&
-          (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)     ) ) {
+    if (!(((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  &&
+          (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)
+        ) || ((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F64)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F64)  &&
+          (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F64)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F64)
+        ) ) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }

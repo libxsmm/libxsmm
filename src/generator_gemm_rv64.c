@@ -44,6 +44,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 
   /* datatype dependent instructions */
   unsigned int l_a_part_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
+  unsigned int l_a_4reg_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
+  unsigned int l_a_8reg_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_b_load_instr = LIBXSMM_RV64_INSTR_GP_VRGATHER_VV;
   unsigned int l_b_load_scalar_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_b_load_bcast_instr = LIBXSMM_RV64_INSTR_GP_VFMV_V_F;
@@ -62,6 +64,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   LIBXSMM_UNUSED(l_compute_is_pred);
 
   l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VLE64_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
+  l_a_4reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VL4RE64_V : LIBXSMM_RV64_INSTR_GP_VL4RE32_V;
+  l_a_8reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VL8RE64_V : LIBXSMM_RV64_INSTR_GP_VL8RE32_V;
 
   l_b_load_scalar_instr = LIBXSMM_RV64_INSTR_GP_FLW;
 
@@ -120,7 +124,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
     if ( (l_m_blocks[0] == 2) && (l_m_blocks[1] == 0) ) {
       for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
         libxsmm_rv64_instruction_rvv_move( io_generated_code,
-            LIBXSMM_RV64_INSTR_GP_VLE32_V,
+            l_a_part_load_instr,
             i_gp_reg_mapping->gp_reg_a,
             0,
             (u_loop_index_local % 2) * l_m_blocks[0] + l_m,
@@ -134,7 +138,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       }
     } else if ( (l_m_blocks[0] == 4) && (l_m_blocks[1] == 0) ) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
-          LIBXSMM_RV64_INSTR_GP_VL4RE32_V,
+          l_a_4reg_load_instr,
           i_gp_reg_mapping->gp_reg_a,
           0,
           (u_loop_index_local % 2) * l_m_blocks[0],
@@ -146,7 +150,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
           4 * i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in * l_k_pack_factor);
     } else if ( (l_m_blocks[0] == 8) && (l_m_blocks[1] == 0) ) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
-          LIBXSMM_RV64_INSTR_GP_VL8RE32_V,
+          l_a_8reg_load_instr,
           i_gp_reg_mapping->gp_reg_a,
           0,
           (u_loop_index_local % 2) * l_m_blocks[0],
@@ -159,7 +163,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
     } else {
       for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
         libxsmm_rv64_instruction_rvv_move( io_generated_code,
-            LIBXSMM_RV64_INSTR_GP_VLE32_V,
+            l_a_part_load_instr,
             i_gp_reg_mapping->gp_reg_a,
             0,
             (u_loop_index_local % 2) * l_m_blocks[0] + l_m,
@@ -546,6 +550,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   unsigned int a_vnni_factor  = 1;
   unsigned int l_ldc_saved = 0;
   unsigned int l_is_i8f32_gemm  = ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ))) ? 1 : 0;
+  unsigned int l_sew = (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_RV64_SEW_B : (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_RV64_SEW_W : (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_RV64_SEW_D : LIBXSMM_RV64_SEW_Q;
 
   /* Local variables used for A transpose case */
   libxsmm_gemm_descriptor*          l_xgemm_desc_opa;
@@ -704,7 +709,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                 l_gp_reg_mapping.gp_reg_nloop, l_n_done - l_n_done_old );
 
     /* Set vector length to full vector */
-    libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_micro_kernel_config.vector_length, l_gp_reg_mapping.gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+    libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_micro_kernel_config.vector_length, l_gp_reg_mapping.gp_reg_help_5, l_sew, LIBXSMM_RV64_LMUL_M1);
 
     /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
     l_m_blocking = libxsmm_generator_gemm_rv64_get_initial_m_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch );
@@ -722,7 +727,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
       }
 
       if (l_m_blocking && (l_m_blocking < l_micro_kernel_config.vector_length)){
-        libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_m_blocking, l_gp_reg_mapping.gp_reg_help_5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+        libxsmm_rv64_instruction_rvv_setivli( io_generated_code, l_m_blocking, l_gp_reg_mapping.gp_reg_help_5, l_sew, LIBXSMM_RV64_LMUL_M1);
       }
 
       l_m_done_old = l_m_done;
