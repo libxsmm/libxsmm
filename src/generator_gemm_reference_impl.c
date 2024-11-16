@@ -952,8 +952,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     int l_k_block = 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
+      env_arch == strstr(env_arch, "spr") ||
+      env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
     int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
     int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
@@ -1014,8 +1014,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     int l_k_block = 2;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
+      env_arch == strstr(env_arch, "spr") ||
+      env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
     int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
     int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
@@ -1101,8 +1101,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     int l_k_block = 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
+      env_arch == strstr(env_arch, "spr") ||
+      env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
     int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
     int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
@@ -1173,8 +1173,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     int l_k_block = 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
+      env_arch == strstr(env_arch, "spr") ||
+      env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
     int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
     int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
@@ -1245,8 +1245,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
+      env_arch == strstr(env_arch, "spr") ||
+      env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
     int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
     int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
@@ -1296,8 +1296,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
+      env_arch == strstr(env_arch, "spr") ||
+      env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
     int l_is_gt_spr = (is_env_SPR > 0) ? 1 : ((env_arch == NULL && arch_cpuid >= LIBXSMM_X86_AVX512_SPR) ? 1 : 0);
     int l_use_replacement_fma = (((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT && l_is_gt_spr > 0))) ? 1 : 0;
