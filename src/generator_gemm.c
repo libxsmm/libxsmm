@@ -442,8 +442,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_vector_length = 16;
     /* some checks as we cannot mask everything */
     if ( (l_xgemm_desc_mod.k % 4 != 0) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-      return;
+      if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (l_xgemm_desc_mod.k % 2 == 0) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)) {
+        /* We are good... */
+      } else {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
     }
     if ((l_is_Ai4_Bi8_gemm > 0) && (l_xgemm_desc_mod.k % 8 != 0)) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
