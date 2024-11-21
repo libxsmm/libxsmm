@@ -2263,47 +2263,6 @@ void libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( libxsmm_generated_co
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_setup_masking_infra_lp_via_stack( libxsmm_generated_code* io_generated_code, libxsmm_micro_kernel_config*  i_micro_kernel_config, unsigned int i_m, unsigned int i_k ) {
-
-  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
-  unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
-  i_micro_kernel_config->mask_m_lp_cvt = 0;
-  i_micro_kernel_config->mask_k_lp_cvt = 0;
-  i_micro_kernel_config->mask_m_lp_cvt_st = 0;
-  i_micro_kernel_config->mask_k_lp_cvt_st = 0;
-
-  if (i_m % 32 > 0) {
-    reserved_mask_regs  += 1;
-    i_micro_kernel_config->mask_m_lp_cvt  = reserved_mask_regs - 1;
-    libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_lp_cvt, 32 - (i_m % 32), LIBXSMM_DATATYPE_BF16);
-    i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
-  }
-
-  if (i_m % 16 > 0) {
-    reserved_mask_regs  += 1;
-    i_micro_kernel_config->mask_m_lp_cvt_st  = reserved_mask_regs - 1;
-    libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_lp_cvt_st, 16 - (i_m % 16), LIBXSMM_DATATYPE_F32);
-    i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
-  }
-
-  if ((i_k/2) % 32 > 0) {
-    reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
-    reserved_mask_regs  += 1;
-    i_micro_kernel_config->mask_k_lp_cvt  = reserved_mask_regs - 1;
-    libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_k_lp_cvt, 32 - ((i_k/2) % 32), LIBXSMM_DATATYPE_BF16);
-    i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
-  }
-
-  if ((i_k/2) % 16 > 0) {
-    reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
-    reserved_mask_regs  += 1;
-    i_micro_kernel_config->mask_k_lp_cvt_st  = reserved_mask_regs - 1;
-    libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_k_lp_cvt_st, 16 - ((i_k/2) % 16), LIBXSMM_DATATYPE_F32);
-    i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
-  }
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*            io_generated_code,
                                                     const libxsmm_gemm_descriptor*      i_xgemm_desc,
                                                     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
@@ -2478,45 +2437,6 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
           i_micro_kernel_config->blend_reg );
     } else {
       /* Do nothing  */
-    }
-  }
-
-  if (i_micro_kernel_config->use_custom_bf8_preproc > 0) {
-    unsigned char perm_table_vnni_lo[64];
-    int __i = 0;
-    for (__i = 0; __i < 64; __i+=2) {
-      perm_table_vnni_lo[__i] = __i/2;
-      perm_table_vnni_lo[__i+1] = __i/2+64;
-    }
-    i_micro_kernel_config->perm_table_vnni_lo = reserved_zmms;
-    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo, "perm_table_vnni_lo_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_lo);
-    reserved_zmms++;
-
-    if (io_generated_code->arch < LIBXSMM_X86_AVX512_GNR) {
-      /* Prepare LUT tables for fast bf8 --> bf16 conerts */
-      i_micro_kernel_config->luth_reg0 = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->luth_reg1 = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->lutl_reg0 = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->lutl_reg1 = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->sign_reg = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->blend_reg = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->tmp_reg0 = reserved_zmms;
-      reserved_zmms++;
-      i_micro_kernel_config->tmp_reg1 = reserved_zmms;
-      reserved_zmms++;
-      libxsmm_generator_cvt_bf8_to_bf16_lut_prep_regs_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-          i_micro_kernel_config->luth_reg0,
-          i_micro_kernel_config->luth_reg1,
-          i_micro_kernel_config->lutl_reg0,
-          i_micro_kernel_config->lutl_reg1,
-          i_micro_kernel_config->sign_reg,
-          i_micro_kernel_config->blend_reg );
     }
   }
 
@@ -3467,6 +3387,79 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, tmp_reg );
   }
 
+  if (i_micro_kernel_config->use_custom_bf8_preproc > 0) {
+    unsigned int reserved_zmms = 0;
+    unsigned char perm_table_vnni_lo[64];
+    unsigned int reserved_mask_regs = 0;
+    unsigned int temp_reg = struct_gp_reg;
+    unsigned int i_m = i_xgemm_desc->m, i_k = i_xgemm_desc->k;
+    int __i = 0;
+    for (__i = 0; __i < 64; __i+=2) {
+      perm_table_vnni_lo[__i] = __i/2;
+      perm_table_vnni_lo[__i+1] = __i/2+64;
+    }
+    i_micro_kernel_config->perm_table_vnni_lo = reserved_zmms;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo, "perm_table_vnni_lo_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_lo);
+    reserved_zmms++;
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_GNR) {
+      /* Prepare LUT tables for fast bf8 --> bf16 converts */
+      i_micro_kernel_config->luth_reg0 = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->luth_reg1 = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->lutl_reg0 = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->lutl_reg1 = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->sign_reg = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->blend_reg = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->tmp_reg0 = reserved_zmms;
+      reserved_zmms++;
+      i_micro_kernel_config->tmp_reg1 = reserved_zmms;
+      reserved_zmms++;
+      libxsmm_generator_cvt_bf8_to_bf16_lut_prep_regs_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+          i_micro_kernel_config->luth_reg0,
+          i_micro_kernel_config->luth_reg1,
+          i_micro_kernel_config->lutl_reg0,
+          i_micro_kernel_config->lutl_reg1,
+          i_micro_kernel_config->sign_reg,
+          i_micro_kernel_config->blend_reg );
+    }
+    i_micro_kernel_config->reserved_zmms = reserved_zmms;
+    i_micro_kernel_config->mask_m_lp_cvt = 0;
+    i_micro_kernel_config->mask_k_lp_cvt = 0;
+    i_micro_kernel_config->mask_m_lp_cvt_st = 0;
+    i_micro_kernel_config->mask_k_lp_cvt_st = 0;
+    if (i_m % 32 > 0) {
+      reserved_mask_regs  += 1;
+      i_micro_kernel_config->mask_m_lp_cvt  = reserved_mask_regs - 1;
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_lp_cvt, 32 - (i_m % 32), LIBXSMM_DATATYPE_BF16);
+      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+    }
+    if (i_m % 16 > 0) {
+      reserved_mask_regs  += 1;
+      i_micro_kernel_config->mask_m_lp_cvt_st  = reserved_mask_regs - 1;
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_lp_cvt_st, 16 - (i_m % 16), LIBXSMM_DATATYPE_F32);
+      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+    }
+    if ((i_k/2) % 32 > 0) {
+      reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+      reserved_mask_regs  += 1;
+      i_micro_kernel_config->mask_k_lp_cvt  = reserved_mask_regs - 1;
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_k_lp_cvt, 32 - ((i_k/2) % 32), LIBXSMM_DATATYPE_BF16);
+      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+    }
+    if ((i_k/2) % 16 > 0) {
+      reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+      reserved_mask_regs  += 1;
+      i_micro_kernel_config->mask_k_lp_cvt_st  = reserved_mask_regs - 1;
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_k_lp_cvt_st, 16 - ((i_k/2) % 16), LIBXSMM_DATATYPE_F32);
+      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+    }
+  }
+
   /* Setup A in stack */
   if (a_in_vnni > 0) {
     /* If A is originally in VNNI4 format: First convert VNNI4 to VNNI2 (8bit)*/
@@ -3999,10 +3992,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     if (l_micro_kernel_config.vnni_format_C > 0) {
       l_defer_c_vnni_format = 1;
       l_micro_kernel_config.vnni_format_C = 0;
-    }
-    if (l_use_custom_bf8_preproc > 0) {
-      libxsmm_generator_gemm_amx_setup_fusion_infra( io_generated_code, l_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
-      libxsmm_generator_gemm_amx_setup_masking_infra_lp_via_stack(io_generated_code, &l_micro_kernel_config, l_xgemm_desc->m, i_xgemm_desc->k );
     }
     libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
   }
