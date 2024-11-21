@@ -385,7 +385,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_f16_flat( libx
     libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_VMOVUPS,
         o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-        im * l_vlen,
+        im * l_vlen * 2,
         i_micro_kernel_config->vector_name,
         l_vreg_lo, ((im == i_m_blocks-1) && (l_process_even_half == 0)) ? i_micro_kernel_config->mask_k_lp_cvt_st : 0, 0, 1 );
 
@@ -393,7 +393,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_f16_flat( libx
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVUPS,
           o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-          im * l_vlen + 64,
+          im * l_vlen * 2 + 64,
           i_micro_kernel_config->vector_name,
           l_vreg_hi, (im == i_m_blocks-1) ? i_micro_kernel_config->mask_k_lp_cvt_st : 0, 0, 1 );
     }
