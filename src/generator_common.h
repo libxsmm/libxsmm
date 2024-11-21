@@ -1551,6 +1551,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int mask_m_fp32;
   unsigned int mask_m_bf16;
   unsigned int mask_m_lp_cvt;
+  unsigned int mask_k_lp_cvt;
+  unsigned int mask_m_lp_cvt_st;
+  unsigned int mask_k_lp_cvt_st;
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
@@ -1601,6 +1604,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int enforce_Mx1_amx_tile_blocking;
 
   /* Auxiliary fields for LP emulations and stack-based data prepartion */
+  unsigned int use_custom_bf8_preproc;
   unsigned int bf8_gemm_via_stack_alloc_tensors;
   unsigned int hf8_gemm_via_stack_alloc_tensors;
   unsigned int atrans_gemm_stack_alloc_tensors;
