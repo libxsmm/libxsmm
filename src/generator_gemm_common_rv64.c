@@ -403,6 +403,8 @@ unsigned int libxsmm_generator_gemm_rv64_get_initial_m_blocking( libxsmm_micro_k
     } else
     if ( i_xgemm_desc->m >= 8 ) {
       l_m_blocking = 8;
+    } else if ( i_xgemm_desc->m >= 4 ) {
+      l_m_blocking = 4;
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
@@ -449,11 +451,24 @@ unsigned int libxsmm_generator_gemm_rv64_update_m_blocking( libxsmm_micro_kernel
       /* we are done with m_blocking */
     }
   } else if ( ( i_arch == LIBXSMM_RV64 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
-    if (i_current_m_blocking == 8) {
-      l_m_blocking = i_xgemm_desc->m % 8;
-    } else {
-      /* we are done with m_blocking */
+    if (i_current_m_blocking == 16) {
+      if ((i_xgemm_desc->m % 16) >= 8){
+        l_m_blocking = 8;
+      } else if ((i_xgemm_desc->m % 8) >= 4){
+        l_m_blocking = 4;
+      } else {
+        l_m_blocking = i_xgemm_desc->m % 4;
+      }
+    } else if (i_current_m_blocking == 8) {
+      if ((i_xgemm_desc->m % 8) >= 4){
+        l_m_blocking = 4;
+      } else {
+        l_m_blocking = i_xgemm_desc->m % 4;
+      }
+    } else if (i_current_m_blocking == 4) {
+      l_m_blocking = i_xgemm_desc->m % 4;
     }
+    /* we are done with m_blocking */
   } else {
     /* we should never end up here, if we do let the user know */
     /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );

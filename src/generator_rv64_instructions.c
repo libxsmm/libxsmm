@@ -372,7 +372,8 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 #define RVV_SUI(i)  ((i == RVI(VSUXEI8_V))||(i == RVI(VSUXEI16_V))||(i == RVI(VSUXEI32_V))||(i == RVI(VSUXEI64_V)))
 #define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
 #define RVV_I(i)    (RVV_LUI(i) || RVV_LOI(i) || RVV_SUI(i) || RVV_SOI(i))
-  if ( (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VL4RE32_V)  || (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VS4R_V)) {
+  if ( (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VL4RE32_V)  || (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VS4R_V) ||
+        (i_vmove_instr == LIBXSMM_RV64_INSTR_GP_VL4RE64_V) ) {
     if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
       fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: invalid register!\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);

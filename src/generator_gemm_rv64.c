@@ -719,7 +719,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
     /* apply m_blocking */
     while (l_m_done != (unsigned int)l_xgemm_desc_opa->m) {
 #if 0
-      printf("In mblock of size %d blocking of size %d\n", l_m_blocking, l_n_blocking);
+      printf("In mblock of size %d nblock of size %d\n", l_m_blocking, l_n_blocking);
 #endif
       if ( l_m_blocking == 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
