@@ -235,7 +235,6 @@ void libxsmm_ref_apply_preop(libxsmm_gemm_def* i_gemm_def, void *param, const li
       /* Setup binary desc and call refence kernel*/
       libxsmm_meltw_binary_param binary_param;
       libxsmm_descriptor_blob blob;
-      libxsmm_bitfield binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n,
           i_xgemm_desc->m, i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, (unsigned short)LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, (unsigned short)LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_OPERATION_BINARY);
       binary_param.in0.primary = (void*)gemm_param->d.primary;
