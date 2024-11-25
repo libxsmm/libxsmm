@@ -88,6 +88,18 @@ typedef struct libxsmm_gemm_def {
   long long *br_offs_B;
   void **br_addr_A;
   void **br_addr_B;
+
+  /* fusion aux variables */
+  unsigned int fuse_colbias_add;
+  unsigned int fuse_relu;
+  unsigned int fuse_relu_bitmask;
+  unsigned int fuse_sigmoid;
+  unsigned int fuse_vnni_c;
+  unsigned int fuse_via_scratch;
+
+  /* c_scratch for fusion */
+  void *c_scratch;
+  void *c_vnni_scratch;
 } libxsmm_gemm_def;
 
 typedef struct libxsmm_fusion_args {
@@ -170,6 +182,125 @@ unsigned char libxsmm_calculate_zpt(libxsmm_blasint i_br, libxsmm_blasint i_m, c
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_ref_allocate_c_scratch(libxsmm_gemm_def* i_gemm_def) {
+  if (i_gemm_def->fuse_colbias_add > 0 || i_gemm_def->fuse_relu > 0 || i_gemm_def->fuse_sigmoid > 0) {
+    if (i_gemm_def->c_type != LIBXSMM_DATATYPE_F32) {
+      i_gemm_def->fuse_via_scratch = 1;
+      i_gemm_def->c_scratch = (void*) malloc(i_gemm_def->ldc * i_gemm_def->n * 4);
+    } else {
+      i_gemm_def->fuse_via_scratch = 0;
+    }
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_ref_allocate_c_vnni_scratch(libxsmm_gemm_def* i_gemm_def) {
+  if (i_gemm_def->fuse_vnni_c > 0) {
+    i_gemm_def->c_vnni_scratch = (void*) malloc(i_gemm_def->ldc * i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->c_type));
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_ref_deallocate_c_scratch(libxsmm_gemm_def* i_gemm_def) {
+  if (i_gemm_def->fuse_via_scratch) {
+    free(i_gemm_def->c_scratch);
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_ref_deallocate_c_vnni_scratch(libxsmm_gemm_def* i_gemm_def) {
+  if (i_gemm_def->fuse_vnni_c > 0) {
+    free(i_gemm_def->c_vnni_scratch);
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_ref_apply_preop(libxsmm_gemm_def* i_gemm_def, void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
+  libxsmm_gemm_ext_param *gemm_param = (libxsmm_gemm_ext_param*)param;
+  if (i_gemm_def->fuse_colbias_add > 0) {
+    if ( i_gemm_def->beta == 0 ) {
+      libxsmm_meltw_unary_param unary_param;
+      libxsmm_descriptor_blob blob;
+      const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->m, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_OPERATION_UNARY);
+      unary_param.in.primary  = (void*)gemm_param->d.primary;
+      unary_param.out.primary = (void*)i_gemm_def->c_scratch;
+      libxsmm_reference_unary_elementwise(&unary_param, desc);
+      i_gemm_def->beta = 1.0;
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
+    } else {
+      /* Setup binary desc and call refence kernel*/
+      libxsmm_meltw_binary_param binary_param;
+      libxsmm_descriptor_blob blob;
+      libxsmm_bitfield binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+      const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n,
+          i_xgemm_desc->m, i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, (unsigned short)LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, (unsigned short)LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_OPERATION_BINARY);
+      binary_param.in0.primary = (void*)gemm_param->d.primary;
+      binary_param.in1.primary = (void*)gemm_param->c.primary;
+      binary_param.out.primary = (void*)i_gemm_def->c_scratch;
+      libxsmm_reference_binary_elementwise(&binary_param, desc);
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
+    }
+  } else {
+    if (i_gemm_def->fuse_via_scratch > 0) {
+      if ( i_gemm_def->beta != 0 ) {
+        libxsmm_meltw_unary_param unary_param;
+        libxsmm_descriptor_blob blob;
+        const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_OPERATION_UNARY);
+        unary_param.in.primary  = (void*)gemm_param->c.primary;
+        unary_param.out.primary = (void*)i_gemm_def->c_scratch;
+        libxsmm_reference_unary_elementwise(&unary_param, desc);
+      }
+      i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
+    }
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_ref_apply_postop(libxsmm_gemm_def* i_gemm_def, void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
+  libxsmm_gemm_ext_param *gemm_param = (libxsmm_gemm_ext_param*)param;
+  if (i_gemm_def->fuse_relu > 0) {
+    /* Setup unary desc and call refence kernel*/
+    libxsmm_meltw_unary_param unary_param;
+    libxsmm_descriptor_blob blob;
+    const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), i_xgemm_desc->m, i_xgemm_desc->n,
+        i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0, (unsigned short) ((i_gemm_def->fuse_relu_bitmask > 0) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT: LIBXSMM_MELTW_FLAG_UNARY_NONE), (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_MELTW_OPERATION_UNARY);
+    unary_param.in.primary  = (void*)i_gemm_def->c_scratch;
+    unary_param.out.primary = (void*)gemm_param->c.primary;
+    if (i_gemm_def->fuse_relu_bitmask > 0) {
+      unary_param.out.secondary = (void*)gemm_param->c.secondary;
+    }
+    libxsmm_reference_unary_elementwise(&unary_param, desc);
+  } else if (i_gemm_def->fuse_sigmoid > 0) {
+    /* Setup unary desc and call refence kernel*/
+    libxsmm_meltw_unary_param unary_param;
+    libxsmm_descriptor_blob blob;
+    const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), i_xgemm_desc->m, i_xgemm_desc->n,
+        i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_OPERATION_UNARY);
+    unary_param.in.primary  = (void*)i_gemm_def->c_scratch;
+    unary_param.out.primary = (void*)gemm_param->c.primary;
+    libxsmm_reference_unary_elementwise(&unary_param, desc);
+  } else {
+    /* Copy to actual C if using scratch  */
+    if (i_gemm_def->fuse_via_scratch > 0) {
+      libxsmm_meltw_unary_param unary_param;
+      libxsmm_descriptor_blob blob;
+      const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), i_xgemm_desc->m, i_xgemm_desc->n,
+          i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_OPERATION_UNARY);
+      unary_param.in.primary  = (void*)i_gemm_def->c_scratch;
+      unary_param.out.primary = (void*)gemm_param->c.primary;
+      libxsmm_reference_unary_elementwise(&unary_param, desc);
+    }
+  }
+
+  return;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   libxsmm_gemm_def l_gemm_def;
   libxsmm_gemm_ext_param *gemm_param_ext = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) > 0) ? (libxsmm_gemm_ext_param*)param : NULL;
@@ -194,6 +325,36 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   int l_binary_postop = 0;
   int l_unary_postop = 0;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+  l_gemm_def.fuse_relu = 0;
+  l_gemm_def.fuse_relu_bitmask = 0;
+  l_gemm_def.fuse_sigmoid = 0;
+  l_gemm_def.fuse_vnni_c = 0;
+  l_gemm_def.fuse_colbias_add = 0;
+
+  /* Check for fusions and set proper flags */
+  if (i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
+    if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
+      l_gemm_def.fuse_relu = 1;
+      if ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) {
+        l_gemm_def.fuse_relu_bitmask = 1;
+      } else {
+        l_gemm_def.fuse_relu_bitmask = 0;
+      }
+    }
+    if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
+      l_gemm_def.fuse_sigmoid = 1;
+    }
+  }
+
+  if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_BINARY) {
+    if (i_xgemm_desc->meltw_param == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
+      if (((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0 ) ||
+          ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0 )) {
+        l_gemm_def.fuse_colbias_add = 1;
+      }
+    }
+  }
 
   l_gemm_def.fuse_zpt_sub = 0;
   l_gemm_def.is_Ai4Bf16_gemm = 0;
@@ -322,7 +483,30 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
       l_gemm_def.scf =  *((float*)gemm_param->c.tertiary);
     }
   } else {
-
+    if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_F16) &&
+             (l_dtype_comp == LIBXSMM_DATATYPE_F16 || l_dtype_comp == LIBXSMM_DATATYPE_F32 || l_dtype_comp == LIBXSMM_DATATYPE_IMPLICIT ) && (l_dtype_c == LIBXSMM_DATATYPE_F16 || l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
+      l_gemm_def.zpt_f16 = (libxsmm_float16*)gemm_param_ext->a.quaternary;
+      l_gemm_def.scf_f16 = (libxsmm_float16*)gemm_param_ext->a.tertiary;
+    }
+    if (l_gemm_def.is_Amxfp4Bbf16_gemm > 0 || l_gemm_def.is_Amxfp4Bfp32_gemm > 0 || l_gemm_def.is_Amxfp4Bi8_gemm > 0) {
+      l_gemm_def.scf_u8 = (unsigned char*)gemm_param_ext->a.tertiary;
+      if (l_br_type == 1) {
+        l_gemm_def.scf_u8_braddr = (unsigned char**)gemm_param_ext->a.tertiary;
+      }
+      if (l_gemm_def.is_Amxfp4Bi8_gemm > 0 ) {
+        l_gemm_def.scf_b_f32 = (float*)gemm_param_ext->b.tertiary;
+        if (l_br_type == 1) {
+          l_gemm_def.scf_b_f32_braddr = (float**)gemm_param_ext->b.tertiary;
+        }
+      }
+    }
+    if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_BF16) &&
+           (l_dtype_c == LIBXSMM_DATATYPE_BF16 || l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
+        l_gemm_def.scf_f32 =  (float*)gemm_param_ext->a.tertiary;
+    }
+    if ( l_dtype_a == LIBXSMM_DATATYPE_I8 && l_dtype_b == LIBXSMM_DATATYPE_I8 && l_dtype_c == LIBXSMM_DATATYPE_F32 ) {
+      l_gemm_def.scf =  *((float*)gemm_param_ext->c.tertiary);
+    }
   }
 
   /* setting static GEMM parameters */
@@ -350,6 +534,7 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   l_gemm_def.br_count = l_br;
   l_gemm_def.binary_postop = l_binary_postop;
   l_gemm_def.unary_postop  = l_unary_postop;
+  l_gemm_def.fuse_vnni_c = l_vnni_c;
 
   *i_gemm_def = l_gemm_def;
   return;
@@ -360,6 +545,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
   libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
   libxsmm_blasint lda = i_gemm_def->lda;
   libxsmm_blasint ldb = i_gemm_def->ldb;
+
   libxsmm_blasint ldc = i_gemm_def->ldc;
   libxsmm_blasint m = i_gemm_def->m;
   libxsmm_blasint n = i_gemm_def->n;
@@ -1572,6 +1758,21 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_ref_apply_c_vnni(libxsmm_gemm_def* i_gemm_def, void *c_ptr, const libxsmm_gemm_descriptor *i_xgemm_desc) {
+  if (i_gemm_def->fuse_vnni_c > 0) {
+    unsigned short vnni_cvt_type = (unsigned short)(( LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF16 || LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_F16 ) ? (( libxsmm_cpuid_dot_pack_factor(LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) == 4 && (i_xgemm_desc->n % 4 == 0)) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4);
+    libxsmm_meltw_unary_param unary_param;
+    libxsmm_descriptor_blob blob;
+    const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), i_xgemm_desc->m, i_xgemm_desc->n,
+        i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)vnni_cvt_type, LIBXSMM_MELTW_OPERATION_UNARY);
+    memcpy(i_gemm_def->c_vnni_scratch, c_ptr, i_xgemm_desc->ldc * i_xgemm_desc->n * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )));
+    unary_param.in.primary  = (void*)i_gemm_def->c_vnni_scratch;
+    unary_param.out.primary = (void*)c_ptr;
+    libxsmm_reference_unary_elementwise(&unary_param, desc);
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   libxsmm_gemm_def l_gemm_def;
   /* Return if kernel is tileconfig/tilerelease  */
@@ -1581,13 +1782,26 @@ void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG) > 0)) {
     return;
   }
-  libxsmm_setup_gemm_def(&l_gemm_def, param, i_xgemm_desc);
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) > 0)) {
+    libxsmm_gemm_descriptor l_adjusted_desc = *i_xgemm_desc;
     libxsmm_gemm_ext_param *gemm_param = (libxsmm_gemm_ext_param*)param;
-    libxsmm_ref_matmul( &l_gemm_def, (const void*) gemm_param->a.primary, (const void*) gemm_param->b.primary, (void*) gemm_param->c.primary);
+    libxsmm_setup_gemm_def(&l_gemm_def, param, &l_adjusted_desc);
+    l_gemm_def.c_scratch = (void*)gemm_param->c.primary;
+    libxsmm_ref_allocate_c_scratch(&l_gemm_def);
+    libxsmm_ref_allocate_c_vnni_scratch(&l_gemm_def);
+    libxsmm_ref_apply_preop(&l_gemm_def, gemm_param, &l_adjusted_desc);
+    libxsmm_ref_matmul(&l_gemm_def, (const void*)gemm_param->a.primary, (const void*)gemm_param->b.primary, (void*)l_gemm_def.c_scratch);
+    libxsmm_ref_apply_postop(&l_gemm_def, gemm_param, &l_adjusted_desc);
+    libxsmm_ref_apply_c_vnni(&l_gemm_def, (void*)gemm_param->c.primary, i_xgemm_desc);
+    libxsmm_ref_deallocate_c_scratch(&l_gemm_def);
+    libxsmm_ref_deallocate_c_vnni_scratch(&l_gemm_def);
   } else {
     libxsmm_gemm_param *gemm_param = (libxsmm_gemm_param*)param;
-    libxsmm_ref_matmul( &l_gemm_def, (const void*) gemm_param->a.primary, (const void*) gemm_param->b.primary, (void*) gemm_param->c.primary);
+    libxsmm_setup_gemm_def(&l_gemm_def, param, i_xgemm_desc);
+    libxsmm_ref_allocate_c_vnni_scratch(&l_gemm_def);
+    libxsmm_ref_matmul( &l_gemm_def, (const void*)gemm_param->a.primary, (const void*)gemm_param->b.primary, (void*)gemm_param->c.primary);
+    libxsmm_ref_apply_c_vnni(&l_gemm_def, (void*)gemm_param->c.primary, i_xgemm_desc);
+    libxsmm_ref_deallocate_c_vnni_scratch(&l_gemm_def);
   }
   return;
 }

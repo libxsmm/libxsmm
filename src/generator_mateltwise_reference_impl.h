@@ -26,6 +26,15 @@ LIBXSMM_API_INTERN libxsmm_bfloat8 my_libxsmm_convert_f32_to_bf8_rne(float in);
 LIBXSMM_API_INTERN libxsmm_hfloat8 my_libxsmm_convert_f32_to_hf8_rne(float in);
 
 LIBXSMM_API_INTERN
+void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+
+LIBXSMM_API_INTERN
+void libxsmm_reference_binary_elementwise(libxsmm_meltw_binary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+
+LIBXSMM_API_INTERN
+void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+
+LIBXSMM_API_INTERN
 void libxsmm_reference_elementwise(void *param,  const libxsmm_meltw_descriptor *i_mateltwise_desc);
 
 #endif /* GENERATOR_MATELTWISE_REFERENCE_IMPL_H */
