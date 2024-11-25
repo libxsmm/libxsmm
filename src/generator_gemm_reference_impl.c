@@ -133,7 +133,7 @@ float libxsmm_calculate_mxfp4_scf(libxsmm_blasint i_br, libxsmm_blasint i_k, lib
   unsigned char scale_mxfp4_uchar = 0;
   unsigned int mxfp4_block_size = i_gemm_def->mxfp4_block_size;
   unsigned int scale_mxfp4_u32 = 0;
-  float *scalef_ptr = (float*)&scale_mxfp4_u32;
+  libxsmm_float_uint fuint;
 
   if (i_gemm_def->br_type == 1) {
     scale_mxfp4_uchar = *((unsigned char*)i_gemm_def->scf_u8_braddr[i_br] + i_k * i_gemm_def->lda + i_m);
@@ -146,7 +146,8 @@ float libxsmm_calculate_mxfp4_scf(libxsmm_blasint i_br, libxsmm_blasint i_k, lib
   }
   scale_mxfp4_u32 = (unsigned int) scale_mxfp4_uchar;
   scale_mxfp4_u32 = scale_mxfp4_u32 << 23;
-  res_f32 = *scalef_ptr;
+  fuint.u = scale_mxfp4_u32;
+  res_f32 = fuint.f;
   return res_f32;
 }
 
