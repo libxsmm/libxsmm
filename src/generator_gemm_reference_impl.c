@@ -1135,9 +1135,9 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     libxsmm_float16 c_tmp;
     libxsmm_float16 cur_b;
     float up_c;
-    int l_k_block = 1;
+    int l_k_block = (i_gemm_def->vnni_a != 0) ? 2 : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
-    const int is_env_SPR = (
+    const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
       env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
@@ -1199,7 +1199,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     float up_c;
     int l_k_block = 2;
     const char* env_arch = getenv("LIBXSMM_TARGET");
-    const int is_env_SPR = (
+    const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
       env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
@@ -1286,7 +1286,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     float up_c;
     int l_k_block = 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
-    const int is_env_SPR = (
+    const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
       env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
@@ -1358,7 +1358,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     libxsmm_float16 cur_a, cur_b;
     int l_k_block = 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
-    const int is_env_SPR = (
+    const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
       env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
@@ -1430,7 +1430,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     float up_c;
     int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
-    const int is_env_SPR = (
+    const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
       env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
@@ -1481,7 +1481,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     libxsmm_float16 cur_a, cur_b;
     int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     const char* env_arch = getenv("LIBXSMM_TARGET");
-    const int is_env_SPR = (
+    const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
       env_arch == strstr(env_arch, "amx"));
     int arch_cpuid = libxsmm_cpuid(NULL);
