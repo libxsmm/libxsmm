@@ -15,56 +15,70 @@
 
 #include "generator_ppc64le_instructions.h"
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vsx_mk_load_vsr( libxsmm_generated_code *io_generated_code,
-                                             libxsmm_ppc64le_reg    *io_reg_tracker,
-                                             libxsmm_datatype const  i_datatype,
-                                             libxsmm_datatype const  i_comptype, /* currently unsuded */
-                                             unsigned int const      i_a,
-                                             unsigned int const      i_m,
-                                             unsigned int const      i_n,
-                                             unsigned int const      i_lda,
-                                             unsigned int           *io_t,
-                                             unsigned int const      i_ldt );
-
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vsx_mk_store_vsr( libxsmm_generated_code *io_generated_code,
-                                              libxsmm_ppc64le_reg    *io_reg_tracker,
-                                              libxsmm_datatype const  i_datatype,
-                                              libxsmm_datatype const  i_comptype, /* currently unsuded */
-                                              unsigned int const      i_a,
-                                              unsigned int const      i_m,
-                                              unsigned int const      i_n,
-                                              unsigned int const      i_lda,
-                                              unsigned int           *io_t,
-                                              unsigned int const      i_ldt );
+void libxsmm_generator_gemm_vsx_micro_load_vsr( libxsmm_generated_code *io_generated_code,
+                                                libxsmm_ppc64le_reg    *io_reg_tracker,
+                                                libxsmm_datatype const  i_datatype,
+                                                libxsmm_datatype const  i_comptype, /* currently unsuded */
+                                                unsigned int const      i_a,
+                                                unsigned int const      i_m,
+                                                unsigned int const      i_n,
+                                                unsigned int const      i_lda,
+                                                unsigned int           *io_t,
+                                                unsigned int const      i_ldt );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vsx_mk_load_vsr_splat( libxsmm_generated_code *io_generated_code,
-                                                   libxsmm_ppc64le_reg    *io_reg_tracker,
-                                                   libxsmm_datatype const  i_datatype,
-                                                   libxsmm_datatype const  i_comptype, /* currently unsuded */
-                                                   unsigned int const      i_a,
-                                                   unsigned int const      i_m,
-                                                   unsigned int const      i_n,
-                                                   unsigned int const      i_lda,
-                                                   unsigned int           *io_t,
-                                                   unsigned int const      i_ldt );
+void libxsmm_generator_gemm_vsx_block_load_vsr( libxsmm_generated_code *io_generated_code,
+                                                libxsmm_ppc64le_reg    *io_reg_tracker,
+                                                libxsmm_datatype const  i_datatype,
+                                                libxsmm_datatype const  i_comptype, /* currently unsuded */
+                                                unsigned int const      i_a,
+                                                unsigned int const      i_m,
+                                                unsigned int const      i_n,
+                                                unsigned int const      i_lda,
+                                                unsigned int           *io_t,
+                                                unsigned int const      i_ldt );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vsx_mk_load_trans( libxsmm_generated_code * io_generated_code,
-                                               libxsmm_datatype const   i_datatype,
-                                               libxsmm_datatype const   i_comptype, /* currently unsuded */
-                                               libxsmm_ppc64le_reg    * io_reg_tracker,
-                                               unsigned int           * i_loaded_regs,
-                                               unsigned int const       i_ptr_gpr,
-                                               unsigned int const       i_n_rows,
-                                               unsigned int const       i_n_cols,
-                                               unsigned int const       i_stride );
+void libxsmm_generator_gemm_vsx_block_store_vsr( libxsmm_generated_code *io_generated_code,
+                                                 libxsmm_ppc64le_reg    *io_reg_tracker,
+                                                 libxsmm_datatype const  i_datatype,
+                                                 libxsmm_datatype const  i_comptype, /* currently unsuded */
+                                                 unsigned int const      i_a,
+                                                 unsigned int const      i_m,
+                                                 unsigned int const      i_n,
+                                                 unsigned int const      i_lda,
+                                                 unsigned int           *io_t,
+                                                 unsigned int const      i_ldt );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vsx_micro_load_vsr_splat( libxsmm_generated_code *io_generated_code,
+                                                      libxsmm_ppc64le_reg    *io_reg_tracker,
+                                                      libxsmm_datatype const  i_datatype,
+                                                      libxsmm_datatype const  i_comptype, /* currently unsuded */
+                                                      unsigned int const      i_a,
+                                                      unsigned int const      i_m,
+                                                      unsigned int const      i_n,
+                                                      unsigned int const      i_lda,
+                                                      unsigned int           *io_t,
+                                                      unsigned int const      i_ldt );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vsx_block_load_vsr_splat( libxsmm_generated_code *io_generated_code,
+                                                      libxsmm_ppc64le_reg    *io_reg_tracker,
+                                                      libxsmm_datatype const  i_datatype,
+                                                      libxsmm_datatype const  i_comptype, /* currently unsuded */
+                                                      unsigned int const      i_a,
+                                                      unsigned int const      i_m,
+                                                      unsigned int const      i_n,
+                                                      unsigned int const      i_lda,
+                                                      unsigned int           *io_t,
+                                                      unsigned int const      i_ldt );
 
 
 LIBXSMM_API_INTERN
