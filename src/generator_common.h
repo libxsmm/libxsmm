@@ -1389,6 +1389,7 @@
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
 #define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
+#define LIBXSMM_ERR_SCHED                 90055
 
 /* define some magic numbers (in bytes) for accessing the param structs
    in the JIT code generators */

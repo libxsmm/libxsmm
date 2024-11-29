@@ -21,39 +21,39 @@
 #include "../include/libxsmm_typedefs.h"
 
 
-typedef void (*libxsmm_ppc64le_reg_func)( unsigned int const i_vec_len,
-                                          unsigned int      *i_blocking,
-                                          unsigned int      *o_reg );
+typedef void (*libxsmm_ppc64le_reg_func)( unsigned int const  i_vec_len,
+                                          unsigned int       *i_blocking,
+                                          unsigned int       *o_reg );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_reg_vsx( unsigned int const i_vec_len,
-                                             unsigned int      *i_blocking,
-                                             unsigned int      *o_reg);
+void libxsmm_generator_gemm_ppc64le_reg_vsx( unsigned int const  i_vec_len,
+                                             unsigned int       *i_blocking,
+                                             unsigned int       *o_reg);
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_reg_mma( unsigned int const i_vec_len,
-                                             unsigned int      *i_blocking,
-                                             unsigned int      *o_reg );
+void libxsmm_generator_gemm_ppc64le_reg_mma( unsigned int const  i_vec_len,
+                                             unsigned int       *i_blocking,
+                                             unsigned int       *o_reg );
 
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_ppc64le_n_reg( unsigned int const       i_vec_len,
-                                                   unsigned int            *i_blocking,
-                                                   libxsmm_ppc64le_reg_func i_reg_func );
+unsigned int libxsmm_generator_gemm_ppc64le_n_reg( unsigned int const        i_vec_len,
+                                                   unsigned int             *i_blocking,
+                                                   libxsmm_ppc64le_reg_func  i_reg_func );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const       i_reg_max,
-                                                   unsigned int const       i_vec_len,
-                                                   unsigned int const       i_comp_bytes,
-                                                   unsigned int            *i_dims,
-                                                   unsigned int            *i_increment,
-                                                   unsigned int            *i_weights,
-                                                   unsigned int const       i_nweight,
-                                                   unsigned int            *o_blocking,
-                                                   libxsmm_ppc64le_reg_func i_reg_func );
+void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const        i_reg_max,
+                                                   unsigned int const        i_vec_len,
+                                                   unsigned int const        i_comp_bytes,
+                                                   unsigned int             *i_dims,
+                                                   unsigned int             *i_increment,
+                                                   unsigned int             *i_weights,
+                                                   unsigned int const        i_nweight,
+                                                   unsigned int             *o_blocking,
+                                                   libxsmm_ppc64le_reg_func  i_reg_func );
 
 
 void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code        *io_generated_code,
@@ -66,6 +66,13 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
                                                     libxsmm_gemm_descriptor const *i_xgemm_desc,
                                                     libxsmm_ppc64le_blocking      *io_blocking );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_k_graph( libxsmm_generated_code         *io_generated_code,
+                                             const libxsmm_gemm_descriptor  *i_xgemm_desc,
+                                             libxsmm_ppc64le_blocking       *i_blocking,
+                                             libxsmm_ppc64le_node          **io_graph,
+                                             unsigned int                   *o_nnode );
 
 
 /**
@@ -103,15 +110,16 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *i
  * @param i_a_prt_gpr number of register containing current pointer to c block
  **/
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code        *io_generated_code,
-                                                libxsmm_gemm_descriptor const *i_xgemm_desc,
-                                                libxsmm_ppc64le_blocking      *i_blocking,
-                                                libxsmm_ppc64le_reg           *io_reg_tracker,
-                                                libxsmm_loop_label_tracker    *io_loop_labels,
-                                                unsigned int                  *i_acc,
-                                                unsigned char const            i_a,
-                                                unsigned char const            i_b,
-                                                unsigned char const            i_c );
+void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *io_generated_code,
+                                                libxsmm_gemm_descriptor const  *i_xgemm_desc,
+                                                libxsmm_ppc64le_blocking       *i_blocking,
+                                                libxsmm_ppc64le_reg            *io_reg_tracker,
+                                                libxsmm_loop_label_tracker     *io_loop_labels,
+                                                libxsmm_ppc64le_node          **i_schedule,
+                                                unsigned int                   *i_acc,
+                                                unsigned char const             i_a,
+                                                unsigned char const             i_b,
+                                                unsigned char const             i_c );
 
 /**
  * Generates a matrix kernel for PPC64LE VSX.
@@ -120,10 +128,11 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code        *i
  * @param io_reg_tracker register tracking structure.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        *io_generated_code,
-                                                libxsmm_gemm_descriptor const *i_xgemm_desc,
-                                                libxsmm_ppc64le_blocking      *io_blocking,
-                                                libxsmm_ppc64le_reg           *io_reg_tracker );
+void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *io_generated_code,
+                                                libxsmm_gemm_descriptor const  *i_xgemm_desc,
+                                                libxsmm_ppc64le_blocking       *io_blocking,
+                                                libxsmm_ppc64le_reg            *io_reg_tracker,
+                                                libxsmm_ppc64le_node          **i_schedule );
 
 /**
  * Generates a matrix kernel for PPC64LE MMA.
@@ -132,10 +141,11 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code        *i
  * @param io_reg_tracker register tracking structure.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code        *io_generated_code,
-                                                libxsmm_gemm_descriptor const *i_xgemm_desc,
-                                                libxsmm_ppc64le_blocking      *i_blocking,
-                                                libxsmm_ppc64le_reg           *io_reg_tracker );
+void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *io_generated_code,
+                                                libxsmm_gemm_descriptor const  *i_xgemm_desc,
+                                                libxsmm_ppc64le_blocking       *i_blocking,
+                                                libxsmm_ppc64le_reg            *io_reg_tracker,
+                                                libxsmm_ppc64le_node          **i_schedule );
 
 
 /**
