@@ -1322,6 +1322,7 @@
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
 #define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
+#define LIBXSMM_ERR_SCHED                 90055
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
