@@ -871,7 +871,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
       }
     }
     libxsmm_free(tmp_c);
-  } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16) {
+  } else if (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_I16) {
     libxsmm_bfloat16* h_c   = (libxsmm_bfloat16*)l_c_gold;
     libxsmm_bfloat16* tmp_c = (libxsmm_bfloat16*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat16), 64);
     /* Copy to tmp_c */
@@ -2020,7 +2020,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       const char* env_arch = getenv("LIBXSMM_TARGET");
       const int is_env_DMR = (env_arch == NULL) ? 0 : ( env_arch == libxsmm_stristr(env_arch, "dmr"));
       int arch_cpuid = libxsmm_cpuid(NULL);
-      if ((!is_env_DMR && arch_cpuid < LIBXSMM_X86_AVX512_DMR) || (i_gemm_def->vnni_a == 0)) {
+      if ((!is_env_DMR && arch_cpuid < LIBXSMM_X86_AVX512_DMR) || (i_gemm_def->vnni_a == 0) || (( arch_cpuid >= LIBXSMM_AARCH64_V81 ) &&  ( arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT )) ) {
         char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
         i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
         libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
@@ -2043,7 +2043,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       const char* env_arch = getenv("LIBXSMM_TARGET");
       const int is_env_DMR = (env_arch == NULL) ? 0 : ( env_arch == libxsmm_stristr(env_arch, "dmr"));
       int arch_cpuid = libxsmm_cpuid(NULL);
-      if ((!is_env_DMR && arch_cpuid < LIBXSMM_X86_AVX512_DMR) || (i_gemm_def->vnni_a == 0)) {
+      if ((!is_env_DMR && arch_cpuid < LIBXSMM_X86_AVX512_DMR) || (i_gemm_def->vnni_a == 0) || (( arch_cpuid >= LIBXSMM_AARCH64_V81 ) &&  ( arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ))) {
         char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
         i_gemm_def->c_type = LIBXSMM_DATATYPE_F32;
         libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
