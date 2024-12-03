@@ -118,8 +118,8 @@ void libxsmm_calculate_brgemm_offsets(void **a_addr, void **b_addr, long long *o
     *offs_a = (i_gemm_def->br_offs_A[l_r])/LIBXSMM_TYPESIZE(i_gemm_def->a_type);
     *offs_b = (i_gemm_def->br_offs_B[l_r])/LIBXSMM_TYPESIZE(i_gemm_def->b_type);
   } else if (i_gemm_def->br_type == 3) {
-    *offs_a = (i_gemm_def->stride_a/LIBXSMM_TYPESIZE(i_gemm_def->a_type)) * l_r;
-    *offs_b = (i_gemm_def->stride_b/LIBXSMM_TYPESIZE(i_gemm_def->b_type)) * l_r;
+    *offs_a = i_gemm_def->stride_a * l_r;
+    *offs_b = i_gemm_def->stride_b * l_r;
   } else {
     *offs_a = 0;
     *offs_b = 0;
