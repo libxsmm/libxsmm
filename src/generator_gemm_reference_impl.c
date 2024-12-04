@@ -592,7 +592,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     unsigned long long compressed_index = 0;
 
     if (i_gemm_def->a_type != LIBXSMM_DATATYPE_F32) {
-      l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+      l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->b_type);
     }
     for (l_s = 0; l_s < (k / l_k_block); l_s++) {
       for (l_i = 0; l_i < m; l_i++) {
