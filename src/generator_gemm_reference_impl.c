@@ -1305,7 +1305,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, const void* a, cons
     short short_a;
     int int_a;
     float up_c;
-    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->b_type);
+    int l_k_block = 2;
     const char* env_arch = getenv("LIBXSMM_TARGET");
     const int is_env_SPR = (env_arch == NULL) ? 0 : (
       env_arch == strstr(env_arch, "spr") ||
