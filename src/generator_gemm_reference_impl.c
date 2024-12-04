@@ -2063,7 +2063,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
 LIBXSMM_API_INTERN
 void libxsmm_ref_apply_c_vnni(libxsmm_gemm_def* i_gemm_def, void *c_ptr, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   if (i_gemm_def->fuse_vnni_c > 0) {
-    unsigned short vnni_cvt_type = (unsigned short)(( LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF16 || LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_F16 ) ? (( libxsmm_cpuid_dot_pack_factor(LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) == 4 && (i_xgemm_desc->n % 4 == 0)) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4);
+    unsigned short vnni_cvt_type = (unsigned short)(( LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF16 || LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_F16 ) ? (( libxsmm_cpuid_dot_pack_factor((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) == 4 && (i_xgemm_desc->n % 4 == 0)) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4);
     libxsmm_meltw_unary_param unary_param;
     libxsmm_descriptor_blob blob;
     const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), i_xgemm_desc->m, i_xgemm_desc->n,
