@@ -22,7 +22,7 @@ float libxsmm_convert_mxfp4_to_float(unsigned char x) {
 
 LIBXSMM_API_INTERN
 char libxsmm_convert_mxfp4_to_char(unsigned char x) {
-  char fp4_e2m1_lut[16] = {0, 11, 21, 32, 42, 64, 85, 127, 0, -11, -21, -32, -42, -64, -85, -127};
+  char fp4_e2m1_lut[16] = {0, 11, 21, 32, 42, 64, 85, 127, 0, (char)-11, (char)-21, (char)-32, (char)-42, (char)-64, (char)-85, (char)-127};
   char result = fp4_e2m1_lut[x];
   return result;
 }
