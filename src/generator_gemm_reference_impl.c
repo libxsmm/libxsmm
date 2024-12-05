@@ -209,6 +209,7 @@ LIBXSMM_API_INTERN
 void libxsmm_ref_deallocate_c_scratch(libxsmm_gemm_def* i_gemm_def) {
   if (i_gemm_def->fuse_via_scratch) {
     free(i_gemm_def->c_scratch);
+    i_gemm_def->c_scratch = NULL;
   }
   return;
 }
@@ -217,6 +218,7 @@ LIBXSMM_API_INTERN
 void libxsmm_ref_deallocate_c_vnni_scratch(libxsmm_gemm_def* i_gemm_def) {
   if (i_gemm_def->fuse_vnni_c > 0) {
     free(i_gemm_def->c_vnni_scratch);
+    i_gemm_def->c_vnni_scratch = NULL;
   }
   return;
 }
@@ -322,7 +324,7 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   int l_vnni_c = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_C) > 0) ? 1 : 0;
   double l_alpha = 1.0;
   double l_beta = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0) > 0) ? 0.0 : 1.0;
-  int l_br = (int) ( (gemm_param_ext == NULL) ? (*(unsigned long long*)gemm_param->op.tertiary) : (*(unsigned long long*)gemm_param_ext->op.tertiary) );
+  int l_br = 0;
   int l_br_type = 0;
   int l_binary_postop = 0;
   int l_unary_postop = 0;
@@ -405,6 +407,10 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   if ((l_dtype_a == LIBXSMM_DATATYPE_I8 || l_dtype_a == LIBXSMM_DATATYPE_U8) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV) > 0) && (l_dtype_b == LIBXSMM_DATATYPE_I8)) {
     l_gemm_def.is_Ai4Bi8_gemm = 1;
     l_gemm_def.fuse_zpt_sub = 1;
+  }
+
+  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS > 0) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET > 0) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE > 0)) {
+    l_br = (int) ( (gemm_param_ext == NULL) ? (*(unsigned long long*)gemm_param->op.tertiary) : (*(unsigned long long*)gemm_param_ext->op.tertiary) );
   }
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
