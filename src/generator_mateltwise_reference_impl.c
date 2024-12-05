@@ -12,7 +12,7 @@
 #include "generator_common.h"
 #include "generator_mateltwise_reference_impl.h"
 
-LIBXSMM_API_INTERN libxsmm_float16 my_libxsmm_convert_f32_to_f16(float in)
+LIBXSMM_API_INTERN libxsmm_float16 libxsmm_my_convert_f32_to_f16(float in)
 {
   unsigned int f32_bias = 127;
   unsigned int f16_bias = 15;
@@ -101,7 +101,7 @@ LIBXSMM_API_INTERN libxsmm_float16 my_libxsmm_convert_f32_to_f16(float in)
   return res;
 }
 
-LIBXSMM_API_INTERN float my_libxsmm_convert_f16_to_f32(libxsmm_float16 in)
+LIBXSMM_API_INTERN float libxsmm_my_convert_f16_to_f32(libxsmm_float16 in)
 {
   unsigned int f32_bias = 127;
   unsigned int f16_bias = 15;
@@ -146,7 +146,7 @@ LIBXSMM_API_INTERN float my_libxsmm_convert_f16_to_f32(libxsmm_float16 in)
   return res.f;
 }
 
-LIBXSMM_API_INTERN void my_libxsmm_lsfr_i32(unsigned int* rng_state, unsigned int* prng_out, const unsigned int seed_idx) {
+LIBXSMM_API_INTERN void libxsmm_my_lsfr_i32(unsigned int* rng_state, unsigned int* prng_out, const unsigned int seed_idx) {
   unsigned int rng_num = 0;
   const unsigned int state_ld = 16;
 
@@ -175,7 +175,7 @@ LIBXSMM_API_INTERN void my_libxsmm_lsfr_i32(unsigned int* rng_state, unsigned in
   rng_state[seed_idx + (3 * state_ld)] = state_3;
 }
 
-LIBXSMM_API_INTERN void my_libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state, unsigned int start_seed_idx) {
+LIBXSMM_API_INTERN void libxsmm_my_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state, unsigned int start_seed_idx) {
   unsigned int i = 0;
   unsigned int j = 0;
 
@@ -189,8 +189,8 @@ LIBXSMM_API_INTERN void my_libxsmm_stochastic_convert_fp32_bf8(const float* in, 
       unsigned int vrng;
       unsigned short rand;
 
-      hybrid_in.f = my_libxsmm_convert_f32_to_f16( in[i+j] );
-      my_libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
+      hybrid_in.f = libxsmm_my_convert_f32_to_f16( in[i+j] );
+      libxsmm_my_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
       rand = (unsigned short)((vrng >> 24) & 0xff);
 
       /* RNE fixup */
@@ -210,15 +210,15 @@ LIBXSMM_API_INTERN void my_libxsmm_stochastic_convert_fp32_bf8(const float* in, 
   }
 }
 
-LIBXSMM_API_INTERN float my_libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in)
+LIBXSMM_API_INTERN float libxsmm_my_convert_bf8_to_f32(libxsmm_bfloat8 in)
 {
   const unsigned short inus = (unsigned short)in;
   const unsigned short tmp = (unsigned short)(inus << 8);
-  return my_libxsmm_convert_f16_to_f32(tmp);
+  return libxsmm_my_convert_f16_to_f32(tmp);
 }
 
 
-LIBXSMM_API_INTERN float my_libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in)
+LIBXSMM_API_INTERN float libxsmm_my_convert_hf8_to_f32(libxsmm_hfloat8 in)
 {
   const unsigned int f32_bias = 127, f8_bias = 7;
   const unsigned int s = (in & 0x80 ) << 24;
@@ -251,7 +251,7 @@ LIBXSMM_API_INTERN float my_libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in)
 }
 
 
-LIBXSMM_API_INTERN float my_libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in)
+LIBXSMM_API_INTERN float libxsmm_my_convert_bf16_to_f32(libxsmm_bfloat16 in)
 {
   libxsmm_float_uint hybrid_in = { 0 };
   hybrid_in.u = in;
@@ -263,7 +263,7 @@ LIBXSMM_API_INTERN float my_libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in)
   return hybrid_in.f;
 }
 
-LIBXSMM_API_INTERN libxsmm_bfloat16 my_libxsmm_convert_f32_to_bf16_truncate(float in)
+LIBXSMM_API_INTERN libxsmm_bfloat16 libxsmm_my_convert_f32_to_bf16_truncate(float in)
 {
   libxsmm_float_uint hybrid_in = { 0 };
   libxsmm_bfloat16 res;
@@ -282,7 +282,7 @@ LIBXSMM_API_INTERN libxsmm_bfloat16 my_libxsmm_convert_f32_to_bf16_truncate(floa
 }
 
 
-LIBXSMM_API_INTERN libxsmm_bfloat16 my_libxsmm_convert_f32_to_bf16_rnaz(float in)
+LIBXSMM_API_INTERN libxsmm_bfloat16 libxsmm_my_convert_f32_to_bf16_rnaz(float in)
 {
   libxsmm_float_uint hybrid_in = { 0 };
   libxsmm_bfloat16 res;
@@ -301,7 +301,7 @@ LIBXSMM_API_INTERN libxsmm_bfloat16 my_libxsmm_convert_f32_to_bf16_rnaz(float in
 }
 
 
-LIBXSMM_API_INTERN libxsmm_bfloat16 my_libxsmm_convert_f32_to_bf16_rne(float in)
+LIBXSMM_API_INTERN libxsmm_bfloat16 libxsmm_my_convert_f32_to_bf16_rne(float in)
 {
   libxsmm_float_uint hybrid_in = { 0 };
   libxsmm_bfloat16 res;
@@ -323,10 +323,10 @@ LIBXSMM_API_INTERN libxsmm_bfloat16 my_libxsmm_convert_f32_to_bf16_rne(float in)
 }
 
 
-LIBXSMM_API_INTERN libxsmm_bfloat8 my_libxsmm_convert_f32_to_bf8_stochastic(float in, unsigned int seed)
+LIBXSMM_API_INTERN libxsmm_bfloat8 libxsmm_my_convert_f32_to_bf8_stochastic(float in, unsigned int seed)
 {
   /* initial downcast */
-  libxsmm_float16 f16 = my_libxsmm_convert_f32_to_f16(in);
+  libxsmm_float16 f16 = libxsmm_my_convert_f32_to_f16(in);
   /* do not round inf and NaN */
   if ((f16 & 0x7c00) == 0x7c00) {
     f16 = (unsigned short)(((f16 & 0x03ff) == 0x0) ? f16 : (f16 | 0x0200));
@@ -348,12 +348,12 @@ LIBXSMM_API_INTERN libxsmm_bfloat8 my_libxsmm_convert_f32_to_bf8_stochastic(floa
 }
 
 
-LIBXSMM_API_INTERN libxsmm_bfloat8 my_libxsmm_convert_f32_to_bf8_rne(float in)
+LIBXSMM_API_INTERN libxsmm_bfloat8 libxsmm_my_convert_f32_to_bf8_rne(float in)
 {
   libxsmm_float16_ushort hybrid_in = { 0 };
   libxsmm_bfloat8 res;
   unsigned int fixup;
-  hybrid_in.f = my_libxsmm_convert_f32_to_f16(in);
+  hybrid_in.f = libxsmm_my_convert_f32_to_f16(in);
   /* RNE round */
   fixup = (hybrid_in.u >> 8) & 1;
   /* we do not round inf and NaN */
@@ -366,7 +366,7 @@ LIBXSMM_API_INTERN libxsmm_bfloat8 my_libxsmm_convert_f32_to_bf8_rne(float in)
 }
 
 
-LIBXSMM_API libxsmm_hfloat8 my_libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in)
+LIBXSMM_API libxsmm_hfloat8 libxsmm_my_convert_f16_to_hf8_rne(libxsmm_float16 in)
 {
   unsigned int f16_bias = 15;
   unsigned int f8_bias = 7;
@@ -434,10 +434,10 @@ LIBXSMM_API libxsmm_hfloat8 my_libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in
 }
 
 
-LIBXSMM_API_INTERN libxsmm_hfloat8 my_libxsmm_convert_f32_to_hf8_rne(float in)
+LIBXSMM_API_INTERN libxsmm_hfloat8 libxsmm_my_convert_f32_to_hf8_rne(float in)
 {
-  const libxsmm_float16 itm = my_libxsmm_convert_f32_to_f16(in);
-  return my_libxsmm_convert_f16_to_hf8_rne(itm);
+  const libxsmm_float16 itm = libxsmm_my_convert_f32_to_f16(in);
+  return libxsmm_my_convert_f16_to_hf8_rne(itm);
 }
 
 LIBXSMM_API_INTERN
@@ -705,16 +705,16 @@ float libxsmm_elementwise_get_float_value(const void *in, libxsmm_blasint i, lib
     result = f_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)];
   } else if ( dtype_in == LIBXSMM_DATATYPE_BF16 ) {
     const libxsmm_bfloat16* bf16_in = (const libxsmm_bfloat16*)in;
-    result = my_libxsmm_convert_bf16_to_f32(bf16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_my_convert_bf16_to_f32(bf16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else if ( dtype_in == LIBXSMM_DATATYPE_F16 ) {
     const libxsmm_float16* f16_in = (const libxsmm_float16*)in;
-    result = my_libxsmm_convert_f16_to_f32(f16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_my_convert_f16_to_f32(f16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else if ( dtype_in == LIBXSMM_DATATYPE_BF8 ) {
     const libxsmm_bfloat8* bf8_in = (const libxsmm_bfloat8*)in;
-    result = my_libxsmm_convert_bf8_to_f32(bf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_my_convert_bf8_to_f32(bf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else if ( dtype_in == LIBXSMM_DATATYPE_HF8 ) {
     const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
-    result = my_libxsmm_convert_hf8_to_f32(hf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_my_convert_hf8_to_f32(hf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else {
     /* should not happen */
   }
@@ -729,20 +729,20 @@ void libxsmm_elementwise_store_value(void *out, void* out_value_ptr, libxsmm_bla
     f_out[(j*ldo) + i] = out_value;
   } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
     libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
-    bf16_out[(j*ldo) + i] = my_libxsmm_convert_f32_to_bf16_rne(out_value);
+    bf16_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_bf16_rne(out_value);
   } else if ( dtype_out == LIBXSMM_DATATYPE_F16 ) {
     libxsmm_float16* f16_out = (libxsmm_float16*)out;
-    f16_out[(j*ldo) + i] = my_libxsmm_convert_f32_to_f16(out_value);
+    f16_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_f16(out_value);
   } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
     libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
     if (use_stoch > 0) {
-      my_libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
+      libxsmm_my_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
     } else {
-      bf8_out[(j*ldo) + i] = my_libxsmm_convert_f32_to_bf8_rne(out_value);
+      bf8_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_bf8_rne(out_value);
     }
   } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
     libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
-    hf8_out[(j*ldo) + i] = my_libxsmm_convert_f32_to_hf8_rne(out_value);
+    hf8_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_hf8_rne(out_value);
   } else {
     /* should not happen */
   }
@@ -2515,9 +2515,9 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
             tmp.i[0] = 0;
             out2_value = tmp.i[1];
             ftmp2 = ftmp - tmp.f;
-            out3_value = my_libxsmm_convert_f32_to_bf16_rne(ftmp2);
+            out3_value = libxsmm_my_convert_f32_to_bf16_rne(ftmp2);
           } else {
-            out2_value = my_libxsmm_convert_f32_to_bf16_rne(ftmp);
+            out2_value = libxsmm_my_convert_f32_to_bf16_rne(ftmp);
           }
           bf16_out[(j*ldo) + i                   ] = out1_value;
           bf16_out[(j*ldo) + i + (strides[0]/2)  ] = out2_value;
