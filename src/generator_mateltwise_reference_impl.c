@@ -1573,6 +1573,10 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
     double *tmp_result_elts = NULL, *tmp_result_elts_squared = NULL;
     tmp_result_elts = (double*) malloc( sizeof(double)*result_size );
     tmp_result_elts_squared = (double*) malloc( sizeof(double)*result_size );
+    for (i = 0; i < result_size; i++) {
+      if (reduce_elts) tmp_result_elts[i] = 0.0;
+      if (reduce_elts_sq) out_elts_sq_f64[i] = 0.0;
+    }
     if (reduce_op == 0) {
       /* Calculate reference results... */
       if (reduce_rows == 1) {
@@ -1703,10 +1707,6 @@ void libxsmm_elementwise_reduce_kernel(libxsmm_meltw_unary_param *param, const l
           }
         } else {
           printf("Should not happen\n");
-          for (i = 0; i < result_size; i++) {
-            if (reduce_elts) tmp_result_elts[i] = 0.0;
-            if (reduce_elts_sq) out_elts_sq_f64[i] = 0.0;
-          }
         }
       }
     }
