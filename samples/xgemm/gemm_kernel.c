@@ -1679,7 +1679,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat16* h_a = (libxsmm_bfloat16*)a;
     libxsmm_bfloat16* h_b = (libxsmm_bfloat16*)b;
     libxsmm_bfloat16* h_c = (libxsmm_bfloat16*)c;
-    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? (i_gemm_def->is_Amxfp4Bbf16_gemm > 0) ? 2 :  libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     float acc = 0.0f;
     libxsmm_bfloat16 h_acc;
 
