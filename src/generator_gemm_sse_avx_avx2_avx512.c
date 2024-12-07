@@ -168,6 +168,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                       (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc->datatype )) &&
                                       ((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ))))) ? 1 : 0;
   unsigned int l_is_Ai4_Bi8_gemm = libxsmm_x86_is_Ai4_Bi8_gemm(i_xgemm_desc);
+  unsigned int l_is_Ai2_Bi8_gemm = libxsmm_x86_is_Ai2_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bfp32_gemm = libxsmm_x86_is_Amxfp4_Bfp32_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bi8_gemm = libxsmm_x86_is_Amxfp4_Bi8_gemm(i_xgemm_desc);
@@ -365,6 +366,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
         l_m_zpt_vregs += init_m_blocks;
       }
       while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1 + l_m_zpt_vregs) > l_micro_kernel_config.vector_reg_count) {
+        l_max_n_blocking--;
+      }
+    } else if (l_is_Ai2_Bi8_gemm > 0) {
+      int l_m_reserved_vregs = 3;
+      while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1 + l_m_reserved_vregs) > l_micro_kernel_config.vector_reg_count) {
         l_max_n_blocking--;
       }
     } else {
@@ -609,6 +615,59 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,  (const unsigned char *) perm_rpt_zpt, "my_vperm_i4", 'z', 2 );
     }
+  }
+
+  if (l_is_Ai2_Bi8_gemm > 0) {
+    char perm_bits_01[64];
+    char perm_bits_23[64];
+    char perm_bits_45[64];
+    unsigned int __i;
+
+    for (__i = 0; __i < 64; __i++) {
+      if ((__i & 0x3) == 0) {
+        perm_bits_01[__i] = 0;
+      }
+      if ((__i & 0x3) == 1) {
+        perm_bits_01[__i] = 1;
+      }
+      if ((__i & 0x3) == 2) {
+        perm_bits_01[__i] = -1;
+      }
+      if ((__i & 0xc) == 0) {
+        perm_bits_23[__i] = 0;
+      }
+      if ((__i & 0xc) == 4) {
+        perm_bits_23[__i] = 1;
+      }
+      if ((__i & 0xc) == 8) {
+        perm_bits_23[__i] = -1;
+      }
+      if ((__i & 0x30) == 0) {
+        perm_bits_45[__i] = 0;
+      }
+      if ((__i & 0x30) == 16) {
+        perm_bits_45[__i] = 1;
+      }
+      if ((__i & 0x30) == 32) {
+        perm_bits_45[__i] = -1;
+      }
+    }
+
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                         (const unsigned char *) perm_bits_01 ,
+                                                         "my_perm_01",
+                                                         'z',
+                                                         0 );
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                         (const unsigned char *) perm_bits_23 ,
+                                                         "my_perm_23",
+                                                         'z',
+                                                         1 );
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                         (const unsigned char *) perm_bits_45 ,
+                                                         "my_perm_45",
+                                                         'z',
+                                                         2 );
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0) {
