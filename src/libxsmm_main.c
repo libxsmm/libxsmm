@@ -2112,6 +2112,18 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   char jit_buffer[LIBXSMM_CODE_MAXSIZE] = { 0 }, jit_name[384] = { 0 }, suffix_name[16] = { 0 };
   libxsmm_generated_code generated_code /*= { 0 }*/;
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
+  const char *const env_reference_disable_gemm_fallback = getenv("LIBXSMM_DISABLE_GEMM_REFERENCE_FALLBACK");
+  const char *const env_reference_enforce_gemm_fallback = getenv("LIBXSMM_ENFORCE_GEMM_REFERENCE_FALLBACK");
+  const char *const env_reference_disable_meltw_fallback = getenv("LIBXSMM_DISABLE_MELTW_REFERENCE_FALLBACK");
+  const char *const env_reference_enforce_meltw_fallback = getenv("LIBXSMM_ENFORCE_MELTW_REFERENCE_FALLBACK");
+  const char *const env_reference_disable_matequation_fallback = getenv("LIBXSMM_DISABLE_MATEQUATION_REFERENCE_FALLBACK");
+  const char *const env_reference_enforce_matequation_fallback = getenv("LIBXSMM_ENFORCE_MATEQUATION_REFERENCE_FALLBACK");
+  unsigned int libxsmm_disable_reference_gemm_fallback = (env_reference_disable_gemm_fallback == 0) ? 0 : atoi(env_reference_disable_gemm_fallback);
+  unsigned int libxsmm_enforce_reference_gemm_fallback = (env_reference_enforce_gemm_fallback == 0) ? 0 : atoi(env_reference_enforce_gemm_fallback);
+  unsigned int libxsmm_disable_reference_meltw_fallback = (env_reference_disable_meltw_fallback == 0) ? 0 : atoi(env_reference_disable_meltw_fallback);
+  unsigned int libxsmm_enforce_reference_meltw_fallback = (env_reference_enforce_meltw_fallback == 0) ? 0 : atoi(env_reference_enforce_meltw_fallback);
+  unsigned int libxsmm_disable_reference_matequation_fallback = (env_reference_disable_matequation_fallback == 0) ? 0 : atoi(env_reference_disable_matequation_fallback);
+  unsigned int libxsmm_enforce_reference_matequation_fallback = (env_reference_enforce_matequation_fallback == 0) ? 0 : atoi(env_reference_enforce_matequation_fallback);
 
   LIBXSMM_MEMZERO127(&generated_code);
   if (LIBXSMM_CAPACITY_REGISTRY != regindex) {
@@ -2160,12 +2172,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           }
         }
 # endif
-        libxsmm_generator_gemm_kernel(&generated_code, request->descriptor.gemm);
+        if (libxsmm_enforce_reference_gemm_fallback == 0) {
+          libxsmm_generator_gemm_kernel(&generated_code, request->descriptor.gemm);
+        }
         /* Try reference code JITer */
-        if (0 != generated_code.last_error) {
-          generated_code.code_size = 0;
-          generated_code.last_error = 0;
-          libxsmm_generator_gemm_reference_kernel(&generated_code, request->descriptor.gemm);
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, request->descriptor.gemm);
+          }
         }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -2519,12 +2535,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        libxsmm_generator_mateltwise_kernel(&generated_code, request->descriptor.meltw);
+        if (libxsmm_enforce_reference_meltw_fallback == 0) {
+          libxsmm_generator_mateltwise_kernel(&generated_code, request->descriptor.meltw);
+        }
         /* Try reference code JITer */
-        if (0 != generated_code.last_error) {
-          generated_code.code_size = 0;
-          generated_code.last_error = 0;
-          libxsmm_generator_mateltwise_reference_kernel(&generated_code, request->descriptor.meltw);
+        if (libxsmm_disable_reference_meltw_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            libxsmm_generator_mateltwise_reference_kernel(&generated_code, request->descriptor.meltw);
+          }
         }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -2546,12 +2566,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_MEQN: { /* matequation kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
-        libxsmm_generator_matequation_kernel(&generated_code, request->descriptor.meqn);
+        if (libxsmm_enforce_reference_matequation_fallback == 0) {
+          libxsmm_generator_matequation_kernel(&generated_code, request->descriptor.meqn);
+        }
         /* Try reference code JITer */
-        if (0 != generated_code.last_error) {
-          generated_code.code_size = 0;
-          generated_code.last_error = 0;
-          libxsmm_generator_matequation_reference_kernel(&generated_code, request->descriptor.meqn);
+        if (libxsmm_disable_reference_matequation_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            libxsmm_generator_matequation_reference_kernel(&generated_code, request->descriptor.meqn);
+          }
         }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
