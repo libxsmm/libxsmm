@@ -12,7 +12,7 @@
 #include "generator_common.h"
 #include "generator_mateltwise_reference_impl.h"
 #include <libxsmm_math.h>
-#include <libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_lpflt_quant.h>
 
 LIBXSMM_API_INTERN
 float libxsmm_fsigmoid(float x) {

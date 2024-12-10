@@ -13,7 +13,7 @@
 #include "generator_gemm_reference_impl.h"
 #include "generator_mateltwise_reference_impl.h"
 #include <libxsmm_math.h>
-#include <libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_lpflt_quant.h>
 
 LIBXSMM_API_INTERN
 float libxsmm_convert_mxfp4_to_float(unsigned char x) {
