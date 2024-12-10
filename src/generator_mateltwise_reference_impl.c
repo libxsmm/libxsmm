@@ -11,434 +11,8 @@
 #include "generator_mateltwise_common.h"
 #include "generator_common.h"
 #include "generator_mateltwise_reference_impl.h"
-
-LIBXSMM_API_INTERN libxsmm_float16 libxsmm_my_convert_f32_to_f16(float in)
-{
-  unsigned int f32_bias = 127;
-  unsigned int f16_bias = 15;
-  libxsmm_float_uint hybrid_in = { 0 };
-  libxsmm_float16 res = 0;
-  unsigned int s, e, m, e_f32, m_f32;
-  unsigned int fixup;
-  hybrid_in.f = in;
-
-  /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
-    ? (hybrid_in.u & 0x80000000)
-    : (hybrid_in.u & 0xffffffff));
-
-  s = (hybrid_in.u & 0x80000000) >> 16;
-  e_f32 = (hybrid_in.u & 0x7f800000) >> 23;
-  m_f32 = (hybrid_in.u & 0x007fffff);
-
-  /* special value */
-  if (e_f32 == 0xff) {
-    e = 0x1f;
-    m = (m_f32 == 0 ? 0 : ((m_f32 >> 13) | 0x200));
-    /* overflow */
-  }
-  else if (e_f32 > (f32_bias + f16_bias)) {
-    e = 0x1f;
-    m = 0x0;
-    /* smaller than denormal f16 */
-  }
-  else if (e_f32 < f32_bias - f16_bias - 10) {
-    e = 0x0;
-    m = 0x0;
-    /* denormal */
-  }
-  else if (e_f32 <= f32_bias - f16_bias) {
-    /* RNE */
-#if 1
-    /* denormalized mantissa */
-    m = m_f32 | 0x00800000;
-    /* additionally subnormal shift */
-    m = m >> ((f32_bias - f16_bias) + 1 - e_f32);
-    /* preserve sticky bit (some sticky bits are lost when denormalizing) */
-    m |= (((m_f32 & 0x1fff) + 0x1fff) >> 13);
-    /* RNE Round */
-    fixup = (m >> 13) & 0x1;
-    m = m + 0x000000fff + fixup;
-    m = m >> 13;
-    e = 0x0;
-#else
-    /* RAZ */
-    m = (m_f32 | 0x00800000) >> 12;
-    m = (m >> ((f32_bias - f16_bias) + 2 - e_f32)) + ((m >> ((f32_bias - f16_bias) + 1 - e_f32)) & 1);
-    e = 0x0;
-#endif
-    /* normal */
-  }
-  else {
-#if 1
-    /* RNE round */
-    fixup = (m_f32 >> 13) & 0x1;
-    hybrid_in.u = hybrid_in.u + 0x000000fff + fixup;
-    e = (hybrid_in.u & 0x7f800000) >> 23;
-    m = (hybrid_in.u & 0x007fffff);
-    LIBXSMM_ASSERT(e >= (f32_bias - f16_bias));
-    e -= (f32_bias - f16_bias);
-    m = m >> 13;
-#else
-    /* RAZ */
-    hybrid_in.u = hybrid_in.u + 0x00001000;
-    e = (hybrid_in.u & 0x7f800000) >> 23;
-    m = (hybrid_in.u & 0x007fffff);
-    LIBXSMM_ASSERT(e >= (f32_bias - f16_bias));
-    e -= (f32_bias - f16_bias);
-    m = m >> 13;
-#endif
-  }
-
-  /* set result to 0 */
-  res = 0x0;
-  /* set exponent and mantissa */
-  res |= e << 10;
-  res |= m;
-  /* sign it */
-  res |= s;
-
-  return res;
-}
-
-LIBXSMM_API_INTERN float libxsmm_my_convert_f16_to_f32(libxsmm_float16 in)
-{
-  unsigned int f32_bias = 127;
-  unsigned int f16_bias = 15;
-  unsigned int s = (in & 0x8000) << 16;
-  unsigned int e = (in & 0x7c00) >> 10;
-  unsigned int m = (in & 0x03ff);
-  unsigned int e_norm = e + (f32_bias - f16_bias);
-  libxsmm_float_uint res = { 0 };
-
-  /* convert denormal fp16 number into a normal fp32 number */
-  if ((e == 0) && (m != 0)) {
-    unsigned int lz_cnt = 9;
-    lz_cnt = (m > 0x1 ? 8 : lz_cnt);
-    lz_cnt = (m > 0x3 ? 7 : lz_cnt);
-    lz_cnt = (m > 0x7 ? 6 : lz_cnt);
-    lz_cnt = (m > 0xf ? 5 : lz_cnt);
-    lz_cnt = (m > 0x1f ? 4 : lz_cnt);
-    lz_cnt = (m > 0x3f ? 3 : lz_cnt);
-    lz_cnt = (m > 0x7f ? 2 : lz_cnt);
-    lz_cnt = (m > 0xff ? 1 : lz_cnt);
-    lz_cnt = (m > 0x1ff ? 0 : lz_cnt);
-    LIBXSMM_ASSERT(e_norm >= lz_cnt);
-    e_norm -= lz_cnt;
-    m = (m << (lz_cnt + 1)) & 0x03ff;
-  }
-  else if ((e == 0) && (m == 0)) {
-    e_norm = 0;
-  }
-  else if (e == 0x1f) {
-    e_norm = 0xff;
-    m |= (m == 0 ? 0 : 0x0200); /* making first mantissa bit 1 */
-  }
-
-  /* set result to 0 */
-  res.u = 0x0;
-  /* set exponent and mantissa */
-  res.u |= (e_norm << 23);
-  res.u |= (m << 13);
-  /* sign it */
-  res.u |= s;
-
-  return res.f;
-}
-
-LIBXSMM_API_INTERN void libxsmm_my_lsfr_i32(unsigned int* rng_state, unsigned int* prng_out, const unsigned int seed_idx) {
-  unsigned int rng_num = 0;
-  const unsigned int state_ld = 16;
-
-  unsigned int state_0 = rng_state[seed_idx + (0 * state_ld)];
-  unsigned int state_1 = rng_state[seed_idx + (1 * state_ld)];
-  unsigned int state_2 = rng_state[seed_idx + (2 * state_ld)];
-  unsigned int state_3 = rng_state[seed_idx + (3 * state_ld)];
-
-  unsigned int tmp_0, tmp_1;
-  tmp_0 = (state_0 + state_3) << 7;
-  tmp_1 = (state_0 + state_3) >> 25;
-  rng_num = (tmp_0 | tmp_1) + state_0;
-  prng_out[0] = rng_num;
-  tmp_0 = state_1 << 9;
-  state_2 = state_2 ^ state_0;
-  state_3 = state_3 ^ state_1;
-  state_1 = state_1 ^ state_2;
-  state_0 = state_0 ^ state_3;
-  state_2 = state_2 ^ tmp_0;
-  tmp_0 = state_3 << 11;
-  tmp_1 = state_3 >> 21;
-  state_3 = tmp_0 | tmp_1;
-  rng_state[seed_idx + (0 * state_ld)] = state_0;
-  rng_state[seed_idx + (1 * state_ld)] = state_1;
-  rng_state[seed_idx + (2 * state_ld)] = state_2;
-  rng_state[seed_idx + (3 * state_ld)] = state_3;
-}
-
-LIBXSMM_API_INTERN void libxsmm_my_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state, unsigned int start_seed_idx) {
-  unsigned int i = 0;
-  unsigned int j = 0;
-
-  /* truncate buffer to bf8 */
-  for ( i = 0; i < len; i+=16 ) {
-    unsigned int j_length = ( i + 16 < len ) ? 16 : len - i;
-    for (j=0; j < j_length; j++) {
-      libxsmm_float16_ushort hybrid_in = { 0 };
-      libxsmm_bfloat8 res;
-      unsigned short fixup;
-      unsigned int vrng;
-      unsigned short rand;
-
-      hybrid_in.f = libxsmm_my_convert_f32_to_f16( in[i+j] );
-      libxsmm_my_lsfr_i32((unsigned int*)rng_state, &vrng, (start_seed_idx + j) % 16);
-      rand = (unsigned short)((vrng >> 24) & 0xff);
-
-      /* RNE fixup */
-      fixup = (unsigned short)((hybrid_in.u >> 8) & 1);
-
-      /* we do not round inf and NaN */
-      hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
-        ? ( ((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200 )
-        /* we only stochastically round normal numbers, RNE for subnormal */
-        : ( ((hybrid_in.u & 0x7c00) == 0x0000) ? hybrid_in.u + 0x007f + fixup : hybrid_in.u + rand ) );
-
-      /* shift right */
-      res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
-
-      out[i+j] = res;
-    }
-  }
-}
-
-LIBXSMM_API_INTERN float libxsmm_my_convert_bf8_to_f32(libxsmm_bfloat8 in)
-{
-  const unsigned short inus = (unsigned short)in;
-  const unsigned short tmp = (unsigned short)(inus << 8);
-  return libxsmm_my_convert_f16_to_f32(tmp);
-}
-
-
-LIBXSMM_API_INTERN float libxsmm_my_convert_hf8_to_f32(libxsmm_hfloat8 in)
-{
-  const unsigned int f32_bias = 127, f8_bias = 7;
-  const unsigned int s = (in & 0x80 ) << 24;
-  const unsigned int e = (in & 0x78 ) >> 3;
-  unsigned int m = (in & 0x07 );
-  unsigned int e_norm = e + (f32_bias - f8_bias);
-  libxsmm_float_uint res;
-  /* convert denormal fp8 number into a normal fp32 number */
-  if ( (e == 0) && (m != 0) ) {
-    unsigned int lz_cnt = 2;
-    lz_cnt = (m > 0x1 ? 1 : lz_cnt);
-    lz_cnt = (m > 0x3 ? 0 : lz_cnt);
-    LIBXSMM_ASSERT(e_norm >= lz_cnt);
-    e_norm -= lz_cnt;
-    m = (m << (lz_cnt+1)) & 0x07;
-  } else if (e == 0 && m == 0) {
-    e_norm = 0;
-  } else if (e == 0xf && m == 0x7) {
-    e_norm = 0xff;
-    m = 0x4; /* making first mantissa bit 1 */
-  }
-  /* set result to 0 */
-  res.u = 0x0;
-  /* set exponent and mantissa */
-  res.u |= (e_norm << 23);
-  res.u |= (m << 20);
-  /* sign it */
-  res.u |= s;
-  return res.f;
-}
-
-
-LIBXSMM_API_INTERN float libxsmm_my_convert_bf16_to_f32(libxsmm_bfloat16 in)
-{
-  libxsmm_float_uint hybrid_in = { 0 };
-  hybrid_in.u = in;
-  /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f80) == 0x0
-    ? (unsigned short)(hybrid_in.u & 0x8000)
-    : hybrid_in.u);
-  hybrid_in.u = hybrid_in.u << 16;
-  return hybrid_in.f;
-}
-
-LIBXSMM_API_INTERN libxsmm_bfloat16 libxsmm_my_convert_f32_to_bf16_truncate(float in)
-{
-  libxsmm_float_uint hybrid_in = { 0 };
-  libxsmm_bfloat16 res;
-  hybrid_in.f = in;
-  /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
-    ? (hybrid_in.u & 0x80000000)
-    : hybrid_in.u);
-  /* we do not round inf and NaN */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x7f800000
-    ? ((hybrid_in.u & 0x007fffff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x00400000))
-    : hybrid_in.u);
-  /* shift right */
-  res = (unsigned short)(hybrid_in.u >> 16);
-  return res;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_bfloat16 libxsmm_my_convert_f32_to_bf16_rnaz(float in)
-{
-  libxsmm_float_uint hybrid_in = { 0 };
-  libxsmm_bfloat16 res;
-  hybrid_in.f = in;
-  /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
-    ? (hybrid_in.u & 0x80000000)
-    : hybrid_in.u);
-  /* we do not round inf and NaN */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x7f800000
-    ? ((hybrid_in.u & 0x007fffff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x00400000))
-    : (hybrid_in.u + 0x00008000));
-  /* shift right */
-  res = (unsigned short)(hybrid_in.u >> 16);
-  return res;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_bfloat16 libxsmm_my_convert_f32_to_bf16_rne(float in)
-{
-  libxsmm_float_uint hybrid_in = { 0 };
-  libxsmm_bfloat16 res;
-  unsigned int fixup;
-  hybrid_in.f = in;
-  /* DAZ */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0
-    ? (hybrid_in.u & 0x80000000)
-    : hybrid_in.u);
-  /* RNE round */
-  fixup = (hybrid_in.u >> 16) & 1;
-  /* we do not round inf and NaN */
-  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x7f800000
-    ? ((hybrid_in.u & 0x007fffff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x00400000))
-    : (hybrid_in.u + 0x00007fff + fixup));
-  /* shift right */
-  res = (unsigned short)(hybrid_in.u >> 16);
-  return res;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_bfloat8 libxsmm_my_convert_f32_to_bf8_stochastic(float in, unsigned int seed)
-{
-  /* initial downcast */
-  libxsmm_float16 f16 = libxsmm_my_convert_f32_to_f16(in);
-  /* do not round inf and NaN */
-  if ((f16 & 0x7c00) == 0x7c00) {
-    f16 = (unsigned short)(((f16 & 0x03ff) == 0x0) ? f16 : (f16 | 0x0200));
-  }
-  else if ((f16 & 0x7c00) != 0x0000) { /* only round normal numbers */
-#if 1
-    const unsigned short stochastic = (unsigned short)LIBXSMM_MOD2(seed, 0xff + 1);
-#else
-    const unsigned short stochastic = (unsigned short)((seed >> 24) & 0xff);
-#endif
-    f16 = (unsigned short)(f16 + stochastic);
-  }
-  else { /* RNE for subnormal */
-    const unsigned short fixup = (unsigned short)((f16 >> 8) & 1);
-    f16 = (unsigned short)(f16 + 0x007f + fixup);
-  }
-  /* create the bf8 value by shifting out the lower 8 bits */
-  return (unsigned char)(f16 >> 8);
-}
-
-
-LIBXSMM_API_INTERN libxsmm_bfloat8 libxsmm_my_convert_f32_to_bf8_rne(float in)
-{
-  libxsmm_float16_ushort hybrid_in = { 0 };
-  libxsmm_bfloat8 res;
-  unsigned int fixup;
-  hybrid_in.f = libxsmm_my_convert_f32_to_f16(in);
-  /* RNE round */
-  fixup = (hybrid_in.u >> 8) & 1;
-  /* we do not round inf and NaN */
-  hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
-    ? ((hybrid_in.u & 0x03ff) == 0x0 ? hybrid_in.u : (hybrid_in.u | 0x0200))
-    : (hybrid_in.u + 0x007f + fixup));
-  /* shift right */
-  res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
-  return res;
-}
-
-
-LIBXSMM_API libxsmm_hfloat8 libxsmm_my_convert_f16_to_hf8_rne(libxsmm_float16 in)
-{
-  unsigned int f16_bias = 15;
-  unsigned int f8_bias = 7;
-  libxsmm_hfloat8 res = 0;
-  unsigned short s, e, m, e_f16, m_f16;
-  unsigned int fixup;
-
-  s = (in & 0x8000) >> 8;
-  e_f16 = (in & 0x7c00) >> 10;
-  m_f16 = (in & 0x03ff);
-
-  /* special value --> make it NaN */
-  if (e_f16 == 0x1f) {
-    e = 0xf;
-    m = 0x7;
-    /* overflow --> make it NaN */
-  }
-  else if ((e_f16 >  (f16_bias - f8_bias + 15)) ||
-          ((e_f16 == (f16_bias - f8_bias + 15)) && (m_f16 > 0x0340)))
-  {
-    e = 0xf;
-    m = 0x7;
-    /* smaller than denormal f8 + eps */
-  }
-  else if (e_f16 < f16_bias - f8_bias - 3) {
-    e = 0x0;
-    m = 0x0;
-    /* denormal */
-  }
-  else if (e_f16 <= f16_bias - f8_bias) {
-    /* RNE */
-    /* denormalized mantissa */
-    m = m_f16 | 0x0400;
-    /* additionally subnormal shift */
-    m = m >> ((f16_bias - f8_bias) + 1 - e_f16);
-    /* preserve sticky bit (some sticky bits are lost when denormalizing) */
-    m |= (((m_f16 & 0x007f) + 0x007f) >> 7);
-    /* RNE Round */
-    fixup = (m >> 7) & 0x1;
-    m = m + LIBXSMM_CAST_USHORT(0x003f + fixup);
-    m = m >> 7;
-    e = 0x0;
-    /* normal */
-  }
-  else {
-    /* RNE round */
-    fixup = (m_f16 >> 7) & 0x1;
-    in = in + LIBXSMM_CAST_USHORT(0x003f + fixup);
-    e = (in & 0x7c00) >> 10;
-    m = (in & 0x03ff);
-    LIBXSMM_ASSERT(e >= LIBXSMM_CAST_USHORT(f16_bias - f8_bias));
-    e -= LIBXSMM_CAST_USHORT(f16_bias - f8_bias);
-    m = m >> 7;
-  }
-
-  /* set result to 0 */
-  res = 0x0;
-  /* set exponent and mantissa */
-  res |= e << 3;
-  res |= m;
-  /* sign it */
-  res |= s;
-
-  return res;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_hfloat8 libxsmm_my_convert_f32_to_hf8_rne(float in)
-{
-  const libxsmm_float16 itm = libxsmm_my_convert_f32_to_f16(in);
-  return libxsmm_my_convert_f16_to_hf8_rne(itm);
-}
+#include <libxsmm_math.h>
+#include <libxsmm_lpflt_quant.h>
 
 LIBXSMM_API_INTERN
 float libxsmm_fsigmoid(float x) {
@@ -705,16 +279,16 @@ float libxsmm_elementwise_get_float_value(const void *in, libxsmm_blasint i, lib
     result = f_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)];
   } else if ( dtype_in == LIBXSMM_DATATYPE_BF16 ) {
     const libxsmm_bfloat16* bf16_in = (const libxsmm_bfloat16*)in;
-    result = libxsmm_my_convert_bf16_to_f32(bf16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_convert_bf16_to_f32(bf16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else if ( dtype_in == LIBXSMM_DATATYPE_F16 ) {
     const libxsmm_float16* f16_in = (const libxsmm_float16*)in;
-    result = libxsmm_my_convert_f16_to_f32(f16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_convert_f16_to_f32(f16_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else if ( dtype_in == LIBXSMM_DATATYPE_BF8 ) {
     const libxsmm_bfloat8* bf8_in = (const libxsmm_bfloat8*)in;
-    result = libxsmm_my_convert_bf8_to_f32(bf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_convert_bf8_to_f32(bf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else if ( dtype_in == LIBXSMM_DATATYPE_HF8 ) {
     const libxsmm_hfloat8* hf8_in = (const libxsmm_hfloat8*)in;
-    result = libxsmm_my_convert_hf8_to_f32(hf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
+    result = libxsmm_convert_hf8_to_f32(hf8_in[libxsmm_elementwise_get_index(i, j, ld, i_mateltwise_desc, operand_id)]);
   } else {
     /* should not happen */
   }
@@ -729,20 +303,20 @@ void libxsmm_elementwise_store_value(void *out, void* out_value_ptr, libxsmm_bla
     f_out[(j*ldo) + i] = out_value;
   } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
     libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
-    bf16_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_bf16_rne(out_value);
+    bf16_out[(j*ldo) + i] = libxsmm_convert_f32_to_bf16_rne(out_value);
   } else if ( dtype_out == LIBXSMM_DATATYPE_F16 ) {
     libxsmm_float16* f16_out = (libxsmm_float16*)out;
-    f16_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_f16(out_value);
+    f16_out[(j*ldo) + i] = libxsmm_convert_f32_to_f16(out_value);
   } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
     libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
     if (use_stoch > 0) {
-      libxsmm_my_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
+      libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1, rng_state, seed_idx);
     } else {
-      bf8_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_bf8_rne(out_value);
+      bf8_out[(j*ldo) + i] = libxsmm_convert_f32_to_bf8_rne(out_value);
     }
   } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
     libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
-    hf8_out[(j*ldo) + i] = libxsmm_my_convert_f32_to_hf8_rne(out_value);
+    hf8_out[(j*ldo) + i] = libxsmm_convert_f32_to_hf8_rne(out_value);
   } else {
     /* should not happen */
   }
@@ -2515,9 +2089,9 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
             tmp.i[0] = 0;
             out2_value = tmp.i[1];
             ftmp2 = ftmp - tmp.f;
-            out3_value = libxsmm_my_convert_f32_to_bf16_rne(ftmp2);
+            out3_value = libxsmm_convert_f32_to_bf16_rne(ftmp2);
           } else {
-            out2_value = libxsmm_my_convert_f32_to_bf16_rne(ftmp);
+            out2_value = libxsmm_convert_f32_to_bf16_rne(ftmp);
           }
           bf16_out[(j*ldo) + i                   ] = out1_value;
           bf16_out[(j*ldo) + i + (strides[0]/2)  ] = out2_value;
