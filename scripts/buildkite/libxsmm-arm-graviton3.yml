@@ -7,6 +7,8 @@ steps:
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     agents:
       queue: "aarch64"
+    env:
+      ENVS: "SSIZE=2"
 
   - label: "BCSC SPMM"
     command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
