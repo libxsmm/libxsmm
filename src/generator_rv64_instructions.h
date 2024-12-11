@@ -2326,6 +2326,7 @@ void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_gene
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_gp_reg_src_1,
                                               const int               i_imm12 );
+#if 0
 /**
  * Generates jump and link instruction with register
  *
@@ -2341,6 +2342,7 @@ void libxsmm_rv64_instruction_register_jump( libxsmm_generated_code* io_generate
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_gp_reg_src_1,
                                               const unsigned int      i_imm12 );
+#endif
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
