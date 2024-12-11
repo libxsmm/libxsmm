@@ -42,7 +42,8 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
        io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
-       io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+       io_generated_code->arch == LIBXSMM_AARCH64_A64FX ||
+       io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 32;
     /* Configure input specific microkernel options */

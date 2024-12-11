@@ -9,7 +9,6 @@ steps:
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test_srf.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
-      LIBXSMM_TARGET: srf
     label: "SMMs SRF Prec. (SRF)"
 
   - command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
@@ -29,5 +28,9 @@ steps:
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test_gnr.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -gnr --"
-      LIBXSMM_TARGET: gnr
     label: "SMMs GNR Prec. (GNR)"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_dmr.sh"
+    env:
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -dmr --"
+    label: "SMMs DMR Prec. (DMR)"

@@ -128,6 +128,7 @@
      &    LIBXSMM_X86_AVX512_CPX        = 1103,                         &
      &    LIBXSMM_X86_AVX512_SPR        = 1104,                         &
      &    LIBXSMM_X86_AVX512_GNR        = 1105,                         &
+     &    LIBXSMM_X86_AVX512_DMR        = 1106,                         &
      &    LIBXSMM_X86_ALLFEAT           = 1999,                         &
      &    LIBXSMM_AARCH64_V81           = 2001,                         &
      &    LIBXSMM_AARCH64_V82           = 2002,                         &

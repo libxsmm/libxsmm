@@ -38,6 +38,7 @@
 #define LIBXSMM_X86_AVX512_CPX        1103
 #define LIBXSMM_X86_AVX512_SPR        1104
 #define LIBXSMM_X86_AVX512_GNR        1105
+#define LIBXSMM_X86_AVX512_DMR        1106
 #define LIBXSMM_X86_ALLFEAT           1999
 #define LIBXSMM_AARCH64_V81           2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
