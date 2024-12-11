@@ -106,7 +106,6 @@ LIBXSMM_API_INTERN unsigned int internal_crc32_u32(unsigned int seed, const void
   uint32_t c0, c1, c2, c3, s;
   LIBXSMM_ASSERT(NULL != pu32 && NULL != internal_crc32_table);
   s = seed ^ (*pu32);
-  printf("%i %i\n", seed, *pu32);
   c0 = internal_crc32_table[0][(s >> 24) & 0xFF];
   c1 = internal_crc32_table[1][(s >> 16) & 0xFF];
   c2 = internal_crc32_table[2][(s >> 8) & 0xFF];
