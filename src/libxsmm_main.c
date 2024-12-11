@@ -18,6 +18,8 @@
 # include "libxsmm_perf.h"
 #endif
 #include "generator_common.h"
+#include "generator_x86_reference.h"
+#include "generator_aarch64_reference.h"
 
 #include <signal.h>
 #if !defined(NDEBUG)
@@ -197,6 +199,50 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # endif
 #endif
 
+LIBXSMM_API
+void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_generated_code,
+                                              const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  /* generate kernel */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
+  } else {
+    /* TODO fix this error and support for more architectures */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
+
+LIBXSMM_API
+void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*          io_generated_code,
+                                          const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
+  /* generate kernel */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
+  } else {
+    /* TODO fix this error and support for more architectures */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
+
+LIBXSMM_API
+void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*         io_generated_code,
+                                                     const libxsmm_meqn_descriptor*  i_mateqn_desc ) {
+  /* generate kernel */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_generator_matequation_x86_reference_kernel( io_generated_code, i_mateqn_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
+  } else {
+    /* TODO fix this error and support for more architectures */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
 
 LIBXSMM_EXTERN_C typedef struct internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;

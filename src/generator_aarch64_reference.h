@@ -19,5 +19,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_reference_kernel( libxsmm_generated_code* io_generated_code,
                                                       const libxsmm_gemm_descriptor* i_gemm_desc );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_aarch64_reference_kernel( libxsmm_generated_code*         io_generated_code,
+                                                         const libxsmm_meqn_descriptor* i_mateqn_desc );
 #endif /* GENERATOR_AARCH64_REFERENCE_H */
 

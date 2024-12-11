@@ -17,6 +17,8 @@ void libxsmm_generator_mateltwise_x86_reference_kernel( libxsmm_generated_code* 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_x86_reference_kernel( libxsmm_generated_code* io_generated_code,
                                                   const libxsmm_gemm_descriptor* i_gemm_desc );
-
+LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
+                                                         const libxsmm_meqn_descriptor* i_mateqn_desc );
 #endif /* GENERATOR_X86_REFERENCE_H */
 

@@ -15,8 +15,6 @@
 #include "generator_gemm_aarch64.h"
 #include "generator_gemm_sme.h"
 #include "generator_gemm_noarch.h"
-#include "generator_x86_reference.h"
-#include "generator_aarch64_reference.h"
 
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,
@@ -1054,18 +1052,3 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   free( l_generated_code.generated_code );
 }
 
-LIBXSMM_API
-void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  /* generate kernel */
-  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
-    libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
-  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
-    libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
-  } else {
-    /* TODO fix this error and support for more architectures */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
-  }
-
-}
