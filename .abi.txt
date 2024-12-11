@@ -284,6 +284,9 @@ libxsmm_ptr_z1
 libxsmm_ptr_z2
 libxsmm_quantize_i16
 libxsmm_realloc
+libxsmm_reference_elementwise
+libxsmm_reference_gemm
+libxsmm_reference_matequation
 libxsmm_release_dmmkernel
 libxsmm_release_kernel
 libxsmm_release_kernel_
