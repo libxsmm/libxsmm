@@ -11,6 +11,7 @@
 ******************************************************************************/
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
+#include "generator_rv64_instructions.h"
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511
