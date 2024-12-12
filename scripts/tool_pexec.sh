@@ -306,7 +306,9 @@ if [ "${MKTEMP}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CA
     _PEXEC_PRETTY=\$(_PEXEC_MAKE_PRETTY \"${PEXEC_SCRARG}\"); \
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
-      if [ \"0\" != \"\${RESULT}\" ]; then \
+      if [ \"254\" = \"\${RESULT}\" ]; then \
+        1>&2 echo -e \" -> \033[95mREFER\033[0m[000]: \${_PEXEC_PRETTY}\"; \
+      elif [ \"0\" != \"\${RESULT}\" ]; then \
         local PERMIT=\$((0==${XFAIL}||1==RESULT||255==RESULT)); \
         if [ \"${ALLOW}\" ] && [ \"0\" != \"\${PERMIT}\" ] && \
            [ \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \

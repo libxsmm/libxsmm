@@ -21,6 +21,19 @@
 #define RELU_BITMASK    2
 #define SIGMOID         3
 
+#define REFERENCE_TEST_LIMIT 10
+
+unsigned int is_reference_kernel = 0;
+unsigned long long tests_executed = 0;
+
+int return_success_code() {
+  if (is_reference_kernel > 0) {
+    return 254;
+  } else {
+    return EXIT_SUCCESS;
+  }
+}
+
 typedef struct gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -2208,6 +2221,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
                    const unsigned int i_print_jit_info,
                    fusion_args        *i_fusion_arguments ) {
   /* define function pointer */
+  libxsmm_kernel_info info;
   libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_xmmfunction cfg_tr = { NULL };
   libxsmm_xmmfunction rls_tr = { NULL };
@@ -2399,9 +2413,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
   l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+  libxsmm_get_kernel_info((const void*) l_test_jit.gemm_ext, &info);
 #else
   l_test_jit.gemm = libxsmm_dispatch_brgemm( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  libxsmm_get_kernel_info((const void*) l_test_jit.gemm, &info);
 #endif
+  is_reference_kernel = info.is_reference_kernel;
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == NULL) {
     printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
@@ -3838,7 +3855,8 @@ int main(int argc, char* argv []) {
         l_total_max_error_bitmask = error_bitmask;
       }
     }
-  } while ( l_keep_going );
+    tests_executed++;
+  } while ( (l_keep_going > 0 && is_reference_kernel == 0) || (l_keep_going > 0 && is_reference_kernel > 0 && tests_executed < REFERENCE_TEST_LIMIT) );
 
   if ( l_file_input != 0 ) {
     fclose( l_file_handle );
@@ -3857,26 +3875,26 @@ int main(int argc, char* argv []) {
       if ( l_total_max_error >= 0.007 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else {
       if ( l_total_max_error >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     }
   } else if ( l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 ) {
     if ( l_total_max_error >= 0.008 ) {
       return EXIT_FAILURE;
     } else {
-      return EXIT_SUCCESS;
+      return return_success_code();
     }
   } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF8 ) {
     if (l_gemm_def.unary_postop == SIGMOID) {
@@ -3887,23 +3905,23 @@ int main(int argc, char* argv []) {
           if ( l_total_max_error >= 0.018 ) {
             return EXIT_FAILURE;
           } else {
-            return EXIT_SUCCESS;
+            return return_success_code();
           }
         }
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else {
       if ( l_total_max_error >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     }
   } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_HF8 ) {
@@ -3915,23 +3933,23 @@ int main(int argc, char* argv []) {
           if ( l_total_max_error >= 0.018 ) {
             return EXIT_FAILURE;
           } else {
-            return EXIT_SUCCESS;
+            return return_success_code();
           }
         }
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else {
       if ( l_total_max_error >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     }
   } else {
@@ -3939,19 +3957,19 @@ int main(int argc, char* argv []) {
       if ( l_total_max_error >= 0.0007 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.00002 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     } else {
       if ( l_total_max_error >= 0.000012 ) {
         return EXIT_FAILURE;
       } else {
-        return EXIT_SUCCESS;
+        return return_success_code();
       }
     }
   }
