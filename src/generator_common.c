@@ -11,6 +11,7 @@
 ******************************************************************************/
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
+#include "generator_rv64_instructions.h"
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511
@@ -804,7 +805,6 @@ void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_map
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
-#if 0
 LIBXSMM_API_INTERN
 void libxsmm_reset_rv64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping ) {
   io_gp_reg_mapping->gp_reg_param_struct = LIBXSMM_RV64_GP_REG_UNDEF;
@@ -839,7 +839,6 @@ void libxsmm_reset_rv64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mappin
   io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_RV64_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_RV64_GP_REG_UNDEF;
 }
-#endif
 
 LIBXSMM_API_INTERN
 int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype) {

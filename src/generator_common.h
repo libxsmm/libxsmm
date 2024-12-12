@@ -503,6 +503,7 @@
 #define LIBXSMM_X86_INSTR_VPSUBB           0x300516f8
 #define LIBXSMM_X86_INSTR_VPMAXSD          0x3005263d
 #define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
+#define LIBXSMM_X86_INSTR_VPMAXSB          0x3005263c
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
 
 /* AVX512 VNNI */
@@ -594,6 +595,22 @@
 #define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
 #define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
 #define LIBXSMM_X86_INSTR_VCVTW2PH         0xe106567d
+
+/* AVX10 FP8 converts */
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2BF8   0xe0042674
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2BF8S  0xe0045674
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2HF8   0xe0045618
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2HF8S  0xe004561b
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2BF8    0xf0072674
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2BF8S   0xf0075674
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2HF8    0xf0075618
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2HF8S   0xf007561b
+#define LIBXSMM_X86_INSTR_VCVTNEPH2BF8     0xe0062674
+#define LIBXSMM_X86_INSTR_VCVTNEPH2BF8S    0xe0065674
+#define LIBXSMM_X86_INSTR_VCVTNEPH2HF8     0xe0065618
+#define LIBXSMM_X86_INSTR_VCVTNEPH2HF8S    0xe006561b
+#define LIBXSMM_X86_INSTR_VCVTNEHF82PH     0xe007551e
+#define LIBXSMM_X86_INSTR_VCVT2PS2PHX     0xf0052667
 
 /* AVX512 Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
@@ -1266,6 +1283,55 @@
 #define LIBXSMM_X86_INSTR_TDPBF16PS          0x7006205c
 /* CPUID: AMX-FP16 INTERCEPT: GNR */
 #define LIBXSMM_X86_INSTR_TDPFP16PS          0x7007205c
+/* CPUID: AMX-FP8 INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_TDPBF8PS           0x700450fd
+#define LIBXSMM_X86_INSTR_TDPBHF8PS          0x700750fd
+#define LIBXSMM_X86_INSTR_TDPHBF8PS          0x700650fd
+#define LIBXSMM_X86_INSTR_TDPHF8PS           0x700550fd
+/* CPUID: AMX-MOVRS INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_TILELOADDRS        0x6007204a
+#define LIBXSMM_X86_INSTR_TILELOADDRST1      0x6005204a
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS      0x600450f8
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0RST1    0x600450f9
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1RS      0x600550f8
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1RST1    0x600550f9
+/* CPUID: AMX-AVX512-CVTROW INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_TCVTROWD2PS         50010
+#define LIBXSMM_X86_INSTR_TCVTROWD2PS_GPR     0xf006204a
+#define LIBXSMM_X86_INSTR_TCVTROWD2PS_IMM     0xe00e3007
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16H     50011
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16H_GPR 0xf007206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16H_IMM 0xe00f3007
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16L     50012
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16L_GPR 0xf006206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16L_IMM 0xe00e3077
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHH       50013
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHH_GPR   0xf004206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHH_IMM   0xe00c3007
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHL       50014
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHL_GPR   0xf005206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHL_IMM   0xe00f3077
+#define LIBXSMM_X86_INSTR_TILEMOVROW          50015
+#define LIBXSMM_X86_INSTR_TILEMOVROW_GPR      0xf005204a
+#define LIBXSMM_X86_INSTR_TILEMOVROW_IMM      0xe00d3007
+/* CPUID: AMX-TF32 */
+#define LIBXSMM_X86_INSTR_TMMULTF32PS         0x70052048
+#define LIBXSMM_X86_INSTR_TTMMULTF32PS        0x70042048
+/* CPUID: AMX-COMPLEX */
+#define LIBXSMM_X86_INSTR_TCMMIMFP16PS        0x7005206c
+#define LIBXSMM_X86_INSTR_TCMMRLFP16PS        0x7004206c
+#define LIBXSMM_X86_INSTR_TCONJTCMMIMFP16PS   0x7004206b
+#define LIBXSMM_X86_INSTR_TCONJTFP16          0x7005206b
+#define LIBXSMM_X86_INSTR_TTCMMIMFP16PS       0x7007206b
+#define LIBXSMM_X86_INSTR_TTCMMRLFP16PS       0x7006206b
+/* CPUID: AMX-TRANSPOSE INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0         0x6004206e
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1       0x6004206f
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1         0x6005206e
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1T1       0x6005206f
+#define LIBXSMM_X86_INSTR_TTDPBF16PS          0x7006206c
+#define LIBXSMM_X86_INSTR_TTDPFP16PS          0x7007206c
+#define LIBXSMM_X86_INSTR_TTRANSPOSED         0x6006205f
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL               90000
@@ -1457,6 +1523,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int vnni_perm_reg;
+  unsigned int vnni_perm_reg2;
   unsigned int zero_reg;
   unsigned int scf_vreg;
   unsigned int aux_vreg;
@@ -1484,6 +1551,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int mask_m_fp32;
   unsigned int mask_m_bf16;
   unsigned int mask_m_lp_cvt;
+  unsigned int mask_k_lp_cvt;
+  unsigned int mask_m_lp_cvt_st;
+  unsigned int mask_k_lp_cvt_st;
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
@@ -1506,6 +1576,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _C_tile_mate_id[4];
   int _im_offset_prefix_sums[4];
   int _in_offset_prefix_sums[4];
+  int config_trans_a_tile;
   libxsmm_blocking_info_t m_blocking_info[2];
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
@@ -1530,8 +1601,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
+  unsigned int enforce_Mx1_amx_tile_blocking;
 
   /* Auxiliary fields for LP emulations and stack-based data prepartion */
+  unsigned int use_custom_bf8_preproc;
   unsigned int bf8_gemm_via_stack_alloc_tensors;
   unsigned int hf8_gemm_via_stack_alloc_tensors;
   unsigned int atrans_gemm_stack_alloc_tensors;

@@ -35,6 +35,16 @@ LIBXSMM_API_INTERN
 int libxsmm_is_tile_in_last_tilerow(const libxsmm_micro_kernel_config* i_micro_kernel_config, int tile);
 
 LIBXSMM_API_INTERN
+void  libxsmm_load_vreg_from_amx_tile( libxsmm_generated_code*            io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int i_use_gemm_scratch,
+    unsigned int i_gp_reg_gemm_scratch,
+    unsigned int i_use_mask,
+    unsigned int i_tile_id,
+    unsigned int i_col_id,
+    unsigned int io_vreg);
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_cvtstore_tile_from_I32_to_F32( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,

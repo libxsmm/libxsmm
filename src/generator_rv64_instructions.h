@@ -119,7 +119,7 @@
 #define LIBXSMM_RV64_GP_REG_V30  30
 #define LIBXSMM_RV64_GP_REG_V31  31
 
-#define LIBXSMM_RV64_GP_REG_UNDEF  32
+#define LIBXSMM_RV64_GP_REG_UNDEF  127
 
 /* SEW encoding */
 #define LIBXSMM_RV64_SEW_B (0)
@@ -134,8 +134,6 @@
 #define LIBXSMM_RV64_LMUL_M2 (1)
 #define LIBXSMM_RV64_LMUL_M3 (2)
 #define LIBXSMM_RV64_LMUL_M4 (3)
-
-#define LIBXSMM_RV64_GP_REG_UNDEF  32
 
 /* special instruction */
 #define LIBXSMM_RV64_INSTR_UNDEF 9999
@@ -2326,6 +2324,7 @@ void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_gene
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_gp_reg_src_1,
                                               const int               i_imm12 );
+#if 0
 /**
  * Generates jump and link instruction with register
  *
@@ -2341,6 +2340,7 @@ void libxsmm_rv64_instruction_register_jump( libxsmm_generated_code* io_generate
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_gp_reg_src_1,
                                               const unsigned int      i_imm12 );
+#endif
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack

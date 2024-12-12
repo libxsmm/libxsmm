@@ -128,6 +128,7 @@
      &    LIBXSMM_X86_AVX512_CPX        = 1103,                         &
      &    LIBXSMM_X86_AVX512_SPR        = 1104,                         &
      &    LIBXSMM_X86_AVX512_GNR        = 1105,                         &
+     &    LIBXSMM_X86_AVX512_DMR        = 1106,                         &
      &    LIBXSMM_X86_ALLFEAT           = 1999,                         &
      &    LIBXSMM_AARCH64_V81           = 2001,                         &
      &    LIBXSMM_AARCH64_V82           = 2002,                         &
@@ -137,7 +138,9 @@
      &    LIBXSMM_AARCH64_NEOV1         = 2302,                         &
      &    LIBXSMM_AARCH64_SVX512        = 2401,                         &
      &    LIBXSMM_AARCH64_A64FX         = 2402,                         &
-     &    LIBXSMM_AARCH64_ALLFEAT       = 2999
+     &    LIBXSMM_AARCH64_ALLFEAT       = 2999,                         &
+     &    LIBXSMM_RV64                  = 3000,                         &
+     &    LIBXSMM_RV64_ALLFEAT          = 3999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION
