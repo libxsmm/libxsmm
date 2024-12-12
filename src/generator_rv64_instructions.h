@@ -135,8 +135,6 @@
 #define LIBXSMM_RV64_LMUL_M3 (2)
 #define LIBXSMM_RV64_LMUL_M4 (3)
 
-#define LIBXSMM_RV64_GP_REG_UNDEF  32
-
 /* special instruction */
 #define LIBXSMM_RV64_INSTR_UNDEF 9999
 
