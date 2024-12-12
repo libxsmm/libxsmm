@@ -26,14 +26,6 @@
 unsigned int is_reference_kernel = 0;
 unsigned long long tests_executed = 0;
 
-int return_success_code() {
-  if (is_reference_kernel > 0) {
-    return 254;
-  } else {
-    return EXIT_SUCCESS;
-  }
-}
-
 typedef struct gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -3875,26 +3867,26 @@ int main(int argc, char* argv []) {
       if ( l_total_max_error >= 0.007 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else {
       if ( l_total_max_error >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     }
   } else if ( l_gemm_def.b_type == LIBXSMM_DATATYPE_F16 ) {
     if ( l_total_max_error >= 0.008 ) {
       return EXIT_FAILURE;
     } else {
-      return return_success_code();
+      return libxsmm_return_success_code(is_reference_kernel);
     }
   } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_BF8 ) {
     if (l_gemm_def.unary_postop == SIGMOID) {
@@ -3905,23 +3897,23 @@ int main(int argc, char* argv []) {
           if ( l_total_max_error >= 0.018 ) {
             return EXIT_FAILURE;
           } else {
-            return return_success_code();
+            return libxsmm_return_success_code(is_reference_kernel);
           }
         }
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else {
       if ( l_total_max_error >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     }
   } else if ( l_gemm_def.c_type == LIBXSMM_DATATYPE_HF8 ) {
@@ -3933,23 +3925,23 @@ int main(int argc, char* argv []) {
           if ( l_total_max_error >= 0.018 ) {
             return EXIT_FAILURE;
           } else {
-            return return_success_code();
+            return libxsmm_return_success_code(is_reference_kernel);
           }
         }
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else {
       if ( l_total_max_error >= 0.005 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     }
   } else {
@@ -3957,19 +3949,19 @@ int main(int argc, char* argv []) {
       if ( l_total_max_error >= 0.0007 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else if ( (l_gemm_def.unary_postop == RELU_BITMASK) || (l_gemm_def.unary_postop == RELU_NOBITMASK) ) {
       if ( l_total_max_error_bitmask >= 0.00002 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     } else {
       if ( l_total_max_error >= 0.000012 ) {
         return EXIT_FAILURE;
       } else {
-        return return_success_code();
+        return libxsmm_return_success_code(is_reference_kernel);
       }
     }
   }

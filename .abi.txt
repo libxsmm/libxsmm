@@ -305,6 +305,7 @@ libxsmm_release_kernel_
 libxsmm_release_scratch
 libxsmm_release_smmkernel
 libxsmm_remainder
+libxsmm_return_success_code
 libxsmm_rnaz_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf8

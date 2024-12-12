@@ -17,6 +17,13 @@
 # define LIBXSMM_RNG_DRAND48
 #endif
 
+LIBXSMM_API int libxsmm_return_success_code(unsigned int i_used_reference_kernel) {
+  if (i_used_reference_kernel > 0) {
+    return 254;
+  } else {
+    return EXIT_SUCCESS;
+  }
+}
 
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 {

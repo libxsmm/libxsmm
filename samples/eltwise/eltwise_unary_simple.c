@@ -776,5 +776,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

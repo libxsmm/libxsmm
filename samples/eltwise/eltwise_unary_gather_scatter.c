@@ -21,6 +21,8 @@
 #define SCATTER 1
 #define EXPANSION_FACTOR 4
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void create_unique_random_array(unsigned long long *inout_array, int n) {
@@ -307,7 +309,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
   unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
   l_kernel    = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
-    if ( l_kernel == NULL ) {
+  libxsmm_get_kernel_info((const void*) l_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
+  if ( l_kernel == NULL ) {
     fprintf( stderr, "JIT for GATHER-SCATTER TPP failed. Bailing...!\n");
     exit(-1);
   }
@@ -685,5 +689,6 @@ int main(int argc, char* argv[])
     fprintf(stderr, "ERROR at test: M = %u, N = %u, ldi = %i, ldo = %i, gs = %u, rowcolsoffs = %u, 32b/16b = %u, idxtype = %u\n", m, n, ld_in, ld_out, use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index );
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

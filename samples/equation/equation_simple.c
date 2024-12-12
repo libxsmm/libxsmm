@@ -11,6 +11,7 @@
 #include "equation_common.h"
 
 unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, float*arg3, float *out) {
@@ -314,7 +315,6 @@ void eqn0_f32hf8(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_kernel_info info;
   int ret = EXIT_SUCCESS;
   double error_bound = 0.00001;
   libxsmm_blasint my_eqn0;
@@ -767,5 +767,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(hf8_out);
   libxsmm_free(hf8_eqn_out);
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

@@ -41,6 +41,7 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
 
 LIBXSMM_INLINE
 void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
@@ -507,7 +508,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   unsigned int *rng_state_gold = NULL;
   libxsmm_blasint l_ldo = ldo;
   libxsmm_datatype dtype_out = _dtype_out;
-
+  libxsmm_kernel_info info;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_binary binary_kernel;
   libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
@@ -635,6 +636,8 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT;
   }
   binary_kernel = libxsmm_dispatch_meltw_binary( binary_type, binary_shape, binary_flags );
+  libxsmm_get_kernel_info((const void*) binary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);
@@ -860,5 +863,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  res = (res == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : res;
   return res;
 }

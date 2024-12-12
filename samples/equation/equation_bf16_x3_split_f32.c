@@ -11,6 +11,8 @@
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 int main(int argc, char* argv[]) {
   int ret = EXIT_SUCCESS;
@@ -130,6 +132,8 @@ int main(int argc, char* argv[]) {
   /* libxsmm_meqn_tree_print(my_eqn0); */
   /* libxsmm_meqn_rpn_print(my_eqn0); */
   func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
+  libxsmm_get_kernel_info((const void*) func0, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);
@@ -257,5 +261,6 @@ int main(int argc, char* argv[]) {
   libxsmm_free(output1_libxsmm);
   libxsmm_free(output2_libxsmm);
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }
