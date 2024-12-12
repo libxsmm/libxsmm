@@ -102,17 +102,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
     }
   }
   else {
-#if 0
-    if ( i_n_blocking == 1 ) {
-        l_b_next_k = l_k_pack_factor;
-        l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
-    }
-    else
-#endif
-  {
-      l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
-      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
-    }
+    l_b_next_k = i_xgemm_desc->ldb - (i_n_blocking - 1);
+    l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
   }
 
   l_b_next_k *= i_micro_kernel_config->datatype_size_in;
