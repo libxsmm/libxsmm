@@ -508,9 +508,9 @@ LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data)
 
 LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
 {
-   uint16_t tmp_data = (uint16_t)data;
-   unsigned int tmp_seed = (unsigned int)(data >> 16);
-   return libxsmm_crc32_u16(tmp_seed, &tmp_data) & 0xFFFF;
+  uint16_t tmp_data = (uint16_t)data;
+  unsigned int tmp_seed = (unsigned int)(data >> 16);
+  return libxsmm_crc32_u16(tmp_seed, &tmp_data) & 0xFFFF;
 }
 
 
