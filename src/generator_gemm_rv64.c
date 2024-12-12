@@ -91,27 +91,28 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 
   l_b_stride *= i_micro_kernel_config->datatype_size_in;
 
-#if 0
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
     if ( i_n_blocking == 1 ) {
       l_b_next_k = l_k_pack_factor;
-      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADDI;
+      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
     }
     else {
       l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
-      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUBI;
+      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUB;
     }
   }
-  else
-#endif
-
-  if ( i_n_blocking == 1 ) {
-      l_b_next_k = l_k_pack_factor;
-      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
-  }
   else {
-    l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
-    l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_SUB;
+#if 0
+    if ( i_n_blocking == 1 ) {
+        l_b_next_k = l_k_pack_factor;
+        l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
+    }
+    else
+#endif
+  {
+      l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - l_k_pack_factor);
+      l_b_next_k_inst = LIBXSMM_RV64_INSTR_GP_ADD;
+    }
   }
 
   l_b_next_k *= i_micro_kernel_config->datatype_size_in;
