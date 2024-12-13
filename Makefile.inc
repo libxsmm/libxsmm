@@ -1169,8 +1169,8 @@ ifneq (0,$(INTEL))
       CXXFLAGS += -g
       CFLAGS += -g
     else
-      CXXFLAGS += -g3 -debug inline-debug-info -ipo
-      CFLAGS += -g3 -debug inline-debug-info -ipo
+      CXXFLAGS += -g3 -debug inline-debug-info
+      CFLAGS += -g3 -debug inline-debug-info
     endif
     ifeq (,$(strip $(GFC)))
     ifeq (0,$(ICX))
