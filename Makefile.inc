@@ -420,6 +420,10 @@ ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" 
 endif
 ICX ?= 0
 
+ifneq (0,$(CX))
+  IPO := 1
+endif
+
 # linker setup
 LD := $(CC)
 XLD := $(CXX)
