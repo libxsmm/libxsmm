@@ -1163,6 +1163,15 @@ FCLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
 CXXLDFLAGS += $(XLIB_BEGIN) $(LIBC) $(XLIB_END)
 
 ifneq (0,$(INTEL))
+  ifneq (0,$(ICX))
+    CFLAGS += -ipo
+    CLDFLAGS += -ipo
+    CXXFLAGS += -ipo
+    CXXLDFLAGS += -ipo
+  endif
+endif
+
+ifneq (0,$(INTEL))
   AR ?= xiar
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
