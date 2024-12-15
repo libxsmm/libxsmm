@@ -2905,7 +2905,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
                                           const long long         i_immediate ) {
-  unsigned char* raw_imm_ptr = (unsigned char*)(&i_immediate);
+  const unsigned char* raw_imm_ptr = (const unsigned char*)(&i_immediate);
   switch ( i_alu_instr ) {
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVB_R_IMM8:
