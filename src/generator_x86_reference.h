@@ -11,6 +11,10 @@
 #ifndef GENERATOR_X86_REFERENCE_H
 #define GENERATOR_X86_REFERENCE_H
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
+                                             const void*                     i_desc,
+                                             unsigned int                    i_is_gemm_or_eltwise );
 LIBXSMM_API
 void libxsmm_generator_mateltwise_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
                                                         const libxsmm_meltw_descriptor* i_mateltw_desc );

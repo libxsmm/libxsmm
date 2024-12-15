@@ -21,6 +21,14 @@
 #include "generator_matequation_reference_impl.h"
 #include "libxsmm_matrixeqn.h"
 
+typedef union libxsmm_ref_code_pointer {
+  void (*ptr_gemm_fn)(void*, const libxsmm_gemm_descriptor*);
+  void (*ptr_eltw_fn)(void*, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+  void* ptr;
+  uintptr_t uval;
+  intptr_t ival;
+} libxsmm_ref_code_pointer;
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
                                              const void*                     i_desc,
@@ -30,11 +38,14 @@ void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_
   unsigned char *l_padded_desc = NULL;
   unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
   unsigned int input_param_reg = 0;
+  libxsmm_ref_code_pointer code_ptr;
+
 #if defined(_WIN32) || defined(__CYGWIN__)
   input_param_reg = LIBXSMM_X86_GP_REG_RCX;
 #else /* match calling convention on Linux */
   input_param_reg = LIBXSMM_X86_GP_REG_RDI;
 #endif
+  code_ptr.ptr = NULL;
   l_padded_desc = (unsigned char*) malloc(l_padded_desc_size);
   memset(l_padded_desc, 0, l_padded_desc_size);
   if (i_is_gemm_or_eltwise == 0) {
@@ -74,9 +85,11 @@ void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_
 #endif
   /* We set the address of the function  */
   if (i_is_gemm_or_eltwise == 0) {
-    libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, (unsigned long long) libxsmm_reference_gemm );
+    code_ptr.ptr_gemm_fn = libxsmm_reference_gemm;
+    libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, code_ptr.ival );
   } else {
-    libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, (unsigned long long) libxsmm_reference_elementwise );
+    code_ptr.ptr_eltw_fn = libxsmm_reference_elementwise;
+    libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, code_ptr.ival );
   }
   /* We call the function  */
   l_code_buffer[io_generated_code->code_size++] = 0xff;

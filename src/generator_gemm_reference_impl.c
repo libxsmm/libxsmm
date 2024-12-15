@@ -2119,6 +2119,5 @@ void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_
       free(l_gemm_def.c_scratch);
     }
   }
-  return;
 }
 
