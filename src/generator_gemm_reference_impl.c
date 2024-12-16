@@ -191,7 +191,7 @@ void libxsmm_ref_allocate_c_scratch(libxsmm_gemm_def* i_gemm_def) {
   if (i_gemm_def->fuse_colbias_add > 0 || i_gemm_def->fuse_relu > 0 || i_gemm_def->fuse_sigmoid > 0) {
     if (i_gemm_def->c_type != LIBXSMM_DATATYPE_F32) {
       i_gemm_def->fuse_via_scratch = 1;
-      i_gemm_def->c_scratch = (void*) malloc(i_gemm_def->ldc * i_gemm_def->n * 4);
+      i_gemm_def->c_scratch = (void*) malloc((size_t)i_gemm_def->ldc * i_gemm_def->n * 4);
     } else {
       i_gemm_def->fuse_via_scratch = 0;
     }
@@ -202,7 +202,7 @@ void libxsmm_ref_allocate_c_scratch(libxsmm_gemm_def* i_gemm_def) {
 LIBXSMM_API_INTERN
 void libxsmm_ref_allocate_c_vnni_scratch(libxsmm_gemm_def* i_gemm_def) {
   if (i_gemm_def->fuse_vnni_c > 0) {
-    i_gemm_def->c_vnni_scratch = (void*) malloc(i_gemm_def->ldc * i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->c_type));
+    i_gemm_def->c_vnni_scratch = (void*) malloc((size_t)i_gemm_def->ldc * i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->c_type));
   }
   return;
 }
@@ -476,7 +476,7 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
     if (l_gemm_def.is_spmm > 0) {
       l_gemm_def.decompress_bitmap = (unsigned char*)gemm_param->a.secondary;
       if (l_dtype_c != LIBXSMM_DATATYPE_F32) {
-        l_gemm_def.c_scratch = (void*)malloc(l_m*l_n*4);
+        l_gemm_def.c_scratch = (void*)malloc((size_t)l_m*l_n*4);
       } else {
         l_gemm_def.c_scratch = NULL;
       }
@@ -762,7 +762,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               unsigned char packed_a = 0;
               char even_a = 0, odd_a = 0, even_b = 0, odd_b = 0;
 
-              packed_a = c_a[offs_a + ((l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+0];
+              packed_a = c_a[offs_a + (((long long)l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+0];
               even = packed_a & 0x0f;
               even_a = libxsmm_convert_mxfp4_to_char(even);
               odd = (packed_a >> 4) & 0x0f;
@@ -771,7 +771,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               odd_b = c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2 + 4];
               tmp_val += (int)even_a * even_b + (int)odd_a * odd_b;
 
-              packed_a = c_a[offs_a + ((l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+1];
+              packed_a = c_a[offs_a + (((long long)l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+1];
               even = packed_a & 0x0f;
               even_a = libxsmm_convert_mxfp4_to_char(even);
               odd = (packed_a >> 4) & 0x0f;
@@ -780,7 +780,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               odd_b = c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2 + 5];
               tmp_val += (int)even_a * even_b + (int)odd_a * odd_b;
 
-              packed_a = c_a[offs_a + ((l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+2];
+              packed_a = c_a[offs_a + (((long long)l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+2];
               even = packed_a & 0x0f;
               even_a = libxsmm_convert_mxfp4_to_char(even);
               odd = (packed_a >> 4) & 0x0f;
@@ -789,7 +789,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               odd_b = c_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2 + 6];
               tmp_val += (int)even_a * even_b + (int)odd_a * odd_b;
 
-              packed_a = c_a[offs_a + ((l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+3];
+              packed_a = c_a[offs_a + (((long long)l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+3];
               even = packed_a & 0x0f;
               even_a = libxsmm_convert_mxfp4_to_char(even);
               odd = (packed_a >> 4) & 0x0f;
@@ -1274,7 +1274,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               if (i_gemm_def->trans_b == 0) {
                 cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * (long long)ldb + l_j];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += tmp_a_f * b_use;
@@ -1359,7 +1359,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               if (i_gemm_def->trans_b == 0) {
                 cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + ((long long)(l_s*l_k_block+l_k2)) * ldb + l_j];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
@@ -1441,7 +1441,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               if (i_gemm_def->trans_b == 0) {
                 cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + (long long)(l_s*l_k_block+l_k2) * ldb + l_j];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
@@ -1513,7 +1513,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               if (i_gemm_def->trans_b == 0) {
                 cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + ((long long)l_s*l_k_block+l_k2) * ldb + l_j];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
@@ -1564,7 +1564,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               if (i_gemm_def->trans_b == 0) {
                 cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + ((long long)l_s*l_k_block+l_k2) * (long long)ldb + l_j];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
@@ -1615,7 +1615,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               if (i_gemm_def->trans_b == 0) {
                 cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               } else {
-                cur_b = f16_b[offs_b + (l_s*l_k_block+l_k2) * ldb + l_j];
+                cur_b = f16_b[offs_b + ((long long)l_s*l_k_block+(long long)l_k2) * ldb + l_j];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
@@ -2076,7 +2076,7 @@ void libxsmm_ref_apply_c_vnni(libxsmm_gemm_def* i_gemm_def, void *c_ptr, const l
     libxsmm_descriptor_blob blob;
     const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), i_xgemm_desc->m, i_xgemm_desc->n,
         i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)vnni_cvt_type, LIBXSMM_MELTW_OPERATION_UNARY);
-    memcpy(i_gemm_def->c_vnni_scratch, c_ptr, i_xgemm_desc->ldc * i_xgemm_desc->n * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )));
+    memcpy(i_gemm_def->c_vnni_scratch, c_ptr, (size_t)i_xgemm_desc->ldc * i_xgemm_desc->n * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )));
     unary_param.in.primary  = (void*)i_gemm_def->c_vnni_scratch;
     unary_param.out.primary = (void*)c_ptr;
     libxsmm_reference_unary_elementwise(&unary_param, desc);
