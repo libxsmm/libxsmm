@@ -10,6 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
+#include "equation_common.h"
 
 unsigned int is_reference_kernel = 0;
 libxsmm_kernel_info info;
