@@ -13,8 +13,6 @@
 
 #include "libxsmm_typedefs.h"
 
-LIBXSMM_API int libxsmm_return_success_code(unsigned int i_used_reference_kernel);
-
 /**
  * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n),
  * i.e., the generated range of values 0..n-1 excludes n.

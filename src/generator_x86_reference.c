@@ -21,14 +21,6 @@
 #include "generator_matequation_reference_impl.h"
 #include "libxsmm_matrixeqn.h"
 
-typedef union libxsmm_ref_code_pointer {
-  void (*ptr_gemm_fn)(void*, const libxsmm_gemm_descriptor*);
-  void (*ptr_eltw_fn)(void*, const libxsmm_meltw_descriptor *i_mateltwise_desc);
-  void* ptr;
-  uintptr_t uval;
-  intptr_t ival;
-} libxsmm_ref_code_pointer;
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_generated_code,
                                              const void*                     i_desc,
@@ -127,6 +119,8 @@ void libxsmm_generator_matequation_x86_reference_kernel( libxsmm_generated_code*
   unsigned long long n_tmp = 0;
   unsigned long long tmp_size = 0;
   unsigned long long scratch_size = 0;
+  libxsmm_ref_code_pointer code_ptr;
+  code_ptr.ptr = NULL;
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
@@ -207,7 +201,8 @@ void libxsmm_generator_matequation_x86_reference_kernel( libxsmm_generated_code*
 #endif
 
   /* We set the address of the function  */
-  libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, (unsigned long long) libxsmm_reference_matequation );
+  code_ptr.ptr_meqn_fn = libxsmm_reference_matequation;
+  libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, code_ptr.ival );
   /* We call the function  */
   l_code_buffer[io_generated_code->code_size++] = 0xff;
   l_code_buffer[io_generated_code->code_size++] = 0xd0;

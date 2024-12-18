@@ -30,7 +30,8 @@ void libxsmm_generator_aarch64_reference_kernel( libxsmm_generated_code*        
   unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
   unsigned int l_temp_reg = LIBXSMM_AARCH64_GP_REG_X1;
   unsigned int l_temp_reg2 = LIBXSMM_AARCH64_GP_REG_X2;
-
+  libxsmm_ref_code_pointer code_ptr;
+  code_ptr.ptr = NULL;
   l_padded_desc = (unsigned char*) malloc(l_padded_desc_size);
   memset(l_padded_desc, 0, l_padded_desc_size);
   if (i_is_gemm_or_eltwise == 0) {
@@ -78,9 +79,11 @@ void libxsmm_generator_aarch64_reference_kernel( libxsmm_generated_code*        
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, l_temp_reg, 0, 0 );
   /* We set the address of the function  */
   if (i_is_gemm_or_eltwise == 0) {
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, (unsigned long long) libxsmm_reference_gemm  );
+    code_ptr.ptr_gemm_fn = libxsmm_reference_gemm;
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, code_ptr.uval  );
   } else {
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, (unsigned long long) libxsmm_reference_elementwise  );
+    code_ptr.ptr_eltw_fn = libxsmm_reference_elementwise;
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, code_ptr.uval  );
   }
   /* We call the function  */
   l_code_buffer[io_generated_code->code_size++] = 0x40;
@@ -124,6 +127,8 @@ void libxsmm_generator_matequation_aarch64_reference_kernel( libxsmm_generated_c
   unsigned long long tmp_size = 0;
   unsigned long long scratch_size = 0;
   unsigned long long *l_imm_array_ptr;
+  libxsmm_ref_code_pointer code_ptr;
+  code_ptr.ptr = NULL;
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
@@ -199,7 +204,8 @@ void libxsmm_generator_matequation_aarch64_reference_kernel( libxsmm_generated_c
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg3, (unsigned long long)tmp_size );
 
   /* We set the address of the function */
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg4, (unsigned long long) libxsmm_reference_matequation  );
+  code_ptr.ptr_meqn_fn = libxsmm_reference_matequation;
+  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg4, code_ptr.uval  );
   /* We call the function  */
   l_code_buffer[io_generated_code->code_size++] = 0x80;
   l_code_buffer[io_generated_code->code_size++] = 0x00;

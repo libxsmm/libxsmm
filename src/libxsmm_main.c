@@ -2148,6 +2148,23 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
   return result;
 }
 
+LIBXSMM_API_INTERN unsigned int libxsmm_disable_reference_gemm(void){
+  const char *const env_reference_disable_gemm_fallback = getenv("LIBXSMM_DISABLE_GEMM_REFERENCE_FALLBACK");
+  unsigned int result = (env_reference_disable_gemm_fallback == 0) ? 0 : atoi(env_reference_disable_gemm_fallback);
+  return result;
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_disable_reference_meltw(void){
+  const char *const env_reference_disable_meltw_fallback = getenv("LIBXSMM_DISABLE_MELTW_REFERENCE_FALLBACK");
+  unsigned int result = (env_reference_disable_meltw_fallback == 0) ? 0 : atoi(env_reference_disable_meltw_fallback);
+  return result;
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_disable_reference_matequation(void){
+  const char *const env_reference_disable_matequation_fallback = getenv("LIBXSMM_DISABLE_MATEQUATION_REFERENCE_FALLBACK");
+  unsigned int result = (env_reference_disable_matequation_fallback == 0) ? 0 : atoi(env_reference_disable_matequation_fallback);
+  return result;
+}
 
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
@@ -2158,12 +2175,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   char jit_buffer[LIBXSMM_CODE_MAXSIZE] = { 0 }, jit_name[384] = { 0 }, suffix_name[16] = { 0 };
   libxsmm_generated_code generated_code /*= { 0 }*/;
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
-  const char *const env_reference_disable_gemm_fallback = getenv("LIBXSMM_DISABLE_GEMM_REFERENCE_FALLBACK");
-  const char *const env_reference_disable_meltw_fallback = getenv("LIBXSMM_DISABLE_MELTW_REFERENCE_FALLBACK");
-  const char *const env_reference_disable_matequation_fallback = getenv("LIBXSMM_DISABLE_MATEQUATION_REFERENCE_FALLBACK");
-  unsigned int libxsmm_disable_reference_gemm_fallback = (env_reference_disable_gemm_fallback == 0) ? 0 : atoi(env_reference_disable_gemm_fallback);
-  unsigned int libxsmm_disable_reference_meltw_fallback = (env_reference_disable_meltw_fallback == 0) ? 0 : atoi(env_reference_disable_meltw_fallback);
-  unsigned int libxsmm_disable_reference_matequation_fallback = (env_reference_disable_matequation_fallback == 0) ? 0 : atoi(env_reference_disable_matequation_fallback);
+  unsigned int libxsmm_disable_reference_gemm_fallback = libxsmm_disable_reference_gemm();
+  unsigned int libxsmm_disable_reference_meltw_fallback = libxsmm_disable_reference_meltw();
+  unsigned int libxsmm_disable_reference_matequation_fallback = libxsmm_disable_reference_matequation();
 
   LIBXSMM_MEMZERO127(&generated_code);
   if (LIBXSMM_CAPACITY_REGISTRY != regindex) {

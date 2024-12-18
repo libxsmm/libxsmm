@@ -2305,6 +2305,15 @@ typedef enum libxsmm_ulp_precision {
   LIBXSMM_ULP_PRECISION_ESTIMATE /* can be pretty bad, but should have the correct order of magnitude */
 } libxsmm_ulp_precision;
 
+typedef union libxsmm_ref_code_pointer {
+  void (*ptr_gemm_fn)(void*, const libxsmm_gemm_descriptor*);
+  void (*ptr_eltw_fn)(void*, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+  void (*ptr_meqn_fn)(void*, void*, void*, unsigned long long);
+  void* ptr;
+  uintptr_t uval;
+  intptr_t ival;
+} libxsmm_ref_code_pointer;
+
 /** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or estimate for just an estimate
  * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}
  */

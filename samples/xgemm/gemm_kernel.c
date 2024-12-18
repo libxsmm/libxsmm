@@ -23,6 +23,14 @@
 
 #define REFERENCE_TEST_LIMIT 10
 
+int libxsmm_return_success_code(unsigned int i_used_reference_kernel) {
+  if (i_used_reference_kernel > 0) {
+    return 254;
+  } else {
+    return EXIT_SUCCESS;
+  }
+}
+
 unsigned int is_reference_kernel = 0;
 unsigned long long tests_executed = 0;
 
