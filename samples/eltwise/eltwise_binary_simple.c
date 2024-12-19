@@ -41,6 +41,7 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
 
 LIBXSMM_INLINE
 void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
@@ -86,6 +87,56 @@ void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_dat
 
   if (dtype_in1 == LIBXSMM_DATATYPE_HF8) {
     libxsmm_rne_convert_fp32_hf8( in2_use, (libxsmm_hfloat8*)in2, N*ldi );
+  }
+
+  libxsmm_free(in_f);
+  libxsmm_free(in2_f);
+}
+
+LIBXSMM_INLINE
+void adjust_inputs_for_bf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
+  float *in_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in2_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in_use;
+  float *in2_use;
+  libxsmm_blasint i, j;
+
+  if (dtype_in == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)in, in_f, N*ldi );
+    in_use = in_f;
+  } else {
+    in_use = (float*)in;
+  }
+
+  if (dtype_in1 == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)in2, in2_f, N*ldi );
+    in2_use = in2_f;
+  } else {
+    in2_use = (float*)in2;
+  }
+
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < ldi; i++) {
+      if (in2_use[j*ldi+i] == 0.0f) {
+        in2_use[j*ldi+i] = 1.0;
+      }
+      in_use[j*ldi+i] = 2.f * in2_use[j*ldi+i];
+      if (LIBXSMM_ABS(in_use[j*ldi+i]) > 400.f) {
+        in_use[j*ldi+i] = 400.f;
+        in2_use[j*ldi+i] = 200.f;
+      }
+      if (use_bcast > 0) {
+        in2_use[j*ldi+i] = 1.f;
+      }
+    }
+  }
+
+  if (dtype_in == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_rne_convert_fp32_bf8( in_use, (libxsmm_bfloat8*)in, N*ldi );
+  }
+
+  if (dtype_in1 == LIBXSMM_DATATYPE_BF8) {
+    libxsmm_rne_convert_fp32_bf8( in2_use, (libxsmm_bfloat8*)in2, N*ldi );
   }
 
   libxsmm_free(in_f);
@@ -457,7 +508,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   unsigned int *rng_state_gold = NULL;
   libxsmm_blasint l_ldo = ldo;
   libxsmm_datatype dtype_out = _dtype_out;
-
+  libxsmm_kernel_info info;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_binary binary_kernel;
   libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
@@ -500,6 +551,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
+  }
+  if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_in1 == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8))) {
+    adjust_inputs_for_bf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
   }
   if ((op == MULADD_OP) && ((dtype_out == LIBXSMM_DATATYPE_BF16) || (dtype_out == LIBXSMM_DATATYPE_F16) || (dtype_out == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     round_to_bf8( dtype_in,  in,  ldi, N );
@@ -582,6 +636,8 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT;
   }
   binary_kernel = libxsmm_dispatch_meltw_binary( binary_type, binary_shape, binary_flags );
+  libxsmm_get_kernel_info((const void*) binary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);
@@ -807,5 +863,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  res = (res == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : res;
   return res;
 }

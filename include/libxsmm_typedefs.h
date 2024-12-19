@@ -826,6 +826,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_info {
   unsigned int nflops;
   /** Code size (Bytes). */
   size_t code_size;
+  unsigned int is_reference_kernel;
 } libxsmm_kernel_info;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */

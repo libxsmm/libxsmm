@@ -12,6 +12,13 @@
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 
+int libxsmm_return_success_code(unsigned int i_used_reference_kernel) {
+  if (i_used_reference_kernel > 0) {
+    return 254;
+  } else {
+    return EXIT_SUCCESS;
+  }
+}
 
 LIBXSMM_INLINE
 libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {

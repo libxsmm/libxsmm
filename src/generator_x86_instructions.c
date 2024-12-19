@@ -2905,6 +2905,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
                                           const long long         i_immediate ) {
+  const unsigned char* raw_imm_ptr = (const unsigned char*)(&i_immediate);
   switch ( i_alu_instr ) {
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVB_R_IMM8:
@@ -2935,11 +2936,9 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     if ( (l_alu_instr & 0x00080000 ) == 0x00080000 ) {
       unsigned char* code = (unsigned char *) io_generated_code->generated_code;
       unsigned int l_imm_bytes = 1 << ( (l_alu_instr >> 8) & 0x3 );
-      size_t l_immediate = i_immediate;
       unsigned int l_i = 0;
       for ( l_i = 0; l_i < l_imm_bytes; ++l_i ) {
-        code[io_generated_code->code_size++] = (unsigned char)l_immediate;
-        l_immediate = (size_t)((size_t)l_immediate >> (size_t)8);
+        code[io_generated_code->code_size++] = raw_imm_ptr[l_i];
       }
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (0x%08x) is not an imm-instruction!\n", l_alu_instr);

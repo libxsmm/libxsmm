@@ -16,7 +16,6 @@
 #include "generator_gemm_sme.h"
 #include "generator_gemm_noarch.h"
 
-
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,
                                     const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -677,6 +676,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
       if (l_xgemm_desc_mod.k % 8 != 0)  {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
+      if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 && (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }

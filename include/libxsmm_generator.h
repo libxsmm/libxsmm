@@ -86,6 +86,10 @@ LIBXSMM_API
 void libxsmm_generator_gemm_kernel(libxsmm_generated_code*        io_generated_code,
                                    const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API
+void libxsmm_generator_gemm_reference_kernel(libxsmm_generated_code*        io_generated_code,
+                                             const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 /* TODO: change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_spgemm(const char*                    i_file_out,
@@ -162,7 +166,15 @@ void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_
                                           const libxsmm_meltw_descriptor*    i_mateltw_desc );
 
 LIBXSMM_API
+void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*            io_generated_code,
+                                          const libxsmm_meltw_descriptor*    i_mateltw_desc );
+
+LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*        io_generated_code,
+                                           const libxsmm_meqn_descriptor* i_mateqn_desc );
+
+LIBXSMM_API
+void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*        io_generated_code,
                                            const libxsmm_meqn_descriptor* i_mateqn_desc );
 
 /** Used for system/user specific locking (I/O). */
