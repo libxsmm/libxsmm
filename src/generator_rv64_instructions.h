@@ -18,7 +18,7 @@
 #define RVI(i) (LIBXSMM_RV64_INSTR_GP_##i)
 
 /* defining gp register mappings */
-#define LIBXSMM_RV64_GP_REG_X0   0
+#define LIBXSMM_RV64_GP_REG_X0    0
 #define LIBXSMM_RV64_GP_REG_X1    1
 #define LIBXSMM_RV64_GP_REG_X2    2
 #define LIBXSMM_RV64_GP_REG_X3    3
