@@ -24,6 +24,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
                                                                               const unsigned int                      i_gp_reg_scratch,
                                                                               const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                               const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  printf("In norm to norm t \n");
   /* m loop header */
   libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, i_mateltwise_desc->m );
 
@@ -31,11 +32,11 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
   libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, i_mateltwise_desc->n );
 
   /* actual transpose */
-  libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                          i_gp_reg_in, 0, 0, 1 );
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
+                                          i_gp_reg_in, LIBXSMM_RV64_GP_REG_X5, 0 );
 
-  libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD,
-                                          i_gp_reg_out, 0, 0, 1 );
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD,
+                                          i_gp_reg_out, LIBXSMM_RV64_GP_REG_X5, 0 );
 
   /* advance input pointer */
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,

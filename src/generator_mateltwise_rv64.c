@@ -11,6 +11,7 @@
 ******************************************************************************/
 #include "generator_mateltwise_rv64.h"
 #include "generator_mateltwise_transform_common.h"
+#include "generator_mateltwise_transform_rv64.h"
 #include "generator_mateltwise_unary_binary_rv64.h"
 #if 0
 #include "generator_mateltwise_reduce_rv64.h"
@@ -275,7 +276,16 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   }
 #endif
 
-  libxsmm_generator_unary_binary_rv64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+    libxsmm_generator_transform_rv64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+  } else if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) ||
+      (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
+    libxsmm_generator_unary_binary_rv64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+  } else {
+    /* This should not happen */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNKNOWN_OPERATION );
+    return;
+  }
 
   libxsmm_generator_meltw_destroy_stack_frame_rv64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
 #if 0
