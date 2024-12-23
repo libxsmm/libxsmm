@@ -31,10 +31,10 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
   libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, i_mateltwise_desc->n );
 
   /* actual transpose */
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LW,
                                           i_gp_reg_in, LIBXSMM_RV64_GP_REG_X5, 0 );
 
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD,
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SW,
                                           i_gp_reg_out, LIBXSMM_RV64_GP_REG_X5, 0 );
 
   /* advance input pointer */
