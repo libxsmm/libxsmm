@@ -152,9 +152,18 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
                                                                         const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
   libxsmm_blasint is_valid_arch_prec = 0;
 
+  unsigned int is_transform_tpp = i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT;
+
+#if 0
+  if (is_transform_tpp){
+    printf("It's a tranform tpp\n");
+  } else {
+    printf("It's a %d tpp\n", i_mateltwise_desc->param);
+  }
+#endif
+
   unsigned int is_unary_simple_rv64_tpp = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
       ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY)     ||
-       (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) ||
        (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)     ||
        (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2))) ? 1 : 0;
 
@@ -175,8 +184,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
   is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
                               LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
 
-  is_valid_arch_prec = (is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp) && is_fp32_inp_out;
-
+  is_valid_arch_prec = (is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp || is_transform_tpp) && is_fp32_inp_out;
   return is_valid_arch_prec;
 }
 
