@@ -15,6 +15,8 @@
 #include <immintrin.h>
 #endif
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void sfill_matrix( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
@@ -388,6 +390,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   /* JIT kernel */
   if (n_cols_idx == 0) {
     kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
+    libxsmm_get_kernel_info((const void*) kernel, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( kernel == NULL ) {
       fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
       exit(-1);
@@ -404,6 +408,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     unary_shape.n = 0;
     if (reduce_op == 0) {
       kernel2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
+      libxsmm_get_kernel_info((const void*) kernel2, &info);
+      is_reference_kernel = info.is_reference_kernel;
       if ( kernel2 == NULL ) {
         fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
         exit(-1);
@@ -420,6 +426,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
           }
         }
         kernel2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+        libxsmm_get_kernel_info((const void*) kernel2, &info);
+        is_reference_kernel = info.is_reference_kernel;
         if ( kernel2 == NULL ) {
           fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
           exit(-1);
@@ -436,6 +444,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
           }
         }
         kernel2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN, unary_shape, unary_flags );
+        libxsmm_get_kernel_info((const void*) kernel2, &info);
+        is_reference_kernel = info.is_reference_kernel;
         if ( kernel2 == NULL ) {
           fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
           exit(-1);
@@ -885,5 +895,5 @@ int main(int argc, char* argv[])
   }
 
   printf("SUCCESS unary reduce\n");
-  return EXIT_SUCCESS;
+  return libxsmm_return_success_code(is_reference_kernel);
 }

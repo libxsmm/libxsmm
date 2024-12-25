@@ -23,6 +23,8 @@ LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) 
 LIBXSMM_INLINE void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
 #endif
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, float *ptmp) {
@@ -537,6 +539,8 @@ int main( int argc, char* argv[] ) {
     /*libxsmm_meqn_tree_print( my_eqn0 );*/
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func0, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func0 == NULL ) {
       fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
       exit(-1);
@@ -660,6 +664,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata2, arg_shape2, arg_singular_attr2);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_meqn( my_eqn2, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func2, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func2 == NULL ) {
       fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
       exit(-1);
@@ -682,6 +688,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata3, arg_shape3, arg_singular_attr3);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_meqn( my_eqn3, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func3, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func3 == NULL ) {
       fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
       exit(-1);
@@ -796,5 +804,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(bf16_eqn_out);
   libxsmm_free(cache_fl);
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

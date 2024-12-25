@@ -18,6 +18,8 @@
 # include "libxsmm_perf.h"
 #endif
 #include "generator_common.h"
+#include "generator_x86_reference.h"
+#include "generator_aarch64_reference.h"
 
 #include <signal.h>
 #if !defined(NDEBUG)
@@ -197,6 +199,50 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # endif
 #endif
 
+LIBXSMM_API
+void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_generated_code,
+                                              const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  /* generate kernel */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
+  } else {
+    /* TODO fix this error and support for more architectures */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
+
+LIBXSMM_API
+void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*          io_generated_code,
+                                          const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
+  /* generate kernel */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
+  } else {
+    /* TODO fix this error and support for more architectures */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
+
+LIBXSMM_API
+void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*         io_generated_code,
+                                                     const libxsmm_meqn_descriptor*  i_mateqn_desc ) {
+  /* generate kernel */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_generator_matequation_x86_reference_kernel( io_generated_code, i_mateqn_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
+  } else {
+    /* TODO fix this error and support for more architectures */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
 
 LIBXSMM_EXTERN_C typedef struct internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
@@ -2102,6 +2148,23 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
   return result;
 }
 
+LIBXSMM_API_INTERN unsigned int libxsmm_disable_reference_gemm(void){
+  const char *const env_reference_disable_gemm_fallback = getenv("LIBXSMM_DISABLE_GEMM_REFERENCE_FALLBACK");
+  unsigned int result = (env_reference_disable_gemm_fallback == 0) ? 0 : atoi(env_reference_disable_gemm_fallback);
+  return result;
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_disable_reference_meltw(void){
+  const char *const env_reference_disable_meltw_fallback = getenv("LIBXSMM_DISABLE_MELTW_REFERENCE_FALLBACK");
+  unsigned int result = (env_reference_disable_meltw_fallback == 0) ? 0 : atoi(env_reference_disable_meltw_fallback);
+  return result;
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_disable_reference_matequation(void){
+  const char *const env_reference_disable_matequation_fallback = getenv("LIBXSMM_DISABLE_MATEQUATION_REFERENCE_FALLBACK");
+  unsigned int result = (env_reference_disable_matequation_fallback == 0) ? 0 : atoi(env_reference_disable_matequation_fallback);
+  return result;
+}
 
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
@@ -2112,6 +2175,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   char jit_buffer[LIBXSMM_CODE_MAXSIZE] = { 0 }, jit_name[384] = { 0 }, suffix_name[16] = { 0 };
   libxsmm_generated_code generated_code /*= { 0 }*/;
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
+  unsigned int libxsmm_disable_reference_gemm_fallback = libxsmm_disable_reference_gemm();
+  unsigned int libxsmm_disable_reference_meltw_fallback = libxsmm_disable_reference_meltw();
+  unsigned int libxsmm_disable_reference_matequation_fallback = libxsmm_disable_reference_matequation();
 
   LIBXSMM_MEMZERO127(&generated_code);
   if (LIBXSMM_CAPACITY_REGISTRY != regindex) {
@@ -2132,6 +2198,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   extra.registered = regindex;
   extra.nflops = 0;
+  extra.is_reference_kernel = 0;
 
   LIBXSMM_ASSERT(NULL != generated_code.generated_code || 0 == generated_code.buffer_size);
   LIBXSMM_ASSERT(NULL != request && 0 != libxsmm_target_archid);
@@ -2161,6 +2228,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
 # endif
         libxsmm_generator_gemm_kernel(&generated_code, request->descriptor.gemm);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, request->descriptor.gemm);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2514,6 +2590,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
         libxsmm_generator_mateltwise_kernel(&generated_code, request->descriptor.meltw);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_meltw_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            libxsmm_generator_mateltwise_reference_kernel(&generated_code, request->descriptor.meltw);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2535,6 +2620,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
         libxsmm_generator_matequation_kernel(&generated_code, request->descriptor.meqn);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_matequation_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            libxsmm_generator_matequation_reference_kernel(&generated_code, request->descriptor.meqn);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2928,6 +3022,7 @@ LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info*
   code.ptr_const = kernel;
   LIBXSMM_MEMZERO127(&result_info);
   xinfo = libxsmm_get_kernel_xinfo(code, &desc, &result_info.code_size);
+  result_info.is_reference_kernel = xinfo->is_reference_kernel;
   if (NULL != xinfo) {
     if (NULL != desc) {
       const libxsmm_kernel_kind kind = (libxsmm_kernel_kind)LIBXSMM_DESCRIPTOR_KIND(desc->kind);
@@ -2955,7 +3050,6 @@ LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info*
   }
   return result;
 }
-
 
 LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info)
 {
