@@ -375,6 +375,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gemm_kernel_fused", "..\sam
 		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gemm_kernel_parallel", "..\samples\xgemm\gemm_kernel_parallel.vcxproj", "{3efa53ac-f6f5-4895-a692-91cd7948d88b}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memcmp", "..\samples\utilities\memcmp\memcmp.vcxproj", "{7E730036-A678-4529-83F3-DFFB68CA278E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
