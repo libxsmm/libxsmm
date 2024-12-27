@@ -2479,9 +2479,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     gemm_param.a.primary = (void*)i_a;
     gemm_param.b.primary = (void*)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
-      gemm_param.a.quaternary = (void*)i_a;
-      gemm_param.b.quaternary = (void*)i_b;
-      gemm_param.c.quaternary = (void*)o_c;
+      gemm_param.a.senary = (void*)i_a;
+      gemm_param.b.senary = (void*)i_b;
+      gemm_param.c.senary = (void*)o_c;
     }
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
@@ -2555,9 +2555,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     gemm_param.a.primary = (void*)i_a;
     gemm_param.b.primary = (void*)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
-      gemm_param.a.quaternary = (void*)i_a;
-      gemm_param.b.quaternary = (void*)i_b;
-      gemm_param.c.quaternary = (void*)o_c_perf;
+      gemm_param.a.senary = (void*)i_a;
+      gemm_param.b.senary = (void*)i_b;
+      gemm_param.c.senary = (void*)o_c_perf;
     }
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)

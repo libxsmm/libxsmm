@@ -577,6 +577,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg {
   void* secondary;
   void* tertiary;
   void* quaternary;
+  void* quinary;
+  void* senary;
 } libxsmm_matrix_arg;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_op_arg {
