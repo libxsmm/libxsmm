@@ -214,7 +214,7 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   libxsmm_generator_mateltwise_rv64_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, i_mateltwise_desc );
 
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0xe0f );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0xfff );
 
   libxsmm_generator_meltw_setup_stack_frame_rv64( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
@@ -293,5 +293,5 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   fflush(stdout);
 #endif
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0xe0f );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0xfff );
 }

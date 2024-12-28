@@ -30,57 +30,77 @@ void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_
   /* allocate callee save space on the stack */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
                                                LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
-                                               -80 );
+                                               -112 );
 
   /* save x18-x27 to stack */
   if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X18, 72 );
+                                          LIBXSMM_RV64_GP_REG_X18, 104 );
   }
   if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X19, 64 );
+                                          LIBXSMM_RV64_GP_REG_X19, 96 );
   }
   if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X20, 56 );
+                                          LIBXSMM_RV64_GP_REG_X20, 88 );
   }
   if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X21, 48 );
+                                          LIBXSMM_RV64_GP_REG_X21, 80 );
   }
   if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X22, 40 );
+                                          LIBXSMM_RV64_GP_REG_X22, 72 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X23, 32 );
+                                          LIBXSMM_RV64_GP_REG_X23, 64 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X24, 24 );
+                                          LIBXSMM_RV64_GP_REG_X24, 56 );
   }
 
   if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X25, 16);
+                                          LIBXSMM_RV64_GP_REG_X25, 48 );
   }
 
   if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X26, 8 );
+                                          LIBXSMM_RV64_GP_REG_X26, 40 );
   }
 
   if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X27, 0 );
+                                          LIBXSMM_RV64_GP_REG_X27, 32 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X8, 24 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X9, 16 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x1000 ) == 0x1000 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X1, 8 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x2000 ) == 0x2000 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X0, 0 );
   }
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated_code,
-                                               const unsigned short    i_callee_save_bitmask ) {
+                                               const unsigned short  i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_restore_regs: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -90,52 +110,72 @@ void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated
   /* save x18-x27 to stack */
   if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X18, 72 );
+                                          LIBXSMM_RV64_GP_REG_X18, 104 );
   }
   if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X19, 64 );
+                                          LIBXSMM_RV64_GP_REG_X19, 96 );
   }
   if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X20, 56 );
+                                          LIBXSMM_RV64_GP_REG_X20, 88 );
   }
   if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X21, 48 );
+                                          LIBXSMM_RV64_GP_REG_X21, 80 );
   }
   if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X22, 40 );
+                                          LIBXSMM_RV64_GP_REG_X22, 72 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X23, 32 );
+                                          LIBXSMM_RV64_GP_REG_X23, 64 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X24, 24 );
+                                          LIBXSMM_RV64_GP_REG_X24, 56 );
   }
 
   if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X25, 16);
+                                          LIBXSMM_RV64_GP_REG_X25, 48);
   }
 
   if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X26, 8 );
+                                          LIBXSMM_RV64_GP_REG_X26, 40 );
   }
 
   if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X27, 0 );
+                                          LIBXSMM_RV64_GP_REG_X27, 32 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X8, 24 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X9, 16 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x1000 ) == 0x1000 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X2, 8 );
+  }
+
+  if ( ( i_callee_save_bitmask & 0x2000 ) == 0x2000 ) {
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
+                                          LIBXSMM_RV64_GP_REG_X1, 0 );
   }
 
   /* deallocate calle save space on stack */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
                                                  LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
-                                                 80 );
+                                                 112 );
 }
 
 LIBXSMM_API_INTERN
