@@ -92,14 +92,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
 
   if (i_op2_type != LIBXSMM_MELTW_TYPE_UNARY_NONE) {
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, i_stack_var_scratch_ptr, i_tmp_reg);
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, i_tmp_reg );
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 80, i_tmp_reg );
   } else {
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, i_stack_var_dst_ptr, i_tmp_reg);
     if (is_brgemm > 0) {
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_tmp_reg3, i_tmp_reg, i_tmp_reg, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_tmp_reg3, i_tmp_reg2, i_tmp_reg3, (long long)LIBXSMM_TYPESIZE(i_out_dtype) * i_m * i_n );
     }
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, i_tmp_reg );
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 80, i_tmp_reg );
   }
 
   l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, i_in_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
@@ -122,7 +122,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_tmp_reg3, i_tmp_reg, i_tmp_reg, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_tmp_reg3, i_tmp_reg2, i_tmp_reg3, (long long)LIBXSMM_TYPESIZE(i_out2_dtype) * i_m2 * i_n2);
     }
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, i_tmp_reg );
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 80, i_tmp_reg );
 
     l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, i_in2_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
       i_comp2_dtype, i_out2_dtype, i_m2, i_n2, i_ldi2, i_ldo2, 0, 0,
