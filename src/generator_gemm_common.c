@@ -146,7 +146,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
             LIBXSMM_X86_INSTR_MOVQ,
             i_struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            64,
+            80,
             i_tmp_reg,
             1 );
   } else {
@@ -160,7 +160,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
             LIBXSMM_X86_INSTR_MOVQ,
             i_struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            64,
+            80,
             i_tmp_reg,
             1 );
   }
@@ -193,7 +193,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
             LIBXSMM_X86_INSTR_MOVQ,
             i_struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            64,
+            80,
             i_tmp_reg,
             1 );
     l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, i_in2_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
