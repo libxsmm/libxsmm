@@ -136,11 +136,11 @@ int main(int argc, char* argv[])
          &beta, c + STREAM_C(j * nc), &ldc);
 #else
       gemm_param.a.primary    = a + STREAM_A(j * na);
-      gemm_param.a.quaternary = a + STREAM_A(p * na);
+      gemm_param.a.senary = a + STREAM_A(p * na);
       gemm_param.b.primary    = b + STREAM_B(j * nb);
-      gemm_param.b.quaternary = b + STREAM_B(p * nb);
+      gemm_param.b.senary = b + STREAM_B(p * nb);
       gemm_param.c.primary    = c + STREAM_C(j * nc);
-      gemm_param.c.quaternary = c + STREAM_C(p * nc);
+      gemm_param.c.senary = c + STREAM_C(p * nc);
       kernel.gemm(&gemm_param);
 #endif
     }
@@ -156,11 +156,11 @@ int main(int argc, char* argv[])
      &beta, c + STREAM_C(j * nc), &ldc);
 #else
   gemm_param.a.primary    = a + STREAM_A(j * na);
-  gemm_param.a.quaternary = gemm_param.a.primary;
+  gemm_param.a.senary = gemm_param.a.primary;
   gemm_param.b.primary    = b + STREAM_B(j * nb);
-  gemm_param.b.quaternary = gemm_param.b.primary;
+  gemm_param.b.senary = gemm_param.b.primary;
   gemm_param.c.primary    = c + STREAM_C(j * nc);
-  gemm_param.c.quaternary = gemm_param.c.primary;
+  gemm_param.c.senary = gemm_param.c.primary;
   kernel.gemm(&gemm_param);
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
