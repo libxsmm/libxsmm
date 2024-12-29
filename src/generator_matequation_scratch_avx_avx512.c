@@ -398,9 +398,9 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
   if (ptr_id == 0) {
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4, temp_reg );
   } else if (ptr_id == 1) {
-    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8, temp_reg );
+    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10, temp_reg );
   } else {
-    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12, temp_reg );
+    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg );
   }
 
   /* Setup secondaries if need be */
@@ -471,15 +471,15 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
       ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->info.b_op.is_brgemm == 1)) ||
       ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.is_matmul == 1)) ||
       ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.is_brgemm == 1))) {
-    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12, temp_reg );
+    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg );
   } else {
     if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
-      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8, temp_reg );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10, temp_reg );
     } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ||
                (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY && (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MULADD ||  cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD))) {
-      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12, temp_reg );
-    } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg );
+    } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR22, temp_reg );
     } else {
       /* Should not happen */
     }
@@ -498,7 +498,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
           24,
           temp_reg,
           0 );
-      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11, temp_reg );
     } else {
       if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) {
         fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
@@ -634,7 +634,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         } else {
           libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, (-1-cur_op->fusion_info.xgemm.colbias_pos_in_arg) * i_micro_kernel_config->tmp_size, temp_reg);
         }
-        libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg);
+        libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR22, temp_reg);
       }
 
       if ( (((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT))) &&
@@ -683,7 +683,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         /* If need, be set properly the offset param from scratch...  */
         if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (timestamp == last_timestamp)) {
           libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
-          libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg );
+          libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11, temp_reg );
         }
 
         /* If DUMP operator set secondary output in stack param struct */
@@ -702,7 +702,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               cur_op->info.u_op.op_arg_pos*48,
               temp_reg,
               0 );
-           libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg);
+           libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11, temp_reg);
         }
 
         /* Prepare descriptor */
