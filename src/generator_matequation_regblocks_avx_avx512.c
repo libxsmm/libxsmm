@@ -65,7 +65,7 @@ void libxsmm_generator_copy_opargs(libxsmm_generated_code*        io_generated_c
           i_micro_kernel_config->alu_mov_instruction,
           input_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.u_op.op_arg_pos*48,
+          cur_node->info.u_op.op_arg_pos*32,
           temp_reg,
           0 );
       libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, n_args * 8 + cur_pos * 32, temp_reg2);

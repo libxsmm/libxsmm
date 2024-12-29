@@ -37,7 +37,7 @@ void libxsmm_generator_copy_opargs_aarch64(libxsmm_generated_code*        io_gen
   } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
     if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
       unsigned int cur_pos = *oparg_id;
-      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, input_reg, temp_reg, temp_reg2, (long long)cur_node->info.u_op.op_arg_pos*48 );
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, input_reg, temp_reg, temp_reg2, (long long)cur_node->info.u_op.op_arg_pos*32 );
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, temp_reg2, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, temp_reg );
       libxsmm_generator_meqn_getaddr_stack_tmpaddr_i_aarch64( io_generated_code, n_args * 8 + cur_pos * 32, temp_reg3, temp_reg2);
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, temp_reg2, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, temp_reg);
