@@ -367,7 +367,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.arg.in_pos*32,
+          cur_node->info.arg.in_pos*48,
           temp_reg,
           0 );
     } else {
@@ -389,7 +389,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          arg_tmp_id*32,
+          arg_tmp_id*48,
           temp_reg,
           0 );
     }
@@ -419,7 +419,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.arg.in_pos*32+8,
+          cur_node->info.arg.in_pos*48+8,
           temp_reg,
           0 );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5, temp_reg );
@@ -461,7 +461,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          arg_tmp_id*32,
+          arg_tmp_id*48,
           temp_reg,
           0 );
     }
@@ -599,7 +599,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->info.b_op.op_arg_pos*32+16,
+              cur_op->info.b_op.op_arg_pos*48+16,
               temp_reg,
               0 );
         } else {
@@ -607,7 +607,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->info.t_op.op_arg_pos*32+16,
+              cur_op->info.t_op.op_arg_pos*48+16,
               temp_reg,
               0 );
         }
@@ -628,7 +628,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->fusion_info.xgemm.colbias_pos_in_arg*32,
+              cur_op->fusion_info.xgemm.colbias_pos_in_arg*48,
               temp_reg,
               0 );
         } else {
@@ -699,7 +699,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->info.u_op.op_arg_pos*32,
+              cur_op->info.u_op.op_arg_pos*48,
               temp_reg,
               0 );
            libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg);
