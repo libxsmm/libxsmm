@@ -425,10 +425,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     if ( l_xgemm_desc->prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       /* A prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + 40, i_gp_reg_mapping->gp_reg_a_prefetch, 0 );
+                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, i_gp_reg_mapping->gp_reg_a_prefetch, 0 );
       /* B prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b + 40, i_gp_reg_mapping->gp_reg_b_prefetch, 0 );
+                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, i_gp_reg_mapping->gp_reg_b_prefetch, 0 );
     }
     /* batch reduce count & offset arrays*/
     if ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {

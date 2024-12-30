@@ -1334,13 +1334,13 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars_aarch64( 
 
   if (has_A_pf_ptr == 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-        struct_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + 40, val_reg);
+        struct_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, val_reg);
     libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_PFA_PTR, aux_reg, val_reg );
   }
 
   if (has_B_pf_ptr == 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-        struct_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + 40, val_reg);
+        struct_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, val_reg);
     libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_PFB_PTR, aux_reg, val_reg );
   }
 

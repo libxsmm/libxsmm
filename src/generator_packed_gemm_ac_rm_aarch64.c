@@ -89,10 +89,10 @@ void libxsmm_generator_packed_gemm_ac_rm_aarch64( libxsmm_generated_code*       
     if ( i_xgemm_desc->prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       /* A prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + 40, l_gp_reg_mapping.gp_reg_a_prefetch );
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, l_gp_reg_mapping.gp_reg_a_prefetch );
       /* B prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + 40, l_gp_reg_mapping.gp_reg_b_prefetch );
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, l_gp_reg_mapping.gp_reg_b_prefetch );
     }
   } else {
 #if 0

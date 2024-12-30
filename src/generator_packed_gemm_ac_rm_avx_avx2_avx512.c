@@ -100,10 +100,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
     if ( i_xgemm_desc->prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       /* A prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + 40, l_gp_reg_mapping.gp_reg_a_prefetch, 0 );
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, l_gp_reg_mapping.gp_reg_a_prefetch, 0 );
       /* B prefetch pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b + 40, l_gp_reg_mapping.gp_reg_b_prefetch, 0 );
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, l_gp_reg_mapping.gp_reg_b_prefetch, 0 );
     }
   } else {
 #if 0
