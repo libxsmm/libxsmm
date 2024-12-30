@@ -191,6 +191,8 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0, gp_idx_mat_base_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
@@ -233,7 +235,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_base_reg,
         0 );
 
@@ -241,7 +243,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -249,7 +251,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -261,7 +263,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -269,7 +271,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_idx_mat_base_reg,
         0 );
 
@@ -277,7 +279,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        88,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -744,6 +746,8 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
   const char *const env_pf_dist = getenv("PF_DIST_GATHER_SCATTER");
   const char *const env_pf_type = getenv("PF_TYPE_GATHER_SCATTER");
   const char *const env_nts     = getenv("NTS_GATHER_SCATTER");
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
@@ -784,7 +788,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_base_reg,
         0 );
 
@@ -792,7 +796,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -800,7 +804,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -813,7 +817,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -821,7 +825,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_idx_mat_base_reg,
         0 );
 
@@ -829,7 +833,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        88,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -968,6 +972,8 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
@@ -986,7 +992,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_reg,
         0 );
 
@@ -994,7 +1000,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1002,7 +1008,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -1015,7 +1021,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -1023,7 +1029,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_idx_mat_reg,
         0 );
 
@@ -1031,7 +1037,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        88,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1093,6 +1099,8 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
@@ -1111,7 +1119,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_reg,
         0 );
 
@@ -1119,7 +1127,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1127,7 +1135,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -1139,7 +1147,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -1147,7 +1155,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_idx_mat_reg,
         0 );
 
@@ -1155,7 +1163,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        88,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1223,6 +1231,8 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0, gp_idx_mat_base_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
@@ -1265,7 +1275,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_base_reg,
         0 );
 
@@ -1273,7 +1283,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1281,7 +1291,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -1294,7 +1304,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -1302,7 +1312,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         gp_idx_mat_base_reg,
         0 );
 
@@ -1310,7 +1320,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        88,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 

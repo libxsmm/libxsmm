@@ -4050,6 +4050,10 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
                                ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0) > 0)) ||
                                ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1) > 0)) ||
                                ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2) > 0))) ? 1 : 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+  int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
+  int l_offset_ptr_d = (int)(sizeof(libxsmm_matrix_op_arg) + 3*sizeof(libxsmm_matrix_arg));
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( ((i_mateltwise_desc->m > i_mateltwise_desc->ldi) && !(bcast_row > 0 || bcast_scalar > 0)) ||
@@ -4230,7 +4234,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         i_gp_reg_mapping->gp_reg_in,
         0 );
 
@@ -4238,7 +4242,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         i_gp_reg_mapping->gp_reg_out,
         0 );
 
@@ -4247,7 +4251,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_out2,
           0 );
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
@@ -4255,7 +4259,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_relumask,
           0 );
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) {
@@ -4263,7 +4267,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          40,
+          l_offset_ptr_a + 8,
           i_gp_reg_mapping->gp_reg_relumask,
           0 );
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU)  {
@@ -4280,7 +4284,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          40,
+          l_offset_ptr_a + 8,
           i_gp_reg_mapping->gp_reg_relumask,
           0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -4303,7 +4307,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_relumask,
           0 );
       l_gp_reg_aux1 = i_gp_reg_mapping->gp_reg_fam_lualpha;
@@ -4312,7 +4316,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          40,
+          l_offset_ptr_a + 8,
           i_gp_reg_mapping->gp_reg_relumask,
           0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -4328,7 +4332,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_offset,
           0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_offset, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_gp_reg_mapping->gp_reg_offset, 0 );
@@ -4337,7 +4341,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_offset,
           0 );
       l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_offset;
@@ -4346,7 +4350,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_offset,
           0 );
       l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_offset;
@@ -4370,7 +4374,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          88,
+          l_offset_ptr_b + 8,
           i_gp_reg_mapping->gp_reg_dropoutmask,
           0 );
       l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_prngstate;
@@ -4380,7 +4384,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          40,
+          l_offset_ptr_a + 8,
           i_gp_reg_mapping->gp_reg_dropoutmask,
           0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -4397,7 +4401,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_param_struct,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            40,
+            l_offset_ptr_a + 8,
             i_gp_reg_mapping->gp_reg_quant_sf,
             0 );
       }
@@ -4408,7 +4412,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_param_struct,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            40,
+            l_offset_ptr_a + 8,
             i_gp_reg_mapping->gp_reg_quant_sf,
             0 );
       }
@@ -4428,7 +4432,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         i_gp_reg_mapping->gp_reg_in,
         0 );
 
@@ -4436,7 +4440,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         i_gp_reg_mapping->gp_reg_in2,
         0 );
 
@@ -4444,7 +4448,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        128,
+        l_offset_ptr_c,
         i_gp_reg_mapping->gp_reg_out,
         0 );
     if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_STOCHASTIC_ROUND) > 0 ) {
@@ -4462,7 +4466,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         i_gp_reg_mapping->gp_reg_in,
         0 );
 
@@ -4470,7 +4474,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        80,
+        l_offset_ptr_b,
         i_gp_reg_mapping->gp_reg_in2,
         0 );
 
@@ -4478,7 +4482,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        128,
+        l_offset_ptr_c,
         i_gp_reg_mapping->gp_reg_in3,
         0 );
 
@@ -4486,7 +4490,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        176,
+        l_offset_ptr_d,
         i_gp_reg_mapping->gp_reg_out,
         0 );
     if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_STOCHASTIC_ROUND) > 0 ) {

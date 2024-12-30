@@ -3323,6 +3323,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
   unsigned int gp_reg_b         = LIBXSMM_X86_GP_REG_RSI;
   unsigned short gp_save_bitmask = 0x2 | 0x4 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000;
   unsigned int l_enforce_Mx1_amx_tile_blocking = i_micro_kernel_config->enforce_Mx1_amx_tile_blocking;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
@@ -3338,7 +3340,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
               LIBXSMM_X86_INSTR_MOVQ,
               struct_gp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              32,
+              l_offset_ptr_a,
               i_gp_reg_mapping->gp_reg_c,
               1 );
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR, tmp_reg );
@@ -3346,7 +3348,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
               LIBXSMM_X86_INSTR_MOVQ,
               struct_gp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              80,
+              l_offset_ptr_b,
               tmp_reg,
               1 );
       l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
@@ -3367,7 +3369,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            32,
+            l_offset_ptr_a,
             tmp_reg,
             1 );
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR, tmp_reg );
@@ -3375,7 +3377,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            80,
+            l_offset_ptr_b,
             tmp_reg,
             1 );
     l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, i_in_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
@@ -3564,6 +3566,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
   unsigned int hf8_output_gemm  = (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc_orig->datatype ) ) ? 1 : 0;
   unsigned int struct_gp_reg    = LIBXSMM_X86_GP_REG_R15;
   unsigned int tmp_reg          = LIBXSMM_X86_GP_REG_R14;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+
   l_mateltwise_gp_reg_mapping.gp_reg_param_struct = struct_gp_reg;
 
   /* Apply RELU if requested */
@@ -3577,14 +3582,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            32,
+            l_offset_ptr_a,
             tmp_reg,
             1 );
     libxsmm_x86_instruction_alu_mem( io_generated_code,
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            80,
+            l_offset_ptr_b,
             tmp_reg,
             1 );
     if (i_defer_relu_bitmask_compute > 0) {
@@ -3598,7 +3603,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
               LIBXSMM_X86_INSTR_MOVQ,
               struct_gp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              88,
+              l_offset_ptr_b + 8,
               tmp_reg,
               1 );
     }
@@ -3618,7 +3623,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
                 LIBXSMM_X86_INSTR_MOVQ,
                 struct_gp_reg,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                32,
+                l_offset_ptr_a,
                 tmp_reg,
                 1 );
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, tmp_reg );
@@ -3626,7 +3631,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
                 LIBXSMM_X86_INSTR_MOVQ,
                 struct_gp_reg,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                80,
+                l_offset_ptr_b,
                 tmp_reg,
                 1 );
         l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
@@ -3651,7 +3656,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            32,
+            l_offset_ptr_a,
             tmp_reg,
             1 );
     if (i_defer_c_vnni_format == 0) {
@@ -3661,7 +3666,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            80,
+            l_offset_ptr_b,
             tmp_reg,
             1 );
     l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
@@ -3677,7 +3682,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm
               LIBXSMM_X86_INSTR_MOVQ,
               struct_gp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              80,
+              l_offset_ptr_b,
               tmp_reg,
               1 );
       l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, i_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
@@ -3896,39 +3901,43 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
        (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0))) {
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
          ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+      int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+      int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+      int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
+
       /* RDI holds the pointer to the struct, so lets first move this one into R15 */
       libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_help_1 );
       /* A pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, LIBXSMM_X86_GP_REG_RDI, 0 );
+                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a, LIBXSMM_X86_GP_REG_RDI, 0 );
       if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) {
         libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, i_gp_reg_mapping->gp_reg_bitmap_a, 0 );
+                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + 8, i_gp_reg_mapping->gp_reg_bitmap_a, 0 );
       }
       /* B pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 80, LIBXSMM_X86_GP_REG_RSI, 0 );
+                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b, LIBXSMM_X86_GP_REG_RSI, 0 );
       /* C pointer */
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 128, i_gp_reg_mapping->gp_reg_c, 0 );
+                                       i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_c, i_gp_reg_mapping->gp_reg_c, 0 );
       /* batch reduce count & offset arrays*/
       if ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
         libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                          i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_mapping->gp_reg_reduce_count, 0 );
         if ( l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
           libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-              i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, i_gp_reg_mapping->gp_reg_a_offset, 0 );
+              i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + 8, i_gp_reg_mapping->gp_reg_a_offset, 0 );
           libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-              i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 88, i_gp_reg_mapping->gp_reg_b_offset, 0 );
+              i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b + 8, i_gp_reg_mapping->gp_reg_b_offset, 0 );
         }
       }
       if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) ) {
         libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 144, i_gp_reg_mapping->gp_reg_scf, 0 );
+                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_c + 16, i_gp_reg_mapping->gp_reg_scf, 0 );
       }
       if (l_is_Amxfp4_Bbf16_gemm > 0) {
         libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 48, i_gp_reg_mapping->gp_reg_scf, 0 );
+                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + 16, i_gp_reg_mapping->gp_reg_scf, 0 );
       }
     }
   }

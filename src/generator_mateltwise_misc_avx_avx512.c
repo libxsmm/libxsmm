@@ -241,6 +241,8 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   unsigned int in_tsize, out_tsize, tsize;
   unsigned int mask_in = 1, mask_out = 1, mask_out_count;
   unsigned int END_LABEL = 1;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
@@ -287,7 +289,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      32,
+      l_offset_ptr_a,
       i_gp_reg_mapping->gp_reg_in,
       0 );
 
@@ -295,7 +297,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      80,
+      l_offset_ptr_b,
       i_gp_reg_mapping->gp_reg_out,
       0 );
 
