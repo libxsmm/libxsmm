@@ -633,13 +633,13 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
               if (0 <= ai && 0 <= bi && 0 <= ci)
 # endif
               {
-                gemm_param.a.quaternary = &a0[ai << ibits];
-                gemm_param.b.quaternary = &b0[bi << ibits];
-                gemm_param.c.quaternary = &c0[ci << obits];
+                gemm_param.a.senary = &a0[ai << ibits];
+                gemm_param.b.senary = &b0[bi << ibits];
+                gemm_param.c.senary = &c0[ci << obits];
                 kernel(&gemm_param);
-                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+                gemm_param.a.primary = gemm_param.a.senary; /* next */
+                gemm_param.b.primary = gemm_param.b.senary; /* next */
+                gemm_param.c.primary = gemm_param.c.senary; /* next */
               }
             }
           }
@@ -665,13 +665,13 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
               if (0 <= ai && 0 <= bi && 0 <= ci)
 #endif
               {
-                gemm_param.a.quaternary = &a0[ai * itypesize];
-                gemm_param.b.quaternary = &b0[bi * itypesize];
-                gemm_param.c.quaternary = &c0[ci * otypesize];
+                gemm_param.a.senary = &a0[ai * itypesize];
+                gemm_param.b.senary = &b0[bi * itypesize];
+                gemm_param.c.senary = &c0[ci * otypesize];
                 kernel(&gemm_param);
-                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+                gemm_param.a.primary = gemm_param.a.senary; /* next */
+                gemm_param.b.primary = gemm_param.b.senary; /* next */
+                gemm_param.c.primary = gemm_param.c.senary; /* next */
               }
             }
           }
@@ -682,9 +682,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 #endif
           end == size)
         {
-          gemm_param.a.quaternary = gemm_param.a.primary;
-          gemm_param.b.quaternary = gemm_param.b.primary;
-          gemm_param.c.quaternary = gemm_param.c.primary;
+          gemm_param.a.senary = gemm_param.a.primary;
+          gemm_param.b.senary = gemm_param.b.primary;
+          gemm_param.c.senary = gemm_param.c.primary;
           kernel(&gemm_param);
         }
       }
@@ -721,9 +721,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 #   endif
               {
                 LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
-                gemm_param.a.quaternary = &a0[ai << ibits];
-                gemm_param.b.quaternary = &b0[bi << ibits];
-                gemm_param.c.quaternary = &c0[ci << obits];
+                gemm_param.a.senary = &a0[ai << ibits];
+                gemm_param.b.senary = &b0[bi << ibits];
+                gemm_param.c.senary = &c0[ci << obits];
 #   if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
 #   else
@@ -735,9 +735,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 #   else
                 LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
 #   endif
-                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+                gemm_param.a.primary = gemm_param.a.senary; /* next */
+                gemm_param.b.primary = gemm_param.b.senary; /* next */
+                gemm_param.c.primary = gemm_param.c.senary; /* next */
               }
             }
           }
@@ -765,9 +765,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 # endif
               {
                 LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
-                gemm_param.a.quaternary = &a0[ai * itypesize];
-                gemm_param.b.quaternary = &b0[bi * itypesize];
-                gemm_param.c.quaternary = &c0[ci * otypesize];
+                gemm_param.a.senary = &a0[ai * itypesize];
+                gemm_param.b.senary = &b0[bi * itypesize];
+                gemm_param.c.senary = &c0[ci * otypesize];
 # if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
 # else
@@ -779,9 +779,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 # else
                 LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
 # endif
-                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+                gemm_param.a.primary = gemm_param.a.senary; /* next */
+                gemm_param.b.primary = gemm_param.b.senary; /* next */
+                gemm_param.c.primary = gemm_param.c.senary; /* next */
               }
             }
           }
@@ -793,9 +793,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 # endif
           end == size)
         {
-          gemm_param.a.quaternary = gemm_param.a.primary;
-          gemm_param.b.quaternary = gemm_param.b.primary;
-          gemm_param.c.quaternary = gemm_param.c.primary;
+          gemm_param.a.senary = gemm_param.a.primary;
+          gemm_param.b.senary = gemm_param.b.primary;
+          gemm_param.c.senary = gemm_param.c.primary;
           LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
           kernel(&gemm_param);
           LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
@@ -820,18 +820,18 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       { /* no locking */
         for (i = begin; i < end1; ++i) {
           char *const an = ai + da, *const bn = bi + db, *const cn = ci + dc;
-          gemm_param.a.quaternary = *((void**)an);
-          gemm_param.b.quaternary = *((void**)bn);
-          gemm_param.c.quaternary = *((void**)cn);
+          gemm_param.a.senary = *((void**)an);
+          gemm_param.b.senary = *((void**)bn);
+          gemm_param.c.senary = *((void**)cn);
 #if defined(LIBXSMM_BATCH_CHECK)
           if (NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary)
 #endif
           {
             kernel(&gemm_param);
           }
-          gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-          gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-          gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+          gemm_param.a.primary = gemm_param.a.senary; /* next */
+          gemm_param.b.primary = gemm_param.b.senary; /* next */
+          gemm_param.c.primary = gemm_param.c.senary; /* next */
           ai = an; bi = bn; ci = cn; /* next */
         }
         if ( /* remainder multiplication */
@@ -840,9 +840,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 #endif
           end == size)
         {
-          gemm_param.a.quaternary = gemm_param.a.primary;
-          gemm_param.b.quaternary = gemm_param.b.primary;
-          gemm_param.c.quaternary = gemm_param.c.primary;
+          gemm_param.a.senary = gemm_param.a.primary;
+          gemm_param.b.senary = gemm_param.b.primary;
+          gemm_param.c.senary = gemm_param.c.primary;
           kernel(&gemm_param);
         }
       }
@@ -855,14 +855,14 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
         LIBXSMM_ASSERT(NULL != lock);
         for (i = begin + 1; i <= end1; ++i) {
           char *const an = ai + da, *const bn = bi + db, *const cn = ci + dc;
-          gemm_param.a.quaternary = *((void**)an);
-          gemm_param.b.quaternary = *((void**)bn);
-          gemm_param.c.quaternary = *((void**)cn);
+          gemm_param.a.senary = *((void**)an);
+          gemm_param.b.senary = *((void**)bn);
+          gemm_param.c.senary = *((void**)cn);
 # if defined(LIBXSMM_BATCH_CHECK)
           if (NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary)
 # endif
           {
-            LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKPTR(gemm_param.c.quaternary, internal_gemm_nlocks)].state;
+            LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKPTR(gemm_param.c.senary, internal_gemm_nlocks)].state;
 # if defined(LIBXSMM_GEMM_LOCKFWD)
             if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
 # else
@@ -875,9 +875,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
             LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
 # endif
           }
-          gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-          gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-          gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+          gemm_param.a.primary = gemm_param.a.senary; /* next */
+          gemm_param.b.primary = gemm_param.b.senary; /* next */
+          gemm_param.c.primary = gemm_param.c.senary; /* next */
           ai = an; bi = bn; ci = cn; /* next */
         }
         if ( /* remainder multiplication */
@@ -886,9 +886,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 # endif
           end == size)
         {
-          gemm_param.a.quaternary = gemm_param.a.primary;
-          gemm_param.b.quaternary = gemm_param.b.primary;
-          gemm_param.c.quaternary = gemm_param.c.primary;
+          gemm_param.a.senary = gemm_param.a.primary;
+          gemm_param.b.senary = gemm_param.b.primary;
+          gemm_param.c.senary = gemm_param.c.primary;
           LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
           kernel(&gemm_param);
           LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
@@ -906,18 +906,18 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       gemm_param.b.primary = &b0[begin * db];
       gemm_param.c.primary = &c0[begin * dc];
       for (i = begin; i < end1; ++i) {
-        gemm_param.a.quaternary = (char*)gemm_param.a.primary + da;
-        gemm_param.b.quaternary = (char*)gemm_param.b.primary + db;
-        gemm_param.c.quaternary = (char*)gemm_param.c.primary + dc;
+        gemm_param.a.senary = (char*)gemm_param.a.primary + da;
+        gemm_param.b.senary = (char*)gemm_param.b.primary + db;
+        gemm_param.c.senary = (char*)gemm_param.c.primary + dc;
         kernel(&gemm_param);
-        gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-        gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-        gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+        gemm_param.a.primary = gemm_param.a.senary; /* next */
+        gemm_param.b.primary = gemm_param.b.senary; /* next */
+        gemm_param.c.primary = gemm_param.c.senary; /* next */
       }
       if (end == size) { /* remainder multiplication */
-        gemm_param.a.quaternary = gemm_param.a.primary;
-        gemm_param.b.quaternary = gemm_param.b.primary;
-        gemm_param.c.quaternary = gemm_param.c.primary;
+        gemm_param.a.senary = gemm_param.a.primary;
+        gemm_param.b.senary = gemm_param.b.primary;
+        gemm_param.c.senary = gemm_param.c.primary;
         kernel(&gemm_param);
       }
     }
