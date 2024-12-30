@@ -22,7 +22,9 @@ void libxsmm_generator_matequation_setup_out_ptrs( libxsmm_meqn_elem  *cur_node,
                                                    unsigned char      **primary,
                                                    unsigned char      **secondary,
                                                    unsigned char      **tertiary,
-                                                   unsigned char      **quaternary) {
+                                                   unsigned char      **quaternary,
+                                                   unsigned char      **quinary,
+                                                   unsigned char      **senary) {
   if (is_last_op > 0) {
     *primary = (unsigned char*)eqn_param->output.primary;
   } else {
@@ -68,7 +70,9 @@ void libxsmm_generator_matequation_setup_inp_ptrs( libxsmm_meqn_elem  *cur_node,
                                                    unsigned char      **primary,
                                                    unsigned char      **secondary,
                                                    unsigned char      **tertiary,
-                                                   unsigned char      **quaternary) {
+                                                   unsigned char      **quaternary,
+                                                   unsigned char      **quinary,
+                                                   unsigned char      **senary) {
 
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     if (cur_node->info.arg.in_pos >= 0) {
@@ -128,12 +132,16 @@ void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *sc
                                                    (unsigned char**)&unary_param.in.primary,
                                                    (unsigned char**)&unary_param.in.secondary,
                                                    (unsigned char**)&unary_param.in.tertiary,
-                                                   (unsigned char**)&unary_param.in.quaternary);
+                                                   (unsigned char**)&unary_param.in.quaternary,
+                                                   (unsigned char**)&unary_param.in.quinary,
+                                                   (unsigned char**)&unary_param.in.senary);
       libxsmm_generator_matequation_setup_out_ptrs( &cur_tpp_node, (libxsmm_meqn_param*)param, is_last_tpp, (unsigned char*)scratchpad, tmp_size,
                                                    (unsigned char**)&unary_param.out.primary,
                                                    (unsigned char**)&unary_param.out.secondary,
                                                    (unsigned char**)&unary_param.out.tertiary,
-                                                   (unsigned char**)&unary_param.out.quaternary);
+                                                   (unsigned char**)&unary_param.out.quaternary,
+                                                   (unsigned char**)&unary_param.out.quinary,
+                                                   (unsigned char**)&unary_param.out.senary);
       libxsmm_reference_elementwise((void*)&unary_param, (const libxsmm_meltw_descriptor*)meltw_desc);
     } else if (cur_tpp_node.type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
       libxsmm_meqn_elem right_tpp_node = unfolded_exec_tree[5*i+2];
@@ -151,18 +159,24 @@ void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *sc
                                                    (unsigned char**)&binary_param.in0.primary,
                                                    (unsigned char**)&binary_param.in0.secondary,
                                                    (unsigned char**)&binary_param.in0.tertiary,
-                                                   (unsigned char**)&binary_param.in0.quaternary);
+                                                   (unsigned char**)&binary_param.in0.quaternary,
+                                                   (unsigned char**)&binary_param.in0.quinary,
+                                                   (unsigned char**)&binary_param.in0.senary);
       libxsmm_generator_matequation_setup_inp_ptrs( &right_tpp_node, &cur_tpp_node, (libxsmm_meqn_param*)param, (unsigned char*)scratchpad, tmp_size,
                                                    (unsigned char**)&binary_param.in1.primary,
                                                    (unsigned char**)&binary_param.in1.secondary,
                                                    (unsigned char**)&binary_param.in1.tertiary,
-                                                   (unsigned char**)&binary_param.in1.quaternary);
+                                                   (unsigned char**)&binary_param.in1.quaternary,
+                                                   (unsigned char**)&binary_param.in1.quinary,
+                                                   (unsigned char**)&binary_param.in1.senary);
       libxsmm_generator_matequation_setup_out_ptrs( &cur_tpp_node, (libxsmm_meqn_param*)param, is_last_tpp, (unsigned char*)scratchpad, tmp_size,
                                                    (unsigned char**)&binary_param.out.primary,
                                                    (unsigned char**)&binary_param.out.secondary,
                                                    (unsigned char**)&binary_param.out.tertiary,
-                                                   (unsigned char**)&binary_param.out.quaternary);
-     libxsmm_reference_elementwise((void*)&binary_param, (const libxsmm_meltw_descriptor*)meltw_desc);
+                                                   (unsigned char**)&binary_param.out.quaternary,
+                                                   (unsigned char**)&binary_param.out.quinary,
+                                                   (unsigned char**)&binary_param.out.senary);
+      libxsmm_reference_elementwise((void*)&binary_param, (const libxsmm_meltw_descriptor*)meltw_desc);
     } else {
       libxsmm_meqn_elem right_tpp_node  = unfolded_exec_tree[5*i+2];
       libxsmm_meqn_elem right2_tpp_node = unfolded_exec_tree[5*i+3];
@@ -176,23 +190,31 @@ void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *sc
                                                    (unsigned char**)&ternary_param.in0.primary,
                                                    (unsigned char**)&ternary_param.in0.secondary,
                                                    (unsigned char**)&ternary_param.in0.tertiary,
-                                                   (unsigned char**)&ternary_param.in0.quaternary);
+                                                   (unsigned char**)&ternary_param.in0.quaternary,
+                                                   (unsigned char**)&ternary_param.in0.quinary,
+                                                   (unsigned char**)&ternary_param.in0.senary);
       libxsmm_generator_matequation_setup_inp_ptrs( &right_tpp_node, &cur_tpp_node, (libxsmm_meqn_param*)param, (unsigned char*)scratchpad, tmp_size,
                                                    (unsigned char**)&ternary_param.in1.primary,
                                                    (unsigned char**)&ternary_param.in1.secondary,
                                                    (unsigned char**)&ternary_param.in1.tertiary,
-                                                   (unsigned char**)&ternary_param.in1.quaternary);
-       libxsmm_generator_matequation_setup_inp_ptrs( &right2_tpp_node, &cur_tpp_node, (libxsmm_meqn_param*)param, (unsigned char*)scratchpad, tmp_size,
-                                                     (unsigned char**)&ternary_param.in2.primary,
-                                                     (unsigned char**)&ternary_param.in2.secondary,
-                                                     (unsigned char**)&ternary_param.in2.tertiary,
-                                                     (unsigned char**)&ternary_param.in2.quaternary);
+                                                   (unsigned char**)&ternary_param.in1.quaternary,
+                                                   (unsigned char**)&ternary_param.in1.quinary,
+                                                   (unsigned char**)&ternary_param.in1.senary);
+      libxsmm_generator_matequation_setup_inp_ptrs( &right2_tpp_node, &cur_tpp_node, (libxsmm_meqn_param*)param, (unsigned char*)scratchpad, tmp_size,
+                                                   (unsigned char**)&ternary_param.in2.primary,
+                                                   (unsigned char**)&ternary_param.in2.secondary,
+                                                   (unsigned char**)&ternary_param.in2.tertiary,
+                                                   (unsigned char**)&ternary_param.in2.quaternary,
+                                                   (unsigned char**)&ternary_param.in2.quinary,
+                                                   (unsigned char**)&ternary_param.in2.senary);
       libxsmm_generator_matequation_setup_out_ptrs( &cur_tpp_node, (libxsmm_meqn_param*)param, is_last_tpp, (unsigned char*)scratchpad, tmp_size,
                                                    (unsigned char**)&ternary_param.out.primary,
                                                    (unsigned char**)&ternary_param.out.secondary,
                                                    (unsigned char**)&ternary_param.out.tertiary,
-                                                   (unsigned char**)&ternary_param.out.quaternary);
-     libxsmm_reference_elementwise((void*)&ternary_param, (const libxsmm_meltw_descriptor*)meltw_desc);
+                                                   (unsigned char**)&ternary_param.out.quaternary,
+                                                   (unsigned char**)&ternary_param.out.quinary,
+                                                   (unsigned char**)&ternary_param.out.senary);
+      libxsmm_reference_elementwise((void*)&ternary_param, (const libxsmm_meltw_descriptor*)meltw_desc);
     }
     i++;
     if (is_last_tpp > 0) {
