@@ -2685,6 +2685,8 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number,
                                       const unsigned int      i_is_store ) {
   switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_ADDQ_RM_R:
+    case LIBXSMM_X86_INSTR_ADDQ_R_RM:
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVD:
     case LIBXSMM_X86_INSTR_MOVW:

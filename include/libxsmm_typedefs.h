@@ -138,6 +138,8 @@
 # endif
 #endif
 
+#define LIBXSMM_RUNTIME_SET_LD 0xffffffff
+
 /** Integer type used to represent tick of a high-resolution timer. */
 typedef unsigned long long libxsmm_timer_tickint;
 

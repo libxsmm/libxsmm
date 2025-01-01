@@ -1393,6 +1393,7 @@
 /* define some magic numbers (in bytes) for accessing the param structs
    in the JIT code generators */
 #define LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH            40
+#define LIBXSMM_MATRIX_ARG_OFFSET_RUNTIME_LD          32
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -2125,9 +2126,9 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35,
   LIBXSMM_GEMM_STACK_VAR_BSCALE_PTR             = 36,
   LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37,
-  LIBXSMM_GEMM_STACK_VAR_LDA_PTR                = 38,
-  LIBXSMM_GEMM_STACK_VAR_LDB_PTR                = 39,
-  LIBXSMM_GEMM_STACK_VAR_LDC_PTR                = 40
+  LIBXSMM_GEMM_STACK_VAR_LDA_VAL                = 38,
+  LIBXSMM_GEMM_STACK_VAR_LDB_VAL                = 39,
+  LIBXSMM_GEMM_STACK_VAR_LDC_VAL                = 40
 } libxsmm_gemm_stack_var;
 
 #if 0
@@ -2332,5 +2333,7 @@ LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *
 LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char *datatype);
 LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype);
 LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ld_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 #endif /* GENERATOR_COMMON_H */

@@ -32,7 +32,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
-  unsigned int l_is_var_ld = ( (l_xgemm_desc_mod.lda == 0) && (l_xgemm_desc_mod.ldb == 0) && (l_xgemm_desc_mod.ldc == 0) );
 
   /* Support this precision only in avx2 for now  */
   if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {
@@ -719,7 +718,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDA */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) == LIBXSMM_GEMM_FLAG_TRANS_A ) {
-    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k) && (libxsmm_is_runtime_set_ld_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA_TRANS );
       return;
     }
@@ -740,7 +739,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     }
   } else {
-    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m) && (libxsmm_is_runtime_set_ld_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
@@ -748,19 +747,19 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDB */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.n) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.n) && (libxsmm_is_runtime_set_ld_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB_TRANS );
       return;
     }
   } else {
-    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k) && (libxsmm_is_runtime_set_ld_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
   }
 
   /* check LDC */
-  if ( (l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m) && (l_is_var_ld == 0) ) {
+  if ( (l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m) && (libxsmm_is_runtime_set_ld_gemm(&l_xgemm_desc_mod) == 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
     return;
   }

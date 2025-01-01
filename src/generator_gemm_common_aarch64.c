@@ -1572,9 +1572,9 @@ void libxsmm_generator_gemm_setup_stack_frame_aarch64( libxsmm_generated_code*  
    *      C SCRATCH PTR                             <-- RBP-152,
    *      C OUTPUT PTR                              <-- RBP-160,
    *      BIAS SCRATCH PTR                          <-- RBP-168,
-   *      Variable LDA PTR                          <-- RBP-176,
-   *      Variable LDB PTR                          <-- RBP-184,
-   *      Variable LDC PTR                          <-- RBP-192, RSP
+   *      Variable LDA VAL                          <-- RBP-176,
+   *      Variable LDB VAL                          <-- RBP-184,
+   *      Variable LDC VAL                          <-- RBP-192, RSP
    */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) || ((libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack() > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0)) || ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0) || (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors > 0) || ( i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0) ) {
     libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars_aarch64( io_generated_code, i_xgemm_desc, i_micro_kernel_config, i_gp_reg_mapping );
@@ -1624,9 +1624,9 @@ void libxsmm_generator_gemm_setup_stack_frame_aarch64( libxsmm_generated_code*  
    *      C SCRATCH PTR                         <-- RBP-152,
    *      C OUTPUT PTR                          <-- RBP-160,
    *      BIAS SCRATCH PTR                      <-- RBP-168,
-   *      Variable LDA PTR                      <-- RBP-176,
-   *      Variable LDB PTR                      <-- RBP-184,
-   *      Variable LDC PTR                      <-- RBP-192, RSP
+   *      Variable LDA VAL                      <-- RBP-176,
+   *      Variable LDB VAL                      <-- RBP-184,
+   *      Variable LDC VAL                      <-- RBP-192, RSP
    *      [ Potential pad for 64b align ]
    *      AV2 mask, 64b aligned                 <-- (RBP-104) contains this address
    *      AV2 low precision helper, 64b aligned <-- (RBP-112) contains this address
