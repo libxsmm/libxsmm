@@ -89,12 +89,12 @@ void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_
 
   if ( ( i_callee_save_bitmask & 0x1000 ) == 0x1000 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X1, 8 );
+                                          LIBXSMM_RV64_GP_REG_X2, 8 );
   }
 
   if ( ( i_callee_save_bitmask & 0x2000 ) == 0x2000 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X0, 0 );
+                                          LIBXSMM_RV64_GP_REG_X1, 0 );
   }
 }
 
