@@ -48,7 +48,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
                                                  i_micro_kernel_config->datatype_size_out );
 
   /* close n loop */
-  libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, 1 );
+  libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, (i_mateltwise_desc->n) ? 1 : 0 );
 
   /* advance output pointer */
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
@@ -61,7 +61,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
                                                  ((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - ((long long)i_micro_kernel_config->datatype_size_in) );
 
   /* close m loop */
-  libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, 1 );
+  libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, (i_mateltwise_desc->n) ? 1 : 0 );
 }
 
 LIBXSMM_API_INTERN
@@ -70,12 +70,12 @@ void libxsmm_generator_transform_rv64_microkernel( libxsmm_generated_code*      
                                                    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                    const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
-  i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X8;
-  i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X9;
-  i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X10;
-  i_gp_reg_mapping->gp_reg_n_loop    = LIBXSMM_RV64_GP_REG_X11;
-  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X6;
-  i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X7;
+  i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X18;
+  i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X19;
+  i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X20;
+  i_gp_reg_mapping->gp_reg_n_loop    = LIBXSMM_RV64_GP_REG_X21;
+  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X22;
+  i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X23;
 
   /* load pointers from struct */
   libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, 32 );
