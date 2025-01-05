@@ -471,9 +471,9 @@ void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_ge
   unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
 
   /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
-  int l_instr = i_datatype_size == 1 ? LIBXSMM_RV64_INSTR_GP_VLE8_V :
-    i_datatype_size == 2 ? LIBXSMM_RV64_INSTR_GP_VLE16_V : i_datatype_size == 4 ? LIBXSMM_RV64_INSTR_GP_VLE32_V :
-    LIBXSMM_RV64_INSTR_GP_VLE64_V ;
+  int l_instr = i_datatype_size == 1 ? LIBXSMM_RV64_INSTR_RVV_VLE8_V :
+    i_datatype_size == 2 ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : i_datatype_size == 4 ? LIBXSMM_RV64_INSTR_RVV_VLE32_V :
+    LIBXSMM_RV64_INSTR_RVV_VLE64_V ;
   int l_sew = i_datatype_size == 1 ? LIBXSMM_RV64_SEW_B : i_datatype_size == 2 ? LIBXSMM_RV64_SEW_W : i_datatype_size == 4 ? LIBXSMM_RV64_SEW_D : LIBXSMM_RV64_SEW_Q ;
 
   /* Set vector length and load required number of elements */
@@ -486,9 +486,9 @@ void libxsmm_generator_bcastload_masked_vreg_rv64( libxsmm_generated_code* io_ge
   /* libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, LIBXSMM_RV64_GP_REG_X31, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1); */
 
   /* Broadcast loaded value to */
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFMV_F_S, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, LIBXSMM_RV64_GP_REG_F10, 1);
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VFMV_F_S, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, LIBXSMM_RV64_GP_REG_F10, 1);
 
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFMV_V_F, LIBXSMM_RV64_GP_REG_F10, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, 1);
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VFMV_V_F, LIBXSMM_RV64_GP_REG_F10, LIBXSMM_RV64_GP_REG_V0, i_vec_reg, 1);
 
   if ( l_offset ){/* post increment address by offset */
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_addr, i_gp_reg_addr, l_offset);
@@ -783,8 +783,8 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
   unsigned int l_datatype_size = LIBXSMM_TYPESIZE(i_datatype);
-  unsigned int l_load_instr = (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_GP_VLE32_V : LIBXSMM_RV64_INSTR_GP_VLE64_V;
-  unsigned int l_masked_load_instr = (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_GP_VLE32_V : LIBXSMM_RV64_INSTR_GP_VLE64_V;
+  unsigned int l_load_instr = (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V;
+  unsigned int l_masked_load_instr = (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V;
 
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_remainder_size = i_m_blocking % i_vec_length;
@@ -876,7 +876,7 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
         libxsmm_rv64_instruction_rvv_compute( io_generated_code,
-                                                 LIBXSMM_RV64_INSTR_GP_VXOR_VV,
+                                                 LIBXSMM_RV64_INSTR_RVV_VXOR_VV,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
@@ -1983,8 +1983,8 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
   unsigned int l_remainder_size = 0;
   unsigned long long l_jump_block_n_last = 0; /* this is the jump size to be performed after a n-block is complete */
   unsigned int l_datatype_size = LIBXSMM_TYPESIZE(i_datatype);
-  unsigned int l_store_instr =  (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_GP_VSE32_V : LIBXSMM_RV64_INSTR_GP_VSE64_V;
-  unsigned int l_masked_store_instr = (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_GP_VSE32_V : LIBXSMM_RV64_INSTR_GP_VSE64_V;
+  unsigned int l_store_instr =  (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_RVV_VSE32_V : LIBXSMM_RV64_INSTR_RVV_VSE64_V;
+  unsigned int l_masked_store_instr = (l_datatype_size == 4) ? LIBXSMM_RV64_INSTR_RVV_VSE32_V : LIBXSMM_RV64_INSTR_RVV_VSE64_V;
   unsigned int l_tmp_vreg = 0;
   unsigned int l_tmp_vreg2 = 0;
 

@@ -315,25 +315,25 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
       io_micro_kernel_config->vector_length = libxsmm_cpuid_mvl_rv64()/64;
       io_micro_kernel_config->datatype_size_in = 8;
       io_micro_kernel_config->datatype_size_out = 8;
-      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE64_V;
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE64_V;
+      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VLE64_V;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VLE64_V;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VSE64_V;
-      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_GP_VSE64_V;
+      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VSE64_V;
+      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_RVV_VSE64_V;
       io_micro_kernel_config->vxor_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_GP_VFMACC_VV;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_RVV_VFMACC_VV;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
     } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       io_micro_kernel_config->vector_length = libxsmm_cpuid_mvl_rv64()/32;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_out = 4;
-      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE32_V;
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE32_V;
+      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VLE32_V;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VLE32_V;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VSE32_V;
-      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_GP_VSE32_V;
+      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VSE32_V;
+      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_RVV_VSE32_V;
       io_micro_kernel_config->vxor_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_GP_VFMACC_VV;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_RVV_VFMACC_VV;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
     } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) { /* TODO (MMLA): do a proper integration; right now just assumes A in MMLA format, rest col-major */
       io_micro_kernel_config->vector_length = libxsmm_cpuid_mvl_rv64()/16;
@@ -345,11 +345,11 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
       } else {
         /* Should not happen */
       }
-      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE16_V;
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VLE16_V;
+      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VLE16_V;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VLE16_V;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_RV64_INSTR_UNDEF;
-      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_GP_VSE16_V;
-      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_GP_VSE16_V;
+      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_RV64_INSTR_RVV_VSE16_V;
+      io_micro_kernel_config->c_vmove_nts_instruction = LIBXSMM_RV64_INSTR_RVV_VSE16_V;
       io_micro_kernel_config->vxor_instruction = LIBXSMM_RV64_INSTR_UNDEF;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_RV64_INSTR_UNDEF;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_RV64_INSTR_UNDEF;
@@ -625,7 +625,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64(  libxsmm_generate
     for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
       unsigned int cur_vreg = l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m;
 
-      libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFMAX_VF,
+      libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VFMAX_VF,
                                                LIBXSMM_RV64_GP_REG_F31, cur_vreg, cur_vreg, 1);
     }
   }
@@ -670,8 +670,8 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
   unsigned int l_gp_reg_bias = i_gp_reg_scratch0;
   unsigned int l_bias_tsize = LIBXSMM_TYPESIZE( colbias_precision );
   unsigned int l_matrix_tsize = LIBXSMM_TYPESIZE( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
-  unsigned int l_matrix_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_matrix_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE32_V : LIBXSMM_RV64_INSTR_GP_VLE64_V);
-  unsigned int l_bias_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_GP_VLE32_V : LIBXSMM_RV64_INSTR_GP_VLE64_V);
+  unsigned int l_matrix_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_matrix_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V);
+  unsigned int l_bias_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V);
 
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_remainder_size = i_m_blocking % i_vec_length;
@@ -727,7 +727,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
         else {
           l_jump_block_m_last = (long long)i_vec_length * l_matrix_tsize;
         }
-        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VADD_VV,
+        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VADD_VV,
             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_m, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, 1 );
       }
 
@@ -748,7 +748,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
                                            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
                                            1 );
 
-        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VFADD_VV,
+        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VFADD_VV,
             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_m_blocks[0], l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], 1 );
 
       }
@@ -793,7 +793,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
                                                         i_vec_length * l_bias_tsize );
           }
         }
-        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VOR_VV,
+        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VOR_VV,
             l_m, l_m, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, 1 );
       }
 
@@ -806,7 +806,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
                                              l_m_blocks[0],
                                              1 );
         }
-        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_VOR_VV,
+        libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VOR_VV,
             l_m_blocks[0], l_m_blocks[0], l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], 1 );
       }
     }

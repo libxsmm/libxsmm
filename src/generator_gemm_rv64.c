@@ -46,9 +46,9 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   unsigned int l_a_part_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_a_4reg_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_a_8reg_load_instr = LIBXSMM_RV64_INSTR_UNDEF;
-  unsigned int l_b_load_instr = LIBXSMM_RV64_INSTR_GP_VRGATHER_VV;
+  unsigned int l_b_load_instr = LIBXSMM_RV64_INSTR_RVV_VRGATHER_VV;
   unsigned int l_b_load_scalar_instr = LIBXSMM_RV64_INSTR_UNDEF;
-  unsigned int l_b_load_bcast_instr = LIBXSMM_RV64_INSTR_GP_VFMV_V_F;
+  unsigned int l_b_load_bcast_instr = LIBXSMM_RV64_INSTR_RVV_VFMV_V_F;
   unsigned int l_compute_instr = LIBXSMM_RV64_INSTR_UNDEF;
   unsigned int l_compute_is_pred = 1;
 
@@ -63,16 +63,16 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   LIBXSMM_UNUSED(l_b_load_bcast_instr);
   LIBXSMM_UNUSED(l_compute_is_pred);
 
-  l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VLE64_V : LIBXSMM_RV64_INSTR_GP_VLE32_V;
-  l_a_4reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VL4RE64_V : LIBXSMM_RV64_INSTR_GP_VL4RE32_V;
-  l_a_8reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_VL8RE64_V : LIBXSMM_RV64_INSTR_GP_VL8RE32_V;
+  l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_RVV_VLE64_V : LIBXSMM_RV64_INSTR_RVV_VLE32_V;
+  l_a_4reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_RVV_VL4RE64_V : LIBXSMM_RV64_INSTR_RVV_VL4RE32_V;
+  l_a_8reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_RVV_VL8RE64_V : LIBXSMM_RV64_INSTR_RVV_VL8RE32_V;
 
   l_b_load_scalar_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLD : LIBXSMM_RV64_INSTR_GP_FLW;
 
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||
        (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))    ) {
-    /*l_compute_instr = LIBXSMM_RV64_INSTR_GP_VFMACC_VV;*/
-    l_compute_instr = LIBXSMM_RV64_INSTR_GP_VFMACC_VF;
+    /*l_compute_instr = LIBXSMM_RV64_INSTR_RVV_VFMACC_VV;*/
+    l_compute_instr = LIBXSMM_RV64_INSTR_RVV_VFMACC_VF;
     l_compute_is_pred = 1;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
@@ -243,7 +243,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* full vector loads on a */
   for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
     libxsmm_rv64_instruction_rvv_move( io_generated_code,
-                                       LIBXSMM_RV64_INSTR_GP_VLE32_V,
+                                       LIBXSMM_RV64_INSTR_RVV_VLE32_V,
                                        i_gp_reg_mapping->gp_reg_a,
                                        0,
                                        1 + l_m_total_blocks * l_n + l_m,
