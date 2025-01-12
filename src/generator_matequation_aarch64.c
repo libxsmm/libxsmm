@@ -386,6 +386,7 @@ libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libx
                                      (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
   unsigned int has_inp_or_out_fp64= ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64) > 0) || (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
   unsigned int has_inp_or_out_bf16= ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_BF16) > 0) || (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+  unsigned int has_inp_or_out_f16= ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F16) > 0) || (LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
   unsigned int all_nodes_fp64 = libxsmm_meqn_all_nodes_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
   unsigned int all_args_fp64 = libxsmm_meqn_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
   unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
@@ -424,6 +425,9 @@ libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libx
     is_valid_arch_prec = 0;
   }
   if (has_inp_or_out_fp8 > 0) {
+    is_valid_arch_prec = 0;
+  }
+  if (has_inp_or_out_f16 > 0) {
     is_valid_arch_prec = 0;
   }
   if ((has_inp_or_out_fp64 > 0) && (all_fp64 == 0)) {
@@ -539,7 +543,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       } else {
         libxsmm_blasint arg_tmp_id = -1-cur_eqn->eqn_root->tmp.id;
         libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, l_gp_reg_mapping.gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 8, temp_reg );
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, temp_reg, l_gp_reg_mapping.temp_reg2, temp_reg, (long long)arg_tmp_id*32);
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, temp_reg, l_gp_reg_mapping.temp_reg2, temp_reg, (long long)arg_tmp_id*((int)sizeof(libxsmm_matrix_arg)));
         libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, temp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, temp_reg );
       }
       copy_mateqn_desc.datatype = LIBXSMM_CAST_UCHAR(cur_eqn->eqn_root->tmp.dtype);

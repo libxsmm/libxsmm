@@ -621,6 +621,9 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+    int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+    int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+    int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
 
     /* RDI holds the pointer to the struct, so lets first move this one into R15 */
     libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
@@ -628,27 +631,27 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
     /* A pointer */
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_a, 32 );
+                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_a, l_offset_ptr_a );
     /* B pointer */
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b, 64 );
+                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b, l_offset_ptr_b );
     /* C pointer */
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_c, 96 );
+                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_c, l_offset_ptr_c );
 
     /* Load scaling factor gpr if need be */
     if ( l_is_i8f32_gemm > 0 ) {
       libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                            l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_scf, 112);
+                                            l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_scf, l_offset_ptr_c + 16);
 
     }
     if ( l_xgemm_desc_opa->prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       /* A prefetch pointer */
       libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                       l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_a_prefetch, 56 );
+                                       l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_a_prefetch, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH );
       /* B prefetch pointer */
       libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                       l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b_prefetch, 88 );
+                                       l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b_prefetch, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH );
     }
 
     /* batch reduce count & offset arrays */
@@ -658,9 +661,9 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
       if ( l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
         libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                         l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_a_offset, 40 );
+                                         l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_a_offset, l_offset_ptr_a + 8 );
         libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD,
-                                         l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b_offset, 72 );
+                                         l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_b_offset, l_offset_ptr_b + 8 );
       }
     }
 

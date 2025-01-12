@@ -10,6 +10,8 @@
 ******************************************************************************/
 #include "eltwise_common.h"
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
@@ -86,6 +88,8 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
     exit(-1);
@@ -201,6 +205,8 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI2_TO_VNNI2T TPP. Bailing...!\n");
     exit(-1);
@@ -323,6 +329,8 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_VNNI4T TPP. Bailing...!\n");
     exit(-1);
@@ -433,6 +441,8 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_VNNI4T TPP. Bailing...!\n");
     exit(-1);
@@ -543,6 +553,8 @@ int test_vnni8_to_vnni8T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI8_TO_VNNI8T TPP. Bailing...!\n");
     exit(-1);
@@ -653,6 +665,8 @@ int test_vnni8_to_vnni8T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI8_TO_VNNI8T TPP. Bailing...!\n");
     exit(-1);
@@ -758,6 +772,8 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2;
   }
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI2 TPP. Bailing...!\n");
     exit(-1);
@@ -854,6 +870,8 @@ int test_norm_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI2T TPP. Bailing...!\n");
     exit(-1);
@@ -952,6 +970,8 @@ int test_vnni8T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI8T_TO_NORM TPP. Bailing...!\n");
     exit(-1);
@@ -1050,6 +1070,8 @@ int test_vnni4T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4T_TO_NORM TPP. Bailing...!\n");
     exit(-1);
@@ -1148,6 +1170,8 @@ int test_vnni2T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI2T_TO_NORM TPP. Bailing...!\n");
     exit(-1);
@@ -1247,6 +1271,8 @@ int test_norm_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI4T TPP. Bailing...!\n");
     exit(-1);
@@ -1346,6 +1372,8 @@ int test_norm_to_vnni8T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI8T TPP. Bailing...!\n");
     exit(-1);
@@ -1452,6 +1480,8 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4;
   }
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI4 TPP. Bailing...!\n");
     exit(-1);
@@ -1557,6 +1587,8 @@ int test_norm_to_vnni8_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8;
   }
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI8 TPP. Bailing...!\n");
     exit(-1);
@@ -1662,6 +1694,8 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4;
   }
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI4 TPP. Bailing...!\n");
     exit(-1);
@@ -1765,6 +1799,8 @@ int test_norm_to_vnni8_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8;
   }
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI8 TPP. Bailing...!\n");
     exit(-1);
@@ -1853,7 +1889,8 @@ int test_vnni4_to_norm_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_NORM TPP. Bailing...!\n");
     exit(-1);
@@ -1942,7 +1979,8 @@ int test_vnni4_to_vnni2_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_VNNI2 TPP. Bailing...!\n");
     exit(-1);
@@ -2035,6 +2073,8 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADN_MOD2 TPP. Bailing...!\n");
     exit(-1);
@@ -2127,6 +2167,8 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADM_MOD2 TPP. Bailing...!\n");
     exit(-1);
@@ -2220,6 +2262,8 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADNM_MOD2 TPP. Bailing...!\n");
     exit(-1);
@@ -2312,6 +2356,8 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADN_MOD2 TPP. Bailing...!\n");
     exit(-1);
@@ -2404,6 +2450,8 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADM_MOD4 TPP. Bailing...!\n");
     exit(-1);
@@ -2497,6 +2545,8 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4;
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADNM_MOD4 TPP. Bailing...!\n");
     exit(-1);
@@ -2631,10 +2681,11 @@ int main( int argc, char* argv[] ) {
   } else if ( op == 'Z' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 || dtype == LIBXSMM_DATATYPE_HF8 ) ) {
     printf("Testing 08bit NORM PADNM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod4_08bit( M, N, ldi, ldo );
-   } else {
+  } else {
     printf(" Case not implemented! Usage: %s [T/R/S/V/W/Q/F/G/H/I/N/M/X/Y/Z/B/C/D] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

@@ -12,6 +12,8 @@
 
 #define EXPANSION_FACTOR 8
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, unsigned int *cols_ind_array, float *out) {
@@ -149,6 +151,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
   libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
   func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
+  libxsmm_get_kernel_info((const void*) func0, &info);
+  is_reference_kernel = info.is_reference_kernel;
+
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for equation failed. Bailing...!\n");
     exit(-1);
@@ -322,5 +327,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(hf8_out);
   libxsmm_free(hf8_eqn_out);
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

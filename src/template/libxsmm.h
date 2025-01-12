@@ -425,9 +425,9 @@ template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
   LIBXSMM_ASSERT(LIBXSMM_GEMM_PREFETCH_NONE != PREFETCH);
   if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(xmm, &info) && LIBXSMM_GEMM_PREFETCH_NONE != info.prefetch) {
     const size_t itypesize = LIBXSMM_TYPESIZE(info.iprecision), otypesize = LIBXSMM_TYPESIZE(info.oprecision);
-    args.a.quaternary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
-    args.b.quaternary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
-    args.c.quaternary = static_cast<char*>(args.c.primary) + otypesize * info.m * info.n;
+    args.a.senary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
+    args.b.senary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
+    args.c.senary = static_cast<char*>(args.c.primary) + otypesize * info.m * info.n;
   }
 }
 template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_GEMM_PREFETCH_NONE>(
@@ -437,7 +437,7 @@ template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_GEMM_P
 #if defined(NDEBUG)
   LIBXSMM_UNUSED(args);
 #else
-  args.a.quaternary = args.b.quaternary = args.c.quaternary = NULL;
+  args.a.senary = args.b.senary = args.c.senary = NULL;
 #endif
 }
 
@@ -519,9 +519,9 @@ public:
     args.a.primary = const_cast<itype*>(a);
     args.b.primary = const_cast<itype*>(b);
     args.c.primary = c;
-    args.a.quaternary = const_cast<itype*>(pa);
-    args.b.quaternary = const_cast<itype*>(pb);
-    args.c.quaternary = const_cast<otype*>(pc);
+    args.a.senary = const_cast<itype*>(pa);
+    args.b.senary = const_cast<itype*>(pb);
+    args.c.senary = const_cast<otype*>(pc);
     LIBXSMM_ASSERT(NULL != m_function);
     m_function(&args);
   }

@@ -70,6 +70,9 @@ void libxsmm_generator_transform_rv64_microkernel( libxsmm_generated_code*      
                                                    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                    const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+
   i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X18;
   i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X19;
   i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X20;
@@ -78,8 +81,8 @@ void libxsmm_generator_transform_rv64_microkernel( libxsmm_generated_code*      
   i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X23;
 
   /* load pointers from struct */
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, 32 );
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_out, 64 );
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_in, l_offset_ptr_a );
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_out, l_offset_ptr_b );
 
   /* check leading dimnesions and sizes */
   if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) ||

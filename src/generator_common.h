@@ -1390,6 +1390,10 @@
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
 #define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
 
+/* define some magic numbers (in bytes) for accessing the param structs
+   in the JIT code generators */
+#define LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH            40
+
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
@@ -2120,8 +2124,10 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_SCF_BRGEMM_PTR         = 34,
   LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35,
   LIBXSMM_GEMM_STACK_VAR_BSCALE_PTR             = 36,
-  LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37
-
+  LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37,
+  LIBXSMM_GEMM_STACK_VAR_LDA_PTR                = 38,
+  LIBXSMM_GEMM_STACK_VAR_LDB_PTR                = 39,
+  LIBXSMM_GEMM_STACK_VAR_LDC_PTR                = 40
 } libxsmm_gemm_stack_var;
 
 #if 0
@@ -2307,6 +2313,15 @@ typedef enum libxsmm_ulp_precision {
   LIBXSMM_ULP_PRECISION_ONE_ULP, /* perfect except for last bit */
   LIBXSMM_ULP_PRECISION_ESTIMATE /* can be pretty bad, but should have the correct order of magnitude */
 } libxsmm_ulp_precision;
+
+typedef union libxsmm_ref_code_pointer {
+  void (*ptr_gemm_fn)(void*, const libxsmm_gemm_descriptor*);
+  void (*ptr_eltw_fn)(void*, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+  void (*ptr_meqn_fn)(void*, void*, void*, unsigned long long);
+  void* ptr;
+  uintptr_t uval;
+  intptr_t ival;
+} libxsmm_ref_code_pointer;
 
 /** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or estimate for just an estimate
  * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}

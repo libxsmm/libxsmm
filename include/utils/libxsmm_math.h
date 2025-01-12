@@ -13,7 +13,6 @@
 
 #include "libxsmm_typedefs.h"
 
-
 /**
  * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n),
  * i.e., the generated range of values 0..n-1 excludes n.
