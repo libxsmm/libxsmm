@@ -108,6 +108,15 @@ int export_gemm( int argc, char* argv [] ) {
   libxsmm_blasint l_m = 0, l_n = 0, l_k = 0;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_generated_code l_generated_code /*= { 0 }*/;
+  libxsmm_gemm_shape l_shape;
+  libxsmm_gemm_batch_reduce_config l_brconfig;
+  libxsmm_gemm_ext_unary_argops l_argops;
+  libxsmm_gemm_ext_binary_postops l_postops;
+  libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+#if 0
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+#endif
   char l_code_buffer[EXPORT_CODE_BUFFERSIZE];
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
   libxsmm_descriptor_blob l_xgemm_blob;
@@ -373,17 +382,6 @@ int export_gemm( int argc, char* argv [] ) {
       return EXIT_FAILURE;
     }
   }
-
-  /* define function pointer */
-  libxsmm_gemm_shape l_shape;
-  libxsmm_gemm_batch_reduce_config l_brconfig;
-  libxsmm_gemm_ext_unary_argops l_argops;
-  libxsmm_gemm_ext_binary_postops l_postops;
-  libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-#if 0
-  int l_cfg_flags = 0;
-  int l_rls_flags = 0;
-#endif
 
   /* set up the flags */
   if ( l_dtype_a == LIBXSMM_DATATYPE_U8 ) {
