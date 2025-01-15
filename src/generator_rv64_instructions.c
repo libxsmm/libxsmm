@@ -1201,6 +1201,13 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
   /* SHIFT Right */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
       LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 12);
+
+  /* Clear left most bits */
+  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+    LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 44);
+
+  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+    LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 44);
 }
 
 /* Auxilary instruction */
@@ -1234,8 +1241,8 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
 #define IMM_12_1 (0xfff)
 #define IMM_20_1 (0xfffff000)
 
-   unsigned int imm_12_1 = (i_imm32 & IMM_12_1);
-   unsigned int imm_20_1 = ((i_imm32 & IMM_20_1) >> 12);
+   unsigned long imm_12_1 = (i_imm32 & IMM_12_1);
+   unsigned long imm_20_1 = ((i_imm32 & IMM_20_1) >> 12);
 
    /* LUI 20 bits */
    libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
@@ -1247,6 +1254,13 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
 #undef IMM_12_1
 #undef IMM_20_1
   }
+
+  /* Clear left most bits */
+  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+    LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
+
+  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+    LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 32);
 }
 
 /* 64 bit immediate move using addi, lui, and shift instructions. */
@@ -1271,7 +1285,7 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
   } else if ( i_imm64 <= 0xfffff ){
     libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
   } else if ( i_imm64 <= 0xffffffff) {
-    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
+    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
   } else {
 #define IMM_12_2 (0xfff00000000)
 #define IMM_20_2 (0xfffff00000000000)

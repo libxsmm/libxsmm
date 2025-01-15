@@ -30,7 +30,7 @@ void libxsmm_generator_rv64_reference_kernel( libxsmm_generated_code*         io
 #if 0
   unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
 #endif
-  unsigned int l_temp_reg = LIBXSMM_RV64_GP_REG_X28;
+  unsigned int l_temp_reg = LIBXSMM_RV64_GP_REG_X11;
   unsigned int l_temp_reg2 = LIBXSMM_RV64_GP_REG_X29;
   libxsmm_ref_code_pointer code_ptr;
   code_ptr.ptr = NULL;
@@ -49,7 +49,7 @@ void libxsmm_generator_rv64_reference_kernel( libxsmm_generated_code*         io
   l_imm_array_ptr = (unsigned long long*)l_padded_desc;
 
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0xc00 );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0xcfff );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_X30, 0 );
   /* Here we add some arguments in the stack and pass them in the function by setting to x1/l_temp_reg the relevant stack pointer */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg2, 0 );
@@ -80,20 +80,27 @@ void libxsmm_generator_rv64_reference_kernel( libxsmm_generated_code*         io
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg2, 0 );
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB, l_temp_reg2, l_temp_reg, l_temp_reg2,
                                                  (long long) l_padded_desc_size );
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, l_temp_reg2, LIBXSMM_RV64_GP_REG_XSP, 0 );
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, l_temp_reg2, l_temp_reg, 0 );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg, 0 );
 
   /* We set the address of the function  */
   if (i_is_gemm_or_eltwise == 0) {
     code_ptr.ptr_gemm_fn = libxsmm_reference_gemm;
+#if 0
+    printf("Calling function ptr %lx %lx\n", (unsigned long)(code_ptr.ptr_gemm_fn), code_ptr.uval);
+#endif
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, code_ptr.uval  );
   } else {
     code_ptr.ptr_eltw_fn = libxsmm_reference_elementwise;
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, code_ptr.uval  );
   }
 
+#if 0
+  printf("Calling stub routine\n");
+#endif
+
   /* We call the function  */
-  libxsmm_rv64_instruction_jump_and_link(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X1, l_temp_reg2);
+  libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X1, l_temp_reg2, 0);
 
 #if 0
   l_code_buffer[io_generated_code->code_size++] = 0x40;
@@ -105,7 +112,12 @@ void libxsmm_generator_rv64_reference_kernel( libxsmm_generated_code*         io
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X30, LIBXSMM_RV64_GP_REG_XSP, 0 );
 
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0xc000 );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0xcfff );
+
+#if 0
+  printf("Finished stub routine\n");
+#endif
+
   free(l_padded_desc);
 }
 
@@ -225,7 +237,7 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg4, code_ptr.uval  );
 
   /* We call the function  */
-  libxsmm_rv64_instruction_jump_and_link(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X1, l_temp_reg4);
+  libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X1, l_temp_reg4, 0);
 
 #if 0
   /* We call the function  */
