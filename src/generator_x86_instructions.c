@@ -2685,8 +2685,6 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number,
                                       const unsigned int      i_is_store ) {
   switch ( i_alu_instr ) {
-    case LIBXSMM_X86_INSTR_ADDQ_RM_R:
-    case LIBXSMM_X86_INSTR_ADDQ_R_RM:
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVD:
     case LIBXSMM_X86_INSTR_MOVW:
@@ -2704,6 +2702,15 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_LEAW:
     case LIBXSMM_X86_INSTR_LEAD:
     case LIBXSMM_X86_INSTR_LEAQ:
+    case LIBXSMM_X86_INSTR_ADDW_R_RM:
+    case LIBXSMM_X86_INSTR_ADDD_R_RM:
+    case LIBXSMM_X86_INSTR_ADDQ_R_RM:
+    case LIBXSMM_X86_INSTR_SUBW_R_RM:
+    case LIBXSMM_X86_INSTR_SUBD_R_RM:
+    case LIBXSMM_X86_INSTR_SUBQ_R_RM:
+    case LIBXSMM_X86_INSTR_IMULW:
+    case LIBXSMM_X86_INSTR_IMULD:
+    case LIBXSMM_X86_INSTR_IMULQ:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: 0x%08x\n", i_alu_instr);

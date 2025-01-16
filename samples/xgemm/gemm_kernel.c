@@ -23,6 +23,10 @@
 
 #define REFERENCE_TEST_LIMIT 10
 
+#if 0
+#define TEST_DYNAMIC_LD
+#endif
+
 int libxsmm_return_success_code(unsigned int i_used_reference_kernel) {
   if (i_used_reference_kernel > 0) {
     return 254;
@@ -2256,9 +2260,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
   int l_asize_divide_factor = 1;
+#if defined(TEST_DYNAMIC_LD)
   long long l_lda = (long long)i_gemm_def->lda;
   long long l_ldb = (long long)i_gemm_def->ldb;
   long long l_ldc = (long long)i_gemm_def->ldc;
+  long long l_stride_a = 0;
+  long long l_stride_b = 0;
+#endif
 
   if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
@@ -2339,10 +2347,10 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   /* setting update GEMM struct */
 #if 1
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
-#if 1
-      i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
-#else
+#ifdef TEST_DYNAMIC_LD
       LIBXSMM_RUNTIME_SET_LD, LIBXSMM_RUNTIME_SET_LD, LIBXSMM_RUNTIME_SET_LD,
+#else
+      i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
 #endif
       (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((i_gemm_def->is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : i_gemm_def->a_type), i_gemm_def->b_type, i_gemm_def->c_type, i_gemm_def->comp_type );
 #else
@@ -2367,6 +2375,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_stride_a_hint = (i_gemm_def->trans_a == 0) ? i_gemm_def->lda*(i_gemm_def->k/l_asize_divide_factor)*LIBXSMM_TYPESIZE(i_gemm_def->a_type) : i_gemm_def->lda*i_gemm_def->m*LIBXSMM_TYPESIZE(i_gemm_def->a_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->b_type) : i_gemm_def->ldb*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->b_type);
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
+#if defined(TEST_DYNAMIC_LD)
+    l_stride_a = (long long)l_brconfig.br_stride_a_hint;
+    l_stride_b = (long long)l_brconfig.br_stride_b_hint;
+    l_brconfig.br_stride_a_hint = 0;
+    l_brconfig.br_stride_b_hint = 0;
+#endif
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
     l_brconfig.br_stride_a_hint = 0;
@@ -2481,9 +2495,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   }
 
+#ifdef TEST_DYNAMIC_LD
+  gemm_param.op.primary = &l_stride_a;
+  gemm_param.op.secondary = &l_stride_b;
   gemm_param.a.quinary = &l_lda;
   gemm_param.b.quinary = &l_ldb;
   gemm_param.c.quinary = &l_ldc;
+#endif
 
   /* run correctness */
   if (i_gemm_def->br_type == 0) {

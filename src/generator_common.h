@@ -1395,6 +1395,9 @@
 #define LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH            40
 #define LIBXSMM_MATRIX_ARG_OFFSET_RUNTIME_LD          32
 
+#define LIBXSMM_MATRIX_OP_ARG_OFFSET_STRIDE_A          0
+#define LIBXSMM_MATRIX_OP_ARG_OFFSET_STRIDE_B          8
+
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
@@ -2128,7 +2131,9 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37,
   LIBXSMM_GEMM_STACK_VAR_LDA_VAL                = 38,
   LIBXSMM_GEMM_STACK_VAR_LDB_VAL                = 39,
-  LIBXSMM_GEMM_STACK_VAR_LDC_VAL                = 40
+  LIBXSMM_GEMM_STACK_VAR_LDC_VAL                = 40,
+  LIBXSMM_GEMM_STACK_VAR_STRIDE_A_VAL           = 41,
+  LIBXSMM_GEMM_STACK_VAR_STRIDE_B_VAL           = 42
 } libxsmm_gemm_stack_var;
 
 #if 0
