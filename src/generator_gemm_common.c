@@ -1704,7 +1704,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 208 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 192 );
 
   /* The stack now looks like this:
    *      10th param (if applicable)                <-- RBP+80
@@ -1737,9 +1737,9 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      BIAS SCRATCH PTR                          <-- RBP-168,
    *      Variable LDA VAL                          <-- RBP-176,
    *      Variable LDB VAL                          <-- RBP-184,
-   *      Variable LDC VAL                          <-- RBP-192,
-   *      Variable stride A VAL                     <-- RBP-200,
-   *      Variable stride B VAL                     <-- RBP-208, RSP
+   *      Variable LDC VAL                          <-- RBP-192, RSP
+   *      Variable stride A VAL                     <-- RBP-24,
+   *      Variable stride B VAL                     <-- RBP-32
    *
    * */
 
@@ -1769,13 +1769,13 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
 
     if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
       libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
-        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, LIBXSMM_MATRIX_OP_ARG_OFFSET_STRIDE_A, temp_reg, 0 );
+        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_BRSTRIDE, temp_reg, 0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg,
                                        LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_STRIDE_A_VAL, temp_reg );
 
       libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
-        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, LIBXSMM_MATRIX_OP_ARG_OFFSET_STRIDE_B, temp_reg, 0 );
+        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_BRSTRIDE, temp_reg, 0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg,
                                        LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_STRIDE_B_VAL, temp_reg );
@@ -1832,9 +1832,9 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      BIAS SCRATCH PTR                      <-- RBP-168,
    *      Variable LDA VAL                      <-- RBP-176,
    *      Variable LDB VAL                      <-- RBP-184,
-   *      Variable LDC VAL                      <-- RBP-192,
-   *      Variable stride A VAL                 <-- RBP-200,
-   *      Variable stride B VAL                 <-- RBP-208, RSP
+   *      Variable LDC VAL                      <-- RBP-192, RSP
+   *      Variable stride A VAL                 <-- RBP-24,
+   *      Variable stride B VAL                 <-- RBP-32, RSP
    *
    *      [ Potential pad for 64b align ]
    *      AVX2 mask, 64b aligned                <-- (RBP-104) contains this address
@@ -2024,8 +2024,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      Variable LDA VAL                          <-- RBP-176
    *      Variable LDB VAL                          <-- RBP-184
    *      Variable LDC VAL                          <-- RBP-192
-   *      Variable stride A VAL                     <-- RBP-200
-   *      Variable stride B VAL                     <-- RBP-208
+   *      Variable stride A VAL                     <-- RBP-24
+   *      Variable stride B VAL                     <-- RBP-32
    */
 
   switch ( stack_var ) {
@@ -2112,9 +2112,9 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
     case LIBXSMM_GEMM_STACK_VAR_LDC_VAL:
       return -192;
     case LIBXSMM_GEMM_STACK_VAR_STRIDE_A_VAL:
-      return -200;
+      return -24;
     case LIBXSMM_GEMM_STACK_VAR_STRIDE_B_VAL:
-      return -208;
+      return -32;
   }
   return 0;
 }

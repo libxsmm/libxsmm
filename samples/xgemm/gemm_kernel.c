@@ -2345,19 +2345,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
 
   /* setting update GEMM struct */
-#if 1
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
-#ifdef TEST_DYNAMIC_LD
+#if defined(TEST_DYNAMIC_LD)
       LIBXSMM_RUNTIME_SET_LD, LIBXSMM_RUNTIME_SET_LD, LIBXSMM_RUNTIME_SET_LD,
 #else
       i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
 #endif
       (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((i_gemm_def->is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : i_gemm_def->a_type), i_gemm_def->b_type, i_gemm_def->c_type, i_gemm_def->comp_type );
-#else
-  l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
-      i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
-      LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-#endif
 
   /* setting BRGEMM config struct */
   if (i_gemm_def->br_type == 1) {
@@ -2495,9 +2489,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   }
 
-#ifdef TEST_DYNAMIC_LD
-  gemm_param.op.primary = &l_stride_a;
-  gemm_param.op.secondary = &l_stride_b;
+#if defined(TEST_DYNAMIC_LD)
   gemm_param.a.quinary = &l_lda;
   gemm_param.b.quinary = &l_ldb;
   gemm_param.c.quinary = &l_ldc;
@@ -2561,7 +2553,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
   } else if (i_gemm_def->br_type == 3) {
     gemm_param.a.primary = (void*)i_a;
+#if defined(TEST_DYNAMIC_LD)
+    gemm_param.a.secondary = &l_stride_a;
+#endif
     gemm_param.b.primary = (void*)i_b;
+#if defined(TEST_DYNAMIC_LD)
+    gemm_param.b.secondary = &l_stride_b;
+#endif
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
 #else
@@ -2644,7 +2642,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   } else if (i_gemm_def->br_type == 3) {
     gemm_param.a.primary = (void*)i_a;
+#if defined(TEST_DYNAMIC_LD)
+    gemm_param.a.secondary = &l_stride_a;
+#endif
     gemm_param.b.primary = (void*)i_b;
+#if defined(TEST_DYNAMIC_LD)
+    gemm_param.b.secondary = &l_stride_b;
+#endif
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
       l_test_jit.gemm_ext( &gemm_param );

@@ -1394,9 +1394,7 @@
    in the JIT code generators */
 #define LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH            40
 #define LIBXSMM_MATRIX_ARG_OFFSET_RUNTIME_LD          32
-
-#define LIBXSMM_MATRIX_OP_ARG_OFFSET_STRIDE_A          0
-#define LIBXSMM_MATRIX_OP_ARG_OFFSET_STRIDE_B          8
+#define LIBXSMM_MATRIX_ARG_OFFSET_BRSTRIDE             8
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
