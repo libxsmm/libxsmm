@@ -24,6 +24,12 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
                                                                               const unsigned int                      i_gp_reg_scratch,
                                                                               const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                               const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  unsigned int  load_instr;
+  unsigned int  store_instr;
+
+  load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLW : LIBXSMM_RV64_INSTR_GP_FLD;
+  store_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FSW : LIBXSMM_RV64_INSTR_GP_FSD;
+
   /* m loop header */
   libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, i_mateltwise_desc->m );
 
@@ -31,10 +37,10 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
   libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, i_mateltwise_desc->n );
 
   /* actual transpose */
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLW,
+  libxsmm_rv64_instruction_alu_move( io_generated_code, load_instr,
                                           i_gp_reg_in, LIBXSMM_RV64_GP_REG_X5, 0 );
 
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSW,
+  libxsmm_rv64_instruction_alu_move( io_generated_code, store_instr,
                                           i_gp_reg_out, LIBXSMM_RV64_GP_REG_X5, 0 );
 
   /* advance input pointer */
@@ -61,7 +67,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
                                                  ((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - ((long long)i_micro_kernel_config->datatype_size_in) );
 
   /* close m loop */
-  libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, (i_mateltwise_desc->n) ? 1 : 0 );
+  libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, (i_mateltwise_desc->m) ? 1 : 0 );
 }
 
 LIBXSMM_API_INTERN

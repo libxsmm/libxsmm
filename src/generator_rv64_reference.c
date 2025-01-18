@@ -196,7 +196,7 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
   stack_offset = 0;
 
   /* Store the descriptor in stack and set argument in x1 */
-  for (i = 0; i < l_padded_desc_size/32; i++) {
+  for (i = 0; i < padded_size/32; i++) {
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[0] );
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[1] );
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg, stack_offset );
