@@ -1216,7 +1216,7 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
                                                const unsigned int      i_gp_reg_dst,
                                                const unsigned int      i_imm32 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm32: at least RV64 needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_rv64_instruction_alu_move_imm32: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -1307,9 +1307,10 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
         LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
 
-#define IMM_32 (0xffffffff)
+#define IMM_32 (0x00000000ffffffff)
 
-    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, i_imm64 & IMM_32 );
+    libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_gp_reg_dst, LIBXSMM_RV64_GP_REG_X12,
+        i_gp_reg_dst, i_imm64 & IMM_32 );
 
 #undef IMM_32
   }
