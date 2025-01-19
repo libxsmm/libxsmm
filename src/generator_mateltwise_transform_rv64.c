@@ -27,8 +27,8 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
   unsigned int  load_instr;
   unsigned int  store_instr;
 
-  load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLW : LIBXSMM_RV64_INSTR_GP_FLD;
-  store_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FSW : LIBXSMM_RV64_INSTR_GP_FSD;
+  load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLD : LIBXSMM_RV64_INSTR_GP_FLW;
+  store_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FSD : LIBXSMM_RV64_INSTR_GP_FSW;
 
   /* m loop header */
   libxsmm_generator_loop_header_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, i_mateltwise_desc->m );
