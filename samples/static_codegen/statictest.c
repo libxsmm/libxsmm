@@ -1,0 +1,96 @@
+/******************************************************************************
+* Copyright (c) Intel Corporation - All rights reserved.                      *
+* This file is part of the LIBXSMM library.                                   *
+*                                                                             *
+* For information on the license, see the LICENSE file.                       *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
+* SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
+/* Alexander Heinecke (Intel Corp.)
+******************************************************************************/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "libstatictest/libstatictest.h"
+
+void test(unsigned int m, unsigned int n, unsigned int k) {
+  float A[m*k];
+  float B[k*n];
+  float C_gold[m*n];
+  float C_asm[m*n];
+  unsigned int lm, ln, lk;
+  libxsmm_matrix_op_arg myoparg;
+  libxsmm_matrix_arg matrix_a;
+  libxsmm_matrix_arg matrix_b;
+  libxsmm_matrix_arg matrix_c;
+  libxsmm_gemm_param param;
+
+  /* init data */
+  for ( lk = 0; lk < k; ++lk ) {
+    for ( lm = 0; lm < m; ++lm ) {
+      A[lk * m + lm] = (float)(lk * m + lm);
+    }
+  }
+  for ( ln = 0; ln < n; ++ln ) {
+    for ( lk = 0; lk < k; ++lk ) {
+      B[ln * k + lk] = (float)(ln * k + lk + 16384);
+    }
+  }
+  for ( ln = 0; ln < n; ++ln ) {
+    for ( lm = 0; lm < m; ++lm ) {
+      C_gold[ln * m + lm] = 0.0f;
+      C_asm[ln * m + lm] = 0.0f;
+    }
+  }
+
+  /* compute gold */
+  for ( ln = 0; ln < n; ++ln ) {
+    for ( lk = 0; lk < k; ++lk ) {
+      for ( lm = 0; lm < m; ++lm ) {
+        C_gold[ln * m + lm] += A[lk * m + lm] *  B[ln * k + lk];
+      }
+    }
+  }
+
+  memset( &myoparg, 0, sizeof(libxsmm_matrix_op_arg) );
+  memset( &matrix_a, 0, sizeof(libxsmm_matrix_arg) );
+  memset( &matrix_b, 0, sizeof(libxsmm_matrix_arg) );
+  memset( &matrix_c, 0, sizeof(libxsmm_matrix_arg) );
+  memset( &param, 0, sizeof(libxsmm_gemm_param) );
+
+  matrix_a.primary = A;
+  matrix_b.primary = B;
+  matrix_c.primary = C_asm;
+  param.op = myoparg;
+  param.a = matrix_a;
+  param.b = matrix_b;
+  param.c = matrix_c;
+
+  if ( m == 32 && n == 32 && k == 32 ) {
+    printf("test one...\n");
+    one( &param );
+    printf("...done\n");
+  } else if ( m == 64 && n == 64 && k == 64 ) {
+    printf("test two...\n");
+    two( &param );
+    printf("...done\n");
+  } else {
+    printf("Attempting to run a case that was not pregenerated!");
+    exit(-1);
+  }
+
+  for ( ln = 0; ln < n; ++ln ) {
+    for ( lm = 0; lm < m; ++lm ) {
+      printf("(%f,%f) ", C_gold[ln * m + lm], C_asm[ln * m + lm]);
+    }
+    printf("\n");
+  }
+}
+
+int main( int argc, char* argv[] ) {
+  /* run the statically generated tests */
+  test( 32, 32, 32 );
+  test( 64, 64, 64 );
+}
+
