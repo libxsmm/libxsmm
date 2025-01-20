@@ -287,6 +287,8 @@ class CodeGenKernels(object):
         headerfile.write("  void* secondary;\n")
         headerfile.write("  void* tertiary;\n")
         headerfile.write("  void* quaternary;\n")
+        headerfile.write("  void* quinary;\n")
+        headerfile.write("  void* senary;\n")
         headerfile.write("} libxsmm_matrix_arg;\n\n")
         headerfile.write("typedef struct libxsmm_gemm_param {\n")
         headerfile.write("  libxsmm_matrix_op_arg op;\n")

@@ -20,6 +20,7 @@ void test(unsigned int m, unsigned int n, unsigned int k) {
   float C_gold[m*n];
   float C_asm[m*n];
   unsigned int lm, ln, lk;
+  unsigned int error = 0;
   libxsmm_matrix_op_arg myoparg;
   libxsmm_matrix_arg matrix_a;
   libxsmm_matrix_arg matrix_b;
@@ -29,12 +30,12 @@ void test(unsigned int m, unsigned int n, unsigned int k) {
   /* init data */
   for ( lk = 0; lk < k; ++lk ) {
     for ( lm = 0; lm < m; ++lm ) {
-      A[lk * m + lm] = (float)(lk * m + lm);
+      A[lk * m + lm] = (float)(lk * m + lm)/(float)(m*k);
     }
   }
   for ( ln = 0; ln < n; ++ln ) {
     for ( lk = 0; lk < k; ++lk ) {
-      B[ln * k + lk] = (float)(ln * k + lk + 16384);
+      B[ln * k + lk] = (float)(ln * k + lk)/(float)(k*n);
     }
   }
   for ( ln = 0; ln < n; ++ln ) {
@@ -82,9 +83,14 @@ void test(unsigned int m, unsigned int n, unsigned int k) {
 
   for ( ln = 0; ln < n; ++ln ) {
     for ( lm = 0; lm < m; ++lm ) {
-      printf("(%f,%f) ", C_gold[ln * m + lm], C_asm[ln * m + lm]);
+      if ( C_gold[ln * m + lm] -  C_asm[ln * m + lm] > 0.00001 ) {
+        printf("(%f,%f) ", C_gold[ln * m + lm], C_asm[ln * m + lm]);
+        error = 1;
+      }
     }
-    printf("\n");
+  }
+  if ( error == 0 ) {
+    printf("SUCCESS\n");
   }
 }
 

@@ -54,12 +54,12 @@ clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
-	@-rm -f one one.o two two.o libstatictest.h libstatictest.a
+	@-rm -rf libstatictest/
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@-rm -rf $(BLDDIR)
-	@-rm -f one one.o two two.o libstatictest.h libstatictest.a
+	@-rm -f $(OBJECTS) $(OBJECTX) *__genmod.* *.dat *.log
+	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 
 .PHONY: realclean
@@ -67,12 +67,13 @@ realclean: clean
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
-	@-rm -f one one.o two two.o libstatictest.h libstatictest.a
+	@-rm -rf libstatictest/
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
-	@-rm -rf $(OUTDIR)
-	@-rm -f one one.o two two.o libstatictest.h libstatictest.a
+	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@-rm -f $(XFILES)
+	@-rm -f $(XFILES)
 endif
 
 .PHONY: deepclean
