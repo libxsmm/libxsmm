@@ -169,23 +169,70 @@ class CodeGenKernels(object):
     def setCodeType(self, codetype):
         self.codetype = codetype
 
+    def getGeneratorConfigString(self, kernel):
+        ret = os.path.basename(self.env.getGenerator()) + " "
+        ret = ret + kernel.getArch() + " "
+        ret = ret + kernel.getName() + " "
+        ret = ret + kernel.getType() + " "
+        ret = ret + json.dumps(kernel.getConfig()).strip('"')
+        ret = ret.replace("[", "")
+        ret = ret.replace("]", "")
+        ret = ret.replace(",", "")
+        ret = ret.replace("\"", "")
+        return ret
+
     def generateCode(self, outdir):
         self.logger.info(f"Starting codegen for library/export {self.name} of type {self.codetype}")
         odir = os.path.join(outdir, self.name)
         self.logger.info(f"outdir is {odir}")
         os.makedirs(odir, exist_ok=True)
+        headerfile = open(os.path.join(odir, self.name + ".h"), "w")
+        self.logger.info(f"opened headerfile for writing: {headerfile.name}")
+        headerfile.write("#ifndef " + self.name.upper() + "_H\n")
+        headerfile.write("#define " + self.name.upper() + "_H\n\n")
+        headerfile.write("#ifdef __cplusplus\n")
+        headerfile.write("extern \"C\" {\n")
+        headerfile.write("#endif\n\n")
+        headerfile.write("typedef struct libxsmm_matrix_op_arg {\n")
+        headerfile.write("  void* primary;\n")
+        headerfile.write("  void* secondary;\n")
+        headerfile.write("  void* tertiary;\n")
+        headerfile.write("  void* quaternary;\n")
+        headerfile.write("} libxsmm_matrix_op_arg;\n\n")
+        headerfile.write("typedef struct libxsmm_matrix_arg {\n")
+        headerfile.write("  void* primary;\n")
+        headerfile.write("  void* secondary;\n")
+        headerfile.write("  void* tertiary;\n")
+        headerfile.write("  void* quaternary;\n")
+        headerfile.write("} libxsmm_matrix_arg;\n\n")
+        headerfile.write("typedef struct libxsmm_gemm_param {\n")
+        headerfile.write("  libxsmm_matrix_op_arg op;\n")
+        headerfile.write("  libxsmm_matrix_arg a;\n")
+        headerfile.write("  libxsmm_matrix_arg b;\n")
+        headerfile.write("  libxsmm_matrix_arg c;\n")
+        headerfile.write("} libxsmm_gemm_param;\n\n")
 
         for kernel in self.kernels:
+            kernelfile = os.path.join(odir, kernel.getName())
             cmd = list()
             cmd.append(self.env.getGenerator())
             cmd.append(kernel.getArch())
-            cmd.append(os.path.join(odir, kernel.getName()))
+            cmd.append(kernelfile)
             cmd.append(kernel.getType())
             cmd.extend(kernel.getConfig())
             self.logger.info(F"generator arg list: {cmd}")
             res = self.runner.run(cmd)
             self.logger.info(res.stdout)
-            self.logger.error(res.stderr)
+            if (res.stderr != ""):
+                 self.logger.error(res.stderr)
+            headerfile.write("/* " + self.getGeneratorConfigString(kernel) + " */\n")
+            headerfile.write("void " + kernel.getName() + "( libxsmm_gemm_param* param );\n")
+
+        headerfile.write("\n#ifdef __cplusplus\n")
+        headerfile.write("extern }\n")
+        headerfile.write("#endif\n\n")
+        headerfile.write("#endif /* " + self.name.upper() + "_H */\n")
+        headerfile.close()
 
         return True
 
