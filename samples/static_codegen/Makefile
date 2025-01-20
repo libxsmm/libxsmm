@@ -43,7 +43,7 @@ libstatictest/libstatictest.h: $(DEPDIR)/scripts/libxsmm_staticlib.py
 	$(info Creating static lib...)
 	./$(DEPDIR)/scripts/libxsmm_staticlib.py -c statictest.json -o . -v
 
-$(OUTDIR)/statictest: $(OUTDIR)/.make $(BLDDIR)/statictest-c.o libstatictest/libstatictest.a
+$(OUTDIR)/statictest: $(OUTDIR)/.make $(BLDDIR)/statictest-c.o libstatictest/libstatictest.h
 	$(LD) -o $@ $(BLDDIR)/statictest-c.o libstatictest/libstatictest.a $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make libstatictest/libstatictest.h Makefile $(DEPDIR)/Makefile.inc
