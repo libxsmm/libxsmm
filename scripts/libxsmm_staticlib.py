@@ -346,7 +346,7 @@ class CodeGenKernels(object):
              sys.exit(1)
 
         headerfile.write("\n#ifdef __cplusplus\n")
-        headerfile.write("extern }\n")
+        headerfile.write("}\n")
         headerfile.write("#endif\n\n")
         headerfile.write("#endif /* " + self.name.upper() + "_H */\n")
         headerfile.close()
