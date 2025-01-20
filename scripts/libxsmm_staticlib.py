@@ -118,9 +118,39 @@ class Environment(object):
         self.logger.info(f"script directory: {self.script_dir}")
         self.logger.info(f"LIBXSMM root directory: {self.root_dir}")
         self.gen_exec = os.path.join(self.root_dir, "bin", "libxsmm_binaryexport_generator")
+        # check if we have llvm-objcopy avaialble
+        self.llvm_objcopy = shutil.which('llvm-objcopy')
+        if ( self.llvm_objcopy is None ):
+            self.logger.error(f"didn't find llvm-objcopy, we cannot proceed :-(")
+            sys.exit(1)
+        else:
+            self.logger.info(f"found llvm-objcopy {self.llvm_objcopy}")
+        # check if we have ar available
+        self.ar = shutil.which('ar')
+        if ( self.ar is None ):
+            self.logger.error(f"didn't find ar, we cannot proceed :-(")
+            sys.exit(1)
+        else:
+            self.logger.info(f"found ar {self.ar}")
+        # check if we have rm available
+        self.rm = shutil.which('rm')
+        if ( self.rm is None ):
+            self.logger.error(f"didn't find rm, we cannot proceed :-(")
+            sys.exit(1)
+        else:
+            self.logger.info(f"found ar {self.rm}")
 
     def getGenerator(self):
         return self.gen_exec
+
+    def getLlvmObjcopy(self):
+        return self.llvm_objcopy
+
+    def getAr(self):
+        return self.ar
+
+    def getRm(self):
+        return self.rm
 
 
 class KernelDesc(object):
@@ -181,7 +211,60 @@ class CodeGenKernels(object):
         ret = ret.replace("\"", "")
         return ret
 
+    def getGeneratorCmd(self, kernel, kernelfile):
+        cmd = list()
+        cmd.append(self.env.getGenerator())
+        cmd.append(kernel.getArch())
+        cmd.append(kernelfile)
+        cmd.append(kernel.getType())
+        cmd.extend(kernel.getConfig())
+        return cmd
+
+    def getObjcopyBintoElfCmd(self, kernel, kernelfile):
+        cmd = list()
+        cmd.append(self.env.getLlvmObjcopy())
+        cmd.append("-I")
+        cmd.append("binary")
+        cmd.append("-O")
+        cmd.append("elf64-x86-64")
+        cmd.append(f"--rename-section=.data=.text.{kernel.getName()},code")
+        cmd.append(kernelfile)
+        cmd.append(kernelfile + ".tmp.elf")
+        return cmd
+
+    def getObjcopyElftoFinalCmd(self, kernel, kernelfile):
+        file = kernelfile.replace("/", "_")
+        file = file.replace(".", "_")
+        cmd = list()
+        cmd.append(self.env.getLlvmObjcopy())
+        cmd.append("-I")
+        cmd.append("elf64-x86-64")
+        cmd.append("-O")
+        cmd.append("elf64-x86-64")
+        cmd.append(f"--redefine-sym=_binary_{file}_start={kernel.getName()}")
+        cmd.append(f"--redefine-sym=_binary_{file}_end={kernel.getName()}_end")
+        cmd.append(f"--redefine-sym=_binary_{file}_size={kernel.getName()}_size")
+        cmd.append(kernelfile + ".tmp.elf")
+        cmd.append(kernelfile + ".o")
+        return cmd
+
+    def getRmCmd(self, kernelfile):
+        cmd = list()
+        cmd.append(self.env.getRm())
+        cmd.append("-f")
+        cmd.append(kernelfile + ".tmp.elf")
+        return cmd
+
+    def getArCmd(self, archivename, objfiles):
+        cmd = list()
+        cmd.append(self.env.getAr())
+        cmd.append("rcs")
+        cmd.append(archivename)
+        cmd.extend(objfiles)
+        return cmd
+
     def generateCode(self, outdir):
+        objfiles = list()
         self.logger.info(f"Starting codegen for library/export {self.name} of type {self.codetype}")
         odir = os.path.join(outdir, self.name)
         self.logger.info(f"outdir is {odir}")
@@ -213,20 +296,52 @@ class CodeGenKernels(object):
         headerfile.write("} libxsmm_gemm_param;\n\n")
 
         for kernel in self.kernels:
+            # generate binary code
             kernelfile = os.path.join(odir, kernel.getName())
-            cmd = list()
-            cmd.append(self.env.getGenerator())
-            cmd.append(kernel.getArch())
-            cmd.append(kernelfile)
-            cmd.append(kernel.getType())
-            cmd.extend(kernel.getConfig())
-            self.logger.info(F"generator arg list: {cmd}")
-            res = self.runner.run(cmd)
+            gencmd = self.getGeneratorCmd(kernel, kernelfile)
+            self.logger.info(F"generator arg list: {gencmd}")
+            res = self.runner.run(gencmd)
             self.logger.info(res.stdout)
             if (res.stderr != ""):
                  self.logger.error(res.stderr)
+            # create elf object from binary code
+            llvmobjcopy_one_cmd = self.getObjcopyBintoElfCmd(kernel, kernelfile)
+            self.logger.info(F"llvm-objcopy tmp cmd: {llvmobjcopy_one_cmd}")
+            res = self.runner.run(llvmobjcopy_one_cmd)
+            self.logger.info(res.stdout)
+            if (res.stderr != ""):
+                 self.logger.error(res.stderr)
+                 sys.exit(1)
+
+            llvmobjcopy_two_cmd = self.getObjcopyElftoFinalCmd(kernel, kernelfile)
+            self.logger.info(F"llvm-objcopy final cmd: {llvmobjcopy_two_cmd}")
+            res = self.runner.run(llvmobjcopy_two_cmd)
+            self.logger.info(res.stdout)
+            if (res.stderr != ""):
+                 self.logger.error(res.stderr)
+                 sys.exit(1)
+
+            rm_cmd = self.getRmCmd(kernelfile)
+            self.logger.info(F"rm cmd: {rm_cmd}")
+            res = self.runner.run(rm_cmd)
+            self.logger.info(res.stdout)
+            if (res.stderr != ""):
+                 self.logger.error(res.stderr)
+                 sys.exit(1)
+
+            objfiles.append(kernelfile + ".o")
+            # add generated kernel to header
             headerfile.write("/* " + self.getGeneratorConfigString(kernel) + " */\n")
             headerfile.write("void " + kernel.getName() + "( libxsmm_gemm_param* param );\n")
+
+        archivefile = os.path.join(odir, self.name + ".a")
+        ar_cmd = self.getArCmd(archivefile, objfiles)
+        self.logger.info(F"ar cmd: {ar_cmd}")
+        res = self.runner.run(ar_cmd)
+        self.logger.info(res.stdout)
+        if (res.stderr != ""):
+             self.logger.error(res.stderr)
+             sys.exit(1)
 
         headerfile.write("\n#ifdef __cplusplus\n")
         headerfile.write("extern }\n")
