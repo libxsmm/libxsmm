@@ -434,8 +434,13 @@ int export_gemm( int argc, char* argv [] ) {
   l_flags |= (0.0 == l_beta ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
 
   /* setting update GEMM struct */
-  l_shape = libxsmm_create_gemm_shape( l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
-      (l_is_Abf8Bbf16_gemm > 0 || l_is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((l_is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : l_dtype_a), l_dtype_b, l_dtype_c, l_dtype_comp );
+  if ( (l_lda == -1) && (l_ldb == -1) && (l_ldc == -1) ) {
+    l_shape = libxsmm_create_gemm_shape( l_m, l_n, l_k, LIBXSMM_RUNTIME_SET_LD, LIBXSMM_RUNTIME_SET_LD, LIBXSMM_RUNTIME_SET_LD,
+        (l_is_Abf8Bbf16_gemm > 0 || l_is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((l_is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : l_dtype_a), l_dtype_b, l_dtype_c, l_dtype_comp );
+  } else {
+    l_shape = libxsmm_create_gemm_shape( l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
+        (l_is_Abf8Bbf16_gemm > 0 || l_is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((l_is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : l_dtype_a), l_dtype_b, l_dtype_c, l_dtype_comp );
+  }
 
   /* setting BRGEMM config struct */
   if (l_br_type == 1) {
@@ -450,8 +455,13 @@ int export_gemm( int argc, char* argv [] ) {
     l_brconfig.br_unroll_hint = (unsigned char)(( l_br_unroll <= 0 ) ? 0 : l_br_count);
   } else if (l_br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-    l_brconfig.br_stride_a_hint = l_br_stride_a;
-    l_brconfig.br_stride_b_hint = l_br_stride_b;
+    if ( (l_lda == -1) && (l_ldb == -1) && (l_ldc == -1) ) {
+      l_brconfig.br_stride_a_hint = 0;
+      l_brconfig.br_stride_b_hint = 0;
+    } else {
+      l_brconfig.br_stride_a_hint = l_br_stride_a;
+      l_brconfig.br_stride_b_hint = l_br_stride_b;
+    }
     l_brconfig.br_unroll_hint = (unsigned char)(( l_br_unroll <= 0 ) ? 0 : l_br_count);
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
