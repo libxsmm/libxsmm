@@ -453,6 +453,104 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 }
 
 
+LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
+{
+  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+
+  if (strcmp(arch, "avx512_vl256_cpx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_CPX;
+  }
+  else if (strcmp(arch, "avx512_vl256_clx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_CLX;
+  }
+  else if (strcmp(arch, "avx512_vl256") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_SKX;
+  }
+  else if (strcmp(arch, "dmr") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_DMR;
+  }
+  else if (strcmp(arch, "gnr") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_GNR;
+  }
+  else if (strcmp(arch, "spr") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_SPR;
+  }
+  else if (strcmp(arch, "cpx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_CPX;
+  }
+  else if (strcmp(arch, "clx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_CLX;
+  }
+  else if (strcmp(arch, "skx") == 0 || strcmp(arch, "skl") == 0
+          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512_SKX */
+          || strcmp(arch, "avx3") == 0 || strcmp(arch, "avx512") == 0)
+  {
+    target_archid = LIBXSMM_X86_AVX512_SKX;
+  }
+  else if (strcmp(arch, "srf") == 0) {
+    target_archid = LIBXSMM_X86_AVX2_SRF;
+  }
+  else if (strcmp(arch, "adl") == 0) {
+    target_archid = LIBXSMM_X86_AVX2_ADL;
+  }
+  else if (strcmp(arch, "hsw") == 0 || strcmp(arch, "avx2") == 0) {
+    target_archid = LIBXSMM_X86_AVX2;
+  }
+  else if (strcmp(arch, "snb") == 0 || strcmp(arch, "avx") == 0) {
+    target_archid = LIBXSMM_X86_AVX;
+  }
+  else if (strcmp(arch, "wsm") == 0 || strcmp(arch, "nhm") == 0
+       || strcmp(arch, "sse4_2") == 0 || strcmp(arch, "sse4.2") == 0
+       || strcmp(arch, "sse42") == 0  || strcmp(arch, "sse4") == 0)
+  {
+    target_archid = LIBXSMM_X86_SSE42;
+  }
+  else if (strcmp(arch, "sse3") == 0) {
+    target_archid = LIBXSMM_X86_SSE3;
+  }
+  else if (strcmp(arch, "x86") == 0|| strcmp(arch, "x86_64") == 0
+          || strcmp(arch, "x64") == 0 || strcmp(arch, "sse2") == 0
+          || strcmp(arch, "sse") == 0)
+  {
+    target_archid = LIBXSMM_X86_GENERIC;
+  }
+  else if  (strcmp(arch, "arm") == 0 || strcmp(arch, "arm64") == 0
+        || strcmp(arch, "arm_v81") == 0
+        || strcmp(arch, "aarch64") == 0)
+  {
+    target_archid = LIBXSMM_AARCH64_V81;
+  }
+  else if (strcmp(arch, "arm_v82") == 0) {
+    target_archid = LIBXSMM_AARCH64_V82;
+  }
+  else if (strcmp(arch, "appl_m1") == 0) {
+    target_archid = LIBXSMM_AARCH64_APPL_M1;
+  }
+  else if (strcmp(arch, "sve128") == 0) {
+    target_archid = LIBXSMM_AARCH64_SVE128;
+  }
+  else if (strcmp(arch, "sve256") == 0) {
+    target_archid = LIBXSMM_AARCH64_SVE256;
+  }
+  else if (strcmp(arch, "neov1") == 0) {
+    target_archid = LIBXSMM_AARCH64_NEOV1;
+  }
+  else if (strcmp(arch, "neov2") == 0) {
+    target_archid = LIBXSMM_AARCH64_NEOV2;
+  }
+  else if (strcmp(arch, "sve512") == 0) {
+    target_archid = LIBXSMM_AARCH64_SVE512;
+  }
+  else if (strcmp(arch, "a64fx") == 0) {
+    target_archid = LIBXSMM_AARCH64_A64FX;
+  } else {
+    target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+  }
+
+  return target_archid;
+}
+
+
 /**
  * This implementation also accounts for non-x86 platforms,
  * which not only allows to resolve any given ID but to
