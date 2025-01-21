@@ -543,6 +543,9 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "a64fx") == 0) {
     target_archid = LIBXSMM_AARCH64_A64FX;
+  }
+  else if (strcmp(arch, "rv64") == 0) {
+    target_archid = LIBXSMM_RV64;
   } else {
     target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   }
