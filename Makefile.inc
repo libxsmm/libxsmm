@@ -1514,7 +1514,6 @@ else # GCC assumed
       endif
     endif
     FPEDANTIC += $(FWARNEXTRA)
-    CSTD := -std=c99
     ifeq (1,$(PEDANTIC))
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD := -std=c99
@@ -1585,7 +1584,7 @@ else # GCC assumed
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
       FCFLAGS += $(FFORM_FLAG)
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
-        CSTD := -std=c89
+        CSTD := -std=c99
       endif
       CFLAGS += $(CSTD)
     endif
