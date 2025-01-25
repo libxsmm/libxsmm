@@ -647,8 +647,16 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_rv64(  libxsmm_generated_cod
                                                            const unsigned int              i_vec_reg_count,
                                                            const unsigned int              i_m_blocking,
                                                            const unsigned int              i_n_blocking ) {
-  if ((io_micro_kernel_config->fused_relu_nobitmask > 0) || (io_micro_kernel_config->fused_relu > 0)) {
+  if ( (io_micro_kernel_config->fused_relu_nobitmask > 0) ) {
     libxsmm_generator_gemm_apply_relu_fusion_2dregblock_rv64( io_generated_code, i_xgemm_desc, io_micro_kernel_config, i_gp_reg_scratch0, i_gp_reg_scratch1, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking );
+  } else if ( (io_micro_kernel_config->fused_relu > 0) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNKNOWN_OPERATION );
+    return;
+  } else if ( (io_micro_kernel_config->fused_sigmoid > 0) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNKNOWN_OPERATION );
+    return;
+  } else {
+    return;
   }
 }
 
