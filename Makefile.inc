@@ -1514,6 +1514,7 @@ else # GCC assumed
       endif
     endif
     FPEDANTIC += $(FWARNEXTRA)
+    CSTD := -std=c99
     ifeq (1,$(PEDANTIC))
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD := -std=c99
@@ -1586,6 +1587,7 @@ else # GCC assumed
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD := -std=c89
       endif
+      CFLAGS += $(CSTD)
     endif
   endif
   # flag specifying output directory must be last
