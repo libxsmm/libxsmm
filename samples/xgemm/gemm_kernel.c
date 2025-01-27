@@ -23,7 +23,7 @@
 
 #define REFERENCE_TEST_LIMIT 10
 
-#if 0
+#if 1
 #define TEST_DYNAMIC_LD
 #endif
 
