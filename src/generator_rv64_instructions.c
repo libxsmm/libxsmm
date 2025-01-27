@@ -7,7 +7,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke (Intel Corp.)
+/* Siddharth Rai, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_rv64_instructions.h"
@@ -20,7 +20,7 @@
 /* Save X18 X19 X20 X21 X22 X23 X24 X25 X26 X27 */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
-                                              const unsigned short    i_callee_save_bitmask ) {
+                                           const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_close_stream: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -29,145 +29,145 @@ void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_
 
   /* allocate callee save space on the stack */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
-                                               LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
-                                               -208 );
+                                              LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
+                                              -208 );
 
   /* Save f8, f9, f18-f27 to stack */
   if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F27, 200 );
+                                       LIBXSMM_RV64_GP_REG_F27, 200 );
   }
 
   if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F26, 192 );
+                                       LIBXSMM_RV64_GP_REG_F26, 192 );
   }
 
   if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F25, 184 );
+                                       LIBXSMM_RV64_GP_REG_F25, 184 );
   }
 
   if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F24, 176 );
+                                       LIBXSMM_RV64_GP_REG_F24, 176 );
   }
 
   if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F23, 168 );
+                                       LIBXSMM_RV64_GP_REG_F23, 168 );
   }
 
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F22, 160 );
+                                       LIBXSMM_RV64_GP_REG_F22, 160 );
   }
 
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F21, 152 );
+                                       LIBXSMM_RV64_GP_REG_F21, 152 );
   }
 
   if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F20, 144 );
+                                       LIBXSMM_RV64_GP_REG_F20, 144 );
   }
 
   if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F19, 136 );
+                                       LIBXSMM_RV64_GP_REG_F19, 136 );
   }
 
   if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F18, 128 );
+                                       LIBXSMM_RV64_GP_REG_F18, 128 );
   }
 
   if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F8, 120 );
+                                       LIBXSMM_RV64_GP_REG_F8, 120 );
   }
 
   if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FSD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F9, 112 );
+                                       LIBXSMM_RV64_GP_REG_F9, 112 );
   }
 
   /* Save x1, x2, x8, x9, x18-x27 to stack */
   if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X18, 104 );
+                                       LIBXSMM_RV64_GP_REG_X18, 104 );
   }
 
   if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X19, 96 );
+                                       LIBXSMM_RV64_GP_REG_X19, 96 );
   }
 
   if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X20, 88 );
+                                       LIBXSMM_RV64_GP_REG_X20, 88 );
   }
 
   if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X21, 80 );
+                                       LIBXSMM_RV64_GP_REG_X21, 80 );
   }
 
   if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X22, 72 );
+                                       LIBXSMM_RV64_GP_REG_X22, 72 );
   }
 
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X23, 64 );
+                                       LIBXSMM_RV64_GP_REG_X23, 64 );
   }
 
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X24, 56 );
+                                       LIBXSMM_RV64_GP_REG_X24, 56 );
   }
 
   if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X25, 48 );
+                                       LIBXSMM_RV64_GP_REG_X25, 48 );
   }
 
   if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X26, 40 );
+                                       LIBXSMM_RV64_GP_REG_X26, 40 );
   }
 
   if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X27, 32 );
+                                       LIBXSMM_RV64_GP_REG_X27, 32 );
   }
 
   if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X8, 24 );
+                                       LIBXSMM_RV64_GP_REG_X8, 24 );
   }
 
   if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X9, 16 );
+                                       LIBXSMM_RV64_GP_REG_X9, 16 );
   }
 
   if ( ( i_callee_save_bitmask & 0x1000 ) == 0x1000 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X2, 8 );
+                                       LIBXSMM_RV64_GP_REG_X2, 8 );
   }
 
   if ( ( i_callee_save_bitmask & 0x2000 ) == 0x2000 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X1, 0 );
+                                       LIBXSMM_RV64_GP_REG_X1, 0 );
   }
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated_code,
-                                               const unsigned short  i_callee_save_bitmask ) {
+                                            const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_restore_regs: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -177,52 +177,52 @@ void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated
   /* Restore f8, f9, f18-f27 from stack */
   if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F27, 200 );
+                                       LIBXSMM_RV64_GP_REG_F27, 200 );
   }
 
   if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F26, 192 );
+                                       LIBXSMM_RV64_GP_REG_F26, 192 );
   }
 
   if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F25, 184 );
+                                       LIBXSMM_RV64_GP_REG_F25, 184 );
   }
 
   if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F24, 176 );
+                                       LIBXSMM_RV64_GP_REG_F24, 176 );
   }
 
   if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F23, 168 );
+                                       LIBXSMM_RV64_GP_REG_F23, 168 );
   }
 
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F22, 160 );
+                                       LIBXSMM_RV64_GP_REG_F22, 160 );
   }
 
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F21, 152 );
+                                       LIBXSMM_RV64_GP_REG_F21, 152 );
   }
 
   if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F20, 144 );
+                                       LIBXSMM_RV64_GP_REG_F20, 144 );
   }
 
   if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F19, 136 );
+                                       LIBXSMM_RV64_GP_REG_F19, 136 );
   }
 
   if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F18, 128 );
+                                       LIBXSMM_RV64_GP_REG_F18, 128 );
   }
 
   if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
@@ -232,83 +232,83 @@ void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated
 
   if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_FLD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_F9, 112 );
+                                       LIBXSMM_RV64_GP_REG_F9, 112 );
   }
 
   /* Restore x1, x2, x8, x9, x18-x27 from stack */
   if ( ( i_callee_save_bitmask & 0x01 ) == 0x01 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X18, 104 );
+                                       LIBXSMM_RV64_GP_REG_X18, 104 );
   }
   if ( ( i_callee_save_bitmask & 0x02 ) == 0x02 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X19, 96 );
+                                       LIBXSMM_RV64_GP_REG_X19, 96 );
   }
   if ( ( i_callee_save_bitmask & 0x04 ) == 0x04 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X20, 88 );
+                                       LIBXSMM_RV64_GP_REG_X20, 88 );
   }
   if ( ( i_callee_save_bitmask & 0x08 ) == 0x08 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X21, 80 );
+                                       LIBXSMM_RV64_GP_REG_X21, 80 );
   }
   if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X22, 72 );
+                                       LIBXSMM_RV64_GP_REG_X22, 72 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X23, 64 );
+                                       LIBXSMM_RV64_GP_REG_X23, 64 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X24, 56 );
+                                       LIBXSMM_RV64_GP_REG_X24, 56 );
   }
 
   if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X25, 48);
+                                       LIBXSMM_RV64_GP_REG_X25, 48);
   }
 
   if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X26, 40 );
+                                       LIBXSMM_RV64_GP_REG_X26, 40 );
   }
 
   if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X27, 32 );
+                                       LIBXSMM_RV64_GP_REG_X27, 32 );
   }
 
   if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X8, 24 );
+                                       LIBXSMM_RV64_GP_REG_X8, 24 );
   }
 
   if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X9, 16 );
+                                       LIBXSMM_RV64_GP_REG_X9, 16 );
   }
 
   if ( ( i_callee_save_bitmask & 0x1000 ) == 0x1000 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X2, 8 );
+                                        LIBXSMM_RV64_GP_REG_X2, 8 );
   }
 
   if ( ( i_callee_save_bitmask & 0x2000 ) == 0x2000 ) {
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, LIBXSMM_RV64_GP_REG_XSP,
-                                          LIBXSMM_RV64_GP_REG_X1, 0 );
+                                       LIBXSMM_RV64_GP_REG_X1, 0 );
   }
 
   /* deallocate calle save space on stack */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI,
-                                                 LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
-                                                 208 );
+                                              LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP,
+                                              208 );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
-                                               const unsigned short    i_callee_save_bitmask ) {
+                                            const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -331,10 +331,10 @@ void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated
 /* RVV VL config */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_setvli( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_gp_reg_src,
-                                           const unsigned int      i_reg_dst,
-                                           const unsigned int      i_sew,
-                                           const unsigned int      i_lmul ) {
+                                           const unsigned int     i_gp_reg_src,
+                                           const unsigned int     i_reg_dst,
+                                           const unsigned int     i_sew,
+                                           const unsigned int     i_lmul ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_setvli: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -373,13 +373,10 @@ void libxsmm_rv64_instruction_rvv_setvli( libxsmm_generated_code* io_generated_c
 
     /* fix bits */
     code[code_head]  = LIBXSMM_RV64_INSTR_RVV_VSETVLI;
-
     /* setting RS1 */
     code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS1);
-
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
     /* setting lmul and sew */
     code[code_head] |= (unsigned int)FILL_REGID(zimm11, LIBXSMM_RV64_INSTR_FIELD_ZIMM11);
 
@@ -442,13 +439,10 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
 
     /* fix bits */
     code[code_head]  = LIBXSMM_RV64_INSTR_RVV_VSETIVLI;
-
     /* setting RVL */
     code[code_head] |= (unsigned int)FILL_REGID(i_rvl, LIBXSMM_RV64_INSTR_FIELD_SIMM5);
-
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
     /* setting lmul and sew */
     code[code_head] |= (unsigned int)FILL_REGID(uimm, LIBXSMM_RV64_INSTR_FIELD_ZIMM11);
 
@@ -464,9 +458,9 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_setvl( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_gp_reg_src_1,
-                                           const unsigned int      i_gp_reg_src_2,
-                                           const unsigned int      i_reg_dst ) {
+                                         const unsigned int      i_gp_reg_src_1,
+                                         const unsigned int      i_gp_reg_src_2,
+                                         const unsigned int      i_reg_dst ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_setvl: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -491,13 +485,10 @@ void libxsmm_rv64_instruction_rvv_setvl( libxsmm_generated_code* io_generated_co
 
     /* fix bits */
     code[code_head]  = LIBXSMM_RV64_INSTR_RVV_VSETVL;
-
     /* setting RS1 */
     code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_1, LIBXSMM_RV64_INSTR_FIELD_RS1);
-
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
     /* setting RS2 */
     code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src_2, LIBXSMM_RV64_INSTR_FIELD_RS2);
 
@@ -514,11 +505,11 @@ void libxsmm_rv64_instruction_rvv_setvl( libxsmm_generated_code* io_generated_co
 /* RVV LD/ST */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_code,
-                                         const unsigned int      i_vmove_instr,
-                                         const unsigned int      i_vec_reg_addr,
-                                         const unsigned int      i_vec_reg_offset,
-                                         const unsigned int      i_vec_reg_dst,
-                                         const unsigned int      i_masked) {
+                                         const unsigned int     i_vmove_instr,
+                                         const unsigned int     i_vec_reg_addr,
+                                         const unsigned int     i_vec_reg_offset,
+                                         const unsigned int     i_vec_reg_dst,
+                                         const unsigned int     i_masked) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -540,6 +531,7 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 #define RVV_SUI(i)  ((i == RVI(VSUXEI8_V))||(i == RVI(VSUXEI16_V))||(i == RVI(VSUXEI32_V))||(i == RVI(VSUXEI64_V)))
 #define RVV_SOI(i)  ((i == RVI(VSOXEI8_V))||(i == RVI(VSOXEI16_V))||(i == RVI(VSOXEI32_V))||(i == RVI(VSOXEI64_V)))
 #define RVV_I(i)    (RVV_LUI(i) || RVV_LOI(i) || RVV_SUI(i) || RVV_SOI(i))
+
   if ( (i_vmove_instr == LIBXSMM_RV64_INSTR_RVV_VL4RE32_V)  || (i_vmove_instr == LIBXSMM_RV64_INSTR_RVV_VS4R_V) ||
         (i_vmove_instr == LIBXSMM_RV64_INSTR_RVV_VL4RE64_V) ) {
     if ( !REG_VALID_2(i_vec_reg_addr, i_vec_reg_dst) ) {
@@ -595,13 +587,10 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 
       /* fix bits */
       code[code_head]  = i_vmove_instr;
-
       /* setting RS1 */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_addr, LIBXSMM_RV64_INSTR_FIELD_RS1);
-
       /* setting RD */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
       /* setting mask bit */
       code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RV64_INSTR_FIELD_VM);
 
@@ -635,16 +624,12 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 
       /* fix bits */
       code[code_head]  = i_vmove_instr;
-
       /* setting RS1 */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_addr, LIBXSMM_RV64_INSTR_FIELD_RS1);
-
       /* setting RD */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
       /* setting RS2 */
       code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_offset, LIBXSMM_RV64_INSTR_FIELD_RS2);
-
       /* setting mask bit */
       code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RV64_INSTR_FIELD_VM);
 
@@ -675,11 +660,11 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
 /* RVV compute instruction */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated_code,
-                                            const unsigned int     i_vec_instr,
-                                            const unsigned int     i_vec_reg_src_1,
-                                            const unsigned int     i_vec_reg_src_2,
-                                            const unsigned int     i_vec_reg_dst,
-                                            const unsigned int     i_masked) {
+                                            const unsigned int      i_vec_instr,
+                                            const unsigned int      i_vec_reg_src_1,
+                                            const unsigned int      i_vec_reg_src_2,
+                                            const unsigned int      i_vec_reg_dst,
+                                            const unsigned int      i_masked) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_compute: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -707,13 +692,10 @@ void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated
 
     /* setting RS1 */
     code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src_1, LIBXSMM_RV64_INSTR_FIELD_RS1);
-
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
     /* setting RS2 */
     code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src_2, LIBXSMM_RV64_INSTR_FIELD_RS2);
-
     /* setting mask bit */
     code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RV64_INSTR_FIELD_VM);
 
@@ -729,11 +711,11 @@ void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code*  io_generated_code,
-                                              const unsigned int     i_vec_instr,
-                                              const unsigned int     i_vec_reg_src,
-                                              const unsigned int     i_imm,
-                                              const unsigned int     i_reg_dst,
-                                              const unsigned int     i_masked) {
+                                               const unsigned int       i_vec_instr,
+                                               const unsigned int       i_vec_reg_src,
+                                               const unsigned int       i_imm,
+                                               const unsigned int       i_reg_dst,
+                                               const unsigned int       i_masked) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_compute_imm: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -767,13 +749,10 @@ void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gener
 
     /* setting RS1 */
     code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS1);
-
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
     /* setting IMM */
     code[code_head] |= (unsigned int)FILL_REGID(i_imm, LIBXSMM_RV64_INSTR_FIELD_SIMM5);
-
     /* setting mask bit */
     code[code_head] |= (unsigned int)FILL_REGID(i_masked, LIBXSMM_RV64_INSTR_FIELD_VM);
 
@@ -790,10 +769,10 @@ void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gener
 /* RV64 base ISA LD/ST */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_code,
-                                         const unsigned int       i_move_instr,
-                                         const unsigned int       i_gp_reg_addr,
-                                         const unsigned int       i_gp_reg_dst,
-                                         const int                i_offset ) {
+                                        const unsigned int      i_move_instr,
+                                        const unsigned int      i_gp_reg_addr,
+                                        const unsigned int      i_gp_reg_dst,
+                                        const int               i_offset ) {
   int is_load = 0;
 
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
@@ -859,13 +838,11 @@ void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_cod
     if (is_load) {
       /* setting RD */
       code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
-
       /* setting IMM */
       code[code_head] |= (unsigned int)FILL_REGID(i_offset, LIBXSMM_RV64_INSTR_FIELD_IMM12);
     } else {
       /* setting RS2 */
       code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RS2);
-
       /* setting IMM */
       code[code_head] |= (unsigned int)FILL_REGID((i_offset & 0x1f), LIBXSMM_RV64_INSTR_FIELD_IMM12LO);
       code[code_head] |= (unsigned int)FILL_REGID((i_offset >> 5), LIBXSMM_RV64_INSTR_FIELD_IMM12HI);
@@ -887,10 +864,10 @@ void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_cod
 /* RV64 base ISA R-type instructions */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_code,
-                                            const unsigned int      i_alu_instr,
-                                            const unsigned int      i_gp_reg_src_1,
-                                            const unsigned int      i_gp_reg_src_2,
-                                            const unsigned int      i_gp_reg_dst) {
+                                            const unsigned int     i_alu_instr,
+                                            const unsigned int     i_gp_reg_src_1,
+                                            const unsigned int     i_gp_reg_src_2,
+                                            const unsigned int     i_gp_reg_dst) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -999,10 +976,10 @@ void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_
 /* RV64 base ISA I-type instructions */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_alu_instr,
-                                                    const unsigned int      i_gp_reg_src,
-                                                    const unsigned int      i_gp_reg_dst,
-                                                    const int               i_imm12 ) {
+                                                 const unsigned int      i_alu_instr,
+                                                 const unsigned int      i_gp_reg_src,
+                                                 const unsigned int      i_gp_reg_dst,
+                                                 const int               i_imm12 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm12: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1081,9 +1058,9 @@ void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_gene
 /* RV64 base ISA U-type instructions */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_alu_instr,
-                                                    const unsigned int      i_gp_reg_dst,
-                                                    const unsigned int      i_imm20 ) {
+                                                 const unsigned int      i_alu_instr,
+                                                 const unsigned int      i_gp_reg_dst,
+                                                 const unsigned int      i_imm20 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm20: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1143,8 +1120,8 @@ void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_gene
 /* RV64 base ISA U-type instructions */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_dst,
-                                               const int               i_imm12 )
+                                              const unsigned int      i_gp_reg_dst,
+                                              const int               i_imm12 )
 {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_move_imm12: at least RV64 needs to be specified as target arch!\n");
@@ -1174,8 +1151,8 @@ void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generat
 /* RV64 base ISA U-type instructions */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm20 ) {
+                                              const unsigned int      i_gp_reg_dst,
+                                              const unsigned int      i_imm20 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm20: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1205,7 +1182,6 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
   /* Clear left most bits */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
     LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 44);
-
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
     LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 44);
 }
@@ -1213,8 +1189,8 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
 /* Auxilary instruction */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm32 ) {
+                                              const unsigned int      i_gp_reg_dst,
+                                              const unsigned int      i_imm32 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_move_imm32: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1227,48 +1203,47 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
     return;
   }
 
-  if ( i_imm32 > 0xffffffff ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_alu_move_imm20: unexpected imm: %u\n", i_imm32);
-    LIBXSMM_EXIT_ERROR(io_generated_code);
-    return;
+#define BIT_WIDTH (11)
+#define BIT_LEFT  (10)
+#define BIT_SFT   (53)
+
+  imm_mask = 0xffe0000000000000;
+
+  for (i_11 = 0; i_11 < 2; i_11++) {
+    /* Get next 11 bits of immediate to LSB */
+    imm_11 = (i_imm64 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
+
+    imm_mask >>= BIT_WIDTH;
+
+    /* Shift and add immediate to dst */
+    libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+        LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_WIDTH);
+
+    libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+        LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
   }
 
-  if (i_imm32 <= 0xfff) {
-    libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, i_imm32 );
-  } else if ( i_imm32 <= 0xfffff ){
-    libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, i_imm32 );
-  } else {
-#define IMM_12_1 (0xfff)
-#define IMM_20_1 (0xfffff000)
+  /* Get remaining 10 bits of immediate to LSB */
+  imm_mask = 0x3ff;
+  imm_11 = (i_imm64 & imm_mask);
 
-   unsigned long imm_12_1 = (i_imm32 & IMM_12_1);
-   unsigned long imm_20_1 = ((i_imm32 & IMM_20_1) >> 12);
-
-   /* LUI 20 bits */
-   libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
-       LIBXSMM_RV64_INSTR_GP_LUI, i_gp_reg_dst, imm_20_1);
-
-   /* ADD 12 bits */
-   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-       LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_1);
-
-#undef IMM_12_1
-#undef IMM_20_1
-  }
-
-  /* Clear left most bits */
+  /* Shift and add immediate to dst */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-    LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
+      LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_LEFT);
 
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-    LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 32);
+      LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
+
+#undef BIT_WIDTH
+#undef BIT_LEFT
+#undef BIT_SFT
 }
 
 /* 64 bit immediate move using addi, lui, and shift instructions. */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
-                                              const unsigned int      i_gp_reg_dst,
-                                              const unsigned long long i_imm64 ) {
+                                             const unsigned int       i_gp_reg_dst,
+                                             const unsigned long long i_imm64 ) {
   unsigned long imm_mask = 0xffe0000000000000;
   unsigned int imm_11;
   int i_11;
@@ -1285,74 +1260,35 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
     return;
   }
 
-#if 0
-  if (i_imm64 <= 0x7ff) {
-    libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
-  } else if ( i_imm64 <= 0xfffff ){
-    libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, (int)i_imm64 );
-  } else if ( i_imm64 <= 0xffffffff) {
-    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
-  } else {
-#define IMM_20_2 (0xfffff00000000000)
-#define IMM_12_2 (0xfff00000000)
-
-    unsigned int imm_12_2 = ((i_imm64 & IMM_12_2) >> 32);
-    unsigned int imm_20_2 = ((i_imm64 & IMM_20_2) >> 44);
-
-    /* LUI 20 bits */
-    libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
-        LIBXSMM_RV64_INSTR_GP_LUI, i_gp_reg_dst, imm_20_2);
-
-    printf("Adding 12 bit for imm 64 %d\n", imm_12_2);
-
-    /* ADD 12 bits */
-    libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-        LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_12_2);
-
-#undef IMM_20_2
-#undef IMM_12_2
-
-    /* SHIFT Left */
-    libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-        LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 32);
-
-#define IMM_32 (0x00000000ffffffff)
-
-    libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_gp_reg_dst, LIBXSMM_RV64_GP_REG_X12,
-        i_gp_reg_dst, i_imm64 & IMM_32 );
-
-#undef IMM_32
-  }
-#endif
-
 #define BIT_WIDTH (11)
 #define BIT_LEFT  (9)
 #define BIT_SFT   (53)
 
-    imm_mask = 0xffe0000000000000;
-    for (i_11 = 0; i_11 < 5; i_11++) {
-      /* Get next 11 bits of immediate to LSB */
-      imm_11 = (i_imm64 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
+  imm_mask = 0xffe0000000000000;
 
-      imm_mask >>= BIT_WIDTH;
+  for (i_11 = 0; i_11 < 5; i_11++) {
+    /* Get next 11 bits of immediate to LSB */
+    imm_11 = (i_imm64 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
 
-      /* Shift and add immediate to dst */
-      libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-          LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_WIDTH);
-
-      libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-        LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
-    }
-
-    /* Get remaining 9 bits of immediate to LSB */
-    imm_mask = 0x1ff;
-    imm_11 = (i_imm64 & imm_mask);
+    imm_mask >>= BIT_WIDTH;
 
     /* Shift and add immediate to dst */
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-        LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_LEFT);
+        LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_WIDTH);
 
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+        LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
+  }
+
+  /* Get remaining 9 bits of immediate to LSB */
+  imm_mask = 0x1ff;
+  imm_11 = (i_imm64 & imm_mask);
+
+  /* Shift and add immediate to dst */
+  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+      LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_LEFT);
+
+  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
       LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
 
 #undef BIT_WIDTH
@@ -1363,11 +1299,11 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
 /* 64-bit compute with immediate uses 64-bit move and alu instructions. */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_generated_code,
-                                                  const unsigned int       i_alu_meta_instr,
-                                                  const unsigned int       i_gp_reg_src,
-                                                  const unsigned int       i_gp_reg_tmp,
-                                                  const unsigned int       i_gp_reg_dst,
-                                                  const long long          i_imm64 ) {
+                                                  const unsigned int      i_alu_meta_instr,
+                                                  const unsigned int      i_gp_reg_src,
+                                                  const unsigned int      i_gp_reg_tmp,
+                                                  const unsigned int      i_gp_reg_dst,
+                                                  const long long         i_imm64 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1380,38 +1316,21 @@ void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_gen
     return;
   }
 
-#if 0
-  if (i_imm64 <= 0xfff) {
-    libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, i_alu_meta_instr, i_gp_reg_tmp, i_gp_reg_dst, i_imm64 );
-  } else if (i_imm64 <= 0xfffff){
-    libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_tmp, i_imm64 );
+  /* move imm64 into the temp register */
+  libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, i_imm64 );
 
-    /* reg-reg instruction */
-    libxsmm_rv64_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
-                                         i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst);
-  } else {
-#endif
-  {
-    /* move imm64 into the temp register */
-    libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, i_imm64 );
-
-    /* reg-reg instruction */
-    libxsmm_rv64_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
-                                         i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst);
-  }
+  /* reg-reg instruction */
+  libxsmm_rv64_instruction_alu_compute( io_generated_code, i_alu_meta_instr,
+      i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst);
 }
 
 /* Conditional jump instructions. */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_code,
-                                          const unsigned int      i_jmp_instr,
-                                          const unsigned int      i_gp_reg_src_1,
-                                          const unsigned int      i_gp_reg_src_2,
-                                          const int               i_imm ) {
-#if 0
-  printf("Received imm for jmp = %d %d\n", i_imm, (abs(i_imm) > 0x7ff));
-  fflush(stdout);
-#endif
+                                          const unsigned int     i_jmp_instr,
+                                          const unsigned int     i_gp_reg_src_1,
+                                          const unsigned int     i_gp_reg_src_2,
+                                          const int              i_imm ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1465,9 +1384,6 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
         i_sign = 1;
         a_imm = (~abs(i_imm) + 1) & 0x7ff;
       }
-#if 0
-      printf("Jump immediate %d %x\n", a_imm, a_imm);
-#endif
 
       /* Generate immediate */
       imm_lo = ((a_imm >> 10) & 0x1) | ((a_imm & 0xf) << 1);
@@ -1498,9 +1414,9 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
 /* RV64 Base UJ-type instructions. */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generated_code,
-                                     const unsigned int i_jmp_instr,
-                                     const unsigned int i_gp_reg_dst,
-                                     const int          i_imm ) {
+                                             const unsigned int      i_jmp_instr,
+                                             const unsigned int      i_gp_reg_dst,
+                                             const int               i_imm ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_jump_and_link: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1578,10 +1494,10 @@ void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generate
 /* RV64 Base uncontional jump instructions. */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_jmp_instr,
-                                              const unsigned int      i_gp_reg_dst,
-                                              const unsigned int      i_gp_reg_src_1,
-                                              const int               i_imm12 ) {
+                                                 const unsigned int      i_jmp_instr,
+                                                 const unsigned int      i_gp_reg_dst,
+                                                 const unsigned int      i_gp_reg_src_1,
+                                                 const int               i_imm12 ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_jump_and_link_reg: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1640,8 +1556,8 @@ void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_gene
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
-                                                    const unsigned int          i_label_no,
-                                                    libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+                                                   const unsigned int          i_label_no,
+                                                   libxsmm_jump_label_tracker* io_jump_label_tracker ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1678,7 +1594,7 @@ void libxsmm_rv64_instruction_register_jump_label( libxsmm_generated_code*     i
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io_generated_code,
+void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*      io_generated_code,
                                                    const unsigned int          i_jmp_instr,
                                                    const unsigned int          i_gp_reg_src_1,
                                                    const unsigned int          i_gp_reg_src_2,
@@ -1750,7 +1666,6 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io
 
     /* TODO: remove devision here and move to the jump */
     libxsmm_rv64_instruction_cond_jump(io_generated_code, i_jmp_instr,
-        /*i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm );*/
         i_gp_reg_src_1, i_gp_reg_src_2, l_jmp_imm/2 );
 
     /* advance code head */
@@ -1765,7 +1680,7 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
-                                                           libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+                                                        libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_back_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1782,12 +1697,6 @@ void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code* 
     int l_lab = io_loop_label_tracker->label_count;
     io_loop_label_tracker->label_count++;
     io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
-#if 0
-    printf("Added a new label\n");
-    printf("Label count %d\n", io_loop_label_tracker->label_count);
-    printf("Label address %d\n", io_loop_label_tracker->label_address[l_lab]);
-    fflush(stdout);
-#endif
   } else {
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
@@ -1798,10 +1707,10 @@ void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code* 
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
-                                                          const unsigned int          i_jmp_instr,
-                                                          const unsigned int          i_gp_reg_src_1,
-                                                          const unsigned int          i_gp_reg_src_2,
-                                                          libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+                                                       const unsigned int          i_jmp_instr,
+                                                       const unsigned int          i_gp_reg_src_1,
+                                                       const unsigned int          i_gp_reg_src_2,
+                                                       libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump_back_to_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);

@@ -6,7 +6,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
+/* Siddharth Rai, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_mateltwise_transform_rv64.h"
 #include "generator_common_rv64.h"

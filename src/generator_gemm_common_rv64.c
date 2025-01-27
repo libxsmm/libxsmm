@@ -7,7 +7,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer (Univ. Jena), Alexander Heinecke, Evangelos Georganas (Intel Corp.)
+/* Siddharth Rai, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_gemm_common.h"
 #include "generator_rv64_instructions.h"
@@ -16,11 +16,6 @@
 #include "generator_mateltwise_unary_binary_rv64.h"
 #include "generator_common_rv64.h"
 #include "generator_mateltwise_rv64.h"
-
-#if 0
-#include "generator_mateltwise_transform_common.h"
-#include "generator_mateltwise_transform_rv64_rvv.h"
-#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_getval_stack_var_rv64( libxsmm_generated_code* io_generated_code,
@@ -37,25 +32,27 @@ void libxsmm_generator_gemm_getval_stack_var_rv64( libxsmm_generated_code* io_ge
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_setval_stack_var_rv64( libxsmm_generated_code*             io_generated_code,
-                                                      libxsmm_gemm_stack_var              stack_var,
-                                                      unsigned int                        i_aux_reg,
-                                                      unsigned int                        i_gp_reg ) {
+void libxsmm_generator_gemm_setval_stack_var_rv64( libxsmm_generated_code*  io_generated_code,
+                                                   libxsmm_gemm_stack_var   stack_var,
+                                                   unsigned int             i_aux_reg,
+                                                   unsigned int             i_gp_reg ) {
   int offset = libxsmm_generator_gemm_get_rbp_relative_offset(stack_var);
   /* make sure we requested to set  a legal stack var */
   if (offset >= 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
+
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, i_aux_reg, -1 * offset );
   libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SW, i_aux_reg, i_gp_reg, 0 );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars_rv64( libxsmm_generated_code*            io_generated_code,
-    const libxsmm_gemm_descriptor*      i_xgemm_desc,
-    libxsmm_micro_kernel_config*        i_micro_kernel_config,
-    const libxsmm_gp_reg_mapping*       i_gp_reg_mapping ) {
+void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars_rv64(
+    libxsmm_generated_code*         io_generated_code,
+    const libxsmm_gemm_descriptor*  i_xgemm_desc,
+    libxsmm_micro_kernel_config*    i_micro_kernel_config,
+    const libxsmm_gp_reg_mapping*   i_gp_reg_mapping ) {
   int is_stride_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
   int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
@@ -144,7 +141,8 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars_rv64( lib
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64(
+    libxsmm_generated_code*             io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
     libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
@@ -217,14 +215,12 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64( libxsmm_gen
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_setup_stack_frame_rv64( libxsmm_generated_code*            io_generated_code,
-    const libxsmm_gemm_descriptor*      i_xgemm_desc,
-    const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-    libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
+void libxsmm_generator_gemm_setup_stack_frame_rv64(
+    libxsmm_generated_code*         io_generated_code,
+    const libxsmm_gemm_descriptor*  i_xgemm_desc,
+    const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+    libxsmm_micro_kernel_config*    i_micro_kernel_config ) {
   unsigned int temp_reg = i_gp_reg_mapping->gp_reg_help_1;
-#if 0
-  unsigned int temp_reg2 = i_gp_reg_mapping->gp_reg_help_0;
-#endif
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_X27, 0 );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_XSP, -192 );
 
@@ -259,17 +255,6 @@ void libxsmm_generator_gemm_setup_stack_frame_rv64( libxsmm_generated_code*     
       libxsmm_generator_gemm_setval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_INT8_SCF, temp_reg, i_gp_reg_mapping->gp_reg_scf );
     }
   }
-
-#if 0
-  /* Now align RSP to 64 byte boundary */
-  libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, temp_reg2, 0 );
-  libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_AND, temp_reg2, temp_reg, temp_reg2 );
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, temp_reg2, LIBXSMM_RV64_GP_REG_XSP, 0 );
-
-  /* Now alllocate in stack required GEMM scratch if necessary*/
-  libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, i_micro_kernel_config );
-#endif
 
   /* The stack at exit of setup looks like this:
    *
@@ -308,8 +293,8 @@ void libxsmm_generator_gemm_destroy_stack_frame_rv64( libxsmm_generated_code* io
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                              const unsigned int             i_arch,
-                                                              const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+                                                           const unsigned int             i_arch,
+                                                           const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
   libxsmm_generator_gemm_setup_fusion_microkernel_properties(i_xgemm_desc, io_micro_kernel_config);
   if ( i_arch == LIBXSMM_RV64 ) {
@@ -369,8 +354,8 @@ void libxsmm_generator_gemm_init_micro_kernel_config_rv64( libxsmm_micro_kernel_
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_rv64_get_max_n_blocking( const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                                const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                                const unsigned int                  i_arch ) {
+                                                              const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                              const unsigned int                  i_arch ) {
   LIBXSMM_UNUSED( i_micro_kernel_config );
   LIBXSMM_UNUSED( i_xgemm_desc );
 
@@ -384,8 +369,8 @@ unsigned int libxsmm_generator_gemm_rv64_get_max_n_blocking( const libxsmm_micro
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_rv64_get_initial_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                                    const unsigned int              i_arch ) {
+                                                                 const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                                 const unsigned int              i_arch ) {
   unsigned int l_m_blocking = 1;
 
   if ( ( i_arch == LIBXSMM_RV64 ) && ( ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
@@ -536,11 +521,11 @@ void libxsmm_generator_gemm_rv64_setup_n_blocking( libxsmm_generated_code*      
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_rv64_setup_k_strides( libxsmm_generated_code*            io_generated_code,
-                                                     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                     const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                     const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                     const unsigned int                 i_m_blocking,
-                                                     const unsigned int                 i_n_blocking ) {
+                                                  const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                  const unsigned int                 i_m_blocking,
+                                                  const unsigned int                 i_n_blocking ) {
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
   /* register blocking counter in n */
@@ -576,23 +561,6 @@ void libxsmm_generator_gemm_rv64_setup_k_strides( libxsmm_generated_code*       
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
   }
-
-  /* load b offsets */
-#if 0
-  if ( io_generated_code->arch == LIBXSMM_RV64 ) {
-    if ( i_n_blocking < 7 ) {
-      for ( l_n = 1; l_n < i_n_blocking; l_n++ ) {
-        /* handle trans B */
-        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-          l_b_offset = l_n * i_micro_kernel_config->datatype_size_in;
-        } else {
-          l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size_in;
-        }
-        libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 + (l_n - 1), l_b_offset );
-      }
-    }
-  }
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -662,15 +630,15 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_rv64(  libxsmm_generated_cod
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated_code*     io_generated_code,
-                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                              const unsigned int              i_gp_reg_addr,
-                                                              const unsigned int              i_gp_reg_scratch0,
-                                                              const unsigned int              i_vec_length,
-                                                              const unsigned int              i_vec_reg_count,
-                                                              libxsmm_datatype                colbias_precision,
-                                                              const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_ld ) {
+                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                               const unsigned int              i_gp_reg_addr,
+                                                               const unsigned int              i_gp_reg_scratch0,
+                                                               const unsigned int              i_vec_length,
+                                                               const unsigned int              i_vec_reg_count,
+                                                               libxsmm_datatype                colbias_precision,
+                                                               const unsigned int              i_m_blocking,
+                                                               const unsigned int              i_n_blocking,
+                                                               const unsigned int              i_ld ) {
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */

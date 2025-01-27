@@ -7,7 +7,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer, Antonio Noack (FSU Jena), Alexander Heinecke (Intel Corp.)
+/* Siddharth Rai, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_RV64_INSTRUCTIONS_H
@@ -2003,7 +2003,7 @@ static const int db_bpos[32] = { 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15,
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
-                                              const unsigned short    i_callee_save_bitmask );
+                                           const unsigned short    i_callee_save_bitmask );
 
 /**
  * Closes the inline assembly section / jit stream
@@ -2015,32 +2015,11 @@ void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated_code,
-                                               const unsigned short    i_callee_save_bitmask );
+                                            const unsigned short    i_callee_save_bitmask );
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
-                                               const unsigned short    i_callee_save_bitmask );
-
-#if 0
-LIBXSMM_API_INTERN
-void libxsmm_rv64_instruction_close_data( libxsmm_generated_code*     io_generated_code,
-                                             libxsmm_const_data_tracker* io_const_data );
-
-LIBXSMM_API_INTERN
-void libxsmm_rv64_instruction_adr_data( libxsmm_generated_code*     io_generated_code,
-                                           unsigned int                i_reg,
-                                           unsigned int                i_off,
-                                           libxsmm_const_data_tracker* io_const_data );
-
-LIBXSMM_API_INTERN
-unsigned int libxsmm_rv64_instruction_add_data( libxsmm_generated_code*     io_generated_code,
-                                                   const unsigned char*        i_data,
-                                                   unsigned int                i_ndata_bytes,
-                                                   unsigned int                i_alignment,
-                                                   unsigned int                i_append_only,
-                                                   libxsmm_const_data_tracker* io_const_data );
-#endif
-
+                                            const unsigned short    i_callee_save_bitmask );
 
 /**
  * Generates vector lenght instructions for structs
@@ -2053,10 +2032,10 @@ unsigned int libxsmm_rv64_instruction_add_data( libxsmm_generated_code*     io_g
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_setvli( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_gp_reg_src,
-                                           const unsigned int      i_reg_dst,
-                                           const unsigned int      i_sew,
-                                           const unsigned int      i_lmul );
+                                           const unsigned int     i_gp_reg_src,
+                                           const unsigned int     i_reg_dst,
+                                           const unsigned int     i_sew,
+                                           const unsigned int     i_lmul );
 
 /**
  * Generates vector lenght instructions for structs
@@ -2084,9 +2063,9 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_setvl( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int      i_gp_reg_src_1,
-                                           const unsigned int      i_gp_reg_src_2,
-                                           const unsigned int      i_reg_dst);
+                                         const unsigned int      i_gp_reg_src_1,
+                                         const unsigned int      i_gp_reg_src_2,
+                                         const unsigned int      i_reg_dst);
 
 
 /**
@@ -2100,11 +2079,11 @@ void libxsmm_rv64_instruction_rvv_setvl( libxsmm_generated_code* io_generated_co
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_code,
-                                         const unsigned int      i_vmove_instr,
-                                         const unsigned int      i_vec_reg_addr,
-                                         const unsigned int      i_vec_reg_offset,
-                                         const unsigned int      i_vec_reg_dst,
-                                         const unsigned int      i_masked);
+                                         const unsigned int     i_vmove_instr,
+                                         const unsigned int     i_vec_reg_addr,
+                                         const unsigned int     i_vec_reg_offset,
+                                         const unsigned int     i_vec_reg_dst,
+                                         const unsigned int     i_masked);
 
 
 /**
@@ -2119,11 +2098,11 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated_code,
-                                            const unsigned int     i_vec_instr,
-                                            const unsigned int     i_vec_reg_src_1,
-                                            const unsigned int     i_vec_reg_src_2,
-                                            const unsigned int     i_vec_reg_dst,
-                                            const unsigned int     i_masked);
+                                            const unsigned int      i_vec_instr,
+                                            const unsigned int      i_vec_reg_src_1,
+                                            const unsigned int      i_vec_reg_src_2,
+                                            const unsigned int      i_vec_reg_dst,
+                                            const unsigned int      i_masked);
 
 /**
  * Generates compute with immediate
@@ -2137,11 +2116,11 @@ void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code* io_generated_code,
-                                                const unsigned int      i_vec_instr,
-                                                const unsigned int      i_vec_reg_src_1,
-                                                const unsigned int      i_imm,
-                                                const unsigned int      i_vec_reg_dst,
-                                                const unsigned int      i_masked);
+                                                const unsigned int     i_vec_instr,
+                                                const unsigned int     i_vec_reg_src_1,
+                                                const unsigned int     i_imm,
+                                                const unsigned int     i_vec_reg_dst,
+                                                const unsigned int     i_masked);
 
 /**
  * Generates alu memory movements like ldr, str,
@@ -2183,8 +2162,8 @@ void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generat
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm20 );
+                                               const unsigned int     i_gp_reg_dst,
+                                               const unsigned int     i_imm20 );
 
 
 /**
@@ -2197,8 +2176,8 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_dst,
-                                               const unsigned int      i_imm32 );
+                                               const unsigned int     i_gp_reg_dst,
+                                               const unsigned int     i_imm32 );
 
 /**
  * Generates a sequence of instructions to load a int64 into a GPR
@@ -2224,10 +2203,10 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_alu_instr,
-                                                    const unsigned int      i_gp_reg_src_1,
-                                                    const unsigned int      i_gp_reg_src_2,
-                                                    const unsigned int      i_gp_reg_dst);
+                                                    const unsigned int i_alu_instr,
+                                                    const unsigned int i_gp_reg_src_1,
+                                                    const unsigned int i_gp_reg_src_2,
+                                                    const unsigned int i_gp_reg_dst);
 
 /**
  * Generate compute with immediate
@@ -2241,10 +2220,10 @@ void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_alu_instr,
-                                                    const unsigned int      i_gp_reg_src,
-                                                    const unsigned int      i_gp_reg_dst,
-                                                    const int               i_imm12 );
+                                                    const unsigned int   i_alu_instr,
+                                                    const unsigned int   i_gp_reg_src,
+                                                    const unsigned int   i_gp_reg_dst,
+                                                    const int            i_imm12 );
 
 /**
  * Generates a sequence of compute with intermediates
@@ -2256,9 +2235,9 @@ void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_gene
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_alu_instr,
-                                                    const unsigned int      i_gp_reg_dst,
-                                                    const unsigned int      i_imm20 );
+                                                    const unsigned int   i_alu_instr,
+                                                    const unsigned int   i_gp_reg_dst,
+                                                    const unsigned int   i_imm20 );
 
 /**
  * Generates an optimal sequence of adding up to a 64bit imm to a GPR
@@ -2272,11 +2251,11 @@ void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_gene
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_generated_code,
-                                                  const unsigned int       i_alu_meta_instr,
-                                                  const unsigned int       i_gp_reg_src,
-                                                  const unsigned int       i_gp_reg_tmp,
-                                                  const unsigned int       i_gp_reg_dst,
-                                                  const long long          i_imm64 );
+                                                  const unsigned int      i_alu_meta_instr,
+                                                  const unsigned int      i_gp_reg_src,
+                                                  const unsigned int      i_gp_reg_tmp,
+                                                  const unsigned int      i_gp_reg_dst,
+                                                  const long long         i_imm64 );
 
 /**
  * Generates conditional branch
@@ -2289,10 +2268,10 @@ void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_gen
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_code,
-                                          const unsigned int      i_jmp_instr,
-                                          const unsigned int      i_gp_src_1,
-                                          const unsigned int      i_gp_src_2,
-                                          const int               i_imm );
+                                          const unsigned int     i_jmp_instr,
+                                          const unsigned int     i_gp_src_1,
+                                          const unsigned int     i_gp_src_2,
+                                          const int              i_imm );
 
 /**
  * Generates jump and link
@@ -2304,9 +2283,9 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generated_code,
-                                     const unsigned int      i_jmp_instr,
-                                     const unsigned int      i_gp_reg_dst,
-                                     const int               i_imm );
+                                             const unsigned int      i_jmp_instr,
+                                             const unsigned int      i_gp_reg_dst,
+                                             const int               i_imm );
 
 
 /**
@@ -2320,27 +2299,10 @@ void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generate
  */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_jmp_instr,
-                                              const unsigned int      i_gp_reg_dst,
-                                              const unsigned int      i_gp_reg_src_1,
-                                              const int               i_imm12 );
-#if 0
-/**
- * Generates jump and link instruction with register
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_jmp_instr actual jmp instruction
- * @param i_gp_reg_dst link register for return address
- * @param i_gp_reg_src_1 address register
- * @param i_imm 12 bit immediate
- */
-LIBXSMM_API_INTERN
-void libxsmm_rv64_instruction_register_jump( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_jmp_instr,
-                                              const unsigned int      i_gp_reg_dst,
-                                              const unsigned int      i_gp_reg_src_1,
-                                              const unsigned int      i_imm12 );
-#endif
+                                                 const unsigned int      i_jmp_instr,
+                                                 const unsigned int      i_gp_reg_dst,
+                                                 const unsigned int      i_gp_reg_src_1,
+                                                 const int               i_imm12 );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
@@ -2350,7 +2312,7 @@ void libxsmm_rv64_instruction_register_jump( libxsmm_generated_code* io_generate
 */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
-                                                           libxsmm_loop_label_tracker* io_loop_label_tracker );
+                                                        libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
  * Pops the latest from the loop label stack and jumps there based on the condition
@@ -2362,10 +2324,10 @@ void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code* 
 */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
-                                                          const unsigned int          i_jmp_instr,
-                                                          const unsigned int          i_gp_reg_src_1,
-                                                          const unsigned int          i_gp_reg_src_2,
-                                                          libxsmm_loop_label_tracker* io_loop_label_tracker );
+                                                       const unsigned int          i_jmp_instr,
+                                                       const unsigned int          i_gp_reg_src_1,
+                                                       const unsigned int          i_gp_reg_src_2,
+                                                       libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
@@ -2376,8 +2338,8 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
 */
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
-                                                      const unsigned int          i_label_no,
-                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
+                                                   const unsigned int          i_label_no,
+                                                   libxsmm_jump_label_tracker* io_jump_label_tracker );
 
 /**
  * Jumps to the address/label stored a specific position
@@ -2391,10 +2353,10 @@ void libxsmm_rv64_instruction_register_jump_label( libxsmm_generated_code*     i
 
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io_generated_code,
-                                                     const unsigned int          i_jmp_instr,
-                                                     const unsigned int          i_gp_reg_src_1,
-                                                     const unsigned int          i_gp_reg_stc_2,
-                                                     const unsigned int          i_label_no,
-                                                     libxsmm_jump_label_tracker* io_jump_label_tracker );
+                                                  const unsigned int          i_jmp_instr,
+                                                  const unsigned int          i_gp_reg_src_1,
+                                                  const unsigned int          i_gp_reg_stc_2,
+                                                  const unsigned int          i_label_no,
+                                                  libxsmm_jump_label_tracker* io_jump_label_tracker );
 
 #endif /* GENERATOR_RV64_INSTRUCTIONS_H */
