@@ -1264,40 +1264,48 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
     return;
   }
 
+  if (i_imm64 <= 0x7ff) {
+    libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
+  } else if ( i_imm64 <= 0xfffff ){
+    libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
+  } else if ( i_imm64 <= 0xffffffff) {
+    libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
+  } else {
 #define BIT_WIDTH (11)
 #define BIT_LEFT  (9)
 #define BIT_SFT   (53)
 
-  imm_mask = 0xffe0000000000000;
+    imm_mask = 0xffe0000000000000;
 
-  for (i_11 = 0; i_11 < 5; i_11++) {
-    /* Get next 11 bits of immediate to LSB */
-    imm_11 = (i_imm64 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
+    for (i_11 = 0; i_11 < 5; i_11++) {
+      /* Get next 11 bits of immediate to LSB */
+      imm_11 = (i_imm64 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
 
-    imm_mask >>= BIT_WIDTH;
+      imm_mask >>= BIT_WIDTH;
+
+      /* Shift and add immediate to dst */
+      libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+          LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_WIDTH);
+
+      libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
+          LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
+    }
+
+    /* Get remaining 9 bits of immediate to LSB */
+    imm_mask = 0x1ff;
+    imm_11 = (i_imm64 & imm_mask);
 
     /* Shift and add immediate to dst */
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-        LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_WIDTH);
+        LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_LEFT);
 
     libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
         LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
-  }
-
-  /* Get remaining 9 bits of immediate to LSB */
-  imm_mask = 0x1ff;
-  imm_11 = (i_imm64 & imm_mask);
-
-  /* Shift and add immediate to dst */
-  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-      LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, BIT_LEFT);
-
-  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-      LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_dst, i_gp_reg_dst, imm_11);
 
 #undef BIT_WIDTH
 #undef BIT_LEFT
 #undef BIT_SFT
+  }
 }
 
 /* 64-bit compute with immediate uses 64-bit move and alu instructions. */
