@@ -1191,6 +1191,10 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_imm32 ) {
+  unsigned int imm_mask = 0xffe00000;
+  unsigned int imm_11;
+  int i_11;
+
   if ( io_generated_code->arch < LIBXSMM_RV64 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_move_imm32: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -1207,11 +1211,11 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
 #define BIT_LEFT  (10)
 #define BIT_SFT   (53)
 
-  imm_mask = 0xffe0000000000000;
+  imm_mask = 0xffe00000;
 
   for (i_11 = 0; i_11 < 2; i_11++) {
     /* Get next 11 bits of immediate to LSB */
-    imm_11 = (i_imm64 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
+    imm_11 = (i_imm32 & imm_mask) >> (BIT_SFT - (BIT_WIDTH * i_11));
 
     imm_mask >>= BIT_WIDTH;
 
@@ -1225,7 +1229,7 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
 
   /* Get remaining 10 bits of immediate to LSB */
   imm_mask = 0x3ff;
-  imm_11 = (i_imm64 & imm_mask);
+  imm_11 = (i_imm32 & imm_mask);
 
   /* Shift and add immediate to dst */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
