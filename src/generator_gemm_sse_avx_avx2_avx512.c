@@ -1506,6 +1506,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
     if ( ( (i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
       return 28;
     }
+    if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) {
+      return 28;
+    }
     return 30;
   } else if ( i_arch >= LIBXSMM_X86_AVX512_SKX && i_arch <= LIBXSMM_X86_ALLFEAT) {
     /* handle int16 on SKX */
@@ -1535,6 +1538,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
       return 28;
     }
     if ( ( (i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
+      return 28;
+    }
+    if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) {
       return 28;
     }
     return 30;

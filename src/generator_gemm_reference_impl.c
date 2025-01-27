@@ -104,6 +104,9 @@ typedef struct libxsmm_gemm_def {
   /* c_scratch for fusion */
   void *c_scratch;
   void *c_vnni_scratch;
+
+  /* dynamic LD */
+  unsigned int is_dynld;
 } libxsmm_gemm_def;
 
 typedef struct libxsmm_fusion_args {
@@ -447,8 +450,22 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
     }
   } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
     l_br_type = 3;
-    l_gemm_def.stride_a = i_xgemm_desc->c1/LIBXSMM_TYPESIZE(l_dtype_a);
-    l_gemm_def.stride_b = i_xgemm_desc->c2/LIBXSMM_TYPESIZE(l_dtype_b);
+    if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) {
+      long long l_dyn_stride_a = 0;
+      long long l_dyn_stride_b = 0;
+      if (gemm_param_ext == NULL) {
+        l_dyn_stride_a = *((long long*)gemm_param->a.secondary);
+        l_dyn_stride_b = *((long long*)gemm_param->b.secondary);
+      } else {
+        l_dyn_stride_a = *((long long*)gemm_param_ext->a.secondary);
+        l_dyn_stride_b = *((long long*)gemm_param_ext->b.secondary);
+      }
+      l_gemm_def.stride_a = l_dyn_stride_a/LIBXSMM_TYPESIZE(l_dtype_a);
+      l_gemm_def.stride_b = l_dyn_stride_b/LIBXSMM_TYPESIZE(l_dtype_b);
+    } else {
+      l_gemm_def.stride_a = i_xgemm_desc->c1/LIBXSMM_TYPESIZE(l_dtype_a);
+      l_gemm_def.stride_b = i_xgemm_desc->c2/LIBXSMM_TYPESIZE(l_dtype_b);
+    }
     if (l_gemm_def.is_Ai4Bi8_gemm > 0) {
       if (gemm_param_ext == NULL) {
         l_gemm_def.zpt_u8 = (unsigned char*)gemm_param->a.quaternary;
@@ -537,9 +554,27 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   l_gemm_def.m = l_m;
   l_gemm_def.n = l_n;
   l_gemm_def.k = l_k;
-  l_gemm_def.lda = l_lda;
-  l_gemm_def.ldb = l_ldb;
-  l_gemm_def.ldc = l_ldc;
+  if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) {
+    long long l_dyn_lda = 0;
+    long long l_dyn_ldb = 0;
+    long long l_dyn_ldc = 0;
+    if (gemm_param_ext == NULL) {
+      l_dyn_lda = *((long long*)gemm_param->a.quinary);
+      l_dyn_ldb = *((long long*)gemm_param->b.quinary);
+      l_dyn_ldc = *((long long*)gemm_param->c.quinary);
+    } else {
+      l_dyn_lda = *((long long*)gemm_param_ext->a.quinary);
+      l_dyn_ldb = *((long long*)gemm_param_ext->b.quinary);
+      l_dyn_ldc = *((long long*)gemm_param_ext->c.quinary);
+    }
+    l_gemm_def.lda = (libxsmm_blasint)l_dyn_lda;
+    l_gemm_def.ldb = (libxsmm_blasint)l_dyn_ldb;
+    l_gemm_def.ldc = (libxsmm_blasint)l_dyn_ldc;
+  } else {
+    l_gemm_def.lda = l_lda;
+    l_gemm_def.ldb = l_ldb;
+    l_gemm_def.ldc = l_ldc;
+  }
   l_gemm_def.a_type = l_dtype_a;
   l_gemm_def.b_type = l_dtype_b;
   l_gemm_def.comp_type = l_dtype_comp;

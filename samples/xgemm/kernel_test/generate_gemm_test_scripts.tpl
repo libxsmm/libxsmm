@@ -15,7 +15,7 @@ PREC=PRECDESC
 
 for BINARY_POSTOP in 0 1; do
   for UNARY_POSTOP in 0 1 2 3; do
-    for LD in 'eqld' 'gtld'; do
+    for LD in 'eqld' 'gtld' 'dyneqld' 'dyngtld'; do
       for AVNNI in 0 1; do
         for BVNNI in 0 1; do
           for CVNNI in 0 1; do
@@ -46,6 +46,16 @@ for BINARY_POSTOP in 0 1; do
 
                   if [[ ("$BINARY_POSTOP" == '0'  &&  "$UNARY_POSTOP" == '0') ]]; then
                     NOFUSION=1
+                  fi
+
+                  # TODO for now we are skipping several cases for dynld as we don't even handle them in reference code
+                  if [[ ("$LD" == 'dyneqld' || "$LD" == 'dyngtld') ]] ; then
+                    if [ "$NOFUSION" == '0' ] ; then
+                      continue
+                    fi
+                    if [ "$CVNNI" == '1' ] ; then
+                      continue
+                    fi
                   fi
 
                   # TODO: all the "continue" ifs should be handled by allow list outside of this script
@@ -442,9 +452,19 @@ for BINARY_POSTOP in 0 1; do
                   | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \
                   >${HERE}/${OUTNAME}
 
-                  # for gt we need to touch up the script
+                  # for gtld we need to touch up the script
                   if [ "$LD" == 'gtld' ] ; then
                     sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '100 100 100'/g" ${HERE}/${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/${OUTNAME}
+                  fi
+
+                  # for dynld we need to touch up the script
+                  if [ "$LD" == 'dyneqld' ] ; then
+                    sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '-1 -1 -1'/g" ${HERE}/${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/${OUTNAME}
+                  fi
+                  if [ "$LD" == 'dyngtld' ] ; then
+                    sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '-2 -2 -2'/g" ${HERE}/${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/${OUTNAME}
                   fi
 
