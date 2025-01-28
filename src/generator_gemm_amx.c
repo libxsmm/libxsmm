@@ -2077,11 +2077,11 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         }
 
         for (in = 0; in < n_tiles; in++) {
-          unsigned int l_tile_base_reg = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? gp_ldc_aux : i_gp_reg_mapping->gp_reg_c;
-          unsigned int l_tile_disp = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? i_m_offset * 4 : (i_n_offset * i_xgemm_desc->ldc + i_m_offset) * 4;
+          long long l_tile_base_reg = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? gp_ldc_aux : i_gp_reg_mapping->gp_reg_c;
+          long long l_tile_disp = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? (long long)i_m_offset * 4 : (i_n_offset * i_xgemm_desc->ldc + i_m_offset) * 4;
           if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
             for (col = 0; col < n_blocking_info->sizes[in]; col++) {
-              int l_displacement = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ?  i_m_offset * 4 : ((i_n_offset+col) * i_xgemm_desc->ldc + i_m_offset) * 4;
+              long long  l_displacement = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? (long long)i_m_offset * 4 : ((i_n_offset+col) * i_xgemm_desc->ldc + i_m_offset) * 4;
               int l_idx_register = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? gp_ldc_aux : LIBXSMM_X86_GP_REG_UNDEF;
               int l_scale = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? 4 : 0;
               if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) {
