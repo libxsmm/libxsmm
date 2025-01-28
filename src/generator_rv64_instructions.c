@@ -1171,6 +1171,9 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
     return;
   }
 
+  libxsmm_rv64_instruction_alu_compute(io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+    LIBXSMM_RV64_GP_REG_X0, LIBXSMM_RV64_GP_REG_X0, i_gp_reg_dst);
+
   /* ADDI immediate to X0 register */
   libxsmm_rv64_instruction_alu_compute_imm20(io_generated_code,
     LIBXSMM_RV64_INSTR_GP_LUI, i_gp_reg_dst, i_imm20);
@@ -1178,12 +1181,6 @@ void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generat
   /* SHIFT Right */
   libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
       LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 12);
-
-  /* Clear left most bits */
-  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-    LIBXSMM_RV64_INSTR_GP_SLLI, i_gp_reg_dst, i_gp_reg_dst, 44);
-  libxsmm_rv64_instruction_alu_compute_imm12(io_generated_code,
-    LIBXSMM_RV64_INSTR_GP_SRLI, i_gp_reg_dst, i_gp_reg_dst, 44);
 }
 
 /* Auxilary instruction */
@@ -1207,9 +1204,13 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
     return;
   }
 
+  /* Reset the destination register */
+  libxsmm_rv64_instruction_alu_compute(io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+    LIBXSMM_RV64_GP_REG_X0, LIBXSMM_RV64_GP_REG_X0, i_gp_reg_dst);
+
 #define BIT_WIDTH (11)
 #define BIT_LEFT  (10)
-#define BIT_SFT   (53)
+#define BIT_SFT   (21)
 
   imm_mask = 0xffe00000;
 
