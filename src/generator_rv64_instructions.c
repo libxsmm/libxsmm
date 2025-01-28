@@ -1267,9 +1267,9 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
 
   if (i_imm64 <= 0x7ff) {
     libxsmm_rv64_instruction_alu_move_imm12( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
-  } else if ( i_imm64 <= 0xfffff ){
+  } else if ( i_imm64 <= 0x7ffff ){
     libxsmm_rv64_instruction_alu_move_imm20( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
-  } else if ( i_imm64 <= 0xffffffff) {
+  } else if ( i_imm64 <= 0x7fffffff) {
     libxsmm_rv64_instruction_alu_move_imm32( io_generated_code, i_gp_reg_dst, (unsigned int)i_imm64 );
   } else {
 #define BIT_WIDTH (11)
