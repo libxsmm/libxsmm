@@ -2316,7 +2316,6 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
       }
     } else {
       /* For now fully unroll the k loop */
-      unsigned int l_k_trips = (i_xgemm_desc->k + l_k_blocking - 1)/l_k_blocking;
       if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 && l_k_trips > 1) {
         libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_nloop);
         libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_a );
