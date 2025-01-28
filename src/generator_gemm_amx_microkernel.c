@@ -842,7 +842,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
           for (col = 0; col < (unsigned int)n_cols; col++) {
             unsigned int vmove_instr = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_X86_INSTR_VMOVDQU16 : LIBXSMM_X86_INSTR_VMOVDQU8;
             char vmove_name = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ? 'y' : 'x';
-            int l_displacement = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ?  im_offset * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) : ((in_offset+col) * i_xgemm_desc->ldc + im_offset) * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ));
+            long long l_displacement = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ?  (long long)im_offset * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) : (long long)((in_offset+col) * i_xgemm_desc->ldc + im_offset) * LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ));
             int l_idx_register = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? i_gp_reg_mapping->gp_reg_ldc : LIBXSMM_X86_GP_REG_UNDEF;
             int l_scale = ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) != 0 ) ? LIBXSMM_TYPESIZE((libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) : 0;
 
