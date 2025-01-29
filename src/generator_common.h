@@ -2338,5 +2338,8 @@ LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datat
 LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
 
 LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ld_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc );
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_lda_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc );
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ldb_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc );
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ldc_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 #endif /* GENERATOR_COMMON_H */
