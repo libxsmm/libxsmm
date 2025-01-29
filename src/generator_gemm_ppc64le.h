@@ -67,14 +67,6 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
                                                     libxsmm_ppc64le_blocking      *io_blocking );
 
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_k_graph( libxsmm_generated_code         *io_generated_code,
-                                             const libxsmm_gemm_descriptor  *i_xgemm_desc,
-                                             libxsmm_ppc64le_blocking       *i_blocking,
-                                             libxsmm_ppc64le_node          **io_graph,
-                                             unsigned int                   *o_nnode );
-
-
 /**
  * Generators the inner m-loop for PPC64LE VSX GEMM kernel
  * @param io_generated_code pointer to the pointer of the generated code structure.
@@ -115,7 +107,6 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_blocking       *i_blocking,
                                                 libxsmm_ppc64le_reg            *io_reg_tracker,
                                                 libxsmm_loop_label_tracker     *io_loop_labels,
-                                                libxsmm_ppc64le_node          **i_schedule,
                                                 unsigned int                   *i_acc,
                                                 unsigned char const             i_a,
                                                 unsigned char const             i_b,
@@ -131,8 +122,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *io_generated_code,
                                                 libxsmm_gemm_descriptor const  *i_xgemm_desc,
                                                 libxsmm_ppc64le_blocking       *io_blocking,
-                                                libxsmm_ppc64le_reg            *io_reg_tracker,
-                                                libxsmm_ppc64le_node          **i_schedule );
+                                                libxsmm_ppc64le_reg            *io_reg_tracker );
 
 /**
  * Generates a matrix kernel for PPC64LE MMA.
@@ -144,8 +134,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *io_generated_code,
                                                 libxsmm_gemm_descriptor const  *i_xgemm_desc,
                                                 libxsmm_ppc64le_blocking       *i_blocking,
-                                                libxsmm_ppc64le_reg            *io_reg_tracker,
-                                                libxsmm_ppc64le_node          **i_schedule );
+                                                libxsmm_ppc64le_reg            *io_reg_tracker );
 
 
 /**
