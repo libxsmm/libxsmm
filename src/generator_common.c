@@ -1427,3 +1427,25 @@ LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ldc_gemm( const libxsmm_gemm_descr
 
   return result;
 }
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_strda_brgemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  int result = 0;
+
+  if ( i_xgemm_desc->c1 == LIBXSMM_RUNTIME_SET_STRD ) {
+    result = 1;
+  }
+
+  return result;
+}
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_strdb_brgemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  int result = 0;
+
+  if ( i_xgemm_desc->c2 == LIBXSMM_RUNTIME_SET_STRD ) {
+    result = 1;
+  }
+
+  return result;
+}
+
+

@@ -456,8 +456,8 @@ int export_gemm( int argc, char* argv [] ) {
   } else if (l_br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
     if ( (l_lda == -1) && (l_ldb == -1) && (l_ldc == -1) ) {
-      l_brconfig.br_stride_a_hint = 0;
-      l_brconfig.br_stride_b_hint = 0;
+      l_brconfig.br_stride_a_hint = LIBXSMM_RUNTIME_SET_STRD;
+      l_brconfig.br_stride_b_hint = LIBXSMM_RUNTIME_SET_STRD;
     } else {
       l_brconfig.br_stride_a_hint = l_br_stride_a;
       l_brconfig.br_stride_b_hint = l_br_stride_b;
