@@ -1,6 +1,5 @@
 /******************************************************************************
-* Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
-*               Intel Corporation - All rights reserved                       *
+* Copyright (c) Intel Corporation - All rights reserved                       *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
@@ -9,8 +8,8 @@
 ******************************************************************************/
 /* Siddharth Rai, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#ifndef GENERATOR_GEMM_COMMON_AARCH64_H
-#define GENERATOR_GEMM_COMMON_AARCH64_H
+#ifndef GENERATOR_GEMM_COMMON_RV64_H
+#define GENERATOR_GEMM_COMMON_RV64_H
 
 #include "generator_common.h"
 
@@ -110,5 +109,5 @@ void libxsmm_generator_gemm_rv64_setup_k_strides( libxsmm_generated_code*       
                                                   const unsigned int                 i_m_blocking,
                                                   const unsigned int                 i_n_blocking );
 
-#endif /* GENERATOR_GEMM_COMMON_AARCH64_H */
+#endif /* GENERATOR_GEMM_COMMON_RV64_H */
 

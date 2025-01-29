@@ -1,6 +1,5 @@
 /******************************************************************************
-* Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
-*               Intel Corporation - All rights reserved                       *
+* Copyright (c) Intel Corporation - All rights reserved                       *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
@@ -56,9 +55,9 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 
   unsigned int u_loop_index_local = 0;
 
+  LIBXSMM_UNUSED(l_compute_is_pred);
   LIBXSMM_UNUSED(l_b_load_instr);
   LIBXSMM_UNUSED(l_b_load_bcast_instr);
-  LIBXSMM_UNUSED(l_compute_is_pred);
 
   l_a_part_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_RVV_VLE64_V : LIBXSMM_RV64_INSTR_RVV_VLE32_V;
   l_a_4reg_load_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_RVV_VL4RE64_V : LIBXSMM_RV64_INSTR_RVV_VL4RE32_V;
@@ -376,9 +375,6 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   unsigned int             lda_transpose;
 
   LIBXSMM_UNUSED(l_ldc_saved);
-  LIBXSMM_UNUSED(l_xgemm_desc_opa);
-  LIBXSMM_UNUSED(l_new_xgemm_desc_opa);
-  LIBXSMM_UNUSED(lda_transpose);
 
   /* define gp register mapping */
 
@@ -798,8 +794,6 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                           l_gp_reg_mapping.gp_reg_b, 0 );
     }
 
-    /* reset A pointer */
-    /* TODO (MMLA): hardcoded MMLA fix */
     /* advance B pointer */
     if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 &&  (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 ) {
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
@@ -815,7 +809,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                      (long long)l_n_blocking * l_xgemm_desc_opa->ldb * l_micro_kernel_config.datatype_size_in );
     }
 
-    /* Not sure why is this needed? */
+    /* reset A pointer */
     if (l_m_blocking_old){
         libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
           l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,  (long long)l_m_blocking_old*l_micro_kernel_config.datatype_size_in);

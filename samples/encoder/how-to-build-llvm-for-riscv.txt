@@ -1,5 +1,0 @@
-Clone from: git clone https://github.com/llvm/llvm-project.git
-
-Build using:
-
-cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=/nfs_home/raisiddh/llvm-project/install -DLLVM_TARGETS_TO_BUILD="RISCV" ../llvm

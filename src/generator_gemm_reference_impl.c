@@ -2086,7 +2086,6 @@ void libxsmm_ref_apply_c_vnni(libxsmm_gemm_def* i_gemm_def, void *c_ptr, const l
 LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   libxsmm_gemm_def l_gemm_def;
-
   /* Return if kernel is tileconfig/tilerelease  */
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG) == 0)) {
     return;

@@ -81,11 +81,9 @@ int main(void)
   if (4050765991979987505ULL != libxsmm_hash_string("12345678")) {
     result = EXIT_FAILURE;
   }
-#if 0
   if (3199039660 != libxsmm_hash32(libxsmm_hash_string("01234567890"))) {
     result = EXIT_FAILURE;
   }
-#endif
 
   libxsmm_free(data);
 

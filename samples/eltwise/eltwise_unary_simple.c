@@ -44,12 +44,6 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
-int unary_kernel_test(libxsmm_meltw_unary_param *param);
-int unary_kernel_test(libxsmm_meltw_unary_param *param)
-{
-  printf("%lx\n", *((libxsmm_meltw_unary_param *)0x0));
-}
-
 unsigned int is_reference_kernel = 0;
 
 LIBXSMM_INLINE
@@ -526,10 +520,8 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
   /* use jited transpose */
   memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
-
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
-
   if (rnd_mode == RND_STOCHASTIC) {
     unary_param.op.secondary = (void*)rng_state;
   }
@@ -572,11 +564,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     exit(-1);
   }
 
-  printf("Allcoated %lx %lx %lx \n", in, out, &unary_param);
-  fflush(stdout);
-
   unary_kernel( &unary_param );
-  /*unary_kernel_test( &unary_param );*/
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {

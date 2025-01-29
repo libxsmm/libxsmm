@@ -1,6 +1,5 @@
 /******************************************************************************
 * Copyright (c) Intel Corporation - All rights reserved.                      *
-*               Friedrich Schiller University Jena - All rights reserved.     *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
@@ -10,11 +9,8 @@
 /* Siddharth Rai, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_rv64_instructions.h"
-
 #include "generator_mateltwise_rv64.h"
-
 #include "generator_common_rv64.h"
-
 #include "generator_common.h"
 #include "generator_mateltwise_unary_binary_rv64.h"
 
