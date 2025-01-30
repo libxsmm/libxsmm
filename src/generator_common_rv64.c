@@ -133,7 +133,7 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
                                                       i_gp_reg_addr,
                                                       i_gp_reg_scratch,
                                                       i_gp_reg_addr,
-                                                      i_vec_length * l_datatype_size
+                                                      (unsigned long)i_vec_length * l_datatype_size
                                                       );
         }
         /* combine the m-jump with the n one*/
