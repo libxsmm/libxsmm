@@ -2260,6 +2260,9 @@ LIBXSMM_API_INTERN
 void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping );
 
 LIBXSMM_API_INTERN
+void libxsmm_reset_rv64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping );
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
 
 /* some string manipulation helper needed to generated code */

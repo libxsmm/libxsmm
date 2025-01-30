@@ -563,6 +563,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
   }
+
   unary_kernel( &unary_param );
 
   /* populate error bounds */
@@ -599,6 +600,14 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(matdiff_ext));
     }
   }
+
+#if 0
+  for (int i = 0; i < 2; i ++) {
+    for (int j = 0; j < 2; j++) {
+      printf("%f %f ", *((float *)out_gold + i * ldo + j), *((float *)out + i * ldo + j));
+    }
+  }
+#endif
 
   /* compare result */
   norms_out = check_matrix(dtype_out, out_gold, out, ldo, M, N_out);

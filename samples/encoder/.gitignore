@@ -1,4 +1,5 @@
 encoder_aarch64
 encoder_x86
+encoder_riscv
 jit_bigsur_test
 *.bin
