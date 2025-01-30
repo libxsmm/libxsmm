@@ -81,7 +81,6 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void);
 LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
-LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void);
 
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
