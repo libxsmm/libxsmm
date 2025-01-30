@@ -2369,8 +2369,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     if ( i_gemm_def->is_dynld != 0 ) {
       l_stride_a = (long long)l_brconfig.br_stride_a_hint;
       l_stride_b = (long long)l_brconfig.br_stride_b_hint;
-      l_brconfig.br_stride_a_hint = (int)LIBXSMM_RUNTIME_SET_STRD;
-      l_brconfig.br_stride_b_hint = (int)LIBXSMM_RUNTIME_SET_STRD;
+      l_brconfig.br_stride_a_hint = 0;
+      l_brconfig.br_stride_b_hint = 0;
     }
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
