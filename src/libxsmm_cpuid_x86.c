@@ -342,6 +342,8 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
   return libxsmm_cpuid_x86(info);
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
   return libxsmm_cpuid_arm(info);
+#elif defined(LIBXSMM_PLATFORM_RV64)
+  return LIBXSMM_RV64;
 #else
   memset(info, 0, sizeof(info));
   return LIBXSMM_TARGET_ARCH_UNKNOWN;
@@ -430,6 +432,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     } break;
     case LIBXSMM_AARCH64_A64FX: {
       target_arch = "a64fx";
+    } break;
+    case LIBXSMM_RV64: {
+      target_arch = "rv64";
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
@@ -538,6 +543,9 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "a64fx") == 0) {
     target_archid = LIBXSMM_AARCH64_A64FX;
+  }
+  else if (strcmp(arch, "rv64") == 0) {
+    target_archid = LIBXSMM_RV64;
   } else {
     target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   }
@@ -627,21 +635,6 @@ LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
   } else {
     if ( atoi(l_env_x86_srf_gemm_set_n_max_blocking) > 0 ) {
       result = (unsigned int) atoi(l_env_x86_srf_gemm_set_n_max_blocking);
-    }
-  }
-#endif
-  return result;
-}
-
-LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void) {
- unsigned int result = 0;
-#if defined(LIBXSMM_PLATFORM_X86)
-  const char *const l_env_bf8_gemm_via_stack_alloc_tensors = getenv("LIBXSMM_BF8_GEMM_VIA_STACK");
-  if ( 0 == l_env_bf8_gemm_via_stack_alloc_tensors ) {
-    result = 0;
-  } else {
-    if ( atoi(l_env_bf8_gemm_via_stack_alloc_tensors) != 0 ) {
-      result = 1;
     }
   }
 #endif

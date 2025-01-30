@@ -98,8 +98,8 @@
         ! compute reference solution and warmup BLAS library
         ALLOCATE(sumblas(m,n))
         sumblas(:,:) = REAL(0, T)
-        !$OMP PARALLEL REDUCTION(+:sumblas) PRIVATE(i, r)               &
-        !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, repetitions)
+        !$OMP PARALLEL PRIVATE(i, r)                                    &
+        !$OMP DEFAULT(NONE) SHARED(m, n, k, a, b, repetitions, sumblas)
         ALLOCATE(sumtmp(m,n))
         sumtmp(:,:) = REAL(0, T)
         DO r = 1, repetitions
@@ -110,7 +110,9 @@
      &              a=a(:,:,i), b=b(:,:,i), c=sumtmp)
           END DO
         END DO
+        !$OMP CRITICAL
         sumblas(:,:) = sumblas(:,:) + sumtmp(:UBOUND(sumblas,1),:)
+        !$OMP END CRITICAL
         ! Deallocate thread-local arrays
         DEALLOCATE(sumtmp)
         !$OMP END PARALLEL
@@ -118,9 +120,9 @@
         WRITE(*, "(A)") "Streamed (A,B)... (BLAS)"
         ALLOCATE(sumxsmm(m,n))
         sumxsmm(:,:) = REAL(0, T)
-        !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)        &
+        !$OMP PARALLEL PRIVATE(i, r, start)        &
         !$OMP   DEFAULT(NONE)                                           &
-        !$OMP   SHARED(m, n, k, a, b, duration, repetitions)
+        !$OMP   SHARED(m, n, k, a, b, duration, repetitions, sumxsmm)
         ALLOCATE(sumtmp(m,n))
         sumtmp(:,:) = REAL(0, T)
         !$OMP MASTER
@@ -139,7 +141,9 @@
         !$OMP MASTER
         duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         !$OMP END MASTER
+        !$OMP CRITICAL
         sumxsmm(:,:) = sumxsmm(:,:) + sumtmp(:UBOUND(sumxsmm,1),:)
+        !$OMP END CRITICAL
         ! Deallocate thread-local arrays
         DEALLOCATE(sumtmp)
         !$OMP END PARALLEL
@@ -147,9 +151,9 @@
 
         WRITE(*, "(A)") "Streamed (A,B)... (auto-dispatched)"
         sumxsmm(:,:) = REAL(0, T)
-        !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)        &
+        !$OMP PARALLEL PRIVATE(i, r, start)                             &
         !$OMP   DEFAULT(NONE)                                           &
-        !$OMP   SHARED(m, n, k, a, b, duration, repetitions)
+        !$OMP   SHARED(m, n, k, a, b, duration, repetitions, sumxsmm)
         ALLOCATE(sumtmp(m,n))
         sumtmp(:,:) = REAL(0, T)
         !$OMP MASTER
@@ -168,7 +172,9 @@
         !$OMP MASTER
         duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         !$OMP END MASTER
+        !$OMP CRITICAL
         sumxsmm(:,:) = sumxsmm(:,:) + sumtmp(:UBOUND(sumxsmm,1),:)
+        !$OMP END CRITICAL
         ! Deallocate thread-local arrays
         DEALLOCATE(sumtmp)
         !$OMP END PARALLEL
@@ -181,8 +187,8 @@
         IF (libxsmm_available(xmm)) THEN
           sumxsmm(:,:) = REAL(0, T)
           WRITE(*, "(A)") "Streamed (A,B)... (specialized)"
-          !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)
-            !DEFAULT(NONE) SHARED(m, n, a, b, duration, repetitions, xmm)
+          !$OMP PARALLEL PRIVATE(i, r, start) DEFAULT(NONE)             &
+          !$OMP SHARED(m, n, a, b, duration, repetitions, xmm, sumxsmm)
           ALLOCATE(sumtmp(m,n))
           sumtmp(:,:) = REAL(0, T)
           !$OMP MASTER
@@ -199,7 +205,9 @@
           !$OMP MASTER
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
           !$OMP END MASTER
+          !$OMP CRITICAL
           sumxsmm(:,:) = sumxsmm(:,:) + sumtmp(:UBOUND(sumxsmm,1),:)
+          !$OMP END CRITICAL
           ! Deallocate thread-local arrays
           DEALLOCATE(sumtmp)
           !$OMP END PARALLEL
@@ -241,7 +249,7 @@
         ! finalize LIBXSMM
         CALL libxsmm_finalize()
 
-        IF (1.LT.(max_diff%l2_rel)) STOP 1
+        IF (1.LT.(max_diff%l2_abs)) STOP 1
 
       CONTAINS
         PURE SUBROUTINE init(seed, matrix, scale, n)

@@ -16,6 +16,7 @@
 #include "generator_mateltwise_transform_avx512.h"
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_mateltwise_transform_aarch64_sve.h"
+#include "generator_mateltwise_transform_rv64.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_x86_microkernel( libxsmm_generated_code*                        io_generated_code,
