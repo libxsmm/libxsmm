@@ -1463,3 +1463,4 @@ LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ldc_gemm( const libxsmm_gemm_descr
 
   return result;
 }
+
