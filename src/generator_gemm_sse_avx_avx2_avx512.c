@@ -1228,6 +1228,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
       i_xgemm_desc, i_m_blocking, i_xgemm_desc->k, 1 );
   } else {
+    int l_b_offset = 0;
     /* 2. we want to fully unroll below the threshold */
     if ((unsigned int)i_xgemm_desc->k <= l_k_threshold) {
       l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
@@ -1235,7 +1236,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
       unsigned int l_max_blocked_k = ((i_xgemm_desc->k)/l_k_blocking)*l_k_blocking;
-      int l_b_offset = 0;
 
       /* we can block as k is large enough */
       if ( l_max_blocked_k > 0 ) {
@@ -1251,17 +1251,17 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
       /* now we handle the remainder handling */
       l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
         i_xgemm_desc, i_m_blocking, i_n_blocking, ((unsigned int)i_xgemm_desc->k) - l_max_blocked_k );
-
-      /* reset B pointer */
-      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-        l_b_offset = i_xgemm_desc->ldb * i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
-      } else {
-        l_b_offset = i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
-      }
-
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-        i_gp_reg_mapping->gp_reg_b, l_b_offset );
     }
+
+    /* reset B pointer */
+    if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+      l_b_offset = i_xgemm_desc->ldb * i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
+    } else {
+      l_b_offset = i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
+    }
+
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
+      i_gp_reg_mapping->gp_reg_b, l_b_offset );
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0 && l_is_Ai8_Bbf16_gemm_bf16fma == 0) {
