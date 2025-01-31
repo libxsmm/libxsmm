@@ -11,6 +11,7 @@
 ******************************************************************************/
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
+#include "generator_rv64_instructions.h"
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511
@@ -802,6 +803,41 @@ void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_map
   /* Auxiliary regs for sparsity in A support */
   io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_reset_rv64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping ) {
+  io_gp_reg_mapping->gp_reg_param_struct = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_base = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_base = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_c = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_offset = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_offset = LIBXSMM_RV64_GP_REG_UNDEF;
+  /*  io_gp_reg_mapping->gp_reg_c_prefetch = LIBXSMM_RV64_GP_REG_UNDEF;*/
+  io_gp_reg_mapping->gp_reg_mloop = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_nloop = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_kloop = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_reduce_count = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_reduce_loop = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_ptrs = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_ptrs = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_lda = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_ldb = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_ldc = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_scf = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_2 = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_RV64_GP_REG_UNDEF;
+  /* Auxiliary regs for sparsity in A support */
+  io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_RV64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_RV64_GP_REG_UNDEF;
 }
 
 LIBXSMM_API_INTERN

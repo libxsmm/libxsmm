@@ -51,6 +51,8 @@
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_APPL_M4       2501 /* Apple M4 SME without SVE*/
 #define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_RV64                  3001 /* RISCV All */
+#define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
@@ -79,7 +81,6 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void);
 LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
-LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void);
 
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
@@ -118,5 +119,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
  * Use libxsmm_get_target_archid() instead.
  */
 #define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
+
+LIBXSMM_API int libxsmm_cpuid_mvl_rv64(void);
 
 #endif /*LIBXSMM_CPUID_H*/

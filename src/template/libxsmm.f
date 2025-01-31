@@ -138,7 +138,9 @@
      &    LIBXSMM_AARCH64_NEOV1         = 2302,                         &
      &    LIBXSMM_AARCH64_SVX512        = 2401,                         &
      &    LIBXSMM_AARCH64_A64FX         = 2402,                         &
-     &    LIBXSMM_AARCH64_ALLFEAT       = 2999
+     &    LIBXSMM_AARCH64_ALLFEAT       = 2999,                         &
+     &    LIBXSMM_RV64                  = 3000,                         &
+     &    LIBXSMM_RV64_ALLFEAT          = 3999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION

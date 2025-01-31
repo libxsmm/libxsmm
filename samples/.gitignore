@@ -22,3 +22,4 @@ packed/trmm/trmm
 packed/trsm/trsm
 pyfr/pyfr_driver_asp_reg
 *.txt
+*.elf

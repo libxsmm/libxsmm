@@ -20,6 +20,7 @@
 #include "generator_common.h"
 #include "generator_x86_reference.h"
 #include "generator_aarch64_reference.h"
+#include "generator_rv64_reference.h"
 
 #include <signal.h>
 #if !defined(NDEBUG)
@@ -207,6 +208,8 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
     libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_RV64) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
+    libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
   } else {
     /* TODO fix this error and support for more architectures */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -222,6 +225,8 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
     libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_RV64) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
+    libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
   } else {
     /* TODO fix this error and support for more architectures */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -237,6 +242,8 @@ void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*    
     libxsmm_generator_matequation_x86_reference_kernel( io_generated_code, i_mateqn_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_RV64) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
+    libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
   } else {
     /* TODO fix this error and support for more architectures */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -1619,7 +1626,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_SVE256:
     case LIBXSMM_AARCH64_NEOV1:
     case LIBXSMM_AARCH64_SVE512:
-    case LIBXSMM_AARCH64_A64FX: {
+    case LIBXSMM_AARCH64_A64FX:
+    case LIBXSMM_RV64: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1628,6 +1636,9 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
       break;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
       target_archid = LIBXSMM_AARCH64_V81;
+      break;
+#elif defined(LIBXSMM_PLATFORM_RV64)
+      target_archid = LIBXSMM_RV64;
       break;
 #endif
     default: target_archid = libxsmm_cpuid(NULL);
@@ -1692,12 +1703,28 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
     }
 #endif
+#if defined(LIBXSMM_PLATFORM_RV64) || defined(LIBXSMM_PLATFORM_FORCE)
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_RV64 + jit;
+      }
+      else
+# endif
+      if  (arch == libxsmm_stristr(arch, "riscv") || arch == libxsmm_stristr(arch, "rv64"))
+      {
+        target_archid = LIBXSMM_RV64;
+      }
+    }
+#endif
+     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
       if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
         target_archid = LIBXSMM_X86_GENERIC;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
         target_archid = LIBXSMM_AARCH64_V81;
+#elif defined(LIBXSMM_PLATFORM_RV64)
+        target_archid = LIBXSMM_RV64;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
@@ -2125,6 +2152,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   LIBXSMM_ASSERT(NULL != request && 0 != libxsmm_target_archid);
   LIBXSMM_ASSERT(NULL != code && NULL == code->ptr_const);
   LIBXSMM_ASSERT(0 == LIBXSMM_DESCRIPTOR_ISBIG(request->kind));
+
+#if 0
+  printf("Request kind %d\n", request->kind);
+#endif
 
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
