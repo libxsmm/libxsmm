@@ -384,12 +384,11 @@ void libxsmm_generator_gemm_avx2_microkernel_Amxfp4( libxsmm_generated_code*    
   }
 
   /* Increase B for next K iteration */
-  if ((32/l_k_pack_factor)/l_k_unroll_factor > 1 || i_k > 32) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code,
-                                 i_micro_kernel_config->alu_add_instruction,
-                                 i_gp_reg_mapping->gp_reg_b,
-                                 (long long)l_k_pack_factor*l_k_unroll_factor*i_micro_kernel_config->datatype_size_in2 );
-  }
+  libxsmm_x86_instruction_alu_imm( io_generated_code,
+                               i_micro_kernel_config->alu_add_instruction,
+                               i_gp_reg_mapping->gp_reg_b,
+                               (long long)l_k_pack_factor*l_k_unroll_factor*i_micro_kernel_config->datatype_size_in2 );
+
   if ((32/l_k_pack_factor)/l_k_unroll_factor > 1) {
     libxsmm_generator_generic_loop_footer_with_idx_inc( io_generated_code, i_micro_kernel_config->io_loop_label_tracker, i_gp_reg_mapping->gp_reg_help_0, 1, (32/l_k_pack_factor)/l_k_unroll_factor);
   }
