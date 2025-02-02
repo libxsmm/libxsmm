@@ -620,7 +620,17 @@ void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_ge
   } else if (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) {
     l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_mma;
   } else {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
+  }
+
+  /* Transpose not currently supported */
+  if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A ) > 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+    return;
+  }
+  if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B ) > 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
     return;
   }
 
