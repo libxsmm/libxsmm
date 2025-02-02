@@ -22,12 +22,12 @@ void libxsmm_generator_gemm_mma_block_load_pair( libxsmm_generated_code *io_gene
                                                  libxsmm_ppc64le_reg    *io_reg_tracker,
                                                  libxsmm_datatype const  i_datatype,
                                                  libxsmm_datatype const  i_comptype,
-                                                 unsigned int const      i_a,
-                                                 unsigned int const      i_m,
-                                                 unsigned int const      i_n,
-                                                 unsigned int const      i_lda,
+                                                 unsigned int            i_a,
+                                                 unsigned int            i_m,
+                                                 unsigned int            i_n,
+                                                 unsigned int            i_lda,
                                                  unsigned int           *io_t,
-                                                 unsigned int const      i_ldt );
+                                                 unsigned int            i_ldt );
 
 
 LIBXSMM_API_INTERN
@@ -35,12 +35,12 @@ void libxsmm_generator_gemm_mma_block_load_trans( libxsmm_generated_code *io_gen
                                                   libxsmm_ppc64le_reg    *io_reg_tracker,
                                                   libxsmm_datatype const  i_datatype,
                                                   libxsmm_datatype const  i_comptype,
-                                                  unsigned int const      i_a,
-                                                  unsigned int const      i_m,
-                                                  unsigned int const      i_n,
-                                                  unsigned int const      i_lda,
+                                                  unsigned int            i_a,
+                                                  unsigned int            i_m,
+                                                  unsigned int            i_n,
+                                                  unsigned int            i_lda,
                                                   unsigned int           *io_t,
-                                                  unsigned int const      i_ldt );
+                                                  unsigned int            i_ldt );
 
 
 LIBXSMM_API_INTERN
@@ -48,12 +48,12 @@ void libxsmm_generator_gemm_mma_block_load_acc( libxsmm_generated_code *io_gener
                                                 libxsmm_ppc64le_reg    *io_reg_tracker,
                                                 libxsmm_datatype const  i_datatype,
                                                 libxsmm_datatype const  i_comptype,
-                                                unsigned int const      i_a,
-                                                unsigned int const      i_m,
-                                                unsigned int const      i_n,
-                                                unsigned int const      i_lda,
+                                                unsigned int            i_a,
+                                                unsigned int            i_m,
+                                                unsigned int            i_n,
+                                                unsigned int            i_lda,
                                                 unsigned int           *io_t,
-                                                unsigned int const      i_ldt );
+                                                unsigned int            i_ldt );
 
 
 LIBXSMM_API_INTERN
@@ -61,77 +61,55 @@ void libxsmm_generator_gemm_mma_block_store_acc( libxsmm_generated_code *io_gene
                                                  libxsmm_ppc64le_reg    *io_reg_tracker,
                                                  libxsmm_datatype const  i_datatype,
                                                  libxsmm_datatype const  i_comptype,
-                                                 unsigned int const      i_a,
-                                                 unsigned int const      i_m,
-                                                 unsigned int const      i_n,
-                                                 unsigned int const      i_lda,
+                                                 unsigned int            i_a,
+                                                 unsigned int            i_m,
+                                                 unsigned int            i_n,
+                                                 unsigned int            i_lda,
                                                  unsigned int           *io_t,
-                                                 unsigned int const      i_ldt );
-
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_mma_micro_ger_f32( libxsmm_generated_code *io_generated_code,
-                                          unsigned int const      i_m,
-                                          unsigned int const      i_n,
-                                          unsigned int const      i_k,
-                                          unsigned int           *i_a,
-                                          unsigned int const      i_lda,
-                                          unsigned int           *i_b,
-                                          unsigned int const      io_c );
-
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_mma_micro_ger_f64( libxsmm_generated_code *io_generated_code,
-                                          unsigned int const      i_m,
-                                          unsigned int const      i_n,
-                                          unsigned int const      i_k,
-                                          unsigned int           *i_a,
-                                          unsigned int const      i_lda,
-                                          unsigned int           *i_b,
-                                          unsigned int const      io_c );
+                                                 unsigned int            i_ldt );
 
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mma_block_ger( libxsmm_generated_code *io_generated_code,
                                       libxsmm_datatype const  i_comptype,
-                                      unsigned int const      i_m,
-                                      unsigned int const      i_n,
-                                      unsigned int const      i_k,
+                                      unsigned int            i_m,
+                                      unsigned int            i_n,
+                                      unsigned int            i_k,
                                       unsigned int           *i_a,
-                                      unsigned int const      i_lda,
+                                      unsigned int            i_lda,
                                       unsigned int           *i_b,
-                                      unsigned int const      i_ldb,
-                                      unsigned int const      i_beta,
+                                      unsigned int            i_ldb,
+                                      unsigned int            i_beta,
                                       unsigned int           *io_c,
-                                      unsigned int const      i_ldc );
+                                      unsigned int            i_ldc );
 
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mma_block_ger_f32( libxsmm_generated_code *io_generated_code,
-                                          unsigned int const      i_m,
-                                          unsigned int const      i_n,
-                                          unsigned int const      i_k,
+                                          unsigned int            i_m,
+                                          unsigned int            i_n,
+                                          unsigned int            i_k,
                                           unsigned int           *i_a,
-                                          unsigned int const      i_lda,
+                                          unsigned int            i_lda,
                                           unsigned int           *i_b,
-                                          unsigned int const      i_ldb,
-                                          unsigned int const      i_beta,
+                                          unsigned int            i_ldb,
+                                          unsigned int            i_beta,
                                           unsigned int           *io_c,
-                                          unsigned int const      i_ldc );
+                                          unsigned int            i_ldc );
 
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mma_block_ger_f64( libxsmm_generated_code *io_generated_code,
-                                          unsigned int const      i_m,
-                                          unsigned int const      i_n,
-                                          unsigned int const      i_k,
+                                          unsigned int            i_m,
+                                          unsigned int            i_n,
+                                          unsigned int            i_k,
                                           unsigned int           *i_a,
-                                          unsigned int const      i_lda,
+                                          unsigned int            i_lda,
                                           unsigned int           *i_b,
-                                          unsigned int const      i_ldb,
-                                          unsigned int const      i_beta,
+                                          unsigned int            i_ldb,
+                                          unsigned int            i_beta,
                                           unsigned int           *io_c,
-                                          unsigned int const      i_ldc );
+                                          unsigned int            i_ldc );
 
 
 LIBXSMM_API_INTERN
@@ -141,8 +119,8 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
                                         libxsmm_ppc64le_reg           *io_reg_tracker,
                                         libxsmm_loop_label_tracker    *io_loop_labels,
                                         unsigned int                  *i_acc,
-                                        unsigned char const            i_a,
-                                        unsigned char const            i_b,
-                                        unsigned char const            i_c );
+                                        unsigned char                  i_a,
+                                        unsigned char                  i_b,
+                                        unsigned char                  i_c );
 
 #endif
