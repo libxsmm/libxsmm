@@ -69,6 +69,16 @@ void libxsmm_generator_gemm_vsx_block_load_vsr_splat( libxsmm_generated_code *io
 
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
+                                libxsmm_datatype const  i_datatype,
+                                unsigned int            i_a,
+                                unsigned int            i_b,
+                                unsigned int            i_c,
+                                char                    i_alpha,
+                                char                    i_beta );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_vsx_block_fma_b_splat( libxsmm_generated_code *io_generated_code,
                                               libxsmm_datatype const  i_datatype,
                                               unsigned int            i_m,
