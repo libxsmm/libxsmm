@@ -626,14 +626,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       l_b_vname = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) > 0)) ? (l_b_vname == 'z' ? 'y' : 'x') : l_b_vname;
       /* handle trans B */
       if ( libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0 ) {
+        unsigned int l_k_pack_advance = (l_is_Ai8_Bbf16_gemm > 0) ? ((l_is_Ai8_Bbf16_gemm_bf16fma == 0) ? 1 : 2) : l_k_pack_factor;
+        unsigned int l_init_help2 = ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) ? ((l_k == 0) && (l_k_iters > 1)) : (l_n == 0);
+        unsigned int l_updated_help2 = ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) ? ( l_k < l_k_iters-1 ) : ( l_n < i_n_blocking-1 );
+
+        if ( l_init_help2 ) {
+          libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
+                                           i_gp_reg_mapping->gp_reg_help_2, 0 );
+        }
+
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-          unsigned int l_k_pack_advance = (l_is_Ai8_Bbf16_gemm > 0) ? ((l_is_Ai8_Bbf16_gemm_bf16fma == 0) ? 1 : 2) : l_k_pack_factor;
-
-          if ( (l_k == 0) && (l_k_iters > 1) ) {
-            libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
-                                             i_gp_reg_mapping->gp_reg_help_2, 0 );
-          }
-
           l_b_offset = l_n * i_micro_kernel_config->datatype_size_in2 * l_k_pack_advance;
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -645,17 +647,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
               l_b_vname,
               l_vreg_ab_offset, 0, 1, 0 );
 
-          if ( l_k < l_k_iters-1 ) {
-            libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_2);
-          }
-        } else {
-          unsigned int l_k_pack_advance = (l_is_Ai8_Bbf16_gemm > 0) ? ((l_is_Ai8_Bbf16_gemm_bf16fma == 0) ? 1 : 2) : l_k_pack_factor;
-
-          if ( l_n == 0 ) {
-            libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
-                                             i_gp_reg_mapping->gp_reg_help_2, 0 );
-          }
-
+       } else {
           l_b_offset = l_k * l_k_pack_advance * i_micro_kernel_config->datatype_size_in2;
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -666,10 +658,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
               l_b_offset,
               l_b_vname,
               l_vreg_ab_offset, 0, 1, 0 );
+        }
 
-          if ( l_n < i_n_blocking-1 ) {
-            libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_2);
-          }
+        if ( l_updated_help2 ) {
+          libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_2);
         }
       } else {
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
