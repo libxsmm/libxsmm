@@ -1324,10 +1324,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   unsigned int gp_reg_a;
   const char *const l_env_pf_c_scratch_dist = getenv("LIBXSMM_X86_AMX_GEMM_OUTPUT_SCR_PF_DIST");
   const char *const l_env_pf_c_matrix_dist  = getenv("LIBXSMM_X86_AMX_GEMM_OUTPUT_MAT_PF_DIST");
-  /*unsigned int prefetch_C_scratch       = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C_SCRATCH) > 0) ? 1 : 0;*/
   unsigned int prefetch_C_scratch       = (l_env_pf_c_scratch_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_scratch_dist  = (l_env_pf_c_scratch_dist == 0) ? 4 : atoi(l_env_pf_c_scratch_dist);
-  /*unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;*/
   unsigned int prefetch_C_matrix        = (l_env_pf_c_matrix_dist == 0) ? 0 : 1;
   unsigned int prefetch_C_matrix_dist   = (l_env_pf_c_matrix_dist == 0) ? 3 : atoi(l_env_pf_c_matrix_dist);
   unsigned int streaming_tileload_a = 0;

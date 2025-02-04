@@ -279,7 +279,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_n_loop( libxsmm
                                    (long long)i_micro_kernel_config->datatype_size_in*i_packed_width*l_n_chunksize);
 
   /* advance B prefetch pointer */
-  if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
+  if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2) > 0 ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_b_prefetch,
                                      ((long long)i_micro_kernel_config->datatype_size_in*i_packed_width*i_xgemm_desc->ldb*i_xgemm_desc->m)-((long long)i_micro_kernel_config->datatype_size_in*i_packed_width*l_n_chunksize));
   }
@@ -386,7 +386,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
             }
           }
         }
-        if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
+        if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2) > 0 ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             i_micro_kernel_config->prefetch_instruction,
                                             i_gp_reg_mapping->gp_reg_b_prefetch,
@@ -545,7 +545,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
                                      (long long)i_micro_kernel_config->datatype_size_out*i_packed_width*i_xgemm_desc->ldc);
 
     /* advance B prefetch pointer */
-    if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
+    if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2) > 0 ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_prefetch,
                                        (long long)i_micro_kernel_config->datatype_size_in*i_packed_width*i_xgemm_desc->ldb);
     }
