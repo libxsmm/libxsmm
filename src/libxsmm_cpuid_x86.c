@@ -577,7 +577,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   }
   else if (LIBXSMM_AARCH64_SVE512 == id
         || LIBXSMM_AARCH64_A64FX  == id
-        || LIBXSMM_AARCH64_APPL_M4 == id)
+        || LIBXSMM_AARCH64_APPL_M4 == id )
   {
     result = 16;
   }

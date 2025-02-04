@@ -22,6 +22,7 @@ void libxsmm_generator_packed_gemm_aarch64( libxsmm_generated_code*         io_g
   unsigned int l_max_n_reg_block = 0;
   unsigned int l_m_block = 0;
   unsigned int l_m_remainder = 0;
+  unsigned char l_is_sme = ( (io_generated_code->arch >= LIBXSMM_AARCH64_APPL_M4) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) ? 1 : 0;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -94,6 +95,11 @@ void libxsmm_generator_packed_gemm_aarch64( libxsmm_generated_code*         io_g
 #endif
   }
 
+  if( l_is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTART);
+  }
+
   /* set P0 in case of SVE */
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
@@ -139,6 +145,10 @@ void libxsmm_generator_packed_gemm_aarch64( libxsmm_generated_code*         io_g
     /* m loop body for remainder */
     libxsmm_generator_packed_gemm_aarch64_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
                                                  i_xgemm_desc, i_packed_width, l_max_n_reg_block, l_m_block );
+  }
+  if( l_is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTOP);
   }
 
   /* close asm */
