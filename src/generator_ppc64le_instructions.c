@@ -2903,6 +2903,7 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
    * The first arg to the gemm is a pointer to a libxsmm_gemm_param struct, which we
    * can then unpack, into the standard register locations
    */
+
   unsigned int gpr_offset = LIBXSMM_PPC64LE_STACK_SIZE - 16 ;
   unsigned int fpr_offset = gpr_offset - (LIBXSMM_PPC64LE_GPR_NMAX - LIBXSMM_PPC64LE_GPR_IVOL)*8;
   unsigned int vsr_offset = fpr_offset - (LIBXSMM_PPC64LE_FPR_NMAX - LIBXSMM_PPC64LE_FPR_IVOL)*8;
@@ -2943,6 +2944,7 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                            ( 24 >> 2 ) );
 
   /* Save non-volatile general purpose registers */
+
   for( unsigned int gpr = LIBXSMM_PPC64LE_GPR_IVOL; gpr < LIBXSMM_PPC64LE_GPR_NMAX; ++gpr ) {
     unsigned int l_offset = gpr_offset - (gpr - LIBXSMM_PPC64LE_GPR_IVOL)*8;
     libxsmm_ppc64le_instr_3( io_generated_code,
@@ -2997,6 +2999,7 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                            LIBXSMM_PPC64LE_GPR_R5,
                            LIBXSMM_PPC64LE_GPR_R31,
                            l_offset_ptr_c >> 2 );
+
 }
 
 
@@ -3017,6 +3020,7 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
                              LIBXSMM_PPC64LE_GPR_SP,
                              l_offset >> 2 );
   }
+
 
   /* Restore non-volatile floating point registers */
   for( unsigned int fpr = LIBXSMM_PPC64LE_FPR_IVOL; fpr < LIBXSMM_PPC64LE_FPR_NMAX; ++fpr ) {

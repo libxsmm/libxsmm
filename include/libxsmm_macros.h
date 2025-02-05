@@ -78,6 +78,7 @@
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
 #   error LIBXSMM requires X86_64, AArch64, RV64, ppc64le or compatible CPUs!
+
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
