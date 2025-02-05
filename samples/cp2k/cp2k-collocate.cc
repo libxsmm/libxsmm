@@ -83,7 +83,7 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
         kernelset[2*a1+0] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_NONE,
           length_[1], static_cast<libxsmm_blasint>(co.size(1)) - a1, static_cast<libxsmm_blasint>(co.size(2)) - a1,
           static_cast<libxsmm_blasint>(p_alpha_beta_reduced_.ld()), static_cast<libxsmm_blasint>(co.ld()), static_cast<libxsmm_blasint>(C.ld()),
-          1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_AL2/*_AHEAD*/);
+          1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_AL2);
         kernelset[2*a1+1] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], static_cast<libxsmm_blasint>(co.size(2)) - a1,
           static_cast<libxsmm_blasint>(C.ld()), static_cast<libxsmm_blasint>(p_alpha_beta_reduced_.ld()), static_cast<libxsmm_blasint>(xyz_alpha_beta.ld()),
           1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_NONE);

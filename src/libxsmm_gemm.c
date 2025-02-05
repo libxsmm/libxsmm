@@ -487,7 +487,7 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
   libxsmm_gemm_prefetch_type result;
   if (0 > prefetch) {
     LIBXSMM_INIT /* load configuration */
-    result = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
+    result = LIBXSMM_GEMM_PREFETCH_NONE;
   }
   else {
     result = (libxsmm_gemm_prefetch_type)prefetch;
