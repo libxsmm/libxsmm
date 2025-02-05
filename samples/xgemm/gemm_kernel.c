@@ -2719,7 +2719,7 @@ void print_help(void) {
   printf("    0: A normal, 1: A vnni\n");
   printf("    0: B normal, 1: B vnni\n");
   printf("    0: C normal, 1: C vnni\n");
-  printf("    PREFETCH: nopf (none), BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
+  printf("    PREFETCH: nopf (none), AL2\n");
   printf("    BRGEMM/SPMM: nobr, addrbr, offsbr, strdbr, spmm\n");
   printf("    BRsize: 1 - N (or sparsity factor for spmm)\n");
   printf("    BRunroll: 0/1\n");
@@ -2887,20 +2887,8 @@ int main(int argc, char* argv []) {
     if (strcmp("nopf", argv[20]) == 0) {
       l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
     }
-    else if (strcmp("BL2viaC", argv[20]) == 0) {
-      l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
-    }
-    else if (strcmp("curAL2", argv[20]) == 0) {
-      l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
-    }
-    else if (strcmp("curAL2_BL2viaC", argv[20]) == 0) {
-      l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
-    }
     else if (strcmp("AL2", argv[20]) == 0) {
       l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2;
-    }
-    else if (strcmp("AL2_BL2viaC", argv[20]) == 0) {
-      l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
     }
     else {
       print_help();
@@ -3872,11 +3860,7 @@ int main(int argc, char* argv []) {
         const char *prefetch = NULL, *br_type = NULL;
         switch (l_prefetch) {
           case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
-          case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;
           case LIBXSMM_GEMM_PREFETCH_AL2: prefetch = "AL2"; break;
-          case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C: prefetch = "AL2_BL2viaC"; break;
           default: prefetch = "unknown";
         }
         switch (l_br_type) {

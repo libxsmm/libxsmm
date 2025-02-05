@@ -589,17 +589,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
           vname_cvt, l_is_Ai8_Bf16_gemm, l_is_Abf8_Bf16_gemm, l_is_Af16_Bf16_gemm, l_use_f16_replacement_fma, l_use_f32_compute_with_f16_inp, l_m, l_m_blocking, 1+l_m+l_vreg_ab_offset);
     }
 
-    /* current A prefetch, next rows for the current column */
-    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
-      libxsmm_x86_instruction_prefetch( io_generated_code,
-          LIBXSMM_X86_INSTR_PREFETCHT1,
-          i_gp_reg_mapping->gp_reg_a,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          ((i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor) + (64 * l_m_blocking) );
-    }
-
     /* prefetch a different A matrix provided by the prefetch pointers */
-    if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+    if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
           LIBXSMM_X86_INSTR_PREFETCHT1,
           i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -696,14 +687,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       }
 
       if (l_n == i_n_blocking - 1) {
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2);
-        }
-
         /* handle trans B */
         if ( libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0 ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -745,19 +728,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         }
       }
 
-      /* In case of batch reduce try to prefetch a few more columns ahead for A... */
-      if ((l_n < l_m_blocking)  && ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB) > 0) && (LIBXSMM_DATATYPE_I8 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) && (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE))) {
-        unsigned int pf_a_cols_ahead = 16;
-        if (i_xgemm_desc->lda == 1024) {
-          pf_a_cols_ahead = 4;
-        }
-        libxsmm_x86_instruction_prefetch( io_generated_code,
-            LIBXSMM_X86_INSTR_PREFETCHT0,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_n * l_k_pack_factor + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in);
-      }
-
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         /* post increment early */
         if ( (l_m == 0) && (l_n == i_n_blocking-1) && (l_k == 0)) {
@@ -781,7 +751,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
           }
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
-          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -907,14 +877,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
     }
 
     if (l_n == i_n_blocking - 1) {
-      if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-        libxsmm_x86_instruction_prefetch(io_generated_code,
-            LIBXSMM_X86_INSTR_PREFETCHT0,
-            i_gp_reg_mapping->gp_reg_b,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2);
-      }
-
       /* handle trans B */
       if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
         l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
@@ -952,17 +914,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
     libxsmm_generator_gemm_avx512_microkernel_process_vreg_A( io_generated_code, i_micro_kernel_config, i_xgemm_desc,
         vname_cvt, l_is_Ai8_Bf16_gemm, l_is_Abf8_Bf16_gemm, l_is_Af16_Bf16_gemm, l_use_f16_replacement_fma, l_use_f32_compute_with_f16_inp, l_m, l_m_blocking, l_vreg_ab_offset);
 
-    /* current A prefetch, next rows for the current column */
-    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
-      libxsmm_x86_instruction_prefetch( io_generated_code,
-          LIBXSMM_X86_INSTR_PREFETCHT1,
-          i_gp_reg_mapping->gp_reg_a,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          ((i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor) + (64 * l_m_blocking) );
-    }
-
     /* prefetch a different A matrix provided by the prefetch pointers */
-    if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+    if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
           LIBXSMM_X86_INSTR_PREFETCHT1,
           i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -979,7 +932,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
             (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
 
         /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
-        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1125,17 +1078,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_i8_ss_uu_emu_n
       }
 
       if ( l_pass == 1 ) {
-        /* current A prefetch, next rows for the current column */
-        if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT1,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor) + (64 * l_m_blocking) );
-        }
-
         /* prefetch a different A matrix provided by the prefetch pointers */
-        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT1,
               i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1167,14 +1111,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_i8_ss_uu_emu_n
           0, 0, 1, 0 );
 
       if ((l_n == i_n_blocking - 1) && (l_pass == 1)) {
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2);
-        }
-
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
@@ -1205,7 +1141,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_i8_ss_uu_emu_n
               (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
-          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1319,14 +1255,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_i8_ss_uu_em
           1+l_n, 0, 1, 0 );
 
       if ((l_n == i_n_blocking - 1) && (l_pass == 1)) {
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2);
-        }
-
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
@@ -1402,17 +1330,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_i8_ss_uu_em
       }
 
       if ( l_pass == 1 ) {
-        /* current A prefetch, next rows for the current column */
-        if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT1,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor) + (64 * l_m_blocking) );
-        }
-
         /* prefetch a different A matrix provided by the prefetch pointers */
-        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT1,
               i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1430,7 +1349,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_i8_ss_uu_em
               (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
-          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1551,17 +1470,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
       }
 
       if ( l_pass == 1 ) {
-        /* current A prefetch, next rows for the current column */
-        if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT1,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor) + (64 * l_m_blocking) );
-        }
-
         /* prefetch a different A matrix provided by the prefetch pointers */
-        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT1,
               i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1589,14 +1499,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           0, 0, 1, 0 );
 
       if ((l_n == i_n_blocking - 1) && (l_pass == 1)) {
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2);
-        }
-
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
@@ -1629,7 +1531,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
               (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
-          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1724,14 +1626,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
           1+l_n, 0, 1, 0 );
 
       if ((l_n == i_n_blocking - 1) && (l_pass == 1)) {
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2);
-        }
-
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in2;
@@ -1797,17 +1691,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
       }
 
       if ( l_pass == 1 ) {
-        /* current A prefetch, next rows for the current column */
-        if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT1,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor) + (64 * l_m_blocking) );
-        }
-
         /* prefetch a different A matrix provided by the prefetch pointers */
-        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+        if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT1,
               i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1825,7 +1710,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
               (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
-          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
+          if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -1953,15 +1838,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                         0 + l_vreg_ab_offset,
                                         i_micro_kernel_config->use_masking_a_c, 1, 0 );
 
-      /* current A prefetch, next rows for the current column */
-      if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
-           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
-        libxsmm_x86_instruction_prefetch( io_generated_code,
-                                          i_micro_kernel_config->prefetch_instruction,
-                                          i_gp_reg_mapping->gp_reg_a,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (i_xgemm_desc->lda * l_k + i_micro_kernel_config->datatype_size_in * l_k_pack_factor) + 64 );
-      }
       if ( l_k_iters > 1 ) {
         /* second A load in first iteration, in case of large blockings -> hiding L1 latencies */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1974,15 +1850,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                           1 + l_vreg_ab_offset,
                                           i_micro_kernel_config->use_masking_a_c, 1, 0 );
 
-        /* current A prefetch, next rows for the current column */
-        if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
-             i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            i_micro_kernel_config->prefetch_instruction,
-                                            i_gp_reg_mapping->gp_reg_a,
-                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            (i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size_in * l_k_pack_factor) + 64 );
-        }
       }
     } else if ( l_k < (l_k_iters - 1) ) {
       /* pipelined load of A, one k iteration ahead */
@@ -1996,20 +1863,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                         (l_k+1)%2 + l_vreg_ab_offset,
                                         i_micro_kernel_config->use_masking_a_c, 1, 0 );
 
-      /* current A prefetch, next rows for the current column */
-      if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          ||
-           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD    ) {
-        libxsmm_x86_instruction_prefetch( io_generated_code,
-                                          i_micro_kernel_config->prefetch_instruction,
-                                          i_gp_reg_mapping->gp_reg_a,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size_in * l_k_pack_factor) + 64 );
-      }
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
-         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
+    if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
                                         i_micro_kernel_config->prefetch_instruction,
                                         i_gp_reg_mapping->gp_reg_a_prefetch,
