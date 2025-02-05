@@ -1572,7 +1572,10 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_SVE256:
     case LIBXSMM_AARCH64_NEOV1:
     case LIBXSMM_AARCH64_SVE512:
-    case LIBXSMM_AARCH64_A64FX: {
+    case LIBXSMM_AARCH64_A64FX:
+    case LIBXSMM_PPC64LE_FPF:
+    case LIBXSMM_PPC64LE_VSX:
+    case LIBXSMM_PPC64LE_MMA: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1619,6 +1622,7 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+
   if (NULL != arch && '\0' != *arch
     && arch != libxsmm_stristr(arch, "default")
     && arch != libxsmm_stristr(arch, "cpuid")
@@ -1721,12 +1725,32 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
     }
 #endif
+#if defined(LIBXSMM_PLATFORM_PPC64LE) || defined(LIBXSMM_PLATFORM_FORCE)
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_PPC64LE_VSX + jit;
+      }
+      else
+# endif
+      if (arch == libxsmm_stristr(arch, "power8") || arch == libxsmm_stristr(arch, "power9"))
+      {
+        target_archid = LIBXSMM_PPC64LE_VSX;
+      }
+      else if (arch == libxsmm_stristr(arch, "power10")) {
+        target_archid = LIBXSMM_PPC64LE_MMA;
+      }
+    }
+#endif
+
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
       if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
         target_archid = LIBXSMM_X86_GENERIC;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
         target_archid = LIBXSMM_AARCH64_V81;
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+        target_archid = LIBXSMM_PPC64LE_VSX;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
@@ -3400,7 +3424,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                           const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config ) {
+                                                          const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config ) {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_descriptor_blob blob;
   libxsmm_xmmfunction result;

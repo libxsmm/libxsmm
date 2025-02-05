@@ -49,6 +49,10 @@
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_PPC64LE_FPF           3001 /* Generic floating-point facility */
+#define LIBXSMM_PPC64LE_VSX           3002 /* Vector scalar extension */
+#define LIBXSMM_PPC64LE_MMA           3003 /* Matrix-multiply assist */
+#define LIBXSMM_PPC64LE_ALLFEAT       3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
@@ -62,6 +66,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
 /** Returns the target architecture and instruction set extensions. */
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+LIBXSMM_API int libxsmm_cpuid_ppc(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 /**
  * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.
