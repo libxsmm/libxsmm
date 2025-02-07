@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2024, IBM Corporation - All rights reserved.                  *
+* Copyright (c), 2025 IBM Corporation - All rights reserved.                  *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
