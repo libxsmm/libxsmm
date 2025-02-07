@@ -33,9 +33,9 @@ LIBXSMM_API int libxsmm_cpuid_s390x(libxsmm_cpuid_info* info)
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid re-detecting features */
 # if defined(LIBXSMM_CPUID_S390X_BASELINE)
     result = LIBXSMM_CPUID_S390X_BASELINE;
-# elif defined( __ARCH__ == 13 )
+# elif defined(__ARCH__) && ( __ARCH__ == 13 )
     result = LIBXSMM_S390X_Z15
-# elif defined( __ARCH__ == 14 )
+# elif defined(__ARCH__) && ( __ARCH__ == 14 )
     result = LIBXSMM_S390X_Z16
 # endif
   }
