@@ -1627,7 +1627,9 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_NEOV1:
     case LIBXSMM_AARCH64_SVE512:
     case LIBXSMM_AARCH64_A64FX:
-    case LIBXSMM_RV64: {
+    case LIBXSMM_RV64:
+    case LIBXSMM_S390X_Z15:
+    case LIBXSMM_S390X_Z16: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1639,6 +1641,9 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
       break;
 #elif defined(LIBXSMM_PLATFORM_RV64)
       target_archid = LIBXSMM_RV64;
+      break;
+#elif defined(LIBXSMM_PLATFORM_S390X)
+      target_archid = LIBXSMM_S390X_Z15;
       break;
 #endif
     default: target_archid = libxsmm_cpuid(NULL);
@@ -1717,6 +1722,23 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
     }
 #endif
+#if defined(LIBXSMM_PLATFORM_S390X) || defined(LIBXSMM_PLATFORM_FORCE)
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_PPC64LE_S390X + jit;
+      }
+      else
+# endif
+      if (arch == libxsmm_stristr(arch, "z15"))
+      {
+        target_archid = LIBXSMM_S390X_Z15;
+      }
+      else if (arch == libxsmm_stristr(arch, "z16")) {
+        target_archid = LIBXSMM_S390X_Z16;
+      }
+    }
+#endif
      if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
       if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
@@ -1725,6 +1747,8 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
         target_archid = LIBXSMM_AARCH64_V81;
 #elif defined(LIBXSMM_PLATFORM_RV64)
         target_archid = LIBXSMM_RV64;
+#elif defined(LIBXSMM_PLATFORM_S390Z)
+        target_archid = LIBXSMM_S390X_Z15;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif

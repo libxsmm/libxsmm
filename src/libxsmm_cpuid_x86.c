@@ -344,6 +344,8 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
   return libxsmm_cpuid_arm(info);
 #elif defined(LIBXSMM_PLATFORM_RV64)
   return LIBXSMM_RV64;
+#elif defined(LIBXSMM_PLATFORM_S390X)
+  return libxsmm_cpuid_s390x(info);
 #else
   memset(info, 0, sizeof(info));
   return LIBXSMM_TARGET_ARCH_UNKNOWN;
@@ -435,6 +437,12 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     } break;
     case LIBXSMM_RV64: {
       target_arch = "rv64";
+    } break;
+    case LIBXSMM_S390X_Z15: {
+      target_arch = "z15";
+    } break;
+    case LIBXSMM_S390X_Z16: {
+      target_arch = "z16";
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
@@ -546,7 +554,14 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "rv64") == 0) {
     target_archid = LIBXSMM_RV64;
-  } else {
+  }
+  else if (strcmp(arch, "z15") == 0) {
+    target_archid = LIBXSMM_S390X_Z15;
+  }
+  else if (strcmp(arch, "z16") == 0) {
+    target_archid = LIBXSMM_S390X_Z16;
+  }
+  else {
     target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   }
 
@@ -588,6 +603,9 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
     result = 8;
   }
   else if (LIBXSMM_X86_GENERIC <= id) {
+    result = 4;
+  }
+  else if ( LIBXSMM_S390X_Z15 <= id && LIBXSMM_S390X_ALLFEAT >= id ) {
     result = 4;
   }
   else { /* scalar */
