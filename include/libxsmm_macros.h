@@ -64,12 +64,16 @@
 #if !defined(LIBXSMM_PLATFORM_RV64) && \
     (defined(__riscv) && 64 == (__riscv_xlen))
 # define LIBXSMM_PLATFORM_RV64
+#if !defined(LIBXSMM_PLATFORM_C390X) && \
+  (defined(__s390x__) || defined(__zarch__)) && \
+  (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+# define LIBXSMM_PLATFORM_S390X
 #endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_RV64)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_RV64) || defined(LIBXSMM_PLATFORM_S390X)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error LIBXSMM requires X86_64, AArch64, RV64 or compatible CPUs!
+#   error LIBXSMM requires X86_64, AArch64, RV64, s390x, or compatible CPUs!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
@@ -80,7 +84,8 @@
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
       (defined(_WIN64) || defined(_M_ARM64)) || \
-      (defined(__powerpc64))
+       defined(__powerpc64) || \
+      (defined(__LP64__) || defined(_LP64))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)
