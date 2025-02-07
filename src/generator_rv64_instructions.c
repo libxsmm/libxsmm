@@ -1783,6 +1783,65 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_rv64_instruction_prefetch( libxsmm_generated_code*  io_generated_code,
+                                         const unsigned int       i_pf_instr,
+                                         const unsigned int       i_gp_reg_src,
+                                         const unsigned int       i_imm12){
+  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_prefetch: at least RV64 needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  if ( !REG_VALID_1(i_gp_reg_src) ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_prefetch: invalid register id !\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  switch ( i_pf_instr ) {
+    case LIBXSMM_RV64_INSTR_GP_PREFETCH_I:
+    case LIBXSMM_RV64_INSTR_GP_PREFETCH_R:
+    case LIBXSMM_RV64_INSTR_GP_PREFETCH_W:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_rv64_instruction_prefetch: unexpected instruction number: %u\n", i_pf_instr);
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* fix bits */
+    code[code_head]  = i_pf_instr;
+    /* setting RS1 */
+    code[code_head] |= (unsigned int)FILL_REGID(LIBXSMM_RV64_GP_REG_X0, LIBXSMM_RV64_INSTR_FIELD_RD);
+    /* setting RS2 */
+    code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS1);
+    /* setting IMM12HI */
+    code[code_head] |= (unsigned int)FILL_REGID(i_imm12 & 0xfe0, LIBXSMM_RV64_INSTR_FIELD_IMM12);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_rv64_instruction_prefetch: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  return;
+}
+
 #undef FILL_REGID
 #undef REG_VALID_1
 #undef REG_VALID_2
