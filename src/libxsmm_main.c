@@ -1726,15 +1726,15 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
 # if !defined(LIBXSMM_PLATFORM_FORCE)
       if (0 < jit) {
-        target_archid = LIBXSMM_PPC64LE_S390X + jit;
+        target_archid = LIBXSMM_S390X + jit;
       }
       else
 # endif
-      if (arch == libxsmm_stristr(arch, "z15"))
+      if ( arch == libxsmm_stristr(arch, "z15") )
       {
         target_archid = LIBXSMM_S390X_Z15;
       }
-      else if (arch == libxsmm_stristr(arch, "z16")) {
+      else if ( arch == libxsmm_stristr(arch, "z16") ) {
         target_archid = LIBXSMM_S390X_Z16;
       }
     }
@@ -1747,7 +1747,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
         target_archid = LIBXSMM_AARCH64_V81;
 #elif defined(LIBXSMM_PLATFORM_RV64)
         target_archid = LIBXSMM_RV64;
-#elif defined(LIBXSMM_PLATFORM_S390Z)
+#elif defined(LIBXSMM_PLATFORM_S390X)
         target_archid = LIBXSMM_S390X_Z15;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
