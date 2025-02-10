@@ -35,12 +35,31 @@
 #define LIBXSMM_S390X_GPR_ARG2 4
 #define LIBXSMM_S390X_GPR_ARG3 5
 
+#define LIBXSMM_S390X_F16 0x01
+#define LIBXSMM_S390X_F32 0x02
+#define LIBXSMM_S390X_F64 0x03
+#define LIBXSMM_S390X_F128 0x04
+
+#define LIBXSMM_S390X_FP_TINY LIBXSMM_S390X_F16
+#define LIBXSMM_S390X_FP_SHORT LIBXSMM_S390X_F32
+#define LIBXSMM_S390X_FP_LONG LIBXSMM_S390X_F64
+#define LIBXSMM_S390X_FP_EXT LIBXSMM_S390X_F128
+
+#define LIBXSMM_S390X_INSTR_RETURN 0x07fe
+#define LIBXSMM_S390X_INSTR_NOP 0x47000000
+
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_open_stack( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_colapse_stack( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_nop( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_return( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,

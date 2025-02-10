@@ -29,7 +29,6 @@ LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_open_stack( libxsmm_generated_code *io_generated_code ) {
   /* Based on "ELF Application Binary Interface s390x Supplement: v1.6.1"
    */
-  return;
 }
 
 LIBXSMM_API_INTERN
@@ -37,6 +36,22 @@ void libxsmm_s390x_instr_colapse_stack( libxsmm_generated_code *io_generated_cod
   /* Based on "ELF Application Binary Interface s390x Supplement: v1.6.1"
    */
   return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_return( libxsmm_generated_code *io_generated_code ) {
+  unsigned short *l_code = (unsigned short*) io_generated_code->generated_code;
+  unsigned int l_code_head = io_generated_code->code_size / 2;
+  l_code[l_code_head] = (unsigned short)(0xffff & LIBXSMM_S390X_INSTR_RETURN );
+  io_generated_code->code_size += 2;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_nop( libxsmm_generated_code *io_generated_code ) {
+  unsigned int *l_code = (unsigned int*) io_generated_code->generated_code;
+  unsigned int l_code_head = io_generated_code->code_size / 4;
+  l_code[l_code_head] = (unsigned int)(0xffffffff & LIBXSMM_S390X_INSTR_NOP );
+  io_generated_code->code_size += 4;
 }
 
 LIBXSMM_API_INTERN

@@ -16,6 +16,11 @@
 #include "generator_s390x_instructions.h"
 #include "../include/libxsmm_typedefs.h"
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vector_kernel( libxsmm_generated_code *io_generated_code,
+                                           const libxsmm_gemm_descriptor *i_xgemm_desc );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_s390x_kernel( libxsmm_generated_code        *io_generated_code,
                                           const libxsmm_gemm_descriptor *i_xgemm_desc );
