@@ -59,7 +59,8 @@
 /* permit thread-unsafe */
 #if !defined(LIBXSMM_SYNC_NONE) && ( \
   (defined(__PGI) && !defined(LIBXSMM_LIBATOMIC)) || \
-  (defined(_CRAYC) && !defined(__GNUC__)))
+  (defined(_CRAYC) && !defined(__GNUC__)) || \
+  (defined(__zarch__) || defined(__s390x__)))
 # define LIBXSMM_SYNC_NONE
 #endif
 

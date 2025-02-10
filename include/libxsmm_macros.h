@@ -66,8 +66,7 @@
 # define LIBXSMM_PLATFORM_RV64
 #endif
 #if !defined(LIBXSMM_PLATFORM_C390X) && \
-  (defined(__s390x__) || defined(__zarch__)) && \
-  ( __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ )
+  (defined(__s390x__) || defined(__zarch__))
 # define LIBXSMM_PLATFORM_S390X
 #endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)

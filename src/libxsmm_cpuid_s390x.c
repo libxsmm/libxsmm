@@ -14,15 +14,37 @@
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_CPUID_S390X_BASELINE) && 0
-# define LIBXSMM_CPUID_S390X_BASELINE LIBXSMM_S390X_Z15
+# define LIBXSMM_CPUID_S390X_BASELINE LIBXSMM_S390X_ARCH11
 #endif
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_cpuid_s390x_stfle( unsigned long     *i_fle,
+                                        const unsigned int i_max_len ) {
+  i_fle[0] = i_max_len - 1;
+  for ( unsigned int i = 1 ; i < i_max_len + 1 ; ++i ) {
+    i_fle
+      [i] = 0;
+  }
+#if defined(__zarch__) || defined(__s390x__)
+  __asm__ volatile ( "lg 0,%[len]\n"
+                     "stfle %[fac]\n"
+                     "stg 0,%[len]\n"
+                     : [fac] "=QS"(*(unsigned long(*)[i_max_len])&i_fle[1]),
+                       [len] "+RT"(i_fle[0])
+                     :
+                     : "%r0", "cc"
+                     );
+#endif
+  return (unsigned int)(i_fle[0] + 1);
+}
+
 
 LIBXSMM_API int libxsmm_cpuid_s390x(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_S390X)
   libxsmm_cpuid_info cpuid_info;
-  //size_t model_size = 0;
   if (NULL != info)
   {
     size_t cpuinfo_model_size = sizeof(cpuid_info.model);
@@ -33,10 +55,36 @@ LIBXSMM_API int libxsmm_cpuid_s390x(libxsmm_cpuid_info* info)
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid re-detecting features */
 # if defined(LIBXSMM_CPUID_S390X_BASELINE)
     result = LIBXSMM_CPUID_S390X_BASELINE;
-# elif defined(__ARCH__) && ( __ARCH__ == 13 )
-    result = LIBXSMM_S390X_Z15
-# elif defined(__ARCH__) && ( __ARCH__ == 14 )
-    result = LIBXSMM_S390X_Z16
+# elif defined(__zarch__) || defined(__s390x__)
+    unsigned int l_max_len = 8;
+    unsigned long l_fle[l_max_len + 1];
+    unsigned int l_fle_len = libxsmm_cpuid_s390x_stfle( l_fle, l_max_len );
+
+    if ( l_fle_len >= 3 ) {
+      /* Test for Neural-network-processing-assist */
+      if ( ( ( l_fle[3] & ( 0x01UL << 26 ) ) >> 26 ) == 1 ) {
+        result = LIBXSMM_S390X_ARCH14;
+      /* Test for Vector-enhancements facility 2 */
+      } else if ( ( ( l_fle[3] & ( 0x01UL << 43 ) ) >> 43 ) == 1 ) {
+        result = LIBXSMM_S390X_ARCH13;
+      /* Test for Vector-enhancements facility 1 */
+      } else if ( ( ( l_fle[3] & ( 0x01UL << 56 ) ) >> 56 ) == 1 ) {
+        result = LIBXSMM_S390X_ARCH12;
+       /* Test for Vector facility for z/Architecture */
+      } else if (  ( ( l_fle[3] & ( 0x01UL << 62 ) ) >> 62 ) == 1 ) {
+        result = LIBXSMM_S390X_ARCH11;
+      } else {
+        fprintf(stderr, "LIBXSMM WARNING: s390x arch facilities not supported\n");
+        for ( unsigned int i = 0; i < l_fle_len ; ++i) {
+          fprintf(stderr, "LIBXSMM WARNING: S390X FLE[%d] = 0x%016lx\n", i, l_fle[i+1]);
+        }
+      }
+    } else {
+      fprintf(stderr, "LIBXSMM WARNING: s390x arch facilities not supported\n");
+      for ( unsigned int i = 0; i < l_fle_len ; ++i) {
+        fprintf(stderr, "LIBXSMM WARNING: S390X FLE[%d] = 0x%016lx\n", i, l_fle[i+1]);
+      }
+    }
 # endif
   }
 

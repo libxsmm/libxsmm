@@ -54,8 +54,16 @@
 #define LIBXSMM_RV64                  3001 /* RISCV All */
 #define LIBXSMM_RV64_ALLFEAT          3999
 #define LIBXSMM_S390X                 5001
-#define LIBXSMM_S390X_Z15             5013 /* Z15 == arch13 */
-#define LIBXSMM_S390X_Z16             5014 /* Z16 == arch14 */
+#define LIBXSMM_S390X_ARCH5           5005 /* z900 == arch5 */
+#define LIBXSMM_S390X_ARCH6           5006 /* z990 == arch6 */
+#define LIBXSMM_S390X_ARCH7           5007 /* z9-109 == arch7 */
+#define LIBXSMM_S390X_ARCH8           5008 /* z10 == arch8 */
+#define LIBXSMM_S390X_ARCH9           5009 /* z196 == arch9 */
+#define LIBXSMM_S390X_ARCH10          5010 /* zEC12 == arch10 */
+#define LIBXSMM_S390X_ARCH11          5011 /* z13 == arch11 */
+#define LIBXSMM_S390X_ARCH12          5012 /* z14 == arch12 */
+#define LIBXSMM_S390X_ARCH13          5013 /* z15 == arch13 */
+#define LIBXSMM_S390X_ARCH14          5014 /* z16 == arch14 */
 #define LIBXSMM_S390X_ALLFEAT         5999
 
  /** Zero-initialized structure; assumes conservative properties. */
