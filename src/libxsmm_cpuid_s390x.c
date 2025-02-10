@@ -17,27 +17,35 @@
 # define LIBXSMM_CPUID_S390X_BASELINE LIBXSMM_S390X_ARCH11
 #endif
 
-
-LIBXSMM_API_INTERN
-unsigned int libxsmm_cpuid_s390x_stfle( unsigned long     *i_fle,
-                                        const unsigned int i_max_len ) {
-  i_fle[0] = i_max_len - 1;
-  for ( unsigned int i = 1 ; i < i_max_len + 1 ; ++i ) {
-    i_fle
-      [i] = 0;
-  }
 #if defined(__zarch__) || defined(__s390x__)
-  __asm__ volatile ( "lg 0,%[len]\n"
-                     "stfle %[fac]\n"
-                     "stg 0,%[len]\n"
-                     : [fac] "=QS"(*(unsigned long(*)[i_max_len])&i_fle[1]),
-                       [len] "+RT"(i_fle[0])
-                     :
-                     : "%r0", "cc"
-                     );
+# include <sys/auxv.h>
+# if defined(HWCAP_S390_VX)
+#  define LIBXSMM_S390X_HWCAP_VX HWCAP_S390_VX
+# else
+#  define LIBXSMM_S390X_HWCAP_VX 0
+# endif
+# if defined(HWCAP_S390_VXRS_EXT)
+#  define LIBXSMM_S390X_HWCAP_VXEX HWCAP_S390_VXRS_EXT
+# else
+#  define LIBXSMM_S390X_HWCAP_VXEX 0
+# endif
+
+# if defined(HWCAP_S390_VXRS_EXT2)
+#  define LIBXSMM_S390X_HWCAP_VXEX2 HWCAP_S390_VXRS_EXT2
+# else
+#  define LIBXSMM_S390X_HWCAP_VXEX2 0
+# endif
+# if defined(HWCAP_S390_NNPA)
+#  define LIBXSMM_S390X_HWCAP_NNPA HWCAP_S390_NNPA
+# else
+#  define LIBXSMM_S390X_HWCAP_NNPA 0
+# endif
+#else
+# define LIBXSMM_S390X_HWCAP_VX 0
+# define LIBXSMM_S390X_HWCAP_VXEX 0
+# define LIBXSMM_S390X_HWCAP_VXEX2 0
+# define LIBXSMM_S390X_HWCAP_NNPA 0
 #endif
-  return (unsigned int)(i_fle[0] + 1);
-}
 
 
 LIBXSMM_API int libxsmm_cpuid_s390x(libxsmm_cpuid_info* info)
@@ -55,35 +63,18 @@ LIBXSMM_API int libxsmm_cpuid_s390x(libxsmm_cpuid_info* info)
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid re-detecting features */
 # if defined(LIBXSMM_CPUID_S390X_BASELINE)
     result = LIBXSMM_CPUID_S390X_BASELINE;
-# elif defined(__zarch__) || defined(__s390x__)
-    unsigned int l_max_len = 8;
-    unsigned long l_fle[l_max_len + 1];
-    unsigned int l_fle_len = libxsmm_cpuid_s390x_stfle( l_fle, l_max_len );
-
-    if ( l_fle_len >= 3 ) {
-      /* Test for Neural-network-processing-assist */
-      if ( ( ( l_fle[3] & ( 0x01UL << 26 ) ) >> 26 ) == 1 ) {
-        result = LIBXSMM_S390X_ARCH14;
-      /* Test for Vector-enhancements facility 2 */
-      } else if ( ( ( l_fle[3] & ( 0x01UL << 43 ) ) >> 43 ) == 1 ) {
-        result = LIBXSMM_S390X_ARCH13;
-      /* Test for Vector-enhancements facility 1 */
-      } else if ( ( ( l_fle[3] & ( 0x01UL << 56 ) ) >> 56 ) == 1 ) {
-        result = LIBXSMM_S390X_ARCH12;
-       /* Test for Vector facility for z/Architecture */
-      } else if (  ( ( l_fle[3] & ( 0x01UL << 62 ) ) >> 62 ) == 1 ) {
-        result = LIBXSMM_S390X_ARCH11;
-      } else {
-        fprintf(stderr, "LIBXSMM WARNING: s390x arch facilities not supported\n");
-        for ( unsigned int i = 0; i < l_fle_len ; ++i) {
-          fprintf(stderr, "LIBXSMM WARNING: S390X FLE[%d] = 0x%016lx\n", i, l_fle[i+1]);
-        }
-      }
+# else
+    /* Querry this way as hardware and linux kernel support is needed */
+    if ( getauxval(AT_HWCAP) & LIBXSMM_S390X_HWCAP_NNPA ) {
+      result = LIBXSMM_S390X_ARCH14;
+    } else if ( getauxval(AT_HWCAP) & LIBXSMM_S390X_HWCAP_VXEX2 ) {
+      result = LIBXSMM_S390X_ARCH13;
+    } else if ( getauxval(AT_HWCAP) & LIBXSMM_S390X_HWCAP_VXEX ) {
+      result = LIBXSMM_S390X_ARCH12;
+    } else if ( getauxval(AT_HWCAP) & LIBXSMM_S390X_HWCAP_VX ) {
+      result = LIBXSMM_S390X_ARCH11;
     } else {
       fprintf(stderr, "LIBXSMM WARNING: s390x arch facilities not supported\n");
-      for ( unsigned int i = 0; i < l_fle_len ; ++i) {
-        fprintf(stderr, "LIBXSMM WARNING: S390X FLE[%d] = 0x%016lx\n", i, l_fle[i+1]);
-      }
     }
 # endif
   }
