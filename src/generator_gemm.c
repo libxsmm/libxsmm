@@ -743,6 +743,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
       return;
     }
+#endif
   } else if ( ( io_generated_code->arch == LIBXSMM_RV64 ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = libxsmm_cpuid_mvl_rv64() / 32;
   } else if ( ( io_generated_code->arch == LIBXSMM_RV64 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
