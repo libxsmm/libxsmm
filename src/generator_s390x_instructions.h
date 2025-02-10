@@ -16,15 +16,15 @@
 
 /* Based on "z/Architecture: Principles of Operation".
    Below is a table showing Z model corresponding revision number:
-   z14     SA22-7832-11 (12th edition)
-   z15     SA22-7832-12 (13th edition)
-   z16     SA22-7832-13 (14th edition)
+   arch11 (z14)     SA22-7832-10 (11th edition)
+   arch12 (z14)     SA22-7832-11 (12th edition)
+   arch13 (z15)     SA22-7832-12 (13th edition)
+   arch14 (z16)     SA22-7832-13 (14th edition)
 
    Also based on "z/Architecture: Reference Summary"
    Below is a table showing Z model corresponding revision number:
-   z14     SA22-7871-9  (12th edition)
-   z15     SA22-7871-10 (12th edition)
-   z16     SA22-7871-11 (12th edition)
+   arch13 (z15)     SA22-7871-10 (10th edition)
+   arch14 (z16)     SA22-7871-11 (11th edition)
 */
 
 
