@@ -27,7 +27,6 @@
    arch14 (z16)     SA22-7871-11 (11th edition)
 */
 
-
 #define LIBXSMM_S390X_GPR_RA 14
 #define LIBXSMM_S390X_GPR_SP 15
 #define LIBXSMM_S390X_GPR_ARG0 2
@@ -35,6 +34,50 @@
 #define LIBXSMM_S390X_GPR_ARG2 4
 #define LIBXSMM_S390X_GPR_ARG3 5
 
+#define LIBXSMM_S390X_STACK_SIZE 160
+
+typedef enum libxsmm_s390x_reg_type {
+  LIBXSMM_S390X_GPR = 0,
+  LIBXSMM_S390X_FPR = 1,
+  LIBXSMM_S390X_VR = 2,
+} libxsmm_s390x_reg_type;
+
+
+typedef enum libxsmm_s390x_reg_util {
+  LIBXSMM_S390X_REG_RESV = 0,
+  LIBXSMM_S390X_REG_USED = 1,
+  LIBXSMM_S390X_REG_FREE = 2
+} libxsmm_s390x_reg_util;
+
+/* Number of rename registers */
+#define LIBXSMM_S390X_ARCH11_GPR 16
+#define LIBXSMM_S390X_ARCH11_FPR 16
+#define LIBXSMM_S390X_ARCH11_VR 32
+#define LIBXSMM_S390X_ARCH12_GPR 16
+#define LIBXSMM_S390X_ARCH12_FPR 16
+#define LIBXSMM_S390X_ARCH12_VR 32
+#define LIBXSMM_S390X_ARCH13_GPR 16
+#define LIBXSMM_S390X_ARCH13_FPR 16
+#define LIBXSMM_S390X_ARCH13_VR 32
+#define LIBXSMM_S390X_ARCH14_GPR 16
+#define LIBXSMM_S390X_ARCH14_FPR 16
+#define LIBXSMM_S390X_ARCH14_VR 32
+
+/* Reserved registers */
+#define LIBXSMM_S390X_NRESV_GPR 4
+#define LIBXSMM_S390X_RESV_GPR {0, 1, 14, 15} /* 0 and 1 are used in many commands, so best avoided */
+
+/* Register structure */
+typedef struct libxsmm_s390x_reg {
+  unsigned int ngpr;
+  unsigned int *gpr;
+  unsigned int nfpr;
+  unsigned int *fpr;
+  unsigned int nvr;
+  unsigned int *vr;
+} libxsmm_s390x_reg;
+
+/* Floating point types */
 #define LIBXSMM_S390X_F16 0x01
 #define LIBXSMM_S390X_F32 0x02
 #define LIBXSMM_S390X_F64 0x03
@@ -45,21 +88,75 @@
 #define LIBXSMM_S390X_FP_LONG LIBXSMM_S390X_F64
 #define LIBXSMM_S390X_FP_EXT LIBXSMM_S390X_F128
 
+/* Special instructions */
 #define LIBXSMM_S390X_INSTR_RETURN 0x07fe
 #define LIBXSMM_S390X_INSTR_NOP 0x47000000
 
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_add_value( libxsmm_generated_code *io_generated_code,
+                                        unsigned int            i_src,
+                                        unsigned int            i_dst,
+                                        long int                i_value );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_copy( libxsmm_generated_code *io_generated_code,
+                                   unsigned int            i_src,
+                                   unsigned int            i_dst );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_set_value( libxsmm_generated_code *io_generated_code,
+                                        unsigned int            i_grp,
+                                        long int                i_value );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_register_jump_label( libxsmm_generated_code     *io_generated_code,
+                                              libxsmm_loop_label_tracker *io_loop_label_tracker );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_branch_count_jump_label( libxsmm_generated_code     *io_generated_code,
+                                                  unsigned int                i_gpr,
+                                                  libxsmm_loop_label_tracker *io_loop_label_tracker );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_unpack_args( libxsmm_generated_code *io_generated_code,
+                                      libxsmm_s390x_reg      *io_reg_tracker );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_open_stack( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_colapse_stack( libxsmm_generated_code *io_generated_code );
+void libxsmm_s390x_instr_collapse_stack( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_nop( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_return( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
+libxsmm_s390x_reg libxsmm_s390x_reg_init( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_reg_destroy( libxsmm_generated_code *io_generated_code,
+                                libxsmm_s390x_reg      *i_reg_tracker );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_s390x_reg_get( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    libxsmm_s390x_reg_type  i_reg_type );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_reg_free( libxsmm_generated_code *io_generated_code,
+                             libxsmm_s390x_reg      *io_reg_tracker,
+                             libxsmm_s390x_reg_type  i_reg_type,
+                             unsigned int            i_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_reg_set( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_reg      *io_reg_tracker,
+                            libxsmm_s390x_reg_type  i_reg_type,
+                            unsigned int            i_reg,
+                            libxsmm_s390x_reg_util  i_value );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
@@ -130,87 +227,88 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 /* All code below here is auto-generated */
 #define LIBXSMM_S390X_FMASK 0xffff000000000000UL
 
-#define LIBXSMM_S390X_FORM_E_FORM 0x0000000000000000UL /* 0 */
-#define LIBXSMM_S390X_FORM_I_FORM 0x0001000000000000UL /* 1 */
-#define LIBXSMM_S390X_FORM_IE_FORM 0x0002000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_MII_FORM 0x0003000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RI_A_FORM 0x0004000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RI_B_FORM 0x0005000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RI_C_FORM 0x0006000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RIE_A_FORM 0x0007000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RIE_B_FORM 0x0008000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RIE_C_FORM 0x0009000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RIE_D_FORM 0x000a000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RIE_E_FORM 0x000b000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RIE_F_FORM 0x000c000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RIE_G_FORM 0x000d000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RIL_A_FORM 0x000e000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RIL_B_FORM 0x000f000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RIL_C_FORM 0x0010000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RIS_FORM 0x0011000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RR_FORM 0x0012000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RRD_FORM 0x0013000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RRE_FORM 0x0014000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_RRF_A_FORM 0x0015000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RRF_B_FORM 0x0016000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RRF_C_FORM 0x0017000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RRF_D_FORM 0x0018000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RRF_E_FORM 0x0019000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RRS_FORM 0x001a000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RS_A_FORM 0x001b000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RS_B_FORM 0x001c000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RSI_FORM 0x001d000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RSL_A_FORM 0x001e000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RSL_B_FORM 0x001f000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_RSY_A_FORM 0x0020000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RSY_B_FORM 0x0021000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RX_A_FORM 0x0022000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RX_B_FORM 0x0023000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_RXE_FORM 0x0024000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RXF_FORM 0x0025000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RXY_A_FORM 0x0026000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_RXY_B_FORM 0x0027000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_S_FORM 0x0028000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_SI_FORM 0x0029000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_SIL_FORM 0x002a000000000000UL /* 3 */
-#define LIBXSMM_S390X_FORM_SIY_FORM 0x002b000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_SMI_FORM 0x002c000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_SS_A_FORM 0x002d000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_SS_B_FORM 0x002e000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_SS_C_FORM 0x002f000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_SS_D_FORM 0x0030000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_SS_E_FORM 0x0031000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_SS_F_FORM 0x0032000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_SSE_FORM 0x0033000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_SSF_FORM 0x0034000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRI_A_FORM 0x0035000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_VRI_B_FORM 0x0036000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRI_C_FORM 0x0037000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRI_D_FORM 0x0038000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRI_E_FORM 0x0039000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRI_F_FORM 0x003a000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRI_G_FORM 0x003b000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRI_H_FORM 0x003c000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_VRI_I_FORM 0x003d000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRR_A_FORM 0x003e000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRR_B_FORM 0x003f000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRR_C_FORM 0x0040000000000000UL /* 7 */
-#define LIBXSMM_S390X_FORM_VRR_D_FORM 0x0041000000000000UL /* 7 */
-#define LIBXSMM_S390X_FORM_VRR_E_FORM 0x0042000000000000UL /* 7 */
-#define LIBXSMM_S390X_FORM_VRR_F_FORM 0x0043000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_VRR_G_FORM 0x0044000000000000UL /* 2 */
-#define LIBXSMM_S390X_FORM_VRR_H_FORM 0x0045000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_VRR_I_FORM 0x0046000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRR_J_FORM 0x0047000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRR_K_FORM 0x0048000000000000UL /* 4 */
-#define LIBXSMM_S390X_FORM_VRS_A_FORM 0x0049000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRS_B_FORM 0x004a000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRS_C_FORM 0x004b000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRS_D_FORM 0x004c000000000000UL /* 5 */
-#define LIBXSMM_S390X_FORM_VRV_FORM 0x004d000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VRX_FORM 0x004e000000000000UL /* 6 */
-#define LIBXSMM_S390X_FORM_VSI_FORM 0x004f000000000000UL /* 5 */
+#define LIBXSMM_S390X_FORM_E_FORM 0x0000000000000000UL
+#define LIBXSMM_S390X_FORM_I_FORM 0x0001000000000000UL
+#define LIBXSMM_S390X_FORM_IE_FORM 0x0002000000000000UL
+#define LIBXSMM_S390X_FORM_MII_FORM 0x0003000000000000UL
+#define LIBXSMM_S390X_FORM_RI_A_FORM 0x0004000000000000UL
+#define LIBXSMM_S390X_FORM_RI_B_FORM 0x0005000000000000UL
+#define LIBXSMM_S390X_FORM_RI_C_FORM 0x0006000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_A_FORM 0x0007000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_B_FORM 0x0008000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_C_FORM 0x0009000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_D_FORM 0x000a000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_E_FORM 0x000b000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_F_FORM 0x000c000000000000UL
+#define LIBXSMM_S390X_FORM_RIE_G_FORM 0x000d000000000000UL
+#define LIBXSMM_S390X_FORM_RIL_A_FORM 0x000e000000000000UL
+#define LIBXSMM_S390X_FORM_RIL_B_FORM 0x000f000000000000UL
+#define LIBXSMM_S390X_FORM_RIL_C_FORM 0x0010000000000000UL
+#define LIBXSMM_S390X_FORM_RIS_FORM 0x0011000000000000UL
+#define LIBXSMM_S390X_FORM_RR_FORM 0x0012000000000000UL
+#define LIBXSMM_S390X_FORM_RRD_FORM 0x0013000000000000UL
+#define LIBXSMM_S390X_FORM_RRE_FORM 0x0014000000000000UL
+#define LIBXSMM_S390X_FORM_RRF_A_FORM 0x0015000000000000UL
+#define LIBXSMM_S390X_FORM_RRF_B_FORM 0x0016000000000000UL
+#define LIBXSMM_S390X_FORM_RRF_C_FORM 0x0017000000000000UL
+#define LIBXSMM_S390X_FORM_RRF_D_FORM 0x0018000000000000UL
+#define LIBXSMM_S390X_FORM_RRF_E_FORM 0x0019000000000000UL
+#define LIBXSMM_S390X_FORM_RRS_FORM 0x001a000000000000UL
+#define LIBXSMM_S390X_FORM_RS_A_FORM 0x001b000000000000UL
+#define LIBXSMM_S390X_FORM_RS_B_FORM 0x001c000000000000UL
+#define LIBXSMM_S390X_FORM_RSI_FORM 0x001d000000000000UL
+#define LIBXSMM_S390X_FORM_RSL_A_FORM 0x001e000000000000UL
+#define LIBXSMM_S390X_FORM_RSL_B_FORM 0x001f000000000000UL
+#define LIBXSMM_S390X_FORM_RSY_A_FORM 0x0020000000000000UL
+#define LIBXSMM_S390X_FORM_RSY_B_FORM 0x0021000000000000UL
+#define LIBXSMM_S390X_FORM_RX_A_FORM 0x0022000000000000UL
+#define LIBXSMM_S390X_FORM_RX_B_FORM 0x0023000000000000UL
+#define LIBXSMM_S390X_FORM_RXE_FORM 0x0024000000000000UL
+#define LIBXSMM_S390X_FORM_RXF_FORM 0x0025000000000000UL
+#define LIBXSMM_S390X_FORM_RXY_A_FORM 0x0026000000000000UL
+#define LIBXSMM_S390X_FORM_RXY_B_FORM 0x0027000000000000UL
+#define LIBXSMM_S390X_FORM_S_FORM 0x0028000000000000UL
+#define LIBXSMM_S390X_FORM_SI_FORM 0x0029000000000000UL
+#define LIBXSMM_S390X_FORM_SIL_FORM 0x002a000000000000UL
+#define LIBXSMM_S390X_FORM_SIY_FORM 0x002b000000000000UL
+#define LIBXSMM_S390X_FORM_SMI_FORM 0x002c000000000000UL
+#define LIBXSMM_S390X_FORM_SS_A_FORM 0x002d000000000000UL
+#define LIBXSMM_S390X_FORM_SS_B_FORM 0x002e000000000000UL
+#define LIBXSMM_S390X_FORM_SS_C_FORM 0x002f000000000000UL
+#define LIBXSMM_S390X_FORM_SS_D_FORM 0x0030000000000000UL
+#define LIBXSMM_S390X_FORM_SS_E_FORM 0x0031000000000000UL
+#define LIBXSMM_S390X_FORM_SS_F_FORM 0x0032000000000000UL
+#define LIBXSMM_S390X_FORM_SSE_FORM 0x0033000000000000UL
+#define LIBXSMM_S390X_FORM_SSF_FORM 0x0034000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_A_FORM 0x0035000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_B_FORM 0x0036000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_C_FORM 0x0037000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_D_FORM 0x0038000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_E_FORM 0x0039000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_F_FORM 0x003a000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_G_FORM 0x003b000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_H_FORM 0x003c000000000000UL
+#define LIBXSMM_S390X_FORM_VRI_I_FORM 0x003d000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_A_FORM 0x003e000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_B_FORM 0x003f000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_C_FORM 0x0040000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_D_FORM 0x0041000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_E_FORM 0x0042000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_F_FORM 0x0043000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_G_FORM 0x0044000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_H_FORM 0x0045000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_I_FORM 0x0046000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_J_FORM 0x0047000000000000UL
+#define LIBXSMM_S390X_FORM_VRR_K_FORM 0x0048000000000000UL
+#define LIBXSMM_S390X_FORM_VRS_A_FORM 0x0049000000000000UL
+#define LIBXSMM_S390X_FORM_VRS_B_FORM 0x004a000000000000UL
+#define LIBXSMM_S390X_FORM_VRS_C_FORM 0x004b000000000000UL
+#define LIBXSMM_S390X_FORM_VRS_D_FORM 0x004c000000000000UL
+#define LIBXSMM_S390X_FORM_VRV_FORM 0x004d000000000000UL
+#define LIBXSMM_S390X_FORM_VRX_FORM 0x004e000000000000UL
+#define LIBXSMM_S390X_FORM_VSI_FORM 0x004f000000000000UL
 
+#define LIBXSMM_S390X_INSTR_AGFI 0x000ec20800000000UL /* Add Immediate (64-32), form: RIL-a */
 #define LIBXSMM_S390X_INSTR_AGH 0x0026e30000000038UL /* Add Halfword (64<-16), form: RXY-a */
 #define LIBXSMM_S390X_INSTR_AGHI 0x00040000a70b0000UL /* Add Halfword Immediate (64<-16), form: RI-a */
 #define LIBXSMM_S390X_INSTR_AGHIK 0x000aec00000000d9UL /* Add Immediate (64<-16), form: RIE-d */
@@ -221,6 +319,193 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 #define LIBXSMM_S390X_INSTR_ALGHSIK 0x000aec00000000dbUL /* Add Logical with Signed Immediate (64<-16), form: RIE-d */
 #define LIBXSMM_S390X_INSTR_ALGR 0x00140000b90a0000UL /* Add Logical (64), form: RRE */
 #define LIBXSMM_S390X_INSTR_ALGRK 0x00150000b9ea0000UL /* Add Logical (64), form: RRF-a */
+#define LIBXSMM_S390X_INSTR_BAKR 0x00140000b2400000UL /* Branch and Stack, form: RRE */
+#define LIBXSMM_S390X_INSTR_BAL 0x0022000045000000UL /* Branch and Link, form: RX-a */
+#define LIBXSMM_S390X_INSTR_BALR 0x0012000000000500UL /* Branch and Link, form: RR */
+#define LIBXSMM_S390X_INSTR_BAS 0x002200004d000000UL /* Branch and Save, form: RX-a */
+#define LIBXSMM_S390X_INSTR_BASR 0x0012000000000d00UL /* Branch and Save, form: RR */
+#define LIBXSMM_S390X_INSTR_BASSM 0x0012000000000c00UL /* Branch and Save and Set Mode, form: RR */
+#define LIBXSMM_S390X_INSTR_BC 0x0023000047000000UL /* Branch on Condition, form: RX-b */
+#define LIBXSMM_S390X_INSTR_BCR 0x0012000000000700UL /* Branch on Condition, form: RR */
+#define LIBXSMM_S390X_INSTR_BCT 0x0022000046000000UL /* Branch on Count (32), form: RX-a */
+#define LIBXSMM_S390X_INSTR_BCTG 0x0026e30000000046UL /* Branch on Count (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_BCTGR 0x00140000b9460000UL /* Branch on Count (64), form: RRE */
+#define LIBXSMM_S390X_INSTR_BCTR 0x0012000000000600UL /* Branch on Count (32), form: RR */
+#define LIBXSMM_S390X_INSTR_BIC 0x0027e30000000047UL /* Branch Indirect on Condition, form: RXY-b */
+#define LIBXSMM_S390X_INSTR_BPP 0x002cc70000000000UL /* Branch Prediction Preload, form: SMI */
+#define LIBXSMM_S390X_INSTR_BPRP 0x0003c50000000000UL /* Branch Prediction Relative Preload, form: MII */
+#define LIBXSMM_S390X_INSTR_BRAS 0x00050000a7050000UL /* Branch Relative and Save, form: RI-b */
+#define LIBXSMM_S390X_INSTR_BRASL 0x000fc00500000000UL /* Branch Relative and Save Long, form: RIL-b */
+#define LIBXSMM_S390X_INSTR_BRC 0x00060000a7040000UL /* Branch Relative on Condition, form: RI-c */
+#define LIBXSMM_S390X_INSTR_BRCL 0x0010c00400000000UL /* Branch Relative on Condition Long, form: RIL-c */
+#define LIBXSMM_S390X_INSTR_BRCT 0x00050000a7060000UL /* Branch Relative on Count (32), form: RI-b */
+#define LIBXSMM_S390X_INSTR_BRCTG 0x00050000a7070000UL /* Branch Relative on Count (64), form: RI-b */
+#define LIBXSMM_S390X_INSTR_BRCTH 0x000fcc0600000000UL /* Branch Relative on Count High (32), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_BRXH 0x001d000084000000UL /* Branch Relative on Index High (32), form: RSI */
+#define LIBXSMM_S390X_INSTR_BRXHG 0x000bec0000000044UL /* Branch Relative on Index High (64), form: RIE-e */
+#define LIBXSMM_S390X_INSTR_BRXLE 0x001d000085000000UL /* Branch Relative on Index Low or Equal (32), form: RSI */
+#define LIBXSMM_S390X_INSTR_BRXLG 0x000bec0000000045UL /* Branch Relative on Index Low or Equal (64), form: RIE-e */
+#define LIBXSMM_S390X_INSTR_BSA 0x00140000b25a0000UL /* Branch and Set Authority, form: RRE */
+#define LIBXSMM_S390X_INSTR_BSG 0x00140000b2580000UL /* Branch in Subspace Group, form: RRE */
+#define LIBXSMM_S390X_INSTR_BSM 0x0012000000000b00UL /* Branch and Set Mode, form: RR */
+#define LIBXSMM_S390X_INSTR_BXH 0x001b000086000000UL /* Branch on Index High (32), form: RS-a */
+#define LIBXSMM_S390X_INSTR_BXHG 0x0020eb0000000044UL /* Branch on Index High (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_BXLE 0x001b000087000000UL /* Branch on Index Low or Equal (32), form: RS-a */
+#define LIBXSMM_S390X_INSTR_BXLEG 0x0020eb0000000045UL /* Branch on Index Low or Equal (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_L 0x0022000058000000UL /* Load (32), form: RX-a */
+#define LIBXSMM_S390X_INSTR_LA 0x0022000041000000UL /* Load Address, form: RX-a */
+#define LIBXSMM_S390X_INSTR_LAA 0x0020eb00000000f8UL /* Load and Add (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAAG 0x0020eb00000000e8UL /* Load and Add (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAAL 0x0020eb00000000faUL /* Load and Add Logical (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAALG 0x0020eb00000000eaUL /* Load and Add Logical (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAE 0x0022000051000000UL /* Load Address Extended, form: RX-a */
+#define LIBXSMM_S390X_INSTR_LAEY 0x0026e30000000075UL /* Load Address Extended, form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LAM 0x001b00009a000000UL /* Load Access Multiple, form: RS-a */
+#define LIBXSMM_S390X_INSTR_LAMY 0x0020eb000000009aUL /* Load Access Multiple, form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAN 0x0020eb00000000f4UL /* Load and AND (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LANG 0x0020eb00000000e4UL /* Load and AND (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAO 0x0020eb00000000f6UL /* Load and OR (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAOG 0x0020eb00000000e6UL /* Load and OR (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LARL 0x000fc00000000000UL /* Load Address Relative Long, form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LASP 0x0033e50000000000UL /* Load Address Space Parameters, form: SSE */
+#define LIBXSMM_S390X_INSTR_LAT 0x0026e3000000009fUL /* Load and Trap (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LAX 0x0020eb00000000f7UL /* Load and Exclusive OR (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAXG 0x0020eb00000000e7UL /* Load and Exclusive OR (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LAY 0x0026e30000000071UL /* Load Address, form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LB 0x0026e30000000076UL /* Load Byte (32-8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LBH 0x0026e300000000c0UL /* Load Byte High (32-8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LBR 0x00140000b9260000UL /* Load Byte (32-8), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCBB 0x0024e70000000027UL /* Load Count to Block Boundary, form: RXE */
+#define LIBXSMM_S390X_INSTR_LCDBR 0x00140000b3130000UL /* Load Complement (LB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCDFR 0x00140000b3730000UL /* Load Complement (L), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCDR 0x0012000000002300UL /* Load Complement (LH), form: RR */
+#define LIBXSMM_S390X_INSTR_LCEBR 0x00140000b3030000UL /* Load Complement (SB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCER 0x0012000000003300UL /* Load Complement (SH), form: RR */
+#define LIBXSMM_S390X_INSTR_LCGFR 0x00140000b9130000UL /* Load Complement (64-32), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCGR 0x00140000b9030000UL /* Load Complement (64), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCR 0x0012000000001300UL /* Load Complement (32), form: RR */
+#define LIBXSMM_S390X_INSTR_LCTL 0x001b0000b7000000UL /* Load Control (32), form: RS-a */
+#define LIBXSMM_S390X_INSTR_LCTLG 0x0020eb000000002fUL /* Load Control (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LCXBR 0x00140000b3430000UL /* Load Complement (EB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LCXR 0x00140000b3630000UL /* Load Complement (EH), form: RRE */
+#define LIBXSMM_S390X_INSTR_LD 0x0022000068000000UL /* Load (L), form: RX-a */
+#define LIBXSMM_S390X_INSTR_LDE 0x0024ed0000000024UL /* Load Lengthened (LH-SH), form: RXE */
+#define LIBXSMM_S390X_INSTR_LDEB 0x0024ed0000000004UL /* Load Lengthened (LB-SB), form: RXE */
+#define LIBXSMM_S390X_INSTR_LDEBR 0x00140000b3040000UL /* Load Lengthened (LB-SB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LDER 0x00140000b3240000UL /* Load Lengthened (LH-SH), form: RRE */
+#define LIBXSMM_S390X_INSTR_LDETR 0x00180000b3d40000UL /* Load Lengthened (LD-SD), form: RRF-d */
+#define LIBXSMM_S390X_INSTR_LDGR 0x00140000b3c10000UL /* Load FPR from GR (L-64), form: RRE */
+#define LIBXSMM_S390X_INSTR_LDR 0x0012000000002800UL /* Load (L), form: RR */
+#define LIBXSMM_S390X_INSTR_LDXBR 0x00140000b3450000UL /* Load Rounded (LB-EB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LDXBRA 0x00190000b3450000UL /* Load Rounded (LB-EB), form: RRF-e */
+#define LIBXSMM_S390X_INSTR_LDXR 0x0012000000002500UL /* Load Rounded (LH-EH), form: RR */
+#define LIBXSMM_S390X_INSTR_LDXTR 0x00190000b3dd0000UL /* Load Rounded (LD-ED), form: RRF-e */
+#define LIBXSMM_S390X_INSTR_LDY 0x0026ed0000000065UL /* Load (L), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LE 0x0022000078000000UL /* Load (S), form: RX-a */
+#define LIBXSMM_S390X_INSTR_LEDBR 0x00140000b3440000UL /* Load Rounded (SB-LB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LEDBRA 0x00190000b3440000UL /* Load Rounded (SB-LB), form: RRF-e */
+#define LIBXSMM_S390X_INSTR_LEDR 0x0012000000003500UL /* Load Rounded (SH-LH), form: RR */
+#define LIBXSMM_S390X_INSTR_LEDTR 0x00190000b3d50000UL /* Load Rounded (SD-LD), form: RRF-e */
+#define LIBXSMM_S390X_INSTR_LER 0x0012000000003800UL /* Load (S), form: RR */
+#define LIBXSMM_S390X_INSTR_LEXBR 0x00140000b3460000UL /* Load Rounded (SB-EB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LEXBRA 0x00190000b3460000UL /* Load Rounded (SB-EB), form: RRF-e */
+#define LIBXSMM_S390X_INSTR_LEXR 0x00140000b3660000UL /* Load Rounded (SH-EH), form: RRE */
+#define LIBXSMM_S390X_INSTR_LEY 0x0026ed0000000064UL /* Load (S), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LFH 0x0026e300000000caUL /* Load High (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LFHAT 0x0026e300000000c8UL /* Load and Trap (32H-32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LG 0x0026e30000000004UL /* Load (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LGAT 0x0026e30000000085UL /* Load and Trap (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LGB 0x0026e30000000077UL /* Load Byte (64-8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LGBR 0x00140000b9060000UL /* Load Byte (64-8), form: RRE */
+#define LIBXSMM_S390X_INSTR_LGDR 0x00140000b3cd0000UL /* Load GR from FPR (64-L), form: RRE */
+#define LIBXSMM_S390X_INSTR_LGF 0x0026e30000000014UL /* Load (64-32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LGFI 0x000ec00100000000UL /* Load Immediate (64-32), form: RIL-a */
+#define LIBXSMM_S390X_INSTR_LGFR 0x00140000b9140000UL /* Load (64-32), form: RRE */
+#define LIBXSMM_S390X_INSTR_LGFRL 0x000fc40c00000000UL /* Load Relative Long (64-32), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LGG 0x0026e3000000004cUL /* Load guarded (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LGH 0x0026e30000000015UL /* Load Halfword (64-16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LGHI 0x00040000a7090000UL /* Load Halfword Immediate (64-16), form: RI-a */
+#define LIBXSMM_S390X_INSTR_LGHR 0x00140000b9070000UL /* Load Halfword (64-16), form: RRE */
+#define LIBXSMM_S390X_INSTR_LGHRL 0x000fc40400000000UL /* Load Halfword Relative Long (64-16), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LGR 0x00140000b9040000UL /* Load (64), form: RRE */
+#define LIBXSMM_S390X_INSTR_LGRL 0x000fc40800000000UL /* Load Relative Long (64), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LGSC 0x0026e3000000004dUL /* Load guarded storage controls, form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LH 0x0022000048000000UL /* Load Halfword (32-16), form: RX-a */
+#define LIBXSMM_S390X_INSTR_LHH 0x0026e300000000c4UL /* Load Halfword High (32-16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LHI 0x00040000a7080000UL /* Load Halfword Immediate (32-16), form: RI-a */
+#define LIBXSMM_S390X_INSTR_LHR 0x00140000b9270000UL /* Load Halfword (32-16), form: RRE */
+#define LIBXSMM_S390X_INSTR_LHRL 0x000fc40500000000UL /* Load Halfword Relative Long (32-16), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LHY 0x0026e30000000078UL /* Load Halfword (32-16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLC 0x0026e30000000094UL /* Load Logical Character (32-8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLCH 0x0026e300000000c2UL /* Load Logical Character High (32-8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLCR 0x00140000b9940000UL /* Load Logical Character (32-8), form: RRE */
+#define LIBXSMM_S390X_INSTR_LLGC 0x0026e30000000090UL /* Load Logical Character (64-8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLGCR 0x00140000b9840000UL /* Load Logical Character (64-8), form: RRE */
+#define LIBXSMM_S390X_INSTR_LLGF 0x0026e30000000016UL /* Load Logical (64-32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLGFR 0x00140000b9160000UL /* Load Logical (64-32), form: RRE */
+#define LIBXSMM_S390X_INSTR_LLGFRL 0x000fc40e00000000UL /* Load Logical Relative Long (64-32), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LLGFSG 0x0026e30000000048UL /* Load logical and shift guarded (64-32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLGH 0x0026e30000000091UL /* Load Logical Halfword (64-16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLGHR 0x00140000b9850000UL /* Load Logical Halfword (64-16), form: RRE */
+#define LIBXSMM_S390X_INSTR_LLGHRL 0x000fc40600000000UL /* Load Logical Halfword Relative Long (64-16), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LLH 0x0026e30000000095UL /* Load Logical Halfword (32-16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLHH 0x0026e300000000c6UL /* Load Logical Halfword High (32-16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LLHR 0x00140000b9950000UL /* Load Logical Halfword (32-16), form: RRE */
+#define LIBXSMM_S390X_INSTR_LLHRL 0x000fc40200000000UL /* Load Logical Halfword Relative Long (32-16), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LLIHF 0x000ec00e00000000UL /* Load Logical Immediate (high), form: RIL-a */
+#define LIBXSMM_S390X_INSTR_LLIHH 0x00040000a50c0000UL /* Load Logical Immediate (high high), form: RI-a */
+#define LIBXSMM_S390X_INSTR_LLIHL 0x00040000a50d0000UL /* Load Logical Immediate (high low), form: RI-a */
+#define LIBXSMM_S390X_INSTR_LLILF 0x000ec00f00000000UL /* Load Logical Immediate (low), form: RIL-a */
+#define LIBXSMM_S390X_INSTR_LLILH 0x00040000a50e0000UL /* Load Logical Immediate (low high), form: RI-a */
+#define LIBXSMM_S390X_INSTR_LLILL 0x00040000a50f0000UL /* Load Logical Immediate (low low), form: RI-a */
+#define LIBXSMM_S390X_INSTR_LLZRGF 0x0026e3000000003aUL /* Load Logical and Zero Rightmost Byte (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LM 0x001b000098000000UL /* Load Multiple (32), form: RS-a */
+#define LIBXSMM_S390X_INSTR_LMD 0x0031ef0000000000UL /* Load Multiple Disjoint (64-32&32), form: SS-e */
+#define LIBXSMM_S390X_INSTR_LMG 0x0020eb0000000004UL /* Load Multiple (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LMH 0x0020eb0000000096UL /* Load Multiple High, form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LMY 0x0020eb0000000098UL /* Load Multiple (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_LNDBR 0x00140000b3110000UL /* Load Negative (LB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LNDFR 0x00140000b3710000UL /* Load Negative (L), form: RRE */
+#define LIBXSMM_S390X_INSTR_LNDR 0x0012000000002100UL /* Load Negative (LH), form: RR */
+#define LIBXSMM_S390X_INSTR_LNEBR 0x00140000b3010000UL /* Load Negative (SB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LNER 0x0012000000003100UL /* Load Negative (SH), form: RR */
+#define LIBXSMM_S390X_INSTR_LNGFR 0x00140000b9110000UL /* Load Negative (64-32), form: RRE */
+#define LIBXSMM_S390X_INSTR_LNGR 0x00140000b9010000UL /* Load Negative (64), form: RRE */
+#define LIBXSMM_S390X_INSTR_LNR 0x0012000000001100UL /* Load Negative (32), form: RR */
+#define LIBXSMM_S390X_INSTR_LNXBR 0x00140000b3410000UL /* Load Negative (EB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LNXR 0x00140000b3610000UL /* Load Negative (EH), form: RRE */
+#define LIBXSMM_S390X_INSTR_LOC 0x0021eb00000000f2UL /* Load on Condition (32), form: RSY-b */
+#define LIBXSMM_S390X_INSTR_LPD 0x0034c80400000000UL /* Load Pair Disjoint (32), form: SSF */
+#define LIBXSMM_S390X_INSTR_LPDBR 0x00140000b3100000UL /* Load Positive (LB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LPDFR 0x00140000b3700000UL /* Load Positive (L), form: RRE */
+#define LIBXSMM_S390X_INSTR_LPDG 0x0034c80500000000UL /* Load Pair Disjoint (64), form: SSF */
+#define LIBXSMM_S390X_INSTR_LPDR 0x0012000000002000UL /* Load Positive (LH), form: RR */
+#define LIBXSMM_S390X_INSTR_LPEBR 0x00140000b3000000UL /* Load Positive (SB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LPER 0x0012000000003000UL /* Load Positive (SH), form: RR */
+#define LIBXSMM_S390X_INSTR_LPGFR 0x00140000b9100000UL /* Load Positive (64-32), form: RRE */
+#define LIBXSMM_S390X_INSTR_LPGR 0x00140000b9000000UL /* Load Positive (64), form: RRE */
+#define LIBXSMM_S390X_INSTR_LPQ 0x0026e3000000008fUL /* Load Pair from Quadword (64&64-128), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LPR 0x0012000000001000UL /* Load Positive (32), form: RR */
+#define LIBXSMM_S390X_INSTR_LPSW 0x0029000082000000UL /* Load PSW, form: SI */
+#define LIBXSMM_S390X_INSTR_LPSWE 0x00280000b2b20000UL /* Load PSW Extended, form: S */
+#define LIBXSMM_S390X_INSTR_LPSWEY 0x002beb0000000071UL /* Load PSW Extended, form: SIY */
+#define LIBXSMM_S390X_INSTR_LPXBR 0x00140000b3400000UL /* Load Positive (EB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LPXR 0x00140000b3600000UL /* Load Positive (EH), form: RRE */
+#define LIBXSMM_S390X_INSTR_LR 0x0012000000001800UL /* Load (32), form: RR */
+#define LIBXSMM_S390X_INSTR_LRA 0x00220000b1000000UL /* Load Real Address (32), form: RX-a */
+#define LIBXSMM_S390X_INSTR_LRAG 0x0026e30000000003UL /* Load Real Address (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LRAY 0x0026e30000000013UL /* Load Real Address (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LRDR 0x0012000000002500UL /* Load Rounded (LH-EH), form: RR */
+#define LIBXSMM_S390X_INSTR_LRER 0x0012000000003500UL /* Load Rounded (SH-LH), form: RR */
+#define LIBXSMM_S390X_INSTR_LRL 0x000fc40d00000000UL /* Load Relative Long (32), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_LRV 0x0026e3000000001eUL /* Load Reversed (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LRVG 0x0026e3000000000fUL /* Load Reversed (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LRVGR 0x00140000b90f0000UL /* Load Reversed (64), form: RRE */
+#define LIBXSMM_S390X_INSTR_LRVH 0x0026e3000000001fUL /* Load Reversed (16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LRVR 0x00140000b91f0000UL /* Load Reversed (32), form: RRE */
+#define LIBXSMM_S390X_INSTR_LT 0x0026e30000000012UL /* Load and Test (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_LTDBR 0x00140000b3120000UL /* Load and Test (LB), form: RRE */
+#define LIBXSMM_S390X_INSTR_LTDR 0x0012000000002200UL /* Load and Test (LH), form: RR */
 #define LIBXSMM_S390X_INSTR_M 0x002200005c000000UL /* Multiply (64<-32), form: RX-a */
 #define LIBXSMM_S390X_INSTR_MAD 0x0025ed000000003eUL /* Multiply and Add (LH), form: RXF */
 #define LIBXSMM_S390X_INSTR_MADB 0x0025ed000000001eUL /* Multiply and Add (LB), form: RXF */
@@ -277,6 +562,8 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 #define LIBXSMM_S390X_INSTR_OILH 0x00040000a50a0000UL /* OR Immediate (low high), form: RI-a */
 #define LIBXSMM_S390X_INSTR_OILL 0x00040000a50b0000UL /* OR Immediate (low low), form: RI-a */
 #define LIBXSMM_S390X_INSTR_OIY 0x002beb0000000056UL /* OR Immediate, form: SIY */
+#define LIBXSMM_S390X_INSTR_PFD 0x0027e30000000036UL /* Prefetch Data, form: RXY-b */
+#define LIBXSMM_S390X_INSTR_PFDRL 0x0010c60200000000UL /* Prefetch Data Relative Long, form: RIL-c */
 #define LIBXSMM_S390X_INSTR_RISBG 0x000cec0000000055UL /* [,I5] Rotate then Insert Selected Bits (64), form: RIE-f */
 #define LIBXSMM_S390X_INSTR_RISBGN 0x000cec0000000059UL /* [,I5] Rotate then Insert Selected Bits (64), form: RIE-f */
 #define LIBXSMM_S390X_INSTR_RISBHG 0x000cec000000005dUL /* [,I5] Rotate then Insert Selected Bits High (32), form: RIE-f */
@@ -291,6 +578,8 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 #define LIBXSMM_S390X_INSTR_SLDA 0x001b00008f000000UL /* Shift Left Double (64), form: RS-a */
 #define LIBXSMM_S390X_INSTR_SLDL 0x001b00008d000000UL /* Shift Left Double Logical (64), form: RS-a */
 #define LIBXSMM_S390X_INSTR_SLDT 0x0025ed0000000040UL /* Shift Significand Left (LD), form: RXF */
+#define LIBXSMM_S390X_INSTR_SLFI 0x000ec20500000000UL /* Subtract Logical Immediate (32), form: RIL-a */
+#define LIBXSMM_S390X_INSTR_SLGFI 0x000ec20400000000UL /* Subtract Logical Immediate (64-32), form: RIL-a */
 #define LIBXSMM_S390X_INSTR_SLL 0x001b000089000000UL /* Shift Left Single Logical (32), form: RS-a */
 #define LIBXSMM_S390X_INSTR_SLLG 0x0020eb000000000dUL /* Shift Left Single Logical (64), form: RSY-a */
 #define LIBXSMM_S390X_INSTR_SLLK 0x0020eb00000000dfUL /* Shift Left Single Logical (32), form: RSY-a */
@@ -307,12 +596,42 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 #define LIBXSMM_S390X_INSTR_ST 0x0022000050000000UL /* Store (32), form: RX-a */
 #define LIBXSMM_S390X_INSTR_STAM 0x001b00009b000000UL /* Store Access Multiple, form: RS-a */
 #define LIBXSMM_S390X_INSTR_STAMY 0x0020eb000000009bUL /* Store Access Multiple, form: RSY-a */
+#define LIBXSMM_S390X_INSTR_STC 0x0022000042000000UL /* Store Character, form: RX-a */
+#define LIBXSMM_S390X_INSTR_STCH 0x0026e300000000c3UL /* Store Character High (8), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STCM 0x001c0000be000000UL /* Store Characters under Mask (low), form: RS-b */
+#define LIBXSMM_S390X_INSTR_STCMH 0x0021eb000000002cUL /* Store Characters under Mask (high), form: RSY-b */
+#define LIBXSMM_S390X_INSTR_STCMY 0x0021eb000000002dUL /* Store Characters under Mask (low), form: RSY-b */
+#define LIBXSMM_S390X_INSTR_STCPS 0x00280000b23a0000UL /* Store Channel Path Status, form: S */
+#define LIBXSMM_S390X_INSTR_STCRW 0x00280000b2390000UL /* Store Channel Report Word, form: S */
+#define LIBXSMM_S390X_INSTR_STCTG 0x0020eb0000000025UL /* Store Control (64), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_STCTL 0x001b0000b6000000UL /* Store Control (32), form: RS-a */
+#define LIBXSMM_S390X_INSTR_STCY 0x0026e30000000072UL /* Store Character, form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STD 0x0022000060000000UL /* Store (L), form: RX-a */
+#define LIBXSMM_S390X_INSTR_STDY 0x0026ed0000000067UL /* Store (L), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STE 0x0022000070000000UL /* Store (S), form: RX-a */
+#define LIBXSMM_S390X_INSTR_STEY 0x0026ed0000000066UL /* Store (S), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STFH 0x0026e300000000cbUL /* Store High (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STFPC 0x00280000b29c0000UL /* Store FPC, form: S */
 #define LIBXSMM_S390X_INSTR_STG 0x0026e30000000024UL /* Store (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STGRL 0x000fc40b00000000UL /* Store Relative Long (64), form: RIL-b */
 #define LIBXSMM_S390X_INSTR_STH 0x0022000040000000UL /* Store Halfword (16), form: RX-a */
+#define LIBXSMM_S390X_INSTR_STHH 0x0026e300000000c7UL /* Store Halfword High (16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STHRL 0x000fc40700000000UL /* Store Halfword Relative Long (16), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_STHY 0x0026e30000000070UL /* Store Halfword (16), form: RXY-a */
 #define LIBXSMM_S390X_INSTR_STM 0x001b000090000000UL /* Store Multiple (32), form: RS-a */
 #define LIBXSMM_S390X_INSTR_STMG 0x0020eb0000000024UL /* Store Multiple (64), form: RSY-a */
 #define LIBXSMM_S390X_INSTR_STMH 0x0020eb0000000026UL /* Store Multiple High (32), form: RSY-a */
 #define LIBXSMM_S390X_INSTR_STMY 0x0020eb0000000090UL /* Store Multiple (32), form: RSY-a */
+#define LIBXSMM_S390X_INSTR_STNSM 0x00290000ac000000UL /* Store Then And System Mask, form: SI */
+#define LIBXSMM_S390X_INSTR_STOSM 0x00290000ad000000UL /* Store Then Or System Mask, form: SI */
+#define LIBXSMM_S390X_INSTR_STPQ 0x0026e3000000008eUL /* Store Pair to Quadword (64,64128), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STPX 0x00280000b2110000UL /* Store Prefix, form: S */
+#define LIBXSMM_S390X_INSTR_STRAG 0x0033e50200000000UL /* Store Real Address (64), form: SSE */
+#define LIBXSMM_S390X_INSTR_STRL 0x000fc40f00000000UL /* Store Relative Long (32), form: RIL-b */
+#define LIBXSMM_S390X_INSTR_STRV 0x0026e3000000003eUL /* Store Reversed (32), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STRVG 0x0026e3000000002fUL /* Store Reversed (64), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STRVH 0x0026e3000000003fUL /* Store Reversed (16), form: RXY-a */
+#define LIBXSMM_S390X_INSTR_STSCH 0x00280000b2340000UL /* Store Subchannel, form: S */
 #define LIBXSMM_S390X_INSTR_STY 0x0026e30000000050UL /* Store (32), form: RXY-a */
 #define LIBXSMM_S390X_INSTR_TBDR 0x00190000b3510000UL /* Convert HFP to BFP (LB<-LH), form: RRF-e */
 #define LIBXSMM_S390X_INSTR_TBEDR 0x00190000b3500000UL /* Convert HFP to BFP (SB<-LH), form: RRF-e */
