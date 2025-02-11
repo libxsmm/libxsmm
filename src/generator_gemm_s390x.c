@@ -11,6 +11,32 @@
 
 #include "generator_gemm_s390x.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vecotr_m_loop( libxsmm_generated_code        *io_generated_code,
+                                           const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                           libxsmm_s390x_reg             *io_reg_tracker,
+                                           libxsmm_loop_label_tracker    *io_loop_labels ) {
+
+  /* m loop values */
+  unsigned int l_m_iters = i_xgemm_desc->m ;
+  unsigned int l_m_loop;
+
+  if ( l_m_iters > 1 ) {
+    l_m_loop = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_set_value( io_generated_code, l_m_loop, l_m_iters );
+    libxsmm_s390x_instr_register_jump_label( io_generated_code, io_loop_labels );
+  }
+
+  libxsmm_s390x_instr_nop(io_generated_code);
+  libxsmm_s390x_instr_nop(io_generated_code);
+
+  if ( l_m_iters > 1 ) {
+    libxsmm_s390x_instr_branch_count_jump_label( io_generated_code, l_m_loop, io_loop_labels );
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_m_loop );
+  }
+
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_vector_kernel( libxsmm_generated_code        *io_generated_code,
