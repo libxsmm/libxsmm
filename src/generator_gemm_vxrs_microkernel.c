@@ -12,6 +12,15 @@
 #include "generator_gemm_vxrs_microkernel.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_vxrs_microkernel( libxsmm_generated_code        *io_generated_code,
+                                         const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                         libxsmm_s390x_reg             *io_reg_tracker,
+                                         libxsmm_loop_label_tracker    *io_loop_labels,
+                                         const libxsmm_s390x_blocking  *i_blocking ) {
+
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code        *io_generated_code,
                                              const libxsmm_gemm_descriptor *i_xgemm_desc,
                                              libxsmm_s390x_reg             *io_reg_tracker,
@@ -30,7 +39,9 @@ void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code        *io_g
   unsigned int l_m_blocks = i_m / l_vec_ele;
   unsigned int l_m_rem = i_m % l_vec_ele;
 
-  for ( unsigned int l_col = 0; l_col < i_n; ++l_col ) {
+  unsigned int l_col;
+
+  for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* If packed, use multiload */
     if ( l_m_blocks > 0 ) {
       unsigned int l_offset = i_lda*l_col;
@@ -66,22 +77,24 @@ void libxsmm_generator_vxrs_block_load_bcast( libxsmm_generated_code        *io_
   unsigned int l_m_load_blocks = i_m / l_vec_ele;
   unsigned int l_m_load_rem = i_m % l_vec_ele;
 
+  unsigned int l_col, l_row, l_ele;
+
   unsigned int l_scratch = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_VR );
 
-  for ( unsigned int l_col = 0; l_col < i_n; ++l_col ) {
+  for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* Packed load into scratch and then broadcast */
-    for ( unsigned int l_row = 0; l_row < l_m_load_blocks; ++l_row ) {
+    for ( l_row = 0; l_row < l_m_load_blocks; ++l_row ) {
       unsigned int l_offset = i_lda*l_col + l_vec_len*l_row;
       libxsmm_s390x_instr_vec_load( io_generated_code, io_reg_tracker, i_a, l_offset, l_scratch );
 
-      for ( int l_ele = 0; l_ele < l_vec_ele; ++l_ele ) {
+      for ( l_ele = 0; l_ele < l_vec_ele; ++l_ele ) {
         unsigned int l_t = io_t[l_col*i_ldt + l_row*l_vec_ele + l_ele];
         libxsmm_s390x_instr_vec_bcast( io_generated_code, i_datatype, l_scratch, l_ele, l_t );
       }
     }
 
     /* For partial, just perform load and broadcast op */
-    for ( unsigned int l_ele = 0; l_ele < l_m_load_rem; ++l_ele ) {
+    for ( l_ele = 0; l_ele < l_m_load_rem; ++l_ele ) {
       unsigned int l_offset = i_lda*l_col + l_vec_len*l_m_load_blocks + l_ele*l_databytes;
       unsigned int l_t = io_t[l_col*i_ldt + l_vec_ele*l_m_load_blocks + l_ele];
       libxsmm_s390x_instr_vec_load_bcast( io_generated_code, io_reg_tracker, i_datatype, i_a, l_offset, l_t );
@@ -108,7 +121,9 @@ void libxsmm_generator_vxrs_block_store_mult( libxsmm_generated_code        *io_
   unsigned int l_m_blocks = i_m / l_vec_ele;
   unsigned int l_m_rem = i_m % l_vec_ele;
 
-  for ( unsigned int l_col = 0; l_col < i_n; ++l_col ) {
+  unsigned int l_col;
+
+  for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* If packed, use multistore */
     if ( l_m_blocks > 0 ) {
       unsigned int l_offset = i_lda*l_col;

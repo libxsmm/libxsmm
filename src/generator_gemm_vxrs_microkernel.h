@@ -14,6 +14,12 @@
 
 #include "generator_s390x_instructions.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_vxrs_microkernel( libxsmm_generated_code        *io_generated_code,
+                                         const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                         libxsmm_s390x_reg             *io_reg_tracker,
+                                         libxsmm_loop_label_tracker    *io_loop_labels,
+                                         const libxsmm_s390x_blocking  *i_blocking );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code        *io_generated_code,

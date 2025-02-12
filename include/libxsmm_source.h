@@ -50,6 +50,7 @@
 #include "../src/generator_gemm_sme_microkernel.c"
 #include "../src/generator_gemm_sse_avx_avx2_avx512.c"
 #include "../src/generator_gemm_sse_microkernel.c"
+#include "../src/generator_gemm_vxrs_microkernel.c"
 #include "../src/generator_mateltwise.c"
 #include "../src/generator_mateltwise_aarch64.c"
 #include "../src/generator_mateltwise_common.c"
