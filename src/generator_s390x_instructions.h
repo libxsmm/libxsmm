@@ -39,7 +39,7 @@
 typedef enum libxsmm_s390x_reg_type {
   LIBXSMM_S390X_GPR = 0,
   LIBXSMM_S390X_FPR = 1,
-  LIBXSMM_S390X_VR = 2,
+  LIBXSMM_S390X_VR = 2
 } libxsmm_s390x_reg_type;
 
 
@@ -53,15 +53,19 @@ typedef enum libxsmm_s390x_reg_util {
 #define LIBXSMM_S390X_ARCH11_GPR 16
 #define LIBXSMM_S390X_ARCH11_FPR 16
 #define LIBXSMM_S390X_ARCH11_VR 32
+#define LIBXSMM_S390X_ARCH11_VR_SCRATCH 1
 #define LIBXSMM_S390X_ARCH12_GPR 16
 #define LIBXSMM_S390X_ARCH12_FPR 16
 #define LIBXSMM_S390X_ARCH12_VR 32
+#define LIBXSMM_S390X_ARCH12_VR_SCRATCH 1
 #define LIBXSMM_S390X_ARCH13_GPR 16
 #define LIBXSMM_S390X_ARCH13_FPR 16
 #define LIBXSMM_S390X_ARCH13_VR 32
+#define LIBXSMM_S390X_ARCH13_VR_SCRATCH 1
 #define LIBXSMM_S390X_ARCH14_GPR 16
 #define LIBXSMM_S390X_ARCH14_FPR 16
 #define LIBXSMM_S390X_ARCH14_VR 32
+#define LIBXSMM_S390X_ARCH14_VR_SCRATCH 1
 
 /* Register width */
 #define LIBXSMM_S390X_GPR_WIDTH 64
@@ -111,6 +115,7 @@ typedef struct libxsmm_s390x_blocking {
   unsigned int vector_len_b;
   unsigned int vector_len_c;
   unsigned int vector_len_comp;
+  unsigned int comp_bytes;
 
   unsigned int block_m;
   unsigned int block_n;

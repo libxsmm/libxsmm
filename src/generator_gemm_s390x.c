@@ -12,11 +12,136 @@
 #include "generator_gemm_s390x.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_s390x_vxrs_reg( unsigned int  i_vec_len,
+                                            unsigned int *i_blocking,
+                                            unsigned int *o_reg ) {
+  /* a reg := [0], b reg := [1], c reg := [2] */
+  o_reg[0] = ( ( i_blocking[0] + i_vec_len - 1 ) / i_vec_len )*i_blocking[2];
+  o_reg[1] = i_blocking[1]*i_blocking[2];
+  o_reg[2] = ( ( i_blocking[0] + i_vec_len - 1 ) / i_vec_len )*i_blocking[1];
+}
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_s390x_reg_sum( unsigned int const     i_vec_len,
+                                                   unsigned int          *i_blocking,
+                                                   libxsmm_s390x_reg_func i_reg_func ) {
+  unsigned int l_reg[3];
+  i_reg_func( i_vec_len, i_blocking, l_reg );
+  return l_reg[0] + l_reg[1] + l_reg[2];
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_s390x_vxrs_blocking_maximise( libxsmm_generated_code        *io_generated_code,
+                                                          const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                                          libxsmm_s390x_blocking        *io_blocking,
+                                                          libxsmm_s390x_reg_func         i_reg_func ) {
+  unsigned int l_vector_len = io_blocking->vector_len_comp;
+  unsigned int l_inc[3], l_blocking[3], l_dims[3], l_reg[3], l_full[3];
+  unsigned int l_weights[] = {0, 1, 0, 1, 2};
+  unsigned int l_nweight = (unsigned int)(sizeof(l_weights) / sizeof(l_weights[0]));
+  unsigned int l_nreg, l_reg_max, l_step, i;
+
+  for ( i = 0; i < 3 ; ++i ) {
+    l_inc[i] = l_vector_len;
+    l_blocking[i] = l_inc[i];
+    l_reg[i] = 0;
+    l_full[i] = 0;
+  }
+  l_dims[0] = i_xgemm_desc->m;
+  l_dims[1] = i_xgemm_desc->n;
+  l_dims[2] = i_xgemm_desc->k;
+
+  l_nreg = libxsmm_generator_gemm_s390x_reg_sum( l_vector_len, l_blocking, i_reg_func );
+
+  switch ( io_generated_code->arch ) {
+    case LIBXSMM_S390X_ARCH11: {
+      l_reg_max = LIBXSMM_S390X_ARCH11_VR - LIBXSMM_S390X_ARCH11_VR_SCRATCH;
+    } break;
+    case LIBXSMM_S390X_ARCH12: {
+      l_reg_max = LIBXSMM_S390X_ARCH12_VR - LIBXSMM_S390X_ARCH12_VR_SCRATCH;
+    } break;
+    case LIBXSMM_S390X_ARCH13: {
+      l_reg_max = LIBXSMM_S390X_ARCH13_VR - LIBXSMM_S390X_ARCH13_VR_SCRATCH;
+    } break;
+    case LIBXSMM_S390X_ARCH14: {
+      l_reg_max = LIBXSMM_S390X_ARCH14_VR - LIBXSMM_S390X_ARCH14_VR_SCRATCH;
+    } break;
+    default: {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+      return;
+    }
+  }
+
+  l_step = 0;
+  while ( l_nreg < l_reg_max && !( l_full[0] && l_full[1] && l_full[2] ) ) {
+    unsigned int l_b = l_weights[l_step % l_nweight];
+
+    if( !l_full[l_b] ) {
+      unsigned int l_temp_nreg;
+      l_blocking[l_b] += l_inc[l_b];
+      l_temp_nreg = libxsmm_generator_gemm_s390x_reg_sum( l_vector_len, l_blocking, i_reg_func );
+
+      if ( l_temp_nreg > l_reg_max ) {
+        l_blocking[l_b] -= l_inc[l_b];
+        l_full[l_b] = 1;
+      } else {
+        l_nreg = l_temp_nreg;
+      }
+      l_full[l_b] |= ( l_blocking[l_b] >= l_dims[l_b] );
+    }
+    ++l_step;
+  }
+
+  if ( libxsmm_generator_gemm_s390x_reg_sum( l_vector_len, l_blocking, i_reg_func ) > l_reg_max ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  /* Set blocking and reg layout based on result */
+  io_blocking->block_m = l_blocking[0];
+  io_blocking->block_n = l_blocking[1];
+  io_blocking->block_k = l_blocking[2];
+
+  i_reg_func( io_blocking->vector_len_comp, l_blocking, l_reg );
+  io_blocking->n_reg_a = l_reg[0];
+  io_blocking->n_reg_b = l_reg[1];
+  io_blocking->n_reg_c = l_reg[2];
+
+  io_blocking->reg_lda = (io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+  io_blocking->reg_ldb = io_blocking->block_k;
+  io_blocking->reg_ldc = ( io_blocking->block_m + io_blocking->vector_len_comp - 1 ) / io_blocking->vector_len_comp;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_s390x_vxrs_blocking_init( libxsmm_generated_code        *io_generated_code,
+                                                      const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                                      libxsmm_s390x_blocking        *io_blocking ) {
+  unsigned int l_v_bytes = LIBXSMM_S390X_VR_WIDTH / 8;
+  libxsmm_s390x_reg_func l_reg_func = NULL;
+
+  io_blocking->vector_len_a = l_v_bytes / libxsmm_s390x_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_b = l_v_bytes / libxsmm_s390x_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_c = l_v_bytes / libxsmm_s390x_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->comp_bytes = libxsmm_s390x_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_comp = l_v_bytes / io_blocking->comp_bytes;
+
+  if ( io_generated_code->arch >= LIBXSMM_S390X_ARCH11 ) {
+    l_reg_func = &libxsmm_generator_gemm_s390x_vxrs_reg;
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
+  }
+
+  /* Perform a rough maximisation of blocking */
+  libxsmm_generator_gemm_s390x_vxrs_blocking_maximise( io_generated_code, i_xgemm_desc, io_blocking, l_reg_func );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io_generated_code,
                                                const libxsmm_gemm_descriptor *i_xgemm_desc,
                                                libxsmm_s390x_reg             *io_reg_tracker,
+                                               libxsmm_s390x_blocking        *i_blocking,
                                                libxsmm_loop_label_tracker    *io_loop_labels ) {
-
   /* m loop values */
   unsigned int l_m_iters = i_xgemm_desc->m ;
   unsigned int l_m_loop;
@@ -34,16 +159,17 @@ void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io
     libxsmm_s390x_instr_branch_count_jump_label( io_generated_code, l_m_loop, io_loop_labels );
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_m_loop );
   }
-
 }
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io_generated_code,
                                                const libxsmm_gemm_descriptor *i_xgemm_desc,
-                                               libxsmm_s390x_reg             *io_reg_tracker ) {
-  /* Reset loop labels as this is a new kernel */
+                                               libxsmm_s390x_reg             *io_reg_tracker,
+                                               libxsmm_s390x_blocking        *io_blocking ) {
+  unsigned int l_n_iters, l_n_loop;
   libxsmm_loop_label_tracker l_loop_labels;
+
+  /* Reset loop labels as this is a new kernel */
   libxsmm_reset_loop_label_tracker( &l_loop_labels );
 
   /* Start stream based on ABI */
@@ -58,8 +184,7 @@ void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io
   unsigned int i_c = LIBXSMM_S390X_GPR_ARG2;*/
 
   /* n loop values */
-  unsigned int l_n_iters = i_xgemm_desc->n ;
-  unsigned int l_n_loop;
+  l_n_iters = i_xgemm_desc->n ;
 
   if ( l_n_iters > 1 ) {
     l_n_loop = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -67,8 +192,7 @@ void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io
     libxsmm_s390x_instr_register_jump_label( io_generated_code, &l_loop_labels );
   }
 
-  libxsmm_s390x_instr_nop(io_generated_code);
-  libxsmm_s390x_instr_nop(io_generated_code);
+  libxsmm_generator_gemm_s390x_vxrs_m_loop( io_generated_code, i_xgemm_desc, io_reg_tracker, io_blocking, &l_loop_labels );
 
   if ( l_n_iters > 1 ) {
     libxsmm_s390x_instr_branch_count_jump_label( io_generated_code, l_n_loop, &l_loop_labels );
@@ -83,12 +207,20 @@ void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_s390x_kernel( libxsmm_generated_code        *io_generated_code,
                                           const libxsmm_gemm_descriptor *i_xgemm_desc ) {
+  libxsmm_s390x_reg l_reg_tracker;
+  libxsmm_s390x_blocking l_blocking;
 
-  libxsmm_s390x_reg l_reg_tracker = libxsmm_s390x_reg_init( io_generated_code );
+  /* Initial register tracking structure */
+  l_reg_tracker = libxsmm_s390x_reg_init( io_generated_code );
 
-  libxsmm_generator_gemm_s390x_vxrs_kernel( io_generated_code,
-                                            i_xgemm_desc,
-                                            &l_reg_tracker );
+  if ( io_generated_code->arch >= LIBXSMM_S390X_ARCH11 ) {
+    /* Create a blocking of the matrix, later switches  */
+    libxsmm_generator_gemm_s390x_vxrs_blocking_init( io_generated_code, i_xgemm_desc, &l_blocking );
+    libxsmm_generator_gemm_s390x_vxrs_kernel( io_generated_code, i_xgemm_desc, &l_reg_tracker, &l_blocking );
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
+  }
 
   libxsmm_s390x_reg_destroy( io_generated_code, &l_reg_tracker );
   return;
