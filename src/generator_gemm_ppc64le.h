@@ -55,7 +55,7 @@ void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const        i_r
                                                    unsigned int             *o_blocking,
                                                    libxsmm_ppc64le_reg_func  i_reg_func );
 
-
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code        *io_generated_code,
                                                      libxsmm_gemm_descriptor const *i_xgemm_desc,
                                                      libxsmm_ppc64le_blocking      *io_blocking );

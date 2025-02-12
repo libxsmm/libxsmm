@@ -22,7 +22,7 @@
 
 LIBXSMM_API_INTERN
 struct
-libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init() {
+libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init(void) {
   libxsmm_ppc64le_reg reg_tracker = LIBXSMM_PPC64LE_REG_DEFAULT;
   return reg_tracker;
 }

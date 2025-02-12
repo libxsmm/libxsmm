@@ -210,7 +210,7 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *i
                                                 unsigned char const            i_b,
                                                 unsigned char const            i_c ) {
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
-  unsigned int l_m_loop;
+  unsigned int l_m_loop = 0;
   unsigned int l_packed = ( ( io_blocking->block_m % io_blocking->vector_len_comp ) == 0 &&
                             ( i_xgemm_desc->m % io_blocking->block_m ) == 0 ) ? 1 : 0;
 
@@ -405,7 +405,7 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                                 unsigned char const             i_b,
                                                 unsigned char const             i_c ) {
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
-  unsigned int l_m_loop;
+  unsigned int l_m_loop = 0;
   unsigned int l_packed = ( ( io_blocking->block_m % io_blocking->vector_len_comp ) == 0 &&
                             ( i_xgemm_desc->m % io_blocking->block_m ) == 0 ) ? 1 : 0;
 
@@ -507,7 +507,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
 
   /* n loop values */
   unsigned int l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
-  unsigned int l_n_loop;
+  unsigned int l_n_loop = 0;
   unsigned int l_packed = ( ( io_blocking->block_n % io_blocking->vector_len_comp ) == 0 &&
                             ( i_xgemm_desc->n % io_blocking->block_n ) == 0 ) ? 1 : 0;
 
