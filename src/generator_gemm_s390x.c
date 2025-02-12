@@ -12,10 +12,10 @@
 #include "generator_gemm_s390x.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vecotr_m_loop( libxsmm_generated_code        *io_generated_code,
-                                           const libxsmm_gemm_descriptor *i_xgemm_desc,
-                                           libxsmm_s390x_reg             *io_reg_tracker,
-                                           libxsmm_loop_label_tracker    *io_loop_labels ) {
+void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io_generated_code,
+                                               const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                               libxsmm_s390x_reg             *io_reg_tracker,
+                                               libxsmm_loop_label_tracker    *io_loop_labels ) {
 
   /* m loop values */
   unsigned int l_m_iters = i_xgemm_desc->m ;
@@ -39,9 +39,9 @@ void libxsmm_generator_gemm_vecotr_m_loop( libxsmm_generated_code        *io_gen
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vector_kernel( libxsmm_generated_code        *io_generated_code,
-                                           const libxsmm_gemm_descriptor *i_xgemm_desc,
-                                           libxsmm_s390x_reg             *io_reg_tracker ) {
+void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io_generated_code,
+                                               const libxsmm_gemm_descriptor *i_xgemm_desc,
+                                               libxsmm_s390x_reg             *io_reg_tracker ) {
   /* Reset loop labels as this is a new kernel */
   libxsmm_loop_label_tracker l_loop_labels;
   libxsmm_reset_loop_label_tracker( &l_loop_labels );
@@ -86,9 +86,9 @@ void libxsmm_generator_gemm_s390x_kernel( libxsmm_generated_code        *io_gene
 
   libxsmm_s390x_reg l_reg_tracker = libxsmm_s390x_reg_init( io_generated_code );
 
-  libxsmm_generator_gemm_vector_kernel( io_generated_code,
-                                        i_xgemm_desc,
-                                        &l_reg_tracker );
+  libxsmm_generator_gemm_s390x_vxrs_kernel( io_generated_code,
+                                            i_xgemm_desc,
+                                            &l_reg_tracker );
 
   libxsmm_s390x_reg_destroy( io_generated_code, &l_reg_tracker );
   return;
