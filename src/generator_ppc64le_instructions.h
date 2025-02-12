@@ -314,13 +314,13 @@ typedef enum libxsmm_ppc64le_reg_type {
 #define LIBXSMM_PPC64LE_REG_ALTD 3
 
 
-struct libxsmm_ppc64le_reg {
+typedef struct libxsmm_ppc64le_reg {
   unsigned int gpr[LIBXSMM_PPC64LE_GPR_NMAX];
   unsigned int fpr[LIBXSMM_PPC64LE_FPR_NMAX];
   unsigned int vr[LIBXSMM_PPC64LE_VR_NMAX];
   unsigned int vsr[LIBXSMM_PPC64LE_VSR_NMAX];
   unsigned int acc[LIBXSMM_PPC64LE_ACC_NMAX];
-};
+} libxsmm_ppc64le_reg ;
 
 
 #define LIBXSMM_PPC64LE_REG_DEFAULT { { /* GPR */ \
@@ -493,8 +493,6 @@ struct libxsmm_ppc64le_reg {
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE } \
 };
-
-typedef struct libxsmm_ppc64le_reg libxsmm_ppc64le_reg;
 
 /* Special instructions */
 #define LIBXSMM_PPC64LE_INSTR_NOP 0x60000000 /* NOP */
@@ -887,7 +885,7 @@ typedef enum libxsmm_ppc64le_alloc_type {
 
 
 LIBXSMM_API_INTERN
-libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init();
+libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init(void);
 
 
 LIBXSMM_API_INTERN
