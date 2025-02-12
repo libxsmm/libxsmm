@@ -175,9 +175,9 @@ void libxsmm_generator_gemm_vsx_block_load_vsr_splat( libxsmm_generated_code *io
   /* Vector scratch register */
   unsigned l_scratch = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR );
 
-  for ( int l_n = 0; l_n < i_n; ++l_n ){
+  for ( unsigned int l_n = 0; l_n < i_n; ++l_n ){
     /* Full width load */
-    for ( int l_m = 0; l_m < l_m_blocks; ++l_m ) {
+    for ( unsigned int l_m = 0; l_m < l_m_blocks; ++l_m ) {
       long l_offset = l_vec_len*l_m + l_offsets[l_n];
       libxsmm_ppc64le_instr_load( io_generated_code, l_a_ptr[l_n], l_offset, l_scratch );
 

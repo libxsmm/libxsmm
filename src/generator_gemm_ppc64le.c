@@ -68,10 +68,10 @@ void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const       i_re
   for ( unsigned int i = 0; i < 3; ++i )
     l_full[i] |= (o_blocking[i] >= i_dims[i]);
 
-  unsigned int l_maxed = ((l_full[0] != 0) & (l_full[1] != 0) & (l_full[2] != 0));
+  unsigned int l_maxed = ( ( l_full[0] != 0 ) & ( l_full[1] != 0 ) & ( l_full[2] != 0 ) );
 
   unsigned int l_step = 0;
-  while (l_nreg < i_reg_max && l_maxed == 0) {
+  while ( l_nreg < i_reg_max && l_maxed == 0 ) {
     unsigned int l_b = i_weights[l_step % i_nweight];
 
     if( l_full[l_b] == 0 ) {
@@ -110,9 +110,9 @@ void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code     
   unsigned int l_nweight = (unsigned int)(sizeof(l_weight)/sizeof(l_weight[0]));
   unsigned int l_blocking[] = {0, 0, 0};
 
-  if (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) {
+  if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
     l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_vsx;
-  } else if (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) {
+  } else if ( io_generated_code->arch == LIBXSMM_PPC64LE_MMA ) {
     l_reg_func = &libxsmm_generator_gemm_ppc64le_reg_mma;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -515,7 +515,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
   unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
   io_blocking->n_acc_c = io_blocking->n_reg_c / l_acc_vec_len;
   unsigned int l_c_acc[io_blocking->n_acc_c];
-  for ( int l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
+  for ( unsigned int l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
     l_c_acc[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC );
   }
 
@@ -598,7 +598,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
   }
 
   /* Free accumulator */
-  for ( int l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
+  for ( unsigned int l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC, l_c_acc[l_i] );
   }
 
