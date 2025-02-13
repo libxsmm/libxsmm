@@ -2227,8 +2227,7 @@ void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io
    * If an architecture has a wider vector length, a lot of things need to be fixed (for both aarch64 and x86).
    * Load the first VL in fp32 values, the rest doesn't matter */
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) &&
-       (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4) ) {
+       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* The offset for the LDR instruction is not in bytes, it's in vector lengths;
      * Therefore, currently only architectures with a power-of-2-vector length are suppored by this code. */
     unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);

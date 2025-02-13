@@ -947,7 +947,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   unsigned int reg_sum = 31, reg_sum_squared = 30;
   unsigned int aux_vreg = 0;
   unsigned int cur_vreg = 0;
-  unsigned int vlen = (io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) ? 4 : libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set);
+  unsigned int vlen = libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set);
   unsigned int available_vregs = 30;
   unsigned int mask_count = 0, mask_count2;
   unsigned int flag_reduce_elts = ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
@@ -962,7 +962,8 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   unsigned int flag_reduce_op_absmax = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX) ? 1 : 0;
   unsigned int flag_reduce_op_min = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) ? 1 : 0;
   unsigned int reduce_on_output   = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INIT_ACC) > 0 ) ? 1 : 0;
-  unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_APPL_M4);
+  unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  unsigned char is_sme = (io_generated_code->arch >= LIBXSMM_AARCH64_APPL_M4) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_aarch64_sve_type sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_TYPESIZE(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)));
   libxsmm_aarch64_asimd_tupletype asimd_type = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
   unsigned char pred_reg_all = 0; /* defined by caller */
@@ -1066,6 +1067,11 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   use_m_masking = ( m % vlen == 0 ) ? 0 : 1;
   m_trips = ( m+vlen-1 )/ vlen;
   im = 0;
+
+  if( is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTART);
+  }
 
   /* set pred reg 0 to true for sve */
   if ( is_sve ) {
@@ -1339,6 +1345,10 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
   }
 
+  if( is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTOP);
+  }
   return;
 }
 

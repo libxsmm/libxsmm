@@ -185,18 +185,16 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
       }
     }
   }
+  if (((long long)l_ld_reg_mat * l_dtype_size_reg_mat - (long long)l_m * l_dtype_size_reg_mat) > 0) {
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_gp_reg_mat_reg, (long long)l_ld_reg_mat * l_dtype_size_reg_mat -(long long)l_m * l_dtype_size_reg_mat );
+  }
+  libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
 
   if( l_is_sme ){
     libxsmm_aarch64_instruction_sm( io_generated_code,
                                     LIBXSMM_AARCH64_INSTR_SME_SMSTOP);
   }
-
-  if (((long long)l_ld_reg_mat * l_dtype_size_reg_mat - (long long)l_m * l_dtype_size_reg_mat) > 0) {
-    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_gp_reg_mat_reg, (long long)l_ld_reg_mat * l_dtype_size_reg_mat -(long long)l_m * l_dtype_size_reg_mat );
-  }
-
-  libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
 }
 
 LIBXSMM_API_INTERN
