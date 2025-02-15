@@ -65,7 +65,7 @@ typedef enum libxsmm_s390x_reg_util {
 #define LIBXSMM_S390X_ARCH14_GPR 16
 #define LIBXSMM_S390X_ARCH14_FPR 16
 #define LIBXSMM_S390X_ARCH14_VR 32
-#define LIBXSMM_S390X_ARCH14_VR_SCRATCH 1
+#define LIBXSMM_S390X_ARCH14_VR_SCRATCH 2
 
 /* Register width */
 #define LIBXSMM_S390X_GPR_WIDTH 64
@@ -136,6 +136,15 @@ typedef struct libxsmm_s390x_blocking {
 #define LIBXSMM_S390X_INSTR_NOPR 0x0700  /* 2-byte nop */
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
+                                   libxsmm_datatype const  i_datatype,
+                                   unsigned int            i_a,
+                                   unsigned int            i_b,
+                                   unsigned int            i_c,
+                                   char                    i_alpha,
+                                   char                    i_beta );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_store_mult( libxsmm_generated_code *io_generated_code,
                                          libxsmm_s390x_reg      *io_reg_tracker,
                                          unsigned int            i_ptr,
@@ -194,6 +203,21 @@ void libxsmm_s390x_instr_vec_load_bcast_idx( libxsmm_generated_code *io_generate
                                              unsigned int            o_vec );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    unsigned int            i_ptr,
+                                    long int                i_offset,
+                                    unsigned int            i_vec );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned int            i_idxptr,
+                                        unsigned int            i_baseptr,
+                                        long int                i_offset,
+                                        unsigned int            i_vec );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_load( libxsmm_generated_code *io_generated_code,
                                    libxsmm_s390x_reg      *io_reg_tracker,
                                    unsigned int            i_ptr,
@@ -218,6 +242,21 @@ unsigned int libxsmm_s390x_instr_rxb( libxsmm_generated_code *io_generated_code,
                                       unsigned int            i_1,
                                       unsigned int            i_2,
                                       unsigned int            i_3 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_load( libxsmm_generated_code *io_generated_code,
+                                   libxsmm_s390x_reg      *io_reg_tracker,
+                                   unsigned int            i_ptr,
+                                   long int                i_offset,
+                                   unsigned int            o_dst );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_load_idx( libxsmm_generated_code *io_generated_code,
+                                       libxsmm_s390x_reg      *io_reg_tracker,
+                                       unsigned int            i_idxptr,
+                                       unsigned int            i_baseptr,
+                                       long int                i_offset,
+                                       unsigned int            o_dst );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_gpr_add_value( libxsmm_generated_code *io_generated_code,
@@ -264,10 +303,24 @@ LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_return( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_reg_alloc( libxsmm_generated_code *io_generated_code,
+                              libxsmm_s390x_reg      *io_reg_tracker,
+                              libxsmm_s390x_reg_type  i_reg_type,
+                              unsigned int            i_n,
+                              unsigned int           *o_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_reg_dealloc( libxsmm_generated_code *io_generated_code,
+                                libxsmm_s390x_reg      *io_reg_tracker,
+                                libxsmm_s390x_reg_type  i_reg_type,
+                                unsigned int            i_n,
+                                unsigned int           *o_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_reg_alloc_vr_mat( libxsmm_generated_code *io_generated_code,
                                      libxsmm_s390x_reg      *io_reg_tracker,
-                                     unsigned int            i_n,
                                      unsigned int            i_m,
+                                     unsigned int            i_n,
                                      unsigned int           *o_reg );
 
 LIBXSMM_API_INTERN
@@ -290,7 +343,19 @@ unsigned int libxsmm_s390x_reg_get( libxsmm_generated_code *io_generated_code,
                                     libxsmm_s390x_reg_type  i_reg_type );
 
 LIBXSMM_API_INTERN
+char libxsmm_s390x_reg_isfree( libxsmm_generated_code *io_generated_code,
+                               libxsmm_s390x_reg      *io_reg_tracker,
+                               libxsmm_s390x_reg_type  i_reg_type,
+                               unsigned int            i_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_reg_free( libxsmm_generated_code *io_generated_code,
+                             libxsmm_s390x_reg      *io_reg_tracker,
+                             libxsmm_s390x_reg_type  i_reg_type,
+                             unsigned int            i_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_reg_used( libxsmm_generated_code *io_generated_code,
                              libxsmm_s390x_reg      *io_reg_tracker,
                              libxsmm_s390x_reg_type  i_reg_type,
                              unsigned int            i_reg );
