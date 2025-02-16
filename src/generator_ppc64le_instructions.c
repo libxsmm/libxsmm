@@ -805,6 +805,27 @@ unsigned int libxsmm_ppc64le_instr_xl_form_2( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_xl_form_4( unsigned int  i_instr,
+                                              unsigned char i_bo,
+                                              unsigned char i_bi,
+                                              unsigned char i_bh,
+                                              unsigned char i_lk ) {
+  unsigned int l_instr = i_instr;
+
+  /* Set BO */
+  l_instr |= (unsigned int)( (0x1f & i_bo) << (31 - 6 - 4) );
+  /* Set BI */
+  l_instr |= (unsigned int)( (0x1f & i_bi) << (31 - 11 - 4) );
+  /* Set BH */
+  l_instr |= (unsigned int)( (0x03 & i_bh) << (31 - 19 - 1) );
+  /* Set LK */
+  l_instr |= (unsigned int)( (0x01 & i_lk) << (31 - 31 - 0) );
+
+  return l_instr;
+}
+
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_xfx_form_2( unsigned int  i_instr,
                                                unsigned char i_rs,
                                                unsigned char i_fxm ) {
@@ -1567,6 +1588,10 @@ void libxsmm_ppc64le_instr_4( libxsmm_generated_code *io_generated_code,
       /* X (4155) form */
       case LIBXSMM_PPC64LE_FORM_X_4155: {
         l_op = libxsmm_ppc64le_instr_x_form_4155( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3 );
+      } break;
+      /* XL (4) form */
+      case LIBXSMM_PPC64LE_FORM_XL_4: {
+        l_op = libxsmm_ppc64le_instr_xl_form_2( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3 );
       } break;
       /* XX2 (3) form */
       case LIBXSMM_PPC64LE_FORM_XX2_3: {
@@ -2466,11 +2491,7 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
                                       unsigned int            i_dst,
                                       long                    i_val ) {
   if ( i_val <= 0x7fff && i_val >= -0x7fff ) {
-    libxsmm_ppc64le_instr_3( io_generated_code,
-                             LIBXSMM_PPC64LE_INSTR_ADDI,
-                             i_dst,
-                             i_src,
-                             i_val );
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, i_dst, i_src, i_val );
   } else {
     if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
       unsigned int l_low = (unsigned int)( 0xffff & i_val );
@@ -2479,35 +2500,34 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
 
       if ( l_low != 0 ) {
         l_reg = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-        libxsmm_ppc64le_instr_3( io_generated_code,
-                                 LIBXSMM_PPC64LE_INSTR_ADDI,
-                                 l_reg,
-                                 i_src,
-                                 l_low );
+        libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, l_reg, i_src, l_low );
         libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_reg );
       } else {
         l_reg = i_dst;
       }
-      libxsmm_ppc64le_instr_3( io_generated_code,
-                               LIBXSMM_PPC64LE_INSTR_ADDIS,
-                               i_dst,
-                               l_reg,
-                               l_high );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDIS, i_dst, l_reg, l_high );
     } else if ( io_generated_code->arch == LIBXSMM_PPC64LE_MMA ) {
       unsigned int l_low = (unsigned int)( 0xffff & i_val );
       unsigned int l_high = (unsigned int)( 0x03ffff & ( i_val >> 16 ) );
-      libxsmm_ppc64le_instr_prefix_5( io_generated_code,
-                                      LIBXSMM_PPC64LE_INSTR_PADDI,
-                                      0,
-                                      l_high,
-                                      i_dst,
-                                      i_src,
-                                      l_low );
+      libxsmm_ppc64le_instr_prefix_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_PADDI, 0, l_high, i_dst, i_src, l_low );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
   }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
+                                      libxsmm_ppc64le_reg    *io_reg_tracker,
+                                      unsigned int            i_dst,
+                                      long                    i_val ) {
+  unsigned int l_l32 = (unsigned int)( i_val & 0xffffffff );
+  unsigned int l_h32 = (unsigned int)( ( i_val >> 32 ) & 0xffffffff );
+  libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, i_dst, l_h32 );
+  libxsmm_ppc64le_instr_set_shift_left( io_generated_code, i_dst, i_dst, 32 );
+  libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, i_dst, i_dst, l_l32 );
 }
 
 
@@ -3133,6 +3153,17 @@ void libxsmm_ppc64le_instr_cond_jump_back_to_label_ctr( libxsmm_generated_code  
   else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
   }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_lr( libxsmm_generated_code *io_generated_code,
+                                    unsigned int            i_ptr_reg ) {
+  /* Load the address into the link register */
+  libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_MTSPR, i_ptr_reg, LIBXSMM_PPC64LE_SPR_LR );
+
+  /* Unconditional link register jump with return */
+  libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_BCLR, 0x1f, 0, 0x03, 0x01 );
 }
 
 
