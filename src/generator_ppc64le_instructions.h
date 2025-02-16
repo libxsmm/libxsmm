@@ -47,6 +47,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 } libxsmm_ppc64le_blocking;
 
 
+#define LIBXSMM_PPC64LE_REG_NMAX 64 /* Max number of any reg type */
 #define LIBXSMM_PPC64LE_GPR_NMAX 32
 #define LIBXSMM_PPC64LE_FPR_NMAX 32
 #define LIBXSMM_PPC64LE_VR_NMAX  32
@@ -895,11 +896,17 @@ unsigned int libxsmm_ppc64le_get_reg( libxsmm_generated_code  *io_generated_code
 
 
 LIBXSMM_API_INTERN
+char libxsmm_ppc64le_isfree_reg( libxsmm_generated_code  *io_generated_code,
+                                 libxsmm_ppc64le_reg     *io_reg_tracker,
+                                 libxsmm_ppc64le_reg_type i_reg_type,
+                                 unsigned int             i_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_alloc_reg( libxsmm_generated_code  *io_generated_code,
                                 libxsmm_ppc64le_reg     *io_reg_tracker,
                                 libxsmm_ppc64le_reg_type i_reg_type,
-                                unsigned int const       i_n,
-                                unsigned int const       i_contig,
+                                unsigned int             i_n,
+                                unsigned int             i_contig,
                                 unsigned int            *i_a );
 
 
@@ -924,6 +931,11 @@ void libxsmm_ppc64le_ptr_reg_alloc( libxsmm_generated_code *io_generated_code,
                                     unsigned int           *o_ptr,
                                     long                   *o_offset );
 
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_used_reg( libxsmm_generated_code  *io_generated_code,
+                               libxsmm_ppc64le_reg     *io_reg_tracker,
+                               libxsmm_ppc64le_reg_type i_reg_type,
+                               unsigned int             i_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_ptr_reg_free( libxsmm_generated_code *io_generated_code,
@@ -936,7 +948,7 @@ LIBXSMM_API_INTERN
 void libxsmm_ppc64le_get_sequential_reg( libxsmm_generated_code  *io_generated_code,
                                          libxsmm_ppc64le_reg     *io_reg_tracker,
                                          libxsmm_ppc64le_reg_type i_reg_type,
-                                         unsigned int const       i_n,
+                                         unsigned int             i_n,
                                          unsigned int            *o_reg );
 
 
@@ -944,7 +956,7 @@ LIBXSMM_API_INTERN
 void libxsmm_ppc64le_set_reg( libxsmm_generated_code  *io_generated_code,
                               libxsmm_ppc64le_reg     *io_reg_tracker,
                               libxsmm_ppc64le_reg_type i_reg_type,
-                              unsigned int const       i_reg,
+                              unsigned int             i_reg,
                               unsigned int const       i_value );
 
 
@@ -1780,6 +1792,11 @@ void libxsmm_ppc64le_instr_prefetch_stream_open( libxsmm_generated_code *io_gene
                                                  unsigned int const      i_a,
                                                  unsigned int const      i_lda,
                                                  unsigned int const      i_len );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_unpack_args( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_ppc64le_reg    *io_reg_tracker );
 
 
 LIBXSMM_API_INTERN

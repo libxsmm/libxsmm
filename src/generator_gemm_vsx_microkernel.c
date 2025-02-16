@@ -32,18 +32,20 @@ void libxsmm_generator_gemm_vsx_block_load_vsr( libxsmm_generated_code *io_gener
   unsigned int l_m_part;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
+  unsigned int l_a_ptr[LIBXSMM_PPC64LE_GPR_NMAX];
+  long l_offsets[LIBXSMM_PPC64LE_GPR_NMAX];
+  unsigned int l_n, l_m;
+
   /* Partial length */
   if ( !l_packed ) {
-    l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_temp, ( i_m % l_vec_ele )*l_databytes );
     libxsmm_ppc64le_instr_set_shift_left( io_generated_code, l_temp, l_m_part, 56 );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp );
   }
 
   /* Offset registers for large lda and unaligned offset as imm limited to 0xffff */
-  unsigned int l_a_ptr[i_n];
-  long l_offsets[i_n];
   libxsmm_ppc64le_ptr_reg_alloc( io_generated_code,
                                  io_reg_tracker,
                                  i_a,
@@ -53,9 +55,9 @@ void libxsmm_generator_gemm_vsx_block_load_vsr( libxsmm_generated_code *io_gener
                                  l_a_ptr,
                                  l_offsets );
 
-  for ( unsigned int l_n = 0; l_n < i_n; ++l_n ) {
+  for ( l_n = 0; l_n < i_n; ++l_n ) {
     /* Full width load */
-    for ( unsigned int l_m = 0; l_m < l_m_blocks; ++l_m ) {
+    for ( l_m = 0; l_m < l_m_blocks; ++l_m ) {
       long l_offset = l_m*l_vec_len + l_offsets[l_n];
       unsigned int l_t = io_t[l_n*i_ldt + l_m];
       libxsmm_ppc64le_instr_load( io_generated_code, l_a_ptr[l_n], l_offset, l_t );
@@ -97,18 +99,20 @@ void libxsmm_generator_gemm_vsx_block_store_vsr( libxsmm_generated_code *io_gene
   unsigned int l_m_part;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
+  unsigned int l_a_ptr[LIBXSMM_PPC64LE_GPR_NMAX];
+  long l_offsets[LIBXSMM_PPC64LE_GPR_NMAX];
+  unsigned int l_n, l_m;
+
   /* Partial length */
   if ( !l_packed ) {
-    l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_temp, ( i_m % l_vec_ele )*l_databytes );
     libxsmm_ppc64le_instr_set_shift_left( io_generated_code, l_temp, l_m_part, 56 );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp );
   }
 
   /* Offset registers for large lda and unaligned offset as imm limited to 0xffff */
-  unsigned int l_a_ptr[i_n];
-  long l_offsets[i_n];
   libxsmm_ppc64le_ptr_reg_alloc( io_generated_code,
                                  io_reg_tracker,
                                  i_a,
@@ -118,9 +122,9 @@ void libxsmm_generator_gemm_vsx_block_store_vsr( libxsmm_generated_code *io_gene
                                  l_a_ptr,
                                  l_offsets );
 
-  for ( unsigned int l_n = 0; l_n < i_n; ++l_n ) {
+  for ( l_n = 0; l_n < i_n; ++l_n ) {
     /* Full width store */
-    for ( unsigned int l_m = 0; l_m < l_m_blocks; ++l_m ) {
+    for ( l_m = 0; l_m < l_m_blocks; ++l_m ) {
       unsigned int l_t = io_t[l_n*i_ldt + l_m];
       long l_offset = l_m*l_vec_len + l_offsets[l_n];
       libxsmm_ppc64le_instr_store( io_generated_code, l_a_ptr[l_n], l_offset, l_t );
@@ -160,9 +164,11 @@ void libxsmm_generator_gemm_vsx_block_load_vsr_splat( libxsmm_generated_code *io
   unsigned int l_m_blocks = i_m / l_vec_ele;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
+  unsigned int l_scratch, l_a_ptr[LIBXSMM_PPC64LE_GPR_NMAX];
+  long l_offsets[LIBXSMM_PPC64LE_GPR_NMAX];
+  unsigned int l_n, l_m, l_i;
+
   /* Offset registers for large lda and unaligned offset as imm limited to 0xffff */
-  unsigned int l_a_ptr[i_n];
-  long l_offsets[i_n];
   libxsmm_ppc64le_ptr_reg_alloc( io_generated_code,
                                  io_reg_tracker,
                                  i_a,
@@ -173,25 +179,25 @@ void libxsmm_generator_gemm_vsx_block_load_vsr_splat( libxsmm_generated_code *io
                                  l_offsets );
 
   /* Vector scratch register */
-  unsigned l_scratch = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR );
+  l_scratch = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR );
 
-  for ( unsigned int l_n = 0; l_n < i_n; ++l_n ){
+  for ( l_n = 0; l_n < i_n; ++l_n ){
     /* Full width load */
-    for ( unsigned int l_m = 0; l_m < l_m_blocks; ++l_m ) {
+    for ( l_m = 0; l_m < l_m_blocks; ++l_m ) {
       long l_offset = l_vec_len*l_m + l_offsets[l_n];
       libxsmm_ppc64le_instr_load( io_generated_code, l_a_ptr[l_n], l_offset, l_scratch );
 
-      for ( unsigned int l_vec = 0; l_vec < l_vec_ele; ++l_vec ) {
-        unsigned int l_t = io_t[l_vec + l_m*l_vec_ele + l_n*i_ldt];
-        libxsmm_ppc64le_instr_vec_splat( io_generated_code, i_datatype, l_scratch, l_vec_ele - 1 - l_vec, l_t );
+      for ( l_i = 0; l_i < l_vec_ele; ++l_i ) {
+        unsigned int l_t = io_t[l_i + l_m*l_vec_ele + l_n*i_ldt];
+        libxsmm_ppc64le_instr_vec_splat( io_generated_code, i_datatype, l_scratch, l_vec_ele - 1 - l_i, l_t );
       }
     }
 
     /* Partial load and splat */
     if ( !l_packed ) {
-      for ( unsigned int l_vec = 0; l_vec < ( i_m % l_vec_ele ); ++l_vec ) {
-        unsigned int l_t = io_t[l_vec + l_m_blocks*l_vec_ele + l_n*i_ldt];
-        long l_offset = l_m_blocks*l_vec_len + l_vec*l_databytes + l_offsets[l_n];
+      for ( l_i = 0; l_i < ( i_m % l_vec_ele ); ++l_i ) {
+        unsigned int l_t = io_t[l_i + l_m_blocks*l_vec_ele + l_n*i_ldt];
+        long l_offset = l_m_blocks*l_vec_len + l_i*l_databytes + l_offsets[l_n];
         libxsmm_ppc64le_instr_load_splat( io_generated_code, io_reg_tracker, i_datatype, l_a_ptr[l_n], l_offset, l_t );
       }
     }
@@ -216,9 +222,11 @@ void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
     XVMADDA  c, a, b -> c = a*b + c       | alpha =  1, beta = 1
     XVMSUBA  c, a, b -> c = a*b - c       | alpha =  1, beta = -1
     XVNMADDA c, a, b -> c = - ( a*b + c ) | alpha = -1, beta = -1
-    XVNMSUBA c, a, b -> c = -( a*b - c)   | alpha = -1, beta = 1
+    XVNMSUBA c, a, b -> c = -( a*b - c )  | alpha = -1, beta = 1
     XVMUL    c, a, b -> c = a*b           | alpha = -1, beta = 0
   */
+  unsigned int l_op;
+
   /* If beta is zero we only suport positive multiplication */
   if ( ( i_beta == 0 ) && ( i_alpha != 1) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -228,7 +236,6 @@ void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  unsigned int l_op;
   switch ( i_datatype ) {
     case LIBXSMM_DATATYPE_F32: {
       l_op = LIBXSMM_PPC64LE_INSTR_XVMADDASP;
@@ -265,9 +272,10 @@ void libxsmm_generator_vsx_block_fma_b_splat( libxsmm_generated_code *io_generat
                                               unsigned int            i_beta,
                                               unsigned int           *io_c,
                                               unsigned int            i_ldc ) {
-  for ( unsigned int l_k = 0; l_k < i_k; ++l_k ) {
-    for ( unsigned int l_n = 0; l_n < i_n; ++l_n ) {
-      for ( unsigned int l_m = 0; l_m < i_m; ++l_m ) {
+  unsigned int l_m, l_n, l_k;
+  for ( l_k = 0; l_k < i_k; ++l_k ) {
+    for ( l_n = 0; l_n < i_n; ++l_n ) {
+      for ( l_m = 0; l_m < i_m; ++l_m ) {
         char l_beta = ( ( l_k == 0 ) && ( i_beta == 0 ) ) ? 0 : 1;
         libxsmm_generator_vsx_alu( io_generated_code,
                                    i_datatype,
@@ -295,24 +303,24 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
   libxsmm_datatype l_b_datatype = LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
   libxsmm_datatype l_c_datatype = LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
   libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  unsigned int l_beta_zero = ( i_xgemm_desc->flags & 0x0004 ) >> 2;
   unsigned int l_v_len = i_blocking->vector_len_comp;
-
   unsigned int l_n_k_blocks = ( i_xgemm_desc->k + i_blocking->block_k - 1 ) / i_blocking->block_k;
+  unsigned int l_a, l_b, l_a_last, l_b_last, l_a_pipe[2], l_b_pipe[2];
+  unsigned l_a_reg[LIBXSMM_PPC64LE_VSR_NMAX], l_b_reg[LIBXSMM_PPC64LE_VSR_NMAX], l_c_reg[LIBXSMM_PPC64LE_VSR_NMAX];
+  unsigned int l_i, l_k_block;
 
   /* Local pointers registers for A and B */
-  unsigned int l_a_pipe[2], l_b_pipe[2];
-  for ( int i = 0; i < 2; ++i ) {
-    l_a_pipe[i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    l_b_pipe[i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  for ( l_i = 0; l_i < 2; ++l_i ) {
+    l_a_pipe[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    l_b_pipe[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
   }
 
   /* Allocate vector registers */
-  unsigned l_a_reg[i_blocking->n_reg_a], l_b_reg[i_blocking->n_reg_b], l_c_reg[i_blocking->n_reg_c];
   libxsmm_ppc64le_alloc_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, i_blocking->n_reg_a, 1, l_a_reg );
   libxsmm_ppc64le_alloc_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, i_blocking->n_reg_b, 1, l_b_reg );
   libxsmm_ppc64le_alloc_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, i_blocking->n_reg_c, 1, l_c_reg );
 
-  unsigned int l_beta_zero = ( i_xgemm_desc->flags & 0x0004 ) >> 2;
 
   /* Load C if required */
   if ( !l_beta_zero ) {
@@ -329,8 +337,11 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
   }
 
   /* Fully unrolled k-loop */
-  unsigned int l_a, l_b, l_a_last, l_b_last;
-  for ( unsigned int l_k_block = 0; l_k_block < l_n_k_blocks; ++l_k_block ) {
+  for ( l_k_block = 0; l_k_block < l_n_k_blocks; ++l_k_block ) {
+    unsigned int l_k_rem = i_xgemm_desc->k - l_k_block*i_blocking->block_k;
+    unsigned int l_block_k = ( l_k_rem < i_blocking->block_k ) ? l_k_rem : i_blocking->block_k;
+    unsigned int l_beta = ( ( l_k_block == 0 ) && ( l_beta_zero ) ) ? 0 : 1;
+
     /* Make pipeline of pointers to reduce hazards */
     if ( l_k_block == 0 ) {
       l_a = i_a;
@@ -344,9 +355,6 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
     }
     l_a_last = l_a;
     l_b_last = l_b;
-
-    unsigned int l_k_rem = i_xgemm_desc->k - l_k_block*i_blocking->block_k;
-    unsigned int l_block_k = ( l_k_rem < i_blocking->block_k ) ? l_k_rem : i_blocking->block_k;
 
     /* Load block of A */
     libxsmm_generator_gemm_vsx_block_load_vsr( io_generated_code,
@@ -373,7 +381,6 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                                      i_blocking->reg_ldb );
 
     /* Block FMA */
-    unsigned int l_beta = ( ( l_k_block == 0 ) && ( l_beta_zero ) ) ? 0 : 1;
     libxsmm_generator_vsx_block_fma_b_splat( io_generated_code,
                                              l_comptype,
                                              ( i_blocking->block_m + l_v_len - 1 ) / l_v_len,
@@ -401,19 +408,21 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                               i_blocking->reg_ldc );
 
   /* Free A and B registers */
-  for ( unsigned int l_i = 0; l_i < i_blocking->n_reg_a; ++l_i ) {
+  for ( l_i = 0; l_i < i_blocking->n_reg_a; ++l_i ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, l_a_reg[l_i] );
   }
-  for ( unsigned int l_i = 0; l_i < i_blocking->n_reg_b; ++l_i ) {
+  for ( l_i = 0; l_i < i_blocking->n_reg_b; ++l_i ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, l_b_reg[l_i] );
   }
-  for ( int i = 0; i < 2; ++i ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_pipe[i] );
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_pipe[i] );
+
+  /* Free pointer pipeline */
+  for ( l_i = 0; l_i < 2; ++l_i ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_pipe[l_i] );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_pipe[l_i] );
   }
 
   /* Free C registers */
-  for ( unsigned int l_i = 0; l_i < i_blocking->n_reg_c; ++l_i ) {
+  for ( l_i = 0; l_i < i_blocking->n_reg_c; ++l_i ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, l_c_reg[l_i] );
   }
 
