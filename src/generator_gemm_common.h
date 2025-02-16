@@ -338,4 +338,15 @@ void libxsmm_generator_gemm_setval_stack_var( libxsmm_generated_code*           
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned int i_range, unsigned int i_max_block, unsigned int i_nomask_block, unsigned int *io_block, unsigned int *o_use_mask );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_x86_addsublea_scaled_stack_variable( libxsmm_generated_code*            io_generated_code,
+                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                 const unsigned int                 i_gp_reg,
+                                                                 const libxsmm_gemm_stack_var       i_gemm_stack_var_name,
+                                                                 const unsigned int                 i_gp_reg_tmp,
+                                                                 const unsigned int                 i_addsublea_instr,
+                                                                 const long long                    i_scale,
+                                                                 const long long                    i_leaoffset,
+                                                                 const unsigned int                 i_save_gp_reg_tmp );
+
 #endif /* GENERATOR_GEMM_COMMON_H */
