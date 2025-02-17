@@ -168,7 +168,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
           libxsmm_x86_instruction_alu_imm( io_generated_code,
                                            i_micro_kernel_config->alu_add_instruction,
                                            i_gp_reg_mapping->gp_reg_b,
-                                          l_b_offset );
+                                           l_b_offset );
         }
       }
 
