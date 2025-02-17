@@ -116,7 +116,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
 
     /* check archs which support dynld GEMM */
-    if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT) ) {
+    if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT) ) {
       /* we are fine */
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
