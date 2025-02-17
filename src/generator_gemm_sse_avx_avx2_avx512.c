@@ -1285,14 +1285,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     /* reset B pointer */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
       if ( libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0 ) {
-        libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config,
-                                                 LIBXSMM_GEMM_STACK_VAR_LDB_VAL, i_gp_reg_mapping->gp_reg_help_2 );
-
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_2,
-                                         i_xgemm_desc->k*i_micro_kernel_config->datatype_size_in2);
-
-        libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, i_gp_reg_mapping->gp_reg_help_2,
-                                         i_gp_reg_mapping->gp_reg_b );
+        libxsmm_generator_gemm_x86_addsublea_scaled_stack_variable( io_generated_code, i_micro_kernel_config,
+                                                                    i_gp_reg_mapping->gp_reg_b, LIBXSMM_GEMM_STACK_VAR_LDB_VAL,
+                                                                    i_gp_reg_mapping->gp_reg_help_2, LIBXSMM_X86_INSTR_SUBQ,
+                                                                    (long long)i_xgemm_desc->k*i_micro_kernel_config->datatype_size_in2,
+                                                                    0, 0 );
       } else {
         l_b_offset = i_xgemm_desc->ldb * i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in2;
 
