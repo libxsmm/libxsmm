@@ -330,13 +330,6 @@ void libxsmm_generator_gemm_s390x_kernel( libxsmm_generated_code        *io_gene
     /* Create a blocking of the matrix, later switches  */
     libxsmm_generator_gemm_s390x_vxrs_blocking_init( io_generated_code, i_xgemm_desc, &l_blocking );
 
-    printf("l_blocking.block_m: %d\n", l_blocking.block_m);
-    printf("l_blocking.block_n: %d\n", l_blocking.block_n);
-    printf("l_blocking.block_k: %d\n", l_blocking.block_k);
-    printf("l_blocking.n_reg_a: %d\n", l_blocking.n_reg_a);
-    printf("l_blocking.n_reg_b: %d\n", l_blocking.n_reg_b);
-    printf("l_blocking.n_reg_c: %d\n", l_blocking.n_reg_c);
-
     libxsmm_generator_gemm_s390x_vxrs_kernel( io_generated_code, i_xgemm_desc, &l_reg_tracker, &l_blocking );
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
