@@ -170,9 +170,10 @@ void libxsmm_generator_vxrs_block_fma_b_splat( libxsmm_generated_code *io_genera
                                                unsigned int            i_beta,
                                                unsigned int           *io_c,
                                                unsigned int            i_ldc ) {
-  for ( unsigned int l_k = 0; l_k < i_k; ++l_k ) {
-    for ( unsigned int l_n = 0; l_n < i_n; ++l_n ) {
-      for ( unsigned int l_m = 0; l_m < i_m; ++l_m ) {
+  unsigned int l_k, l_m, l_n;
+  for ( l_k = 0; l_k < i_k; ++l_k ) {
+    for ( l_n = 0; l_n < i_n; ++l_n ) {
+      for ( l_m = 0; l_m < i_m; ++l_m ) {
         char l_beta = ( ( l_k == 0 ) && ( i_beta == 0 ) ) ? 0 : 1;
         libxsmm_s390x_instr_vxrs_alu( io_generated_code, i_datatype, i_a[l_m + l_k*i_lda], i_b[l_k + l_n*i_ldb], io_c[l_m + l_n*i_ldc], 1, l_beta );
       }
@@ -200,17 +201,27 @@ void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code        *io_g
   unsigned int l_m_rem = i_m % l_vec_ele;
 
   unsigned int l_col;
+  unsigned int l_ptrs[LIBXSMM_S390X_ARCH11_GPR];
+  long l_offsets[LIBXSMM_S390X_ARCH11_GPR];
+
+  /* Create pointer and offsets to minimise addition and maximise pipeline */
+  libxsmm_s390x_ptr_reg_alloc( io_generated_code,
+                               io_reg_tracker,
+                               i_a,
+                               i_n,
+                               i_lda*l_databytes,
+                               l_m_blocks*l_vec_len,
+                               l_ptrs,
+                               l_offsets );
 
   for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* If packed, use multiload */
     if ( l_m_blocks > 1 ) {
-      unsigned int l_offset = i_lda*l_col*l_databytes;
       unsigned int l_t = io_t[i_ldt*l_col];
-      libxsmm_s390x_instr_vec_load_mult( io_generated_code, io_reg_tracker, i_a, l_m_blocks, l_offset, l_t );
+      libxsmm_s390x_instr_vec_load_mult( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_m_blocks, l_offsets[l_col], l_t );
     } else if ( l_m_blocks == 1 ) {
-      unsigned int l_offset = i_lda*l_col*l_databytes;
       unsigned int l_t = io_t[i_ldt*l_col];
-      libxsmm_s390x_instr_vec_load( io_generated_code, io_reg_tracker, i_a, l_offset, l_t );
+      libxsmm_s390x_instr_vec_load( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_offsets[l_col], l_t );
     }
 
     /* Partial loads */
@@ -220,6 +231,8 @@ void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code        *io_g
       libxsmm_s390x_instr_vec_load_part( io_generated_code, io_reg_tracker, i_datatype, i_a, l_m_rem, l_offset, l_t );
     }
   }
+
+  libxsmm_s390x_ptr_reg_dealloc( io_generated_code, io_reg_tracker, l_ptrs, i_n, 1 );
 }
 
 LIBXSMM_API_INTERN
@@ -242,14 +255,26 @@ void libxsmm_generator_vxrs_block_load_bcast( libxsmm_generated_code        *io_
   unsigned int l_m_load_rem = i_m % l_vec_ele;
 
   unsigned int l_col, l_row, l_ele;
+  unsigned int l_ptrs[LIBXSMM_S390X_ARCH11_GPR];
+  long l_offsets[LIBXSMM_S390X_ARCH11_GPR];
 
   unsigned int l_scratch = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_VR );
+
+  /* Create pointer and offsets to minimise addition and maximise pipeline */
+  libxsmm_s390x_ptr_reg_alloc( io_generated_code,
+                               io_reg_tracker,
+                               i_a,
+                               i_n,
+                               i_lda*l_databytes,
+                               l_m_load_blocks*l_vec_len,
+                               l_ptrs,
+                               l_offsets );
 
   for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* Packed load into scratch and then broadcast */
     for ( l_row = 0; l_row < l_m_load_blocks; ++l_row ) {
-      unsigned int l_offset = i_lda*l_col*l_databytes + l_vec_len*l_row;
-      libxsmm_s390x_instr_vec_load( io_generated_code, io_reg_tracker, i_a, l_offset, l_scratch );
+      unsigned int l_offset = l_offsets[l_col] + l_vec_len*l_row;
+      libxsmm_s390x_instr_vec_load( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_offset, l_scratch );
 
       for ( l_ele = 0; l_ele < l_vec_ele; ++l_ele ) {
         unsigned int l_t = io_t[l_col*i_ldt + l_row*l_vec_ele + l_ele];
@@ -289,16 +314,27 @@ void libxsmm_generator_vxrs_block_store_mult( libxsmm_generated_code        *io_
 
   unsigned int l_col;
 
+  unsigned int l_ptrs[LIBXSMM_S390X_ARCH11_GPR];
+  long l_offsets[LIBXSMM_S390X_ARCH11_GPR];
+
+  /* Create pointer and offsets to minimise addition and maximise pipeline */
+  libxsmm_s390x_ptr_reg_alloc( io_generated_code,
+                               io_reg_tracker,
+                               i_a,
+                               i_n,
+                               i_lda*l_databytes,
+                               l_m_blocks*l_vec_len,
+                               l_ptrs,
+                               l_offsets );
+
   for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* If packed, use multistore */
     if ( l_m_blocks > 1 ) {
-      unsigned int l_offset = i_lda*l_col*l_databytes;
       unsigned int l_t = io_t[i_ldt*l_col];
-      libxsmm_s390x_instr_vec_store_mult( io_generated_code, io_reg_tracker, i_a, l_m_blocks, l_offset, l_t );
+      libxsmm_s390x_instr_vec_store_mult( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_m_blocks, l_offsets[l_col], l_t );
     } else if ( l_m_blocks == 1 ) {
-      unsigned int l_offset = i_lda*l_col*l_databytes;
       unsigned int l_t = io_t[i_ldt*l_col];
-      libxsmm_s390x_instr_vec_store( io_generated_code, io_reg_tracker, i_a, l_offset, l_t );
+      libxsmm_s390x_instr_vec_store( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_offsets[l_col], l_t );
     }
 
     /* Partial store */
