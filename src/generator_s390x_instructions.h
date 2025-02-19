@@ -42,7 +42,6 @@ typedef enum libxsmm_s390x_reg_type {
   LIBXSMM_S390X_VR = 2
 } libxsmm_s390x_reg_type;
 
-
 typedef enum libxsmm_s390x_reg_util {
   LIBXSMM_S390X_REG_RESV = 0,
   LIBXSMM_S390X_REG_USED = 1,
@@ -81,7 +80,7 @@ typedef struct libxsmm_s390x_reg_stack {
 #define LIBXSMM_S390X_ARCH14_GPR 16
 #define LIBXSMM_S390X_ARCH14_FPR 16
 #define LIBXSMM_S390X_ARCH14_VR 32
-#define LIBXSMM_S390X_ARCH14_VR_SCRATCH 2
+#define LIBXSMM_S390X_ARCH14_VR_SCRATCH 1
 
 /* Register width */
 #define LIBXSMM_S390X_GPR_WIDTH 64
@@ -97,10 +96,30 @@ typedef struct libxsmm_s390x_reg {
   unsigned int ngpr;
   libxsmm_s390x_reg_stack *gpr;
   unsigned int nfpr;
-  unsigned int *fpr;
+  enum libxsmm_s390x_reg_util *fpr;
   unsigned int nvr;
-  unsigned int *vr;
+  enum libxsmm_s390x_reg_util *vr;
 } libxsmm_s390x_reg;
+
+
+/* Struct for defered instruction, waiting for a single input to be defined later */
+#define LIBXSMM_S390X_INSTR_MAX_INPUTS 8
+#define LIBXSMM_S390X_MAX_DEFER 128
+
+typedef struct libxsmm_s390x_defered {
+  unsigned long instr;
+  unsigned int nargs; /* total number of args */
+  unsigned int args[LIBXSMM_S390X_INSTR_MAX_INPUTS];
+  unsigned int def_idx;
+  unsigned int def_arg;
+  void *code_point;
+  unsigned int code_byte;
+} libxsmm_s390x_defered;
+
+typedef struct libxsmm_s390x_defer {
+  libxsmm_s390x_defered *defered;
+  unsigned int count;
+} libxsmm_s390x_defer;
 
 /* Alignment hint */
 #define LIBXSMM_S390X_ALIGN_NONE 0x00
@@ -124,6 +143,14 @@ typedef struct libxsmm_s390x_reg {
 #define LIBXSMM_S390X_FP_SHORT LIBXSMM_S390X_F32
 #define LIBXSMM_S390X_FP_LONG LIBXSMM_S390X_F64
 #define LIBXSMM_S390X_FP_EXT LIBXSMM_S390X_F128
+
+/* Prefetch types */
+typedef enum libxsmm_s390x_prefetch_type{
+  LIBXSMM_S390X_PREFETCH_LOAD = 1,
+  LIBXSMM_S390X_PREFETCH_STORE = 2,
+  LIBXSMM_S390X_RELEASE_STORE = 6,
+  LIBXSMM_S390X_RELEASE_ALL = 7
+} libxsmm_s390x_prefetch_type;
 
 /* Structure to hold blocking information */
 typedef struct libxsmm_s390x_blocking {
@@ -296,21 +323,19 @@ void libxsmm_s390x_instr_gpr_imm64( libxsmm_generated_code *io_generated_code,
                                     unsigned long int       i_value );
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_ptr_reg_alloc( libxsmm_generated_code *io_generated_code,
-                                  libxsmm_s390x_reg      *io_reg_tracker,
-                                  unsigned int            i_ptr,
-                                  unsigned int            i_n,
-                                  unsigned int            i_ld,
-                                  unsigned int            i_max_add,
-                                  unsigned int           *o_ptr,
-                                  long                   *o_offset );
+void libxsmm_s390x_data_prefetch( libxsmm_generated_code     *io_generated_code,
+                                  libxsmm_s390x_reg          *io_reg_tracker,
+                                  unsigned int                i_ptr,
+                                  long int                    i_offset,
+                                  libxsmm_s390x_prefetch_type i_type );
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_ptr_reg_dealloc( libxsmm_generated_code *io_generated_code,
-                                    libxsmm_s390x_reg      *io_reg_tracker,
-                                    unsigned int           *i_ptr,
-                                    unsigned int            i_n,
-                                    char                    i_skip0 );
+void libxsmm_s390x_data_prefetch_idx( libxsmm_generated_code     *io_generated_code,
+                                      libxsmm_s390x_reg          *io_reg_tracker,
+                                      unsigned int                i_idxptr,
+                                      unsigned int                i_baseptr,
+                                      long int                    i_offset,
+                                      libxsmm_s390x_prefetch_type i_type );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_register_jump_label( libxsmm_generated_code     *io_generated_code,
@@ -396,6 +421,23 @@ void libxsmm_s390x_reg_stack_set( libxsmm_s390x_reg_stack *i_stack,
                                   libxsmm_s390x_reg_util   i_value );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_ptr_reg_alloc( libxsmm_generated_code *io_generated_code,
+                                  libxsmm_s390x_reg      *io_reg_tracker,
+                                  unsigned int            i_ptr,
+                                  unsigned int            i_n,
+                                  unsigned int            i_ld,
+                                  unsigned int            i_max_add,
+                                  unsigned int           *o_ptr,
+                                  long                   *o_offset );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_ptr_reg_dealloc( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    unsigned int           *i_ptr,
+                                    unsigned int            i_n,
+                                    char                    i_skip0 );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_reg_destroy( libxsmm_generated_code *io_generated_code,
                                 libxsmm_s390x_reg      *i_reg_tracker );
 
@@ -404,6 +446,11 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_s390x_reg_get( libxsmm_generated_code *io_generated_code,
                                     libxsmm_s390x_reg      *io_reg_tracker,
                                     libxsmm_s390x_reg_type  i_reg_type );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_s390x_reg_num_free( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_s390x_reg      *io_reg_tracker,
+                                         libxsmm_s390x_reg_type  i_reg_type );
 
 LIBXSMM_API_INTERN
 char libxsmm_s390x_reg_isfree( libxsmm_generated_code *io_generated_code,
@@ -431,13 +478,165 @@ void libxsmm_s390x_reg_set( libxsmm_generated_code *io_generated_code,
                             libxsmm_s390x_reg_util  i_value );
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_s390x_vec_nscratch( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_s390x_vec_nreg( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_s390x_bytes( libxsmm_generated_code *io_generated_code,
                                   const libxsmm_datatype  i_datatype );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_destroy( libxsmm_generated_code *io_generated_code,
+                                  libxsmm_s390x_defer    *io_defer );
+
+LIBXSMM_API_INTERN
+libxsmm_s390x_defer* libxsmm_s390x_defer_init( libxsmm_generated_code *io_generated_code );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_defered( libxsmm_generated_code *io_generated_code,
+                                  libxsmm_s390x_defered  *io_defered );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
                                  unsigned char          *i_op,
                                  char                    i_nbytes );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_1( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_2( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned int   i_1,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_3( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned int   i_1,
+                              unsigned int   i_2,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_4( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned int   i_1,
+                              unsigned int   i_2,
+                              unsigned int   i_3,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_5( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned int   i_1,
+                              unsigned int   i_2,
+                              unsigned int   i_3,
+                              unsigned int   i_4,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_6( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned int   i_1,
+                              unsigned int   i_2,
+                              unsigned int   i_3,
+                              unsigned int   i_4,
+                              unsigned int   i_5,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+char libxsmm_s390x_resolve_7( unsigned long  i_instr,
+                              unsigned int   i_0,
+                              unsigned int   i_1,
+                              unsigned int   i_2,
+                              unsigned int   i_3,
+                              unsigned int   i_4,
+                              unsigned int   i_5,
+                              unsigned int   i_6,
+                              unsigned char *o_out );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
+                                 libxsmm_s390x_defer    *io_defered_code,
+                                 unsigned long           i_instr,
+                                 unsigned int           *i_args,
+                                 unsigned int            i_n,
+                                 unsigned int            i_idx,
+                                 char                    i_nbytes );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0,
+                            unsigned int            i_1 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0,
+                            unsigned int            i_1,
+                            unsigned int            i_2 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0,
+                            unsigned int            i_1,
+                            unsigned int            i_2,
+                            unsigned int            i_3 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0,
+                            unsigned int            i_1,
+                            unsigned int            i_2,
+                            unsigned int            i_3,
+                            unsigned int            i_4 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0,
+                            unsigned int            i_1,
+                            unsigned int            i_2,
+                            unsigned int            i_3,
+                            unsigned int            i_4,
+                            unsigned int            i_5 );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_defer_7( libxsmm_generated_code *io_generated_code,
+                            libxsmm_s390x_defer    *io_defered_code,
+                            unsigned long           i_instr,
+                            unsigned int            i_idx,
+                            unsigned int            i_0,
+                            unsigned int            i_1,
+                            unsigned int            i_2,
+                            unsigned int            i_3,
+                            unsigned int            i_4,
+                            unsigned int            i_5,
+                            unsigned int            i_6 );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_0( libxsmm_generated_code *io_generated_code,
