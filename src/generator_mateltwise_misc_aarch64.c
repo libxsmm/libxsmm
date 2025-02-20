@@ -40,6 +40,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
   unsigned int upconvert_input_bf16f32 = 0;
   unsigned int downconvert_input_f32bf16 = 0;
   unsigned int mask_count2 = 0;
+  unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 
   if ((LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) && (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ))) {
     upconvert_input_bf16f32 = 1;
@@ -61,7 +62,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
 
     libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_in,
         i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_in,
-        l_masked_elements, 1, 0, pred_reg_mask_use);
+        l_masked_elements, 1, 0, pred_reg_mask_use, is_sve);
     if (upconvert_input_bf16f32 > 0) {
       libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, im, 0);
     }
@@ -81,7 +82,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
 
     libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out,
         i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_out,
-        l_masked_elements, 1, 1, pred_reg_mask_use);
+        l_masked_elements, 1, 1, pred_reg_mask_use, is_sve);
   }
 
   extra_bytes_ldo = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out - (vlen * i_micro_kernel_config->datatype_size_out * m_unroll_factor - i_use_masking * (vlen-mask_inout) * i_micro_kernel_config->datatype_size_out);

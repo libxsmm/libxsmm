@@ -442,7 +442,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_load_C( libxsmm_ge
       } else {
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2,
                                                           (l_n*i_m_blocking) + l_m, i_micro_kernel_config->datatype_size_out, i_use_masking,
-                                                          0, 0, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG );
+                                                          0, 0, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG,  l_is_sve);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_c,
                                                        (long long)i_packed_width*i_micro_kernel_config->datatype_size_out );
@@ -473,13 +473,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_store_C( libxsmm_g
                                                                        const unsigned int                 i_packed_width ) {
   unsigned int l_n = 0;
   unsigned int l_m = 0;
+  unsigned int l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 
   /* store C accumulator */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     for ( l_m = 0; l_m < i_m_blocking; l_m++ ) {
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2,
                                                         (l_n*i_m_blocking) + l_m, i_micro_kernel_config->datatype_size_out, i_use_masking,
-                                                        0, 1, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG );
+                                                        0, 1, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG, l_is_sve);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_c,
                                                      (long long)i_packed_width*i_micro_kernel_config->datatype_size_out );
@@ -524,7 +525,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_kloop_simd_packed(
   for ( l_m = 0; l_m < i_m_blocking; ++l_m ) {
     libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0,
                                                       i_n_blocking*i_m_blocking + l_m, i_micro_kernel_config->datatype_size_out, l_use_masking,
-                                                      0, 0, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG );
+                                                      0, 0, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG, l_is_sve);
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
                                                    (long long)i_packed_width*i_micro_kernel_config->datatype_size_in );
@@ -535,7 +536,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_aarch64_kloop_simd_packed(
     /* load B */
     libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1,
                                                       i_n_blocking*i_m_blocking + i_m_blocking, i_micro_kernel_config->datatype_size_out, l_use_masking,
-                                                      0, 0, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG );
+                                                      0, 0, LIBXSMM_GENERATOR_PACKED_GEMM_AARCH64_MASK_REG, l_is_sve );
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
                                                    (long long)i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in );

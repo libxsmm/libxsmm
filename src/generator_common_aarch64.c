@@ -226,7 +226,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
                                                              const unsigned int      i_is_store ) {
   libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_addr, i_gp_reg_scratch,
                                                     i_vec_reg, i_datatype_size, i_masked_elems, i_adv_gpr, i_is_store,
-                                                    i_masked_elems == 0 ? 0 : 1 );
+                                                    i_masked_elems == 0 ? 0 : 1, 0 );
 }
 
 LIBXSMM_API_INTERN
@@ -241,12 +241,13 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
                                                           const unsigned int      i_masked_elems,
                                                           const unsigned int      i_is_gather ) {
   unsigned int i = 0;
+  unsigned int l_vlen = (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) ? libxsmm_cpuid_vlen(io_generated_code->arch) : 16;
   unsigned int l_load_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF;
   unsigned int l_store_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF;
   unsigned int l_shift_amount = (i_datatype_size == 4) ? 2 : 1;
   libxsmm_aarch64_asimd_width l_idx_move_asimd_width = (i_idx_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D;
   libxsmm_aarch64_asimd_width l_data_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_H;
-  unsigned int l_active_elements = (i_masked_elems == 0) ? libxsmm_cpuid_vlen(io_generated_code->arch)/i_idx_datatype_size : i_masked_elems;
+  unsigned int l_active_elements = (i_masked_elems == 0) ? l_vlen/i_idx_datatype_size : i_masked_elems;
 
   for (i = 0; i < l_active_elements; i++) {
     /* Move index i from index asimd reg to GPR0 */
@@ -280,11 +281,11 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
                                                        const unsigned int      i_masked_elems,
                                                        const unsigned int      i_adv_gpr,
                                                        const unsigned int      i_is_store,
-                                                       const unsigned char     i_mask_reg ) {
+                                                       const unsigned char     i_mask_reg,
+                                                       const unsigned char     i_is_sve ) {
 
   /* i_masked_elems: 0 = load as many as you can; else: load <i_masked_elems> elements */
-  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT )  ) {
+  if ( i_is_sve ) {
     if ( i_masked_elems == 0 ) {/* just load/store without predicate */
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, i_mask_reg );
