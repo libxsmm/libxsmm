@@ -145,14 +145,14 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 # else
     void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
 #   if defined(__APPLE__) && defined(__arm64__)
-    char device_type[64];
-    size_t size = sizeof(device_type);
+    int sme_supported = 0;
+    size_t size = sizeof(sme_supported);
 
-    if (sysctlbyname("hw.machine", &device_type, &size, NULL, 0) == 0) {
-      if(strncmp(device_type, "iPad", 4) == 0){
-        result = LIBXSMM_AARCH64_APPL_M4;
+    if (sysctlbyname("hw.optional.arm.FEAT_SME", &sme_supported, &size, NULL, 0) == 0) {
+      if (sme_supported == 1) {
+          result = LIBXSMM_AARCH64_APPL_M4;
       } else {
-        result = LIBXSMM_AARCH64_APPL_M1;
+          result = LIBXSMM_AARCH64_APPL_M1;
       }
     } else {
       fprintf(stderr, "LIBXSMM WARNING: Apple CPU detection failed !\n");
