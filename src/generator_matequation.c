@@ -33,8 +33,7 @@ void libxsmm_generator_matequation_kernel( libxsmm_generated_code*         io_ge
        io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
-       io_generated_code->arch == LIBXSMM_AARCH64_A64FX ||
-       io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
+       io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     libxsmm_generator_matequation_aarch64_kernel( io_generated_code, i_mateqn_desc );
   } else {
     /* TODO fix this error and support for more architectures */

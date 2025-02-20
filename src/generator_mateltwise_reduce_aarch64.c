@@ -83,7 +83,7 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
   if( is_sme ){
     libxsmm_aarch64_instruction_sm( io_generated_code,
                                     LIBXSMM_AARCH64_INSTR_SME_SMSTART);
-   }
+  }
 
   /* set pred reg 0 to true for sve */
   if ( is_sve ) {
@@ -1284,8 +1284,13 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_absmax_instr,
           cur_vreg, aux_vreg, 0, cur_vreg, asimd_type );
       }
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_instr,
+      if( is_sme ){
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                                  cur_vreg, reg_sum, 0, reg_sum, 0, sve_type);
+      } else {
+        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_instr,
         cur_vreg, reg_sum, 0, reg_sum, asimd_type );
+      }
     }
     if (l_is_out_bf16 == 0) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
@@ -1319,8 +1324,13 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
             0, cur_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
         libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, cur_vreg, 0);
       }
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_instr,
-        cur_vreg, reg_sum_squared, 0, reg_sum_squared, asimd_type );
+      if( is_sme ){
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                                  cur_vreg, reg_sum, 0, reg_sum, 0, sve_type);
+      } else {
+        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_instr,
+        cur_vreg, reg_sum, 0, reg_sum, asimd_type );
+      }
     }
     if (l_is_out_bf16 == 0) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
