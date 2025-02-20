@@ -44,6 +44,7 @@ void libxsmm_generator_gemm_s390x_vxrs_blocking_init( libxsmm_generated_code    
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io_generated_code,
+                                               libxsmm_s390x_defer           *io_deferred_code,
                                                const libxsmm_gemm_descriptor *i_xgemm_desc,
                                                libxsmm_s390x_reg             *io_reg_tracker,
                                                libxsmm_s390x_blocking        *i_blocking,
@@ -54,6 +55,7 @@ void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io_generated_code,
+                                               libxsmm_s390x_defer           *io_deferred_code,
                                                const libxsmm_gemm_descriptor *i_xgemm_desc,
                                                libxsmm_s390x_reg             *io_reg_tracker,
                                                libxsmm_s390x_blocking        *i_blocking );
