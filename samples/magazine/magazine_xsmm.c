@@ -79,9 +79,6 @@ int main(int argc, char* argv[])
 #   if STREAM_A(1)
   prefetch |= LIBXSMM_GEMM_PREFETCH_AL2;
 #   endif
-#   if STREAM_C(1)
-  prefetch |= LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
-#   endif
 # endif
   kernel.gemm = libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif

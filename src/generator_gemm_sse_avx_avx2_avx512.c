@@ -217,8 +217,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   /* Make sure we properly adjust A,B prefetch pointers in case of batch-reduce gemm kernel */
   if (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
-    if ( l_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2          ||
-         l_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C    ) {
+    if ( l_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 /*|| (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2CL1)*/ ) {
       adjust_A_pf_ptrs = 1;
     }
   }
