@@ -102,22 +102,23 @@ typedef struct libxsmm_s390x_reg {
 } libxsmm_s390x_reg;
 
 
-/* Struct for defered instruction, waiting for a single input to be defined later */
+/* Struct for deferred instruction, waiting for a single input to be defined later */
 #define LIBXSMM_S390X_INSTR_MAX_INPUTS 8
 #define LIBXSMM_S390X_MAX_DEFER 128
 
-typedef struct libxsmm_s390x_defered {
+typedef struct libxsmm_s390x_deferred {
   unsigned long instr;
-  unsigned int nargs; /* total number of args */
+  char nargs; /* total number of args */
   unsigned int args[LIBXSMM_S390X_INSTR_MAX_INPUTS];
-  unsigned int def_idx;
+  char def_idx;
+  char set;
   unsigned int def_arg;
   void *code_point;
   unsigned int code_byte;
-} libxsmm_s390x_defered;
+} libxsmm_s390x_deferred;
 
 typedef struct libxsmm_s390x_defer {
-  libxsmm_s390x_defered *defered;
+  libxsmm_s390x_deferred *deferred;
   unsigned int count;
 } libxsmm_s390x_defer;
 
@@ -151,6 +152,22 @@ typedef enum libxsmm_s390x_prefetch_type{
   LIBXSMM_S390X_RELEASE_STORE = 6,
   LIBXSMM_S390X_RELEASE_ALL = 7
 } libxsmm_s390x_prefetch_type;
+
+/* Branch prediction types */
+typedef enum libxsmm_s390x_branch_type{
+  LIBXSMM_S390X_BRANCH_WMULT = 0, /* word, non-linking, multi-target */
+  LIBXSMM_S390X_BRANCH_HLSNGL = 5, /* half, linking, single-target */
+  LIBXSMM_S390X_BRANCH_HRTRN = 6, /* half, return linkage */
+  LIBXSMM_S390X_BRANCH_HLMUL = 7, /* half, linking, multi-target */
+  LIBXSMM_S390X_BRANCH_WSNGL = 8, /* word, non-linking, single-target */
+  LIBXSMM_S390X_BRANCH_WLSNGL = 9, /* word, linking, single-target */
+  LIBXSMM_S390X_BRANCH_WRTRN = 10, /* word, return linkage */
+  LIBXSMM_S390X_BRANCH_WLMULT = 11, /* word, linking, multi-target */
+  LIBXSMM_S390X_BRANCH_SSNGL = 12, /* 6-byte, non-linking, single-target */
+  LIBXSMM_S390X_BRANCH_SLSNGL = 13, /* 6-byte, linking, single-target */
+  LIBXSMM_S390X_BRANCH_EXEC = 14, /* execute */
+  LIBXSMM_S390X_BRANCH_EXECR = 15 /* execute relative */
+} libxsmm_s390x_branch_type;
 
 /* Structure to hold blocking information */
 typedef struct libxsmm_s390x_blocking {
@@ -495,8 +512,12 @@ LIBXSMM_API_INTERN
 libxsmm_s390x_defer* libxsmm_s390x_defer_init( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_defered( libxsmm_generated_code *io_generated_code,
-                                  libxsmm_s390x_defered  *io_defered );
+void libxsmm_s390x_instr_deferred( libxsmm_generated_code *io_generated_code,
+                                  libxsmm_s390x_deferred  *io_deferred );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_deferred_resolve( libxsmm_generated_code *io_generated_code,
+                                           libxsmm_s390x_defer    *io_deferred_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
@@ -561,7 +582,7 @@ char libxsmm_s390x_resolve_7( unsigned long  i_instr,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
-                                 libxsmm_s390x_defer    *io_defered_code,
+                                 libxsmm_s390x_defer    *io_deferred_code,
                                  unsigned long           i_instr,
                                  unsigned int           *i_args,
                                  unsigned int            i_n,
@@ -570,14 +591,14 @@ void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0 );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -585,7 +606,7 @@ void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -594,7 +615,7 @@ void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -604,7 +625,7 @@ void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -615,7 +636,7 @@ void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -627,7 +648,7 @@ void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_7( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,

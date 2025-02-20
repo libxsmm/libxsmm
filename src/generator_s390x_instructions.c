@@ -489,6 +489,7 @@ void libxsmm_s390x_instr_register_jump_label( libxsmm_generated_code     *io_gen
 
   if ( io_generated_code->code_type > 1 ) {
     int l_lab = io_loop_label_tracker->label_count;
+
     io_loop_label_tracker->label_count++;
     io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
   }
@@ -504,12 +505,16 @@ void libxsmm_s390x_instr_branch_count_jump_label( libxsmm_generated_code     *io
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_lab = --io_loop_label_tracker->label_count;
     unsigned int l_b_dst = io_loop_label_tracker->label_address[l_lab];
-    unsigned int l_code_head = io_generated_code->code_size;
+    unsigned int l_b_imm, l_h_imm;
 
-    /* branch immediate _half words_ */
-    unsigned int l_b_imm = 0xffff & (unsigned int)( ( (int)l_b_dst - (int)l_code_head ) / 2 );
+    /* Branch hint immediate _half words_ */
+    l_h_imm = ( (int)l_b_dst - (int)io_generated_code->code_size ) / 2;
 
-    /* branch on count */
+    /* Branch hint */
+    libxsmm_s390x_instr_3( io_generated_code, LIBXSMM_S390X_INSTR_BPRP, LIBXSMM_S390X_BRANCH_SSNGL, 3, l_h_imm );
+
+    /* Branch on count */
+    l_b_imm = 0xffff & (unsigned int)( ( (int)l_b_dst - (int)io_generated_code->code_size ) / 2 );
     libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_BRCTG, i_gpr, l_b_imm );
   }
   else {
@@ -1202,59 +1207,64 @@ unsigned int libxsmm_s390x_bytes( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_destroy( libxsmm_generated_code *io_generated_code,
-                                  libxsmm_s390x_defer    *io_defer ) {
-  free(io_defer->defered);
-  free(io_defer);
+                                  libxsmm_s390x_defer    *io_deferred_code ) {
+  free( io_deferred_code->deferred );
+  free( io_deferred_code );
 }
 
 LIBXSMM_API_INTERN
 libxsmm_s390x_defer* libxsmm_s390x_defer_init( libxsmm_generated_code *io_generated_code ) {
-  libxsmm_s390x_defer *l_defer = malloc(sizeof(libxsmm_s390x_defer));
-  l_defer->defered = malloc(LIBXSMM_S390X_MAX_DEFER*sizeof(libxsmm_s390x_defered));
-  l_defer->count = 0;
-  return l_defer;
+  int i;
+  libxsmm_s390x_defer *l_deferred_code = malloc(sizeof(libxsmm_s390x_defer));
+  l_deferred_code->deferred = malloc(LIBXSMM_S390X_MAX_DEFER*sizeof(libxsmm_s390x_deferred));
+  for ( i = 0; i < LIBXSMM_S390X_MAX_DEFER; ++i ) {
+    l_deferred_code->deferred[i].set = 0;
+  }
+
+  l_deferred_code->count = 0;
+  return l_deferred_code;
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_defered( libxsmm_generated_code *io_generated_code,
-                                  libxsmm_s390x_defered  *io_defered ) {
+void libxsmm_s390x_instr_deferred( libxsmm_generated_code *io_generated_code,
+                                  libxsmm_s390x_deferred  *io_deferred ) {
   unsigned int i, j, l_args[LIBXSMM_S390X_INSTR_MAX_INPUTS];
   unsigned char l_op[8];
   char l_nbytes;
 
   /* Unpacked args */
   j = 0;
-  for ( i = 0; i < io_defered->nargs; ++i ) {
-    if ( i != io_defered->def_idx ) {
-      l_args[i] = io_defered->args[j];
+  for ( i = 0; i < io_deferred->nargs; ++i ) {
+    if ( i != io_deferred->def_idx ) {
+      l_args[i] = io_deferred->args[j];
       j++;
     } else {
-      l_args[i] = io_defered->def_arg;
+      l_args[i] = io_deferred->def_arg;
     }
   }
 
   /* Resolve opcode now */
-  switch ( io_defered->nargs ) {
+  switch ( io_deferred->nargs ) {
     case 1: {
-      l_nbytes = libxsmm_s390x_resolve_1( io_defered->instr, l_args[0], l_op );
+      l_nbytes = libxsmm_s390x_resolve_1( io_deferred->instr, l_args[0], l_op );
     } break;
     case 2: {
-      l_nbytes = libxsmm_s390x_resolve_2( io_defered->instr, l_args[0], l_args[1], l_op );
+      l_nbytes = libxsmm_s390x_resolve_2( io_deferred->instr, l_args[0], l_args[1], l_op );
     } break;
     case 3: {
-      l_nbytes = libxsmm_s390x_resolve_3( io_defered->instr, l_args[0], l_args[1], l_args[2], l_op );
+      l_nbytes = libxsmm_s390x_resolve_3( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_op );
     } break;
     case 4: {
-      l_nbytes = libxsmm_s390x_resolve_4( io_defered->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_op );
+      l_nbytes = libxsmm_s390x_resolve_4( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_op );
     } break;
     case 5: {
-      l_nbytes = libxsmm_s390x_resolve_5( io_defered->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_op );
+      l_nbytes = libxsmm_s390x_resolve_5( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_op );
     } break;
     case 6: {
-      l_nbytes = libxsmm_s390x_resolve_6( io_defered->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5], l_op );
+      l_nbytes = libxsmm_s390x_resolve_6( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5], l_op );
     } break;
     case 7: {
-      l_nbytes = libxsmm_s390x_resolve_7( io_defered->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5], l_args[6], l_op );
+      l_nbytes = libxsmm_s390x_resolve_7( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5], l_args[6], l_op );
     } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -1264,7 +1274,7 @@ void libxsmm_s390x_instr_defered( libxsmm_generated_code *io_generated_code,
 
   /* Replace code with required values */
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *l_code = (unsigned char*) io_defered->code_point;
+    unsigned char *l_code = (unsigned char*) io_deferred->code_point;
     for ( i = 0; i < (int)l_nbytes ; ++i ) {
       l_code[i] = l_op[i];
     }
@@ -1273,6 +1283,22 @@ void libxsmm_s390x_instr_defered( libxsmm_generated_code *io_generated_code,
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
   }
 }
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_deferred_resolve( libxsmm_generated_code *io_generated_code,
+                                           libxsmm_s390x_defer    *io_deferred_code ) {
+  int i;
+  for ( i = 0 ; (int)io_deferred_code->count > i ; ++i ) {
+    libxsmm_s390x_deferred *l_deferred = &io_deferred_code->deferred[i];
+    if ( 1 == l_deferred->set ) {
+      libxsmm_s390x_instr_deferred( io_generated_code, l_deferred );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+  }
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
@@ -1692,49 +1718,49 @@ char libxsmm_s390x_resolve_7( unsigned long  i_instr,
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
-                                 libxsmm_s390x_defer    *io_defered_code,
+                                 libxsmm_s390x_defer    *io_deferred_code,
                                  unsigned long           i_instr,
                                  unsigned int           *i_args,
                                  unsigned int            i_n,
                                  unsigned int            i_idx,
                                  char                    i_nbytes ) {
-  libxsmm_s390x_defered *l_defered = &io_defered_code->defered[io_defered_code->count];
+  libxsmm_s390x_deferred *l_deferred = &io_deferred_code->deferred[io_deferred_code->count];
   unsigned int i, j;
 
   /* Packed args */
   j = 0;
-  l_defered->nargs = i_n;
+  l_deferred->nargs = i_n;
   for ( i = 0; i < i_n; ++i ) {
     if ( i_idx != i ) {
-      l_defered->args[j] = i_args[i];
+      l_deferred->args[j] = i_args[i];
       j++;
     } else {
-      l_defered->def_arg = 0;
-      l_defered->def_idx = i_idx;
+      l_deferred->def_arg = 0;
+      l_deferred->def_idx = i_idx;
     }
   }
 
   /* Set instrcution for later */
-  l_defered->instr = i_instr;
+  l_deferred->instr = i_instr;
 
-  /* Set code point, advance code setting defered section to zero */
+  /* Set code point, advance code setting deferred section to zero */
   if ( 1 < io_generated_code->code_type ) {
     unsigned char *l_code = (unsigned char*) io_generated_code->generated_code;
     unsigned int l_code_head = io_generated_code->code_size;
+    l_deferred->code_point = (void *)&l_code[l_code_head];
+    l_deferred->code_byte = l_code_head;
 
-    l_defered->code_point = (void *)&l_code[l_code_head];
-    l_defered->code_byte = l_code_head;
-    for ( i = 0; i < i_nbytes ; ++i ) {
-      l_code[l_code_head + i] = 0x00;
+    for ( i = 0; i < i_nbytes / 2 ; ++i ) {
+      /* Use half-word NOP in place of op */
+      libxsmm_s390x_instr_nopr( io_generated_code );
     }
-    io_generated_code->code_size += i_nbytes;
   }
-  io_defered_code->count += 1;
+  io_deferred_code->count += 1;
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0 ) {
@@ -1750,12 +1776,12 @@ void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 1, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 1, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -1773,12 +1799,12 @@ void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 2, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 2, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -1798,12 +1824,12 @@ void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 3, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 3, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -1825,12 +1851,12 @@ void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 4, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 4, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -1854,12 +1880,12 @@ void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 5, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 5, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -1885,12 +1911,12 @@ void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 6, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 6, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_7( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_defered_code,
+                            libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0,
@@ -1918,7 +1944,7 @@ void libxsmm_s390x_defer_7( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_defered_code, i_instr, l_args, 7, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 7, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
