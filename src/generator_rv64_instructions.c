@@ -671,7 +671,7 @@ void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated
   }
 
   if ( !REG_VALID_3(i_vec_reg_src_1, i_vec_reg_src_2, i_vec_reg_dst) ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_rvv_compute: invalid register!\n");
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_compute: invalid register %d %d %d!\n", i_vec_reg_src_1, i_vec_reg_src_2, i_vec_reg_dst );
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
