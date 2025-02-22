@@ -348,9 +348,9 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
   unsigned int l_k_stride = 1;
   int u_loop_index = 0;
 
-  LIBXSMM_UNUSED(u_loop_index);
-
   void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int , const int, const int, const unsigned int);
+
+  LIBXSMM_UNUSED(u_loop_index);
 
   /* select micro kernel based on rv64 variant */
   l_generator_microkernel = libxsmm_generator_gemm_rv64_microkernel_rvv;
