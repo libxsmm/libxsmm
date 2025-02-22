@@ -26,8 +26,8 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                   const unsigned int                 i_m_blocking,
                                                   const unsigned int                 i_n_blocking,
-                                                  const int                          u_loop_index,
-                                                  const int                          u_fma_index,
+                                                  const int                          i_loop_index,
+                                                  const int                          i_fma_index,
                                                   const unsigned int                 i_pipelined ) {
   /* register blocking counter in n */
   unsigned int l_n = 0;
@@ -42,6 +42,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   unsigned int l_b_next = 0;
 
   int u_loop_index_local = 0;
+  int nld;
 
   unsigned long imm_offset;
 
@@ -85,19 +86,19 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   l_b_load_scalar_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLD : LIBXSMM_RV64_INSTR_GP_FLW;
 
   if (i_pipelined == 1) {
-    if (u_loop_index == 0){
+    if (i_loop_index == 0){
       max_loads = 2;
-      u_loop_index_local = u_loop_index;
-    } else if (u_loop_index == -1){
+      u_loop_index_local = i_loop_index;
+    } else if (i_loop_index == -1){
       max_loads = -1;
       u_loop_index_local = 0;
     }else{
       max_loads = 1;
-      u_loop_index_local = u_loop_index + 1;
+      u_loop_index_local = i_loop_index + 1;
     }
   } else {
     max_loads = 1;
-    u_loop_index_local = u_loop_index;
+    u_loop_index_local = i_loop_index;
   }
 
   assert(u_loop_index_local >= 0);
@@ -146,7 +147,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 
   /* Full vector loads on a */
   /* If sw pipeline is enabled, fetch twice for first iteration and skip the last. */
-  for (int nld = 0; nld < max_loads; nld++){
+  for (nld = 0; nld < max_loads; nld++){
     if ( (l_m_blocks[0] == 2) && (l_m_blocks[1] == 0) ) {
       for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
         libxsmm_rv64_instruction_rvv_move( io_generated_code,
@@ -315,7 +316,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                             l_compute_instr,
                                             fp_regid[l_n % MAX_FP_REG],
-                                            (u_fma_index % 2) * l_m_blocks[0] + l_m,
+                                            (i_fma_index % 2) * l_m_blocks[0] + l_m,
                                             l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
                                             1
                                             );
@@ -325,7 +326,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                             l_compute_instr,
                                             fp_regid[l_n % MAX_FP_REG],
-                                            (u_fma_index % 2) + l_m,
+                                            (i_fma_index % 2) + l_m,
                                             l_vec_reg_acc_start + (l_m_total_blocks * l_n) + l_m_blocks[0],
                                             1
                                             );
@@ -349,7 +350,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
   LIBXSMM_UNUSED(u_loop_index);
 
-  void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int , const int, int, const unsigned int);
+  void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int , const int, const int, const unsigned int);
 
   /* select micro kernel based on rv64 variant */
   l_generator_microkernel = libxsmm_generator_gemm_rv64_microkernel_rvv;
@@ -365,7 +366,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
     /* TODO (MMLA): strided k loop breaks with original idea */
     for ( l_k = 0; l_k < l_k_blocking; l_k+=l_k_stride ) {
-      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? l_k : -1, l_k, 1);
+      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? (int)l_k : -1, l_k, 1);
     }
 
     libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, l_k_blocking );
@@ -376,7 +377,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
       /* TODO (MMLA): strided k loop breaks with original idea */
       for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k+=l_k_stride ) {
-        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (i_xgemm_desc->k - 1)) ? l_k : -1, l_k, 1);
+        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (i_xgemm_desc->k - 1)) ? (int)l_k : -1, l_k, 1);
       }
     /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
@@ -390,7 +391,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
         /* TODO (MMLA): strided k loop breaks with original idea */
         for ( l_k = 0; l_k < l_k_blocking; l_k+=l_k_stride ) {
-          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? l_k : -1, l_k, 1);
+          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? (int)l_k : -1, l_k, 1);
         }
 
         libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, l_k_blocking );
