@@ -85,6 +85,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 
   l_b_load_scalar_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLD : LIBXSMM_RV64_INSTR_GP_FLW;
 
+  // Set the register index to be used
   if (i_pipelined == 1) {
     if (i_loop_index == 0){
       max_loads = 2;
@@ -98,7 +99,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
     }
   } else {
     max_loads = 1;
-    u_loop_index_local = i_loop_index;
+    u_loop_index_local = (i_loop_index < 0) ? 0 : i_loop_index;
   }
 
   assert(u_loop_index_local >= 0);
@@ -366,7 +367,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
     /* TODO (MMLA): strided k loop breaks with original idea */
     for ( l_k = 0; l_k < l_k_blocking; l_k+=l_k_stride ) {
-      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? (int)l_k : -1, l_k, 1);
+      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? (int)l_k : -1, l_k, (l_k_blocking == 1) ? 0 : 1);
     }
 
     libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, l_k_blocking );
@@ -377,7 +378,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
       /* TODO (MMLA): strided k loop breaks with original idea */
       for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k+=l_k_stride ) {
-        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (i_xgemm_desc->k - 1)) ? (int)l_k : -1, l_k, 1);
+        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (i_xgemm_desc->k - 1)) ? (int)l_k : -1, l_k, (i_xgemm_desc->k == 1) ? 0 : 1);
       }
     /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
@@ -391,7 +392,7 @@ void libxsmm_generator_gemm_rv64_kloop( libxsmm_generated_code*            io_ge
 
         /* TODO (MMLA): strided k loop breaks with original idea */
         for ( l_k = 0; l_k < l_k_blocking; l_k+=l_k_stride ) {
-          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? (int)l_k : -1, l_k, 1);
+          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, (l_k < (l_k_blocking - 1)) ? (int)l_k : -1, l_k, (l_k_blocking == 1) ? 0 : 1);
         }
 
         libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, l_k_blocking );
