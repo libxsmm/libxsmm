@@ -85,7 +85,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
 
   l_b_load_scalar_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_GP_FLD : LIBXSMM_RV64_INSTR_GP_FLW;
 
-  // Set the register index to be used
+  /* Set the register index to be used */
   if (i_pipelined == 1) {
     if (i_loop_index == 0){
       max_loads = 2;
