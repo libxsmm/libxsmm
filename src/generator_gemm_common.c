@@ -3926,9 +3926,16 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
           0,
           i_gp_reg_mapping->gp_reg_help_0,
           0 );
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0,
-          ((long long)(i_xgemm_desc->k/l_k_scale) * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda) ) -
-          ((long long)i_m_blocking * (i_micro_kernel_config->datatype_size_in*l_k_pack_factor)) );
+      if ( libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ) != 0 ) {
+        libxsmm_generator_gemm_x86_addsublea_scaled_stack_variable( io_generated_code, i_micro_kernel_config,
+                                                                    i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_GEMM_STACK_VAR_LDA_VAL,
+                                                                    i_gp_reg_mapping->gp_reg_help_2, LIBXSMM_X86_INSTR_LEAQ,
+                                                                    (long long)((-1) * (i_xgemm_desc->k/l_k_scale) * (i_micro_kernel_config->datatype_size_in)),
+                                                                    (long long)(i_m_blocking * i_micro_kernel_config->datatype_size_in * l_k_pack_factor), 0 );
+      } else {
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0,
+            ((long long)(i_xgemm_desc->k/l_k_scale) * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda) ) - ((long long)i_m_blocking * (i_micro_kernel_config->datatype_size_in) * l_k_pack_factor) );
+      }
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_a_prefetch,
