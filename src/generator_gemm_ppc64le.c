@@ -226,8 +226,7 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *i
   unsigned int l_a, l_c;
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
   unsigned int l_m_loop = 0;
-  unsigned int l_packed = ( ( io_blocking->block_m % io_blocking->vector_len_comp ) == 0 &&
-                            ( i_xgemm_desc->m % io_blocking->block_m ) == 0 ) ? 1 : 0;
+  unsigned int l_packed = ( 0 == i_xgemm_desc->m % io_blocking->block_m ) ? 1 : 0;
 
   /* Create local pointer for a */
   if ( l_m_iters > 1 || !l_packed ) {
@@ -312,7 +311,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_blocking       *io_blocking,
                                                 libxsmm_ppc64le_reg            *io_reg_tracker ) {
   libxsmm_loop_label_tracker l_loop_labels;
-  unsigned int i_a, i_b, i_c, l_b, l_c;
+  unsigned int i_a, i_b, i_c;
   unsigned int l_n_iters, l_n_loop, l_packed;
 
   /* loop labels reset */
@@ -325,25 +324,13 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
   libxsmm_ppc64le_instr_unpack_args( io_generated_code, io_reg_tracker );
 
   /* GPRs holding pointers to A, B, and C */
-  i_a = LIBXSMM_PPC64LE_GPR_R3;
-  i_b = LIBXSMM_PPC64LE_GPR_R4;
-  i_c = LIBXSMM_PPC64LE_GPR_R5;
+  i_a = LIBXSMM_PPC64LE_GPR_ARG0;
+  i_b = LIBXSMM_PPC64LE_GPR_ARG1;
+  i_c = LIBXSMM_PPC64LE_GPR_ARG2;
 
   /* n loop values */
   l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
-  l_packed = ( ( io_blocking->block_n % io_blocking->vector_len_comp ) == 0 &&
-               ( i_xgemm_desc->n % io_blocking->block_n ) == 0 ) ? 1 : 0;
-
-  /* Set up local pointers for b and c if required */
-  if ( l_n_iters > 1 || !l_packed ) {
-    l_b = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    l_c = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_b, l_b, i_b );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_c, l_c, i_c );
-  } else {
-    l_b = i_b;
-    l_c = i_c;
-  }
+  l_packed = ( 0 == i_xgemm_desc->n % io_blocking->block_n ) ? 1 : 0;
 
   /* Set jump point if required */
   if ( l_n_iters > 1 ) {
@@ -360,21 +347,21 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
                                                io_reg_tracker,
                                                &l_loop_labels,
                                                i_a,
-                                               l_b,
-                                               l_c );
+                                               i_b,
+                                               i_c );
   }
 
   /* Increment b and c pointers if required */
   if ( ( l_n_iters > 1 ) || ( l_n_iters > 0 && !l_packed ) ) {
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
-                                     l_b,
-                                     l_b,
+                                     i_b,
+                                     i_b,
                                      i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
-                                     l_c,
-                                     l_c,
+                                     i_c,
+                                     i_c,
                                      i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
   }
 
@@ -395,15 +382,9 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
                                                io_reg_tracker,
                                                &l_loop_labels,
                                                i_a,
-                                               l_b,
-                                               l_c );
+                                               i_b,
+                                               i_c );
     io_blocking->block_n = l_block_n;
-  }
-
-  /* Free b and c pointers if required */
-  if ( l_n_iters > 1 || !l_packed ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b );
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_c );
   }
 
   /* Colapse stack frame */
@@ -417,18 +398,16 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_blocking       *io_blocking,
                                                 libxsmm_ppc64le_reg            *io_reg_tracker,
                                                 libxsmm_loop_label_tracker     *io_loop_labels,
-                                                unsigned int                   *i_acc,
                                                 unsigned char const             i_a,
                                                 unsigned char const             i_b,
                                                 unsigned char const             i_c ) {
   unsigned int l_a, l_c;
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
   unsigned int l_m_loop;
-  unsigned int l_packed = ( ( io_blocking->block_m % io_blocking->vector_len_comp ) == 0 &&
-                            ( i_xgemm_desc->m % io_blocking->block_m ) == 0 ) ? 1 : 0;
+  unsigned int l_packed = ( 0 == i_xgemm_desc->m % io_blocking->block_m ) ? 1 : 0;
 
   /* Create local pointer for a */
-  if ( l_m_iters > 1 || !l_packed ) {
+  if ( 1 < l_m_iters || !l_packed ) {
     l_a = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_a, l_a, i_a );
 
@@ -440,27 +419,26 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
   }
 
   /* Set jump point if required */
-  if ( l_m_iters > 1 ) {
+  if ( 1 < l_m_iters ) {
     l_m_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_m_loop, l_m_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, io_loop_labels );
   }
 
   /* Call k-loop */
-  if ( l_m_iters > 0 ) {
+  if ( 0 < l_m_iters ) {
     libxsmm_generator_mma_microkernel( io_generated_code,
                                        i_xgemm_desc,
                                        io_blocking,
                                        io_reg_tracker,
                                        io_loop_labels,
-                                       i_acc,
                                        l_a,
                                        i_b,
                                        l_c );
   }
 
   /* Increment a and c pointers if required */
-  if ( l_m_iters > 1 || ( l_m_iters > 0 && !l_packed ) ) {
+  if ( 1 < l_m_iters || ( 0 < l_m_iters && !l_packed ) ) {
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_a,
@@ -474,7 +452,7 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
   }
 
   /* Compare and jump if required */
-  if ( l_m_iters > 1 ) {
+  if ( 1 < l_m_iters ) {
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, l_m_loop, l_m_loop, -1 );
     libxsmm_ppc64le_instr_cond_jump_back_to_label( io_generated_code, l_m_loop, io_loop_labels );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_m_loop );
@@ -489,7 +467,6 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                        io_blocking,
                                        io_reg_tracker,
                                        io_loop_labels,
-                                       i_acc,
                                        l_a,
                                        i_b,
                                        l_c );
@@ -497,7 +474,7 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
   }
 
   /* Free a and c pointers if required */
-  if ( l_m_iters > 1 || !l_packed ) {
+  if ( 1 < l_m_iters || !l_packed ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_c );
   }
@@ -511,10 +488,8 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_reg            *io_reg_tracker ) {
   libxsmm_loop_label_tracker l_loop_labels;
   unsigned int l_n_iters, l_n_loop, l_packed;
-  unsigned int i_a, i_b, i_c, l_b, l_c;
+  unsigned int i_a, i_b, i_c;
   unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
-  unsigned int l_c_acc[LIBXSMM_PPC64LE_ACC_NMAX];
-  unsigned int l_i;
 
   /* loop labels reset */
   libxsmm_reset_loop_label_tracker( &l_loop_labels );
@@ -526,71 +501,52 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
   libxsmm_ppc64le_instr_unpack_args( io_generated_code, io_reg_tracker );
 
   /* GPRs holding pointers to A, B, and C */
-  i_a = LIBXSMM_PPC64LE_GPR_R3;
-  i_b = LIBXSMM_PPC64LE_GPR_R4;
-  i_c = LIBXSMM_PPC64LE_GPR_R5;
+  i_a = LIBXSMM_PPC64LE_GPR_ARG0;
+  i_b = LIBXSMM_PPC64LE_GPR_ARG1;
+  i_c = LIBXSMM_PPC64LE_GPR_ARG2;
 
   /* n loop values */
   l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
-  l_packed = ( ( io_blocking->block_n % io_blocking->vector_len_comp ) == 0 &&
-               ( i_xgemm_desc->n % io_blocking->block_n ) == 0 ) ? 1 : 0;
+  l_packed = ( 0 == i_xgemm_desc->n % io_blocking->block_n ) ? 1 : 0;
 
-  /* Allocate C accumaltors early as contiguous VSR are needed */
+  /* Set the number of acc registers */
   io_blocking->n_acc_c = io_blocking->n_reg_c / l_acc_vec_len;
-  for ( l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
-    l_c_acc[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC );
-  }
-
-  /* Create local pointers for b and c */
-  if ( l_n_iters > 1 || !l_packed ) {
-    l_b = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    l_c = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_b, l_b, i_b );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_c, l_c, i_c );
-  } else {
-    l_b = i_b;
-    l_c = i_c;
-  }
 
   /* Set jump point for N-loop if required */
-  if ( l_n_iters > 1 ) {
+  if ( 1 < l_n_iters ) {
     l_n_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_n_loop, l_n_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, &l_loop_labels );
-  } else {
-    l_b = i_b;
-    l_c = i_c;
   }
 
   /* Call m-loop */
-  if ( l_n_iters > 0 ) {
+  if ( 0 < l_n_iters ) {
     libxsmm_generator_gemm_ppc64le_mma_m_loop( io_generated_code,
                                                i_xgemm_desc,
                                                io_blocking,
                                                io_reg_tracker,
                                                &l_loop_labels,
-                                               l_c_acc,
                                                i_a,
-                                               l_b,
-                                               l_c );
+                                               i_b,
+                                               i_c );
   }
 
   /* Increment b and c pointers if required */
-  if ( ( l_n_iters > 1 ) || ( l_n_iters > 0 && !l_packed ) ) {
+  if ( ( 1 < l_n_iters ) || ( 0 < l_n_iters && !l_packed ) ) {
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
-                                     l_b,
-                                     l_b,
+                                     i_b,
+                                     i_b,
                                      i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
-                                     l_c,
-                                     l_c,
+                                     i_c,
+                                     i_c,
                                      i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
   }
 
   /* Compare and jump if required */
-  if ( l_n_iters > 1 ) {
+  if ( 1 < l_n_iters ) {
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, l_n_loop, l_n_loop, -1 );
     libxsmm_ppc64le_instr_cond_jump_back_to_label( io_generated_code, l_n_loop, &l_loop_labels );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_n_loop );
@@ -605,22 +561,10 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
                                                io_blocking,
                                                io_reg_tracker,
                                                &l_loop_labels,
-                                               l_c_acc,
                                                i_a,
-                                               l_b,
-                                               l_c );
+                                               i_b,
+                                               i_c );
     io_blocking->block_n = l_block_n;
-  }
-
-  /* Free b and c pointers if required */
-  if ( l_n_iters > 1 || !l_packed ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b );
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_c );
-  }
-
-  /* Free accumulator */
-  for ( l_i = 0; l_i < io_blocking->n_acc_c; ++l_i ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC, l_c_acc[l_i] );
   }
 
   /* Colapse stack frame */
@@ -638,9 +582,9 @@ void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_ge
   libxsmm_ppc64le_reg l_reg_tracker;
   libxsmm_ppc64le_blocking l_blocking;
 
-  if (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) {
+  if ( LIBXSMM_PPC64LE_VSX == io_generated_code->arch ) {
     l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_vsx;
-  } else if (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) {
+  } else if ( LIBXSMM_PPC64LE_MMA == io_generated_code->arch ) {
     l_generator_kernel = &libxsmm_generator_gemm_ppc64le_kernel_mma;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );

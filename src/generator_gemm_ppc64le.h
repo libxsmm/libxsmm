@@ -107,7 +107,6 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_blocking       *i_blocking,
                                                 libxsmm_ppc64le_reg            *io_reg_tracker,
                                                 libxsmm_loop_label_tracker     *io_loop_labels,
-                                                unsigned int                   *i_acc,
                                                 unsigned char const             i_a,
                                                 unsigned char const             i_b,
                                                 unsigned char const             i_c );

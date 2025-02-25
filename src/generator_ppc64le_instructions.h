@@ -53,7 +53,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 #define LIBXSMM_PPC64LE_VR_NMAX  32
 #define LIBXSMM_PPC64LE_VSR_NMAX 64
 #define LIBXSMM_PPC64LE_ACC_NMAX 8
-#define LIBXSMM_PPC64LE_VSR_SCRATCH 6
+#define LIBXSMM_PPC64LE_VSR_SCRATCH 8
 #define LIBXSMM_PPC64LE_STACK_SIZE 576
 
 /* number of volatile registers */
@@ -317,12 +317,12 @@ typedef enum libxsmm_ppc64le_reg_type {
   LIBXSMM_PPC64LE_ACC = 4
 } libxsmm_ppc64le_reg_type;
 
-
-#define LIBXSMM_PPC64LE_REG_RESV 0
-#define LIBXSMM_PPC64LE_REG_USED 1
-#define LIBXSMM_PPC64LE_REG_FREE 2
-#define LIBXSMM_PPC64LE_REG_ALTD 3
-
+typedef enum libxsmm_ppc64le_reg_util {
+  LIBXSMM_PPC64LE_REG_RESV = 0,
+  LIBXSMM_PPC64LE_REG_USED = 1,
+  LIBXSMM_PPC64LE_REG_FREE = 2,
+  LIBXSMM_PPC64LE_REG_ALTD = 3
+} libxsmm_ppc64le_reg_util;
 
 typedef struct libxsmm_ppc64le_reg {
   unsigned int gpr[LIBXSMM_PPC64LE_GPR_NMAX];
@@ -968,7 +968,7 @@ void libxsmm_ppc64le_set_reg( libxsmm_generated_code  *io_generated_code,
                               libxsmm_ppc64le_reg     *io_reg_tracker,
                               libxsmm_ppc64le_reg_type i_reg_type,
                               unsigned int             i_reg,
-                              unsigned int const       i_value );
+                              libxsmm_ppc64le_reg_util i_value );
 
 
 LIBXSMM_API_INTERN

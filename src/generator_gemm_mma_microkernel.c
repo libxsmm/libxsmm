@@ -107,14 +107,14 @@ void libxsmm_generator_gemm_mma_block_load_trans( libxsmm_generated_code *io_gen
   unsigned int l_m_blocks = i_m / l_vec_ele;
   unsigned int l_n_blocks = (i_n + l_vec_ele - 1) / l_vec_ele;
   unsigned int l_m_part = -1;
-  unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
+  unsigned int l_packed = ( 0 == ( i_m % l_vec_ele ) ) ? 1 : 0;
 
   unsigned int l_a_ptr[LIBXSMM_PPC64LE_GPR_NMAX], l_scratch[LIBXSMM_PPC64LE_VSR_WIDTH/8], l_t[LIBXSMM_PPC64LE_VSR_WIDTH/8];
   long l_offsets[LIBXSMM_PPC64LE_GPR_NMAX];
   unsigned int l_n, l_m, l_i;
 
   /* Partial load length */
-  if ( !l_packed ) {
+  if ( 0 == l_packed ) {
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_temp, ( i_m % l_vec_ele )*l_databytes );
@@ -161,7 +161,7 @@ void libxsmm_generator_gemm_mma_block_load_trans( libxsmm_generated_code *io_gen
     }
 
     /* Partial load */
-    if ( !l_packed ) {
+    if ( 0 == l_packed ) {
       unsigned int l_m_ele = i_m % l_vec_ele;
       unsigned int l_n_ele = ( i_n - l_vec_ele*l_n < l_vec_ele) ? i_n - l_vec_ele*l_n : l_vec_ele;
 
@@ -187,7 +187,7 @@ void libxsmm_generator_gemm_mma_block_load_trans( libxsmm_generated_code *io_gen
   }
 
   /* Free GPR */
-  if ( !l_packed ) {
+  if ( 0 == l_packed ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_m_part );
   }
   libxsmm_ppc64le_ptr_reg_free( io_generated_code, io_reg_tracker, l_a_ptr, i_n );
@@ -572,7 +572,6 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
                                         libxsmm_ppc64le_blocking      *i_blocking,
                                         libxsmm_ppc64le_reg           *io_reg_tracker,
                                         libxsmm_loop_label_tracker    *io_loop_labels,
-                                        unsigned int                  *i_acc,
                                         unsigned char                  i_a,
                                         unsigned char                  i_b,
                                         unsigned char                  i_c ) {
@@ -583,13 +582,18 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
   unsigned int l_beta_zero = ( i_xgemm_desc->flags & 0x04 ) >> 2;
   unsigned int l_n_k_blocks = ( i_xgemm_desc->k + i_blocking->block_k - 1 ) / i_blocking->block_k;
   unsigned int l_a, l_b, l_a_last, l_b_last, l_a_pipe[2], l_b_pipe[2];
-  unsigned int l_a_reg[LIBXSMM_PPC64LE_VSR_NMAX], l_b_reg[LIBXSMM_PPC64LE_VSR_NMAX];
+  unsigned int l_a_reg[LIBXSMM_PPC64LE_VSR_NMAX], l_b_reg[LIBXSMM_PPC64LE_VSR_NMAX], l_c_acc[LIBXSMM_PPC64LE_ACC_NMAX];
   unsigned int l_i, l_k_block;
 
   /* Local pointers registers for A and B */
   for ( l_i = 0; l_i < 2 ; ++l_i ) {
     l_a_pipe[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     l_b_pipe[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  }
+
+  /* Allocate acc for C, do this first to guarantee they can be allocated */
+  for ( l_i = 0; l_i < i_blocking->n_acc_c; ++l_i ) {
+    l_c_acc[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC );
   }
 
   /* Allocate registers for A */
@@ -626,7 +630,7 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
                                                i_blocking->block_m,
                                                i_blocking->block_n,
                                                i_xgemm_desc->ldc,
-                                               i_acc,
+                                               l_c_acc,
                                                i_blocking->reg_ldc );
   }
 
@@ -636,7 +640,7 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
     unsigned int l_beta = ( ( l_k_block == 0 ) && ( l_beta_zero ) ) ? 0 : 1;
 
     /* Make pipeline of pointers to reduce hazards */
-    if ( l_k_block == 0 ) {
+    if ( 0 == l_k_block ) {
       l_a = i_a;
       l_b = i_b;
     } else {
@@ -684,7 +688,7 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
                                      l_b_reg,
                                      i_blocking->reg_ldb,
                                      l_beta,
-                                     i_acc,
+                                     l_c_acc,
                                      i_blocking->reg_ldc );
   }
 
@@ -709,7 +713,13 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
                                               i_blocking->block_m,
                                               i_blocking->block_n,
                                               i_xgemm_desc->ldc,
-                                              i_acc,
+                                              l_c_acc,
                                               i_blocking->reg_ldc );
+
+  /* Free C acc registers */
+  for ( l_i = 0; l_i < i_blocking->n_acc_c ; ++l_i ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC, l_c_acc[l_i] );
+  }
+
   return;
 }
