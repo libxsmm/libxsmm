@@ -60,7 +60,7 @@
 #if !defined(LIBXSMM_SYNC_NONE) && ( \
   (defined(__PGI) && !defined(LIBXSMM_LIBATOMIC)) || \
   (defined(_CRAYC) && !defined(__GNUC__)) || \
-  (defined(__zarch__) || defined(__s390x__)))
+  ( (defined(__zarch__) && 0 != (__zarch__)) || (defined(__s390x__) && 0 != (__s390x__))) )
 # define LIBXSMM_SYNC_NONE
 #endif
 

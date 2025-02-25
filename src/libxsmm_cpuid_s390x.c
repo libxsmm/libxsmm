@@ -17,7 +17,8 @@
 # define LIBXSMM_CPUID_S390X_BASELINE LIBXSMM_S390X_ARCH11
 #endif
 
-#if defined(__zarch__) || defined(__s390x__)
+#if (defined(__zarch__) && 0 != (__zarch__)) || \
+    (defined(__s390x__) && 0 != (__s390x__))
 # include <sys/auxv.h>
 # if defined(HWCAP_S390_VX)
 #  define LIBXSMM_S390X_HWCAP_VX HWCAP_S390_VX
@@ -46,7 +47,6 @@
 # define LIBXSMM_S390X_HWCAP_VXEX2 0
 # define LIBXSMM_S390X_HWCAP_NNPA 0
 #endif
-
 
 LIBXSMM_API int libxsmm_cpuid_s390x(libxsmm_cpuid_info* info)
 {
