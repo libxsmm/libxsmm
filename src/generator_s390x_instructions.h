@@ -153,6 +153,14 @@ typedef enum libxsmm_s390x_prefetch_type{
   LIBXSMM_S390X_RELEASE_ALL = 7
 } libxsmm_s390x_prefetch_type;
 
+/* Next instruction access intent types */
+typedef enum libxsmm_s390x_niai_type{
+  LIBXSMM_S390X_NIAI_NONE = 0,
+  LIBXSMM_S390X_NIAI_STORE = 1,
+  LIBXSMM_S390X_NIAI_LOAD = 2,
+  LIBXSMM_S390X_NIAI_EVICT = 3
+} libxsmm_s390x_niai_type;
+
 /* Branch prediction types */
 typedef enum libxsmm_s390x_branch_type{
   LIBXSMM_S390X_BRANCH_WMULT = 0, /* word, non-linking, multi-target */
@@ -205,12 +213,21 @@ void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
                                    char                    i_beta );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_mult_niai( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_s390x_reg      *io_reg_tracker,
+                                              unsigned int            i_ptr,
+                                              unsigned int            i_n,
+                                              long int                i_offset,
+                                              unsigned int            i_vec,
+                                              libxsmm_s390x_niai_type i_flag );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_store_mult( libxsmm_generated_code *io_generated_code,
                                          libxsmm_s390x_reg      *io_reg_tracker,
                                          unsigned int            i_ptr,
                                          unsigned int            i_n,
                                          long int                i_offset,
-                                         unsigned int            o_vec );
+                                         unsigned int            i_vec );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_store_part( libxsmm_generated_code *io_generated_code,
@@ -219,7 +236,16 @@ void libxsmm_s390x_instr_vec_store_part( libxsmm_generated_code *io_generated_co
                                          unsigned int            i_ptr,
                                          unsigned int            i_len,
                                          long int                i_offset,
-                                         unsigned int            o_vec );
+                                         unsigned int            i_vec );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_load_mult_niai( libxsmm_generated_code *io_generated_code,
+                                             libxsmm_s390x_reg      *io_reg_tracker,
+                                             unsigned int            i_ptr,
+                                             unsigned int            i_n,
+                                             long int                i_offset,
+                                             unsigned int            o_vec,
+                                             libxsmm_s390x_niai_type i_flag );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_load_mult( libxsmm_generated_code *io_generated_code,
@@ -263,11 +289,29 @@ void libxsmm_s390x_instr_vec_load_bcast_idx( libxsmm_generated_code *io_generate
                                              unsigned int            o_vec );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_niai( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_s390x_reg      *io_reg_tracker,
+                                         unsigned int            i_ptr,
+                                         long int                i_offset,
+                                         unsigned int            i_vec,
+                                         libxsmm_s390x_niai_type i_flag );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_store( libxsmm_generated_code *io_generated_code,
                                     libxsmm_s390x_reg      *io_reg_tracker,
                                     unsigned int            i_ptr,
                                     long int                i_offset,
                                     unsigned int            i_vec );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_idx_niai( libxsmm_generated_code *io_generated_code,
+                                             libxsmm_s390x_reg      *io_reg_tracker,
+                                             unsigned int            i_idxptr,
+                                             unsigned int            i_baseptr,
+                                             long int                i_offset,
+                                             unsigned int            i_vec,
+                                             libxsmm_s390x_niai_type i_flag );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_code,
@@ -278,11 +322,28 @@ void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_cod
                                         unsigned int            i_vec );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_load_niai( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned int            i_ptr,
+                                        long int                i_offset,
+                                        unsigned int            o_vec,
+                                        libxsmm_s390x_niai_type i_flag );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_load( libxsmm_generated_code *io_generated_code,
                                    libxsmm_s390x_reg      *io_reg_tracker,
                                    unsigned int            i_ptr,
                                    long int                i_offset,
                                    unsigned int            o_vec );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_load_idx_niai( libxsmm_generated_code *io_generated_code,
+                                            libxsmm_s390x_reg      *io_reg_tracker,
+                                            unsigned int            i_idxptr,
+                                            unsigned int            i_baseptr,
+                                            long int                i_offset,
+                                            unsigned int            o_vec,
+                                            libxsmm_s390x_niai_type i_flag );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vec_load_idx( libxsmm_generated_code *io_generated_code,

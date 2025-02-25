@@ -48,7 +48,7 @@ void libxsmm_generator_vxrs_microkernel( libxsmm_generated_code        *io_gener
   libxsmm_s390x_reg_alloc( io_generated_code, io_reg_tracker, LIBXSMM_S390X_VR, l_n_reg_b, l_b_reg );
 
   /* Load C is beta != 0 */
-  if ( !l_beta_zero ) {
+  if ( 0 == l_beta_zero ) {
     libxsmm_generator_vxrs_block_load_mult( io_generated_code,
                                             io_reg_tracker,
                                             l_c_datatype,
@@ -73,7 +73,7 @@ void libxsmm_generator_vxrs_microkernel( libxsmm_generated_code        *io_gener
   for ( k = 0 ; k < l_n_k_blocks ; ++k ) {
     unsigned int l_k_rem = i_xgemm_desc->k - k*i_blocking->block_k;
     unsigned int l_block_k = ( l_k_rem < i_blocking->block_k ) ? l_k_rem : i_blocking->block_k;
-    unsigned int l_beta = ( !k && l_beta_zero ) ? 0 : 1;
+    unsigned int l_beta = ( 0 == k && 1 == l_beta_zero ) ? 0 : 1;
 
     /* If last k iteration the prefetch C for store */
     if ( LIBXSMM_S390X_ARCH12 <= io_generated_code->arch && l_n_k_blocks - 1 == k ) {
@@ -130,14 +130,14 @@ void libxsmm_generator_vxrs_microkernel( libxsmm_generated_code        *io_gener
       libxsmm_s390x_instr_gpr_add_value( io_generated_code, l_a, l_a_temp, i_blocking->block_k*i_xgemm_desc->lda*i_blocking->comp_bytes );
       libxsmm_s390x_instr_gpr_add_value( io_generated_code, l_b, l_b_temp, i_blocking->block_k*i_blocking->comp_bytes );
     }
-    if ( k == 0 && l_n_k_blocks > 1 ) {
+    if ( 0 == k && 1 < l_n_k_blocks ) {
       l_a = l_a_temp;
       l_b = l_b_temp;
     }
   }
 
   /* Free A/B address registers */
-  if ( l_n_k_blocks > 1 ){
+  if ( 1 < l_n_k_blocks ){
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_a_temp );
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_b_temp );
   }
@@ -154,7 +154,7 @@ void libxsmm_generator_vxrs_microkernel( libxsmm_generated_code        *io_gener
                                            l_c_reg,
                                            l_reg_ldc );
 
-  /* Free a, b, and c register */
+  /* Free A, B, and C register */
   libxsmm_s390x_reg_dealloc( io_generated_code, io_reg_tracker, LIBXSMM_S390X_VR, l_n_reg_a, l_a_reg );
   free(l_a_reg);
   libxsmm_s390x_reg_dealloc( io_generated_code, io_reg_tracker, LIBXSMM_S390X_VR, l_n_reg_b, l_b_reg );
@@ -180,7 +180,7 @@ void libxsmm_generator_vxrs_block_fma_b_splat( libxsmm_generated_code *io_genera
   for ( l_k = 0; l_k < i_k; ++l_k ) {
     for ( l_n = 0; l_n < i_n; ++l_n ) {
       for ( l_m = 0; l_m < i_m; ++l_m ) {
-        char l_beta = ( ( l_k == 0 ) && ( i_beta == 0 ) ) ? 0 : 1;
+        char l_beta = ( 0 == l_k && 0 == i_beta ) ? 0 : 1;
         libxsmm_s390x_instr_vxrs_alu( io_generated_code, i_datatype, i_a[l_m + l_k*i_lda], i_b[l_k + l_n*i_ldb], io_c[l_m + l_n*i_ldc], 1, l_beta );
       }
     }
@@ -221,16 +221,16 @@ void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code *io_generate
 
   for ( l_col = 0; l_col < i_n; ++l_col ) {
     /* If packed, use multiload */
-    if ( l_m_blocks > 1 ) {
+    if ( 1 < l_m_blocks ) {
       unsigned int l_t = io_t[i_ldt*l_col];
       libxsmm_s390x_instr_vec_load_mult( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_m_blocks, l_offsets[l_col], l_t );
-    } else if ( l_m_blocks == 1 ) {
+    } else if ( 1 == l_m_blocks ) {
       unsigned int l_t = io_t[i_ldt*l_col];
       libxsmm_s390x_instr_vec_load( io_generated_code, io_reg_tracker, l_ptrs[l_col], l_offsets[l_col], l_t );
     }
 
     /* Partial loads */
-    if ( l_m_rem != 0 ) {
+    if ( 0 != l_m_rem ) {
       unsigned int l_offset = i_lda*l_col*l_databytes + l_vec_len*l_m_blocks;
       unsigned int l_t = io_t[i_ldt*l_col + l_m_blocks];
       libxsmm_s390x_instr_vec_load_part( io_generated_code, io_reg_tracker, i_datatype, i_a, l_m_rem, l_offset, l_t );
@@ -286,7 +286,6 @@ void libxsmm_generator_vxrs_block_load_bcast( libxsmm_generated_code *io_generat
         unsigned int l_t = io_t[l_col*i_ldt + l_row*l_vec_ele + l_ele];
         libxsmm_s390x_instr_vec_bcast( io_generated_code, i_datatype, l_scratch, l_ele, l_t );
       }
-
     }
 
     /* For partial, just perform load and broadcast op */
@@ -348,7 +347,7 @@ void libxsmm_generator_vxrs_block_store_mult( libxsmm_generated_code *io_generat
     }
 
     /* Partial store */
-    if ( l_m_rem != 0 ) {
+    if ( 0 != l_m_rem ) {
       unsigned int l_offset = i_lda*l_col*l_databytes + l_vec_len*l_m_blocks;
       unsigned int l_t = io_t[i_ldt*l_col + l_m_blocks];
       libxsmm_s390x_instr_vec_store_part( io_generated_code, io_reg_tracker, i_datatype, i_a, l_m_rem, l_offset, l_t );

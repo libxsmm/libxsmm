@@ -48,13 +48,13 @@ void libxsmm_generator_gemm_s390x_vxrs_blocking_maximise( libxsmm_generated_code
   l_blocking[1] = 1;
   l_blocking[2] = 1;
 
-  for ( i = 0; i < 3 ; ++i ) {
-    l_reg[i] = 0;
-    l_full[i] = 0;
-  }
   l_dims[0] = i_xgemm_desc->m;
   l_dims[1] = i_xgemm_desc->n;
   l_dims[2] = i_xgemm_desc->k;
+  for ( i = 0; i < 3 ; ++i ) {
+    l_reg[i] = 0;
+    l_full[i] = (l_blocking[i] >= l_dims[i]) ? 1 : 0;
+  }
 
   l_nreg = libxsmm_generator_gemm_s390x_reg_sum( l_vec_ele, l_blocking, i_reg_func );
   l_reg_max = libxsmm_s390x_vec_nreg( io_generated_code ) - libxsmm_s390x_vec_nscratch( io_generated_code );
@@ -113,7 +113,7 @@ void libxsmm_generator_gemm_s390x_vxrs_blocking_init( libxsmm_generated_code    
   io_blocking->comp_bytes = libxsmm_s390x_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
   io_blocking->vector_len_comp = l_v_bytes / io_blocking->comp_bytes;
 
-  if ( io_generated_code->arch >= LIBXSMM_S390X_ARCH11 ) {
+  if ( LIBXSMM_S390X_ARCH11 <= io_generated_code->arch ) {
     l_reg_func = &libxsmm_generator_gemm_s390x_vxrs_reg;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
@@ -139,13 +139,13 @@ void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io
   /* m loop values */
   l_m_iters = i_xgemm_desc->m / i_blocking->block_m ;
 
-  /* Check if that are partial m part */
-  l_part = ( ( i_blocking->block_m % i_blocking->vector_len_comp ) ||
-             ( i_xgemm_desc->m % i_blocking->block_m ) ) ? 1 : 0 ;
+  /* Check if there is a partial m part */
+  l_part = ( 0 != ( i_xgemm_desc->m % i_blocking->block_m ) ) ? 1 : 0 ;
 
-  if ( l_m_iters > 1 || l_part ) {
+  if ( 1 < l_m_iters || 1 == l_part ) {
     l_a = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_a, l_a, 0 );
+
     l_c = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_c, l_c, 0 );
   } else {
@@ -154,14 +154,14 @@ void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io
   }
 
   /* Set jump point if we nned to loop */
-  if ( l_m_iters > 1 ) {
+  if ( 1 < l_m_iters ) {
     l_m_loop = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_set_value( io_generated_code, l_m_loop, l_m_iters );
     libxsmm_s390x_instr_register_jump_label( io_generated_code, io_loop_labels );
   }
 
   /* Microkernel for full blocking */
-  if ( l_m_iters > 0 ) {
+  if ( 0 < l_m_iters ) {
     libxsmm_generator_vxrs_microkernel( io_generated_code,
                                         i_xgemm_desc,
                                         io_reg_tracker,
@@ -173,22 +173,21 @@ void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io
   }
 
   /* Increment a and c pointers if required */
-  if ( l_m_iters > 1 || ( l_m_iters > 0 && l_part ) ) {
+  if ( 1 < l_m_iters || ( 0 < l_m_iters && 1 == l_part ) ) {
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, l_a, l_a, i_blocking->comp_bytes*i_blocking->block_m );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, l_c, l_c, i_blocking->comp_bytes*i_blocking->block_m );
   }
 
   /* Jump back if we need to m-loop */
-  if ( l_m_iters > 1 ) {
+  if ( 1 < l_m_iters ) {
     libxsmm_s390x_instr_branch_count_jump_label( io_generated_code, l_m_loop, io_loop_labels );
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_m_loop );
   }
 
   /* Mickrokernel for remaining m part */
-  if ( l_part ) {
+  if ( 1 == l_part ) {
     unsigned int l_block_m = i_blocking->block_m;
     i_blocking->block_m = i_xgemm_desc->m % l_block_m;
-
     libxsmm_generator_vxrs_microkernel( io_generated_code,
                                         i_xgemm_desc,
                                         io_reg_tracker,
@@ -200,7 +199,7 @@ void libxsmm_generator_gemm_s390x_vxrs_m_loop( libxsmm_generated_code        *io
     i_blocking->block_m = l_block_m;
   }
 
-  if ( l_m_iters > 1 || l_part ) {
+  if ( 1 < l_m_iters || 1 == l_part ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_a );
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_c );
   }
@@ -230,19 +229,18 @@ void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io
   /* n loop values */
   l_n_iters = i_xgemm_desc->n / i_blocking->block_n ;
 
-  /* Check if that are partial n part */
-  l_part = ( ( i_blocking->block_n % i_blocking->vector_len_comp ) ||
-             ( i_xgemm_desc->n % i_blocking->block_n ) ) ? 1 : 0 ;
+  /* Check if there is partial n part */
+  l_part = ( 0 != ( i_xgemm_desc->n % i_blocking->block_n ) ) ? 1 : 0 ;
 
   /* Set jump point if we need an n loop */
-  if ( l_n_iters > 1 ) {
+  if ( 1 < l_n_iters ) {
     l_n_loop = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_set_value( io_generated_code, l_n_loop, l_n_iters );
     libxsmm_s390x_instr_register_jump_label( io_generated_code, &l_loop_labels );
   }
 
   /* Microkernel for packed n */
-  if ( l_n_iters > 0 ) {
+  if ( 0 < l_n_iters ) {
     libxsmm_generator_gemm_s390x_vxrs_m_loop( io_generated_code,
                                               io_deferred_code,
                                               i_xgemm_desc,
@@ -255,22 +253,21 @@ void libxsmm_generator_gemm_s390x_vxrs_kernel( libxsmm_generated_code        *io
   }
 
   /* Increment b and c pointers if required */
-  if ( ( l_n_iters > 1 ) || ( l_n_iters > 0 && l_part ) ) {
+  if ( ( 1 < l_n_iters ) || ( 0 < l_n_iters && 1 == l_part ) ) {
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_b, i_b, i_xgemm_desc->ldb*i_blocking->comp_bytes*i_blocking->block_n );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_c, i_c, i_xgemm_desc->ldc*i_blocking->comp_bytes*i_blocking->block_n );
   }
 
   /* Jump if looping */
-  if ( l_n_iters > 1 ) {
+  if ( 1 < l_n_iters ) {
     libxsmm_s390x_instr_branch_count_jump_label( io_generated_code, l_n_loop, &l_loop_labels );
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_n_loop );
   }
 
-  /* Mickrokernel for remaining m part */
-  if ( l_part ) {
+  /* Mickrokernel for remaining n part */
+  if ( 1 == l_part ) {
     unsigned int l_block_n = i_blocking->block_n;
     i_blocking->block_n = i_xgemm_desc->n % l_block_n;
-
     libxsmm_generator_gemm_s390x_vxrs_m_loop( io_generated_code,
                                               io_deferred_code,
                                               i_xgemm_desc,
@@ -301,10 +298,11 @@ void libxsmm_generator_gemm_s390x_kernel( libxsmm_generated_code        *io_gene
   /* Initial register tracking structure */
   l_reg_tracker = libxsmm_s390x_reg_init( io_generated_code );
 
-  if ( io_generated_code->arch >= LIBXSMM_S390X_ARCH11 ) {
+  if ( LIBXSMM_S390X_ARCH11 <= io_generated_code->arch  ) {
     /* Create a blocking of the matrix, later switches  */
     libxsmm_generator_gemm_s390x_vxrs_blocking_init( io_generated_code, i_xgemm_desc, &l_blocking );
 
+    /* jit the kernel */
     libxsmm_generator_gemm_s390x_vxrs_kernel( io_generated_code, l_deferred_code, i_xgemm_desc, &l_reg_tracker, &l_blocking );
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
