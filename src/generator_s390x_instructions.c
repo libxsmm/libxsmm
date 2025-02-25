@@ -44,17 +44,17 @@ void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
   unsigned int l_eletype, l_rxb;
 
   /* If beta is zero we only suport positive multiplication */
-  if ( ( i_beta == 0 ) && ( i_alpha != 1) ) {
+  if ( ( 0 == i_beta ) && ( 1 != i_alpha ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
-  } else if ( i_alpha == 0 ) {
+  } else if ( 0 == i_alpha ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
 
   l_eletype = libxsmm_s390x_instr_eletype( io_generated_code, i_datatype );
 
-  if ( i_beta != 0 ) {
+  if ( 0 != i_beta ) {
     unsigned long l_op;
 
     switch ( i_datatype ) {
@@ -78,28 +78,59 @@ void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_vec_store_mult( libxsmm_generated_code *io_generated_code,
-                                         libxsmm_s390x_reg      *io_reg_tracker,
-                                         unsigned int            i_ptr,
-                                         unsigned int            i_n,
-                                         long int                i_offset,
-                                         unsigned int            o_vec ) {
-  unsigned int l_vec = o_vec + i_n - 1;
+void libxsmm_s390x_instr_vec_store_mult_niai( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_s390x_reg      *io_reg_tracker,
+                                              unsigned int            i_ptr,
+                                              unsigned int            i_n,
+                                              long int                i_offset,
+                                              unsigned int            i_vec,
+                                              libxsmm_s390x_niai_type i_flag ) {
+  unsigned int l_vec = i_vec + i_n - 1;
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_vec, l_ptr, l_align );
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, o_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_vec, l_ptr, l_align );
+  if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
+    libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0 );
+  }
+  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, i_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_mult( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_s390x_reg      *io_reg_tracker,
+                                         unsigned int            i_ptr,
+                                         unsigned int            i_n,
+                                         long int                i_offset,
+                                         unsigned int            i_vec ) {
+  unsigned int l_vec = i_vec + i_n - 1;
+  unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
+  unsigned int l_ptr = i_ptr;
+  long int l_offset = i_offset;
+  unsigned int l_rxb;
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
+    l_offset = 0;
+  }
+
+  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_vec, l_ptr, l_align );
+  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, i_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
   }
 }
@@ -111,22 +142,54 @@ void libxsmm_s390x_instr_vec_store_part( libxsmm_generated_code *io_generated_co
                                          unsigned int            i_ptr,
                                          unsigned int            i_len,
                                          long int                i_offset,
-                                         unsigned int            o_vec ) {
-  unsigned int l_len = i_len * libxsmm_s390x_bytes( io_generated_code, i_datatype );
+                                         unsigned int            i_vec ) {
+  unsigned int l_len = i_len * libxsmm_s390x_bytes( io_generated_code, i_datatype ) - 1;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, 0, l_len, l_ptr, o_vec );
-  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VSTRL, l_len, l_ptr, l_offset, o_vec, l_rxb );
+  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, 0, l_len, l_ptr, i_vec );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VSTRL, l_len, l_ptr, l_offset, i_vec, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_load_mult_niai( libxsmm_generated_code *io_generated_code,
+                                             libxsmm_s390x_reg      *io_reg_tracker,
+                                             unsigned int            i_ptr,
+                                             unsigned int            i_n,
+                                             long int                i_offset,
+                                             unsigned int            o_vec,
+                                             libxsmm_s390x_niai_type i_flag ) {
+  unsigned int l_vec = o_vec + i_n - 1;
+  unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
+  unsigned int l_ptr = i_ptr;
+  long int l_offset = i_offset;
+  unsigned int l_rxb;
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
+    l_offset = 0;
+  }
+
+  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_vec, l_ptr, l_align );
+  if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
+    libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0 );
+  }
+  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VLM, o_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
   }
 }
@@ -144,7 +207,7 @@ void libxsmm_s390x_instr_vec_load_mult( libxsmm_generated_code *io_generated_cod
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
     l_offset = 0;
@@ -153,7 +216,7 @@ void libxsmm_s390x_instr_vec_load_mult( libxsmm_generated_code *io_generated_cod
   l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_vec, l_ptr, l_align );
   libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VLM, o_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
   }
 }
@@ -166,12 +229,12 @@ void libxsmm_s390x_instr_vec_load_part( libxsmm_generated_code *io_generated_cod
                                         unsigned int            i_len,
                                         long int                i_offset,
                                         unsigned int            o_vec ) {
-  unsigned int l_len = i_len * libxsmm_s390x_bytes( io_generated_code, i_datatype );
+  unsigned int l_len = i_len * libxsmm_s390x_bytes( io_generated_code, i_datatype ) - 1;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
     l_offset = 0;
@@ -180,7 +243,7 @@ void libxsmm_s390x_instr_vec_load_part( libxsmm_generated_code *io_generated_cod
   l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, 0, l_len, l_ptr, o_vec );
   libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VLRL, l_len, l_ptr, l_offset, o_vec, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
   }
 }
@@ -220,7 +283,7 @@ void libxsmm_s390x_instr_vec_load_bcast_idx( libxsmm_generated_code *io_generate
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
     l_offset = 0;
@@ -229,9 +292,19 @@ void libxsmm_s390x_instr_vec_load_bcast_idx( libxsmm_generated_code *io_generate
   l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_idxptr, i_baseptr, l_eletype );
   libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VLREP, o_vec, l_idxptr, i_baseptr, l_offset, l_eletype, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
   }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_niai( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_s390x_reg      *io_reg_tracker,
+                                         unsigned int            i_ptr,
+                                         long int                i_offset,
+                                         unsigned int            i_vec,
+                                         libxsmm_s390x_niai_type i_flag ) {
+  libxsmm_s390x_instr_vec_store_idx_niai( io_generated_code, io_reg_tracker, 0, i_ptr, i_offset, i_vec, i_flag );
 }
 
 LIBXSMM_API_INTERN
@@ -241,6 +314,37 @@ void libxsmm_s390x_instr_vec_store( libxsmm_generated_code *io_generated_code,
                                     long int                i_offset,
                                     unsigned int            i_vec ) {
   libxsmm_s390x_instr_vec_store_idx( io_generated_code, io_reg_tracker, 0, i_ptr, i_offset, i_vec );
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_store_idx_niai( libxsmm_generated_code *io_generated_code,
+                                             libxsmm_s390x_reg      *io_reg_tracker,
+                                             unsigned int            i_idxptr,
+                                             unsigned int            i_baseptr,
+                                             long int                i_offset,
+                                             unsigned int            i_vec,
+                                             libxsmm_s390x_niai_type i_flag ) {
+  unsigned int l_idxptr = i_idxptr;
+  unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
+  long int l_offset = i_offset;
+  unsigned int l_rxb;
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
+    l_offset = 0;
+  }
+
+  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_idxptr, i_baseptr, l_align );
+  if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
+    libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0);
+  }
+  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VST, i_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -255,7 +359,7 @@ void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_cod
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
     l_offset = 0;
@@ -264,9 +368,19 @@ void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_cod
   l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_idxptr, i_baseptr, l_align );
   libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VST, i_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
   }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_load_niai( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned int            i_ptr,
+                                        long int                i_offset,
+                                        unsigned int            o_vec,
+                                        libxsmm_s390x_niai_type i_flag ) {
+  libxsmm_s390x_instr_vec_load_idx_niai( io_generated_code, io_reg_tracker, 0, i_ptr, i_offset, o_vec, i_flag );
 }
 
 LIBXSMM_API_INTERN
@@ -276,6 +390,37 @@ void libxsmm_s390x_instr_vec_load( libxsmm_generated_code *io_generated_code,
                                    long int                i_offset,
                                    unsigned int            o_vec ) {
   libxsmm_s390x_instr_vec_load_idx( io_generated_code, io_reg_tracker, 0, i_ptr, i_offset, o_vec );
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_vec_load_idx_niai( libxsmm_generated_code *io_generated_code,
+                                            libxsmm_s390x_reg      *io_reg_tracker,
+                                            unsigned int            i_idxptr,
+                                            unsigned int            i_baseptr,
+                                            long int                i_offset,
+                                            unsigned int            o_vec,
+                                            libxsmm_s390x_niai_type i_flag ) {
+  unsigned int l_idxptr = i_idxptr;
+  unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
+  long int l_offset = i_offset;
+  unsigned int l_rxb;
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
+    l_offset = 0;
+  }
+
+  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_idxptr, i_baseptr, l_align );
+  if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
+    libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0);
+  }
+  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VL, o_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
+
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -290,7 +435,7 @@ void libxsmm_s390x_instr_vec_load_idx( libxsmm_generated_code *io_generated_code
   long int l_offset = i_offset;
   unsigned int l_rxb;
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
     l_offset = 0;
@@ -299,7 +444,7 @@ void libxsmm_s390x_instr_vec_load_idx( libxsmm_generated_code *io_generated_code
   l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_idxptr, i_baseptr, l_align );
   libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VL, o_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
 
-  if ( i_offset > 0x07ff || i_offset <= -0x07ff ) {
+  if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
   }
 }
@@ -359,13 +504,13 @@ void libxsmm_s390x_instr_gpr_load_idx( libxsmm_generated_code *io_generated_code
   unsigned int l_offset_l, l_offset_h;
   long int l_offset = i_offset;
 
-  if ( i_offset > 0x07ffff || i_offset <= -0x07ffff ) {
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
     l_offset = 0;
   }
 
-  if ( l_offset ) {
+  if ( 0 != l_offset ) {
     l_offset_l = (unsigned int)( 0xfff & l_offset );
     l_offset_h = (unsigned int)( 0xff & (l_offset >> 12 ) );
   } else {
@@ -375,7 +520,7 @@ void libxsmm_s390x_instr_gpr_load_idx( libxsmm_generated_code *io_generated_code
 
   libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_LG, o_dst, l_idxptr, i_baseptr, l_offset_l, l_offset_h );
 
-  if ( i_offset > 0x07ffff || i_offset <= -0x07ffff ) {
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
   }
 }
@@ -386,27 +531,27 @@ void libxsmm_s390x_instr_gpr_add_value( libxsmm_generated_code *io_generated_cod
                                         unsigned int            i_dst,
                                         long int                i_value ) {
   /* Set value */
-  if ( i_src == 0 ) {
+  if ( 0 == i_src ) {
     libxsmm_s390x_instr_gpr_set_value( io_generated_code, i_dst, i_value );
   /* if source and dest are different, more steps are required */
   } else if ( i_src != i_dst ) {
     /* Load register */
-    if ( i_value == 0 ) {
+    if ( 0 == i_value ) {
       libxsmm_s390x_instr_gpr_copy( io_generated_code, i_src, i_dst );
     /* Add logcial immediate */
-    } else if ( i_value <= 0x7fff && i_value > -0x7fff )  {
+    } else if ( 0x7fff >= i_value && -0x7fff < i_value )  {
         libxsmm_s390x_instr_3( io_generated_code, LIBXSMM_S390X_INSTR_AGHIK, i_dst, i_src, i_value);
-    } else if ( i_value <= 0x7fffffff && i_value > -0x7fffffff ) {
+    } else if ( 0x7fffffff >= i_value && -0x7fffffff < i_value ) {
       libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_LGR, i_dst, i_src );
       libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_AGFI, i_dst, i_value );
     }
   /* if source and dest are the same, simpler commands can be used */
   } else {
-    if ( i_value == 0 ) {
+    if ( 0 == i_value ) {
       return;
-    } else if ( i_value <= 0x7fff && i_value > -0x7fff ) {
+    } else if ( 0x7fff >= i_value && -0x7fff < i_value ) {
       libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_AGHI, i_dst, i_value );
-    } else if ( i_value <= 0x7fffffff && i_value > -0x7fffffff ) {
+    } else if ( 0x7fffffff >= i_value && -0x7fffffff < i_value ) {
       libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_AGFI, i_dst, i_value );
     }
   }
@@ -457,13 +602,13 @@ void libxsmm_s390x_data_prefetch_idx( libxsmm_generated_code     *io_generated_c
                                       libxsmm_s390x_prefetch_type i_type ) {
   unsigned int l_offset_h, l_offset_l, l_idxptr = i_idxptr, l_offset = i_offset;
 
-  if ( i_offset > 0x07ffff || i_offset <= -0x07ffff ) {
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
     libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
     l_offset = 0;
   }
 
-  if ( l_offset ) {
+  if ( 0 != l_offset ) {
     l_offset_l = (unsigned int)( 0x0fff & l_offset );
     l_offset_h = (unsigned int)( 0xff & (l_offset >> 12 ) );
   } else {
@@ -473,7 +618,7 @@ void libxsmm_s390x_data_prefetch_idx( libxsmm_generated_code     *io_generated_c
 
   libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_PFD, i_type, l_idxptr, i_baseptr, l_offset_l, l_offset_h );
 
-  if ( i_offset > 0x07ffff || i_offset <= -0x07ffff ) {
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
   }
 }
@@ -482,12 +627,12 @@ LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_register_jump_label( libxsmm_generated_code     *io_generated_code,
                                               libxsmm_loop_label_tracker *io_loop_label_tracker ) {
   /* check if we still have label we can jump to */
-  if ( io_loop_label_tracker->label_count == 512 ) {
+  if ( 512 == io_loop_label_tracker->label_count ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
 
-  if ( io_generated_code->code_type > 1 ) {
+  if ( 1 < io_generated_code->code_type ) {
     int l_lab = io_loop_label_tracker->label_count;
 
     io_loop_label_tracker->label_count++;
@@ -502,7 +647,7 @@ LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_branch_count_jump_label( libxsmm_generated_code     *io_generated_code,
                                                   unsigned int                i_gpr,
                                                   libxsmm_loop_label_tracker *io_loop_label_tracker ) {
-  if ( io_generated_code->code_type > 1 ) {
+  if ( 1 < io_generated_code->code_type ) {
     unsigned int l_lab = --io_loop_label_tracker->label_count;
     unsigned int l_b_dst = io_loop_label_tracker->label_address[l_lab];
     unsigned int l_b_imm, l_h_imm;
@@ -746,8 +891,6 @@ unsigned int libxsmm_s390x_reg_stack_get( libxsmm_s390x_reg_stack *i_stack ) {
 
     if ( NULL != i_stack->free->next ) {
       l_next = i_stack->free->next;
-    } else{
-      printf("Last GPR :(\n");
     }
 
     *l_free->u = LIBXSMM_S390X_REG_USED;
@@ -757,7 +900,6 @@ unsigned int libxsmm_s390x_reg_stack_get( libxsmm_s390x_reg_stack *i_stack ) {
 
     out = l_free->id;
   } else {
-    printf("Stack is empty :(\n");
     out = 0xffffffff;
   }
   return out;

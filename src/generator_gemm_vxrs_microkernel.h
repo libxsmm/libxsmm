@@ -39,41 +39,41 @@ void libxsmm_generator_vxrs_block_fma_b_splat( libxsmm_generated_code *io_genera
                                                unsigned int            i_ldc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code        *io_generated_code,
-                                             libxsmm_s390x_reg             *io_reg_tracker,
-                                             const libxsmm_datatype         i_datatype,
-                                             const libxsmm_datatype         i_comptype,
-                                             unsigned int                   i_a,
-                                             unsigned int                   i_m,
-                                             unsigned int                   i_n,
-                                             unsigned int                   i_lda,
-                                             unsigned int                  *io_t,
-                                             unsigned int                   i_ldt );
+void libxsmm_generator_vxrs_block_load_mult( libxsmm_generated_code *io_generated_code,
+                                             libxsmm_s390x_reg      *io_reg_tracker,
+                                             const libxsmm_datatype  i_datatype,
+                                             const libxsmm_datatype  i_comptype,
+                                             unsigned int            i_a,
+                                             unsigned int            i_m,
+                                             unsigned int            i_n,
+                                             unsigned int            i_lda,
+                                             unsigned int           *io_t,
+                                             unsigned int            i_ldt );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vxrs_block_load_bcast( libxsmm_generated_code        *io_generated_code,
-                                              libxsmm_s390x_reg             *io_reg_tracker,
-                                              const libxsmm_datatype         i_datatype,
-                                              const libxsmm_datatype         i_comptype,
-                                              unsigned int                   i_a,
-                                              unsigned int                   i_m,
-                                              unsigned int                   i_n,
-                                              unsigned int                   i_lda,
-                                              unsigned int                  *io_t,
-                                              unsigned int                   i_ldt );
+void libxsmm_generator_vxrs_block_load_bcast( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_s390x_reg      *io_reg_tracker,
+                                              const libxsmm_datatype  i_datatype,
+                                              const libxsmm_datatype  i_comptype,
+                                              unsigned int            i_a,
+                                              unsigned int            i_m,
+                                              unsigned int            i_n,
+                                              unsigned int            i_lda,
+                                              unsigned int           *io_t,
+                                              unsigned int            i_ldt );
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vxrs_block_store_mult( libxsmm_generated_code        *io_generated_code,
-                                              libxsmm_s390x_reg             *io_reg_tracker,
-                                              const libxsmm_datatype         i_datatype,
-                                              const libxsmm_datatype         i_comptype,
-                                              unsigned int                   i_a,
-                                              unsigned int                   i_m,
-                                              unsigned int                   i_n,
-                                              unsigned int                   i_lda,
-                                              unsigned int                  *io_t,
-                                              unsigned int                   i_ldt );
+void libxsmm_generator_vxrs_block_store_mult( libxsmm_generated_code *io_generated_code,
+                                              libxsmm_s390x_reg      *io_reg_tracker,
+                                              const libxsmm_datatype  i_datatype,
+                                              const libxsmm_datatype  i_comptype,
+                                              unsigned int            i_a,
+                                              unsigned int            i_m,
+                                              unsigned int            i_n,
+                                              unsigned int            i_lda,
+                                              unsigned int           *io_t,
+                                              unsigned int            i_ldt );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vxrs_block_prefetch( libxsmm_generated_code     *io_generated_code,
