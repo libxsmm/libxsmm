@@ -66,7 +66,7 @@
 # define LIBXSMM_PLATFORM_RV64
 #endif
 #if !defined(LIBXSMM_PLATFORM_C390X) && \
-  (defined(__s390x__) || defined(__zarch__))
+  ( (defined(__s390x__) && 0 != (__s390x__)) || (defined(__zarch__) && 0!= (__zarch__)) )
 # define LIBXSMM_PLATFORM_S390X
 #endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
