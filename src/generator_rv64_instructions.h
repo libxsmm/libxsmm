@@ -2358,4 +2358,20 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*     io
                                                   const unsigned int          i_label_no,
                                                   libxsmm_jump_label_tracker* io_jump_label_tracker );
 
+/**
+ * Jumps to the address/label stored a specific position
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_jmp_instr the particular jump instruction used
+ * @param i_gp_reg_cmp the register holding the condition result
+ * @param i_label_no position in the jump label tracker to jump to
+ * @param io_jump_label_tracker data structures that tracks arbitrary jump labels
+*/
+
+LIBXSMM_API_INTERN
+void libxsmm_rv64_instruction_prefetch( libxsmm_generated_code*  io_generated_code,
+                                        const unsigned int       i_pf_instr,
+                                        const unsigned int       i_gp_reg_src,
+                                        const unsigned int       i_imm12);
+
 #endif /* GENERATOR_RV64_INSTRUCTIONS_H */
