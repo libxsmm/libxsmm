@@ -33,6 +33,7 @@
 #define LIBXSMM_S390X_GPR_ARG1 3
 #define LIBXSMM_S390X_GPR_ARG2 4
 #define LIBXSMM_S390X_GPR_ARG3 5
+#define LIBXSMM_S390X_GPR_ARG4 6
 
 #define LIBXSMM_S390X_STACK_SIZE 160
 
@@ -203,6 +204,42 @@ typedef struct libxsmm_s390x_blocking {
 #define LIBXSMM_S390X_INSTR_NOP 0x47000000 /* 4-byte nop */
 #define LIBXSMM_S390X_INSTR_NOPR 0x0700  /* 2-byte nop */
 
+/* function pointer typedefs */
+typedef unsigned long (*libxsmm_s390x_instr_0_func)( unsigned long instr );
+
+typedef unsigned long (*libxsmm_s390x_instr_1_func)( unsigned long instr,
+                                                     unsigned int  i0 );
+
+typedef unsigned long (*libxsmm_s390x_instr_2_func)( unsigned long instr,
+                                                     unsigned int  i0,
+                                                     unsigned int  i1 );
+
+typedef unsigned long (*libxsmm_s390x_instr_3_func)( unsigned long instr,
+                                                     unsigned int  i0,
+                                                     unsigned int  i1,
+                                                     unsigned int  i2 );
+
+typedef unsigned long (*libxsmm_s390x_instr_4_func)( unsigned long instr,
+                                                     unsigned int  i0,
+                                                     unsigned int  i1,
+                                                     unsigned int  i2,
+                                                     unsigned int  i3 );
+
+typedef unsigned long (*libxsmm_s390x_instr_5_func)( unsigned long instr,
+                                                     unsigned int  i0,
+                                                     unsigned int  i1,
+                                                     unsigned int  i2,
+                                                     unsigned int  i3,
+                                                     unsigned int  i4 );
+
+typedef unsigned long (*libxsmm_s390x_instr_6_func)( unsigned long instr,
+                                                     unsigned int  i0,
+                                                     unsigned int  i1,
+                                                     unsigned int  i2,
+                                                     unsigned int  i3,
+                                                     unsigned int  i4,
+                                                     unsigned int  i5 );
+
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
                                    libxsmm_datatype const  i_datatype,
@@ -365,6 +402,21 @@ unsigned int libxsmm_s390x_instr_rxb( libxsmm_generated_code *io_generated_code,
                                       unsigned int            i_3 );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_store( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    unsigned int            i_ptr,
+                                    long int                i_offset,
+                                    unsigned int            i_src );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_store_idx( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned int            i_idxptr,
+                                        unsigned int            i_baseptr,
+                                        long int                i_offset,
+                                        unsigned int            i_src );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_gpr_load( libxsmm_generated_code *io_generated_code,
                                    libxsmm_s390x_reg      *io_reg_tracker,
                                    unsigned int            i_ptr,
@@ -401,6 +453,13 @@ void libxsmm_s390x_instr_gpr_imm64( libxsmm_generated_code *io_generated_code,
                                     unsigned long int       i_value );
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_move_imm8( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    unsigned int            i_ptr,
+                                    long                    i_offset,
+                                    unsigned char           i_value );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_data_prefetch( libxsmm_generated_code     *io_generated_code,
                                   libxsmm_s390x_reg          *io_reg_tracker,
                                   unsigned int                i_ptr,
@@ -414,6 +473,15 @@ void libxsmm_s390x_data_prefetch_idx( libxsmm_generated_code     *io_generated_c
                                       unsigned int                i_baseptr,
                                       long int                    i_offset,
                                       libxsmm_s390x_prefetch_type i_type );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_call_jump_imm( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned long           i_addr );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_call_jump( libxsmm_generated_code *io_generated_code,
+                                    unsigned int            i_addr );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_register_jump_label( libxsmm_generated_code     *io_generated_code,
@@ -566,6 +634,10 @@ unsigned int libxsmm_s390x_bytes( libxsmm_generated_code *io_generated_code,
                                   const libxsmm_datatype  i_datatype );
 
 LIBXSMM_API_INTERN
+unsigned char libxsmm_s390x_instr_bytes( libxsmm_generated_code *io_generated_code,
+                                         unsigned long           i_instr );
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_destroy( libxsmm_generated_code *io_generated_code,
                                   libxsmm_s390x_defer    *io_defer );
 
@@ -581,74 +653,59 @@ void libxsmm_s390x_instr_deferred_resolve( libxsmm_generated_code *io_generated_
                                            libxsmm_s390x_defer    *io_deferred_code );
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
-                                 unsigned char          *i_op,
-                                 char                    i_nbytes );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_1( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_2( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_3( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_4( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_5( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned int   i_4,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_6( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned int   i_4,
-                              unsigned int   i_5,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_7( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned int   i_4,
-                              unsigned int   i_5,
-                              unsigned int   i_6,
-                              unsigned char *o_out );
-
-LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
                                  libxsmm_s390x_defer    *io_deferred_code,
                                  unsigned long           i_instr,
                                  unsigned int           *i_args,
                                  unsigned int            i_n,
-                                 unsigned int            i_idx,
+                                 unsigned int            i_idx );
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
+                                 unsigned long           i_op,
                                  char                    i_nbytes );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_0( unsigned long  i_instr );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_1( unsigned long  i_instr,
+                                       unsigned int   i_0 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_2( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_3( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_4( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2,
+                                       unsigned int   i_3 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_5( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2,
+                                       unsigned int   i_3,
+                                       unsigned int   i_4 );
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_6( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2,
+                                       unsigned int   i_3,
+                                       unsigned int   i_4,
+                                       unsigned int   i_5 );
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
@@ -708,19 +765,6 @@ void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_5 );
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_defer_7( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_deferred_code,
-                            unsigned long           i_instr,
-                            unsigned int            i_idx,
-                            unsigned int            i_0,
-                            unsigned int            i_1,
-                            unsigned int            i_2,
-                            unsigned int            i_3,
-                            unsigned int            i_4,
-                            unsigned int            i_5,
-                            unsigned int            i_6 );
-
-LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_0( libxsmm_generated_code *io_generated_code,
                             unsigned long           i_instr );
 
@@ -768,18 +812,6 @@ void libxsmm_s390x_instr_6( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_3,
                             unsigned int            i_4,
                             unsigned int            i_5 );
-
-LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
-                            unsigned long           i_instr,
-                            unsigned int            i_0,
-                            unsigned int            i_1,
-                            unsigned int            i_2,
-                            unsigned int            i_3,
-                            unsigned int            i_4,
-                            unsigned int            i_5,
-                            unsigned int            i_6 );
-
 
 /* All code below here is auto-generated */
 #define LIBXSMM_S390X_FMASK 0xffff000000000000UL
@@ -1409,243 +1441,243 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 #define LIBXSMM_S390X_INSTR_ZAP 0x002ef80000000000UL /* Zero and Add, form: SS-b */
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_e_form(unsigned int instr, unsigned char *output);
+unsigned long libxsmm_s390x_form_e_form(unsigned long instr);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_i_form(unsigned int instr, unsigned char i, unsigned char *output);
+unsigned long libxsmm_s390x_form_i_form(unsigned long instr, unsigned int i);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ie_form(unsigned int instr, unsigned char i1,unsigned char i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ie_form(unsigned long instr, unsigned int i1, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_mii_form(unsigned long instr, unsigned char m1,unsigned int ri2,unsigned int ri3, unsigned char *output);
+unsigned long libxsmm_s390x_form_mii_form(unsigned long instr, unsigned int m1, unsigned int ri2, unsigned int ri3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ri_a_form(unsigned int instr, unsigned char r1,unsigned int i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ri_a_form(unsigned long instr, unsigned int r1, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ri_b_form(unsigned int instr, unsigned char r1,unsigned int ri1, unsigned char *output);
+unsigned long libxsmm_s390x_form_ri_b_form(unsigned long instr, unsigned int r1, unsigned int ri1);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ri_c_form(unsigned int instr, unsigned char m1,unsigned int ri2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ri_c_form(unsigned long instr, unsigned int m1, unsigned int ri2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_a_form(unsigned long instr, unsigned char r1,unsigned int i2,unsigned char m3, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_a_form(unsigned long instr, unsigned int r1, unsigned int i2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_b_form(unsigned long instr, unsigned char r1,unsigned char r2,unsigned int ri4,unsigned char m3, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_b_form(unsigned long instr, unsigned int r1, unsigned int r2, unsigned int ri4, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_c_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned int ri4,unsigned char i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_c_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int ri4, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_d_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned int i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_d_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_e_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned int ri2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_e_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int ri2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_f_form(unsigned long instr, unsigned char r1,unsigned char r2,unsigned char i3,unsigned char i4,unsigned char i5, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_f_form(unsigned long instr, unsigned int r1, unsigned int r2, unsigned int i3, unsigned int i4, unsigned int i5);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_g_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned int i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rie_g_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ril_a_form(unsigned long instr, unsigned char r1,unsigned int i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ril_a_form(unsigned long instr, unsigned int r1, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ril_b_form(unsigned long instr, unsigned char r1,unsigned int ri2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ril_b_form(unsigned long instr, unsigned int r1, unsigned int ri2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ril_c_form(unsigned long instr, unsigned char m1,unsigned int ri2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ril_c_form(unsigned long instr, unsigned int m1, unsigned int ri2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ris_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned char b4,unsigned int d4,unsigned char i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ris_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int b4, unsigned int d4, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rr_form(unsigned int instr, unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rr_form(unsigned long instr, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrd_form(unsigned int instr, unsigned char r1,unsigned char r3,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrd_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rre_form(unsigned int instr, unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rre_form(unsigned long instr, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_a_form(unsigned int instr, unsigned char r3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrf_a_form(unsigned long instr, unsigned int r3, unsigned int m4, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_b_form(unsigned int instr, unsigned char r3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrf_b_form(unsigned long instr, unsigned int r3, unsigned int m4, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_c_form(unsigned int instr, unsigned char m3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrf_c_form(unsigned long instr, unsigned int m3, unsigned int m4, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_d_form(unsigned int instr, unsigned char m3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrf_d_form(unsigned long instr, unsigned int m3, unsigned int m4, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_e_form(unsigned int instr, unsigned char m3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrf_e_form(unsigned long instr, unsigned int m3, unsigned int m4, unsigned int r1, unsigned int r2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrs_form(unsigned long instr, unsigned char r1,unsigned char r2,unsigned char b4,unsigned int d4,unsigned char m4, unsigned char *output);
+unsigned long libxsmm_s390x_form_rrs_form(unsigned long instr, unsigned int r1, unsigned int r2, unsigned int b4, unsigned int d4, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rs_a_form(unsigned int instr, unsigned char r1,unsigned char r3,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rs_a_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rs_b_form(unsigned int instr, unsigned char r1,unsigned char m3,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rs_b_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsi_form(unsigned int instr, unsigned char r1,unsigned char r3,unsigned int ri2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rsi_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int ri2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsl_a_form(unsigned long instr, unsigned char l1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rsl_a_form(unsigned long instr, unsigned int l1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsl_b_form(unsigned long instr, unsigned char l1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rsl_b_form(unsigned long instr, unsigned int l1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsy_a_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rsy_a_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b2, unsigned int dl2, unsigned int dh2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsy_b_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rsy_b_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int b2, unsigned int dl2, unsigned int dh2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rx_a_form(unsigned int instr, unsigned char r1,unsigned char x2,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rx_a_form(unsigned long instr, unsigned int r1, unsigned int x2, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rx_b_form(unsigned int instr, unsigned char m1,unsigned char x2,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rx_b_form(unsigned long instr, unsigned int m1, unsigned int x2, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxe_form(unsigned long instr, unsigned char r1,unsigned char x2,unsigned char b2,unsigned int d2,unsigned char m3, unsigned char *output);
+unsigned long libxsmm_s390x_form_rxe_form(unsigned long instr, unsigned int r1, unsigned int x2, unsigned int b2, unsigned int d2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxf_form(unsigned long instr, unsigned char r3,unsigned char x2,unsigned char b2,unsigned int d2,unsigned char r1, unsigned char *output);
+unsigned long libxsmm_s390x_form_rxf_form(unsigned long instr, unsigned int r3, unsigned int x2, unsigned int b2, unsigned int d2, unsigned int r1);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxy_a_form(unsigned long instr, unsigned char r1,unsigned char x2,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rxy_a_form(unsigned long instr, unsigned int r1, unsigned int x2, unsigned int b2, unsigned int dl2, unsigned int dh2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxy_b_form(unsigned long instr, unsigned char m1,unsigned char x2,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output);
+unsigned long libxsmm_s390x_form_rxy_b_form(unsigned long instr, unsigned int m1, unsigned int x2, unsigned int b2, unsigned int dl2, unsigned int dh2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_s_form(unsigned int instr, unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_s_form(unsigned long instr, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_si_form(unsigned int instr, unsigned char i2,unsigned char b1,unsigned int d1, unsigned char *output);
+unsigned long libxsmm_s390x_form_si_form(unsigned long instr, unsigned int i2, unsigned int b1, unsigned int d1);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_sil_form(unsigned long instr, unsigned char b1,unsigned int d1,unsigned int i2, unsigned char *output);
+unsigned long libxsmm_s390x_form_sil_form(unsigned long instr, unsigned int b1, unsigned int d1, unsigned int i2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_siy_form(unsigned long instr, unsigned char i2,unsigned char b1,unsigned int dl1,unsigned char dh1, unsigned char *output);
+unsigned long libxsmm_s390x_form_siy_form(unsigned long instr, unsigned int i2, unsigned int b1, unsigned int dl1, unsigned int dh1);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_smi_form(unsigned long instr, unsigned char m1,unsigned char b3,unsigned int d3,unsigned int ri2, unsigned char *output);
+unsigned long libxsmm_s390x_form_smi_form(unsigned long instr, unsigned int m1, unsigned int b3, unsigned int d3, unsigned int ri2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_a_form(unsigned long instr, unsigned char l,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ss_a_form(unsigned long instr, unsigned int l, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_b_form(unsigned long instr, unsigned char l1,unsigned char l2,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ss_b_form(unsigned long instr, unsigned int l1, unsigned int l2, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_c_form(unsigned long instr, unsigned char l1,unsigned char i3,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ss_c_form(unsigned long instr, unsigned int l1, unsigned int i3, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_d_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ss_d_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_e_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned char b2,unsigned int d2,unsigned char b4,unsigned int d4, unsigned char *output);
+unsigned long libxsmm_s390x_form_ss_e_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b2, unsigned int d2, unsigned int b4, unsigned int d4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_f_form(unsigned long instr, unsigned char l2,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ss_f_form(unsigned long instr, unsigned int l2, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_sse_form(unsigned long instr, unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_sse_form(unsigned long instr, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ssf_form(unsigned long instr, unsigned char r1,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output);
+unsigned long libxsmm_s390x_form_ssf_form(unsigned long instr, unsigned int r1, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_a_form(unsigned long instr, unsigned char v1,unsigned int i2,unsigned char m3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_a_form(unsigned long instr, unsigned int v1, unsigned int i2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_b_form(unsigned long instr, unsigned char v1,unsigned char i2,unsigned char i3,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_b_form(unsigned long instr, unsigned int v1, unsigned int i2, unsigned int i3, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_c_form(unsigned long instr, unsigned char v1,unsigned char v3,unsigned int i2,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_c_form(unsigned long instr, unsigned int v1, unsigned int v3, unsigned int i2, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_d_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char i4,unsigned char m5,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_d_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int i4, unsigned int m5);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_e_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned int i3,unsigned char m5,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_e_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int i3, unsigned int m5, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_f_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m5,unsigned char i4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_f_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m5, unsigned int i4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_g_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char i4,unsigned char m5,unsigned char i3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_g_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int i4, unsigned int m5, unsigned int i3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_h_form(unsigned long instr, unsigned char v1,unsigned int i2,unsigned char i3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_h_form(unsigned long instr, unsigned int v1, unsigned int i2, unsigned int i3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_i_form(unsigned long instr, unsigned char v1,unsigned char r2,unsigned char m4,unsigned char i3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vri_i_form(unsigned long instr, unsigned int v1, unsigned int r2, unsigned int m4, unsigned int i3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_a_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char m5,unsigned char m4,unsigned char m3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_a_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int m5, unsigned int m4, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_b_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m5,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_b_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m5, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_c_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m6,unsigned char m5,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_c_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m6, unsigned int m5, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_d_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m5,unsigned char m6,unsigned char v4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_d_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m5, unsigned int m6, unsigned int v4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_e_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m6,unsigned char m5,unsigned char v4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_e_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m6, unsigned int m5, unsigned int v4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_f_form(unsigned long instr, unsigned char v1,unsigned char r2,unsigned char r3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_f_form(unsigned long instr, unsigned int v1, unsigned int r2, unsigned int r3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_g_form(unsigned long instr, unsigned char v1,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_g_form(unsigned long instr, unsigned int v1);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_h_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char m3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_h_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_i_form(unsigned long instr, unsigned char r1,unsigned char v2,unsigned char m3,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_i_form(unsigned long instr, unsigned int r1, unsigned int v2, unsigned int m3, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_j_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_j_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_k_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char m3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrr_k_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_a_form(unsigned long instr, unsigned char v1,unsigned char v3,unsigned char b2,unsigned int d2,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrs_a_form(unsigned long instr, unsigned int v1, unsigned int v3, unsigned int b2, unsigned int d2, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_b_form(unsigned long instr, unsigned char v1,unsigned char r3,unsigned char b2,unsigned int d2,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrs_b_form(unsigned long instr, unsigned int v1, unsigned int r3, unsigned int b2, unsigned int d2, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_c_form(unsigned long instr, unsigned char r1,unsigned char v3,unsigned char b2,unsigned int d2,unsigned char m4,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrs_c_form(unsigned long instr, unsigned int r1, unsigned int v3, unsigned int b2, unsigned int d2, unsigned int m4);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_d_form(unsigned long instr, unsigned char r3,unsigned char b2,unsigned int d2,unsigned char v1,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrs_d_form(unsigned long instr, unsigned int r3, unsigned int b2, unsigned int d2, unsigned int v1);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrv_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char b2,unsigned int d2,unsigned char m3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrv_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int b2, unsigned int d2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrx_form(unsigned long instr, unsigned char v1,unsigned char x2,unsigned char b2,unsigned int d2,unsigned char m3,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vrx_form(unsigned long instr, unsigned int v1, unsigned int x2, unsigned int b2, unsigned int d2, unsigned int m3);
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vsi_form(unsigned long instr, unsigned char i3,unsigned char b2,unsigned int d2,unsigned char v1,unsigned char rxb, unsigned char *output);
+unsigned long libxsmm_s390x_form_vsi_form(unsigned long instr, unsigned int i3, unsigned int b2, unsigned int d2, unsigned int v1);
 
 #endif

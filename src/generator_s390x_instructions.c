@@ -13,7 +13,7 @@
 
 /* Based on "z/Architecture: Principles of Operation".
    Below is a table showing Z model corresponding revision number:
-   arch11 (z14)     SA22-7832-10 (11th edition)
+   arch11 (z13)     SA22-7832-10 (11th edition)
    arch12 (z14)     SA22-7832-11 (12th edition)
    arch13 (z15)     SA22-7832-12 (13th edition)
    arch14 (z16)     SA22-7832-13 (14th edition)
@@ -41,7 +41,7 @@ void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
     VFNMS c, a, b -> c = -( a*b - c)    | alpha = -1, beta = 1
     VFM    c, a, b -> c = a*b           | alpha = -1, beta = 0
   */
-  unsigned int l_eletype, l_rxb;
+  unsigned int l_eletype;
 
   /* If beta is zero we only suport positive multiplication */
   if ( ( 0 == i_beta ) && ( 1 != i_alpha ) ) {
@@ -69,11 +69,9 @@ void libxsmm_s390x_instr_vxrs_alu( libxsmm_generated_code *io_generated_code,
     }
 
     l_op += ( 0x01 * ( i_beta + 1 ) / 2 ) + ( 0x10 * ( 1 - i_alpha ) / 2 );
-    l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_c, i_a, i_b, i_c );
-    libxsmm_s390x_instr_7( io_generated_code, l_op, i_c, i_a, i_b, l_eletype, 0, i_c, l_rxb );
+    libxsmm_s390x_instr_6( io_generated_code, l_op, i_c, i_a, i_b, l_eletype, 0, i_c );
   } else {
-    l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_c, i_a, i_b, l_eletype );
-    libxsmm_s390x_instr_7( io_generated_code, LIBXSMM_S390X_INSTR_VFM, i_c, i_a, i_b, 0, 0, l_eletype, l_rxb );
+    libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VFM, i_c, i_a, i_b, 0, 0, l_eletype );
   }
 }
 
@@ -89,7 +87,6 @@ void libxsmm_s390x_instr_vec_store_mult_niai( libxsmm_generated_code *io_generat
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -97,11 +94,10 @@ void libxsmm_s390x_instr_vec_store_mult_niai( libxsmm_generated_code *io_generat
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_vec, l_ptr, l_align );
   if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
     libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0 );
   }
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, i_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, i_vec, l_vec, l_ptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
@@ -119,7 +115,6 @@ void libxsmm_s390x_instr_vec_store_mult( libxsmm_generated_code *io_generated_co
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -127,8 +122,7 @@ void libxsmm_s390x_instr_vec_store_mult( libxsmm_generated_code *io_generated_co
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_vec, l_ptr, l_align );
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, i_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VSTM, i_vec, l_vec, l_ptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
@@ -146,7 +140,6 @@ void libxsmm_s390x_instr_vec_store_part( libxsmm_generated_code *io_generated_co
   unsigned int l_len = i_len * libxsmm_s390x_bytes( io_generated_code, i_datatype ) - 1;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -154,8 +147,7 @@ void libxsmm_s390x_instr_vec_store_part( libxsmm_generated_code *io_generated_co
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, 0, l_len, l_ptr, i_vec );
-  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VSTRL, l_len, l_ptr, l_offset, i_vec, l_rxb );
+  libxsmm_s390x_instr_4( io_generated_code, LIBXSMM_S390X_INSTR_VSTRL, l_len, l_ptr, l_offset, i_vec );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
@@ -175,7 +167,6 @@ void libxsmm_s390x_instr_vec_load_mult_niai( libxsmm_generated_code *io_generate
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -183,11 +174,10 @@ void libxsmm_s390x_instr_vec_load_mult_niai( libxsmm_generated_code *io_generate
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_vec, l_ptr, l_align );
   if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
     libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0 );
   }
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VLM, o_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VLM, o_vec, l_vec, l_ptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
@@ -205,7 +195,6 @@ void libxsmm_s390x_instr_vec_load_mult( libxsmm_generated_code *io_generated_cod
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -213,8 +202,7 @@ void libxsmm_s390x_instr_vec_load_mult( libxsmm_generated_code *io_generated_cod
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_vec, l_ptr, l_align );
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VLM, o_vec, l_vec, l_ptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VLM, o_vec, l_vec, l_ptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
@@ -232,7 +220,6 @@ void libxsmm_s390x_instr_vec_load_part( libxsmm_generated_code *io_generated_cod
   unsigned int l_len = i_len * libxsmm_s390x_bytes( io_generated_code, i_datatype ) - 1;
   unsigned int l_ptr = i_ptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -240,8 +227,7 @@ void libxsmm_s390x_instr_vec_load_part( libxsmm_generated_code *io_generated_cod
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, 0, l_len, l_ptr, o_vec );
-  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VLRL, l_len, l_ptr, l_offset, o_vec, l_rxb );
+  libxsmm_s390x_instr_4( io_generated_code, LIBXSMM_S390X_INSTR_VLRL, l_len, l_ptr, l_offset, o_vec );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
@@ -255,9 +241,7 @@ void libxsmm_s390x_instr_vec_bcast( libxsmm_generated_code *io_generated_code,
                                     unsigned int            i_ele,
                                     unsigned int            i_dst ) {
   unsigned int l_eletype = libxsmm_s390x_instr_eletype( io_generated_code, i_datatype );
-  unsigned int l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_dst, i_src, 0, l_eletype );
-  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VREP, i_dst, i_src, i_ele, l_eletype, l_rxb );
-
+  libxsmm_s390x_instr_4( io_generated_code, LIBXSMM_S390X_INSTR_VREP, i_dst, i_src, i_ele, l_eletype );
 }
 
 LIBXSMM_API_INTERN
@@ -281,7 +265,6 @@ void libxsmm_s390x_instr_vec_load_bcast_idx( libxsmm_generated_code *io_generate
   unsigned int l_eletype = libxsmm_s390x_instr_eletype( io_generated_code, i_datatype );
   unsigned int l_idxptr = i_idxptr;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -289,8 +272,7 @@ void libxsmm_s390x_instr_vec_load_bcast_idx( libxsmm_generated_code *io_generate
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_idxptr, i_baseptr, l_eletype );
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VLREP, o_vec, l_idxptr, i_baseptr, l_offset, l_eletype, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VLREP, o_vec, l_idxptr, i_baseptr, l_offset, l_eletype );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
@@ -328,7 +310,6 @@ void libxsmm_s390x_instr_vec_store_idx_niai( libxsmm_generated_code *io_generate
   unsigned int l_idxptr = i_idxptr;
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -336,11 +317,10 @@ void libxsmm_s390x_instr_vec_store_idx_niai( libxsmm_generated_code *io_generate
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_idxptr, i_baseptr, l_align );
   if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
     libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0);
   }
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VST, i_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VST, i_vec, l_idxptr, i_baseptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
@@ -357,7 +337,6 @@ void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_cod
   unsigned int l_idxptr = i_idxptr;
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -365,8 +344,7 @@ void libxsmm_s390x_instr_vec_store_idx( libxsmm_generated_code *io_generated_cod
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, i_vec, l_idxptr, i_baseptr, l_align );
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VST, i_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VST, i_vec, l_idxptr, i_baseptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
@@ -404,7 +382,6 @@ void libxsmm_s390x_instr_vec_load_idx_niai( libxsmm_generated_code *io_generated
   unsigned int l_idxptr = i_idxptr;
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -412,11 +389,10 @@ void libxsmm_s390x_instr_vec_load_idx_niai( libxsmm_generated_code *io_generated
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_idxptr, i_baseptr, l_align );
   if ( LIBXSMM_S390X_NIAI_NONE != i_flag ) {
     libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_NIAI, i_flag, 0);
   }
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VL, o_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VL, o_vec, l_idxptr, i_baseptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
@@ -433,7 +409,6 @@ void libxsmm_s390x_instr_vec_load_idx( libxsmm_generated_code *io_generated_code
   unsigned int l_idxptr = i_idxptr;
   unsigned int const l_align = LIBXSMM_S390X_ALIGN_QUAD;
   long int l_offset = i_offset;
-  unsigned int l_rxb;
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
@@ -441,8 +416,7 @@ void libxsmm_s390x_instr_vec_load_idx( libxsmm_generated_code *io_generated_code
     l_offset = 0;
   }
 
-  l_rxb = libxsmm_s390x_instr_rxb( io_generated_code, o_vec, l_idxptr, i_baseptr, l_align );
-  libxsmm_s390x_instr_6( io_generated_code, LIBXSMM_S390X_INSTR_VL, o_vec, l_idxptr, i_baseptr, l_offset, l_align, l_rxb );
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_VL, o_vec, l_idxptr, i_baseptr, l_offset, l_align );
 
   if ( 0x07ff < i_offset || -0x07ff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
@@ -473,15 +447,44 @@ unsigned int libxsmm_s390x_instr_eletype( libxsmm_generated_code *io_generated_c
 }
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_s390x_instr_rxb( libxsmm_generated_code *io_generated_code,
-                                      unsigned int            i_0,
-                                      unsigned int            i_1,
-                                      unsigned int            i_2,
-                                      unsigned int            i_3 ) {
-  return (unsigned int)( ( ( 0x10 & i_0 ) >> 1 ) +
-                         ( ( 0x10 & i_1 ) >> 2 ) +
-                         ( ( 0x10 & i_2 ) >> 3 )  +
-                         ( ( 0x10 & i_3 ) >> 4 ) );
+void libxsmm_s390x_instr_gpr_store( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    unsigned int            i_ptr,
+                                    long int                i_offset,
+                                    unsigned int            i_src ) {
+  libxsmm_s390x_instr_gpr_store_idx( io_generated_code, io_reg_tracker, 0, i_ptr, i_offset, i_src );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_gpr_store_idx( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned int            i_idxptr,
+                                        unsigned int            i_baseptr,
+                                        long int                i_offset,
+                                        unsigned int            i_src ) {
+  unsigned int l_idxptr = i_idxptr;
+  unsigned int l_offset_l, l_offset_h;
+  long int l_offset = i_offset;
+
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
+    l_idxptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_idxptr, l_idxptr, i_offset );
+    l_offset = 0;
+  }
+
+  if ( 0 != l_offset ) {
+    l_offset_l = (unsigned int)( 0xfff & l_offset );
+    l_offset_h = (unsigned int)( 0xff & (l_offset >> 12 ) );
+  } else {
+    l_offset_l = 0;
+    l_offset_h = 0;
+  }
+
+  libxsmm_s390x_instr_5( io_generated_code, LIBXSMM_S390X_INSTR_STG, i_src, l_idxptr, i_baseptr, l_offset_l, l_offset_h );
+
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -585,6 +588,34 @@ void libxsmm_s390x_instr_gpr_imm64( libxsmm_generated_code *io_generated_code,
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_move_imm8( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_s390x_reg      *io_reg_tracker,
+                                    unsigned int            i_ptr,
+                                    long                    i_offset,
+                                    unsigned char           i_value ) {
+  unsigned int l_ptr = i_ptr;
+  long l_offset = i_offset;
+
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
+    l_ptr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+    libxsmm_s390x_instr_gpr_add_value( io_generated_code, i_ptr, l_ptr, i_offset );
+    l_offset = 0;
+  }
+
+  if ( 0x07ff >= l_offset && -0x07ff < l_offset ) {
+    libxsmm_s390x_instr_3( io_generated_code, LIBXSMM_S390X_INSTR_MVI, i_value, l_ptr, (unsigned int)l_offset );
+  } else {
+    unsigned int l_offset_l = (unsigned int)( 0x0fff & l_offset );
+    unsigned int l_offset_h = (unsigned int)( 0xff & (l_offset >> 12 ) );
+    libxsmm_s390x_instr_4( io_generated_code, LIBXSMM_S390X_INSTR_MVIY, i_value, l_ptr, l_offset_l, l_offset_h );
+  }
+
+  if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
+    libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_ptr );
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_data_prefetch( libxsmm_generated_code     *io_generated_code,
                                   libxsmm_s390x_reg          *io_reg_tracker,
                                   unsigned int                i_ptr,
@@ -621,6 +652,22 @@ void libxsmm_s390x_data_prefetch_idx( libxsmm_generated_code     *io_generated_c
   if ( 0x07ffff < i_offset || -0x07ffff >= i_offset ) {
     libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_idxptr );
   }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_call_jump_imm( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_s390x_reg      *io_reg_tracker,
+                                        unsigned long           i_addr ) {
+  unsigned int l_addr = libxsmm_s390x_reg_get( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR );
+  libxsmm_s390x_instr_gpr_imm64( io_generated_code, l_addr, i_addr );
+  libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_BASR, LIBXSMM_S390X_GPR_RA, l_addr );
+  libxsmm_s390x_reg_free( io_generated_code, io_reg_tracker, LIBXSMM_S390X_GPR, l_addr );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_call_jump( libxsmm_generated_code *io_generated_code,
+                                    unsigned int            i_addr ) {
+  libxsmm_s390x_instr_2( io_generated_code, LIBXSMM_S390X_INSTR_BASR, LIBXSMM_S390X_GPR_RA, i_addr );
 }
 
 LIBXSMM_API_INTERN
@@ -1348,6 +1395,106 @@ unsigned int libxsmm_s390x_bytes( libxsmm_generated_code *io_generated_code,
 }
 
 LIBXSMM_API_INTERN
+unsigned char libxsmm_s390x_instr_bytes( libxsmm_generated_code *io_generated_code,
+                                         unsigned long           i_instr ) {
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned char l_nbytes;
+  switch ( l_fid ) {
+    case LIBXSMM_S390X_FORM_E_FORM:
+    case LIBXSMM_S390X_FORM_I_FORM:
+    case LIBXSMM_S390X_FORM_RR_FORM: {
+      l_nbytes = 2;
+    } break;
+    case LIBXSMM_S390X_FORM_IE_FORM:
+    case LIBXSMM_S390X_FORM_RI_A_FORM:
+    case LIBXSMM_S390X_FORM_RI_B_FORM:
+    case LIBXSMM_S390X_FORM_RI_C_FORM:
+    case LIBXSMM_S390X_FORM_RRD_FORM:
+    case LIBXSMM_S390X_FORM_RRE_FORM:
+    case LIBXSMM_S390X_FORM_RRF_A_FORM:
+    case LIBXSMM_S390X_FORM_RRF_B_FORM:
+    case LIBXSMM_S390X_FORM_RRF_C_FORM:
+    case LIBXSMM_S390X_FORM_RRF_D_FORM:
+    case LIBXSMM_S390X_FORM_RRF_E_FORM:
+    case LIBXSMM_S390X_FORM_RS_A_FORM:
+    case LIBXSMM_S390X_FORM_RS_B_FORM:
+    case LIBXSMM_S390X_FORM_RSI_FORM:
+    case LIBXSMM_S390X_FORM_RX_A_FORM:
+    case LIBXSMM_S390X_FORM_RX_B_FORM:
+    case LIBXSMM_S390X_FORM_S_FORM:
+    case LIBXSMM_S390X_FORM_SI_FORM: {
+      l_nbytes = 4;
+    } break;
+    case LIBXSMM_S390X_FORM_MII_FORM:
+    case LIBXSMM_S390X_FORM_RIE_A_FORM:
+    case LIBXSMM_S390X_FORM_RIE_B_FORM:
+    case LIBXSMM_S390X_FORM_RIE_C_FORM:
+    case LIBXSMM_S390X_FORM_RIE_D_FORM:
+    case LIBXSMM_S390X_FORM_RIE_E_FORM:
+    case LIBXSMM_S390X_FORM_RIE_F_FORM:
+    case LIBXSMM_S390X_FORM_RIE_G_FORM:
+    case LIBXSMM_S390X_FORM_RIL_A_FORM:
+    case LIBXSMM_S390X_FORM_RIL_B_FORM:
+    case LIBXSMM_S390X_FORM_RIL_C_FORM:
+    case LIBXSMM_S390X_FORM_RIS_FORM:
+    case LIBXSMM_S390X_FORM_RRS_FORM:
+    case LIBXSMM_S390X_FORM_RSL_A_FORM:
+    case LIBXSMM_S390X_FORM_RSL_B_FORM:
+    case LIBXSMM_S390X_FORM_RSY_A_FORM:
+    case LIBXSMM_S390X_FORM_RSY_B_FORM:
+    case LIBXSMM_S390X_FORM_RXE_FORM:
+    case LIBXSMM_S390X_FORM_RXF_FORM:
+    case LIBXSMM_S390X_FORM_RXY_A_FORM:
+    case LIBXSMM_S390X_FORM_RXY_B_FORM:
+    case LIBXSMM_S390X_FORM_SIL_FORM:
+    case LIBXSMM_S390X_FORM_SIY_FORM:
+    case LIBXSMM_S390X_FORM_SMI_FORM:
+    case LIBXSMM_S390X_FORM_SS_A_FORM:
+    case LIBXSMM_S390X_FORM_SS_B_FORM:
+    case LIBXSMM_S390X_FORM_SS_C_FORM:
+    case LIBXSMM_S390X_FORM_SS_D_FORM:
+    case LIBXSMM_S390X_FORM_SS_E_FORM:
+    case LIBXSMM_S390X_FORM_SS_F_FORM:
+    case LIBXSMM_S390X_FORM_SSE_FORM:
+    case LIBXSMM_S390X_FORM_SSF_FORM:
+    case LIBXSMM_S390X_FORM_VRI_A_FORM:
+    case LIBXSMM_S390X_FORM_VRI_B_FORM:
+    case LIBXSMM_S390X_FORM_VRI_C_FORM:
+    case LIBXSMM_S390X_FORM_VRI_D_FORM:
+    case LIBXSMM_S390X_FORM_VRI_E_FORM:
+    case LIBXSMM_S390X_FORM_VRI_F_FORM:
+    case LIBXSMM_S390X_FORM_VRI_G_FORM:
+    case LIBXSMM_S390X_FORM_VRI_H_FORM:
+    case LIBXSMM_S390X_FORM_VRI_I_FORM:
+    case LIBXSMM_S390X_FORM_VRR_A_FORM:
+    case LIBXSMM_S390X_FORM_VRR_B_FORM:
+    case LIBXSMM_S390X_FORM_VRR_C_FORM:
+    case LIBXSMM_S390X_FORM_VRR_D_FORM:
+    case LIBXSMM_S390X_FORM_VRR_E_FORM:
+    case LIBXSMM_S390X_FORM_VRR_F_FORM:
+    case LIBXSMM_S390X_FORM_VRR_G_FORM:
+    case LIBXSMM_S390X_FORM_VRR_H_FORM:
+    case LIBXSMM_S390X_FORM_VRR_I_FORM:
+    case LIBXSMM_S390X_FORM_VRR_J_FORM:
+    case LIBXSMM_S390X_FORM_VRR_K_FORM:
+    case LIBXSMM_S390X_FORM_VRS_A_FORM:
+    case LIBXSMM_S390X_FORM_VRS_B_FORM:
+    case LIBXSMM_S390X_FORM_VRS_C_FORM:
+    case LIBXSMM_S390X_FORM_VRS_D_FORM:
+    case LIBXSMM_S390X_FORM_VRV_FORM:
+    case LIBXSMM_S390X_FORM_VRX_FORM:
+    case LIBXSMM_S390X_FORM_VSI_FORM: {
+      l_nbytes = 6;
+    } break;
+    default: {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      l_nbytes = 0xff;
+    }
+  }
+  return l_nbytes;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_destroy( libxsmm_generated_code *io_generated_code,
                                   libxsmm_s390x_defer    *io_deferred_code ) {
   free( io_deferred_code->deferred );
@@ -1369,10 +1516,10 @@ libxsmm_s390x_defer* libxsmm_s390x_defer_init( libxsmm_generated_code *io_genera
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_deferred( libxsmm_generated_code *io_generated_code,
-                                  libxsmm_s390x_deferred  *io_deferred ) {
+                                   libxsmm_s390x_deferred *io_deferred ) {
   unsigned int i, j, l_args[LIBXSMM_S390X_INSTR_MAX_INPUTS];
-  unsigned char l_op[8];
-  char l_nbytes;
+  unsigned long l_opcode;
+  char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, io_deferred->instr );
 
   /* Unpacked args */
   j = 0;
@@ -1388,25 +1535,22 @@ void libxsmm_s390x_instr_deferred( libxsmm_generated_code *io_generated_code,
   /* Resolve opcode now */
   switch ( io_deferred->nargs ) {
     case 1: {
-      l_nbytes = libxsmm_s390x_resolve_1( io_deferred->instr, l_args[0], l_op );
+      l_opcode = libxsmm_s390x_resolve_1( io_deferred->instr, l_args[0] );
     } break;
     case 2: {
-      l_nbytes = libxsmm_s390x_resolve_2( io_deferred->instr, l_args[0], l_args[1], l_op );
+      l_opcode = libxsmm_s390x_resolve_2( io_deferred->instr, l_args[0], l_args[1] );
     } break;
     case 3: {
-      l_nbytes = libxsmm_s390x_resolve_3( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_op );
+      l_opcode = libxsmm_s390x_resolve_3( io_deferred->instr, l_args[0], l_args[1], l_args[2] );
     } break;
     case 4: {
-      l_nbytes = libxsmm_s390x_resolve_4( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_op );
+      l_opcode = libxsmm_s390x_resolve_4( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3] );
     } break;
     case 5: {
-      l_nbytes = libxsmm_s390x_resolve_5( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_op );
+      l_opcode = libxsmm_s390x_resolve_5( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4] );
     } break;
     case 6: {
-      l_nbytes = libxsmm_s390x_resolve_6( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5], l_op );
-    } break;
-    case 7: {
-      l_nbytes = libxsmm_s390x_resolve_7( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5], l_args[6], l_op );
+      l_opcode = libxsmm_s390x_resolve_6( io_deferred->instr, l_args[0], l_args[1], l_args[2], l_args[3], l_args[4], l_args[5] );
     } break;
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -1417,445 +1561,14 @@ void libxsmm_s390x_instr_deferred( libxsmm_generated_code *io_generated_code,
   /* Replace code with required values */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *l_code = (unsigned char*) io_deferred->code_point;
+    unsigned char *l_op = (unsigned char*)&l_opcode;
     for ( i = 0; i < (int)l_nbytes ; ++i ) {
-      l_code[i] = l_op[i];
+      l_code[i] = l_op[i + (sizeof(unsigned long) - l_nbytes)];
     }
   }
   else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
   }
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_deferred_resolve( libxsmm_generated_code *io_generated_code,
-                                           libxsmm_s390x_defer    *io_deferred_code ) {
-  int i;
-  for ( i = 0 ; (int)io_deferred_code->count > i ; ++i ) {
-    libxsmm_s390x_deferred *l_deferred = &io_deferred_code->deferred[i];
-    if ( 1 == l_deferred->set ) {
-      libxsmm_s390x_instr_deferred( io_generated_code, l_deferred );
-    } else {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-      return;
-    }
-  }
-}
-
-
-LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
-                                 unsigned char          *i_op,
-                                 char                    i_nbytes ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char *l_code = (unsigned char*) io_generated_code->generated_code;
-    unsigned int l_code_head = io_generated_code->code_size;
-    int i;
-    for ( i = 0; i < (int)i_nbytes ; ++i ) {
-      l_code[l_code_head + i] = i_op[i];
-    }
-    io_generated_code->code_size += i_nbytes;
-  }
-  else {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-  }
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_0( libxsmm_generated_code *io_generated_code,
-                            unsigned long           i_instr ) {
-  if ( io_generated_code->code_type > 1 ) {
-    char l_nbytes;
-    unsigned char l_out[8];
-
-    unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-    unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-
-    switch( l_fid ) {
-      case LIBXSMM_S390X_FORM_E_FORM: {
-        l_nbytes = libxsmm_s390x_instr_e_form( (unsigned int)l_instr, l_out);
-      } break;
-      default: {
-        l_nbytes = 0;
-      }
-    }
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    }
-  } else {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-  }
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_1( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned char *o_out ) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_I_FORM: {
-      l_nbytes = libxsmm_s390x_instr_i_form( (unsigned int)l_instr, (unsigned char)i_0, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_2( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned char *o_out ) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_IE_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ie_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RI_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ri_a_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RI_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ri_b_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RI_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ri_c_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIL_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ril_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIL_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ril_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIL_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ril_c_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RR_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rr_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRE_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rre_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_S_FORM: {
-      l_nbytes = libxsmm_s390x_instr_s_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned int)i_1, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_G_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_g_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_3( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned char *o_out) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_MII_FORM: {
-      l_nbytes = libxsmm_s390x_instr_mii_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIE_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, (unsigned char)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIE_D_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_d_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIE_E_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_e_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIE_G_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_g_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRD_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrd_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RSI_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rsi_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RSL_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rsl_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RSL_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rsl_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SI_FORM: {
-      l_nbytes = libxsmm_s390x_instr_si_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SIL_FORM: {
-      l_nbytes = libxsmm_s390x_instr_sil_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, (unsigned int)i_2, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_4( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned char *o_out ) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_RIE_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIE_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_c_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRF_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrf_a_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRF_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrf_b_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRF_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrf_c_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRF_D_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrf_d_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRF_E_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrf_e_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RS_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rs_a_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RS_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rs_b_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RX_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rx_a_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RX_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rx_b_form( (unsigned int)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SIY_FORM: {
-      l_nbytes = libxsmm_s390x_instr_siy_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SMI_FORM: {
-      l_nbytes = libxsmm_s390x_instr_smi_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned int)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SSE_FORM: {
-      l_nbytes = libxsmm_s390x_instr_sse_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, (unsigned char)i_2, (unsigned int)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_H_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_h_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned int)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_F_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_f_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_H_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_h_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_K_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_k_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_5( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned int   i_4,
-                              unsigned char *o_out ) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_RIE_F_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rie_f_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RIS_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ris_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RRS_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rrs_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RSY_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rsy_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RSY_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rsy_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RXE_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rxe_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RXF_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rxf_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RXY_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rxy_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_RXY_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_rxy_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SS_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ss_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned int)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SS_F_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ss_f_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned int)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SSF_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ssf_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned int)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_c_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_I_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_i_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_I_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_i_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_J_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_j_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRS_D_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrs_d_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VSI_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vsi_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned char)i_4, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_6( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned int   i_4,
-                              unsigned int   i_5,
-                              unsigned char *o_out ) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_SS_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ss_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned int)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SS_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ss_c_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned int)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SS_D_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ss_d_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned int)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_SS_E_FORM: {
-      l_nbytes = libxsmm_s390x_instr_ss_e_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned int)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_D_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_d_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_E_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_e_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned int)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_F_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_f_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRI_G_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vri_g_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRS_A_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrs_a_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRS_B_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrs_b_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRS_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrs_c_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRV_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrv_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRX_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrx_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned int)i_3, (unsigned char)i_4, (unsigned char)i_5, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
-}
-
-LIBXSMM_API_INTERN
-char libxsmm_s390x_resolve_7( unsigned long  i_instr,
-                              unsigned int   i_0,
-                              unsigned int   i_1,
-                              unsigned int   i_2,
-                              unsigned int   i_3,
-                              unsigned int   i_4,
-                              unsigned int   i_5,
-                              unsigned int   i_6,
-                              unsigned char *o_out ) {
-  char l_nbytes;
-
-  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
-  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
-  switch( l_fid ) {
-    case LIBXSMM_S390X_FORM_VRR_C_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_c_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_D_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_d_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6, o_out);
-    } break;
-    case LIBXSMM_S390X_FORM_VRR_E_FORM: {
-      l_nbytes = libxsmm_s390x_instr_vrr_e_form( (unsigned long)l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2, (unsigned char)i_3, (unsigned char)i_4, (unsigned char)i_5, (unsigned char)i_6, o_out);
-    } break;
-    default: {
-      l_nbytes = 0;
-    }
-  }
-  return l_nbytes;
 }
 
 LIBXSMM_API_INTERN
@@ -1864,9 +1577,9 @@ void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
                                  unsigned long           i_instr,
                                  unsigned int           *i_args,
                                  unsigned int            i_n,
-                                 unsigned int            i_idx,
-                                 char                    i_nbytes ) {
+                                 unsigned int            i_idx ) {
   libxsmm_s390x_deferred *l_deferred = &io_deferred_code->deferred[io_deferred_code->count];
+  char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
   unsigned int i, j;
 
   /* Packed args */
@@ -1892,7 +1605,7 @@ void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
     l_deferred->code_point = (void *)&l_code[l_code_head];
     l_deferred->code_byte = l_code_head;
 
-    for ( i = 0; i < i_nbytes / 2 ; ++i ) {
+    for ( i = 0; i < l_nbytes / 2 ; ++i ) {
       /* Use half-word NOP in place of op */
       libxsmm_s390x_instr_nopr( io_generated_code );
     }
@@ -1901,15 +1614,412 @@ void libxsmm_s390x_defer_append( libxsmm_generated_code *io_generated_code,
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_deferred_resolve( libxsmm_generated_code *io_generated_code,
+                                           libxsmm_s390x_defer    *io_deferred_code ) {
+  int i;
+  for ( i = 0 ; (int)io_deferred_code->count > i ; ++i ) {
+    libxsmm_s390x_deferred *l_deferred = &io_deferred_code->deferred[i];
+    if ( 1 == l_deferred->set ) {
+      libxsmm_s390x_instr_deferred( io_generated_code, l_deferred );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_s390x_instr_append( libxsmm_generated_code *io_generated_code,
+                                 unsigned long           i_op,
+                                 char                    i_nbytes ) {
+  if ( 1 >= io_generated_code->code_type || 0 >= i_nbytes ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  } else {
+    unsigned char *l_code = (unsigned char*) io_generated_code->generated_code;
+    unsigned char *l_op = (unsigned char*)&i_op;
+    unsigned int l_code_head = io_generated_code->code_size;
+    int i;
+    for ( i = 0; i < (int)i_nbytes ; ++i ) {
+      l_code[l_code_head + i] = l_op[i + (sizeof(unsigned long) - i_nbytes)];
+    }
+    io_generated_code->code_size += i_nbytes;
+  }
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_0( unsigned long  i_instr ) {
+  libxsmm_s390x_instr_0_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+    case LIBXSMM_S390X_FORM_E_FORM: {
+      l_func = libxsmm_s390x_form_e_form;
+    } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr );
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_1( unsigned long  i_instr,
+                                       unsigned int   i_0 ) {
+  libxsmm_s390x_instr_1_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+  case LIBXSMM_S390X_FORM_I_FORM: {
+    l_func = libxsmm_s390x_form_i_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_G_FORM: {
+    l_func = libxsmm_s390x_form_vrr_g_form;
+  } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr, i_0);
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_2( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1 ) {
+  libxsmm_s390x_instr_2_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+  case LIBXSMM_S390X_FORM_IE_FORM: {
+    l_func = libxsmm_s390x_form_ie_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RI_A_FORM: {
+    l_func = libxsmm_s390x_form_ri_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RI_B_FORM: {
+    l_func = libxsmm_s390x_form_ri_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RI_C_FORM: {
+    l_func = libxsmm_s390x_form_ri_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIL_A_FORM: {
+    l_func = libxsmm_s390x_form_ril_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIL_B_FORM: {
+    l_func = libxsmm_s390x_form_ril_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIL_C_FORM: {
+    l_func = libxsmm_s390x_form_ril_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RR_FORM: {
+    l_func = libxsmm_s390x_form_rr_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRE_FORM: {
+    l_func = libxsmm_s390x_form_rre_form;
+  } break;
+  case LIBXSMM_S390X_FORM_S_FORM: {
+    l_func = libxsmm_s390x_form_s_form;
+  } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr, i_0, i_1 );
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_3( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2 ) {
+  libxsmm_s390x_instr_3_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+  case LIBXSMM_S390X_FORM_MII_FORM: {
+    l_func = libxsmm_s390x_form_mii_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIE_A_FORM: {
+    l_func = libxsmm_s390x_form_rie_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIE_D_FORM: {
+    l_func = libxsmm_s390x_form_rie_d_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIE_E_FORM: {
+    l_func = libxsmm_s390x_form_rie_e_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIE_G_FORM: {
+    l_func = libxsmm_s390x_form_rie_g_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRD_FORM: {
+    l_func = libxsmm_s390x_form_rrd_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RSI_FORM: {
+    l_func = libxsmm_s390x_form_rsi_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RSL_A_FORM: {
+    l_func = libxsmm_s390x_form_rsl_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RSL_B_FORM: {
+    l_func = libxsmm_s390x_form_rsl_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SI_FORM: {
+    l_func = libxsmm_s390x_form_si_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SIL_FORM: {
+    l_func = libxsmm_s390x_form_sil_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_A_FORM: {
+    l_func = libxsmm_s390x_form_vri_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_H_FORM: {
+    l_func = libxsmm_s390x_form_vri_h_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_F_FORM: {
+    l_func = libxsmm_s390x_form_vrr_f_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_H_FORM: {
+    l_func = libxsmm_s390x_form_vrr_h_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_K_FORM: {
+    l_func = libxsmm_s390x_form_vrr_k_form;
+  } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr, i_0, i_1, i_2 );
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_4( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2,
+                                       unsigned int   i_3 ) {
+  libxsmm_s390x_instr_4_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+  case LIBXSMM_S390X_FORM_RIE_B_FORM: {
+    l_func = libxsmm_s390x_form_rie_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIE_C_FORM: {
+    l_func = libxsmm_s390x_form_rie_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRF_A_FORM: {
+    l_func = libxsmm_s390x_form_rrf_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRF_B_FORM: {
+    l_func = libxsmm_s390x_form_rrf_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRF_C_FORM: {
+    l_func = libxsmm_s390x_form_rrf_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRF_D_FORM: {
+    l_func = libxsmm_s390x_form_rrf_d_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRF_E_FORM: {
+    l_func = libxsmm_s390x_form_rrf_e_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RS_A_FORM: {
+    l_func = libxsmm_s390x_form_rs_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RS_B_FORM: {
+    l_func = libxsmm_s390x_form_rs_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RX_A_FORM: {
+    l_func = libxsmm_s390x_form_rx_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RX_B_FORM: {
+    l_func = libxsmm_s390x_form_rx_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SIY_FORM: {
+    l_func = libxsmm_s390x_form_siy_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SMI_FORM: {
+    l_func = libxsmm_s390x_form_smi_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SSE_FORM: {
+    l_func = libxsmm_s390x_form_sse_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_B_FORM: {
+    l_func = libxsmm_s390x_form_vri_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_C_FORM: {
+    l_func = libxsmm_s390x_form_vri_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_I_FORM: {
+    l_func = libxsmm_s390x_form_vri_i_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_I_FORM: {
+    l_func = libxsmm_s390x_form_vrr_i_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_J_FORM: {
+    l_func = libxsmm_s390x_form_vrr_j_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRS_D_FORM: {
+    l_func = libxsmm_s390x_form_vrs_d_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VSI_FORM: {
+    l_func = libxsmm_s390x_form_vsi_form;
+  } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr, i_0, i_1, i_2, i_3 );
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_5( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2,
+                                       unsigned int   i_3,
+                                       unsigned int   i_4 ) {
+  libxsmm_s390x_instr_5_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+  case LIBXSMM_S390X_FORM_RIE_F_FORM: {
+    l_func = libxsmm_s390x_form_rie_f_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RIS_FORM: {
+    l_func = libxsmm_s390x_form_ris_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RRS_FORM: {
+    l_func = libxsmm_s390x_form_rrs_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RSY_A_FORM: {
+    l_func = libxsmm_s390x_form_rsy_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RSY_B_FORM: {
+    l_func = libxsmm_s390x_form_rsy_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RXE_FORM: {
+    l_func = libxsmm_s390x_form_rxe_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RXF_FORM: {
+    l_func = libxsmm_s390x_form_rxf_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RXY_A_FORM: {
+    l_func = libxsmm_s390x_form_rxy_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_RXY_B_FORM: {
+    l_func = libxsmm_s390x_form_rxy_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SS_A_FORM: {
+    l_func = libxsmm_s390x_form_ss_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SS_F_FORM: {
+    l_func = libxsmm_s390x_form_ss_f_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SSF_FORM: {
+    l_func = libxsmm_s390x_form_ssf_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_D_FORM: {
+    l_func = libxsmm_s390x_form_vri_d_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_E_FORM: {
+    l_func = libxsmm_s390x_form_vri_e_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_F_FORM: {
+    l_func = libxsmm_s390x_form_vri_f_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRI_G_FORM: {
+    l_func = libxsmm_s390x_form_vri_g_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_A_FORM: {
+    l_func = libxsmm_s390x_form_vrr_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_B_FORM: {
+    l_func = libxsmm_s390x_form_vrr_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRS_A_FORM: {
+    l_func = libxsmm_s390x_form_vrs_a_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRS_B_FORM: {
+    l_func = libxsmm_s390x_form_vrs_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRS_C_FORM: {
+    l_func = libxsmm_s390x_form_vrs_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRV_FORM: {
+    l_func = libxsmm_s390x_form_vrv_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRX_FORM: {
+    l_func = libxsmm_s390x_form_vrx_form;
+  } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr, i_0, i_1, i_2, i_3, i_4 );
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
+unsigned long libxsmm_s390x_resolve_6( unsigned long  i_instr,
+                                       unsigned int   i_0,
+                                       unsigned int   i_1,
+                                       unsigned int   i_2,
+                                       unsigned int   i_3,
+                                       unsigned int   i_4,
+                                       unsigned int   i_5 ) {
+  libxsmm_s390x_instr_6_func l_func = NULL;
+  unsigned long l_op;
+  unsigned long l_fid = i_instr & LIBXSMM_S390X_FMASK;
+  unsigned long l_instr = i_instr & ~LIBXSMM_S390X_FMASK;
+  switch( l_fid ) {
+  case LIBXSMM_S390X_FORM_SS_B_FORM: {
+    l_func = libxsmm_s390x_form_ss_b_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SS_C_FORM: {
+    l_func = libxsmm_s390x_form_ss_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SS_D_FORM: {
+    l_func = libxsmm_s390x_form_ss_d_form;
+  } break;
+  case LIBXSMM_S390X_FORM_SS_E_FORM: {
+    l_func = libxsmm_s390x_form_ss_e_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_C_FORM: {
+    l_func = libxsmm_s390x_form_vrr_c_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_D_FORM: {
+    l_func = libxsmm_s390x_form_vrr_d_form;
+  } break;
+  case LIBXSMM_S390X_FORM_VRR_E_FORM: {
+    l_func = libxsmm_s390x_form_vrr_e_form;
+  } break;
+  default: {
+    return 0xffffffffffffffffUL;
+  }
+  }
+  l_op = l_func( l_instr, i_0, i_1, i_2, i_3, i_4, i_5 );
+  return l_op;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
                             libxsmm_s390x_defer    *io_deferred_code,
                             unsigned long           i_instr,
                             unsigned int            i_idx,
                             unsigned int            i_0 ) {
-  unsigned char l_temp[8];
   unsigned int l_args[1];
-  char l_nbytes = libxsmm_s390x_resolve_1( i_instr, i_0, l_temp );
-
   l_args[0] = i_0;
 
   /* Chdeck idx isn't out of bounds */
@@ -1918,7 +2028,7 @@ void libxsmm_s390x_defer_1( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 1, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 1, i_idx );
 }
 
 LIBXSMM_API_INTERN
@@ -1928,10 +2038,7 @@ void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_idx,
                             unsigned int            i_0,
                             unsigned int            i_1 ) {
-  unsigned char l_temp[8];
   unsigned int l_args[2];
-  char l_nbytes = libxsmm_s390x_resolve_2( i_instr, i_0, i_1, l_temp );
-
   l_args[0] = i_0;
   l_args[1] = i_1;
 
@@ -1941,7 +2048,7 @@ void libxsmm_s390x_defer_2( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 2, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 2, i_idx );
 }
 
 LIBXSMM_API_INTERN
@@ -1952,10 +2059,7 @@ void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_0,
                             unsigned int            i_1,
                             unsigned int            i_2 ) {
-  unsigned char l_temp[8];
   unsigned int l_args[3];
-  char l_nbytes = libxsmm_s390x_resolve_3( i_instr, i_0, i_1, i_2, l_temp );
-
   l_args[0] = i_0;
   l_args[1] = i_1;
   l_args[2] = i_2;
@@ -1966,7 +2070,7 @@ void libxsmm_s390x_defer_3( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 3, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 3, i_idx );
 }
 
 LIBXSMM_API_INTERN
@@ -1978,10 +2082,7 @@ void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_1,
                             unsigned int            i_2,
                             unsigned int            i_3 ) {
-  unsigned char l_temp[8];
   unsigned int l_args[4];
-  char l_nbytes = libxsmm_s390x_resolve_4( i_instr, i_0, i_1, i_2, i_3, l_temp );
-
   l_args[0] = i_0;
   l_args[1] = i_1;
   l_args[2] = i_2;
@@ -1993,7 +2094,7 @@ void libxsmm_s390x_defer_4( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 4, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 4, i_idx );
 }
 
 LIBXSMM_API_INTERN
@@ -2006,10 +2107,7 @@ void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_2,
                             unsigned int            i_3,
                             unsigned int            i_4 ) {
-  unsigned char l_temp[8];
   unsigned int l_args[5];
-  char l_nbytes = libxsmm_s390x_resolve_5( i_instr, i_0, i_1, i_2, i_3, i_4 , l_temp );
-
   l_args[0] = i_0;
   l_args[1] = i_1;
   l_args[2] = i_2;
@@ -2022,7 +2120,7 @@ void libxsmm_s390x_defer_5( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 5, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 5, i_idx );
 }
 
 LIBXSMM_API_INTERN
@@ -2036,10 +2134,7 @@ void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_3,
                             unsigned int            i_4,
                             unsigned int            i_5 ) {
-  unsigned char l_temp[8];
   unsigned int l_args[6];
-  char l_nbytes = libxsmm_s390x_resolve_6( i_instr, i_0, i_1, i_2, i_3, i_4, i_5, l_temp );
-
   l_args[0] = i_0;
   l_args[1] = i_1;
   l_args[2] = i_2;
@@ -2053,54 +2148,36 @@ void libxsmm_s390x_defer_6( libxsmm_generated_code *io_generated_code,
     return;
   }
 
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 6, i_idx, l_nbytes );
+  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 6, i_idx );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_s390x_defer_7( libxsmm_generated_code *io_generated_code,
-                            libxsmm_s390x_defer    *io_deferred_code,
-                            unsigned long           i_instr,
-                            unsigned int            i_idx,
-                            unsigned int            i_0,
-                            unsigned int            i_1,
-                            unsigned int            i_2,
-                            unsigned int            i_3,
-                            unsigned int            i_4,
-                            unsigned int            i_5,
-                            unsigned int            i_6 ) {
-  unsigned char l_temp[8];
-  unsigned int l_args[7];
-  char l_nbytes = libxsmm_s390x_resolve_7( i_instr, i_0, i_1, i_2, i_3, i_4, i_5, i_6, l_temp );
-
-  l_args[0] = i_0;
-  l_args[1] = i_1;
-  l_args[2] = i_2;
-  l_args[3] = i_3;
-  l_args[4] = i_4;
-  l_args[5] = i_5;
-  l_args[6] = i_6;
-
-  /* Chdeck idx isn't out of bounds */
-  if ( 7 <= i_idx ) {
+void libxsmm_s390x_instr_0( libxsmm_generated_code *io_generated_code,
+                            unsigned long           i_instr ) {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_0( i_instr );
+    if ( 0xffffffffffffffffUL == l_op ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    } else {
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
+    }
+  } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
   }
-
-  libxsmm_s390x_defer_append( io_generated_code, io_deferred_code, i_instr, l_args, 7, i_idx, l_nbytes );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_s390x_instr_1( libxsmm_generated_code *io_generated_code,
                             unsigned long           i_instr,
                             unsigned int            i_0 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_1( i_instr, i_0, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_1( i_instr, i_0 );
+    if ( 0xffffffffffffffffUL == l_op ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    } else {
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -2112,14 +2189,13 @@ void libxsmm_s390x_instr_2( libxsmm_generated_code *io_generated_code,
                             unsigned long           i_instr,
                             unsigned int            i_0,
                             unsigned int            i_1 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_2( i_instr, i_0, i_1, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_2( i_instr, i_0, i_1 );
+    if ( 0xffffffffffffffffUL == l_op ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    } else {
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -2132,14 +2208,13 @@ void libxsmm_s390x_instr_3( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_0,
                             unsigned int            i_1,
                             unsigned int            i_2 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_3( i_instr, i_0, i_1, i_2, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_3( i_instr, i_0, i_1, i_2 );
+    if ( 0xffffffffffffffffUL == l_op ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    } else {
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -2153,14 +2228,13 @@ void libxsmm_s390x_instr_4( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_1,
                             unsigned int            i_2,
                             unsigned int            i_3 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_4( i_instr, i_0, i_1, i_2, i_3, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_4( i_instr, i_0, i_1, i_2, i_3 );
+    if ( 0xffffffffffffffffUL == l_op ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    } else {
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -2175,14 +2249,13 @@ void libxsmm_s390x_instr_5( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_2,
                             unsigned int            i_3,
                             unsigned int            i_4 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_5( i_instr, i_0, i_1, i_2, i_3, i_4, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_5( i_instr, i_0, i_1, i_2, i_3, i_4 );
+    if ( 0xffffffffffffffffUL == l_op ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    } else {
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -2198,38 +2271,13 @@ void libxsmm_s390x_instr_6( libxsmm_generated_code *io_generated_code,
                             unsigned int            i_3,
                             unsigned int            i_4,
                             unsigned int            i_5 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_6( i_instr, i_0, i_1, i_2, i_3, i_4, i_5, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
-    } else {
+  if ( 1 < io_generated_code->code_type ) {
+    char l_nbytes = libxsmm_s390x_instr_bytes( io_generated_code, i_instr );
+    unsigned long l_op = libxsmm_s390x_resolve_6( i_instr, i_0, i_1, i_2, i_3, i_4, i_5 );
+    if ( 0xffffffffffffffffUL == l_op ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    }
-  } else {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-  }
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
-                            unsigned long           i_instr,
-                            unsigned int            i_0,
-                            unsigned int            i_1,
-                            unsigned int            i_2,
-                            unsigned int            i_3,
-                            unsigned int            i_4,
-                            unsigned int            i_5,
-                            unsigned int            i_6 ) {
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char l_out[8];
-    char l_nbytes = libxsmm_s390x_resolve_7( i_instr, i_0, i_1, i_2, i_3, i_4, i_5, i_6, l_out );
-
-    if ( l_nbytes > 0 ) {
-      libxsmm_s390x_instr_append( io_generated_code, l_out, l_nbytes );
     } else {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      libxsmm_s390x_instr_append( io_generated_code, l_op, l_nbytes );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -2239,667 +2287,439 @@ void libxsmm_s390x_instr_7( libxsmm_generated_code *io_generated_code,
 /* All code below here is auto-generated */
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_e_form(unsigned int instr, unsigned char *output) {
-unsigned int opcode = (0xffff & instr);
-output[0] = 0xff & (opcode >> 8);
-output[1] = 0xff & (opcode >> 0);
-return 2;
+unsigned long libxsmm_s390x_form_e_form(unsigned long instr) {
+unsigned long opcode = (0xffff & instr);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_i_form(unsigned int instr, unsigned char i, unsigned char *output) {
-unsigned int opcode = (0xffff & instr);
-opcode += (unsigned int)(0xff & i);
-output[0] = 0xff & (opcode >> 8);
-output[1] = 0xff & (opcode >> 0);
-return 2;
+unsigned long libxsmm_s390x_form_i_form(unsigned long instr, unsigned int i) {
+unsigned long opcode = (0xffff & instr);
+opcode += (unsigned long)(0xff & i);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ie_form(unsigned int instr, unsigned char i1,unsigned char i2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & i1) << 4;
-opcode += (unsigned int)(0xf & i2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_ie_form(unsigned long instr, unsigned int i1, unsigned int i2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & i1) << 4;
+opcode += (unsigned long)(0xf & i2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_mii_form(unsigned long instr, unsigned char m1,unsigned int ri2,unsigned int ri3, unsigned char *output) {
+unsigned long libxsmm_s390x_form_mii_form(unsigned long instr, unsigned int m1, unsigned int ri2, unsigned int ri3) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & m1) << 36;
 opcode += (unsigned long)(0xfff & ri2) << 24;
 opcode += (unsigned long)(0xffffff & ri3);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ri_a_form(unsigned int instr, unsigned char r1,unsigned int i2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 20;
-opcode += (unsigned int)(0xffff & i2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_ri_a_form(unsigned long instr, unsigned int r1, unsigned int i2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 20;
+opcode += (unsigned long)(0xffff & i2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ri_b_form(unsigned int instr, unsigned char r1,unsigned int ri1, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 20;
-opcode += (unsigned int)(0xffff & ri1);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_ri_b_form(unsigned long instr, unsigned int r1, unsigned int ri1) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 20;
+opcode += (unsigned long)(0xffff & ri1);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ri_c_form(unsigned int instr, unsigned char m1,unsigned int ri2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & m1) << 20;
-opcode += (unsigned int)(0xffff & ri2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_ri_c_form(unsigned long instr, unsigned int m1, unsigned int ri2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & m1) << 20;
+opcode += (unsigned long)(0xffff & ri2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_a_form(unsigned long instr, unsigned char r1,unsigned int i2,unsigned char m3, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_a_form(unsigned long instr, unsigned int r1, unsigned int i2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xffff & i2) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_b_form(unsigned long instr, unsigned char r1,unsigned char r2,unsigned int ri4,unsigned char m3, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_b_form(unsigned long instr, unsigned int r1, unsigned int r2, unsigned int ri4, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r2) << 32;
 opcode += (unsigned long)(0xffff & ri4) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_c_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned int ri4,unsigned char i2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_c_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int ri4, unsigned int i2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & m3) << 32;
 opcode += (unsigned long)(0xffff & ri4) << 16;
 opcode += (unsigned long)(0xff & i2) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_d_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned int i2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_d_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int i2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r3) << 32;
 opcode += (unsigned long)(0xffff & i2) << 16;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_e_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned int ri2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_e_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int ri2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r3) << 32;
 opcode += (unsigned long)(0xffff & ri2) << 16;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_f_form(unsigned long instr, unsigned char r1,unsigned char r2,unsigned char i3,unsigned char i4,unsigned char i5, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_f_form(unsigned long instr, unsigned int r1, unsigned int r2, unsigned int i3, unsigned int i4, unsigned int i5) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r2) << 32;
 opcode += (unsigned long)(0xff & i3) << 24;
 opcode += (unsigned long)(0xff & i4) << 16;
 opcode += (unsigned long)(0xff & i5) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rie_g_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned int i2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rie_g_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int i2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & m3) << 32;
 opcode += (unsigned long)(0xffff & i2) << 16;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ril_a_form(unsigned long instr, unsigned char r1,unsigned int i2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ril_a_form(unsigned long instr, unsigned int r1, unsigned int i2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xffffffff & i2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ril_b_form(unsigned long instr, unsigned char r1,unsigned int ri2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ril_b_form(unsigned long instr, unsigned int r1, unsigned int ri2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xffffffff & ri2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ril_c_form(unsigned long instr, unsigned char m1,unsigned int ri2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ril_c_form(unsigned long instr, unsigned int m1, unsigned int ri2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & m1) << 36;
 opcode += (unsigned long)(0xffffffff & ri2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ris_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned char b4,unsigned int d4,unsigned char i2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ris_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int b4, unsigned int d4, unsigned int i2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & m3) << 32;
 opcode += (unsigned long)(0xf & b4) << 28;
 opcode += (unsigned long)(0xfff & d4) << 16;
 opcode += (unsigned long)(0xff & i2) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rr_form(unsigned int instr, unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffff & instr);
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 8);
-output[1] = 0xff & (opcode >> 0);
-return 2;
+unsigned long libxsmm_s390x_form_rr_form(unsigned long instr, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffff & instr);
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrd_form(unsigned int instr, unsigned char r1,unsigned char r3,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 12;
-opcode += (unsigned int)(0xf & r3) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rrd_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 12;
+opcode += (unsigned long)(0xf & r3) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rre_form(unsigned int instr, unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rre_form(unsigned long instr, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_a_form(unsigned int instr, unsigned char r3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r3) << 12;
-opcode += (unsigned int)(0xf & m4) << 8;
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rrf_a_form(unsigned long instr, unsigned int r3, unsigned int m4, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r3) << 12;
+opcode += (unsigned long)(0xf & m4) << 8;
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_b_form(unsigned int instr, unsigned char r3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r3) << 12;
-opcode += (unsigned int)(0xf & m4) << 8;
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rrf_b_form(unsigned long instr, unsigned int r3, unsigned int m4, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r3) << 12;
+opcode += (unsigned long)(0xf & m4) << 8;
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_c_form(unsigned int instr, unsigned char m3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & m3) << 12;
-opcode += (unsigned int)(0xf & m4) << 8;
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rrf_c_form(unsigned long instr, unsigned int m3, unsigned int m4, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & m3) << 12;
+opcode += (unsigned long)(0xf & m4) << 8;
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_d_form(unsigned int instr, unsigned char m3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & m3) << 12;
-opcode += (unsigned int)(0xf & m4) << 8;
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rrf_d_form(unsigned long instr, unsigned int m3, unsigned int m4, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & m3) << 12;
+opcode += (unsigned long)(0xf & m4) << 8;
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrf_e_form(unsigned int instr, unsigned char m3,unsigned char m4,unsigned char r1,unsigned char r2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & m3) << 12;
-opcode += (unsigned int)(0xf & m4) << 8;
-opcode += (unsigned int)(0xf & r1) << 4;
-opcode += (unsigned int)(0xf & r2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rrf_e_form(unsigned long instr, unsigned int m3, unsigned int m4, unsigned int r1, unsigned int r2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & m3) << 12;
+opcode += (unsigned long)(0xf & m4) << 8;
+opcode += (unsigned long)(0xf & r1) << 4;
+opcode += (unsigned long)(0xf & r2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rrs_form(unsigned long instr, unsigned char r1,unsigned char r2,unsigned char b4,unsigned int d4,unsigned char m4, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rrs_form(unsigned long instr, unsigned int r1, unsigned int r2, unsigned int b4, unsigned int d4, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r2) << 32;
 opcode += (unsigned long)(0xf & b4) << 28;
 opcode += (unsigned long)(0xfff & d4) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rs_a_form(unsigned int instr, unsigned char r1,unsigned char r3,unsigned char b2,unsigned int d2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 20;
-opcode += (unsigned int)(0xf & r3) << 16;
-opcode += (unsigned int)(0xf & b2) << 12;
-opcode += (unsigned int)(0xfff & d2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rs_a_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b2, unsigned int d2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 20;
+opcode += (unsigned long)(0xf & r3) << 16;
+opcode += (unsigned long)(0xf & b2) << 12;
+opcode += (unsigned long)(0xfff & d2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rs_b_form(unsigned int instr, unsigned char r1,unsigned char m3,unsigned char b2,unsigned int d2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 20;
-opcode += (unsigned int)(0xf & m3) << 16;
-opcode += (unsigned int)(0xf & b2) << 12;
-opcode += (unsigned int)(0xfff & d2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rs_b_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int b2, unsigned int d2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 20;
+opcode += (unsigned long)(0xf & m3) << 16;
+opcode += (unsigned long)(0xf & b2) << 12;
+opcode += (unsigned long)(0xfff & d2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsi_form(unsigned int instr, unsigned char r1,unsigned char r3,unsigned int ri2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 20;
-opcode += (unsigned int)(0xf & r3) << 16;
-opcode += (unsigned int)(0xffff & ri2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rsi_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int ri2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 20;
+opcode += (unsigned long)(0xf & r3) << 16;
+opcode += (unsigned long)(0xffff & ri2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsl_a_form(unsigned long instr, unsigned char l1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rsl_a_form(unsigned long instr, unsigned int l1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & l1) << 36;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsl_b_form(unsigned long instr, unsigned char l1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rsl_b_form(unsigned long instr, unsigned int l1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xff & l1) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsy_a_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rsy_a_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b2, unsigned int dl2, unsigned int dh2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & dl2) << 16;
 opcode += (unsigned long)(0xff & dh2) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rsy_b_form(unsigned long instr, unsigned char r1,unsigned char m3,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rsy_b_form(unsigned long instr, unsigned int r1, unsigned int m3, unsigned int b2, unsigned int dl2, unsigned int dh2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & m3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & dl2) << 16;
 opcode += (unsigned long)(0xff & dh2) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rx_a_form(unsigned int instr, unsigned char r1,unsigned char x2,unsigned char b2,unsigned int d2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & r1) << 20;
-opcode += (unsigned int)(0xf & x2) << 16;
-opcode += (unsigned int)(0xf & b2) << 12;
-opcode += (unsigned int)(0xfff & d2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rx_a_form(unsigned long instr, unsigned int r1, unsigned int x2, unsigned int b2, unsigned int d2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & r1) << 20;
+opcode += (unsigned long)(0xf & x2) << 16;
+opcode += (unsigned long)(0xf & b2) << 12;
+opcode += (unsigned long)(0xfff & d2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rx_b_form(unsigned int instr, unsigned char m1,unsigned char x2,unsigned char b2,unsigned int d2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & m1) << 20;
-opcode += (unsigned int)(0xf & x2) << 16;
-opcode += (unsigned int)(0xf & b2) << 12;
-opcode += (unsigned int)(0xfff & d2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_rx_b_form(unsigned long instr, unsigned int m1, unsigned int x2, unsigned int b2, unsigned int d2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & m1) << 20;
+opcode += (unsigned long)(0xf & x2) << 16;
+opcode += (unsigned long)(0xf & b2) << 12;
+opcode += (unsigned long)(0xfff & d2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxe_form(unsigned long instr, unsigned char r1,unsigned char x2,unsigned char b2,unsigned int d2,unsigned char m3, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rxe_form(unsigned long instr, unsigned int r1, unsigned int x2, unsigned int b2, unsigned int d2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & x2) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxf_form(unsigned long instr, unsigned char r3,unsigned char x2,unsigned char b2,unsigned int d2,unsigned char r1, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rxf_form(unsigned long instr, unsigned int r3, unsigned int x2, unsigned int b2, unsigned int d2, unsigned int r1) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r3) << 36;
 opcode += (unsigned long)(0xf & x2) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & r1) << 12;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxy_a_form(unsigned long instr, unsigned char r1,unsigned char x2,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rxy_a_form(unsigned long instr, unsigned int r1, unsigned int x2, unsigned int b2, unsigned int dl2, unsigned int dh2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & x2) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & dl2) << 16;
 opcode += (unsigned long)(0xff & dh2) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_rxy_b_form(unsigned long instr, unsigned char m1,unsigned char x2,unsigned char b2,unsigned int dl2,unsigned char dh2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_rxy_b_form(unsigned long instr, unsigned int m1, unsigned int x2, unsigned int b2, unsigned int dl2, unsigned int dh2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & m1) << 36;
 opcode += (unsigned long)(0xf & x2) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & dl2) << 16;
 opcode += (unsigned long)(0xff & dh2) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_s_form(unsigned int instr, unsigned char b2,unsigned int d2, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xf & b2) << 12;
-opcode += (unsigned int)(0xfff & d2);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_s_form(unsigned long instr, unsigned int b2, unsigned int d2) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xf & b2) << 12;
+opcode += (unsigned long)(0xfff & d2);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_si_form(unsigned int instr, unsigned char i2,unsigned char b1,unsigned int d1, unsigned char *output) {
-unsigned int opcode = (0xffffffff & instr);
-opcode += (unsigned int)(0xff & i2) << 16;
-opcode += (unsigned int)(0xf & b1) << 12;
-opcode += (unsigned int)(0xfff & d1);
-output[0] = 0xff & (opcode >> 24);
-output[1] = 0xff & (opcode >> 16);
-output[2] = 0xff & (opcode >> 8);
-output[3] = 0xff & (opcode >> 0);
-return 4;
+unsigned long libxsmm_s390x_form_si_form(unsigned long instr, unsigned int i2, unsigned int b1, unsigned int d1) {
+unsigned long opcode = (0xffffffff & instr);
+opcode += (unsigned long)(0xff & i2) << 16;
+opcode += (unsigned long)(0xf & b1) << 12;
+opcode += (unsigned long)(0xfff & d1);
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_sil_form(unsigned long instr, unsigned char b1,unsigned int d1,unsigned int i2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_sil_form(unsigned long instr, unsigned int b1, unsigned int d1, unsigned int i2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xffff & i2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_siy_form(unsigned long instr, unsigned char i2,unsigned char b1,unsigned int dl1,unsigned char dh1, unsigned char *output) {
+unsigned long libxsmm_s390x_form_siy_form(unsigned long instr, unsigned int i2, unsigned int b1, unsigned int dl1, unsigned int dh1) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xff & i2) << 32;
 opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & dl1) << 16;
 opcode += (unsigned long)(0xff & dh1) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_smi_form(unsigned long instr, unsigned char m1,unsigned char b3,unsigned int d3,unsigned int ri2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_smi_form(unsigned long instr, unsigned int m1, unsigned int b3, unsigned int d3, unsigned int ri2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & m1) << 36;
 opcode += (unsigned long)(0xf & b3) << 28;
 opcode += (unsigned long)(0xfff & d3) << 16;
 opcode += (unsigned long)(0xffff & ri2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_a_form(unsigned long instr, unsigned char l,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ss_a_form(unsigned long instr, unsigned int l, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xff & l) << 32;
 opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_b_form(unsigned long instr, unsigned char l1,unsigned char l2,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ss_b_form(unsigned long instr, unsigned int l1, unsigned int l2, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & l1) << 36;
 opcode += (unsigned long)(0xf & l2) << 32;
@@ -2907,17 +2727,11 @@ opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_c_form(unsigned long instr, unsigned char l1,unsigned char i3,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ss_c_form(unsigned long instr, unsigned int l1, unsigned int i3, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & l1) << 36;
 opcode += (unsigned long)(0xf & i3) << 32;
@@ -2925,17 +2739,11 @@ opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_d_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ss_d_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r3) << 32;
@@ -2943,17 +2751,11 @@ opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_e_form(unsigned long instr, unsigned char r1,unsigned char r3,unsigned char b2,unsigned int d2,unsigned char b4,unsigned int d4, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ss_e_form(unsigned long instr, unsigned int r1, unsigned int r3, unsigned int b2, unsigned int d2, unsigned int b4, unsigned int d4) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & r3) << 32;
@@ -2961,529 +2763,343 @@ opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & b4) << 12;
 opcode += (unsigned long)(0xfff & d4);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ss_f_form(unsigned long instr, unsigned char l2,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ss_f_form(unsigned long instr, unsigned int l2, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xff & l2) << 32;
 opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_sse_form(unsigned long instr, unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_sse_form(unsigned long instr, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_ssf_form(unsigned long instr, unsigned char r1,unsigned char b1,unsigned int d1,unsigned char b2,unsigned int d2, unsigned char *output) {
+unsigned long libxsmm_s390x_form_ssf_form(unsigned long instr, unsigned int r1, unsigned int b1, unsigned int d1, unsigned int b2, unsigned int d2) {
 unsigned long opcode = (0xffffffffffff & instr);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & b1) << 28;
 opcode += (unsigned long)(0xfff & d1) << 16;
 opcode += (unsigned long)(0xf & b2) << 12;
 opcode += (unsigned long)(0xfff & d2);
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_a_form(unsigned long instr, unsigned char v1,unsigned int i2,unsigned char m3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_a_form(unsigned long instr, unsigned int v1, unsigned int i2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & i2) >> 3) + ((0x10 & m3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xffff & i2) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_b_form(unsigned long instr, unsigned char v1,unsigned char i2,unsigned char i3,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_b_form(unsigned long instr, unsigned int v1, unsigned int i2, unsigned int i3, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & i2) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xff & i2) << 24;
 opcode += (unsigned long)(0xff & i3) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_c_form(unsigned long instr, unsigned char v1,unsigned char v3,unsigned int i2,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_c_form(unsigned long instr, unsigned int v1, unsigned int v3, unsigned int i2, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v3) >> 2) + ((0x10 & i2) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v3) << 32;
 opcode += (unsigned long)(0xffff & i2) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_d_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char i4,unsigned char m5,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_d_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int i4, unsigned int m5) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3) + ((0x10 & m5) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xff & i4) << 16;
 opcode += (unsigned long)(0xf & m5) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_e_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned int i3,unsigned char m5,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_e_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int i3, unsigned int m5, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & i3) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xfff & i3) << 20;
 opcode += (unsigned long)(0xf & m5) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_f_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m5,unsigned char i4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_f_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m5, unsigned int i4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3) + ((0x10 & i4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xf & m5) << 20;
 opcode += (unsigned long)(0xff & i4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_g_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char i4,unsigned char m5,unsigned char i3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_g_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int i4, unsigned int m5, unsigned int i3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & i4) >> 3) + ((0x10 & i3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xff & i4) << 24;
 opcode += (unsigned long)(0xf & m5) << 20;
 opcode += (unsigned long)(0xff & i3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_h_form(unsigned long instr, unsigned char v1,unsigned int i2,unsigned char i3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_h_form(unsigned long instr, unsigned int v1, unsigned int i2, unsigned int i3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & i2) >> 3) + ((0x10 & i3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xffff & i2) << 16;
 opcode += (unsigned long)(0xf & i3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vri_i_form(unsigned long instr, unsigned char v1,unsigned char r2,unsigned char m4,unsigned char i3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vri_i_form(unsigned long instr, unsigned int v1, unsigned int r2, unsigned int m4, unsigned int i3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & r2) >> 2) + ((0x10 & i3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & r2) << 32;
 opcode += (unsigned long)(0xf & m4) << 20;
 opcode += (unsigned long)(0xff & i3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_a_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char m5,unsigned char m4,unsigned char m3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_a_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int m5, unsigned int m4, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & m3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & m5) << 20;
 opcode += (unsigned long)(0xf & m4) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_b_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m5,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_b_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m5, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xf & m5) << 20;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_c_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m6,unsigned char m5,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_c_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m6, unsigned int m5, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xf & m6) << 20;
 opcode += (unsigned long)(0xf & m5) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_d_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m5,unsigned char m6,unsigned char v4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_d_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m5, unsigned int m6, unsigned int v4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3) + ((0x10 & v4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xf & m5) << 24;
 opcode += (unsigned long)(0xf & m6) << 20;
 opcode += (unsigned long)(0xf & v4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_e_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m6,unsigned char m5,unsigned char v4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_e_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m6, unsigned int m5, unsigned int v4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3) + ((0x10 & v4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xf & m6) << 24;
 opcode += (unsigned long)(0xf & m5) << 16;
 opcode += (unsigned long)(0xf & v4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_f_form(unsigned long instr, unsigned char v1,unsigned char r2,unsigned char r3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_f_form(unsigned long instr, unsigned int v1, unsigned int r2, unsigned int r3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & r2) >> 2) + ((0x10 & r3) >> 3)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & r2) << 32;
 opcode += (unsigned long)(0xf & r3) << 28;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_g_form(unsigned long instr, unsigned char v1,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_g_form(unsigned long instr, unsigned int v1) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 2)) << 8);
 opcode += (unsigned long)(0xf & v1) << 32;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_h_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char m3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_h_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 2) + ((0x10 & v2) >> 3)) << 8);
 opcode += (unsigned long)(0xf & v1) << 32;
 opcode += (unsigned long)(0xf & v2) << 28;
 opcode += (unsigned long)(0xf & m3) << 20;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_i_form(unsigned long instr, unsigned char r1,unsigned char v2,unsigned char m3,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_i_form(unsigned long instr, unsigned int r1, unsigned int v2, unsigned int m3, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & r1) >> 1) + ((0x10 & v2) >> 2)) << 8);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & m3) << 20;
 opcode += (unsigned long)(0xf & m4) << 16;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_j_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char v3,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_j_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & v3) >> 3)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & v3) << 28;
 opcode += (unsigned long)(0xf & m4) << 20;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrr_k_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char m3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrr_k_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & m3) << 20;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_a_form(unsigned long instr, unsigned char v1,unsigned char v3,unsigned char b2,unsigned int d2,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrs_a_form(unsigned long instr, unsigned int v1, unsigned int v3, unsigned int b2, unsigned int d2, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v3) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_b_form(unsigned long instr, unsigned char v1,unsigned char r3,unsigned char b2,unsigned int d2,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrs_b_form(unsigned long instr, unsigned int v1, unsigned int r3, unsigned int b2, unsigned int d2, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & r3) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & r3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_c_form(unsigned long instr, unsigned char r1,unsigned char v3,unsigned char b2,unsigned int d2,unsigned char m4,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrs_c_form(unsigned long instr, unsigned int r1, unsigned int v3, unsigned int b2, unsigned int d2, unsigned int m4) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & r1) >> 1) + ((0x10 & v3) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & m4) >> 4)) << 8);
 opcode += (unsigned long)(0xf & r1) << 36;
 opcode += (unsigned long)(0xf & v3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & m4) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrs_d_form(unsigned long instr, unsigned char r3,unsigned char b2,unsigned int d2,unsigned char v1,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrs_d_form(unsigned long instr, unsigned int r3, unsigned int b2, unsigned int d2, unsigned int v1) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & r3) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & v1) >> 4)) << 8);
 opcode += (unsigned long)(0xf & r3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & v1) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrv_form(unsigned long instr, unsigned char v1,unsigned char v2,unsigned char b2,unsigned int d2,unsigned char m3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrv_form(unsigned long instr, unsigned int v1, unsigned int v2, unsigned int b2, unsigned int d2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & v2) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & m3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & v2) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vrx_form(unsigned long instr, unsigned char v1,unsigned char x2,unsigned char b2,unsigned int d2,unsigned char m3,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vrx_form(unsigned long instr, unsigned int v1, unsigned int x2, unsigned int b2, unsigned int d2, unsigned int m3) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & v1) >> 1) + ((0x10 & x2) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & m3) >> 4)) << 8);
 opcode += (unsigned long)(0xf & v1) << 36;
 opcode += (unsigned long)(0xf & x2) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & m3) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_s390x_instr_vsi_form(unsigned long instr, unsigned char i3,unsigned char b2,unsigned int d2,unsigned char v1,unsigned char rxb, unsigned char *output) {
+unsigned long libxsmm_s390x_form_vsi_form(unsigned long instr, unsigned int i3, unsigned int b2, unsigned int d2, unsigned int v1) {
 unsigned long opcode = (0xffffffffffff & instr);
+opcode += ((((0x10 & i3) >> 1) + ((0x10 & i3) >> 2) + ((0x10 & b2) >> 3) + ((0x10 & v1) >> 4)) << 8);
 opcode += (unsigned long)(0xff & i3) << 32;
 opcode += (unsigned long)(0xf & b2) << 28;
 opcode += (unsigned long)(0xfff & d2) << 16;
 opcode += (unsigned long)(0xf & v1) << 12;
-opcode += (unsigned long)(0xf & rxb) << 8;
-output[0] = 0xff & (opcode >> 40);
-output[1] = 0xff & (opcode >> 32);
-output[2] = 0xff & (opcode >> 24);
-output[3] = 0xff & (opcode >> 16);
-output[4] = 0xff & (opcode >> 8);
-output[5] = 0xff & (opcode >> 0);
-return 6;
+return opcode;
 }
