@@ -40,6 +40,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
   unsigned int upconvert_input_bf16f32 = 0;
   unsigned int downconvert_input_f32bf16 = 0;
   unsigned int mask_count2 = 0;
+  unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 
   if ((LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) && (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ))) {
     upconvert_input_bf16f32 = 1;
@@ -61,7 +62,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
 
     libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_in,
         i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_in,
-        l_masked_elements, 1, 0, pred_reg_mask_use);
+        l_masked_elements, 1, 0, pred_reg_mask_use, is_sve);
     if (upconvert_input_bf16f32 > 0) {
       libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, im, 0);
     }
@@ -81,7 +82,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
 
     libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out,
         i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_out,
-        l_masked_elements, 1, 1, pred_reg_mask_use);
+        l_masked_elements, 1, 1, pred_reg_mask_use, is_sve);
   }
 
   extra_bytes_ldo = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out - (vlen * i_micro_kernel_config->datatype_size_out * m_unroll_factor - i_use_masking * (vlen-mask_inout) * i_micro_kernel_config->datatype_size_out);
@@ -115,6 +116,7 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
   unsigned int mask_inout = 1;
   unsigned int vlen = libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set);
   unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  unsigned char is_sme = (io_generated_code->arch >= LIBXSMM_AARCH64_APPL_M4 ) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   unsigned char pred_reg_all = 0;
   unsigned char pred_reg_mask_f32 = 1;
   unsigned char pred_reg_all_bf16 = 2;
@@ -150,6 +152,11 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
   m_unroll_factor   = m_trips;
   m_trips_loop      = 1;
   peeled_m_trips    = 0;
+
+  if( is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTART);
+  }
 
   /* set pred reg 0 to true for sve */
   if ( is_sve ) {
@@ -193,6 +200,10 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
   if (peeled_m_trips > 0) {
     libxsmm_generator_mn_code_block_replicate_col_var_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
         vlen, 0, peeled_m_trips, peeled_m_trips, use_m_masking, mask_inout );
+  }
+  if( is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTOP);
   }
 
   libxsmm_aarch64_instruction_register_jump_label( io_generated_code, END_LABEL, &l_jump_label_tracker );

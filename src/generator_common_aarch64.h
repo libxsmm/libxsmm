@@ -131,7 +131,8 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
                                                        const unsigned int      i_masked_elems,
                                                        const unsigned int      i_adv_gpr,
                                                        const unsigned int      i_is_store,
-                                                       const unsigned char     i_mask_reg );
+                                                       const unsigned char     i_mask_reg,
+                                                       const unsigned char     i_is_sve );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_code* io_generated_code,
