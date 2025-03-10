@@ -209,9 +209,9 @@ include $(ROOTDIR)/Makefile.inc
 # 0: static, 1: shared, 2: static and shared
 ifneq (,$(filter-out file,$(origin STATIC)))
   ifneq (0,$(STATIC))
-    BUILD := 0
+	BUILD := 0
   else # shared
-    BUILD := 1
+	BUILD := 1
   endif
 else # default
   BUILD := 2
@@ -310,13 +310,13 @@ endif
 
 ifneq (Darwin,$(UNAME))
   GENGEMM := @$(ENVBIN) \
-    LD_LIBRARY_PATH="$(OUTDIR):$${LD_LIBRARY_PATH}" \
-    PATH="$(OUTDIR):$${PATH}" \
+	LD_LIBRARY_PATH="$(OUTDIR):$${LD_LIBRARY_PATH}" \
+	PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 else # osx
   GENGEMM := @$(ENVBIN) \
-    DYLD_LIBRARY_PATH="$(OUTDIR):$${DYLD_LIBRARY_PATH}" \
-    PATH="$(OUTDIR):$${PATH}" \
+	DYLD_LIBRARY_PATH="$(OUTDIR):$${DYLD_LIBRARY_PATH}" \
+	PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
@@ -327,36 +327,36 @@ SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 
 HEADERS_UTILS := \
-          $(ROOTINC)/utils/libxsmm_lpflt_quant.h \
-          $(ROOTINC)/utils/libxsmm_barrier.h \
-          $(ROOTINC)/utils/libxsmm_timer.h \
-          $(ROOTINC)/utils/libxsmm_math.h \
-          $(ROOTINC)/utils/libxsmm_mhd.h \
-          $(NULL)
+		  $(ROOTINC)/utils/libxsmm_lpflt_quant.h \
+		  $(ROOTINC)/utils/libxsmm_barrier.h \
+		  $(ROOTINC)/utils/libxsmm_timer.h \
+		  $(ROOTINC)/utils/libxsmm_math.h \
+		  $(ROOTINC)/utils/libxsmm_mhd.h \
+		  $(NULL)
 HEADERS_MAIN := \
-          $(ROOTINC)/libxsmm_generator.h \
-          $(ROOTINC)/libxsmm_typedefs.h \
-          $(ROOTINC)/libxsmm_fsspmdm.h \
-          $(ROOTINC)/libxsmm_macros.h \
-          $(ROOTINC)/libxsmm_memory.h \
-          $(ROOTINC)/libxsmm_malloc.h \
-          $(ROOTINC)/libxsmm_cpuid.h \
-          $(ROOTINC)/libxsmm_math.h \
-          $(ROOTINC)/libxsmm_sync.h \
-          $(ROOTINC)/libxsmm_utils.h \
-          $(ROOTINC)/libxsmm_intrinsics_x86.h \
-          $(NULL)
+		  $(ROOTINC)/libxsmm_generator.h \
+		  $(ROOTINC)/libxsmm_typedefs.h \
+		  $(ROOTINC)/libxsmm_fsspmdm.h \
+		  $(ROOTINC)/libxsmm_macros.h \
+		  $(ROOTINC)/libxsmm_memory.h \
+		  $(ROOTINC)/libxsmm_malloc.h \
+		  $(ROOTINC)/libxsmm_cpuid.h \
+		  $(ROOTINC)/libxsmm_math.h \
+		  $(ROOTINC)/libxsmm_sync.h \
+		  $(ROOTINC)/libxsmm_utils.h \
+		  $(ROOTINC)/libxsmm_intrinsics_x86.h \
+		  $(NULL)
 HEADERS_SRC := $(wildcard $(ROOTSRC)/*.h)
 HEADERS := \
-          $(wildcard $(ROOTSRC)/template/*.h) \
-          $(HEADERS_SRC) $(HEADERS_MAIN) $(HEADERS_UTILS)
+		  $(wildcard $(ROOTSRC)/template/*.h) \
+		  $(HEADERS_SRC) $(HEADERS_MAIN) $(HEADERS_UTILS)
 SRCFILES_LIB := $(patsubst %,$(ROOTSRC)/%, \
-          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
-          libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
-          libxsmm_utils.c libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_barrier.c \
-          libxsmm_rng.c libxsmm_mhd.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_rv64_reference.c)
-SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(filter-out $(ROOTSRC)/generator_x86_reference.c $(ROOTSRC)/generator_aarch64_reference.c $(ROOTSRC)/generator_rv64_reference.c $(ROOTSRC)/generator_gemm_reference_impl.c $(ROOTSRC)/generator_mateltwise_reference_impl.c $(ROOTSRC)/generator_matequation_reference_impl.c, $(wildcard $(ROOTSRC)/generator_*.c))) \
-          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
+		  libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
+		  libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
+		  libxsmm_utils.c libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_barrier.c \
+		  libxsmm_rng.c libxsmm_mhd.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_rv64_reference.c generator_s390x_reference.c)
+SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(filter-out $(ROOTSRC)/generator_x86_reference.c $(ROOTSRC)/generator_aarch64_reference.c $(ROOTSRC)/generator_rv64_reference.c $(ROOTSRC)/generator_s390x_reference.c $(ROOTSRC)/generator_gemm_reference_impl.c $(ROOTSRC)/generator_mateltwise_reference_impl.c $(ROOTSRC)/generator_matequation_reference_impl.c, $(wildcard $(ROOTSRC)/generator_*.c))) \
+		  libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_cpuid_s390x.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 SRCFILES := $(SRCFILES_LIB) $(SRCFILES_GEN_LIB) $(SRCFILES_KERNELS)
 
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_generator_gemm_driver.c)
@@ -366,13 +366,13 @@ OBJFILES_GEN_BINARYEXPORT_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $
 OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext.o \
-                $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
-                $(BLDDIR)/intel64/libxsmm_ext_gemm.o
+				$(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
+				$(BLDDIR)/intel64/libxsmm_ext_gemm.o
 NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_BINARYEXPORT_BIN) $(OBJFILES_LIB) \
-           $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
+		   $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o
 endif
@@ -382,30 +382,30 @@ ifneq (0,$(JIT))
 ifneq (0,$(VTUNE))
 ifeq (,$(filter Darwin,$(UNAME)))
   ifneq (0,$(PERF))
-    DFLAGS += -DLIBXSMM_PERF
-    ifneq (0,$(JITDUMP))
-      DFLAGS += -DLIBXSMM_PERF_JITDUMP
-    endif
+	DFLAGS += -DLIBXSMM_PERF
+	ifneq (0,$(JITDUMP))
+	  DFLAGS += -DLIBXSMM_PERF_JITDUMP
+	endif
   endif
   VTUNEROOT := $(shell env | grep VTUNE_PROFILER | grep -m1 _DIR | cut -d= -f2-)
   ifeq (,$(VTUNEROOT))
-    VTUNEROOT := $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+	VTUNEROOT := $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
   endif
   ifeq (,$(VTUNEROOT))
-    VTUNEROOT := $(EBROOTVTUNE)/vtune_amplifier
+	VTUNEROOT := $(EBROOTVTUNE)/vtune_amplifier
   endif
   ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-    ifneq (0,$(SYM))
-      LIBJITPROFILING := $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-      DFLAGS += -DLIBXSMM_VTUNE
-      IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
-      WERROR := 0
-      ifneq (0,$(INTEL))
-        CXXFLAGS += -diag-disable 271
-        CFLAGS += -diag-disable 271
-      endif
-    endif
-    MSGJITPROFILING := 1
+	ifneq (0,$(SYM))
+	  LIBJITPROFILING := $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+	  DFLAGS += -DLIBXSMM_VTUNE
+	  IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
+	  WERROR := 0
+	  ifneq (0,$(INTEL))
+		CXXFLAGS += -diag-disable 271
+		CFLAGS += -diag-disable 271
+	  endif
+	endif
+	MSGJITPROFILING := 1
   endif
 endif
 endif
@@ -521,46 +521,46 @@ PREFETCH_TYPE := 0
 PREFETCH_SCHEME := nopf
 ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
   ifneq (0,$(shell echo "$$((0<=$(PREFETCH) && $(PREFETCH)<=6))"))
-    PREFETCH_UID := $(PREFETCH)
+	PREFETCH_UID := $(PREFETCH)
   else ifneq (0,$(shell echo "$$((0>$(PREFETCH)))")) # auto
-    PREFETCH_UID := 1
+	PREFETCH_UID := 1
   else ifeq (pfsigonly,$(PREFETCH))
-    PREFETCH_UID := 2
+	PREFETCH_UID := 2
   else ifeq (BL2viaC,$(PREFETCH))
-    PREFETCH_UID := 3
+	PREFETCH_UID := 3
   else ifeq (curAL2,$(PREFETCH))
-    PREFETCH_UID := 4
+	PREFETCH_UID := 4
   else ifeq (curAL2_BL2viaC,$(PREFETCH))
-    PREFETCH_UID := 5
+	PREFETCH_UID := 5
   else ifeq (AL2,$(PREFETCH))
-    PREFETCH_UID := 6
+	PREFETCH_UID := 6
   else ifeq (AL2_BL2viaC,$(PREFETCH))
-    PREFETCH_UID := 7
+	PREFETCH_UID := 7
   endif
   # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
   ifeq (1,$(PREFETCH_UID))
-    # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
-    # select "nopf" for statically generated code.
-    PREFETCH_SCHEME := nopf
-    PREFETCH_TYPE := -1
+	# Prefetch "auto" is a pseudo-strategy introduced by the frontend;
+	# select "nopf" for statically generated code.
+	PREFETCH_SCHEME := nopf
+	PREFETCH_TYPE := -1
   else ifeq (2,$(PREFETCH_UID))
-    PREFETCH_SCHEME := pfsigonly
-    PREFETCH_TYPE := 1
+	PREFETCH_SCHEME := pfsigonly
+	PREFETCH_TYPE := 1
   else ifeq (3,$(PREFETCH_UID))
-    PREFETCH_SCHEME := BL2viaC
-    PREFETCH_TYPE := 4
+	PREFETCH_SCHEME := BL2viaC
+	PREFETCH_TYPE := 4
   else ifeq (4,$(PREFETCH_UID))
-    PREFETCH_SCHEME := curAL2
-    PREFETCH_TYPE := 8
+	PREFETCH_SCHEME := curAL2
+	PREFETCH_TYPE := 8
   else ifeq (5,$(PREFETCH_UID))
-    PREFETCH_SCHEME := curAL2_BL2viaC
-    PREFETCH_TYPE := $(shell echo "$$((4|8))")
+	PREFETCH_SCHEME := curAL2_BL2viaC
+	PREFETCH_TYPE := $(shell echo "$$((4|8))")
   else ifeq (6,$(PREFETCH_UID))
-    PREFETCH_SCHEME := AL2
-    PREFETCH_TYPE := 2
+	PREFETCH_SCHEME := AL2
+	PREFETCH_TYPE := 2
   else ifeq (7,$(PREFETCH_UID))
-    PREFETCH_SCHEME := AL2_BL2viaC
-    PREFETCH_TYPE := $(shell echo "$$((4|2))")
+	PREFETCH_SCHEME := AL2_BL2viaC
+	PREFETCH_TYPE := $(shell echo "$$((4|2))")
   endif
 endif
 
@@ -580,15 +580,15 @@ ifneq (0,$(call qnum,$(OMP))) # NaN
   DFLAGS += -DLIBXSMM_SYNC_OMP
 else # default (no OpenMP based synchronization)
   ifeq (,$(filter environment% override command%,$(origin OMP)))
-    EXTCFLAGS += $(OMPFLAG)
-    EXTLDFLAGS += $(OMPLIB)
+	EXTCFLAGS += $(OMPFLAG)
+	EXTLDFLAGS += $(OMPLIB)
   endif
 endif
 
 # auto-clean
 $(ROOTSRC)/template/libxsmm_config.h: $(ROOTSCR)/libxsmm_config.py $(ROOTSCR)/libxsmm_utilities.py \
-                                                $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
-                                                $(ROOTDIR)/version.txt
+												$(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
+												$(ROOTDIR)/version.txt
 	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-touch $@
 
@@ -596,7 +596,7 @@ $(ROOTSRC)/template/libxsmm_config.h: $(ROOTSCR)/libxsmm_config.py $(ROOTSCR)/li
 config: $(INCDIR)/libxsmm_config.h $(INCDIR)/libxsmm_version.h
 
 $(INCDIR)/libxsmm_config.h: $(ROOTSRC)/template/libxsmm_config.h $(DIRSTATE)/.state \
-                            $(INCDIR)/utils/.make $(SRCDIR)/.make $(SCRDIR)/.make
+							$(INCDIR)/utils/.make $(SRCDIR)/.make $(SCRDIR)/.make
 	$(information)
 	$(info --- LIBXSMM build log)
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
@@ -616,16 +616,16 @@ $(INCDIR)/libxsmm_config.h: $(ROOTSRC)/template/libxsmm_config.h $(DIRSTATE)/.st
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) >$@
 
 $(INCDIR)/libxsmm_version.h: $(ROOTSRC)/template/libxsmm_config.h $(INCDIR)/.make \
-                             $(ROOTSRC)/template/libxsmm_version.h
+							 $(ROOTSRC)/template/libxsmm_version.h
 	@$(PYTHON) $(ROOTSCR)/libxsmm_config.py $(ROOTSRC)/template/libxsmm_version.h >$@
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: $(ROOTSCR)/libxsmm_interface.py \
-                     $(ROOTSRC)/template/libxsmm.h \
-                     $(INCDIR)/libxsmm_version.h \
-                     $(INCDIR)/libxsmm_config.h \
-                     $(HEADERS)
+					 $(ROOTSRC)/template/libxsmm.h \
+					 $(INCDIR)/libxsmm_version.h \
+					 $(INCDIR)/libxsmm_config.h \
+					 $(HEADERS)
 	@$(PYTHON) $(ROOTSCR)/libxsmm_interface.py $(ROOTSRC)/template/libxsmm.h \
 		$(shell echo "$$(($(PRECISION)+($(call qnum,$(FORTRAN),2)<<2)))") $(PREFETCH_TYPE) $(INDICES) >$@
 
@@ -637,10 +637,10 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(ROOTSCR)/libxsmm_source.sh $(INCDI
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
 $(INCDIR)/libxsmm.f: $(ROOTSCR)/libxsmm_interface.py \
-                     $(ROOTSCR)/libxsmm_config.py \
-                     $(ROOTSRC)/template/libxsmm.f \
-                     $(INCDIR)/libxsmm_version.h \
-                     $(INCDIR)/libxsmm_config.h
+					 $(ROOTSCR)/libxsmm_config.py \
+					 $(ROOTSRC)/template/libxsmm.f \
+					 $(INCDIR)/libxsmm_version.h \
+					 $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTSCR)/libxsmm_interface.py $(ROOTSRC)/template/libxsmm.f \
 		$(shell echo "$$(($(PRECISION)+($(call qnum,$(FORTRAN),2)<<2)))") $(PREFETCH_TYPE) $(INDICES) \
 	| $(PYTHON) $(ROOTSCR)/libxsmm_config.py /dev/stdin \
@@ -831,7 +831,7 @@ ifneq (,$(strip $(LIBJITPROFILING)))
 $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 	@$(CP) $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
 	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
-    JITPROFILINGOBJ := $(BLDDIR)/jitprofiling/jitprofiling.o
+	JITPROFILINGOBJ := $(BLDDIR)/jitprofiling/jitprofiling.o
 endif
 
 .PHONY: clib
@@ -1512,9 +1512,9 @@ ifeq (Windows_NT,$(UNAME))
   ALIAS_PRIVLIBS := $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    ALIAS_PRIVLIBS := $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
+	ALIAS_PRIVLIBS := $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
   else
-    ALIAS_PRIVLIBS := $(LIBDL) $(LIBM) $(LIBC)
+	ALIAS_PRIVLIBS := $(LIBDL) $(LIBM) $(LIBC)
   endif
 endif
 ifneq (Darwin,$(UNAME))

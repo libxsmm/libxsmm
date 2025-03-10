@@ -344,6 +344,8 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
   return libxsmm_cpuid_arm(info);
 #elif defined(LIBXSMM_PLATFORM_RV64)
   return LIBXSMM_RV64;
+#elif defined(LIBXSMM_PLATFORM_S390X)
+  return libxsmm_cpuid_s390x(info);
 #else
   memset(info, 0, sizeof(info));
   return LIBXSMM_TARGET_ARCH_UNKNOWN;
@@ -436,6 +438,18 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_RV64: {
       target_arch = "rv64";
     } break;
+    case LIBXSMM_S390X_ARCH11: {
+      target_arch = "arch11";
+    } break;
+    case LIBXSMM_S390X_ARCH12: {
+      target_arch = "arch12";
+    } break;
+    case LIBXSMM_S390X_ARCH13: {
+      target_arch = "arch13";
+    } break;
+    case LIBXSMM_S390X_ARCH14: {
+      target_arch = "arch14";
+    } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
@@ -448,6 +462,7 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
       target_arch = "unknown";
     }
   }
+
   LIBXSMM_ASSERT(NULL != target_arch);
   return target_arch;
 }
@@ -546,10 +561,22 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "rv64") == 0) {
     target_archid = LIBXSMM_RV64;
-  } else {
+  }
+  else if (strcmp(arch, "arch11") == 0) {
+    target_archid = LIBXSMM_S390X_ARCH11;
+  }
+  else if (strcmp(arch, "arch12") == 0) {
+    target_archid = LIBXSMM_S390X_ARCH12;
+  }
+  else if (strcmp(arch, "arch13") == 0) {
+    target_archid = LIBXSMM_S390X_ARCH13;
+  }
+  else if (strcmp(arch, "arch14") == 0) {
+    target_archid = LIBXSMM_S390X_ARCH14;
+  }
+  else {
     target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   }
-
   return target_archid;
 }
 
@@ -580,6 +607,9 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
         || LIBXSMM_AARCH64_A64FX  == id )
   {
     result = 16;
+  }
+  else if ( LIBXSMM_S390X_ARCH11 <= id && LIBXSMM_S390X_ALLFEAT >= id ) {
+    result = 4;
   }
   else if (LIBXSMM_X86_AVX512_SKX <= id) {
     result = 16;
