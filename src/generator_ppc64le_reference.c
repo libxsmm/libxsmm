@@ -56,7 +56,7 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
   libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp_reg );
 
   /* Increament stack pointer to store description struct */
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy );
   libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, LIBXSMM_PPC64LE_GPR_SP, -l_padded_desc_size );
 
   /* Store the descriptor in stack */
@@ -66,22 +66,25 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
   }
 
   /* Set stack pointer as argument 1 */
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg1, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_arg1 );
 
   /* Set the address of the function  */
   if (i_is_gemm_or_eltwise == 0) {
     l_code_ptr.ptr_gemm_fn = libxsmm_reference_gemm;
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_code_ptr.uval );
   } else {
     l_code_ptr.ptr_eltw_fn = libxsmm_reference_elementwise;
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_code_ptr.uval );
   }
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_code_ptr.uval );
+
+  printf("function pointer: 0x%016lx\n", l_code_ptr.uval);
 
   /* Call the function */
-  libxsmm_ppc64le_instr_jump_lr( io_generated_code, l_temp_reg );
+  libxsmm_ppc64le_instr_nop( io_generated_code );
+  libxsmm_ppc64le_instr_jump_ctr( io_generated_code, l_temp_reg );
+  libxsmm_ppc64le_instr_nop( io_generated_code );
 
   /* Recover stack pointer */
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, l_sp_copy, LIBXSMM_PPC64LE_GPR_SP, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, l_sp_copy, LIBXSMM_PPC64LE_GPR_SP );
 
   /* Free the register used */
   libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_sp_copy );
@@ -176,7 +179,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   }
 
   /* Increament stack pointer to store description struct */
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy );
   libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, LIBXSMM_PPC64LE_GPR_SP, -l_padded_size );
 
   /* Store the unfold descriptor in stack */
@@ -186,13 +189,13 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   }
 
   /* Set stack pointer as arg1 */
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg1, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_arg1 );
 
   /* Get scratchpad pointer and set arg2 and arg3 */
   l_tmp_size = ( 0 == l_tmp_size % 64 ) ? l_tmp_size : ( ( l_tmp_size + 63 ) / 64 ) * 64;
   l_scratch_size = l_tmp_size * l_n_tmp;
   libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, LIBXSMM_PPC64LE_GPR_SP, -l_scratch_size );
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg2, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_arg2 );
   libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_arg3, (unsigned long)l_tmp_size );
 
   if ( libxsmm_verbosity < 0 ) {
@@ -204,10 +207,10 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_code_ptr.uval );
 
   /* Call the function */
-  libxsmm_ppc64le_instr_jump_lr( io_generated_code, l_temp_reg );
+  libxsmm_ppc64le_instr_jump_ctr( io_generated_code, l_temp_reg );
 
   /* Recover stack pointer */
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, l_sp_copy, LIBXSMM_PPC64LE_GPR_SP, 0 );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, l_sp_copy, LIBXSMM_PPC64LE_GPR_SP );
 
   /* Free the registers */
   libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, LIBXSMM_PPC64LE_GPR_ARG0 );

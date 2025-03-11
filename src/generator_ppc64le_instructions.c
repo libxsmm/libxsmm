@@ -2462,12 +2462,22 @@ void libxsmm_ppc64le_instr_transpose_f64_1x1( libxsmm_generated_code *io_generat
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_copy_reg( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_src,
+                                     unsigned int            i_dst ) {
+  libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_src, i_dst, i_src );
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
                                       libxsmm_ppc64le_reg    *io_reg_tracker,
                                       unsigned int            i_src,
                                       unsigned int            i_dst,
                                       long                    i_val ) {
-  if ( i_val <= 0x7fff && i_val >= -0x7fff ) {
+  if ( 0 == i_val ) {
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_src, i_dst );
+  } else if ( i_val <= 0x7fff && i_val >= -0x7fff ) {
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, i_dst, i_src, i_val );
   } else {
     if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
@@ -2500,7 +2510,9 @@ void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
                                       libxsmm_ppc64le_reg    *io_reg_tracker,
                                       unsigned int            i_dst,
                                       long                    i_val ) {
-  if ( LIBXSMM_PPC64LE_VSX == io_generated_code->arch ) {
+  if ( 0 == i_val ) {
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDIS, i_dst, 0, 0 );
+  } else if ( LIBXSMM_PPC64LE_VSX == io_generated_code->arch ) {
     unsigned int l_h3 = (unsigned int)( 0xffff & i_val );
     unsigned int l_h2 = (unsigned int)( ( 0xffff & ( i_val >> 16 ) ) + ( 0x01 & ( l_h3 >> 15 ) ) );
     unsigned int l_h1 = (unsigned int)( ( 0xffff & ( i_val >> 32 ) ) + ( 0x01 & ( l_h2 >> 15 ) ) );
@@ -3171,13 +3183,44 @@ void libxsmm_ppc64le_instr_cond_jump_back_to_label_ctr( libxsmm_generated_code  
 
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_jump_lr( libxsmm_generated_code *io_generated_code,
-                                    unsigned int            i_ptr_reg ) {
-  /* Load the address into the link register */
-  libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_MTSPR, i_ptr_reg, LIBXSMM_PPC64LE_SPR_LR );
+void libxsmm_ppc64le_instr_jump_ctr_imm( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_ppc64le_reg    *io_reg_tracker,
+                                         unsigned long           i_ptr ) {
+  unsigned int l_reg = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, io_reg_tracker, l_reg, i_ptr );
+  libxsmm_ppc64le_instr_jump_ctr( io_generated_code, l_reg );
+}
 
-  /* Unconditional link register jump with return */
-  libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_BCLR, 0x1f, 0, 0x03, 0x01 );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_ctr( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_reg ) {
+  /* Load the address into the count register */
+  libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_MTSPR, i_reg, LIBXSMM_PPC64LE_SPR_CTR );
+
+  /* Unconditional count register jump with return */
+  libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_BCCTR, 0x14, 0, 0x00, 0x01 );
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_lr_imm( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_ppc64le_reg    *io_reg_tracker,
+                                        unsigned long           i_ptr ) {
+  unsigned int l_reg = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, io_reg_tracker, l_reg, i_ptr );
+  libxsmm_ppc64le_instr_jump_lr( io_generated_code, l_reg );
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_lr( libxsmm_generated_code *io_generated_code,
+                                    unsigned int            i_reg ) {
+  /* Load the address into the count register */
+  libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_MTSPR, i_reg, LIBXSMM_PPC64LE_SPR_LR );
+
+  /* Unconditional count register jump with return */
+  libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_BCLR, 0x14, 0, 0x00, 0x01 );
 }
 
 

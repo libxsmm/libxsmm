@@ -567,6 +567,7 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_INSTR_AND 0x7c009038 /* AND X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_ANDI 0x70001000 /* AND Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_BC 0x40000800 /* Branch Conditional B-form */
+#define LIBXSMM_PPC64LE_INSTR_BCCTR 0x4c00c420 /* Branch Conditional to Count Register XL(4)-form */
 #define LIBXSMM_PPC64LE_INSTR_BCLR 0x4c00c020 /* Branch Conditional to Link Register XL(4)-form */
 #define LIBXSMM_PPC64LE_INSTR_CMPI 0x2c001800 /* Compare Immediate D(BF)-form */
 #define LIBXSMM_PPC64LE_INSTR_DCBF 0x7c0078ac /* Data Cache Block Flush X(355L)-form */
@@ -1682,6 +1683,12 @@ void libxsmm_ppc64le_instr_transpose_f64_1x1( libxsmm_generated_code *io_generat
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_copy_reg( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_src,
+                                     unsigned int            i_dst );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
                                       libxsmm_ppc64le_reg    *io_reg_tracker,
                                       unsigned int            i_src,
@@ -1815,11 +1822,32 @@ LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_cond_jump_back_to_label_ctr( libxsmm_generated_code     *io_generated_code,
                                                         libxsmm_loop_label_tracker *io_loop_label_tracker );
 
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_ctr_imm( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_ppc64le_reg    *io_reg_tracker,
+                                         unsigned long           i_ptr );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_ctr( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_lr_imm( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_ppc64le_reg    *io_reg_tracker,
+                                        unsigned long           i_ptr );
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_jump_lr( libxsmm_generated_code *io_generated_code,
-                                    unsigned int            i_ptr_reg );
+                                    unsigned int            i_reg );
 
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_ctr_imm( libxsmm_generated_code *io_generated_code,
+                                         libxsmm_ppc64le_reg    *io_reg_tracker,
+                                         unsigned long           i_ptr );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_jump_ctr( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_prefetch_stream_open( libxsmm_generated_code *io_generated_code,
