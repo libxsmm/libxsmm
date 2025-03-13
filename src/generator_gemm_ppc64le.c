@@ -231,10 +231,9 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *i
   /* Create local pointer for a */
   if ( l_m_iters > 1 || !l_packed ) {
     l_a = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_a, l_a, i_a );
-
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a, l_a );
     l_c = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_c, l_c, i_c );
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_c, l_c );
   } else {
     l_a = i_a;
     l_c = i_c;
@@ -243,7 +242,7 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *i
   /* Set jump point if required */
   if ( l_m_iters > 1 ) {
     l_m_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_m_loop, l_m_iters );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_m_loop, l_m_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, io_loop_labels );
   }
 
@@ -335,7 +334,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
   /* Set jump point if required */
   if ( l_n_iters > 1 ) {
     l_n_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_n_loop, l_n_iters );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_n_loop, l_n_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, &l_loop_labels );
   }
 
@@ -409,10 +408,9 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
   /* Create local pointer for a */
   if ( 1 < l_m_iters || !l_packed ) {
     l_a = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_a, l_a, i_a );
-
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a, l_a );
     l_c = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_OR, i_c, l_c, i_c );
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_c, l_c );
   } else {
     l_a = i_a;
     l_c = i_c;
@@ -421,7 +419,7 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
   /* Set jump point if required */
   if ( 1 < l_m_iters ) {
     l_m_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_m_loop, l_m_iters );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_m_loop, l_m_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, io_loop_labels );
   }
 
@@ -515,7 +513,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
   /* Set jump point for N-loop if required */
   if ( 1 < l_n_iters ) {
     l_n_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, 0, l_n_loop, l_n_iters );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_n_loop, l_n_iters );
     libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, &l_loop_labels );
   }
 

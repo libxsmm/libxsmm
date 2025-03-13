@@ -620,21 +620,24 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_INSTR_NOR 0x7c0090f8 /* NOR X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_OR 0x7c009378 /* OR X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_ORI 0x60001000 /* OR Immediate D-form */
+#define LIBXSMM_PPC64LE_INSTR_ORIS 0x64001000 /* OR Immediate Shifted D-form */
 #define LIBXSMM_PPC64LE_INSTR_RLDIC 0x78004008 /* Rotate Left Doubleword Immediate then Clear MD-form */
 #define LIBXSMM_PPC64LE_INSTR_RLDICL 0x78004000 /* Rotate Left Doubleword Immediate then Clear Left MD-form */
 #define LIBXSMM_PPC64LE_INSTR_RLDICR 0x78004004 /* Rotate Left Doubleword Immediate then Clear Right MD-form */
 #define LIBXSMM_PPC64LE_INSTR_RLWINM 0x54003800 /* Rotate Left Word Immediate then AND with Mask M-form */
+#define LIBXSMM_PPC64LE_INSTR_STB 0x98001000 /* Store Byte D-form */
 #define LIBXSMM_PPC64LE_INSTR_STD 0xf8003000 /* Store Doubleword DS-form */
 #define LIBXSMM_PPC64LE_INSTR_STDU 0xf8003001 /* Store Doubleword with Update DS-form */
 #define LIBXSMM_PPC64LE_INSTR_STFD 0xd8001000 /* Store Floating-Point Double D-form */
 #define LIBXSMM_PPC64LE_INSTR_STFDP 0xf4003000 /* Store Floating-Point Double Pair DS-form */
+#define LIBXSMM_PPC64LE_INSTR_STH 0xb0001000 /* Store Halfword D-form */
 #define LIBXSMM_PPC64LE_INSTR_STQ 0xf8003002 /* Store Quadword DS-form */
 #define LIBXSMM_PPC64LE_INSTR_STVEBX 0x7c00910e /* Store Vector Element Byte Indexed X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_STVEHX 0x7c00914e /* Store Vector Element Halfword Indexed X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_STVEWX 0x7c00918e /* Store Vector Element Word Indexed X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_STVX 0x7c0091ce /* Store Vector Indexed X(555)-form */
 #define LIBXSMM_PPC64LE_INSTR_STVXL 0x7c0093ce /* Store Vector Indexed Last X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_STXSD 0xf4003002 /* Store VSX Scalar Doubleword DS-form */
+#define LIBXSMM_PPC64LE_INSTR_STW 0x90001000 /* Store Word D-form */
 #define LIBXSMM_PPC64LE_INSTR_STXSDX 0x7c006598 /* Store VSX Scalar Doubleword Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXSIBX 0x7c00671a /* Store VSX Scalar as Integer Byte Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXSIHX 0x7c00675a /* Store VSX Scalar as Integer Halfword Indexed X-form */
@@ -1698,7 +1701,6 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
-                                      libxsmm_ppc64le_reg    *io_reg_tracker,
                                       unsigned int            i_dst,
                                       long                    i_val );
 

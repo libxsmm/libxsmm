@@ -10,12 +10,14 @@
 ******************************************************************************/
 #include "generator_ppc64le_reference.h"
 
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_generated_code,
                                                  const void             *i_desc,
                                                  unsigned int            i_is_gemm_or_eltwise ) {
+  /* Padding as stack is quadword aligned */
   unsigned long l_padded_desc_size = ( i_is_gemm_or_eltwise == 0 ) ?
-    ( ( ( sizeof(libxsmm_gemm_descriptor) + 31 ) / 32 ) * 32 ) : ( ( ( sizeof(libxsmm_meltw_descriptor) + 31 ) / 32 ) * 32 );
+    ( ( ( sizeof(libxsmm_gemm_descriptor) + 15 ) / 16 ) * 16 ) : ( ( ( sizeof(libxsmm_meltw_descriptor) + 15 ) / 16 ) * 16 );
   unsigned long i = 0;
   unsigned char *l_padded_desc = NULL;
   unsigned long *l_imm_array_ptr = NULL;
@@ -55,33 +57,35 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
   l_temp_reg = LIBXSMM_PPC64LE_GPR_R30;
   libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp_reg );
 
-  /* Increament stack pointer to store description struct */
+  /* Make a copy of the stack pointer */
   libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy );
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, LIBXSMM_PPC64LE_GPR_SP, -l_padded_desc_size );
+
+  /* Increament stack pointer to store description struct with back chain */
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_STDU,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           (-( l_padded_desc_size + 32 ) >> 2 ) );
 
   /* Store the descriptor in stack */
-  for ( i = 0; i < l_padded_desc_size / 8; ++i ) {
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_imm_array_ptr[i] );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, l_temp_reg, LIBXSMM_PPC64LE_GPR_SP, ( i*8 ) >> 2 );
+  for ( i = 0; i < l_padded_desc_size / 8 ; ++i ) {
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[i] );
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, l_temp_reg, LIBXSMM_PPC64LE_GPR_SP, ( i*8 + 32 ) >> 2 );
   }
 
   /* Set stack pointer as argument 1 */
-  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_arg1 );
+  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg1, 32 );
 
-  /* Set the address of the function  */
+  /* Set the address of the function */
   if (i_is_gemm_or_eltwise == 0) {
     l_code_ptr.ptr_gemm_fn = libxsmm_reference_gemm;
   } else {
     l_code_ptr.ptr_eltw_fn = libxsmm_reference_elementwise;
   }
-  libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_code_ptr.uval );
-
-  printf("function pointer: 0x%016lx\n", l_code_ptr.uval);
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp_reg, l_code_ptr.uval );
 
   /* Call the function */
-  libxsmm_ppc64le_instr_nop( io_generated_code );
   libxsmm_ppc64le_instr_jump_ctr( io_generated_code, l_temp_reg );
-  libxsmm_ppc64le_instr_nop( io_generated_code );
 
   /* Recover stack pointer */
   libxsmm_ppc64le_instr_copy_reg( io_generated_code, l_sp_copy, LIBXSMM_PPC64LE_GPR_SP );
@@ -134,7 +138,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
     unsigned int l_tree_max_comp_tsize = 0;
 
     l_last_timestamp = l_eqn->eqn_root->visit_timestamp;
-    l_padded_size = ( ( ( ( l_last_timestamp + 1 )*5*sizeof(libxsmm_meqn_elem) ) + 63 ) / 64 )*64;
+    l_padded_size = ( ( ( ( l_last_timestamp + 1 )*5*sizeof(libxsmm_meqn_elem) ) + 15 ) / 16 )*16;
     l_unfolded_exec_tree = (libxsmm_meqn_elem*)malloc(l_padded_size);
     l_imm_array_ptr = (unsigned long*)l_unfolded_exec_tree;
     memset( l_unfolded_exec_tree, 0, l_padded_size );
@@ -178,25 +182,36 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
     }
   }
 
-  /* Increament stack pointer to store description struct */
+
+  /* Make a copy of the stack pointer */
   libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy );
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, LIBXSMM_PPC64LE_GPR_SP, -l_padded_size );
+
+  /* Increament stack pointer to store description struct with back chain */
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_STDU,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           (-( l_padded_size + 32 ) >> 2 ) );
 
   /* Store the unfold descriptor in stack */
-  for ( i = 0; i < l_padded_size/8; ++i ) {
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_imm_array_ptr[i] );
-    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, l_temp_reg, LIBXSMM_PPC64LE_GPR_SP, ( i*8 ) >> 2 );
+  for ( i = 0; i < l_padded_size / 8; ++i ) {
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[i] );
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, l_temp_reg, LIBXSMM_PPC64LE_GPR_SP, ( i*8 + 32 ) >> 2 );
   }
 
   /* Set stack pointer as arg1 */
-  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_arg1 );
+  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg1, 32 );
 
   /* Get scratchpad pointer and set arg2 and arg3 */
   l_tmp_size = ( 0 == l_tmp_size % 64 ) ? l_tmp_size : ( ( l_tmp_size + 63 ) / 64 ) * 64;
   l_scratch_size = l_tmp_size * l_n_tmp;
-  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, LIBXSMM_PPC64LE_GPR_SP, -l_scratch_size );
-  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_arg2 );
-  libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_arg3, (unsigned long)l_tmp_size );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_STDU,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           LIBXSMM_PPC64LE_GPR_SP,
+                           (-( l_scratch_size + 32 ) >> 2 ) );
+  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg2, 32 );
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_arg3, (unsigned long)l_tmp_size );
 
   if ( libxsmm_verbosity < 0 ) {
     fprintf( stderr, "JITing Matrix Equation with reference code (n_tmp = %ld , stack_scratch_size = %.5g KB)\n", l_n_tmp, ( 1.0*l_scratch_size ) / 1024.0 );
@@ -204,7 +219,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
 
   /* We set the address of the function */
   l_code_ptr.ptr_meqn_fn = libxsmm_reference_matequation;
-  libxsmm_ppc64le_instr_set_imm64( io_generated_code, &l_reg_tracker, l_temp_reg, l_code_ptr.uval );
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp_reg, l_code_ptr.uval );
 
   /* Call the function */
   libxsmm_ppc64le_instr_jump_ctr( io_generated_code, l_temp_reg );
