@@ -118,7 +118,6 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
                                         libxsmm_ppc64le_blocking      *i_blocking,
                                         libxsmm_ppc64le_reg           *io_reg_tracker,
                                         libxsmm_loop_label_tracker    *io_loop_labels,
-                                        unsigned int                  *i_acc,
                                         unsigned char                  i_a,
                                         unsigned char                  i_b,
                                         unsigned char                  i_c );
