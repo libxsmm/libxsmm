@@ -12,15 +12,27 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
+#include "riscv_vector.h"
 
 #include <signal.h>
 #include <setjmp.h>
 
-#define MVL_BPI_F3 (256)
-
-LIBXSMM_API int libxsmm_cpuid_mvl_rv64(void)
+LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL))
 {
-  return MVL_BPI_F3;
-}
+  int mvl;
 
-#undef MVL_BPI_F3
+  switch (__riscv_vsetvl_e8m1 (65536) * 8){
+    case 128:
+      mvl = LIBXSMM_RV64_MVL128;
+      break;
+
+    case 256:
+      mvl = LIBXSMM_RV64_MVL256;
+      break;
+    default:
+      mvl = LIBXSMM_RV64_MVL128;
+      break;
+  } 
+  
+  return mvl;
+}
