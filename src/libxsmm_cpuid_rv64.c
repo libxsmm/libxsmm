@@ -32,7 +32,7 @@ LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL
     default:
       mvl = LIBXSMM_RV64_MVL128;
       break;
-  } 
-  
+  }
+
   return mvl;
 }
