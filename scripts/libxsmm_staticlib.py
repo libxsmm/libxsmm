@@ -48,6 +48,7 @@ import shutil
 import logging
 import coloredlogs
 import subprocess
+import platform
 
 class Logger(object):
     def __init__(self, name, verbosity):
@@ -226,7 +227,17 @@ class CodeGenKernels(object):
         cmd.append("-I")
         cmd.append("binary")
         cmd.append("-O")
-        cmd.append("elf64-x86-64")
+        if ( platform.machine() == 'x86_64' ):
+            cmd.append("elf64-x86-64")
+        elif ( platform.machine() == 'riscv64' ):
+            cmd.append("elf64-littleriscv")
+            cmd.append("-B")
+            cmd.append("rv64gvc")
+        elif ( platform.machine() == 'aarch64' ):
+            cmd.append("elf64-littleaarch64")
+        else :
+            self.logger.error(f"unsupported machine")
+            sys.exit(1)
         cmd.append(f"--rename-section=.data=.text.{kernel.getName()},code")
         cmd.append(kernelfile)
         cmd.append(kernelfile + ".tmp.elf")
@@ -238,9 +249,25 @@ class CodeGenKernels(object):
         cmd = list()
         cmd.append(self.env.getLlvmObjcopy())
         cmd.append("-I")
-        cmd.append("elf64-x86-64")
+        if ( platform.machine() == 'x86_64' ):
+            cmd.append("elf64-x86-64")
+        elif ( platform.machine() == 'riscv64' ):
+            cmd.append("elf64-littleriscv")
+        elif ( platform.machine() == 'aarch64' ):
+            cmd.append("elf64-littleaarch64")
+        else :
+            self.logger.error(f"unsupported machine")
+            sys.exit(1)
         cmd.append("-O")
-        cmd.append("elf64-x86-64")
+        if ( platform.machine() == 'x86_64' ):
+            cmd.append("elf64-x86-64")
+        elif ( platform.machine() == 'riscv64' ):
+            cmd.append("elf64-littleriscv")
+        elif ( platform.machine() == 'aarch64' ):
+            cmd.append("elf64-littleaarch64")
+        else :
+            self.logger.error(f"unsupported machine")
+            sys.exit(1)
         cmd.append(f"--redefine-sym=_binary_{file}_start={kernel.getName()}")
         cmd.append(f"--redefine-sym=_binary_{file}_end={kernel.getName()}_end")
         cmd.append(f"--redefine-sym=_binary_{file}_size={kernel.getName()}_size")
