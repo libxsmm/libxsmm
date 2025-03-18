@@ -29,7 +29,7 @@ LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL
   mvl = 0;
 #endif
 
-  // Get MVL in bits
+  /* Get MVL in bits */
   switch (mvl * 8){
     case 128:
       mvl = LIBXSMM_RV64_MVL128;
