@@ -17,11 +17,21 @@
 #include <signal.h>
 #include <setjmp.h>
 
+#define VLMAX (65536)
+
 LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL))
 {
   int mvl;
 
-  switch (__riscv_vsetvl_e8m1 (65536) * 8){
+#ifdef LIBXSMM_PLATFORM_RV64
+  int rvl = VLMAX;
+  __asm__(".option arch, +zve64x\n\t""vsetvli %0, %1, e8, m1, ta, ma\n": "=r"(mvl): "r" (rvl));
+#else
+  mvl = 0;
+#endif
+
+  // Get MVL in bits
+  switch (mvl * 8){
     case 128:
       mvl = LIBXSMM_RV64_MVL128;
       break;

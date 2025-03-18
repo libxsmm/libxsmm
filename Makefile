@@ -30,7 +30,7 @@ LICFDIR ?= $(PDOCDIR)
 LICFILE ?= LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
-CFLAGS := $(RPM_OPT_FLAGS) -march=rv64gcv
+CFLAGS := $(RPM_OPT_FLAGS)
 CXXFLAGS := $(RPM_OPT_FLAGS)
 FCFLAGS := $(RPM_OPT_FLAGS)
 
