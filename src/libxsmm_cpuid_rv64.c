@@ -18,7 +18,7 @@
 
 #define VLMAX (65536)
 
-LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL))
+LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* info)
 {
   int mvl;
 
