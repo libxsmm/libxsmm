@@ -12,7 +12,6 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
-#include "riscv_vector.h"
 
 #include <signal.h>
 #include <setjmp.h>
