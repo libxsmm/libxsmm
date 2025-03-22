@@ -21,21 +21,18 @@
 LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* info)
 {
   int mvl;
-
   libxsmm_cpuid_info cpuid_info;
-
   size_t cpuinfo_model_size = sizeof(cpuid_info.model);
-  libxsmm_cpuid_model(cpuid_info.model, &cpuinfo_model_size);
-  LIBXSMM_ASSERT(0 != cpuinfo_model_size || '\0' == *cpuid_info.model);
-
-  cpuid_info.constant_tsc = 1;
-
 #ifdef LIBXSMM_PLATFORM_RV64
   int rvl = VLMAX;
   __asm__(".option arch, +zve64x\n\t""vsetvli %0, %1, e8, m1, ta, ma\n": "=r"(mvl): "r" (rvl));
 #else
   mvl = 0;
 #endif
+
+  libxsmm_cpuid_model(cpuid_info.model, &cpuinfo_model_size);
+  LIBXSMM_ASSERT(0 != cpuinfo_model_size || '\0' == *cpuid_info.model);
+  cpuid_info.constant_tsc = 1;
 
   /* Get MVL in bits */
   switch (mvl * 8){
