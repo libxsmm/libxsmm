@@ -51,7 +51,8 @@
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_APPL_M4       2501 /* Apple M4 SME without SVE*/
 #define LIBXSMM_AARCH64_ALLFEAT       2999
-#define LIBXSMM_RV64                  3001 /* RISCV All */
+#define LIBXSMM_RV64_MVL128           3001 /* RISCV 128-bit RVV */
+#define LIBXSMM_RV64_MVL256           3002 /* RISCV 256-bit RVV */
 #define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */
@@ -120,6 +121,6 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
  */
 #define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
 
-LIBXSMM_API int libxsmm_cpuid_mvl_rv64(void);
+LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 #endif /*LIBXSMM_CPUID_H*/
