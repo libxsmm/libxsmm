@@ -20,7 +20,7 @@
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
                                            const unsigned short    i_callee_save_bitmask ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_close_stream: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -167,7 +167,7 @@ void libxsmm_rv64_instruction_open_stream( libxsmm_generated_code* io_generated_
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated_code,
                                             const unsigned short    i_callee_save_bitmask ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_restore_regs: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -308,7 +308,7 @@ void libxsmm_rv64_instruction_restore_regs( libxsmm_generated_code* io_generated
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
                                             const unsigned short    i_callee_save_bitmask ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -334,7 +334,7 @@ void libxsmm_rv64_instruction_rvv_setvli( libxsmm_generated_code* io_generated_c
                                            const unsigned int     i_reg_dst,
                                            const unsigned int     i_sew,
                                            const unsigned int     i_lmul ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_setvli: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -395,7 +395,7 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_reg_dst,
                                            const unsigned int      i_sew,
                                            const unsigned int      i_lmul ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -460,7 +460,7 @@ void libxsmm_rv64_instruction_rvv_setvl( libxsmm_generated_code* io_generated_co
                                          const unsigned int      i_gp_reg_src_1,
                                          const unsigned int      i_gp_reg_src_2,
                                          const unsigned int      i_reg_dst ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_setvl: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -509,7 +509,7 @@ void libxsmm_rv64_instruction_rvv_move( libxsmm_generated_code* io_generated_cod
                                          const unsigned int     i_vec_reg_offset,
                                          const unsigned int     i_vec_reg_dst,
                                          const unsigned int     i_masked) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_move: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -664,7 +664,7 @@ void libxsmm_rv64_instruction_rvv_compute( libxsmm_generated_code*  io_generated
                                             const unsigned int      i_vec_reg_src_2,
                                             const unsigned int      i_vec_reg_dst,
                                             const unsigned int      i_masked) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_compute: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -715,7 +715,7 @@ void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gener
                                                const unsigned int       i_imm,
                                                const unsigned int       i_reg_dst,
                                                const unsigned int       i_masked) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_rvv_compute_imm: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -774,7 +774,7 @@ void libxsmm_rv64_instruction_alu_move( libxsmm_generated_code* io_generated_cod
                                         const int               i_offset ) {
   int is_load = 0;
 
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_move: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -867,7 +867,7 @@ void libxsmm_rv64_instruction_alu_compute( libxsmm_generated_code* io_generated_
                                             const unsigned int     i_gp_reg_src_1,
                                             const unsigned int     i_gp_reg_src_2,
                                             const unsigned int     i_gp_reg_dst) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -979,7 +979,7 @@ void libxsmm_rv64_instruction_alu_compute_imm12( libxsmm_generated_code* io_gene
                                                  const unsigned int      i_gp_reg_src,
                                                  const unsigned int      i_gp_reg_dst,
                                                  const int               i_imm12 ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm12: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1060,7 +1060,7 @@ void libxsmm_rv64_instruction_alu_compute_imm20( libxsmm_generated_code* io_gene
                                                  const unsigned int      i_alu_instr,
                                                  const unsigned int      i_gp_reg_dst,
                                                  const unsigned int      i_imm20 ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm20: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1122,7 +1122,7 @@ void libxsmm_rv64_instruction_alu_move_imm12( libxsmm_generated_code* io_generat
                                               const unsigned int      i_gp_reg_dst,
                                               const int               i_imm12 )
 {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_move_imm12: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1152,7 +1152,7 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_move_imm20( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_dst,
                                               const unsigned int      i_imm20 ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm20: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1191,7 +1191,7 @@ void libxsmm_rv64_instruction_alu_move_imm32( libxsmm_generated_code* io_generat
   unsigned int imm_11;
   int i_11;
 
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_move_imm32: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1252,7 +1252,7 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
   unsigned int imm_11;
   int i_11;
 
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_set_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1316,7 +1316,7 @@ void libxsmm_rv64_instruction_alu_compute_imm64( libxsmm_generated_code*  io_gen
                                                   const unsigned int      i_gp_reg_tmp,
                                                   const unsigned int      i_gp_reg_dst,
                                                   const long long         i_imm64 ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_alu_compute_imm64: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1343,7 +1343,7 @@ void libxsmm_rv64_instruction_cond_jump( libxsmm_generated_code* io_generated_co
                                           const unsigned int     i_gp_reg_src_1,
                                           const unsigned int     i_gp_reg_src_2,
                                           const int              i_imm ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1429,7 +1429,7 @@ void libxsmm_rv64_instruction_jump_and_link( libxsmm_generated_code* io_generate
                                              const unsigned int      i_jmp_instr,
                                              const unsigned int      i_gp_reg_dst,
                                              const int               i_imm ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_jump_and_link: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1510,7 +1510,7 @@ void libxsmm_rv64_instruction_jump_and_link_reg( libxsmm_generated_code* io_gene
                                                  const unsigned int      i_gp_reg_dst,
                                                  const unsigned int      i_gp_reg_src_1,
                                                  const int               i_imm12 ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_jump_and_link_reg: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1570,7 +1570,7 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
                                                    const unsigned int          i_label_no,
                                                    libxsmm_jump_label_tracker* io_jump_label_tracker ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1614,7 +1614,7 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*      i
                                                    libxsmm_jump_label_tracker* io_jump_label_tracker ) {
   unsigned int l_pos;
 
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump_to_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1693,7 +1693,7 @@ void libxsmm_rv64_instruction_cond_jump_to_label( libxsmm_generated_code*      i
 LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
                                                         libxsmm_loop_label_tracker* io_loop_label_tracker ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_register_jump_back_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1723,7 +1723,7 @@ void libxsmm_rv64_instruction_cond_jump_back_to_label( libxsmm_generated_code*  
                                                        const unsigned int          i_gp_reg_src_1,
                                                        const unsigned int          i_gp_reg_src_2,
                                                        libxsmm_loop_label_tracker* io_loop_label_tracker ) {
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_cond_jump_back_to_label: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
@@ -1788,7 +1788,7 @@ void libxsmm_rv64_instruction_prefetch( libxsmm_generated_code*  io_generated_co
                                          const unsigned int       i_pf_instr,
                                          const unsigned int       i_gp_reg_src,
                                          const unsigned int       i_imm12){
-  if ( io_generated_code->arch < LIBXSMM_RV64 ) {
+  if ( io_generated_code->arch < LIBXSMM_RV64_MVL128 ) {
     fprintf(stderr, "libxsmm_rv64_instruction_prefetch: at least RV64 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;

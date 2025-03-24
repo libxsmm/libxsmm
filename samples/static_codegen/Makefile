@@ -12,6 +12,7 @@ CFLAGS = $(NULL)
 #BLAS = 2
 OMP = 1
 SYM = 1
+UNAME := $(shell uname -m)
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -41,7 +42,16 @@ compile: $(OBJECTS) $(FTNOBJS)
 .PHONY: libstatictest/libstatictest.h
 libstatictest/libstatictest.h: $(DEPDIR)/scripts/libxsmm_staticlib.py
 	$(info Creating static lib...)
-	./$(DEPDIR)/scripts/libxsmm_staticlib.py -c statictest.json -o . -v
+	@echo $(UNAME)
+ifeq ("$(UNAME)","x86_64")
+	./$(DEPDIR)/scripts/libxsmm_staticlib.py -c statictest_x86_64.json -o . -v
+endif
+ifeq ("$(UNAME)","riscv64")
+	./$(DEPDIR)/scripts/libxsmm_staticlib.py -c statictest_riscv64.json -o . -v
+endif
+ifeq ("$(UNAME)","aarch64")
+	./$(DEPDIR)/scripts/libxsmm_staticlib.py -c statictest_aarch64.json -o . -v
+endif
 
 $(OUTDIR)/statictest: $(OUTDIR)/.make $(BLDDIR)/statictest-c.o libstatictest/libstatictest.h
 	$(LD) -o $@ $(BLDDIR)/statictest-c.o libstatictest/libstatictest.a $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
