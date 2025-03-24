@@ -367,9 +367,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       }
     } else {
       if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2_SRF) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) ) {
+#if 0
         while ((init_m_blocks * l_max_n_blocking + l_max_n_blocking + 1) > l_micro_kernel_config.vector_reg_count) {
           l_max_n_blocking--;
         }
+#endif
       } else {
         while ((init_m_blocks * l_max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
           l_max_n_blocking--;
@@ -1418,6 +1420,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
   LIBXSMM_UNUSED(i_micro_kernel_config);
 
   if ( i_arch >= LIBXSMM_X86_GENERIC && (l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bi8_gemm > 0)  ) {
+    if (l_is_Amxfp4_Bi8_gemm > 0) {
+      return 8;
+    }
     return 4;
   } else if ( i_arch >= LIBXSMM_X86_GENERIC && i_arch < LIBXSMM_X86_AVX512_VL256_SKX ) {
     if (i_arch == LIBXSMM_X86_AVX2_SRF) {
