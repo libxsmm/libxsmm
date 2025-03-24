@@ -768,7 +768,7 @@ void libxsmm_generator_gather_scatter_aarch64_microkernel( libxsmm_generated_cod
                                                            const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                            const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
   unsigned int l_is_scatter = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ? 1 : 0;
-  if( l_is_scatter ) io_generated_code->arch = LIBXSMM_AARCH64_APPL_M1;
+  if( l_is_scatter && io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) io_generated_code->arch = LIBXSMM_AARCH64_APPL_M1;
   if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS ) > 0 ) {
     libxsmm_generator_gather_scatter_cols_aarch64_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS ) > 0 ) {
