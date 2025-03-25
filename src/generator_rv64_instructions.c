@@ -419,8 +419,8 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
     return;
   }
 
-  if ( i_rvl > 0x1f ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected imm: %u \n", i_lmul);
+  if ( i_rvl > 0x01f ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected imm: %u \n", i_rvl);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -1828,7 +1828,8 @@ void libxsmm_rv64_instruction_prefetch( libxsmm_generated_code*  io_generated_co
     /* setting RS2 */
     code[code_head] |= (unsigned int)FILL_REGID(i_gp_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS1);
     /* setting IMM12HI */
-    code[code_head] |= (unsigned int)FILL_REGID(i_imm12 & 0xfe0, LIBXSMM_RV64_INSTR_FIELD_IMM12);
+   // code[code_head] |= (unsigned int)FILL_REGID(i_imm12 & 0xfe0, LIBXSMM_RV64_INSTR_FIELD_IMM12);
+    code[code_head] |= (unsigned int)FILL_REGID((i_imm12) << 5, LIBXSMM_RV64_INSTR_FIELD_IMM12);
 
     /* advance code head */
     io_generated_code->code_size += 4;
