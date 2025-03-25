@@ -419,8 +419,8 @@ void libxsmm_rv64_instruction_rvv_setivli( libxsmm_generated_code* io_generated_
     return;
   }
 
-  if ( i_rvl > 0x1f ) {
-    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected imm: %u \n", i_lmul);
+  if ( i_rvl > 0x01f ) {
+    fprintf(stderr, "libxsmm_rv64_instruction_rvv_setivli: unexpected imm: %u \n", i_rvl);
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
