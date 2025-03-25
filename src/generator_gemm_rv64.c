@@ -663,8 +663,6 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
           break;
       }
 
-      printf("Setting vector length to %d reg_group set to %d l_m_blocking %d lmul %d:%d\n", l_micro_kernel_config.vector_length, l_reg_gp, l_m_blocking, l_lmul_new, l_lmul);
-
       if (l_lmul_new != l_lmul){
         libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, l_micro_kernel_config.vector_length * l_reg_gp );
         libxsmm_rv64_instruction_rvv_setvli( io_generated_code,  l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_help_5, l_sew, l_lmul);
