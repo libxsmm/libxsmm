@@ -580,8 +580,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
         || LIBXSMM_AARCH64_V82 == id
         || LIBXSMM_AARCH64_APPL_M1 == id
         || LIBXSMM_AARCH64_SVE128  == id
-        || LIBXSMM_AARCH64_NEOV2 == id
-        || LIBXSMM_AARCH64_APPL_M4 == id )
+        || LIBXSMM_AARCH64_NEOV2 == id )
   {
     result = 4;
   }
@@ -591,7 +590,8 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
     result = 8;
   }
   else if (LIBXSMM_AARCH64_SVE512 == id
-        || LIBXSMM_AARCH64_A64FX  == id )
+        || LIBXSMM_AARCH64_A64FX  == id
+        || LIBXSMM_AARCH64_APPL_M4 == id )
   {
     result = 16;
   }
