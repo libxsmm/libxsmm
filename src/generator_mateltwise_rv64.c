@@ -26,7 +26,8 @@ void libxsmm_generator_mateltwise_rv64_update_micro_kernel_config_vectorlength( 
        io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
        io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
-       io_generated_code->arch == LIBXSMM_RV64 ||
+       io_generated_code->arch == LIBXSMM_RV64_MVL128 ||
+       io_generated_code->arch == LIBXSMM_RV64_MVL256 ||
        io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 32;
