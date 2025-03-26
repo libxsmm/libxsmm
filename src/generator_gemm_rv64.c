@@ -18,7 +18,7 @@
 
 #define MAX_FP_REG (20)
 #define MAX_UIMM   (0x7ff)
-#define REG_GP     (1)
+#define REG_GP(i)  (((i)->arch == LIBXSMM_RV64_MVL128_LMUL) || (((i)->arch == LIBXSMM_RV64_MVL128_LMUL)))
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*            io_generated_code,
@@ -152,7 +152,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* Full vector loads on a */
   /* If sw pipeline is enabled, fetch twice for first iteration and skip the last. */
   for (nld = 0; nld < max_loads; nld++){
-    if (REG_GP == 0){
+    if (REG_GP(io_generated_code) == 0){
       if ( (l_m_blocks[0] == 2) && (l_m_blocks[1] == 0) ) {
         for ( l_m = 0; l_m < l_m_blocks[0]; l_m += i_reg_gp ) {
           libxsmm_rv64_instruction_rvv_move( io_generated_code,
@@ -627,7 +627,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
       l_lmul_new = l_lmul;
 
-      if (REG_GP == 1) {
+      if (REG_GP(io_generated_code)) {
         if ((l_m_blocking/l_micro_kernel_config.vector_length) == 2) {
           l_reg_gp = 2;
         }
