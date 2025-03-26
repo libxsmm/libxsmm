@@ -241,7 +241,7 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
                                                           const unsigned int      i_masked_elems,
                                                           const unsigned int      i_is_gather ) {
   unsigned int i = 0;
-  unsigned int l_vlen = (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) ? libxsmm_cpuid_vlen(io_generated_code->arch) : 16;
+  unsigned int l_vlen = libxsmm_cpuid_vlen(io_generated_code->arch);
   unsigned int l_load_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF;
   unsigned int l_store_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF;
   unsigned int l_shift_amount = (i_datatype_size == 4) ? 2 : 1;
