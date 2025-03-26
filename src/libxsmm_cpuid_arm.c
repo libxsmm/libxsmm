@@ -123,20 +123,20 @@ LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void)
 }
 
 LIBXSMM_API int libxsmm_cpuid_arm_m4_use_neon_non_gemm(void){
-  #if defined(LIBXSMM_PLATFORM_X86)
-    return 0;
-  #else
-    const char *const l_env_use_neon = getenv("LIBXSMM_AARCH64_USE_NEON");
-    int result = 0;
-    if( 0 == l_env_use_neon){
-      result = 0;
-    } else {
-      if( atoi(l_env_use_neon) != 0){
-        result = 1;
-      }
+#if defined(LIBXSMM_PLATFORM_X86)
+  return 0;
+#else
+  const char *const l_env_use_neon = getenv("LIBXSMM_AARCH64_USE_NEON");
+  int result = 0;
+  if( 0 == l_env_use_neon){
+    result = 0;
+  } else {
+    if( atoi(l_env_use_neon) != 0){
+      result = 1;
     }
-    return result;
-  #endif
+    }
+  return result;
+#endif
 }
 
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
