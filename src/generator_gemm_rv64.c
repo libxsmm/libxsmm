@@ -589,7 +589,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
       }
 
       if (l_lmul_new != l_lmul){
-        libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, l_micro_kernel_config.vector_length * l_reg_gp );
+        libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, (unsigned long long)l_micro_kernel_config.vector_length * l_reg_gp );
         libxsmm_rv64_instruction_rvv_setvli( io_generated_code,  l_gp_reg_mapping.gp_reg_help_5, l_gp_reg_mapping.gp_reg_help_5, l_sew, l_lmul);
       }
 
