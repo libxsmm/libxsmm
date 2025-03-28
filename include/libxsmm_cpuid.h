@@ -53,6 +53,8 @@
 #define LIBXSMM_AARCH64_ALLFEAT       2999
 #define LIBXSMM_RV64_MVL128           3001 /* RISCV 128-bit RVV */
 #define LIBXSMM_RV64_MVL256           3002 /* RISCV 256-bit RVV */
+#define LIBXSMM_RV64_MVL128_LMUL      3003 /* RISCV 128-bit RVV with non-unit LMUL */
+#define LIBXSMM_RV64_MVL256_LMUL      3004 /* RISCV 256-bit RVV witb non-unit LMUL */
 #define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */

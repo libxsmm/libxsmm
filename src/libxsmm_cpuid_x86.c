@@ -439,6 +439,12 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_RV64_MVL256: {
       target_arch = "rv64_mvl256";
     } break;
+    case LIBXSMM_RV64_MVL256_LMUL: {
+      target_arch = "rv64_mvl256_lmul";
+    } break;
+    case LIBXSMM_RV64_MVL128_LMUL: {
+      target_arch = "rv64_mvl128_lmul";
+    } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
@@ -552,6 +558,12 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "rv64_mvl256") == 0) {
     target_archid = LIBXSMM_RV64_MVL256;
+  }
+  else if (strcmp(arch, "rv64_mvl256_lmul") == 0) {
+    target_archid = LIBXSMM_RV64_MVL256_LMUL;
+  }
+  else if (strcmp(arch, "rv64_mvl128_lmul") == 0) {
+    target_archid = LIBXSMM_RV64_MVL128_LMUL;
   } else {
     target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   }
