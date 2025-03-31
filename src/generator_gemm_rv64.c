@@ -166,6 +166,24 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
           i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in * l_k_pack_factor * i_reg_gp );
     }
 
+    if ( l_m_blocks[1] > 0) {
+         /* Set vector length */
+         libxsmm_rv64_instruction_rvv_move( io_generated_code,
+             l_a_part_load_instr,
+             i_gp_reg_mapping->gp_reg_a,
+             0,
+             (u_loop_index_local + nld) % 2 + l_m,
+             1);
+
+
+         libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code,
+             LIBXSMM_RV64_INSTR_GP_ADD,
+             i_gp_reg_mapping->gp_reg_a,
+             i_gp_reg_mapping->gp_reg_help_0,
+             i_gp_reg_mapping->gp_reg_a,
+             (long long)l_remainder_size * i_micro_kernel_config->datatype_size_in * l_k_pack_factor );
+    }
+
     if ((i_xgemm_desc->lda > i_m_blocking)){
       /* move immediate to the rgister */
       libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
