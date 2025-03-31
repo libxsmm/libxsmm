@@ -742,13 +742,13 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       return;
     }
 #endif
-  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL128 ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL128 || io_generated_code->arch == LIBXSMM_RV64_MVL128_LMUL ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 4;
-  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL128 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL128 || io_generated_code->arch == LIBXSMM_RV64_MVL128_LMUL ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 2;
-  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL256 ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL256 || io_generated_code->arch == LIBXSMM_RV64_MVL256_LMUL ) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 8;
-  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL256 ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( ( io_generated_code->arch == LIBXSMM_RV64_MVL256 || io_generated_code->arch == LIBXSMM_RV64_MVL256_LMUL ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 4;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -930,6 +930,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 ) {
     libxsmm_generator_gemm_rv64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else {
+    printf("Arch %d\n", io_generated_code->arch);
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }

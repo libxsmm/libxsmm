@@ -43,6 +43,7 @@ LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* info)
     case 256:
       mvl = LIBXSMM_RV64_MVL256;
       break;
+
     default:
       mvl = LIBXSMM_RV64_MVL128;
       break;

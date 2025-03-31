@@ -1713,11 +1713,19 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
       else
 # endif
-      if  (arch == libxsmm_stristr(arch, "riscv") || arch == libxsmm_stristr(arch, "rv64_mvl128"))
+      if  (arch == libxsmm_stristr(arch, "riscv_mvl128_lmul") || arch == libxsmm_stristr(arch, "rv64_mvl128_lmul"))
+      {
+        target_archid = LIBXSMM_RV64_MVL128_LMUL;
+      }
+      else if  (arch == libxsmm_stristr(arch, "riscv_mvl256_lmul") || arch == libxsmm_stristr(arch, "rv64_mvl256_lmul"))
+      {
+        target_archid = LIBXSMM_RV64_MVL256_LMUL;
+      }
+      else if  (arch == libxsmm_stristr(arch, "riscv_mvl128") || arch == libxsmm_stristr(arch, "rv64_mvl128"))
       {
         target_archid = LIBXSMM_RV64_MVL128;
       }
-      else if  (arch == libxsmm_stristr(arch, "riscv") || arch == libxsmm_stristr(arch, "rv64_mvl256"))
+      else if  (arch == libxsmm_stristr(arch, "riscv_mvl256") || arch == libxsmm_stristr(arch, "rv64_mvl256"))
       {
         target_archid = LIBXSMM_RV64_MVL256;
       }
@@ -1746,6 +1754,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   else {
     target_archid = libxsmm_cpuid(NULL);
   }
+
 #if defined(NDEBUG)
   if (libxsmm_cpuid(NULL) < target_archid) { /* warn about code path if beyond CPUID */
     const int cpuid = libxsmm_cpuid(NULL);
@@ -1762,6 +1771,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 # endif
   }
 #endif
+
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 

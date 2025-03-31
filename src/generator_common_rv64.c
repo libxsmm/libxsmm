@@ -79,7 +79,8 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
                                                  const unsigned int      i_m_blocking,
                                                  const unsigned int      i_n_blocking,
                                                  const unsigned int      i_ld,
-                                                 const unsigned int      i_zero ) {
+                                                 const unsigned int      i_zero,
+                                                 const unsigned int      i_reg_gp ) {
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
@@ -113,7 +114,7 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
       /* this is the jump size to be performed after a m-block is complete */
       unsigned long long l_jump_block_m_last = 0;
 
-      for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_blocks[0]; l_m += i_reg_gp ) {
         libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                            l_load_instr,
                                            i_gp_reg_addr,
@@ -133,7 +134,7 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
                                                       i_gp_reg_addr,
                                                       i_gp_reg_scratch,
                                                       i_gp_reg_addr,
-                                                      (unsigned long)i_vec_length * l_datatype_size
+                                                      (unsigned long)i_vec_length * l_datatype_size * i_reg_gp
                                                       );
         }
         /* combine the m-jump with the n one*/
@@ -178,7 +179,7 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
   /* init C accumulator to zero */
   else {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_total_blocks; l_m += i_reg_gp ) {
         libxsmm_rv64_instruction_rvv_compute( io_generated_code,
                                                  LIBXSMM_RV64_INSTR_RVV_VXOR_VV,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
@@ -202,7 +203,8 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
                                                      const unsigned int      i_ld,
                                                      const libxsmm_datatype  i_inp_datatype,
                                                      const unsigned int      i_aux_gp_reg,
-                                                     const unsigned int      i_reduce_on_output  ) {
+                                                     const unsigned int      i_reduce_on_output,
+                                                     const unsigned int      i_reg_gp  ) {
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
@@ -241,7 +243,7 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
     /* this is the jump size to be performed after a m-block is complete */
     unsigned long long l_jump_block_m_last = 0;
 
-    for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+    for ( l_m = 0; l_m < l_m_blocks[0]; l_m += i_reg_gp ) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
                                             l_store_instr,
                                             i_gp_reg_addr,
@@ -259,7 +261,7 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
                                                         LIBXSMM_RV64_INSTR_GP_ADDI,
                                                         i_gp_reg_addr,
                                                         i_gp_reg_addr,
-                                                        i_vec_length * l_datatype_size);
+                                                        i_vec_length * l_datatype_size * i_reg_gp);
       }
       /* combine the m-jump with the n one */
       else {
