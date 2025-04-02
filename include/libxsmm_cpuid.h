@@ -51,6 +51,11 @@
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_APPL_M4       2501 /* Apple M4 SME without SVE*/
 #define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_RV64_MVL128           3001 /* RISCV 128-bit RVV */
+#define LIBXSMM_RV64_MVL256           3002 /* RISCV 256-bit RVV */
+#define LIBXSMM_RV64_MVL128_LMUL      3003 /* RISCV 128-bit RVV with non-unit LMUL */
+#define LIBXSMM_RV64_MVL256_LMUL      3004 /* RISCV 256-bit RVV witb non-unit LMUL */
+#define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
@@ -79,7 +84,6 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void);
 LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
-LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void);
 
 /**
  * return the VNNI/Dot-product/Matmul blocking for a specific
@@ -101,6 +105,11 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 LIBXSMM_API const char* libxsmm_cpuid_name(int id);
 
 /**
+ * Translate the CPU name to LIBXSMM's internal ID
+ */
+LIBXSMM_API int libxsmm_cpuid_id(const char* name);
+
+/**
  * SIMD vector length (VLEN) in 32-bit elements.
  * Do not use libxsmm_cpuid() to match the current CPU!
  * Use libxsmm_get_target_archid() instead.
@@ -113,5 +122,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
  * Use libxsmm_get_target_archid() instead.
  */
 #define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
+
+LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 #endif /*LIBXSMM_CPUID_H*/

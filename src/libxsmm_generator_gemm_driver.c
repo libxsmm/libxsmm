@@ -48,8 +48,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    ARCH: noarch, wsm, snb, hsw, skx, clx, cpx\n");
-  printf("    PREFETCH: nopf (none), BL2viaC, AL2, curAL2,\n"
-         "              AL2_BL2viaC, curAL2_BL2viaC,\n");
+  printf("    PREFETCH: nopf (none), AL2\n");
   printf("    PRECISION: SP, DP\n");
   printf("\n\n\n\n");
 }
@@ -140,20 +139,8 @@ int main(int argc, char* argv []) {
   if (strcmp("nopf", argv[15]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   }
-  else if (strcmp("BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
-  }
-  else if (strcmp("curAL2", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
-  }
-  else if (strcmp("curAL2_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
-  }
   else if (strcmp("AL2", argv[15]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2;
-  }
-  else if (strcmp("AL2_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
   }
   else {
     print_help();

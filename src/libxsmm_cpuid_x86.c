@@ -342,6 +342,8 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
   return libxsmm_cpuid_x86(info);
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
   return libxsmm_cpuid_arm(info);
+#elif defined(LIBXSMM_PLATFORM_RV64)
+  return libxsmm_cpuid_rv64(info);
 #else
   memset(info, 0, sizeof(info));
   return LIBXSMM_TARGET_ARCH_UNKNOWN;
@@ -431,6 +433,18 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_A64FX: {
       target_arch = "a64fx";
     } break;
+    case LIBXSMM_RV64_MVL128: {
+      target_arch = "rv64_mvl128";
+    } break;
+    case LIBXSMM_RV64_MVL256: {
+      target_arch = "rv64_mvl256";
+    } break;
+    case LIBXSMM_RV64_MVL256_LMUL: {
+      target_arch = "rv64_mvl256_lmul";
+    } break;
+    case LIBXSMM_RV64_MVL128_LMUL: {
+      target_arch = "rv64_mvl128_lmul";
+    } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
@@ -448,6 +462,116 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 }
 
 
+LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
+{
+  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+
+  if (strcmp(arch, "avx512_vl256_cpx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_CPX;
+  }
+  else if (strcmp(arch, "avx512_vl256_clx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_CLX;
+  }
+  else if (strcmp(arch, "avx512_vl256") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_SKX;
+  }
+  else if (strcmp(arch, "dmr") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_DMR;
+  }
+  else if (strcmp(arch, "gnr") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_GNR;
+  }
+  else if (strcmp(arch, "spr") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_SPR;
+  }
+  else if (strcmp(arch, "cpx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_CPX;
+  }
+  else if (strcmp(arch, "clx") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_CLX;
+  }
+  else if (strcmp(arch, "skx") == 0 || strcmp(arch, "skl") == 0
+          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512_SKX */
+          || strcmp(arch, "avx3") == 0 || strcmp(arch, "avx512") == 0)
+  {
+    target_archid = LIBXSMM_X86_AVX512_SKX;
+  }
+  else if (strcmp(arch, "srf") == 0) {
+    target_archid = LIBXSMM_X86_AVX2_SRF;
+  }
+  else if (strcmp(arch, "adl") == 0) {
+    target_archid = LIBXSMM_X86_AVX2_ADL;
+  }
+  else if (strcmp(arch, "hsw") == 0 || strcmp(arch, "avx2") == 0) {
+    target_archid = LIBXSMM_X86_AVX2;
+  }
+  else if (strcmp(arch, "snb") == 0 || strcmp(arch, "avx") == 0) {
+    target_archid = LIBXSMM_X86_AVX;
+  }
+  else if (strcmp(arch, "wsm") == 0 || strcmp(arch, "nhm") == 0
+       || strcmp(arch, "sse4_2") == 0 || strcmp(arch, "sse4.2") == 0
+       || strcmp(arch, "sse42") == 0  || strcmp(arch, "sse4") == 0)
+  {
+    target_archid = LIBXSMM_X86_SSE42;
+  }
+  else if (strcmp(arch, "sse3") == 0) {
+    target_archid = LIBXSMM_X86_SSE3;
+  }
+  else if (strcmp(arch, "x86") == 0|| strcmp(arch, "x86_64") == 0
+          || strcmp(arch, "x64") == 0 || strcmp(arch, "sse2") == 0
+          || strcmp(arch, "sse") == 0)
+  {
+    target_archid = LIBXSMM_X86_GENERIC;
+  }
+  else if  (strcmp(arch, "arm") == 0 || strcmp(arch, "arm64") == 0
+        || strcmp(arch, "arm_v81") == 0
+        || strcmp(arch, "aarch64") == 0)
+  {
+    target_archid = LIBXSMM_AARCH64_V81;
+  }
+  else if (strcmp(arch, "arm_v82") == 0) {
+    target_archid = LIBXSMM_AARCH64_V82;
+  }
+  else if (strcmp(arch, "appl_m1") == 0) {
+    target_archid = LIBXSMM_AARCH64_APPL_M1;
+  }
+  else if (strcmp(arch, "sve128") == 0) {
+    target_archid = LIBXSMM_AARCH64_SVE128;
+  }
+  else if (strcmp(arch, "sve256") == 0) {
+    target_archid = LIBXSMM_AARCH64_SVE256;
+  }
+  else if (strcmp(arch, "neov1") == 0) {
+    target_archid = LIBXSMM_AARCH64_NEOV1;
+  }
+  else if (strcmp(arch, "neov2") == 0) {
+    target_archid = LIBXSMM_AARCH64_NEOV2;
+  }
+  else if (strcmp(arch, "sve512") == 0) {
+    target_archid = LIBXSMM_AARCH64_SVE512;
+  }
+  else if (strcmp(arch, "a64fx") == 0) {
+    target_archid = LIBXSMM_AARCH64_A64FX;
+  }
+  else if (strcmp(arch, "rv64_mvl128") == 0) {
+    target_archid = LIBXSMM_RV64_MVL128;
+  }
+  else if (strcmp(arch, "rv64_mvl256") == 0) {
+    target_archid = LIBXSMM_RV64_MVL256;
+  }
+  else if (strcmp(arch, "rv64_mvl256_lmul") == 0) {
+    target_archid = LIBXSMM_RV64_MVL256_LMUL;
+  }
+  else if (strcmp(arch, "rv64_mvl128_lmul") == 0) {
+    target_archid = LIBXSMM_RV64_MVL128_LMUL;
+  } else {
+    target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+  }
+
+  return target_archid;
+}
+
+
 /**
  * This implementation also accounts for non-x86 platforms,
  * which not only allows to resolve any given ID but to
@@ -456,12 +580,19 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 {
   int result;
-  if (LIBXSMM_AARCH64_V81 == id
+  if (LIBXSMM_RV64_MVL128 == id)
+  {
+    result = 4;
+  }
+  else if (LIBXSMM_RV64_MVL256 == id)
+  {
+    result = 8;
+  }
+  else if (LIBXSMM_AARCH64_V81 == id
         || LIBXSMM_AARCH64_V82 == id
         || LIBXSMM_AARCH64_APPL_M1 == id
         || LIBXSMM_AARCH64_SVE128  == id
-        || LIBXSMM_AARCH64_NEOV2 == id
-        || LIBXSMM_AARCH64_APPL_M4 == id )
+        || LIBXSMM_AARCH64_NEOV2 == id )
   {
     result = 4;
   }
@@ -471,7 +602,8 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
     result = 8;
   }
   else if (LIBXSMM_AARCH64_SVE512 == id
-        || LIBXSMM_AARCH64_A64FX  == id )
+        || LIBXSMM_AARCH64_A64FX  == id
+        || LIBXSMM_AARCH64_APPL_M4 == id )
   {
     result = 16;
   }
@@ -529,21 +661,6 @@ LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
   } else {
     if ( atoi(l_env_x86_srf_gemm_set_n_max_blocking) > 0 ) {
       result = (unsigned int) atoi(l_env_x86_srf_gemm_set_n_max_blocking);
-    }
-  }
-#endif
-  return result;
-}
-
-LIBXSMM_API int libxsmm_cpuid_x86_bf8_gemm_via_stack(void) {
- unsigned int result = 0;
-#if defined(LIBXSMM_PLATFORM_X86)
-  const char *const l_env_bf8_gemm_via_stack_alloc_tensors = getenv("LIBXSMM_BF8_GEMM_VIA_STACK");
-  if ( 0 == l_env_bf8_gemm_via_stack_alloc_tensors ) {
-    result = 0;
-  } else {
-    if ( atoi(l_env_bf8_gemm_via_stack_alloc_tensors) != 0 ) {
-      result = 1;
     }
   }
 #endif

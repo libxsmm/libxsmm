@@ -25,6 +25,8 @@ LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) 
 LIBXSMM_INLINE void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
 #endif
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
@@ -728,6 +730,8 @@ int main( int argc, char* argv[] ) {
     jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
     reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, ld, tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     reduce_cols_kernel = libxsmm_dispatch_meltw_unary( unary_type, reduce_cols_shape, jit_reduce_flags );
+    libxsmm_get_kernel_info((const void*) reduce_cols_kernel, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( reduce_cols_kernel == NULL ) {
       fprintf( stderr, "JIT for reduce_cols_kernel failed. Bailing...!\n");
       exit(-1);
@@ -738,6 +742,8 @@ int main( int argc, char* argv[] ) {
     jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
     reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, ld, tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     reduce_rows_kernel = libxsmm_dispatch_meltw_unary( unary_type, reduce_rows_shape, jit_reduce_flags );
+    libxsmm_get_kernel_info((const void*) reduce_rows_kernel, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( reduce_rows_kernel == NULL ) {
       fprintf( stderr, "JIT for reduce_rows_kernel failed. Bailing...!\n");
       exit(-1);
@@ -768,6 +774,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func0, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func0 == NULL ) {
       fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
       exit(-1);
@@ -905,6 +913,9 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func1 = libxsmm_dispatch_meqn( my_eqn1, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func1, &info);
+    is_reference_kernel = info.is_reference_kernel;
+
     if ( func1 == NULL ) {
       fprintf( stderr, "JIT for func1 failed. Bailing...!\n");
       exit(-1);
@@ -922,6 +933,9 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_meqn( my_eqn2, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func2, &info);
+    is_reference_kernel = info.is_reference_kernel;
+
     if ( func2 == NULL ) {
       fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
       exit(-1);
@@ -939,6 +953,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
     arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_meqn( my_eqn3, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func3, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func3 == NULL ) {
       fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
       exit(-1);
@@ -960,6 +976,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
     arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
     func4 = libxsmm_dispatch_meqn( my_eqn4, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func4, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func4 == NULL ) {
       fprintf( stderr, "JIT for func4 failed. Bailing...!\n");
       exit(-1);
@@ -992,6 +1010,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, in_dt );
     func5 = libxsmm_dispatch_meqn( my_eqn5, arg_shape_out );
+    libxsmm_get_kernel_info((const void*) func5, &info);
+    is_reference_kernel = info.is_reference_kernel;
     if ( func5 == NULL ) {
       fprintf( stderr, "JIT for func5 failed. Bailing...!\n");
       exit(-1);
@@ -1167,5 +1187,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(bf16_eqn_out);
   libxsmm_free(cache_fl);
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

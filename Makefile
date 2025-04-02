@@ -354,13 +354,15 @@ SRCFILES_LIB := $(patsubst %,$(ROOTSRC)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
           libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
           libxsmm_utils.c libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_barrier.c \
-          libxsmm_rng.c libxsmm_mhd.c)
-SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(wildcard $(ROOTSRC)/generator_*.c)) \
-          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
+          libxsmm_rng.c libxsmm_mhd.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_rv64_reference.c)
+SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(filter-out $(ROOTSRC)/generator_x86_reference.c $(ROOTSRC)/generator_aarch64_reference.c $(ROOTSRC)/generator_rv64_reference.c $(ROOTSRC)/generator_gemm_reference_impl.c $(ROOTSRC)/generator_mateltwise_reference_impl.c $(ROOTSRC)/generator_matequation_reference_impl.c, $(wildcard $(ROOTSRC)/generator_*.c))) \
+          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 SRCFILES := $(SRCFILES_LIB) $(SRCFILES_GEN_LIB) $(SRCFILES_KERNELS)
 
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_generator_gemm_driver.c)
 OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
+SRCFILES_GEN_BINARYEXPORT_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_binaryexport_generator.c)
+OBJFILES_GEN_BINARYEXPORT_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_BINARYEXPORT_BIN))))
 OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext.o \
@@ -369,7 +371,7 @@ OBJFILES_EXT := $(BLDDIR)/intel64/libxsmm_ext.o \
 NOBLAS_OBJ := $(BLDDIR)/intel64/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_LIB) \
+OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_BINARYEXPORT_BIN) $(OBJFILES_LIB) \
            $(KRNOBJS) $(OBJFILES_EXT) $(NOBLAS_OBJ)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o
@@ -777,6 +779,10 @@ $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTSRC)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
+$(foreach OBJ,$(OBJFILES_GEN_BINARYEXPORT_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
+  $(OBJ),$(patsubst %.o,$(ROOTSRC)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
+  $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
 
 .PHONY: module
 ifneq (,$(strip $(FC)))
@@ -812,9 +818,13 @@ else
 endif
 
 .PHONY: generator
-generator: $(BINDIR)/libxsmm_gemm_generator
+generator: $(BINDIR)/libxsmm_gemm_generator $(BINDIR)/libxsmm_binaryexport_generator
 $(BINDIR)/libxsmm_gemm_generator: $(BINDIR)/.make $(OBJFILES_GEN_GEMM_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 	$(LD) -o $@ $(OBJFILES_GEN_GEMM_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) \
+		$(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
+
+$(BINDIR)/libxsmm_binaryexport_generator: $(BINDIR)/.make $(OBJFILES_GEN_BINARYEXPORT_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
+	$(LD) -o $@ $(OBJFILES_GEN_BINARYEXPORT_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) \
 		$(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 
 ifneq (,$(strip $(LIBJITPROFILING)))

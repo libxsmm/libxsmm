@@ -44,6 +44,8 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
+
 LIBXSMM_INLINE
 void reference_unpack_32bit_to_2x16bit_blocks(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, char *in_char, char *out_char, long long offset) {
   float *in = (float*)in_char;
@@ -427,7 +429,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned int *rng_state = NULL;
   long long offset = 0;
   unsigned int *rng_state_gold = NULL;
-
+  libxsmm_kernel_info info;
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
@@ -555,10 +557,13 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   } else {
     unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
   }
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
   }
+
   unary_kernel( &unary_param );
 
   /* populate error bounds */
@@ -595,6 +600,14 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(matdiff_ext));
     }
   }
+
+#if 0
+  for (int i = 0; i < 2; i ++) {
+    for (int j = 0; j < 2; j++) {
+      printf("%f %f ", *((float *)out_gold + i * ldo + j), *((float *)out + i * ldo + j));
+    }
+  }
+#endif
 
   /* compare result */
   norms_out = check_matrix(dtype_out, out_gold, out, ldo, M, N_out);
@@ -772,5 +785,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

@@ -87,25 +87,13 @@
         !> Enumeration of prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Automatically select strategy (frontend).
-     &    LIBXSMM_PREFETCH_AUTO                     = -1,               &
-          ! No prefetching and no prefetch function signature.
      &    LIBXSMM_PREFETCH_NONE                     = 0,                &
+          ! No prefetching and no prefetch function signature.
+     &    LIBXSMM_PREFETCH_AUTO                     = 0,                &
           ! Prefetch PA using accesses to A.
      &    LIBXSMM_GEMM_PREFETCH_AL2                 = 1,                &
           ! Prefetch PB using accesses to C.
-     &    LIBXSMM_GEMM_PREFETCH_BL2_VIA_C           = 2,                &
-          ! Prefetch A ahead.
-     &    LIBXSMM_GEMM_PREFETCH_AL2_AHEAD           = 4,                &
-          ! Composed prefetch strategies.
-     &    LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C        = IOR(              &
-     &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
-     &        LIBXSMM_GEMM_PREFETCH_AL2),                               &
-     &    LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD  = IOR(              &
-     &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
-     &        LIBXSMM_GEMM_PREFETCH_AL2_AHEAD),                         &
-          ! Current B into L1.
-     &    LIBXSMM_GEMM_PREFETCH_BL1                 = 8,                &
-     &    LIBXSMM_GEMM_PREFETCH_C                   = 64
+     &    LIBXSMM_GEMM_PREFETCH_BL2                 = 2
 
         !> Enumerates the available target architectures and instruction
         !> set extensions as returned by libxsmm_get_target_archid().
@@ -138,7 +126,9 @@
      &    LIBXSMM_AARCH64_NEOV1         = 2302,                         &
      &    LIBXSMM_AARCH64_SVX512        = 2401,                         &
      &    LIBXSMM_AARCH64_A64FX         = 2402,                         &
-     &    LIBXSMM_AARCH64_ALLFEAT       = 2999
+     &    LIBXSMM_AARCH64_ALLFEAT       = 2999,                         &
+     &    LIBXSMM_RV64                  = 3000,                         &
+     &    LIBXSMM_RV64_ALLFEAT          = 3999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION

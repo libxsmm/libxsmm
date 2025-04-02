@@ -331,9 +331,9 @@ int main(int argc, char* argv[])
           gemm_param.b.primary = (double*)b;
           gemm_param.c.primary = c;
           if (LIBXSMM_GEMM_PREFETCH_NONE != prefetch) {
-            gemm_param.a.quaternary = (double*)(a + rnd[j].m * rnd[j].k);
-            gemm_param.b.quaternary = (double*)(b + rnd[j].k * rnd[j].n);
-            gemm_param.c.quaternary = (double*)(c + rnd[j].m * rnd[j].n);
+            gemm_param.a.senary = (double*)(a + rnd[j].m * rnd[j].k);
+            gemm_param.b.senary = (double*)(b + rnd[j].k * rnd[j].n);
+            gemm_param.c.senary = (double*)(c + rnd[j].m * rnd[j].n);
           }
           kernel(&gemm_param);
 # endif

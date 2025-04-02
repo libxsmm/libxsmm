@@ -2905,6 +2905,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
                                           const long long         i_immediate ) {
+  const unsigned char* raw_imm_ptr = (const unsigned char*)(&i_immediate);
   switch ( i_alu_instr ) {
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVB_R_IMM8:
@@ -2935,11 +2936,9 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     if ( (l_alu_instr & 0x00080000 ) == 0x00080000 ) {
       unsigned char* code = (unsigned char *) io_generated_code->generated_code;
       unsigned int l_imm_bytes = 1 << ( (l_alu_instr >> 8) & 0x3 );
-      size_t l_immediate = i_immediate;
       unsigned int l_i = 0;
       for ( l_i = 0; l_i < l_imm_bytes; ++l_i ) {
-        code[io_generated_code->code_size++] = (unsigned char)l_immediate;
-        l_immediate = (size_t)((size_t)l_immediate >> (size_t)8);
+        code[io_generated_code->code_size++] = raw_imm_ptr[l_i];
       }
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (0x%08x) is not an imm-instruction!\n", l_alu_instr);
@@ -4762,8 +4761,7 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading b prefetch pointer in assembly */
-    if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_BL2_VIA_C ||
-         i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
+    if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_BL2) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -4771,14 +4769,6 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
     } else if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    /* loading a and b prefetch pointer in assembly */
-    } else if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {}
 
@@ -4929,24 +4919,11 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_nloop, 3 );
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_kloop, 3 );
 
-    if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_BL2_VIA_C ||
-         i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
-      if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) {
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(A), \"m\"(B), \"m\"(C), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      } else {
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(A), \"m\"(B), \"m\"(C), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r11\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
-      }
-    } else if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ) {
+    if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ) {
       if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) {
         l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(A), \"m\"(B), \"m\"(C), \"m\"(A_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
       } else {
         l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(A), \"m\"(B), \"m\"(C), \"m\"(A_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r11\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
-      }
-    } else if ( i_prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C ) {
-      if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) {
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(A), \"m\"(B), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      } else {
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(A), \"m\"(B), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r11\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
     } else {
       if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) {

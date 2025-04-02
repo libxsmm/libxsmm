@@ -1753,32 +1753,36 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+    int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+    int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+    int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
+
     /* RDI holds the pointer to the struct, so lets first move this one into R15 */
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR,
                                                          l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1,
                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     /* A pointer */
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mapping.gp_reg_a );
+                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_reg_mapping.gp_reg_a );
     /* B pointer */
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mapping.gp_reg_b );
+                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_reg_mapping.gp_reg_b );
     /* C pointer */
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 96, l_gp_reg_mapping.gp_reg_c );
+                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_c, l_gp_reg_mapping.gp_reg_c );
     /* Load scaling factor gpr if need be */
     if ( l_is_i8f32_gemm > 0 ) {
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                            l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 112, l_gp_reg_mapping.gp_reg_scf);
+                                            l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_c + 16, l_gp_reg_mapping.gp_reg_scf);
 
     }
     if ( l_xgemm_desc_opa->prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       /* A prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 56, l_gp_reg_mapping.gp_reg_a_prefetch );
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, l_gp_reg_mapping.gp_reg_a_prefetch );
       /* B prefetch pointer */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 88, l_gp_reg_mapping.gp_reg_b_prefetch );
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH, l_gp_reg_mapping.gp_reg_b_prefetch );
     }
     /* batch reduce count & offset arrays*/
     if ((l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
@@ -1787,9 +1791,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
       if ( l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
         libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                         l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 40, l_gp_reg_mapping.gp_reg_a_offset );
+                                         l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + 8, l_gp_reg_mapping.gp_reg_a_offset );
         libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                         l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 72, l_gp_reg_mapping.gp_reg_b_offset );
+                                         l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + 8, l_gp_reg_mapping.gp_reg_b_offset );
       }
     }
     /* check values for gemm_ext */
@@ -1948,7 +1952,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
             }
           }
         } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-                    (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+                    (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4) ) {
           /* TODO: MMLA */
           if ( l_use_mmla ) {
             libxsmm_generator_load_2dregblock_mmla_aarch64_sve( io_generated_code, &l_micro_kernel_config, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1,
@@ -2073,7 +2077,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                               l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out );
           }
         } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-                    (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+                    (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4) ) {
           if ( l_use_mmla ) {
             /* Apply sigmoid fusion at FP32 registers */
             if (l_micro_kernel_config.fused_sigmoid > 0) {

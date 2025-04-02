@@ -129,23 +129,23 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_restore_2D_regblock_from_scratch( libxsmm_generated_code*             io_generated_code,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const unsigned int                 scratch_gpr,
-    const unsigned int                 l_vec_reg_acc_start,
-    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_vec_reg_acc_start,
+    const unsigned int                 i_m_blocking,
     const unsigned int                 i_n_blocking);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_store_2D_regblock_to_scratch( libxsmm_generated_code*             io_generated_code,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const unsigned int                 scratch_gpr,
-    const unsigned int                 l_vec_reg_acc_start,
-    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_vec_reg_acc_start,
+    const unsigned int                 i_m_blocking,
     const unsigned int                 i_n_blocking);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_dump_2D_block_and_prepare_sigmoid_fusion( libxsmm_generated_code*             io_generated_code,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
-    const unsigned int                 l_vec_reg_acc_start,
-    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_vec_reg_acc_start,
+    const unsigned int                 i_m_blocking,
     const unsigned int                 i_n_blocking,
     const unsigned int                 scratch_gpr,
     const unsigned int                 aux_gpr);
@@ -177,8 +177,8 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     libxsmm_datatype                   colbias_precision,
     libxsmm_datatype                   accumul_precision,
-    const unsigned int                 l_vec_reg_acc_start,
-    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_vec_reg_acc_start,
+    const unsigned int                 i_m_blocking,
     const unsigned int                 i_n_blocking,
     const unsigned int                 i_m_remain );
 
@@ -188,8 +188,8 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     libxsmm_datatype                   colbias_precision,
     libxsmm_datatype                   accumul_precision,
-    const unsigned int                 l_vec_reg_acc_start,
-    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_vec_reg_acc_start,
+    const unsigned int                 i_m_blocking,
     const unsigned int                 i_n_blocking,
     const unsigned int                 i_m_remain );
 

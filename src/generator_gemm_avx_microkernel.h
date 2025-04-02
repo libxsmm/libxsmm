@@ -28,8 +28,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                              const unsigned int                 i_m_blocking,
-                                             const unsigned int                 i_n_blocking,
-                                             const int                          i_offset );
+                                             const unsigned int                 i_n_blocking );
 
 #endif /* GENERATOR_GEMM_AVX_MICROKERNEL_H */
 

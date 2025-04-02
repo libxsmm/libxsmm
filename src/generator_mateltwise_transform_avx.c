@@ -754,16 +754,18 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
   unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
   unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
   unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_RDX;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 
   /* load pointers from struct */
   libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_param_struct,
-                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 32,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_a,
                                    l_gp_reg_in, 0 );
 
   libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_param_struct,
-                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 64,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, l_offset_ptr_b,
                                    l_gp_reg_out, 0 );
 
   /* check leading dimnesions and sizes */

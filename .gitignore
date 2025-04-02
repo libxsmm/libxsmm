@@ -96,3 +96,6 @@ _*.txt
 *.i
 *.s
 *.*~
+*.trace
+*.dump
+*.asm
