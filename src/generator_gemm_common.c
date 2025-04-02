@@ -3508,7 +3508,6 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     int l_b_offset = 0;
      /* k packing factor for VNNI */
     unsigned int l_k_pack_factor = 1;
-    unsigned int l_a_adjust = (l_is_Ai2_Bi8_gemm > 0) ? 4 : ((l_is_Ai1_Bi8_gemm > 0) ? 8 : 1);
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
