@@ -80,5 +80,13 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_srf( libxsmm_generated_co
                                                             const unsigned int                 i_m_blocking,
                                                             const unsigned int                 i_n_blocking );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_avx2_microkernel_int2int8_srf( libxsmm_generated_code*            io_generated_code,
+                                                            const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                            const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                            const unsigned int                 i_m_blocking,
+                                                            const unsigned int                 i_n_blocking );
+
 #endif /* GENERATOR_GEMM_AVX2_MICROKERNEL_H */
 
