@@ -626,7 +626,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   if (l_is_Ai2_Bi8_gemm > 0) {
-    if ((io_generated_code->arch == LIBXSMM_X86_AVX2_SRF)) {
+    if (io_generated_code->arch == LIBXSMM_X86_AVX2_SRF) {
       char perm_bits_01[32];
       char perm_bits_23[32];
       char mask_bits[32];
@@ -726,25 +726,58 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   if (l_is_Ai1_Bi8_gemm > 0) {
-    unsigned char zeros[64];
-    unsigned char ones[64];
-    unsigned int __i;
+    if (io_generated_code->arch == LIBXSMM_X86_AVX2_SRF) {
+      unsigned int l_lut_expand = 0;
+      unsigned int l_mask_bits = 1;
+      unsigned int l_vreg_one = 2;
+      unsigned char l_expand_array[32] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                           0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                                           0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+                                           0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03 };
+      unsigned char l_mask_array[32] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+                                         0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+                                         0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+                                         0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+      unsigned char l_one_array[32] = {    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                                           0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                                           0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                                           0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) l_expand_array ,
+                                                           "my_lut_expand",
+                                                           'y',
+                                                           l_lut_expand );
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) l_mask_array ,
+                                                           "my_mask_bits",
+                                                           'y',
+                                                           l_mask_bits );
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) l_one_array ,
+                                                           "my_ones",
+                                                           'y',
+                                                           l_vreg_one );
+    } else {
+      unsigned char zeros[64];
+      unsigned char ones[64];
+      unsigned int __i;
 
-    for (__i = 0; __i < 64; __i++) {
-      zeros[__i] = 0;
-      ones[__i] = 1;
+      for (__i = 0; __i < 64; __i++) {
+        zeros[__i] = 0;
+        ones[__i] = 1;
+      }
+
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) zeros ,
+                                                           "my_zeros",
+                                                           'z',
+                                                           0 );
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) ones ,
+                                                           "my_ones",
+                                                           'z',
+                                                           1 );
     }
-
-    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
-                                                         (const unsigned char *) zeros ,
-                                                         "my_zeros",
-                                                         'z',
-                                                         0 );
-    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
-                                                         (const unsigned char *) ones ,
-                                                         "my_ones",
-                                                         'z',
-                                                         1 );
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0) {
@@ -1549,6 +1582,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bi8_gemm = libxsmm_x86_is_Amxfp4_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Ai2_Bi8_gemm = libxsmm_x86_is_Ai2_Bi8_gemm(i_xgemm_desc);
+  unsigned int l_is_Ai1_Bi8_gemm = libxsmm_x86_is_Ai1_Bi8_gemm(i_xgemm_desc);
 
   LIBXSMM_UNUSED(i_micro_kernel_config);
 
@@ -1558,7 +1592,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
     if (i_arch == LIBXSMM_X86_AVX2_SRF) {
       if (l_is_Ai2_Bi8_gemm > 0) {
         return 2;
-      } else {
+      } else if (l_is_Ai1_Bi8_gemm > 0) {
+        return 6;
+      }else {
         return libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking();
       }
     } else {

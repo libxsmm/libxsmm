@@ -231,7 +231,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   if ((io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )) {
     if (LIBXSMM_DATATYPE_UNSUPPORTED != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) {
       if ((l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
-        if (l_is_Ai2_Bi8_gemm > 0 && io_generated_code->arch == LIBXSMM_X86_AVX2_SRF) {
+        if ((l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0)&& io_generated_code->arch == LIBXSMM_X86_AVX2_SRF) {
           /* We are good */
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
