@@ -1582,6 +1582,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _in_offset_prefix_sums[4];
   int config_trans_a_tile;
   libxsmm_blocking_info_t m_blocking_info[2];
+  unsigned int n_blocking;
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
@@ -1614,6 +1615,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int atrans_gemm_stack_alloc_tensors;
   unsigned int avnni_gemm_stack_alloc_tensors;
   unsigned int avnni_gemm_sw_pipeline;
+  unsigned int atrans_gemm_sw_pipeline;
+  unsigned int btrans_gemm_sw_pipeline;
   unsigned int atvnni_gemm_stack_alloc_tensors;
   unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
@@ -2127,7 +2130,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37,
   LIBXSMM_GEMM_STACK_VAR_LDA_PTR                = 38,
   LIBXSMM_GEMM_STACK_VAR_LDB_PTR                = 39,
-  LIBXSMM_GEMM_STACK_VAR_LDC_PTR                = 40
+  LIBXSMM_GEMM_STACK_VAR_LDC_PTR                = 40,
+  LIBXSMM_GEMM_STACK_VAR_AUX_VAR2               = 41
 } libxsmm_gemm_stack_var;
 
 #if 0
