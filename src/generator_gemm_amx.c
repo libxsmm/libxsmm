@@ -18,6 +18,7 @@
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_transform_avx512.h"
+#include "generator_mateltwise_transform_common_x86.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_brgemm_amx_set_gp_reg_scf( libxsmm_generated_code*             io_generated_code,
@@ -881,146 +882,153 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_8bit( libxsmm_generated
                                                                unsigned int                       i_ldo,
                                                                unsigned int                       i_gp_reg,
                                                                unsigned int                       o_gp_reg ) {
-#if 0
-  unsigned int ik = 0;
-  unsigned int l_vreg_start = i_micro_kernel_config->reserved_zmms;
-  unsigned int cnt_reg = LIBXSMM_X86_GP_REG_R11;
-  char l_vname_ld = (i_m_tiles <= 2) ? 'y' : 'z';
-  char l_vname_st = 'z';
-  unsigned int l_vlen = 64;
-  unsigned int l_vreg_k0 = l_vreg_start + 0;
-  unsigned int l_vreg_k1 = l_vreg_start + 1;
-  unsigned int l_vreg_k2 = l_vreg_start + 2;
-  unsigned int l_vreg_k3 = l_vreg_start + 3;
-  unsigned int l_vreg_cpy = i_micro_kernel_config->tmp_reg0;
-  libxsmm_x86_instruction_push_reg( io_generated_code, cnt_reg );
-  libxsmm_generator_gemm_header_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg );
+  if (i_K == 64 && i_N == 32) {
+    unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R11;
+    unsigned int gp_reg_gemm_scratch = LIBXSMM_X86_GP_REG_R12;
+    unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
+    unsigned long long l_mask;
+    unsigned int i = 0;
+    unsigned int i_mask_reg_0 = 7;
+    unsigned int i_mask_reg_1 = 6;
+    unsigned int i_mask_reg_2 = 5;
+    unsigned int l_mask_regs[4] = { 0 };
 
-  for (ik = 0; ik < 4; ik++) {
-    libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-        LIBXSMM_X86_INSTR_VMOVDQU8,
-        i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-        ik * i_ldi,
-        l_vname_ld,
-        l_vreg_start + ik, i_micro_kernel_config->mask_m_lp_cvt, i_micro_kernel_config->mask_m_lp_cvt, 0 );
+    /* use full 128-bit loads */
+    l_mask_regs[0] = 0;            l_mask_regs[1] = i_mask_reg_0;
+    l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
 
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) {
-      libxsmm_x86_instruction_prefetch(io_generated_code,
-          LIBXSMM_X86_INSTR_PREFETCHT0,
-          i_gp_reg,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (int)((long long)ik * i_ldi + (long long)i_xgemm_desc->c1) );
+    libxsmm_x86_instruction_push_reg( io_generated_code, gp_reg_gemm_scratch );
+    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_n_loop );
+    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_temp );
+
+    /* Store reserved zmms  */
+    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
+    for (i = 0; i < i_micro_kernel_config->reserved_zmms; i++) {
+      libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 1 );
     }
+
+    /* set the masks for the load+blend stage */
+    l_mask = 0x00f0;
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_temp, l_mask );
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, l_gp_temp, i_mask_reg_0 );
+    l_mask = 0x0f00;
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_temp, l_mask );
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, l_gp_temp, i_mask_reg_1 );
+    l_mask = 0xf000;
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_temp, l_mask );
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, l_gp_temp, i_mask_reg_2 );
+
+    /* open n loop */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_n_loop, 0);
+    libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 1 );
+
+    /* load 16 registers with four quarter rows */
+    libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                                i_gp_reg, 0, i_ldi * i_micro_kernel_config->datatype_size_in,
+                                                                LIBXSMM_X86_INSTR_VBROADCASTI32X4, 16, l_mask_regs, 64, 0 );
+
+    /* advance input pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,  i_gp_reg, (long long)i_micro_kernel_config->datatype_size_in * 16 );
+
+    /* 4-stage shuffle */
+    libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 16 );
+
+    /* storing 16 registers */
+    libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                            o_gp_reg, 0, i_ldo * i_micro_kernel_config->datatype_size_in,
+                                                            LIBXSMM_X86_INSTR_VMOVDQU64, 0, 0, 16 );
+
+    /* advance output pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, o_gp_reg, (long long)16 * i_ldo * i_micro_kernel_config->datatype_size_in );
+
+    /* close n loop */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_n_loop, 2 );
+    libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
+
+    /* advance input pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, i_gp_reg, (long long)i_micro_kernel_config->datatype_size_in * 32 );
+    /* advance output pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, o_gp_reg, (long long)32 * i_ldo * i_micro_kernel_config->datatype_size_in );
+
+    /* Restore reserved zmms  */
+    for (i = 0; i < i_micro_kernel_config->reserved_zmms; i++) {
+      libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 0 );
+    }
+
+    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_n_loop );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, gp_reg_gemm_scratch );
+  } else {
+    unsigned int l_load_instr  = LIBXSMM_X86_INSTR_MOVB;
+    unsigned int l_store_instr = LIBXSMM_X86_INSTR_MOVB;
+    unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R11;
+    unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
+    unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
+    unsigned int i_gp_reg_in = i_gp_reg;
+    unsigned int i_gp_reg_out = o_gp_reg;
+
+    /* save l_gp_temp to stack */
+    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_m_loop );
+    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_n_loop );
+    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_temp );
+
+    /* m loop header */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+    libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_m_loop, 1 );
+
+    /* n loop header */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+    libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_n_loop, 1 );
+
+    /* actual transpose */
+    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
+                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                     l_gp_temp, 0 );
+
+    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
+                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                     l_gp_temp, 1 );
+
+    /* advance input pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_in, (long long)i_ldi * 1);
+
+    /* advance output pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_out, 1);
+
+    /* close n loop */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_n_loop, i_K );
+    libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
+
+    /* advance output pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_out, ((long long)i_ldo * 1) - ((long long)1 * i_K) );
+
+    /* advance input pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
+                                     i_gp_reg_in, ((long long)i_ldi * 1 * i_K) - ((long long)1) );
+
+    /* close m loop */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_m_loop, i_N );
+    libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
+
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_in, ((long long)1 * i_N));
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_out, ((long long)i_ldo * i_N) );
+
+    /* restore l_gp_temp */
+    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_n_loop );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_m_loop );
   }
-
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-      l_vreg_k0, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-      l_vreg_k1, i_micro_kernel_config->perm_table_vnni_lo, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-      l_vreg_cpy, i_micro_kernel_config->perm_table_vnni_hi, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-      l_vreg_k2, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-      l_vreg_k3, i_micro_kernel_config->perm_table_vnni_lo, l_vreg_k2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-      l_vreg_cpy, i_micro_kernel_config->perm_table_vnni_hi, l_vreg_k3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                          l_vreg_k2, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                          l_vreg_k3, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-
-  libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
-      LIBXSMM_X86_INSTR_VMOVUPS,
-      o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      0,
-      l_vname_st,
-      l_vreg_k0, i_micro_kernel_config->mask_m_fp32, 0, 1 );
-
-  libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
-      LIBXSMM_X86_INSTR_VMOVUPS,
-      o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      l_vlen,
-      l_vname_st,
-      l_vreg_k1, i_micro_kernel_config->mask_m_fp32, 0, 1 );
-
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg, (long long)i_ldi * 4 );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, o_gp_reg, (long long)i_ldo * 4 );
-  libxsmm_generator_gemm_footer_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg, i_K/4);
-  libxsmm_x86_instruction_pop_reg( io_generated_code, cnt_reg );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg, (long long)i_ldi * i_K);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, o_gp_reg, (long long)i_ldo * i_K);
-#else
-  unsigned int l_load_instr  = LIBXSMM_X86_INSTR_MOVB;
-  unsigned int l_store_instr = LIBXSMM_X86_INSTR_MOVB;
-  unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R11;
-  unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
-  unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
-  unsigned int i_gp_reg_in = i_gp_reg;
-  unsigned int i_gp_reg_out = o_gp_reg;
-
-  /* save l_gp_temp to stack */
-  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_m_loop );
-  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_n_loop );
-  libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_temp );
-
-  /* m loop header */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
-  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                   i_gp_reg_m_loop, 1 );
-
-  /* n loop header */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
-  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                   i_gp_reg_n_loop, 1 );
-
-  /* actual transpose */
-  libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
-                                   i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                   l_gp_temp, 0 );
-
-  libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
-                                   i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                   l_gp_temp, 1 );
-
-  /* advance input pointer */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                   i_gp_reg_in, (long long)i_ldi * 1);
-
-  /* advance output pointer */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                   i_gp_reg_out, 1);
-
-  /* close n loop */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_n_loop, i_K );
-  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
-
-  /* advance output pointer */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                   i_gp_reg_out, ((long long)i_ldo * 1) - ((long long)1 * i_K) );
-
-  /* advance input pointer */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
-                                   i_gp_reg_in, ((long long)i_ldi * 1 * i_K) - ((long long)1) );
-
-  /* close m loop */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_m_loop, i_N );
-  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
-
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_in, ((long long)1 * i_N));
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_out, ((long long)i_ldo * i_N) );
-
-  /* restore l_gp_temp */
-  libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_n_loop );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_m_loop );
-#endif
 }
-
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm_generated_code*           io_generated_code,
                                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,

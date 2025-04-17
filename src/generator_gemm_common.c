@@ -1505,6 +1505,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     }
   }
 
+  if (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) {
+    gemm_scratch_size = LIBXSMM_MAX(gemm_scratch_size, 32 * 64);
+  }
+
   scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
   gemm_scratch_size += scratch_pad_size;
 
