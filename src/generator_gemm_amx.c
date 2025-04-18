@@ -1049,7 +1049,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
   unsigned int ik = 0, uk = 0;
   unsigned int l_vreg_start = i_micro_kernel_config->reserved_zmms;
   unsigned int cnt_reg = LIBXSMM_X86_GP_REG_R11;
-  char l_vname_ld = (i_m_tiles <= 2) ? 'y' : 'z';
+  char l_vname_ld = (i_m_tiles <= 2) ? ((i_m_tiles == 1) ? 'x' :  'y') : 'z';
   char l_vname_st = 'z';
   unsigned int l_vlen = 64;
   unsigned int l_vreg_k0 = l_vreg_start + 0;
@@ -1057,7 +1057,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
   unsigned int l_vreg_k2 = l_vreg_start + 2;
   unsigned int l_vreg_k3 = l_vreg_start + 3;
   unsigned int l_vreg_cpy = i_micro_kernel_config->tmp_reg0;
-  unsigned int k_unroll = 1;
+  unsigned int k_unroll = 4;
   libxsmm_x86_instruction_push_reg( io_generated_code, cnt_reg );
   libxsmm_generator_gemm_header_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg );
 
@@ -1078,7 +1078,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
             LIBXSMM_X86_INSTR_PREFETCHT0,
             i_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (int)((long long)ik * i_ldi + (long long)i_xgemm_desc->c1) );
+            (int)((long long)ik * i_ldi + i_ldi * 4 * uk + (long long)i_xgemm_desc->c1) );
       }
     }
   }
@@ -1119,8 +1119,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
     } else {
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
                                                               l_vreg_k2, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                              l_vreg_k3, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+      if (i_m_tiles > 1) {
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                                l_vreg_k3, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+      }
     }
   }
   for (uk = 0; uk < k_unroll; uk++) {
@@ -1164,12 +1166,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
           l_vname_st,
           l_vreg_k0, i_micro_kernel_config->mask_m_fp32, 0, 1 );
 
-      libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
-          LIBXSMM_X86_INSTR_VMOVUPS,
-          o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-          l_vlen + i_ldo * 4 * uk,
-          l_vname_st,
-          l_vreg_k1, i_micro_kernel_config->mask_m_fp32, 0, 1 );
+      if (i_m_tiles > 1) {
+        libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVUPS,
+            o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_vlen + i_ldo * 4 * uk,
+            l_vname_st,
+            l_vreg_k1, i_micro_kernel_config->mask_m_fp32, 0, 1 );
+      }
     }
   }
 
@@ -3161,6 +3165,31 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
         n_blocking_info[0].sizes[1] = n_blocking - 16;
       }
     }
+
+#if 0
+    if (i_xgemm_desc->n == 64 && i_xgemm_desc->m == 16) {
+     m_blocking = 16;
+      while (i_xgemm_desc->m % m_blocking != 0) {
+        m_blocking--;
+      }
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 1;
+      m_blocking_info[0].sizes[0] = m_blocking;
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
+      if (i_xgemm_desc->n == 64) {
+        n_blocking_info[0].blocking = 64;
+        n_blocking_info[0].block_size = 64;
+        n_blocking_info[0].tiles = 4;
+        /* I.e. N = 64 = 4 * 16 */
+        n_blocking_info[0].sizes[0] = 16;
+        n_blocking_info[0].sizes[1] = 16;
+        n_blocking_info[0].sizes[2] = 16;
+        n_blocking_info[0].sizes[3] = 16;
+      }
+    }
+#endif
+
 #if 0
     /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
     if ((i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61 || (i_xgemm_desc->n == 64 && i_xgemm_desc->m == 16)) && (has_fused_relu_bitmask == 0)) {
