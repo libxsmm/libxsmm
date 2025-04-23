@@ -2132,7 +2132,9 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_LDA_PTR                = 38,
   LIBXSMM_GEMM_STACK_VAR_LDB_PTR                = 39,
   LIBXSMM_GEMM_STACK_VAR_LDC_PTR                = 40,
-  LIBXSMM_GEMM_STACK_VAR_AUX_VAR2               = 41
+  LIBXSMM_GEMM_STACK_VAR_AUX_VAR2               = 41,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF1_OFFSET        = 42,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF1_USE_OFFSET    = 43
 } libxsmm_gemm_stack_var;
 
 #if 0
