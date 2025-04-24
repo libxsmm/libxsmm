@@ -1551,7 +1551,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     unsigned int l_decompress_dtype = (l_is_Ai4_Bi8_gemm > 0) ? 1 : 2;
     unsigned int scratch_a_decompress_size = 2 * (i_xgemm_desc->m * i_xgemm_desc->k) * l_decompress_dtype * 64;
     unsigned int scratch_a_decompress_pad  = (scratch_a_decompress_size % 64 == 0) ? 0 : ((scratch_a_decompress_size + 63)/64) * 64 - scratch_a_decompress_size;
-    unsigned int scratch_b_decompress_size = 2 * (i_xgemm_desc->n * i_xgemm_desc->k * 2);
+    unsigned int scratch_b_decompress_size = 2 * (i_xgemm_desc->n * i_xgemm_desc->k * 2 * 64);
     unsigned int scratch_b_decompress_pad  = (scratch_b_decompress_size % 64 == 0) ? 0 : ((scratch_b_decompress_size + 63)/64) * 64 - scratch_b_decompress_size;
 
     scratch_a_decompress_size += scratch_a_decompress_pad;
@@ -2025,6 +2025,10 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -192;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF1_USE_OFFSET:
       return -184;
+    case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2_OFFSET:
+      return -176;
+    case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2_USE_OFFSET:
+      return -120;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2:
       return -104;
     case LIBXSMM_GEMM_STACK_VAR_AUX_VAR:
