@@ -4702,6 +4702,11 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int l_expand_a_ld_preproc = i_xgemm_desc->m/l_m_blocking;
   unsigned int l_expand_a_m_preproc = libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity();
 
+  if (l_sw_pipeline_panels == 0) {
+    l_expand_a_m_preproc = 1;
+    l_expand_a_ld_preproc = 1;
+  }
+
   if ( 0 == env_pf_dist ) {
   } else {
     pf_dist = atoi(env_pf_dist);
