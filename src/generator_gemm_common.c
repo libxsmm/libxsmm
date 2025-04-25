@@ -1716,7 +1716,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 192 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 240 );
 
   /* The stack now looks like this:
    *      10th param (if applicable)                <-- RBP+80
@@ -2020,17 +2020,17 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
     case LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR:
       return -72;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF1:
-      return -72;
+      return -200;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF1_OFFSET:
-      return -192;
+      return -208;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF1_USE_OFFSET:
-      return -184;
+      return -216;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2_OFFSET:
-      return -176;
+      return -224;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2_USE_OFFSET:
-      return -120;
+      return -232;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2:
-      return -104;
+      return -240;
     case LIBXSMM_GEMM_STACK_VAR_AUX_VAR:
       return -80;
     case LIBXSMM_GEMM_STACK_VAR_AUX_VAR2:
