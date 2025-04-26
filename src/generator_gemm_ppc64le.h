@@ -55,6 +55,7 @@ void libxsmm_generator_gemm_ppc64le_blocking_iter( unsigned int const        i_r
                                                    unsigned int             *o_blocking,
                                                    libxsmm_ppc64le_reg_func  i_reg_func );
 
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_create_blocking( libxsmm_generated_code        *io_generated_code,
                                                      libxsmm_gemm_descriptor const *i_xgemm_desc,
@@ -67,68 +68,50 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
                                                     libxsmm_ppc64le_blocking      *io_blocking );
 
 
-/**
- * Generators the inner m-loop for PPC64LE VSX GEMM kernel
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_xgemm_desc description of the matrix-operation.
- * @param io_reg_tracker register tracking structure.
- * @param io_loop_labels pointer to libxsmm loop label tracker
- * @param i_blocking pointer to array containing the bocking ordered [n,m,k]
- * @param i_a_prt_gpr number of register containing current pointer to a block
- * @param i_a_prt_gpr number of register containing current pointer to b block
- * @param i_a_prt_gpr number of register containing current pointer to c block
- **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *io_generated_code,
                                                 libxsmm_gemm_descriptor const *i_xgemm_desc,
                                                 libxsmm_ppc64le_blocking      *io_blocking,
                                                 libxsmm_ppc64le_reg           *io_reg_tracker,
                                                 libxsmm_loop_label_tracker    *io_loop_labels,
-                                                unsigned char const            i_a,
-                                                unsigned char const            i_b,
-                                                unsigned char const            i_c );
+                                                unsigned int                   i_a,
+                                                unsigned int                   i_b,
+                                                unsigned int                   i_c );
 
 
-/**
- * Generators the inner m-loop for PPC64LE MMA GEMM kernel
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_xgemm_desc description of the matrix-operation.
- * @param io_reg_tracker register tracking structure.
- * @param io_loop_labels pointer to libxsmm loop label tracker
- * @param i_blocking pointer to array containing the bocking ordered [n,m,k]
- * @param i_acc array of accumulation registers
- * @param i_a_prt_gpr number of register containing current pointer to a block
- * @param i_a_prt_gpr number of register containing current pointer to b block
- * @param i_a_prt_gpr number of register containing current pointer to c block
- **/
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *io_generated_code,
-                                                libxsmm_gemm_descriptor const  *i_xgemm_desc,
-                                                libxsmm_ppc64le_blocking       *i_blocking,
-                                                libxsmm_ppc64le_reg            *io_reg_tracker,
-                                                libxsmm_loop_label_tracker     *io_loop_labels,
-                                                unsigned char const             i_a,
-                                                unsigned char const             i_b,
-                                                unsigned char const             i_c );
-
-/**
- * Generates a matrix kernel for PPC64LE VSX.
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_xgemm_desc description of the matrix-operation.
- * @param io_reg_tracker register tracking structure.
- **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *io_generated_code,
                                                 libxsmm_gemm_descriptor const  *i_xgemm_desc,
                                                 libxsmm_ppc64le_blocking       *io_blocking,
                                                 libxsmm_ppc64le_reg            *io_reg_tracker );
 
-/**
- * Generates a matrix kernel for PPC64LE MMA.
- * @param io_generated_code pointer to the pointer of the generated code structure.
- * @param i_xgemm_desc description of the matrix-operation.
- * @param io_reg_tracker register tracking structure.
- **/
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code         *io_generated_code,
+                                                   libxsmm_gemm_descriptor const  *i_xgemm_desc,
+                                                   libxsmm_ppc64le_blocking       *io_blocking,
+                                                   libxsmm_ppc64le_reg            *io_reg_tracker,
+                                                   libxsmm_loop_label_tracker     *io_loop_labels,
+                                                   unsigned int                    i_a,
+                                                   unsigned int                    i_b,
+                                                   unsigned int                    i_b_n_offset,
+                                                   unsigned int                    i_c,
+                                                   unsigned int                    i_br,
+                                                   unsigned int                    i_a_offset,
+                                                   unsigned int                    i_b_offset );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *io_generated_code,
+                                                libxsmm_gemm_descriptor const  *i_xgemm_desc,
+                                                libxsmm_ppc64le_blocking       *i_blocking,
+                                                libxsmm_ppc64le_reg            *io_reg_tracker,
+                                                libxsmm_loop_label_tracker     *io_loop_labels,
+                                                unsigned int                    i_a,
+                                                unsigned int                    i_b,
+                                                unsigned int                    i_c );
+
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *io_generated_code,
                                                 libxsmm_gemm_descriptor const  *i_xgemm_desc,

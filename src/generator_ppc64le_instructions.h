@@ -336,10 +336,10 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_REG_DEFAULT { { /* GPR */ \
   LIBXSMM_PPC64LE_REG_RESV, \
   LIBXSMM_PPC64LE_REG_RESV, \
-  LIBXSMM_PPC64LE_REG_RESV, \
-  LIBXSMM_PPC64LE_REG_RESV, \
-  LIBXSMM_PPC64LE_REG_RESV, \
-  LIBXSMM_PPC64LE_REG_RESV, \
+  LIBXSMM_PPC64LE_REG_FREE, \
+  LIBXSMM_PPC64LE_REG_FREE, \
+  LIBXSMM_PPC64LE_REG_FREE, \
+  LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
   LIBXSMM_PPC64LE_REG_FREE, \
@@ -1500,6 +1500,11 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
 void libxsmm_ppc64le_instr_unpack_args( libxsmm_generated_code *io_generated_code,
                                         libxsmm_ppc64le_reg    *io_reg_tracker );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code  *io_generated_code,
+                                          libxsmm_gemm_descriptor *io_xgemm_desc,
+                                          libxsmm_ppc64le_reg     *io_reg_tracker );
 
 /**
  * Colapses the stack frame, resetting non-volatile registers.
