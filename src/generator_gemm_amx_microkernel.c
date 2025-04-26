@@ -1389,14 +1389,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   const char *const env_readshared_tileload_b = getenv("LIBXSMM_X86_AMX_GEMM_READSHARED_B");
   const char *const env_pf_dist = getenv("LIBXSMM_X86_AMX_GEMM_PRIMARY_PF_INPUTS_DIST");
   const char *const env_pf_dist_l1 = getenv("LIBXSMM_X86_AMX_GEMM_SECONDARY_PF_INPUTS_DIST");
-  const char *const env_amx_slowdown =  getenv("LIBXSMM_X86_AMX_GEMM_AMX_SLOWDOWN");
-  unsigned int l_amx_slowdown = 1;
-  unsigned int l_slow = 0;
 
-  if ( 0 == env_amx_slowdown ) {
-  } else {
-    l_amx_slowdown = atoi(env_amx_slowdown);
-  }
   if ( 0 == env_streaming_tileload_a ) {
   } else {
     streaming_tileload_a = atoi(env_streaming_tileload_a);
@@ -2008,14 +2001,12 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       }
     }
 
-     for (l_slow = 0; l_slow < l_amx_slowdown; l_slow++) {
-        libxsmm_x86_instruction_tile_compute( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            _C_tilecomp_instr[i],
-            _A_tile_id[i],
-            _B_tile_id[i],
-            _C_tile_id[i]);
-     }
+    libxsmm_x86_instruction_tile_compute( io_generated_code,
+        i_micro_kernel_config->instruction_set,
+        _C_tilecomp_instr[i],
+        _A_tile_id[i],
+        _B_tile_id[i],
+        _C_tile_id[i]);
 
     if ((prefetch_C_scratch > 0) && (is_last_k == 1) &&  (i_micro_kernel_config->is_peeled_br_loop == 1)  &&
         (i_brgemm_loop + prefetch_C_scratch_dist == i_micro_kernel_config->cur_unroll_factor) &&
