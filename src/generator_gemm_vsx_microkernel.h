@@ -94,7 +94,7 @@ void libxsmm_generator_vsx_block_fma_b_splat( libxsmm_generated_code *io_generat
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vsx_br_microkernel( libxsmm_generated_code        *io_generated_code,
+void libxsmm_generator_br_vsx_microkernel( libxsmm_generated_code        *io_generated_code,
                                            libxsmm_gemm_descriptor const *i_xgemm_desc,
                                            libxsmm_ppc64le_blocking      *i_blocking,
                                            libxsmm_ppc64le_reg           *io_reg_tracker,

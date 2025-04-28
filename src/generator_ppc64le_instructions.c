@@ -2991,9 +2991,9 @@ void libxsmm_ppc64le_instr_unpack_args( libxsmm_generated_code *io_generated_cod
 
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code  *io_generated_code,
-                                          libxsmm_gemm_descriptor *io_xgemm_desc,
-                                          libxsmm_ppc64le_reg     *io_reg_tracker ) {
+void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code        *io_generated_code,
+                                          libxsmm_gemm_descriptor const *io_xgemm_desc,
+                                          libxsmm_ppc64le_reg           *io_reg_tracker ) {
   /* Set up input args */
   int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
   int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));

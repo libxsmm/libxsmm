@@ -291,7 +291,7 @@ void libxsmm_generator_vsx_block_fma_b_splat( libxsmm_generated_code *io_generat
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vsx_br_microkernel( libxsmm_generated_code        *io_generated_code,
+void libxsmm_generator_br_vsx_microkernel( libxsmm_generated_code        *io_generated_code,
                                            libxsmm_gemm_descriptor const *i_xgemm_desc,
                                            libxsmm_ppc64le_blocking      *i_blocking,
                                            libxsmm_ppc64le_reg           *io_reg_tracker,
@@ -303,7 +303,6 @@ void libxsmm_generator_vsx_br_microkernel( libxsmm_generated_code        *io_gen
   libxsmm_datatype l_a_datatype = LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
   libxsmm_datatype l_b_datatype = LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
   libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
-  unsigned int l_beta_zero = ( i_xgemm_desc->flags & 0x0004 ) >> 2;
   unsigned int l_v_len = i_blocking->vector_len_comp;
   unsigned int l_n_k_blocks = ( i_xgemm_desc->k + i_blocking->block_k - 1 ) / i_blocking->block_k;
   unsigned int l_a, l_b, l_a_last, l_b_last, l_a_pipe[2], l_b_pipe[2];

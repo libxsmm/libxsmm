@@ -229,9 +229,10 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
   libxsmm_datatype l_c_datatype = LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
   libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_a, l_b, l_c;
-  unsigned int l_a_m_offset = 0, l_ptr_offset = 0;
+  unsigned int i;
+  unsigned int l_a_m_offset = 0, l_a_ptr = 0, l_b_ptr = 0;
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
-  unsigned int l_m_loop = 0;
+  unsigned int l_m_loop = 0, l_br_loop = 0;
   unsigned int l_packed = ( 0 == i_xgemm_desc->m % io_blocking->block_m ) ? 1 : 0;
   unsigned int l_c_reg[LIBXSMM_PPC64LE_VSR_NMAX];
 
@@ -256,14 +257,15 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
   /* Get a register for the pointer offset counter, if required */
   if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
        ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-    l_ptr_offset = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PC64LE_GPR );
+    l_a_ptr = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    l_b_ptr = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
   }
 
   /* Allocate VSR accumulators for C, due to persistence required for batch-reduce */
-  libxsmm_ppc64le_alloc_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, i_blocking->n_reg_c, 1, l_c_reg );
+  libxsmm_ppc64le_alloc_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, io_blocking->n_reg_c, 1, l_c_reg );
 
   /* Get a register for the batch-reduce loop counter */
-  l_br_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PC64LE_GPR );
+  l_br_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
 
   /* Set jump point if required */
   if ( l_m_iters > 1 ) {
@@ -274,19 +276,23 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
 
   /* Main packed m-loop */
   if ( l_m_iters > 0 ) {
-    /* For BR-address and BR-offset, zero the pointer offset counter */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_ptr_offset, 0 );
+    /* For BR-address copy the initial pointer pointer */
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b, l_b_ptr );
+    /* For BR-offset, reset the offsets */
+    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a_offset, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b_offset, l_b_ptr );
     /* For BR-stride set the initial A and B pointers, including the loop offsets */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, i_a, l_a_m_offset, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, i_b_n_offset, 0, 0 );
     }
 
     /* Zero the accumulators */
-    for ( l_i = 0; l_i < i_blocking->n_reg_c; ++l_i ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_c_reg[l_i], 0, ( 0x20 & l_c_reg[l_i] ) >> 5 );
+    for ( i = 0; i < io_blocking->n_reg_c; ++i ) {
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_c_reg[i], 0, ( 0x20 & l_c_reg[i] ) >> 5 );
     }
 
     /* Set batch reduce jump point */
@@ -295,24 +301,24 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
 
     /* Load the A and B pointers for BR-address */
     if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b, l_ptr_offset );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     /* Load the offset and set the A and B pointers for BR-offset */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, i_a, 0, 0 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     }
 
     /* Call batch-reduce k-loop microkernel */
-    libxsmm_generator_vsx_br_microkernel( io_generated_code,
+    libxsmm_generator_br_vsx_microkernel( io_generated_code,
                                           i_xgemm_desc,
                                           io_blocking,
                                           io_reg_tracker,
@@ -322,12 +328,8 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
                                           l_c,
                                           l_c_reg );
 
-    /* For BR-address and BR-offset increment pointer offset by 8 (ie 8 bytes) */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_ptr_offset, l_ptr_offset, 8 );
     /* For BR-stride increment the A and B pointers by the constant strinde */
-    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_a, l_a, i_xgemm_desc->c1 );
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_b, l_b, i_xgemm_desc->c2 );
     }
@@ -342,11 +344,11 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
                                                 l_c_datatype,
                                                 l_comptype,
                                                 l_c,
-                                                i_blocking->block_m,
-                                                i_blocking->block_n,
+                                                io_blocking->block_m,
+                                                io_blocking->block_n,
                                                 i_xgemm_desc->ldc,
                                                 l_c_reg,
-                                                i_blocking->reg_ldc );
+                                                io_blocking->reg_ldc );
   }
 
   /* Increment A m-loop offset and C pointer if required */
@@ -375,19 +377,23 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
     unsigned int l_block_m = io_blocking->block_m;
     io_blocking->block_m = ( i_xgemm_desc->m % l_block_m );
 
-    /* For BR-address and BR-offset, zero the pointer offset counter */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_ptr_offset, 0 );
+    /* For BR-address copy the initial pointer pointer */
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b, l_b_ptr );
+    /* For BR-offset, reset the offsets */
+    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a_offset, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b_offset, l_b_ptr );
     /* For BR-stride set the initial A and B pointers, including the loop offsets */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, i_a, l_a_m_offset, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, i_b_n_offset, 0, 0 );
     }
 
     /* Zero the accumulators */
-    for ( l_i = 0; l_i < i_blocking->n_reg_c; ++l_i ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_c_reg[l_i], 0, ( 0x20 & l_c_reg[l_i] ) >> 5 );
+    for ( i = 0; i < io_blocking->n_reg_c; ++i ) {
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_c_reg[i], 0, ( 0x20 & l_c_reg[i] ) >> 5 );
     }
 
     /* Set batch reduce jump point */
@@ -396,24 +402,24 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
 
     /* Load the A and B pointers for BR-address */
     if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b, l_ptr_offset );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     /* Load the offset and set the A and B pointers for BR-offset */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, i_a, 0, 0 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     }
 
     /* Call batch-reduce k-loop microkernel */
-    libxsmm_generator_vsx_br_microkernel( io_generated_code,
+    libxsmm_generator_br_vsx_microkernel( io_generated_code,
                                           i_xgemm_desc,
                                           io_blocking,
                                           io_reg_tracker,
@@ -423,12 +429,8 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
                                           l_c,
                                           l_c_reg );
 
-    /* For BR-address and BR-offset increment pointer offset by 8 (ie 8 bytes) */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_ptr_offset, l_ptr_offset, 8 );
     /* For BR-stride increment the A and B pointers by the constant strinde */
-    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_a, l_a, i_xgemm_desc->c1 );
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_b, l_b, i_xgemm_desc->c2 );
     }
@@ -443,19 +445,19 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
                                                 l_c_datatype,
                                                 l_comptype,
                                                 l_c,
-                                                i_blocking->block_m,
-                                                i_blocking->block_n,
+                                                io_blocking->block_m,
+                                                io_blocking->block_n,
                                                 i_xgemm_desc->ldc,
                                                 l_c_reg,
-                                                i_blocking->reg_ldc );
+                                                io_blocking->reg_ldc );
 
     /* Reset m-blocking */
     io_blocking->block_m = l_block_m;
   }
 
   /* Free C acc registers */
-  for ( l_i = 0; l_i < i_blocking->n_reg_c ; ++l_i ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC, l_c_reg[l_i] );
+  for ( i = 0; i < io_blocking->n_reg_c ; ++i ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC, l_c_reg[i] );
   }
 
   /* Free batch reduce counter */
@@ -464,12 +466,13 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
   /* Free the pointer offset counter, if required */
   if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
        ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-    libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PC64LE_GPR, l_ptr_offset );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_ptr );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_ptr );
   }
 
   /* Free A m-loop offset register, if required */
   if ( 1 < l_m_iters || ( 0 < l_m_iters && !l_packed ) ) {
-    l_a_m_offset = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_m_offset );
   }
 
   /* Free C pointers if required */
@@ -592,22 +595,22 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_vsx( libxsmm_generated_code       
   libxsmm_ppc64le_instr_open_stream( io_generated_code, io_reg_tracker );
 
   /* Unpack the matrix pointers */
-  libxsmm_ppc64le_instr_unpack_bargs( io_generated_code, io_reg_tracker );
+  libxsmm_ppc64le_instr_unpack_brargs( io_generated_code, i_xgemm_desc, io_reg_tracker );
 
   /* GPRs holding pointers to A, B, and C */
   l_a = LIBXSMM_PPC64LE_GPR_ARG0;
-  libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, i_a );
+  libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a );
   l_b = LIBXSMM_PPC64LE_GPR_ARG1;
-  libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, i_b );
+  libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b );
   l_c = LIBXSMM_PPC64LE_GPR_ARG2;
-  libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, i_c );
+  libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_c );
 
   /* GPR holding br count */
   l_br = LIBXSMM_PPC64LE_GPR_ARG3;
   libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_br );
 
   /* If using BR-offset then allocate the A and B offset registers */
-  if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
+  if ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
     l_a_offset = LIBXSMM_PPC64LE_GPR_ARG4;
     libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_offset );
     l_b_offset = LIBXSMM_PPC64LE_GPR_ARG5;
@@ -683,7 +686,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_vsx( libxsmm_generated_code       
 
   /* Free B offset register if required */
   if ( ( 1 < l_n_iters ) || ( 0 < l_n_iters && !l_packed ) ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_generated_code, LIBXSMM_PPC64LE_GPR, l_b_n_offset );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_n_offset );
   }
 
   /* Free the input registers */
@@ -691,7 +694,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_vsx( libxsmm_generated_code       
   libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b );
   libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_c );
   libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_br );
-  if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
+  if ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_offset );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_offset );
   }
@@ -807,7 +810,8 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
   libxsmm_datatype l_c_datatype = LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
   libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_a, l_b, l_c;
-  unsigned int l_a_m_offset = 0, l_ptr_offset = 0;
+  unsigned int i;
+  unsigned int l_a_m_offset = 0, l_a_ptr = 0, l_b_ptr = 0;
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
   unsigned int l_m_loop = 0, l_br_loop = 0;
   unsigned int l_packed = ( 0 == i_xgemm_desc->m % io_blocking->block_m ) ? 1 : 0;
@@ -834,19 +838,20 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
   /* Get a register for the pointer offset counter, if required */
   if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
        ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-    l_ptr_offset = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PC64LE_GPR );
+    l_a_ptr = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    l_b_ptr = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
   }
 
   /* Allocate accumulators for C,
    * This done first due to the limitastion on C-acc registers and for
    * the persistence required for batch-reduce
    */
-  for ( l_i = 0; l_i < i_blocking->n_acc_c; ++l_i ) {
-    l_c_acc[l_i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC );
+  for ( i = 0; i < io_blocking->n_acc_c; ++i ) {
+    l_c_acc[i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_ACC );
   }
 
   /* Get a register for the batch-reduce loop counter */
-  l_br_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PC64LE_GPR );
+  l_br_loop = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
 
   /* Set m-loop jump point if required */
   if ( 1 < l_m_iters ) {
@@ -857,19 +862,23 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
 
   /* Main packed m-loop */
   if ( 0 < l_m_iters ) {
-    /* For BR-address and BR-offset, zero the pointer offset counter */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_ptr_offset, 0 );
+    /* For BR-address copy the initial pointer pointer */
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b, l_b_ptr );
+    /* For BR-offset, reset the offsets */
+    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a_offset, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b_offset, l_b_ptr );
     /* For BR-stride set the initial A and B pointers, including the loop offsets */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, i_a, l_a_m_offset, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, i_b_n_offset, 0, 0 );
     }
 
     /* Zero the accumulators */
-    for ( l_i = 0; l_i < i_blocking->n_acc_c; ++l_i ) {
-      libxsmm_ppc64le_instr_1( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSETACCZ, l_c_acc[l_i] );
+    for ( i = 0; i < io_blocking->n_acc_c; ++i ) {
+      libxsmm_ppc64le_instr_1( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSETACCZ, l_c_acc[i] );
     }
 
     /* Set batch reduce jump point */
@@ -878,24 +887,24 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
 
     /* Load the A and B pointers for BR-address */
     if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b, l_ptr_offset );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     /* Load the offset and set the A and B pointers for BR-offset */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, i_a, 0, 0 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     }
 
     /* Call batch-reduce k-loop microkernel */
-    libxsmm_generator_mma_br_microkernel( io_generated_code,
+    libxsmm_generator_br_mma_microkernel( io_generated_code,
                                           i_xgemm_desc,
                                           io_blocking,
                                           io_reg_tracker,
@@ -905,12 +914,8 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
                                           l_c,
                                           l_c_acc );
 
-    /* For BR-address and BR-offset increment pointer offset by 8 (ie 8 bytes) */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_ptr_offset, l_ptr_offset, 8 );
     /* For BR-stride increment the A and B pointers by the constant strinde */
-    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_a, l_a, i_xgemm_desc->c1 );
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_b, l_b, i_xgemm_desc->c2 );
     }
@@ -925,11 +930,11 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
                                                 l_c_datatype,
                                                 l_comptype,
                                                 i_c,
-                                                i_blocking->block_m,
-                                                i_blocking->block_n,
+                                                io_blocking->block_m,
+                                                io_blocking->block_n,
                                                 i_xgemm_desc->ldc,
-                                                i_c_acc,
-                                                i_blocking->reg_ldc );
+                                                l_c_acc,
+                                                io_blocking->reg_ldc );
   }
 
   /* Increment A m-loop offset and C pointer if required */
@@ -958,19 +963,23 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
     unsigned int l_block_m = io_blocking->block_m;
     io_blocking->block_m = ( i_xgemm_desc->m % l_block_m );
 
-    /* For BR-address and BR-offset, zero the pointer offset counter */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_ptr_offset, 0 );
+    /* For BR-address copy the initial pointer pointer */
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b, l_b_ptr );
+    /* For BR-offset, reset the offsets */
+    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_a_offset, l_a_ptr );
+      libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_b_offset, l_b_ptr );
     /* For BR-stride set the initial A and B pointers, including the loop offsets */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, i_a, l_a_m_offset, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, i_b, i_b_n_offset, 0, 0 );
     }
 
     /* Zero the C accumulators */
-    for ( l_i = 0; l_i < i_blocking->n_acc_c; ++l_i ) {
-      libxsmm_ppc64le_instr_1( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSETACCZ, l_c_acc[l_i] );
+    for ( i = 0; i < io_blocking->n_acc_c; ++i ) {
+      libxsmm_ppc64le_instr_1( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSETACCZ, l_c_acc[i] );
     }
 
     /* Set batch reduce jump point */
@@ -979,24 +988,24 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
 
     /* Load the A and B pointers for BR-address */
     if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b, l_ptr_offset );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     /* Load the offset and set the A and B pointers for BR-offset */
     } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_a, i_a_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_a, l_a_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, i_a, 0, 0 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_a, l_a, l_a_m_offset, 0, 0 );
 
-      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDX, l_b, i_b_offset, l_ptr_offset );
+      libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_LDU, l_b, l_b_ptr, 8 >> 2 );
       libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b, 0, 0 );
-      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, l_b_n_offset, 0, 0 );
+      libxsmm_ppc64le_instr_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADD, l_b, l_b, i_b_n_offset, 0, 0 );
     }
 
     /* Call batch-reduce k-loop microkernel */
-    libxsmm_generator_mma_br_microkernel( io_generated_code,
+    libxsmm_generator_br_mma_microkernel( io_generated_code,
                                           i_xgemm_desc,
                                           io_blocking,
                                           io_reg_tracker,
@@ -1006,12 +1015,8 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
                                           l_c,
                                           l_c_acc );
 
-    /* For BR-address and BR-offset increment pointer offset by 8 (ie 8 bytes) */
-    if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
-         ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-      libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_ptr_offset, l_ptr_offset, 8 );
     /* For BR-stride increment the A and B pointers by the constant strinde */
-    } else if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
+    if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) {
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_a, l_a, i_xgemm_desc->c1 );
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, l_b, l_b, i_xgemm_desc->c2 );
     }
@@ -1026,19 +1031,19 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
                                                 l_c_datatype,
                                                 l_comptype,
                                                 i_c,
-                                                i_blocking->block_m,
-                                                i_blocking->block_n,
+                                                io_blocking->block_m,
+                                                io_blocking->block_n,
                                                 i_xgemm_desc->ldc,
-                                                i_c_acc,
-                                                i_blocking->reg_ldc );
+                                                l_c_acc,
+                                                io_blocking->reg_ldc );
 
     /* Reset the m-blocking */
     io_blocking->block_m = l_block_m;
   }
 
   /* Free C VSR registers */
-  for ( l_i = 0; l_i < i_blocking->n_acc_c ; ++l_i ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, l_c_acc[l_i] );
+  for ( i = 0; i < io_blocking->n_acc_c ; ++i ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_VSR, l_c_acc[i] );
   }
 
   /* Free batch reduce counter */
@@ -1047,12 +1052,13 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
   /* Free the pointer offset counter, if required */
   if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ||
        ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
-    libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PC64LE_GPR, l_ptr_offset );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_ptr );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_ptr );
   }
 
   /* Free A m-loop offset register, if required */
   if ( 1 < l_m_iters || ( 0 < l_m_iters && !l_packed ) ) {
-    l_a_m_offset = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_m_offset );
   }
 
   /* Free C pointers if required */
@@ -1187,7 +1193,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
   libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_br );
 
   /* If using BR-offset then allocate the A and B offset registers */
-  if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
+  if ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
     l_a_offset = LIBXSMM_PPC64LE_GPR_ARG4;
     libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_offset );
     l_b_offset = LIBXSMM_PPC64LE_GPR_ARG5;
@@ -1200,8 +1206,8 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
 
   /* If offset registers are needed for B and C, then allocate and zero */
   if ( ( 1 < l_n_iters ) || ( 0 < l_n_iters && !l_packed ) ) {
-    l_b_n_offset = libxsmm_ppc64le_get_reg( io_generated_code, io_generated_code, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, io_reg_tracker, l_b_n_offset, 0 );
+    l_b_n_offset = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_b_n_offset, 0 );
   }
 
   /* Set the number of acc registers */
@@ -1272,7 +1278,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
 
   /* Free B offset register if required */
   if ( ( 1 < l_n_iters ) || ( 0 < l_n_iters && !l_packed ) ) {
-    libxsmm_ppc64le_free_reg( io_generated_code, io_generated_code, LIBXSMM_PPC64LE_GPR, l_b_n_offset );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_n_offset );
   }
 
   /* Free the input registers */
@@ -1280,7 +1286,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
   libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b );
   libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_c );
   libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_br );
-  if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
+  if ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_a_offset );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_b_offset );
   }
@@ -1388,9 +1394,9 @@ void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_ge
                               libxsmm_gemm_descriptor const *,
                               libxsmm_ppc64le_blocking *,
                               libxsmm_ppc64le_reg * );
-  char l_br = ( ( 0 < ( io_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ) ||
-                ( 0 < ( io_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) ||
-                ( 0 < ( io_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) ) ) ? 1 : 0;
+  char l_br = ( ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ) ||
+                ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) ||
+                ( 0 < ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) ) ) ? 1 : 0;
   libxsmm_ppc64le_reg l_reg_tracker;
   libxsmm_ppc64le_blocking l_blocking;
 
