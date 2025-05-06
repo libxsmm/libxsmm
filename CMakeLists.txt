@@ -39,14 +39,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 file(GLOB XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${XSMM_ROOT_DIR}/include/libxsmm/*.c)
 list(REMOVE_ITEM XSMM_SRCS ${XSMM_ROOT_DIR}/include/libxsmm/libxsmm_generator_gemm_driver.c)
 
-
-
 if(NOT XSMM_SRCS)
   file(GLOB XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${XSMM_ROOT_DIR}/src/*.c)
   list(REMOVE_ITEM XSMM_SRCS ${XSMM_ROOT_DIR}/src/libxsmm_generator_gemm_driver.c)
 endif()
-
-set(XSMM_INCLUDE_DIRS ${XSMM_ROOT_DIR}/include)
 
 if(XSMM_STATIC)
   add_library(xsmm STATIC ${XSMM_SRCS})
@@ -54,13 +50,31 @@ else()
   add_library(xsmm SHARED ${XSMM_SRCS})
 endif()
 
-target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
+target_include_directories(xsmm PUBLIC ${XSMM_ROOT_DIR}/include)
+target_include_directories(xsmm PUBLIC ${XSMM_ROOT_DIR}/src)
 
 # https://github.com/libxsmm/libxsmm/tree/main#link-instructions
-# Please pass BLAS config by "-D__BLAS=0"
-# target_compile_definitions(xsmm PRIVATE __BLAS=0)
 
-add_definitions(-DLIBXSMM_DEFAULT_CONFIG -U_DEBUG)
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp-simd")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funroll-loops")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftree-vectorize")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdata-sections")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+endif()
+
+add_definitions(-DLIBXSMM_DEFAULT_CONFIG)
+add_definitions(-DNDEBUG)
+add_definitions(-DLIBXSMM_NOFORTRAN)
+add_definitions(-DLIBXSMM_TARGET_ARCH=1006)
+add_definitions(-DLIBXSMM_OPENMP_SIMD)
+add_definitions(-DLIBXSMM_BUILD=2)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
