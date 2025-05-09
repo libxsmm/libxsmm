@@ -153,6 +153,24 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* If sw pipeline is enabled, fetch twice for first iteration and skip the last. */
   for (nld = 0; nld < max_loads; nld++){
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m += i_reg_gp ) {
+      if (PREFETCH_A){
+        int m_stride = libxsmm_gemm_m_prefetch_stride();
+        int stride = i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in;
+
+        /* If m_stride is set prefetch next m block else next k iteration of current m block */
+        if (m_stride >= 1) {
+          stride = i_m_blocking * m_stride * i_micro_kernel_config->datatype_size_in;
+        }
+
+        /* Calculate prefetch address for A from acutal address */
+        libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+            i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_a_prefetch,
+            stride);
+
+        /* Prefetch A for next k loop */
+        libxsmm_rv64_instruction_prefetch( io_generated_code, LIBXSMM_RV64_INSTR_GP_PREFETCH_R, i_gp_reg_mapping->gp_reg_a_prefetch, 0 );
+      }
+
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
           l_a_part_load_instr,
           i_gp_reg_mapping->gp_reg_a,
@@ -200,6 +218,17 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* Prefetch B for the next k iteration */
 
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    /* Prefetch B for the next k iteration */
+    if (PREFETCH_B){
+      /* Calculate prefetch address for A from acutal address */
+      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+          i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b_prefetch,
+          i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in);
+
+      /* Prefetch A for next k loop */
+      libxsmm_rv64_instruction_prefetch( io_generated_code, LIBXSMM_RV64_INSTR_GP_PREFETCH_R, i_gp_reg_mapping->gp_reg_b_prefetch, 0 );
+    }
+
     /* Load scalar and then broadcast on b */
     libxsmm_rv64_instruction_alu_move( io_generated_code,
                                        l_b_load_scalar_instr,
@@ -940,3 +969,8 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
 #undef MAX_FP_REG
 #undef MAX_UIMM
+#undef REUSE_A
+#undef REUSE_B
+#undef REUSE_C
+#undef PREFETCH_A
+#undef PREFETCH_B
