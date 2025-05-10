@@ -228,7 +228,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
       /* Calculate prefetch address for A from acutal address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
           i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b_prefetch,
-          i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in);
+          (long long)i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in);
 
       /* Prefetch A for next k loop */
       libxsmm_rv64_instruction_prefetch( io_generated_code, LIBXSMM_RV64_INSTR_GP_PREFETCH_R, i_gp_reg_mapping->gp_reg_b_prefetch, 0 );
