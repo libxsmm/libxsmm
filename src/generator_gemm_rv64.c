@@ -18,11 +18,11 @@
 
 #define MAX_FP_REG (20)
 #define MAX_UIMM   (0x7ff)
-#define REUSE_A    (libxsmm_gemm_prefetch_reuse_a())
-#define REUSE_B    (libxsmm_gemm_prefetch_reuse_b())
-#define REUSE_C    (libxsmm_gemm_prefetch_reuse_c())
-#define PREFETCH_A (libxsmm_gemm_prefetch_a())
-#define PREFETCH_B (libxsmm_gemm_prefetch_b())
+#define REUSE_A    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_a())
+#define REUSE_B    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_b())
+#define REUSE_C    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_c())
+#define PREFETCH_A (libxsmm_cpuid_rv64_gemm_prefetch_a())
+#define PREFETCH_B (libxsmm_cpuid_rv64_gemm_prefetch_b())
 #define REG_GP(i)  (((i)->arch == LIBXSMM_RV64_MVL128_LMUL) || (((i)->arch == LIBXSMM_RV64_MVL128_LMUL)))
 
 LIBXSMM_API_INTERN
@@ -159,7 +159,7 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   for (nld = 0; nld < max_loads; nld++){
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m += i_reg_gp ) {
       if (PREFETCH_A){
-        int m_stride = libxsmm_gemm_m_prefetch_stride();
+        int m_stride = libxsmm_cpuid_rv64_gemm_m_prefetch_stride();
         int stride = i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in;
 
         /* If m_stride is set prefetch next m block else next k iteration of current m block */
