@@ -29,7 +29,7 @@ void libxsmm_generator_gemm_vsx_block_load_vsr( libxsmm_generated_code *io_gener
   unsigned int l_vec_len =  LIBXSMM_PPC64LE_VSR_WIDTH / 8;
   unsigned int l_vec_ele = l_vec_len / l_databytes;
   unsigned int l_m_blocks = i_m / l_vec_ele;
-  unsigned int l_m_part;
+  unsigned int l_m_part = -1;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
   unsigned int l_a_ptr[LIBXSMM_PPC64LE_GPR_NMAX];
@@ -96,7 +96,7 @@ void libxsmm_generator_gemm_vsx_block_store_vsr( libxsmm_generated_code *io_gene
   unsigned int l_vec_len =  LIBXSMM_PPC64LE_VSR_WIDTH / 8;
   unsigned int l_vec_ele = l_vec_len / l_databytes;
   unsigned int l_m_blocks = i_m / l_vec_ele;
-  unsigned int l_m_part;
+  unsigned int l_m_part = -1;
   unsigned int l_packed = ( ( i_m % l_vec_ele ) == 0 ) ? 1 : 0;
 
   unsigned int l_a_ptr[LIBXSMM_PPC64LE_GPR_NMAX];
