@@ -1503,6 +1503,7 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                                         libxsmm_ppc64le_reg    *io_reg_tracker );
 
 
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_unpack_args( libxsmm_generated_code *io_generated_code,
                                         libxsmm_ppc64le_reg    *io_reg_tracker );
 
