@@ -226,8 +226,8 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
                                                    unsigned int                   i_br,
                                                    unsigned int                   i_a_offset,
                                                    unsigned int                   i_b_offset ) {
-  libxsmm_datatype l_c_datatype = LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_c_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_comptype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_a, l_b, l_c;
   unsigned int i;
   unsigned int l_a_m_offset = 0, l_a_ptr = 0, l_b_ptr = 0;
@@ -807,8 +807,8 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
                                                    unsigned int                    i_br,
                                                    unsigned int                    i_a_offset,
                                                    unsigned int                    i_b_offset ) {
-  libxsmm_datatype l_c_datatype = LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_c_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_comptype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_a, l_b, l_c;
   unsigned int i;
   unsigned int l_a_m_offset = 0, l_a_ptr = 0, l_b_ptr = 0;
