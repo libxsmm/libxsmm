@@ -147,10 +147,10 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
   unsigned int l_vector_len;
   unsigned int l_blocking[3], l_reg[3], l_n_reg;
 
-  io_blocking->vector_len_a = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->vector_len_b = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->vector_len_c = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
-  io_blocking->comp_bytes = libxsmm_ppc64le_instr_bytes( io_generated_code, LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_a = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_b = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->vector_len_c = l_v_bytes / libxsmm_ppc64le_instr_bytes( io_generated_code, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
+  io_blocking->comp_bytes = libxsmm_ppc64le_instr_bytes( io_generated_code, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ) );
   io_blocking->vector_len_comp = l_v_bytes / io_blocking->comp_bytes;
   l_vector_len = io_blocking->vector_len_comp;
 
