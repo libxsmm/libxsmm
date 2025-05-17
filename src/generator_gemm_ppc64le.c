@@ -620,6 +620,10 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_vsx( libxsmm_generated_code       
   }
 
   /* n-loop values */
+  if ( io_blocking->block_n == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
   l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
   l_packed = ( 0 == i_xgemm_desc->n % io_blocking->block_n ) ? 1 : 0;
 
@@ -733,6 +737,10 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
   libxsmm_ppc64le_used_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, i_c );
 
   /* n loop values */
+  if ( io_blocking->block_n == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
   l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
   l_packed = ( 0 == i_xgemm_desc->n % io_blocking->block_n ) ? 1 : 0;
 
@@ -1203,6 +1211,10 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
   }
 
   /* n loop values */
+  if ( io_blocking->block_n == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
   l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
   l_packed = ( 0 == i_xgemm_desc->n % io_blocking->block_n ) ? 1 : 0;
 
@@ -1323,6 +1335,10 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
   i_c = LIBXSMM_PPC64LE_GPR_ARG2;
 
   /* n loop values */
+  if ( io_blocking->block_n == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
   l_n_iters = i_xgemm_desc->n / io_blocking->block_n;
   l_packed = ( 0 == i_xgemm_desc->n % io_blocking->block_n ) ? 1 : 0;
 
