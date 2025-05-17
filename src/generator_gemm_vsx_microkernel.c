@@ -300,9 +300,9 @@ void libxsmm_generator_br_vsx_microkernel( libxsmm_generated_code        *io_gen
                                            unsigned int                   i_b,
                                            unsigned int                   i_c,
                                            unsigned int                  *i_c_reg ) {
-  libxsmm_datatype l_a_datatype = LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_b_datatype = LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_a_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_b_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_comptype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_v_len = i_blocking->vector_len_comp;
   unsigned int l_n_k_blocks = ( i_xgemm_desc->k + i_blocking->block_k - 1 ) / i_blocking->block_k;
   unsigned int l_a, l_b, l_a_last, l_b_last, l_a_pipe[2], l_b_pipe[2];
@@ -404,10 +404,10 @@ void libxsmm_generator_vsx_microkernel( libxsmm_generated_code        *io_genera
                                         unsigned int                   i_a,
                                         unsigned int                   i_b,
                                         unsigned int                   i_c ) {
-  libxsmm_datatype l_a_datatype = LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_b_datatype = LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_c_datatype = LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
-  libxsmm_datatype l_comptype = LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_a_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_b_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_c_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_comptype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
   unsigned int l_beta_zero = ( i_xgemm_desc->flags & 0x0004 ) >> 2;
   unsigned int l_v_len = i_blocking->vector_len_comp;
   unsigned int l_n_k_blocks = ( i_xgemm_desc->k + i_blocking->block_k - 1 ) / i_blocking->block_k;
