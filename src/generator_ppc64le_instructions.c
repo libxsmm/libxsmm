@@ -21,7 +21,7 @@
 
 
 LIBXSMM_API_INTERN
-libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init() {
+libxsmm_ppc64le_reg libxsmm_ppc64le_reg_init(void) {
   libxsmm_ppc64le_reg reg_tracker = LIBXSMM_PPC64LE_REG_DEFAULT;
   return reg_tracker;
 }
@@ -31,7 +31,7 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_get_reg( libxsmm_generated_code  *io_generated_code,
                                       libxsmm_ppc64le_reg     *io_reg_tracker,
                                       libxsmm_ppc64le_reg_type i_reg_type ) {
-  int i, n_reg;
+  int i, n_reg = -1;
 
   switch (i_reg_type) {
     case LIBXSMM_PPC64LE_GPR: {
@@ -49,10 +49,12 @@ unsigned int libxsmm_ppc64le_get_reg( libxsmm_generated_code  *io_generated_code
     case LIBXSMM_PPC64LE_ACC: {
       n_reg = LIBXSMM_PPC64LE_ACC_NMAX;
     } break;
+#if 0
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return 0xfffffff;
     }
+#endif
   }
 
   for ( i = n_reg - 1; i >= 0; --i ) {
@@ -139,9 +141,11 @@ void libxsmm_ppc64le_alloc_mat( libxsmm_generated_code    *io_generated_code,
         }
       }
     } break;
+#if 0
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     }
+#endif
   }
 }
 
@@ -215,7 +219,8 @@ void libxsmm_ppc64le_get_sequential_reg( libxsmm_generated_code  *io_generated_c
                                          unsigned int             i_n,
                                          unsigned int            *o_reg ) {
   char l_alloc = 0;
-  int i = 0, j, l_n_reg;
+  int i = 0, j, l_n_reg = -1;
+
   switch (i_reg_type) {
     case LIBXSMM_PPC64LE_GPR: {
       l_n_reg = LIBXSMM_PPC64LE_GPR_NMAX;
@@ -232,10 +237,12 @@ void libxsmm_ppc64le_get_sequential_reg( libxsmm_generated_code  *io_generated_c
     case LIBXSMM_PPC64LE_ACC: {
       l_n_reg = LIBXSMM_PPC64LE_ACC_NMAX;
     } break;
+#if 0
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
+#endif
   }
 
   while ( i <= (int)(l_n_reg - i_n) && 0 == l_alloc ) {
@@ -313,9 +320,11 @@ char libxsmm_ppc64le_isfree_reg( libxsmm_generated_code  *io_generated_code,
         }
       }
     } break;
+#if 0
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     }
+#endif
   }
   return o_is_free;
 }
@@ -356,10 +365,12 @@ void libxsmm_ppc64le_set_reg( libxsmm_generated_code  *io_generated_code,
         io_reg_tracker->vsr[i_reg*4 + i] = i_value;
       }
     } break;
+#if 0
     default: {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
+#endif
   }
 }
 
