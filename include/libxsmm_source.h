@@ -108,6 +108,7 @@
 #include "../src/generator_packed_spgemm_csr_bsparse_aarch64.c"
 #include "../src/generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.c"
 #include "../src/generator_ppc64le_instructions.c"
+#include "../src/generator_ppc64le_reference.c"
 #include "../src/generator_rv64_instructions.c"
 #include "../src/generator_rv64_reference.c"
 #include "../src/generator_spgemm.c"
