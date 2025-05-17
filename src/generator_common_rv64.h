@@ -47,7 +47,8 @@ void libxsmm_generator_load_2dregblock_rv64_rvv( libxsmm_generated_code* io_gene
                                                  const unsigned int      i_m_blocking,
                                                  const unsigned int      i_n_blocking,
                                                  const unsigned int      i_ld,
-                                                 const unsigned int      i_zero );
+                                                 const unsigned int      i_zero,
+                                                 const unsigned int      i_reg_gp );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_generated_code,
@@ -61,5 +62,6 @@ void libxsmm_generator_store_2dregblock_rv64_rvv( libxsmm_generated_code* io_gen
                                                   const unsigned int      i_ld,
                                                   const libxsmm_datatype  i_inp_datatype,
                                                   const unsigned int      i_aux_gp_reg,
-                                                  const unsigned int      i_reduce_on_output  );
+                                                  const unsigned int      i_reduce_on_output,
+                                                  const unsigned int      i_reg_gp  );
 #endif /* GENERATOR_COMMON_RV64_H */

@@ -3,6 +3,9 @@ name: LIBXSMM Arm Graviton 3
 on:
   workflow_dispatch:
   push:
+  schedule:
+    # Runs every week to keep the AWS node working
+    - cron: '0 0 * * 6'
 
 env:
   LIBXSMM_VERBOSE: 4

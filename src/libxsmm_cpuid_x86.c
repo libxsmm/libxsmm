@@ -343,7 +343,7 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
   return libxsmm_cpuid_arm(info);
 #elif defined(LIBXSMM_PLATFORM_RV64)
-  return LIBXSMM_RV64;
+  return libxsmm_cpuid_rv64(info);
 #elif defined(LIBXSMM_PLATFORM_PPC64LE)
   return libxsmm_cpuid_ppc(info);
 #else
@@ -435,8 +435,17 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_A64FX: {
       target_arch = "a64fx";
     } break;
-    case LIBXSMM_RV64: {
-      target_arch = "rv64";
+    case LIBXSMM_RV64_MVL128: {
+      target_arch = "rv64_mvl128";
+    } break;
+    case LIBXSMM_RV64_MVL256: {
+      target_arch = "rv64_mvl256";
+    } break;
+    case LIBXSMM_RV64_MVL256_LMUL: {
+      target_arch = "rv64_mvl256_lmul";
+    } break;
+    case LIBXSMM_RV64_MVL128_LMUL: {
+      target_arch = "rv64_mvl128_lmul";
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
@@ -555,8 +564,17 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   else if (strcmp(arch, "a64fx") == 0) {
     target_archid = LIBXSMM_AARCH64_A64FX;
   }
-  else if (strcmp(arch, "rv64") == 0) {
-    target_archid = LIBXSMM_RV64;
+  else if (strcmp(arch, "rv64_mvl128") == 0) {
+    target_archid = LIBXSMM_RV64_MVL128;
+  }
+  else if (strcmp(arch, "rv64_mvl256") == 0) {
+    target_archid = LIBXSMM_RV64_MVL256;
+  }
+  else if (strcmp(arch, "rv64_mvl256_lmul") == 0) {
+    target_archid = LIBXSMM_RV64_MVL256_LMUL;
+  }
+  else if (strcmp(arch, "rv64_mvl128_lmul") == 0) {
+    target_archid = LIBXSMM_RV64_MVL128_LMUL;
   } else {
     target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   }
@@ -573,12 +591,19 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 {
   int result;
-  if (LIBXSMM_AARCH64_V81 == id
+  if (LIBXSMM_RV64_MVL128 == id)
+  {
+    result = 4;
+  }
+  else if (LIBXSMM_RV64_MVL256 == id)
+  {
+    result = 8;
+  }
+  else if (LIBXSMM_AARCH64_V81 == id
         || LIBXSMM_AARCH64_V82 == id
         || LIBXSMM_AARCH64_APPL_M1 == id
         || LIBXSMM_AARCH64_SVE128  == id
-        || LIBXSMM_AARCH64_NEOV2 == id
-        || LIBXSMM_AARCH64_APPL_M4 == id )
+        || LIBXSMM_AARCH64_NEOV2 == id )
   {
     result = 4;
   }
@@ -588,7 +613,8 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
     result = 8;
   }
   else if (LIBXSMM_AARCH64_SVE512 == id
-        || LIBXSMM_AARCH64_A64FX  == id )
+        || LIBXSMM_AARCH64_A64FX  == id
+        || LIBXSMM_AARCH64_APPL_M4 == id )
   {
     result = 16;
   }

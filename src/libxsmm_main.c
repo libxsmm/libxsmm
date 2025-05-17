@@ -210,7 +210,7 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
     libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
-  } else if ( (io_generated_code->arch >= LIBXSMM_RV64) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_PPC64LE_FPF) && (io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT) ) {
     libxsmm_generator_gemm_ppc64le_reference_kernel( io_generated_code, i_xgemm_desc );
@@ -230,7 +230,7 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
     libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
-  } else if ( (io_generated_code->arch >= LIBXSMM_RV64) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_PPC64LE_FPF) && (io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT) ) {
     libxsmm_generator_mateltwise_ppc64le_reference_kernel( io_generated_code, i_mateltw_desc );
@@ -249,7 +249,7 @@ void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*    
     libxsmm_generator_matequation_x86_reference_kernel( io_generated_code, i_mateqn_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
-  } else if ( (io_generated_code->arch >= LIBXSMM_RV64) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_PPC64LE_FPF) && (io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT) ) {
     libxsmm_generator_matequation_ppc64le_reference_kernel( io_generated_code, i_mateqn_desc );
@@ -1204,6 +1204,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         libxsmm_set_malloc(0 != valid ? 1 : 0, &malloc_lo, &malloc_hi);
       }
     }
+
 #if defined(LIBXSMM_MAXTARGET)
     libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
 #else /* attempt to set libxsmm_target_archid per environment variable */
@@ -1636,7 +1637,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_NEOV1:
     case LIBXSMM_AARCH64_SVE512:
     case LIBXSMM_AARCH64_A64FX:
-    case LIBXSMM_RV64:
+    case LIBXSMM_RV64_MVL256:
+    case LIBXSMM_RV64_MVL128:
     case LIBXSMM_PPC64LE_FPF:
     case LIBXSMM_PPC64LE_VSX:
     case LIBXSMM_PPC64LE_MMA: {
@@ -1650,7 +1652,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
       target_archid = LIBXSMM_AARCH64_V81;
       break;
 #elif defined(LIBXSMM_PLATFORM_RV64)
-      target_archid = LIBXSMM_RV64;
+      target_archid = LIBXSMM_RV64_MVL128;
       break;
 #endif
     default: target_archid = libxsmm_cpuid(NULL);
@@ -1720,13 +1722,25 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
 # if !defined(LIBXSMM_PLATFORM_FORCE)
       if (0 < jit) {
-        target_archid = LIBXSMM_RV64 + jit;
+        target_archid = LIBXSMM_RV64_MVL128 + jit;
       }
       else
 # endif
-      if  (arch == libxsmm_stristr(arch, "riscv") || arch == libxsmm_stristr(arch, "rv64"))
+      if  (arch == libxsmm_stristr(arch, "riscv_mvl128_lmul") || arch == libxsmm_stristr(arch, "rv64_mvl128_lmul"))
       {
-        target_archid = LIBXSMM_RV64;
+        target_archid = LIBXSMM_RV64_MVL128_LMUL;
+      }
+      else if  (arch == libxsmm_stristr(arch, "riscv_mvl256_lmul") || arch == libxsmm_stristr(arch, "rv64_mvl256_lmul"))
+      {
+        target_archid = LIBXSMM_RV64_MVL256_LMUL;
+      }
+      else if  (arch == libxsmm_stristr(arch, "riscv_mvl128") || arch == libxsmm_stristr(arch, "rv64_mvl128"))
+      {
+        target_archid = LIBXSMM_RV64_MVL128;
+      }
+      else if  (arch == libxsmm_stristr(arch, "riscv_mvl256") || arch == libxsmm_stristr(arch, "rv64_mvl256"))
+      {
+        target_archid = LIBXSMM_RV64_MVL256;
       }
     }
 #endif
@@ -1754,7 +1768,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
         target_archid = LIBXSMM_AARCH64_V81;
 #elif defined(LIBXSMM_PLATFORM_RV64)
-        target_archid = LIBXSMM_RV64;
+        target_archid = LIBXSMM_RV64_MVL128;
 #elif defined(LIBXSMM_PLATFORM_PPC64LE)
         target_archid = LIBXSMM_PPC64LE_VSX;
 #else
@@ -1772,6 +1786,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   else {
     target_archid = libxsmm_cpuid(NULL);
   }
+
 #if defined(NDEBUG)
   if (libxsmm_cpuid(NULL) < target_archid) { /* warn about code path if beyond CPUID */
     const int cpuid = libxsmm_cpuid(NULL);
@@ -1788,6 +1803,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 # endif
   }
 #endif
+
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 

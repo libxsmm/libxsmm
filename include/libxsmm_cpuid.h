@@ -51,7 +51,10 @@
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_APPL_M4       2501 /* Apple M4 SME without SVE*/
 #define LIBXSMM_AARCH64_ALLFEAT       2999
-#define LIBXSMM_RV64                  3001 /* RISCV All */
+#define LIBXSMM_RV64_MVL128           3001 /* RISCV 128-bit RVV */
+#define LIBXSMM_RV64_MVL256           3002 /* RISCV 256-bit RVV */
+#define LIBXSMM_RV64_MVL128_LMUL      3003 /* RISCV 128-bit RVV with non-unit LMUL */
+#define LIBXSMM_RV64_MVL256_LMUL      3004 /* RISCV 256-bit RVV witb non-unit LMUL */
 #define LIBXSMM_RV64_ALLFEAT          3999
 #define LIBXSMM_PPC64LE_FPF           4001 /* Generic floating-point facility */
 #define LIBXSMM_PPC64LE_VSX           4002 /* Vector scalar extension */
@@ -125,6 +128,24 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
  */
 #define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
 
-LIBXSMM_API int libxsmm_cpuid_mvl_rv64(void);
+LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+
+/* Get reuse A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_a(void);
+
+/* Get reuse B knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_b(void);
+
+/* Get reuse C knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_c(void);
+
+/* Get prefetch A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_a(void);
+
+/* Get prefetch B knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_b(void);
+
+/* Get prefetch stride of A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_m_prefetch_stride(void);
 
 #endif /*LIBXSMM_CPUID_H*/

@@ -49,7 +49,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_pred_reg) {
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_vcvt_f32bf16_aarch64_sve( io_generated_code, i_vec_inout, i_pred_reg );
@@ -110,7 +110,7 @@ void libxsmm_generator_vcvt_f32i8_aarch64( libxsmm_generated_code* io_generated_
     const unsigned int i_pred_reg,
     const unsigned int i_skip_scaling,
     const unsigned int i_sign_sat ) {
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO  */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_vcvt_f32i8_aarch64_sve( io_generated_code, i_vec_inout, i_scf_vec_reg, i_pred_reg, i_skip_scaling, i_sign_sat );
@@ -123,7 +123,7 @@ void libxsmm_generator_vcvt_i8f32_aarch64( libxsmm_generated_code* io_generated_
     const unsigned int i_scf_vec_reg,
     const unsigned int i_pred_reg,
     unsigned int       i_skip_scaling ) {
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     /* TODO  */
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_vcvt_i8f32_aarch64_sve( io_generated_code, i_vec_inout, i_scf_vec_reg, i_pred_reg, i_skip_scaling );
@@ -226,7 +226,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
                                                              const unsigned int      i_is_store ) {
   libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_addr, i_gp_reg_scratch,
                                                     i_vec_reg, i_datatype_size, i_masked_elems, i_adv_gpr, i_is_store,
-                                                    i_masked_elems == 0 ? 0 : 1 );
+                                                    i_masked_elems == 0 ? 0 : 1, 0 );
 }
 
 LIBXSMM_API_INTERN
@@ -241,12 +241,13 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
                                                           const unsigned int      i_masked_elems,
                                                           const unsigned int      i_is_gather ) {
   unsigned int i = 0;
+  unsigned int l_vlen = libxsmm_cpuid_vlen(io_generated_code->arch);
   unsigned int l_load_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF;
   unsigned int l_store_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF;
   unsigned int l_shift_amount = (i_datatype_size == 4) ? 2 : 1;
   libxsmm_aarch64_asimd_width l_idx_move_asimd_width = (i_idx_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D;
   libxsmm_aarch64_asimd_width l_data_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_H;
-  unsigned int l_active_elements = (i_masked_elems == 0) ? libxsmm_cpuid_vlen(io_generated_code->arch)/i_idx_datatype_size : i_masked_elems;
+  unsigned int l_active_elements = (i_masked_elems == 0) ? l_vlen/i_idx_datatype_size : i_masked_elems;
 
   for (i = 0; i < l_active_elements; i++) {
     /* Move index i from index asimd reg to GPR0 */
@@ -280,11 +281,11 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
                                                        const unsigned int      i_masked_elems,
                                                        const unsigned int      i_adv_gpr,
                                                        const unsigned int      i_is_store,
-                                                       const unsigned char     i_mask_reg ) {
+                                                       const unsigned char     i_mask_reg,
+                                                       const unsigned char     i_is_sve ) {
 
   /* i_masked_elems: 0 = load as many as you can; else: load <i_masked_elems> elements */
-  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT && io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 )  ) {
+  if ( i_is_sve ) {
     if ( i_masked_elems == 0 ) {/* just load/store without predicate */
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, i_mask_reg );
@@ -479,7 +480,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
                                                             const unsigned int      i_masked_elems,
                                                             const unsigned int      i_adv_gpr ) {
   unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT && (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4) );
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT );
 
   if ( l_is_sve ) {
     int l_pred_reg = 0; /* TODO: find suitable predicate register */
@@ -2227,8 +2228,7 @@ void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io
    * If an architecture has a wider vector length, a lot of things need to be fixed (for both aarch64 and x86).
    * Load the first VL in fp32 values, the rest doesn't matter */
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) &&
-       (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4) ) {
+       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* The offset for the LDR instruction is not in bytes, it's in vector lengths;
      * Therefore, currently only architectures with a power-of-2-vector length are suppored by this code. */
     unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
@@ -2262,8 +2262,7 @@ void libxsmm_generator_store_prng_state_aarch64_asimd( libxsmm_generated_code* i
                                                        const unsigned int      prng_state3_vreg ) {
   /* store RNG state */
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) &&
-      (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4) ) {
+      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* the same notes as in libxsmm_generator_load_prng_state_aarch64_asimd() apply here */
     unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
     unsigned int l_increment = 64 / l_vector_length;
@@ -2295,8 +2294,7 @@ void libxsmm_generator_prepare_dropout_aarch64_asimd( libxsmm_generated_code* io
                                                       const unsigned int      dropout_prob_vreg,
                                                       const unsigned int      dropout_invprob_vreg ) {
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) &&
-      (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4) ) {
+      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* predicate register 0 must be ptrue; is ensured in generator_mateltwise_unary_binary_aarch64.c */
     unsigned char l_pred_reg = 0;
 
@@ -2345,8 +2343,7 @@ void libxsmm_generator_prepare_dropout_inv_aarch64_asimd( libxsmm_generated_code
                                                           const unsigned int      dropout_vreg_zero,
                                                           const unsigned int      dropout_prob_vreg ) {
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) &&
-      (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4)) {
+       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* predicate register 0 must be ptrue; is ensured in generator_mateltwise_unary_binary_aarch64.c */
     unsigned char l_pred_reg = 0;
 

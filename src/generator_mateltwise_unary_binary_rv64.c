@@ -208,12 +208,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_configure_rv64_vlens(const libxsmm_meltw_descriptor* i_mateltwise_desc, libxsmm_mateltwise_kernel_config* i_micro_kernel_config) {
   /* First, determine the vlen compute based on the architecture; there may be architectures with different widths for different types */
   /* At the moment, all types are assumed to be of the same length */
-  /* unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_vlen(i_micro_kernel_config->instruction_set);*/
-#define BIT_BYTE (8)
-
-  unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_mvl_rv64()/BIT_BYTE;
-
-#undef BIT_BYTE
+  unsigned int l_rvv_bytes_per_register = libxsmm_cpuid_vlen(i_micro_kernel_config->instruction_set);
 
   unsigned char l_inp_type = (LIBXSMM_DATATYPE_IMPLICIT == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) ? LIBXSMM_CAST_UCHAR(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) : LIBXSMM_CAST_UCHAR(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP));
   unsigned int  l_inp_type_size = LIBXSMM_TYPESIZE(l_inp_type); /* like libxsmm_typesize; returns 0 if type is unknown */
@@ -222,11 +217,11 @@ void libxsmm_generator_configure_rv64_vlens(const libxsmm_meltw_descriptor* i_ma
   unsigned int  l_out_type_size = LIBXSMM_TYPESIZE(l_out_type);
   unsigned int  l_is_comp_zip = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_ZIP)) ? 1 : 0;
 
-  if (l_inp_type_size > 0) i_micro_kernel_config->vlen_comp = l_asimd_bytes_per_register / l_inp_type_size;
-  if (l_out_type_size > 0) i_micro_kernel_config->vlen_out = l_asimd_bytes_per_register / l_out_type_size;
+  if (l_inp_type_size > 0) i_micro_kernel_config->vlen_comp = l_rvv_bytes_per_register / l_inp_type_size;
+  if (l_out_type_size > 0) i_micro_kernel_config->vlen_out = l_rvv_bytes_per_register / l_out_type_size;
 
   if ( l_is_comp_zip ) {
-    i_micro_kernel_config->vlen_comp = l_asimd_bytes_per_register / l_out_type_size;
+    i_micro_kernel_config->vlen_comp = l_rvv_bytes_per_register / l_out_type_size;
   }
 
   /* The vlen_in is the same as vlen compute */
