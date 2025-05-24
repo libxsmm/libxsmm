@@ -46,7 +46,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
   unsigned int reg_ldc;
 } libxsmm_ppc64le_blocking;
 
-
+/* Number of registers available for use */
 #define LIBXSMM_PPC64LE_REG_NMAX 64 /* Max number of any reg type */
 #define LIBXSMM_PPC64LE_GPR_NMAX 32
 #define LIBXSMM_PPC64LE_FPR_NMAX 32
@@ -55,6 +55,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 #define LIBXSMM_PPC64LE_ACC_NMAX 8
 #define LIBXSMM_PPC64LE_VSR_SCRATCH 8
 #define LIBXSMM_PPC64LE_STACK_SIZE 576
+
+#define LIBXSMM_PPC64lE_INSTR_ALIGN 64
 
 /* number of volatile registers */
 /* From "64-Bit ELF V2 ABI Specification: Power Architecture"
@@ -1045,6 +1047,12 @@ unsigned int libxsmm_ppc64le_instr_ds_form( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_dx_form( unsigned int  i_instr,
+                                            unsigned char i_rt,
+                                            unsigned int  i_d );
+
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_m_form( unsigned int  i_instr,
                                            unsigned char i_rs,
                                            unsigned char i_ra,
@@ -1518,6 +1526,11 @@ void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code        *io_gene
                                           libxsmm_gemm_descriptor const *io_xgemm_desc,
                                           libxsmm_ppc64le_reg           *io_reg_tracker );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_unpack_bc( libxsmm_generated_code *io_generated_code );
+
+
 /**
  * Colapses the stack frame, resetting non-volatile registers.
  *
@@ -1530,8 +1543,22 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_close_data( libxsmm_generated_code*     io_generated_code,
+                                       libxsmm_const_data_tracker* io_const_data );
+
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_bytes( libxsmm_generated_code *io_generated_code,
                                           libxsmm_datatype const  i_datatype );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_add_data( libxsmm_generated_code*     io_generated_code,
+                                             const unsigned char*        i_data,
+                                             unsigned int                i_ndata_bytes,
+                                             unsigned int                i_alignment,
+                                             unsigned int                i_append_only,
+                                             libxsmm_const_data_tracker* io_const_data );
 
 
 LIBXSMM_API_INTERN
@@ -1717,6 +1744,13 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_adr_data( libxsmm_generated_code*     io_generated_code,
+                                     unsigned int                i_reg,
+                                     unsigned int                i_off,
+                                     libxsmm_const_data_tracker* io_const_data );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
                                       unsigned int            i_dst,
                                       long                    i_val );
@@ -1735,6 +1769,13 @@ void libxsmm_ppc64le_instr_vec_shift_left( libxsmm_generated_code *io_generated_
                                            unsigned int            i_src,
                                            unsigned int            i_dst,
                                            unsigned char           i_n );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_neg( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_datatype const  i_datatype,
+                                    unsigned int            i_src,
+                                    unsigned int            i_dst );
 
 
 LIBXSMM_API_INTERN
@@ -1798,6 +1839,13 @@ void libxsmm_ppc64le_instr_store_part( libxsmm_generated_code *io_generated_code
                                        long                    i_offset,
                                        unsigned int            i_mask,
                                        unsigned int            i_t );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_store_pair( libxsmm_generated_code *io_generated_code,
+                                       unsigned int            i_a,
+                                       long                    i_offset,
+                                       unsigned int            i_s );
 
 
 LIBXSMM_API_INTERN

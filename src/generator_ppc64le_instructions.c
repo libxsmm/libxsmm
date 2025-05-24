@@ -535,6 +535,28 @@ unsigned int libxsmm_ppc64le_instr_ds_form( unsigned int  i_instr,
 
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_dx_form( unsigned int  i_instr,
+                                            unsigned char i_rt,
+                                            unsigned int  i_d ) {
+  unsigned int l_instr = i_instr;
+  unsigned int l_d0 = 0x3ff & ( i_d >> 6 );
+  unsigned char l_d1 = 0x1f & ( i_d >> 1 );
+  unsigned char l_d2 = 0x1 & i_d;
+
+  /* set RT */
+  l_instr |= (unsigned int)( (0x1f & i_rt) << (31 - 6 - 4) );
+  /* set d1 */
+  l_instr |= (unsigned int)( (0x1f & l_d1) << (31 - 11 - 4) );
+  /* set d0 */
+  l_instr |= (unsigned int)( (0x1f & l_d0) << (31 - 16 - 9) );
+  /* set d2 */
+  l_instr |= (unsigned int)( (0x1f & l_d2) << (31 - 31 - 0) );
+
+  return l_instr;
+}
+
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_ppc64le_instr_m_form( unsigned int  i_instr,
                                            unsigned char i_rs,
                                            unsigned char i_ra,
@@ -1468,6 +1490,10 @@ void libxsmm_ppc64le_instr_2( libxsmm_generated_code *io_generated_code,
     unsigned int l_instr = i_instr & LIBXSMM_PPC64LE_32FMASK;
 
     switch( l_fid ) {
+      /* DX form */
+      case LIBXSMM_PPC64LE_FORM_DX: {
+        l_op = libxsmm_ppc64le_instr_dx_form( l_instr, (unsigned char)i_0, (unsigned int)i_1 );
+      } break;
       /* X (33) form */
       case LIBXSMM_PPC64LE_FORM_X_33: {
         l_op = libxsmm_ppc64le_instr_x_form_33( l_instr, (unsigned char)i_0, (unsigned char)i_1 );
@@ -2054,6 +2080,54 @@ void libxsmm_ppc64le_instr_prefix_9( libxsmm_generated_code *io_generated_code,
 
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_ppc64le_instr_add_data( libxsmm_generated_code*     io_generated_code,
+                                             const unsigned char*        i_data,
+                                             unsigned int                i_ndata_bytes,
+                                             unsigned int                i_alignment,
+                                             unsigned int                i_append_only,
+                                             libxsmm_const_data_tracker* io_const_data ) {
+  i_alignment = LIBXSMM_MAX( i_alignment, 1 );
+
+  if ( 1 < io_generated_code->code_type ) {
+    unsigned char* l_data = (unsigned char*) io_const_data->const_data;
+    unsigned int l_dsize = io_const_data->const_data_size;
+    unsigned int l_doff, l_npad;
+
+    /* See if we already have the data */
+    if ( !i_append_only ) {
+      for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
+        if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
+          return l_doff;
+        }
+      }
+    }
+
+    /* Determine how much padding is needed */
+    l_npad = LIBXSMM_UP( l_dsize, i_alignment ) - l_dsize;
+
+    /* Ensure we have enough space */
+    if ( ((size_t)l_dsize + l_npad + i_ndata_bytes) > sizeof(io_const_data->const_data) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return ~0U;
+    }
+
+    /* Copy the data */
+    memcpy( l_data + l_dsize + l_npad, i_data, i_ndata_bytes );
+
+    /* Update the size */
+    io_const_data->const_data_size += l_npad + i_ndata_bytes;
+
+    /* Return the offset of the new data in the buffer */
+    return l_dsize + l_npad;
+  } else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_add_data: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return 0;
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_transpose( libxsmm_generated_code *io_generated_code,
                                       libxsmm_ppc64le_reg    *io_reg_tracker,
                                       libxsmm_datatype const  i_datatype,
@@ -2493,7 +2567,10 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
                                       unsigned int            i_src,
                                       unsigned int            i_dst,
                                       long                    i_val ) {
-  if ( 0 == i_src ) {
+  if ( i_src == i_dst && 0 == i_val ) {
+    /* Do nothing */
+    return;
+  } else if ( 0 == i_src ) {
     libxsmm_ppc64le_instr_set_imm64( io_generated_code, i_dst, i_val );
   } else if ( 0 == i_val ) {
     libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_src, i_dst );
@@ -2522,6 +2599,44 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_adr_data( libxsmm_generated_code*     io_generated_code,
+                                     unsigned int                i_reg,
+                                     unsigned int                i_off,
+                                     libxsmm_const_data_tracker* io_const_data ) {
+  if ( 1 < io_generated_code->code_type ) {
+    unsigned int code_head = io_generated_code->code_size / 4;
+    unsigned int* code = (unsigned int*) io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size + 8 < io_generated_code->code_size ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* Ensure we have space in the fixup buffer */
+    if ( 128 <= io_const_data->const_data_nload_insns ) {
+      fprintf( stderr, "libxsmm_ppc64le_instr_adr_data out of fixup space!\n" );
+      LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
+    }
+
+    /* Save the offset and register in the code */
+    code[code_head] = ((0x1f & i_reg) << 27) | (0x1fffff & i_off);
+
+    /* Save the adr offset */
+    io_const_data->const_data_pc_load_insns[io_const_data->const_data_nload_insns++] = io_generated_code->code_size;
+
+    /* Advance code head */
+    io_generated_code->code_size += 8;
+  } else {
+    fprintf(stderr, "libxsmm_ppc64le_instr_adr_data: inline/pure assembly print is not supported!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -2577,6 +2692,28 @@ void libxsmm_ppc64le_instr_set_shift_left( libxsmm_generated_code *io_generated_
   unsigned char l_mask_in = ( ( 0x1f & l_mask ) << 1 ) + ( ( 0x20 & l_mask ) >> 5 );
 
   libxsmm_ppc64le_instr_6( io_generated_code, LIBXSMM_PPC64LE_INSTR_RLDICR, i_src, i_dst, i_n, l_mask_in, (0x20 & i_n) >> 5, 0 );
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_neg( libxsmm_generated_code *io_generated_code,
+                                    libxsmm_datatype const  i_datatype,
+                                    unsigned int            i_src,
+                                    unsigned int            i_dst ) {
+  unsigned int l_instr;
+  switch ( i_datatype ) {
+    case LIBXSMM_DATATYPE_F32:
+      l_instr = LIBXSMM_PPC64LE_INSTR_XVNEGSP;
+      break;
+    case LIBXSMM_DATATYPE_F64:
+      l_instr = LIBXSMM_PPC64LE_INSTR_XVNEGDP;
+      break;
+    default:
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+  }
+
+  libxsmm_ppc64le_instr_4( io_generated_code, l_instr, i_dst, i_src, ( 0x20 & i_src ) >> 5, ( 0x20 & i_dst ) >> 5 );
 }
 
 
@@ -2872,6 +3009,39 @@ void libxsmm_ppc64le_instr_store_part( libxsmm_generated_code *io_generated_code
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_store_pair( libxsmm_generated_code *io_generated_code,
+                                      unsigned int            i_a,
+                                      long                    i_offset,
+                                      unsigned int            i_s ) {
+  if ( i_s % 2 == 1) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM );
+    return;
+  }
+
+  if ( io_generated_code->arch >= LIBXSMM_PPC64LE_MMA ) {
+    unsigned int l_sp = (0x1f & i_s) >> 1;
+    unsigned int l_sx = (0x20 & i_s) >> 5;
+
+    if ( i_offset <= 0x7fff && i_offset >= -0x7fff && ( i_offset % 16 ) == 0 ) {
+      unsigned int l_offset = (unsigned int)( 0xffff & i_offset ) >> 4;
+
+      libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_STXVP, l_sp, l_sx, i_a, l_offset );
+    } else if ( i_offset <= 0x01ffffffff && i_offset >= -0x01ffffffff ) {
+      unsigned int l_offl = (unsigned int)( 0xffff & i_offset );
+      unsigned int l_offh = (unsigned int)( 0x03ffff & ( i_offset >> 16 ) );
+
+      libxsmm_ppc64le_instr_prefix_6( io_generated_code, LIBXSMM_PPC64LE_INSTR_PSTXVP, 0, l_offh, l_sp, l_sx, i_a, l_offl );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNKNOWN_OPERATION );
+    }
+  } else {
+     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_load_splat( libxsmm_generated_code *io_generated_code,
                                        libxsmm_ppc64le_reg    *io_reg_tracker,
                                        libxsmm_datatype const  i_datatype,
@@ -3130,6 +3300,24 @@ void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code        *io_gene
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_unpack_bc( libxsmm_generated_code *io_generated_code ) {
+  /* Set up input args */
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+  int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_LD,
+                           LIBXSMM_PPC64LE_GPR_ARG1,
+                           LIBXSMM_PPC64LE_GPR_ARG0,
+                           l_offset_ptr_b >> 2 );
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_LD,
+                           LIBXSMM_PPC64LE_GPR_ARG2,
+                           LIBXSMM_PPC64LE_GPR_ARG0,
+                           l_offset_ptr_c >> 2 );
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_code,
                                           libxsmm_ppc64le_reg    *io_reg_tracker ) {
   /* From "64-Bit ELF V2 ABI Specification: Power Architecture" */
@@ -3207,6 +3395,63 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
 
   /* Return statement */
   libxsmm_ppc64le_instr_blr( io_generated_code );
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_close_data( libxsmm_generated_code*     io_generated_code,
+                                       libxsmm_const_data_tracker* io_const_data ) {
+  unsigned int l_i;
+  unsigned char* l_code_buffer = (unsigned char*) io_generated_code->generated_code;
+  unsigned int l_code_size = io_generated_code->code_size;
+  unsigned int l_data_size = io_const_data->const_data_size;
+  unsigned int l_max_size = io_generated_code->buffer_size;
+
+  /* Handle any constant data */
+  if ( 0 < l_data_size ) {
+    /* Round up to a page boundary */
+    l_code_size = LIBXSMM_UP( l_code_size, LIBXSMM_PAGE_MINSIZE ); /* Check me */
+
+    /* Ensure we have space in the code stream */
+    if ( l_max_size < l_data_size + l_code_size ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* Copy the data into the buffer */
+    memcpy( l_code_buffer + l_code_size, io_const_data->const_data, l_data_size );
+
+    /* Update the data size including unused space (page-size alignment */
+    io_generated_code->data_size = l_code_size + l_data_size - io_generated_code->code_size;
+
+    /* Fill in the load address */
+    for ( l_i = 0; l_i < io_const_data->const_data_nload_insns; l_i++ ) {
+      unsigned int l_adr_off = io_const_data->const_data_pc_load_insns[l_i];
+      unsigned char l_gp;
+      unsigned int l_off, l_nia_off, l_instr, l_op;
+
+      /* Read the user-provided offset and destination GP */
+      memcpy( &l_off, l_code_buffer + l_adr_off, sizeof(l_off) );
+
+      /* Extract the GP from the top 5 bits */
+      l_gp = 0x1f & ( l_off >> 27 );
+
+      /* Compute the NIA offset */
+      l_nia_off = l_code_size - l_adr_off + ( 0x1fffff & l_off ) - 4;
+
+      /* Construct the ADDPCIS and ADDI instructions */
+      l_op =  LIBXSMM_PPC64LE_INSTR_ADDPCIS & LIBXSMM_PPC64LE_32FMASK;
+      l_instr = libxsmm_ppc64le_instr_dx_form( l_op, l_gp, 0xffff & ( l_nia_off >> 16 ) );
+      memcpy( l_code_buffer + l_adr_off, &l_instr, sizeof(l_instr) );
+      if ( 0 != ( 0xffff & l_nia_off ) ) {
+        l_op =  LIBXSMM_PPC64LE_INSTR_ADDI & LIBXSMM_PPC64LE_32FMASK;
+        l_instr = libxsmm_ppc64le_instr_d_form( l_op, l_gp, l_gp, 0xffff & l_nia_off );
+      } else {
+        l_instr = LIBXSMM_PPC64LE_INSTR_NOP;
+      }
+      memcpy( l_code_buffer + l_adr_off + 4, &l_instr, sizeof(l_instr) );
+    }
+  }
 }
 
 

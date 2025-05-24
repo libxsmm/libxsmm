@@ -215,15 +215,15 @@ void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
                                 unsigned int            i_a,
                                 unsigned int            i_b,
                                 unsigned int            i_c,
-                                char                    i_alpha,
-                                char                    i_beta ) {
+                                int                     i_alpha,
+                                int                     i_beta ) {
   /*
     VSX has 5 possible instructions in the A-form variant:
     XVMADDA  c, a, b -> c = a*b + c       | alpha =  1, beta = 1
     XVMSUBA  c, a, b -> c = a*b - c       | alpha =  1, beta = -1
     XVNMADDA c, a, b -> c = - ( a*b + c ) | alpha = -1, beta = -1
     XVNMSUBA c, a, b -> c = -( a*b - c )  | alpha = -1, beta = 1
-    XVMUL    c, a, b -> c = a*b           | alpha = -1, beta = 0
+    XVMUL    c, a, b -> c = a*b           | alpha =  1, beta = 0
   */
   unsigned int l_op;
 

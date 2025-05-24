@@ -135,6 +135,11 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
                  io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
       libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
                                                             i_row_idx, i_column_idx, i_values );
+    /* ppc64le with VSX */
+    } else if ( LIBXSMM_PPC64LE_VSX <= io_generated_code->arch &&
+                LIBXSMM_PPC64LE_ALLFEAT >= io_generated_code->arch ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( io_generated_code, i_xgemm_desc,
+                                                            i_row_idx, i_column_idx, i_values );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;

@@ -13,6 +13,8 @@
 #include "generator_common_x86.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
+#include "generator_ppc64le_instructions.h"
+#include "generator_gemm_vsx_microkernel.h"
 #include "generator_gemm_common.h"
 #include "generator_gemm_common_aarch64.h"
 
@@ -1735,6 +1737,387 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_aarch64_instruction_close_data( io_generated_code, &l_const_data_tracker );
 
 cleanup:
+  free( l_unique_values );
+  free( l_unique_pos );
+  free( l_unique_sgn );
+  free( l_ops );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_code*         io_generated_code,
+                                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                           const unsigned int*             i_row_idx,
+                                                           const unsigned int*             i_column_idx,
+                                                           const double*                   i_values ) {
+  unsigned int l_m_blocking, l_n_blocking;
+  unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
+  double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
+  unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
+  int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
+  unsigned int l_beta0 = ( i_xgemm_desc->flags & 0x0004 ) >> 2;
+
+  libxsmm_datatype l_datatype = LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype );
+  const unsigned int l_fbytes = libxsmm_ppc64le_instr_bytes( io_generated_code, l_datatype );
+  const unsigned int l_vbytes = LIBXSMM_PPC64LE_VSR_WIDTH / 8;
+  const unsigned int l_vlen = l_vbytes / l_fbytes;
+
+  libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
+  unsigned int l_n_ops, l_op_idx, l_i, l_j, l_n, l_uoff;
+
+  unsigned int l_bcast_reg_vals[LIBXSMM_PPC64LE_VSR_NMAX];
+  unsigned int l_n_b_reg, l_n_c_reg = 0, l_n_bcast_vals = 0, l_breg_unique, l_preg_unique, l_unique;
+  unsigned int l_gp_reg_param_struct, l_gp_reg_b, l_b_reg_copy, l_gp_reg_c, l_a_data_ptr;
+  unsigned int l_b_base_reg, l_c_base_reg, l_pack_base_reg = 0, l_bcast_base_reg = 0;
+
+  int l_curr_b_disp = 0, l_curr_rvb_disp = -1;
+  unsigned int l_n_loop;
+
+  libxsmm_loop_label_tracker l_loop_label_tracker;
+  libxsmm_const_data_tracker l_const_data_tracker;
+  libxsmm_ppc64le_reg l_reg_tracker;
+
+  /* Tracks which accumulators are negated due to use of VMULP[SD] */
+  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = { { 0 }, { 0 } };
+
+  /* Check if mallocs were successful */
+  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
+    goto cleanup;
+  }
+
+  /* Reset the constant data tracker */
+  memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
+  libxsmm_reset_const_data_tracker(&l_const_data_tracker);
+
+  /* Inner chunk size */
+  if ( i_xgemm_desc->n == l_vlen ) {
+    l_n_blocking = 1;
+  } else if ( i_xgemm_desc->n == 2*l_vlen ) {
+    l_n_blocking = 2;
+  } else if ( i_xgemm_desc->n == 4*l_vlen ) {
+    l_n_blocking = 4;
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    goto cleanup;
+  }
+
+  /* Number of B registers */
+  l_n_b_reg = ( LIBXSMM_PPC64LE_VSX == io_generated_code->arch ) ? 1 :
+    ( LIBXSMM_PPC64LE_MMA <= io_generated_code->arch && l_n_blocking > 1 ) ? 2 : 1 ;
+
+  /* prerequisite */
+  LIBXSMM_ASSERT(0 != i_values);
+
+  /* Calculate how many unique values we have */
+  libxsmm_analyse_sparse_nnz( l_n_row_idx, i_values, &l_unique, l_unique_values, l_unique_pos, l_unique_sgn );
+
+  /* Check that there are not too many unique values */
+  if ( l_unique > 1280 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
+    goto cleanup;
+  }
+
+  /* Loop labels reset */
+  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
+
+  /* Initialise the register tracker */
+  l_reg_tracker = libxsmm_ppc64le_reg_init();
+
+  /* Define argument registers */
+  l_gp_reg_param_struct = LIBXSMM_PPC64LE_GPR_ARG0;
+  libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_gp_reg_param_struct );
+  l_gp_reg_b = LIBXSMM_PPC64LE_GPR_ARG1;
+  libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_gp_reg_b );
+  l_gp_reg_c = LIBXSMM_PPC64LE_GPR_ARG2;
+  libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_gp_reg_c );
+
+  /* Initial configuration for number of A broadcast registers */
+  l_breg_unique = LIBXSMM_PPC64LE_VSR_NMAX - l_n_blocking - l_n_b_reg;
+
+  /* Initial configuration for the number of packed registers, we need at least one register to broadcast to */
+  l_preg_unique = l_vlen*(LIBXSMM_PPC64LE_VSR_NMAX - l_n_blocking - l_n_b_reg - 1);
+
+  /* Can A be stored entirely in registers */
+  if ( l_unique <= l_breg_unique ) {
+    l_b_base_reg = 0;
+    l_c_base_reg = l_b_base_reg + l_n_b_reg;
+    l_bcast_base_reg = LIBXSMM_PPC64LE_VSR_NMAX - l_unique;
+    l_n_bcast_vals = l_unique;
+
+    /* See if we have registers spare for m blocking */
+    if ( l_c_base_reg + 4*l_n_blocking < l_bcast_base_reg ) {
+      l_m_blocking = 4;
+    } else if ( l_c_base_reg + 2*l_n_blocking < l_bcast_base_reg ) {
+      l_m_blocking = 2;
+    } else {
+      l_m_blocking = 1;
+    }
+    l_n_c_reg = l_m_blocking * l_n_blocking;
+  /* Test if the packed values can be entirely stored in registers */
+  } else if ( l_unique <= l_preg_unique ) {
+    l_b_base_reg = 0;
+    l_c_base_reg = l_b_base_reg + l_n_b_reg;
+    l_pack_base_reg = LIBXSMM_PPC64LE_VSR_NMAX - (l_preg_unique + l_vlen - 1) / l_vlen;
+
+    /* See if we have registers spare for m blocking */
+    if ( l_c_base_reg + 4*l_n_blocking < l_pack_base_reg - 1 ) {
+      l_m_blocking = 4;
+    } else if ( l_c_base_reg + 2*l_n_blocking < l_pack_base_reg - 1 ) {
+      l_m_blocking = 2;
+    } else {
+      l_m_blocking = 1;
+    }
+    l_n_c_reg = l_m_blocking * l_n_blocking;
+    l_bcast_base_reg = l_c_base_reg + l_n_c_reg;
+    l_n_bcast_vals = l_pack_base_reg - l_bcast_base_reg;
+  } else {
+    l_m_blocking = 4;
+    l_b_base_reg = 0;
+    l_c_base_reg = l_b_base_reg + l_n_b_reg;
+    l_n_c_reg = l_m_blocking * l_n_blocking;
+    l_bcast_base_reg = l_c_base_reg + l_n_c_reg;
+    l_n_bcast_vals = LIBXSMM_PPC64LE_VSR_NMAX - l_bcast_base_reg;
+  }
+
+  /* Set vector registers as used */
+  for ( l_i = l_b_base_reg; l_i < l_b_base_reg + l_n_b_reg; ++l_i ) {
+    libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_VSR, l_i );
+  }
+  for ( l_i = l_c_base_reg; l_i < l_c_base_reg + l_n_c_reg; ++l_i ) {
+    libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_VSR, l_i );
+  }
+  for ( l_i = l_bcast_base_reg; l_i < l_bcast_base_reg + l_n_bcast_vals; ++l_i ) {
+    libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_VSR, l_i );
+  }
+  if ( l_unique <= l_preg_unique ) {
+    for ( l_i = l_pack_base_reg; l_i < l_pack_base_reg + (l_preg_unique + l_vlen - 1) / l_vlen; ++l_i ) {
+      libxsmm_ppc64le_used_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_VSR, l_i );
+    }
+  }
+
+  /* Sequence the operations */
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m,
+                                l_m_blocking,
+                                i_row_idx,
+                                i_column_idx,
+                                l_unique_pos,
+                                l_unique_sgn,
+                                LIBXSMM_ASPARSE_REG_MAX_OPS,
+                                l_ops,
+                                &l_n_ops );
+
+  /* Ensure it worked */
+  if ( 0 == l_n_ops ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    goto cleanup;
+  }
+
+  /* Open the asm stream */
+  libxsmm_ppc64le_instr_open_stream( io_generated_code, &l_reg_tracker);
+
+  /* Unpack the input args */
+  libxsmm_ppc64le_instr_unpack_bc( io_generated_code );
+
+  /* Copy the unique values into the data region with 160byte alignment */
+  l_a_data_ptr = libxsmm_ppc64le_get_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  l_uoff = libxsmm_ppc64le_instr_add_data( io_generated_code,
+                                           (unsigned char*)l_unique_values,
+                                           l_unique*l_fbytes,
+                                           16,
+                                           1,
+                                           &l_const_data_tracker );
+
+  /* Pad the segment to be multiple of 16 */
+  if ( ( l_unique*l_fbytes ) % 16 != 0 ) {
+    unsigned char l_pad[15] = { 0 };
+    libxsmm_ppc64le_instr_add_data( io_generated_code,
+                                    l_pad,
+                                    (l_unique*l_fbytes) % 16,
+                                    1,
+                                    1,
+                                    &l_const_data_tracker );
+  }
+
+  /* Set up the data segment pointer for fixup */
+  libxsmm_ppc64le_instr_adr_data( io_generated_code,
+                                  l_a_data_ptr,
+                                  l_uoff,
+                                  &l_const_data_tracker );
+
+  /* If A can be loaded entirely in registers, then perform the load */
+  if ( l_unique <= l_breg_unique ) {
+    for ( l_i = 0; l_i < l_unique; l_i += l_vlen ) {
+      /* The number of values left to read */
+      unsigned int l_rem = ( l_vlen < l_unique - l_i ) ? l_vlen : l_unique - l_i;
+
+      /* Scratch register for broadcast load */
+      unsigned int l_scratch = LIBXSMM_PPC64LE_VSR_VS0;
+
+      /* Load four values at a time and broadcast them */
+      libxsmm_ppc64le_instr_load( io_generated_code, l_a_data_ptr, 4*l_i, l_scratch );
+
+      /* Perform the broadcast */
+      for ( l_j = 0; l_j < l_rem; ++l_j ) {
+        unsigned int l_t = l_bcast_base_reg + l_i + l_j;
+        libxsmm_ppc64le_instr_vec_splat( io_generated_code, l_datatype, l_scratch, l_vlen - 1 - l_j, l_t );
+      }
+    }
+  /* Else if A can be pack entirely in registers, ther perform the load */
+  } else if ( l_unique <= l_preg_unique ) {
+    for ( l_i = 0; l_i < (l_preg_unique + l_vlen - 1) / l_vlen; ++l_i ) {
+      /* Load vlen values at a time into a vector register */
+      libxsmm_ppc64le_instr_load( io_generated_code, l_a_data_ptr, l_i*l_vlen, l_i + l_pack_base_reg );
+    }
+  }
+
+  /* Set up the n-loop tracker */
+  l_n_loop = libxsmm_ppc64le_get_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_n_loop, (unsigned int)i_xgemm_desc->c1 );
+  libxsmm_ppc64le_instr_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
+
+  /* Copy B pointer */
+  l_curr_b_disp = 0;
+  l_curr_rvb_disp = -1;
+  l_b_reg_copy = libxsmm_ppc64le_get_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR );
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, l_gp_reg_b, l_b_reg_copy );
+
+  /* Loop through the operations */
+  for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
+    libxsmm_asparse_reg_op op = l_ops[l_op_idx];
+    unsigned int l_rvb = l_b_base_reg;
+    int l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+
+    /* Offset B pointer */
+    if ( l_b_disp != l_curr_b_disp ) {
+      libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, l_gp_reg_b, l_gp_reg_b, l_b_disp - l_curr_b_disp );
+      l_curr_b_disp = l_b_disp;
+    }
+
+    for ( l_n = 0; l_n < l_n_blocking; l_n += l_n_b_reg ) {
+      /* Load B (elide if already loaded) */
+      if ( l_curr_rvb_disp != ( l_b_disp + (int)(l_n*l_vbytes) ) ) {
+        if ( 2 == l_n_b_reg ) {
+          libxsmm_ppc64le_instr_load_pair( io_generated_code, l_gp_reg_b, l_n*l_vbytes, l_rvb );
+        } else {
+          libxsmm_ppc64le_instr_load( io_generated_code, l_gp_reg_b, l_n*l_vbytes, l_rvb );
+        }
+        l_curr_rvb_disp = l_b_disp + (int)(l_n*l_vbytes);
+      }
+
+      for ( l_i = 0; l_i < op.n; ++l_i ) {
+        unsigned int l_acc_idx = op.acc_idxs[l_i];
+        unsigned int l_u = op.src_vals[l_i];
+        /*unsigned int l_uneg = op.src_sgns[l_i] == -1;*/
+        unsigned int l_rva = (l_unique > l_breg_unique) ? ~0U : l_bcast_base_reg + l_u;
+        unsigned int l_rvc = l_c_base_reg + l_n_blocking*l_acc_idx;
+        int l_c_disp = op.c_disps[l_i]*i_xgemm_desc->ldc*l_fbytes;
+
+        int l_alpha = op.src_sgns[l_i];
+        int l_beta = ( 0 == l_acc_neg_tbl[l_n][l_acc_idx] ) ? 1 : -1;
+
+        /* Load or zero accumulator if required */
+        if ( LIBXSMM_ASPARSE_REG_FLAG_FIRST & op.flags[l_i] ) {
+          /* Handle zero accumulator */
+          if ( l_beta0 ) {
+            l_beta = 0;
+            if ( -1 == l_alpha ) {
+              l_alpha = 1;
+              l_acc_neg_tbl[l_n][l_acc_idx] = 1;
+            } else if ( 0 == l_alpha ) {
+              /* Zero vector register, this is a zero cycle op as handled in the decoder */
+              unsigned int l_reg =  l_rvc + l_n;
+              libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_reg, 0, ( 0x20 & l_reg ) >> 5 ) ;
+            }
+            /* Otherwise load accumulator */
+          } else {
+            if ( 2 == l_n_b_reg ) {
+              libxsmm_ppc64le_instr_load_pair( io_generated_code, l_gp_reg_c, l_rvc + l_n, l_c_disp + l_n*l_vbytes );
+            } else {
+              libxsmm_ppc64le_instr_load( io_generated_code, l_gp_reg_c, l_rvc + l_n, l_c_disp + l_n*l_vbytes );
+            }
+          }
+        }
+
+        /* If required, broadcast a unique value */
+        if ( l_unique > l_breg_unique ) {
+          /* Test is value is aleady in a broadcast register */
+          for ( l_j = 0; l_j < l_n_bcast_vals; ++l_j ) {
+            if ( l_bcast_reg_vals[l_j] == l_u ) {
+              l_rva = l_j + l_bcast_base_reg;
+              break;
+            }
+          }
+
+          /* Otherwise pick a register to broadcast into */
+          if ( ~0U == l_rva ) {
+            unsigned int l_bcast_rel = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals,
+                                                                           l_n_bcast_vals,
+                                                                           l_ops + l_op_idx + 1,
+                                                                           l_n_ops - l_op_idx - 1 );
+            l_rva = l_bcast_rel + l_bcast_base_reg;
+
+            /* Update bcast record */
+            l_bcast_reg_vals[l_bcast_rel] = l_u;
+
+            /* Broadcast from packed register */
+            if ( l_unique <= l_preg_unique ) {
+              unsigned int l_vp = l_u / l_vlen;
+              unsigned int l_lane = l_vlen - 1 - (l_u % l_vlen);
+
+              libxsmm_ppc64le_instr_vec_splat( io_generated_code, l_datatype, l_vp, l_lane, l_rva );
+            /* Broadcast from memory */
+            } else {
+              libxsmm_ppc64le_instr_load_splat( io_generated_code, &l_reg_tracker, l_datatype, l_a_data_ptr, l_u*l_fbytes, l_rva );
+            }
+          }
+        }
+
+        /* FMA */
+        if ( 2 == l_n_b_reg ) {
+           libxsmm_generator_vsx_alu( io_generated_code, l_datatype, l_rva, l_rvb, l_rvc, l_alpha, l_beta );
+           libxsmm_generator_vsx_alu( io_generated_code, l_datatype, l_rva, l_rvb + 1, l_rvc + 1, l_alpha, l_beta );
+        } else {
+          libxsmm_generator_vsx_alu( io_generated_code, l_datatype, l_rva, l_rvb, l_rvc, l_alpha, l_beta );
+        }
+
+        /* See if we need to save the accumulator */
+        if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_i] ) {
+          if ( 2 == l_n_b_reg ) {
+            libxsmm_ppc64le_instr_store_pair( io_generated_code, l_gp_reg_c, l_rvc + l_n, l_c_disp + l_n*l_vbytes );
+          } else {
+            libxsmm_ppc64le_instr_store( io_generated_code, l_gp_reg_c, l_rvc + l_n, l_c_disp + l_n*l_vbytes );
+          }
+        }
+      }
+    }
+  }
+
+  /* Advance B and C pointers */
+  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, l_b_reg_copy, l_gp_reg_b, l_vbytes*l_n_blocking );
+  libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, l_gp_reg_c, l_gp_reg_b, l_vbytes*l_n_blocking );
+
+  /* Test n-loop condition */
+  libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, l_n_loop, l_n_loop, -1 );
+  libxsmm_ppc64le_instr_cond_jump_back_to_label( io_generated_code, l_n_loop, &l_loop_label_tracker );
+  libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_n_loop );
+
+  /* Close stream */
+  libxsmm_ppc64le_instr_colapse_stack( io_generated_code, &l_reg_tracker );
+
+  /* Apply data fixup */
+  libxsmm_ppc64le_instr_close_data( io_generated_code, &l_const_data_tracker );
+
+cleanup:
+  /* Free all GPR */
+  for ( l_i = 0; l_i < LIBXSMM_PPC64LE_GPR_NMAX; ++l_i ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_i );
+  }
+
+  /* Free all VSR */
+  for ( l_i = 0; l_i < LIBXSMM_PPC64LE_VSR_NMAX ; ++l_i ) {
+    libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_VSR, l_i );
+  }
+
   free( l_unique_values );
   free( l_unique_pos );
   free( l_unique_sgn );

@@ -74,8 +74,8 @@ void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
                                 unsigned int            i_a,
                                 unsigned int            i_b,
                                 unsigned int            i_c,
-                                char                    i_alpha,
-                                char                    i_beta );
+                                int                     i_alpha,
+                                int                     i_beta );
 
 
 LIBXSMM_API_INTERN
