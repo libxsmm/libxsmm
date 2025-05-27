@@ -1,0 +1,22 @@
+name: LIBXSMM PPC10-64le
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ *_powerpc ] # feature_powerpc is the main branch, others can be used for testing
+
+jobs:
+  Pull_Branch:
+      runs-on: self-hosted
+      steps:
+      - name: Pull Branch ${{ github.ref_name }}
+        run: |
+          ssh ppc10 "cd libxsmm && git fetch --all && git reset --hard origin/${{ github.ref_name }} && git clean -fdx"
+
+  GEMM:
+      runs-on: self-hosted
+      needs: Pull_Branch
+      steps:
+      - name: GEMM
+        run: |
+          ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/xgemm/kernel_test.sh"
