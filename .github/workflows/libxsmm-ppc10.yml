@@ -6,41 +6,46 @@ on:
     branches: [ *_powerpc ] # feature_powerpc is the main branch, others can be used for testing
 
 jobs:
-  Pull_Branch:
-    runs-on: self-hosted
+  Nothing:
+    runs-on: ubuntu-latest
     steps:
-      - name: Pull Branch ${{ github.ref_name }}
-        run: |
-          ssh ppc10 "cd libxsmm && git fetch --all && git reset --hard origin/${{ github.ref_name }} && git clean -fdx"
+      - name: Do Nothing
+        run: echo "This job does nothing. It is a placeholder for future jobs."
+#   Pull_Branch:
+#     runs-on: self-hosted
+#     steps:
+#       - name: Pull Branch ${{ github.ref_name }}
+#         run: |
+#           ssh ppc10 "cd libxsmm && git fetch --all && git reset --hard origin/${{ github.ref_name }} && git clean -fdx"
 
-  # GEMM:
-  #   runs-on: self-hosted
-  #   needs: Pull_Branch
-  #   steps:
-  #     - name: GEMM
-  #       run: |
-  #         ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/xgemm/kernel_test.sh"
+#   GEMM:
+#     runs-on: self-hosted
+#     needs: Pull_Branch
+#     steps:
+#       - name: GEMM
+#         run: |
+#           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/xgemm/kernel_test.sh"
 
-  # ELTWISE:
-  #   runs-on: self-hosted
-  #   needs: Pull_Branch
-  #   steps:
-  #     - name: ELTWISE
-  #       run: |
-  #         ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/eltwise/run_test.sh"
+#   ELTWISE:
+#     runs-on: self-hosted
+#     needs: Pull_Branch
+#     steps:
+#       - name: ELTWISE
+#         run: |
+#           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/eltwise/run_test.sh"
 
-  # Test_4:
-  #   runs-on: self-hosted
-  #   needs: Pull_Branch
-  #   steps:
-  #     - name: Test 4
-  #       run: |
-  #         ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh 4"
+#   Test_4:
+#     runs-on: self-hosted
+#     needs: Pull_Branch
+#     steps:
+#       - name: Test 4
+#         run: |
+#           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh 4"
 
-  # Fortran:
-  #   runs-on: self-hosted
-  #   needs: Pull_Branch
-  #   steps:
-  #     - name: Fortran
-  #       run: |
-  #         ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh 5"
+#   Fortran:
+#     runs-on: self-hosted
+#     needs: Pull_Branch
+#     steps:
+#       - name: Fortran
+#         run: |
+#           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh 5"
