@@ -2,8 +2,8 @@ name: LIBXSMM PowerPC
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ *_powerpc ] # feature_powerpc is the main branch, others can be used for testing
+  # push:
+  #   branches: [ *_powerpc ] # feature_powerpc is the main branch, others can be used for testing
 
 jobs:
   Nothing:
