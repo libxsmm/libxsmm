@@ -1,4 +1,4 @@
-name: LIBXSMM PPC10-64le
+name: LIBXSMM PowerPC10
 
 on:
   workflow_dispatch:
