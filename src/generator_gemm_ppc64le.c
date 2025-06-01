@@ -717,7 +717,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_reg            *io_reg_tracker ) {
   libxsmm_loop_label_tracker l_loop_labels;
   unsigned int i_a, i_b, i_c;
-  unsigned int l_n_iters, l_n_loop, l_packed;
+  unsigned int l_n_iters = 0, l_n_loop = 0, l_packed = 0;
 
   /* loop labels reset */
   libxsmm_reset_loop_label_tracker( &l_loop_labels );
@@ -1316,7 +1316,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
                                                 libxsmm_ppc64le_blocking       *io_blocking,
                                                 libxsmm_ppc64le_reg            *io_reg_tracker ) {
   libxsmm_loop_label_tracker l_loop_labels;
-  unsigned int l_n_iters, l_n_loop, l_packed;
+  unsigned int l_n_iters = 0, l_n_loop = 0, l_packed = 0;
   unsigned int i_a, i_b, i_c;
   unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
 
