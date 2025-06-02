@@ -2810,7 +2810,7 @@ int main(int argc, char* argv []) {
       }
       l_gemm_def.fuse_zpt_sub = 1;
     } else if (strcmp(argv[1], "MXFP4") == 0) {
-      l_dtype_a_size = 0.5;
+      l_dtype_a_size = 0.53125;
       if (strcmp(argv[2], "BF16") == 0) {
         l_gemm_def.is_Amxfp4Bbf16_gemm = 1;
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
