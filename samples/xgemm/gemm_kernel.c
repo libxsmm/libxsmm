@@ -2845,6 +2845,11 @@ int main(int argc, char* argv []) {
     l_dtype_b_size = (double)(LIBXSMM_TYPESIZE(l_dtype_b));
     l_dtype_c_size = (double)(LIBXSMM_TYPESIZE(l_dtype_c));
 
+    /* setting vlaues to avoid diff by zero */
+    l_dtype_a_size = ( l_dtype_a_size == 0.0 ) ? 1.0 : l_dtype_a_size;
+    l_dtype_b_size = ( l_dtype_b_size == 0.0 ) ? 1.0 : l_dtype_b_size;
+    l_dtype_c_size = ( l_dtype_c_size == 0.0 ) ? 1.0 : l_dtype_c_size;
+
     /* xgemm sizes */
     l_m = atoi(argv[5]);
     l_n = atoi(argv[6]);
