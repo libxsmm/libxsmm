@@ -141,6 +141,7 @@ LIBXSMM_API int libxsmm_cpuid_arm_m4_use_neon_non_gemm(void){
 
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
+  return LIBXSMM_AARCH64_V81;
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
   libxsmm_cpuid_info cpuid_info;

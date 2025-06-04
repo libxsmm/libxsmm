@@ -152,7 +152,8 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
                                                       const unsigned int      i_m_blocking,
                                                       const unsigned int      i_n_blocking,
                                                       const unsigned int      i_ld,
-                                                      const unsigned int      i_zero );
+                                                      const unsigned int      i_zero,
+                                                      const unsigned int      i_b_transpose );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( libxsmm_generated_code* io_generated_code,
@@ -204,7 +205,8 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
                                                        const unsigned int      i_vec_reg_count,
                                                        const unsigned int      i_m_blocking,
                                                        const unsigned int      i_n_blocking,
-                                                       const unsigned int      i_ld );
+                                                       const unsigned int      i_ld,
+                                                       const unsigned int      i_b_transpose );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_store_2dregblock_mmla_aarch64_asimd( libxsmm_generated_code* io_generated_code,

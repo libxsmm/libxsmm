@@ -268,6 +268,8 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3        0x0c006000
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2        0x0c00a000
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1        0x0c007000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX    0x0d408000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_INDEX    0X0d008000
 
 /* ASIMD <-> GPR moves */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e
@@ -1070,5 +1072,13 @@ void libxsmm_aarch64_instruction_set_predication_as_counter( libxsmm_generated_c
                                                              unsigned int             i_vl,
                                                              unsigned int             i_gp_reg_1,
                                                              unsigned int             i_size );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*               io_generated_code,
+                                                     const unsigned int                    i_vmove_instr,
+                                                     const unsigned int                    i_gp_reg_addr,
+                                                     const unsigned int                    i_vec_reg,
+                                                     const libxsmm_aarch64_asimd_tupletype i_tupletype,
+                                                     const unsigned char                   i_index );                                                            
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */

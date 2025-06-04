@@ -1920,12 +1920,28 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
         }
       }
     }
+    // check if B is transposed
+    if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) ){
+      if( i_xgemm_desc->m >= 12){
+        l_m_blocking = 12;
+      } else {
+        l_m_blocking = i_xgemm_desc->m;
+      }
+    }
   } else if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 || i_arch == LIBXSMM_AARCH64_APPL_M4 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 8 ) {
       l_m_blocking = 8;
     } else {
       l_m_blocking = i_xgemm_desc->m;
+    }
+    // check if B is transposed
+    if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) ){
+      if( i_xgemm_desc->m >= 6){
+        l_m_blocking = 6;
+      } else {
+        l_m_blocking = i_xgemm_desc->m;
+      }
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) && ( ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
                                                                                            ( LIBXSMM_DATATYPE_I32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
@@ -2008,7 +2024,7 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
         }
       }
     } else if ( i_current_m_blocking == 12 && i_xgemm_desc->m != 12 ) {
-      l_m_blocking = i_xgemm_desc->m % 4;
+      l_m_blocking = i_xgemm_desc->m % 12;
     } else if (i_current_m_blocking == 8 && i_xgemm_desc->m != 8) {
       l_m_blocking = i_xgemm_desc->m % 8;
     } else {
@@ -2017,6 +2033,8 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
   } else if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 || i_arch == LIBXSMM_AARCH64_APPL_M4 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     if (i_current_m_blocking == 8) {
       l_m_blocking = i_xgemm_desc->m % 8;
+    } else if( i_current_m_blocking == 6 && i_xgemm_desc->m != 6 ) {
+      l_m_blocking = i_xgemm_desc->m % 6;
     } else {
       /* we are done with m_blocking */
     }
@@ -2080,6 +2098,7 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
   unsigned int max_n_blocking = libxsmm_generator_gemm_aarch64_get_max_n_blocking( io_micro_kernel_config, i_xgemm_desc, i_arch );
   const unsigned int init_m_blocking = libxsmm_generator_gemm_aarch64_get_initial_m_blocking( io_micro_kernel_config, i_xgemm_desc, i_arch );
   unsigned int init_m_blocks = 0;
+  unsigned int init_n_blocks = 0;
 
   /* check for valid values */
   if ( max_n_blocking == 0 || io_micro_kernel_config->vector_length == 0 ) {
@@ -2088,21 +2107,30 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
   }
 
   init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, io_micro_kernel_config->vector_length);
+  init_n_blocks = LIBXSMM_UPDIV(max_n_blocking, io_micro_kernel_config->vector_length);
 
   /* increment m register blocking in case of 2 remainder registers */
-  if (init_m_blocking > 0) {
-    if ( (init_m_blocking % io_micro_kernel_config->vector_length == 3) || ((i_xgemm_desc->m % init_m_blocking) % io_micro_kernel_config->vector_length == 3) ) {
-      init_m_blocks++;
-    }
-  }
-  /* this is just fast on Grace Neoverse V2 */
-  if(io_generated_code->arch == LIBXSMM_AARCH64_V81){
-    while ((init_m_blocks * max_n_blocking + init_m_blocks + max_n_blocking) > io_micro_kernel_config->vector_reg_count) {
+  // if (init_m_blocking > 0) {
+  //   if ( (init_m_blocking % io_micro_kernel_config->vector_length == 3) || ((i_xgemm_desc->m % init_m_blocking) % io_micro_kernel_config->vector_length == 3) ) {
+  //     init_m_blocks++;
+  //   }
+  // }
+
+  if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) ){
+    while( (init_m_blocks * max_n_blocking + init_m_blocks + init_n_blocks > io_micro_kernel_config->vector_reg_count)) {
       max_n_blocking--;
+      
+      init_n_blocks = LIBXSMM_UPDIV(max_n_blocking, io_micro_kernel_config->vector_length);
     }
   } else {
-    while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > io_micro_kernel_config->vector_reg_count) {
-      max_n_blocking--;
+    if(io_generated_code->arch == LIBXSMM_AARCH64_V81){
+      while ((init_m_blocks * max_n_blocking + init_m_blocks + max_n_blocking) > io_micro_kernel_config->vector_reg_count) {
+        max_n_blocking--;
+      }
+    } else {
+      while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > io_micro_kernel_config->vector_reg_count) {
+        max_n_blocking--;
+      }
     }
   }
 
