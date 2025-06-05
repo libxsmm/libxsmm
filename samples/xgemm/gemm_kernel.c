@@ -2765,6 +2765,9 @@ int main(int argc, char* argv []) {
   unsigned int l_keep_going = 0;
   unsigned int l_retry_case = 0;
   float l_spfrac = 0.4;
+  double l_dtype_a_size = 0.0;
+  double l_dtype_b_size = 0.0;
+  double l_dtype_c_size = 0.0;
 
 # if defined(__APPLE__) && defined(__arm64__)
 #  if 1
@@ -2791,10 +2794,12 @@ int main(int argc, char* argv []) {
     l_c_dt = argv[4];
     l_gemm_def.fuse_zpt_sub = 0;
     if (strcmp(argv[1], "I4") == 0) {
+      l_dtype_a_size = 0.5;
       l_gemm_def.is_Ai4Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_I8;
       l_gemm_def.fuse_zpt_sub = 1;
     } else if (strcmp(argv[1], "U4") == 0) {
+      l_dtype_a_size = 0.5;
       if (strcmp(argv[2], "F16") == 0) {
         l_gemm_def.is_Ai4Bf16_gemm = 1;
         l_dtype_a    = LIBXSMM_DATATYPE_U8;
@@ -2805,6 +2810,7 @@ int main(int argc, char* argv []) {
       }
       l_gemm_def.fuse_zpt_sub = 1;
     } else if (strcmp(argv[1], "MXFP4") == 0) {
+      l_dtype_a_size = 0.53125;
       if (strcmp(argv[2], "BF16") == 0) {
         l_gemm_def.is_Amxfp4Bbf16_gemm = 1;
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
@@ -2818,20 +2824,31 @@ int main(int argc, char* argv []) {
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
     } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "BF16") == 0) {
+      l_dtype_a_size = 1;
       l_gemm_def.is_Abf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
     } else if (strcmp(argv[1], "BF8") == 0 && strcmp(argv[2], "F16") == 0 && atoi(argv[17]) > 0) {
+      l_dtype_a_size = 1;
       l_gemm_def.is_Abf8Bf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_F16;
     } else if (strcmp(argv[1], "HF8") == 0 && strcmp(argv[2], "BF16") == 0) {
+      l_dtype_a_size = 1;
       l_gemm_def.is_Ahf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
+      l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(l_dtype_a));
     }
     l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
     l_dtype_comp = char_to_libxsmm_datatype( l_comp_dt );
     l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
+    l_dtype_b_size = (double)(LIBXSMM_TYPESIZE(l_dtype_b));
+    l_dtype_c_size = (double)(LIBXSMM_TYPESIZE(l_dtype_c));
+
+    /* setting vlaues to avoid diff by zero */
+    l_dtype_a_size = ( l_dtype_a_size == 0.0 ) ? 1.0 : l_dtype_a_size;
+    l_dtype_b_size = ( l_dtype_b_size == 0.0 ) ? 1.0 : l_dtype_b_size;
+    l_dtype_c_size = ( l_dtype_c_size == 0.0 ) ? 1.0 : l_dtype_c_size;
 
     /* xgemm sizes */
     l_m = atoi(argv[5]);
@@ -3777,6 +3794,7 @@ int main(int argc, char* argv []) {
     if ( l_file_input == 0 ) {
       printf("%fs for libxsmm\n", l_runtime_libxsmm);
       printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * (double)l_n_threads * 2.0) / (l_runtime_libxsmm * 1.0e9));
+      printf("%f GB/s\n", ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
 #if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
       l_retry_case = 0;
@@ -3787,12 +3805,12 @@ int main(int argc, char* argv []) {
     } else {
       if ( l_run_check == 1 ) {
         if (l_gemm_def.unary_postop == RELU_BITMASK) {
-          printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), error,  error_bitmask );
+          printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f %f %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9), error,  error_bitmask );
         } else {
-          printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), error );
+          printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9), error );
         }
       } else {
-        printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+        printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9) );
       }
       {
         const char *prefetch = NULL, *br_type = NULL;
@@ -3824,6 +3842,7 @@ int main(int argc, char* argv []) {
       }
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+      printf("%f GB/s\n", ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9) );
       if ( l_retry_case == 0 ) {
         printf("max. error: %f\n", error);
       } else {
