@@ -2550,7 +2550,7 @@ void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*    
     code[code_head] |= (unsigned int)((0x1 & (i_index >> 1)) << 30);
 
 
-    
+
     /* advance code head */
     io_generated_code->code_size += 4;
   } else {
