@@ -1975,7 +1975,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
       }
     }
     // check if B is transposed
-    if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ){
+    if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) && io_micro_kernel_config->fused_relu == 0){
       if( i_xgemm_desc->m >= 12){
         l_m_blocking = 12;
       } else {
@@ -2178,7 +2178,7 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
       init_n_blocks = LIBXSMM_UPDIV(max_n_blocking, io_micro_kernel_config->vector_length);
     }
   } else {
-    if(io_generated_code->arch == LIBXSMM_AARCH64_V81){
+    if(io_micro_kernel_config->instruction_set == LIBXSMM_AARCH64_V81 ){
       while ((init_m_blocks * max_n_blocking + init_m_blocks + max_n_blocking) > io_micro_kernel_config->vector_reg_count) {
         max_n_blocking--;
       }

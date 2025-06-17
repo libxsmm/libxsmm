@@ -1669,7 +1669,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
   }
 
   /* select micro kernel based on aarch64 variant */
-  if( io_generated_code->arch == LIBXSMM_AARCH64_V81 ){
+  if( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4){
     if ( l_use_mmla ) {
       l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
     } else {
@@ -1680,14 +1680,6 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
       } else {
         l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse;
       }
-    }
-  }
-  else if ( io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
-    /* TODO (MMLA) */
-    if ( l_use_mmla ) {
-      l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla;
-    } else {
-      l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse;
     }
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 || io_generated_code->arch == LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ) {
     /* TODO (MMLA) */
