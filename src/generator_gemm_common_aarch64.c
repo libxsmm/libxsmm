@@ -1035,7 +1035,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
                                                   l_gp_reg_bias, LIBXSMM_AARCH64_GP_REG_UNDEF, 8,
                                                   l_m_blocks[0],
                                                   LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-          if( l_m_blocks[1] > 0){
+          if( l_m_blocks[2] > 0){
             libxsmm_aarch64_instruction_asimd_r_move_index( io_generated_code,
                                                           LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                           l_gp_reg_bias,
@@ -1975,7 +1975,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
       }
     }
     // check if B is transposed
-    if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) && io_micro_kernel_config->fused_relu == 0){
+    if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) && io_micro_kernel_config->fused_relu_nobitmask == 1){
       if( i_xgemm_desc->m >= 12){
         l_m_blocking = 12;
       } else {
