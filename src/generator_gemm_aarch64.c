@@ -89,7 +89,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_neon_b_transpose( libxsmm_genera
                                                       LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                       i_gp_reg_mapping->gp_reg_a,
                                                       l_vec_reg_acc_start,
-                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S,
                                                       2);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -142,7 +141,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_neon_b_transpose( libxsmm_genera
                                                       LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                       i_gp_reg_mapping->gp_reg_b,
                                                       l_vec_reg_acc_start,
-                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S,
                                                       2);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -266,7 +264,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generate
                                                       LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                       i_gp_reg_mapping->gp_reg_a,
                                                       l_a_load_start,
-                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S,
                                                       2);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -402,7 +399,6 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
                                                       LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                       i_gp_reg_mapping->gp_reg_a,
                                                       l_a_load_start,
-                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S,
                                                       2);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -1796,6 +1792,12 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   int l_use_i8dot = libxsmm_cpuid_arm_use_i8dot();
   char l_use_mmla = 0;
   char l_mmla_zip_row_major = 0;
+
+  if( ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+      (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ))) &&
+      io_generated_code->arch == LIBXSMM_AARCH64_NEOV2 ){
+        io_generated_code->arch = LIBXSMM_AARCH64_V81;
+  }
 
   /* enable MMLA settings for supported datatypes */
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {

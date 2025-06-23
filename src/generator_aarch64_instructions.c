@@ -2510,7 +2510,6 @@ void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*    
                                                      const unsigned int                    i_vmove_instr,
                                                      const unsigned int                    i_gp_reg_addr,
                                                      const unsigned int                    i_vec_reg,
-                                                     const libxsmm_aarch64_asimd_tupletype i_tupletype,
                                                      const unsigned char                   i_index ){
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_r_move_index: at least ARM V81 needs to be specified as target arch!\n");

@@ -955,7 +955,6 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
                                                           LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                           l_gp_reg_bias,
                                                           l_m_blocks[0],
-                                                          LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S,
                                                           2);
             libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                           l_gp_reg_bias, l_gp_reg_bias,
@@ -972,7 +971,6 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
                                                         LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                         i_gp_reg_addr,
                                                         l_vec_reg_acc_start + l_m_blocks[0] + (l_m_total_blocks * l_n),
-                                                        LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S,
                                                         2);
 
           libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
@@ -1040,7 +1038,6 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
                                                           LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX,
                                                           l_gp_reg_bias,
                                                           l_m_blocks[0],
-                                                          LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8B,
                                                           2);
 
             libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,

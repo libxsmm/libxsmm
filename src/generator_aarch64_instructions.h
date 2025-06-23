@@ -1078,7 +1078,6 @@ void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*    
                                                      const unsigned int                    i_vmove_instr,
                                                      const unsigned int                    i_gp_reg_addr,
                                                      const unsigned int                    i_vec_reg,
-                                                     const libxsmm_aarch64_asimd_tupletype i_tupletype,
-                                                     const unsigned char                   i_index );                                                            
+                                                     const unsigned char                   i_index );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */
