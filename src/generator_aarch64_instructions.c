@@ -2504,7 +2504,6 @@ void libxsmm_aarch64_instruction_set_predication_as_counter( libxsmm_generated_c
   return;
 }
 
-/* TODO: full implementation */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*               io_generated_code,
                                                      const unsigned int                    i_vmove_instr,

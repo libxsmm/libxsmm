@@ -61,20 +61,20 @@ void libxsmm_generator_gemm_aarch64_microkernel_neon_b_transpose( libxsmm_genera
   while (l_load_count > 0) {
     l_load_size = (l_load_count >= 4) ? 4 : (l_load_count >= 3) ? 3 : (l_load_count >= 2) ? 2 : 1;
     libxsmm_aarch64_instruction_asimd_struct_r_move(io_generated_code,
-                              (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
-                              (l_load_size == 3) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3 :
-                              (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
-                              LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
-                              i_gp_reg_mapping->gp_reg_a,
-                              LIBXSMM_AARCH64_GP_REG_UNDEF,
-                              l_vec_reg_acc_start,
-                              LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+                                                    (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
+                                                    (l_load_size == 3) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3 :
+                                                    (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
+                                                    LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
+                                                    i_gp_reg_mapping->gp_reg_a,
+                                                    LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                    l_vec_reg_acc_start,
+                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
     libxsmm_aarch64_instruction_alu_compute_imm64(io_generated_code,
-                            LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                            i_gp_reg_mapping->gp_reg_a,
-                            i_gp_reg_mapping->gp_reg_help_2,
-                            i_gp_reg_mapping->gp_reg_a,
-                            i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
+                                                  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  i_gp_reg_mapping->gp_reg_help_2,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  (unsigned long long)i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
     l_vec_reg_acc_start += l_load_size;
     l_load_count -= l_load_size;
   }
@@ -115,19 +115,19 @@ void libxsmm_generator_gemm_aarch64_microkernel_neon_b_transpose( libxsmm_genera
   while (l_load_count > 0) {
     l_load_size = (l_load_count >= 4) ? 4 : (l_load_count >= 2) ? 2 : 1;
     libxsmm_aarch64_instruction_asimd_struct_r_move(io_generated_code,
-                            (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
-                            (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
-                            LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
-                            i_gp_reg_mapping->gp_reg_b,
-                            LIBXSMM_AARCH64_GP_REG_UNDEF,
-                            l_vec_reg_acc_start,
-                            LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+                                                    (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
+                                                    (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
+                                                    LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
+                                                    i_gp_reg_mapping->gp_reg_b,
+                                                    LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                    l_vec_reg_acc_start,
+                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
     libxsmm_aarch64_instruction_alu_compute_imm64(io_generated_code,
-                          LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                          i_gp_reg_mapping->gp_reg_b,
-                          i_gp_reg_mapping->gp_reg_help_2,
-                          i_gp_reg_mapping->gp_reg_b,
-                          i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
+                                                  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                  i_gp_reg_mapping->gp_reg_b,
+                                                  i_gp_reg_mapping->gp_reg_help_2,
+                                                  i_gp_reg_mapping->gp_reg_b,
+                                                  (unsigned long long)i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
     l_vec_reg_acc_start += l_load_size;
     l_load_count -= l_load_size;
   }
@@ -160,21 +160,21 @@ void libxsmm_generator_gemm_aarch64_microkernel_neon_b_transpose( libxsmm_genera
   }
 
   // set next A and B col/row
-  if( i_xgemm_desc->lda - i_m_blocking > 0 ){
+  if( i_xgemm_desc->lda > i_m_blocking ){
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                  i_gp_reg_mapping->gp_reg_a,
-                                                  i_gp_reg_mapping->gp_reg_help_2,
-                                                  i_gp_reg_mapping->gp_reg_a,
-                                                  (i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   i_gp_reg_mapping->gp_reg_a,
+                                                   i_gp_reg_mapping->gp_reg_help_2,
+                                                   i_gp_reg_mapping->gp_reg_a,
+                                                   (unsigned long long)(i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
   }
-  if( i_xgemm_desc->ldb - i_n_blocking > 0 ){
+  if( i_xgemm_desc->ldb > i_n_blocking ){
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  i_gp_reg_mapping->gp_reg_help_2,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  (i_xgemm_desc->ldb - i_n_blocking) * i_micro_kernel_config->datatype_size_in );
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   i_gp_reg_mapping->gp_reg_b,
+                                                   i_gp_reg_mapping->gp_reg_help_2,
+                                                   i_gp_reg_mapping->gp_reg_b,
+                                                   (unsigned long long)(i_xgemm_desc->ldb - i_n_blocking) * i_micro_kernel_config->datatype_size_in );
   }
 
   l_c_register = l_vec_reg_acc_start;
@@ -236,20 +236,20 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generate
   while (l_load_count > 0) {
     unsigned int l_load_size = (l_load_count >= 4) ? 4 : (l_load_count >= 3) ? 3 : (l_load_count >= 2) ? 2 : 1;
     libxsmm_aarch64_instruction_asimd_struct_r_move(io_generated_code,
-                              (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
-                              (l_load_size == 3) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3 :
-                              (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
-                              LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
-                              i_gp_reg_mapping->gp_reg_a,
-                              LIBXSMM_AARCH64_GP_REG_UNDEF,
-                              l_a_load_start,
-                              LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+                                                    (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
+                                                    (l_load_size == 3) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3 :
+                                                    (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
+                                                    LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
+                                                    i_gp_reg_mapping->gp_reg_a,
+                                                    LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                    l_a_load_start,
+                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
     libxsmm_aarch64_instruction_alu_compute_imm64(io_generated_code,
-                            LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                            i_gp_reg_mapping->gp_reg_a,
-                            i_gp_reg_mapping->gp_reg_help_2,
-                            i_gp_reg_mapping->gp_reg_a,
-                            i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
+                                                  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  i_gp_reg_mapping->gp_reg_help_2,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  (unsigned long long)i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
     l_a_load_start += l_load_size;
     l_load_count -= l_load_size;
   }
@@ -371,20 +371,20 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
   while (l_load_count > 0) {
     unsigned int l_load_size = (l_load_count >= 4) ? 4 : (l_load_count >= 3) ? 3 : (l_load_count >= 2) ? 2 : 1;
     libxsmm_aarch64_instruction_asimd_struct_r_move(io_generated_code,
-                              (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
-                              (l_load_size == 3) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3 :
-                              (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
-                              LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
-                              i_gp_reg_mapping->gp_reg_a,
-                              LIBXSMM_AARCH64_GP_REG_UNDEF,
-                              l_a_load_start,
-                              LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+                                                    (l_load_size == 4) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4 :
+                                                    (l_load_size == 3) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3 :
+                                                    (l_load_size == 2) ? LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2 :
+                                                    LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1,
+                                                    i_gp_reg_mapping->gp_reg_a,
+                                                    LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                    l_a_load_start,
+                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
     libxsmm_aarch64_instruction_alu_compute_imm64(io_generated_code,
-                            LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                            i_gp_reg_mapping->gp_reg_a,
-                            i_gp_reg_mapping->gp_reg_help_2,
-                            i_gp_reg_mapping->gp_reg_a,
-                            i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
+                                                  LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  i_gp_reg_mapping->gp_reg_help_2,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  (unsigned long long)i_micro_kernel_config->datatype_size_in * l_load_size * l_values_per_vector);
     l_a_load_start += l_load_size;
     l_load_count -= l_load_size;
   }
