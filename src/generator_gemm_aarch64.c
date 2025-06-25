@@ -2149,7 +2149,8 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
               libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                                l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                                l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
-                                                               (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags), (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ) ? 1 : 0 );
+                                                               (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags),
+                                                               (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ) ? LIBXSMM_AARCH64_ACC_LAYOUT_B_TRANSPOSE : LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT );
             }
           }
         } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
@@ -2275,7 +2276,8 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                 l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking );
             libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                               l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
-                                                              l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out, (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ) ? 1 : 0  );
+                                                              l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
+                                                              (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ) ? LIBXSMM_AARCH64_ACC_LAYOUT_B_TRANSPOSE : LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT );
           }
         } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
                     (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4) ) {
