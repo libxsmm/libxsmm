@@ -63,7 +63,9 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_aarch64_
   LIBXSMM_UNUSED( i_n_valid );
 
   /* load 8 vectors */
-  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch, 2, 32, 4, 4, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in, 0 );
+  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch, 2, 32, 4, 4,
+                                                   i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in, 0,
+                                                   LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT );
 
   /* shuffle */
   {
@@ -76,7 +78,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_aarch64_
   }
 
   /* store 8 vecotrs */
-  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 2, 24, 4, 4, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 2, 24, 4, 4, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out, 0 );
 }
 
 LIBXSMM_API_INTERN
@@ -92,7 +94,9 @@ void libxsmm_generator_transform_norm_to_normt_32bit_4x4_shufflenetwork_aarch64_
   LIBXSMM_UNUSED( i_n_valid );
 
   /* load 8 vectors */
-  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch, 4, 32, 4, 4, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in, 0 );
+  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch,
+                                                   4, 32, 4, 4, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in, 0,
+                                                   LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT );
 
   /* shuffle 64 bit */
   {
@@ -115,7 +119,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_4x4_shufflenetwork_aarch64_
   }
 
   /* store 8 vecotrs */
-  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 4, 32, 4, 4, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 4, 32, 4, 4, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out, 0 );
 }
 
 LIBXSMM_API_INTERN
@@ -131,7 +135,9 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_aarch64_
   LIBXSMM_UNUSED( i_n_valid );
 
   /* load 8 vectors */
-  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch, 4, 32, 8, 8, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in, 0 );
+  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch,
+                                                   4, 32, 8, 8, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in, 0,
+                                                   LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT );
 
   /* shuffle 64 bit */
   {
@@ -154,7 +160,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_aarch64_
   }
 
   /* store 8 vecotrs */
-  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 4, 32, 8, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 4, 32, 8, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out, 0 );
 }
 
 LIBXSMM_API_INTERN
@@ -656,7 +662,9 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_Nmod16_16bit_aarch64_asimd_micr
   libxsmm_generator_loop_header_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, i_mateltwise_desc->m );
 
   /* load 8 vectors */
-  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch, 2, 32, 4, 4, l_ldi * i_micro_kernel_config->datatype_size_in, 0 );
+  libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_in, i_gp_reg_scratch,
+                                                   2, 32, 4, 4, l_ldi * i_micro_kernel_config->datatype_size_in, 0,
+                                                   LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT );
 
   /* shuffle */
   {
@@ -693,7 +701,7 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_Nmod16_16bit_aarch64_asimd_micr
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2, 14, 15, 0, 9, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S ); /* N15,N14: M3M2M1M0 M3M2M1M0 */
 
   /* Store 8 registers */
-  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 2, 10, 4, 4, 16 * i_micro_kernel_config->datatype_size_out );
+  libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 2, 10, 4, 4, 16 * i_micro_kernel_config->datatype_size_out, 0 );
 
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
