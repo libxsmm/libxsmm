@@ -2560,3 +2560,4 @@ void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*    
 
 
 }
+

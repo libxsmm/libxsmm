@@ -159,7 +159,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_neon_b_transpose( libxsmm_genera
     l_vec_reg_acc_start++;
   }
 
-  // set next A and B col/row
+  /* set next A and B col/row */
   if( i_xgemm_desc->lda > i_m_blocking ){
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -215,6 +215,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generate
 
   unsigned int l_a_load_start = 0;
   unsigned int l_values_per_vector = 0;
+  unsigned int l_load_count = 0;
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_micro_kernel_config->vector_length;                                            /* number of 128 bit stores */
@@ -232,7 +233,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse( libxsmm_generate
   l_values_per_vector = (i_micro_kernel_config->datatype_size_in == 4) ? 4 : 2;
 
   /* load A */
-  unsigned int l_load_count = l_m_blocks[0];
+  l_load_count = l_m_blocks[0];
   while (l_load_count > 0) {
     unsigned int l_load_size = (l_load_count >= 4) ? 4 : (l_load_count >= 3) ? 3 : (l_load_count >= 2) ? 2 : 1;
     libxsmm_aarch64_instruction_asimd_struct_r_move(io_generated_code,
@@ -351,6 +352,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
   unsigned int l_m_blocks[3] = { 0 };  /* 0: 128bit, 1: 64bit, 2: 32bit */
   unsigned int l_m_total_blocks = 0;
   unsigned int l_values_per_vector = 0;
+  unsigned int l_load_count = 0;
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_micro_kernel_config->vector_length;                                            /* number of 128 bit stores */
@@ -367,7 +369,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse_v2( libxsmm_gener
   l_values_per_vector = (i_micro_kernel_config->datatype_size_in == 4) ? 4 : 2;
 
   /* load A */
-  unsigned int l_load_count = l_m_blocks[0];
+  l_load_count = l_m_blocks[0];
   while (l_load_count > 0) {
     unsigned int l_load_size = (l_load_count >= 4) ? 4 : (l_load_count >= 3) ? 3 : (l_load_count >= 2) ? 2 : 1;
     libxsmm_aarch64_instruction_asimd_struct_r_move(io_generated_code,

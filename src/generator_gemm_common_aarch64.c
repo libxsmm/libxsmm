@@ -707,7 +707,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
   l_m_blocks[1] = (i_m_blocking%i_vec_length)/(i_vec_length/2);  /* number of  64 bit stores */
   l_m_blocks[2] = (i_m_blocking%i_vec_length)%(i_vec_length/2);  /* number of  32 but stores */
   l_m_total_blocks = l_m_blocks[0];
-  // l_combine_remainder_vregs = ((l_m_blocks[1] > 0) && (l_m_blocks[2] > 0)) ? 1 : 0;
+  /* l_combine_remainder_vregs = ((l_m_blocks[1] > 0) && (l_m_blocks[2] > 0)) ? 1 : 0; */
 
   if( (l_m_blocks[1] > 0) || (l_m_blocks[2] > 0) ) {
     l_m_total_blocks += 1;
@@ -1971,7 +1971,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
         }
       }
     }
-    // check if B is transposed
+    /* check if B is transposed */
     if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) && io_micro_kernel_config->fused_relu_nobitmask == 1){
       if( i_xgemm_desc->m >= 12){
         l_m_blocking = 12;
@@ -1986,7 +1986,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
-    // check if B is transposed
+    /* check if B is transposed */
     if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ){
       if( i_xgemm_desc->m >= 6){
         l_m_blocking = 6;
@@ -2163,11 +2163,13 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
   init_n_blocks = LIBXSMM_UPDIV(max_n_blocking, io_micro_kernel_config->vector_length);
 
   /* increment m register blocking in case of 2 remainder registers */
-  // if (init_m_blocking > 0) {
-  //   if ( (init_m_blocking % io_micro_kernel_config->vector_length == 3) || ((i_xgemm_desc->m % init_m_blocking) % io_micro_kernel_config->vector_length == 3) ) {
-  //     init_m_blocks++;
-  //   }
-  // }
+#if 0
+  if (init_m_blocking > 0) {
+    if ( (init_m_blocking % io_micro_kernel_config->vector_length == 3) || ((i_xgemm_desc->m % init_m_blocking) % io_micro_kernel_config->vector_length == 3) ) {
+      init_m_blocks++;
+    }
+  }
+#endif
 
   if( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_AB) == 2) ){
     while( (init_m_blocks * max_n_blocking + init_m_blocks + init_n_blocks > io_micro_kernel_config->vector_reg_count)) {
