@@ -834,4 +834,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_registry_info {
   size_t capacity, size, nbytes, nstatic, ncache;
 } libxsmm_registry_info;
 
+LIBXSMM_EXTERN_C typedef enum libxsmm_aarch64_acc_layout {
+  LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT = 0,
+  LIBXSMM_AARCH64_ACC_LAYOUT_B_TRANSPOSE = 1
+} libxsmm_aarch64_acc_layout;
+
 #endif /*LIBXSMM_TYPEDEFS_H*/
