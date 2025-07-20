@@ -994,7 +994,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     short* s_a = (short*)a;
     short* s_b = (short*)b;
     int*   i_c = (int*)c;
-    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    int l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
