@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 #include <inttypes.h>
@@ -160,7 +161,7 @@ int main(int argc, char* argv[])
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         rnd[i].m, rnd[i].n, rnd[i].k, rnd[i].m/*lda*/, rnd[i].k/*ldb*/, rnd[i].m/*ldc*/,
         LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-      libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+      libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
     }
     tcgen = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -182,7 +183,7 @@ int main(int argc, char* argv[])
             const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
               rnd[j].m, rnd[j].n, rnd[j].k, rnd[j].m/*lda*/, rnd[j].k/*ldb*/, rnd[j].m/*ldc*/,
               LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-            libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+            libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
           }
 #         pragma omp master
@@ -203,7 +204,7 @@ int main(int argc, char* argv[])
           const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
             rnd[j].m, rnd[j].n, rnd[j].k, rnd[j].m/*lda*/, rnd[j].k/*ldb*/, rnd[j].m/*ldc*/,
             LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-          libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+          libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
         }
         tdsp1 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -228,7 +229,7 @@ int main(int argc, char* argv[])
           const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
             rnd[i].m, rnd[i].n, rnd[i].k, rnd[i].m/*lda*/, rnd[i].k/*ldb*/, rnd[i].m/*ldc*/,
             LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-          libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+          libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
         }
 #       pragma omp master
@@ -249,7 +250,7 @@ int main(int argc, char* argv[])
         const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
           rnd[i].m, rnd[i].n, rnd[i].k, rnd[i].m/*lda*/, rnd[i].k/*ldb*/, rnd[i].m/*ldc*/,
           LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-        libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+        libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
       }
       tcgen += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -272,7 +273,7 @@ int main(int argc, char* argv[])
             const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
               rnd[j].m, rnd[j].n, rnd[j].k, rnd[j].m/*lda*/, rnd[j].k/*ldb*/, rnd[j].m/*ldc*/,
               LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-            libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+            libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
           }
 #         pragma omp master
@@ -293,7 +294,7 @@ int main(int argc, char* argv[])
           const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
             rnd[j].m, rnd[j].n, rnd[j].k, rnd[j].m/*lda*/, rnd[j].k/*ldb*/, rnd[j].m/*ldc*/,
             LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-          libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+          libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
         }
         tdsp0 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
@@ -319,7 +320,7 @@ int main(int argc, char* argv[])
         const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
           rnd[j].m, rnd[j].n, rnd[j].k, rnd[j].m/*lda*/, rnd[j].k/*ldb*/, rnd[j].m/*ldc*/,
           LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
-        const libxsmm_gemmfunction kernel = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+        const libxsmm_gemmfunction kernel = libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 # endif
         if (NULL != kernel) {
 # if defined(MKLJIT)
@@ -330,9 +331,9 @@ int main(int argc, char* argv[])
           gemm_param.b.primary = (double*)b;
           gemm_param.c.primary = c;
           if (LIBXSMM_GEMM_PREFETCH_NONE != prefetch) {
-            gemm_param.a.quaternary = (double*)(a + rnd[j].m * rnd[j].k);
-            gemm_param.b.quaternary = (double*)(b + rnd[j].k * rnd[j].n);
-            gemm_param.c.quaternary = (double*)(c + rnd[j].m * rnd[j].n);
+            gemm_param.a.senary = (double*)(a + rnd[j].m * rnd[j].k);
+            gemm_param.b.senary = (double*)(b + rnd[j].k * rnd[j].n);
+            gemm_param.c.senary = (double*)(c + rnd[j].m * rnd[j].n);
           }
           kernel(&gemm_param);
 # endif

@@ -10,11 +10,11 @@
     <Filter Include="scripts">
       <UniqueIdentifier>{13af66c8-51ff-4b9e-94fe-53a686556d47}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\template">
-      <UniqueIdentifier>{c4a6fa16-23e9-4fb6-9148-c47da5e490e6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\generator">
       <UniqueIdentifier>{23f4992b-2a02-4f5a-9287-9d00762dfcef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\utils">
+      <UniqueIdentifier>{6918a095-2c79-4ace-b2ab-a36696128d0b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -24,13 +24,7 @@
     <ClInclude Include="..\src\libxsmm_hash.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_frontend.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_generator.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_timer.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_typedefs.h">
@@ -57,22 +51,10 @@
     <ClInclude Include="..\src\perf_jitdump.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_sync.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_cpuid.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_fsspmdm.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_mhd.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_math.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_common.h">
@@ -114,14 +96,8 @@
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_rng.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_memory.h">
-      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\template\libxsmm.h">
       <Filter>include</Filter>
@@ -270,12 +246,6 @@
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\template\libxsmm_matdiff.h">
-      <Filter>src\template</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_matequation_regblocks_aarch64.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -286,6 +256,75 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_mhd.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_timer.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_utils.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_intrinsics_x86.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_lpflt_quant.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_memory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_sync.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_math.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_barrier.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_math.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_matdiff.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sme.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sme_microkernel.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_aarch64_reference.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_reference_impl.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_reference_impl.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_matequation_reference_impl.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_x86_reference.h">
       <Filter>src\generator</Filter>
     </ClInclude>
   </ItemGroup>
@@ -549,6 +588,51 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_mateltwise_gather_scatter_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_utils.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_barrier.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sme.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sme_microkernel.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_aarch64_reference.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_reference_impl.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_reference_impl.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matequation_reference_impl.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_x86_reference.c">
       <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>

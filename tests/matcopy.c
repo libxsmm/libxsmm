@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 #if !defined(ELEMTYPE)
@@ -157,7 +158,7 @@ int main(void)
         const libxsmm_datatype type = LIBXSMM_DATATYPE(ELEMTYPE);
         const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
           m[test], n[test], ldi[test], ldo[test], type, type, type);
-        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary_v2(
+        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
 #   if 1
           LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/
 #   else

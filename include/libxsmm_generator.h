@@ -17,6 +17,27 @@
   (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \
   (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
+LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                          const libxsmm_blasint lda, const libxsmm_blasint ldb, const libxsmm_blasint ldc,
+                                                          const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
+                                                                                      const libxsmm_blasint br_stride_a_hint, const libxsmm_blasint br_stride_b_hint,
+                                                                                      const unsigned char br_unroll_hint );
+LIBXSMM_API libxsmm_gemm_ext_unary_argops libxsmm_create_gemm_ext_unary_argops( const libxsmm_blasint ldap, const libxsmm_meltw_unary_type ap_unary_type, const libxsmm_bitfield ap_unary_flags, const libxsmm_blasint store_ap,
+                                                                                const libxsmm_blasint ldbp, const libxsmm_meltw_unary_type bp_unary_type, const libxsmm_bitfield bp_unary_flags, const libxsmm_blasint store_bp,
+                                                                                const libxsmm_blasint ldcp, const libxsmm_meltw_unary_type cp_unary_type, const libxsmm_bitfield cp_unary_flags, const libxsmm_blasint store_cp );
+LIBXSMM_API libxsmm_gemm_ext_binary_postops libxsmm_create_gemm_ext_binary_postops( const libxsmm_blasint ldd, const libxsmm_datatype d_in_type, const libxsmm_meltw_binary_type d_binary_type, const libxsmm_bitfield d_binary_flags );
+
+LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                        const libxsmm_blasint ldi, const libxsmm_blasint ldo,
+                                                                        const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                          const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
+                                                                          const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                            const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldi3, const libxsmm_blasint ldo,
+                                                                            const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype in2_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+
 /** Initialize GEMM descriptor (generic). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_datatype a_type, libxsmm_datatype b_type, libxsmm_datatype comp_type, libxsmm_datatype c_type,
@@ -40,6 +61,18 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
   libxsmm_datatype type, libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, unsigned int eqn_idx);
 
+/** routines for setting up desciptors using similar API as the JITers */
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init_gemm( libxsmm_descriptor_blob* blob, const libxsmm_gemm_shape gemm_shape,
+                                                                        const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags );
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init_brgemm( libxsmm_descriptor_blob* blob, const libxsmm_gemm_shape gemm_shape,
+                                                                          const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
+                                                                          const libxsmm_gemm_batch_reduce_config brgemm_config );
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init_brgemm_ext( libxsmm_descriptor_blob* blob, const libxsmm_gemm_shape gemm_shape,
+                                                                              const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
+                                                                              const libxsmm_gemm_batch_reduce_config brgemm_config,
+                                                                              const libxsmm_gemm_ext_unary_argops unary_argops,
+                                                                              const libxsmm_gemm_ext_binary_postops binary_postops );
+
 /** Structure referring to the generated code with some attached information. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
@@ -62,9 +95,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                * >0: error code
                                */
   unsigned int arch;          /* target arch for the current code generation task */
-  unsigned int sf_size;       /* offset of RSP to the beginning of the stack frame
-                               * we track this value to have RBP available for general compute
-                               */
 } libxsmm_generated_code;
 
 /** Translate LIBXSMM generator error-codes to error messages */
@@ -88,6 +118,10 @@ void libxsmm_generator_gemm_directasm(const char*                    i_file_out,
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel(libxsmm_generated_code*        io_generated_code,
                                    const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API
+void libxsmm_generator_gemm_reference_kernel(libxsmm_generated_code*        io_generated_code,
+                                             const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 /* TODO: change int based architecture value */
 LIBXSMM_API
@@ -156,11 +190,24 @@ void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_gen
                                           const unsigned int              i_packed_width );
 
 LIBXSMM_API
+void libxsmm_generator_packed_gemm( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                    const unsigned int              i_packed_width );
+
+LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_generated_code,
                                           const libxsmm_meltw_descriptor*    i_mateltw_desc );
 
 LIBXSMM_API
+void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*            io_generated_code,
+                                          const libxsmm_meltw_descriptor*    i_mateltw_desc );
+
+LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*        io_generated_code,
+                                           const libxsmm_meqn_descriptor* i_mateqn_desc );
+
+LIBXSMM_API
+void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*        io_generated_code,
                                            const libxsmm_meqn_descriptor* i_mateqn_desc );
 
 /** Used for system/user specific locking (I/O). */

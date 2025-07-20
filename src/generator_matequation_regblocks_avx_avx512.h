@@ -18,24 +18,24 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_has_hf8_input( libxsmm_matrix_eqn_elem *cur_node, unsigned int *found_hf8_input  );
+void libxsmm_generator_has_hf8_input( libxsmm_meqn_elem *cur_node, unsigned int *found_hf8_input  );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
-    libxsmm_matrix_eqn_elem             *cur_node,
+    libxsmm_meqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_matrix_eqn_arg_v2           *arg_info,
+    libxsmm_meqn_arg           *arg_info,
     unsigned int                        input_reg);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_copy_opargs(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
-    libxsmm_matrix_eqn_elem             *cur_node,
+    libxsmm_meqn_elem             *cur_node,
     unsigned int                        *oparg_id,
-    libxsmm_matrix_eqn_tmp_info         *oparg_info,
+    libxsmm_meqn_tmp_info         *oparg_info,
     unsigned int                        input_reg);
 
 LIBXSMM_API_INTERN
@@ -46,7 +46,7 @@ void libxsmm_generator_mateqn_adjust_opargs_addr(libxsmm_generated_code*        
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_tmp_info         *oparg_info);
+    libxsmm_meqn_tmp_info         *oparg_info);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io_generated_code,
@@ -56,7 +56,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_arg_v2           *arg_info);
+    libxsmm_meqn_arg           *arg_info);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_dump_2d_reg_block( libxsmm_generated_code*          io_generated_code,
@@ -224,7 +224,7 @@ void libxsmm_adjust_required_zmms( libxsmm_generated_code*                    io
     unsigned int pool_id );
 
 LIBXSMM_API_INTERN
-void libxsmm_mark_reserved_zmms( libxsmm_generated_code*                    io_generated_code,  libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn_elem *cur_node );
+void libxsmm_mark_reserved_zmms( libxsmm_generated_code*                    io_generated_code,  libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_meqn_elem *cur_node );
 
 LIBXSMM_API_INTERN
 void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_generated_code,
@@ -234,10 +234,10 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
     libxsmm_matrix_eqn                      *eqn );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_regblocks_get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
+void libxsmm_generator_matequation_regblocks_get_parent_bcast_info(libxsmm_meqn_elem* cur_node);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_regblocks_assign_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
+void libxsmm_generator_matequation_regblocks_assign_bcast_info(libxsmm_meqn_elem* cur_node);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_regblocks_propagate_bcast_info( libxsmm_matrix_eqn *eqn );

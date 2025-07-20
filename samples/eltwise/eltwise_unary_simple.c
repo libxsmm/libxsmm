@@ -44,6 +44,8 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
+
 LIBXSMM_INLINE
 void reference_unpack_32bit_to_2x16bit_blocks(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, char *in_char, char *out_char, long long offset) {
   float *in = (float*)in_char;
@@ -427,7 +429,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned int *rng_state = NULL;
   long long offset = 0;
   unsigned int *rng_state_gold = NULL;
-
+  libxsmm_kernel_info info;
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
@@ -438,7 +440,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned long long strides[2];
   char opname[256];
   unsigned long long _N = N;
-  double error_bound = 0.0, check_norm;
+  double error_bound = 0.0;
   const char* matdiff_env;
   libxsmm_blasint N_out = N;
 
@@ -547,47 +549,29 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     }
   }
 
+  unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT;
+
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_shape.n = 0;
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
   } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
   }
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
   }
+
   unary_kernel( &unary_param );
 
   /* populate error bounds */
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
-    const int archid = libxsmm_get_target_archid();
-    if  ((dtype_in == LIBXSMM_DATATYPE_F64 && dtype_out == LIBXSMM_DATATYPE_F64)
-      || (dtype_in == LIBXSMM_DATATYPE_F32 && dtype_out == LIBXSMM_DATATYPE_F32))
-    {
-      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
-        error_bound = 50.0; /* TODO: tighten error bound */
-      }
-      else {
-        error_bound = 0.02;
-      }
-    }
-    else if (dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) {
-      if (archid >= LIBXSMM_AARCH64_V81 && archid < LIBXSMM_AARCH64_SVE128) {
-        error_bound = 50.0; /* TODO: tighten error bound */
-      }
-      else if (archid >= LIBXSMM_X86_GENERIC && archid <= LIBXSMM_X86_AVX2) {
-        error_bound = 0.02;
-      }
-      else {
-        error_bound = 0.0027;
-      }
-    }
-    else if (dtype_in == LIBXSMM_DATATYPE_F16 || dtype_out == LIBXSMM_DATATYPE_F16) {
-      error_bound = 1.9;
-    }
-    else {
-      error_bound = 0.02;
+    if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2_SRF)) {
+      error_bound = 0.008;
+    } else {
+      error_bound = 0.0027;
     }
   } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
               op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
@@ -596,9 +580,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
       error_bound = 0.007;
     } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF8) )  {
-      error_bound = 0.2;
+      error_bound = 0.1;
     } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_HF8) )  {
-      error_bound = 0.2;
+      error_bound = 0.1;
     } else {
       error_bound = 0.007;
     }
@@ -617,6 +601,14 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     }
   }
 
+#if 0
+  for (int i = 0; i < 2; i ++) {
+    for (int j = 0; j < 2; j++) {
+      printf("%f %f ", *((float *)out_gold + i * ldo + j), *((float *)out + i * ldo + j));
+    }
+  }
+#endif
+
   /* compare result */
   norms_out = check_matrix(dtype_out, out_gold, out, ldo, M, N_out);
   printf("##########################################\n");
@@ -628,10 +620,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( check_norm > error_bound ) {
+  if ( norms_out.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -794,5 +785,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

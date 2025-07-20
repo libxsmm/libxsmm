@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_MALLOC_H
 #define LIBXSMM_MALLOC_H
 
-#include "libxsmm_memory.h"
+#include "libxsmm_macros.h"
 
 /** Include <tensorflow/core/public/version.h> prior to LIBXSMM otherwise the current TensorFlow API is assumed. */
 #if !defined(LIBXSMM_TF12) && (!defined(TF_VERSION_STRING) || \

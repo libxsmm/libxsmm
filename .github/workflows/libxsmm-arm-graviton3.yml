@@ -1,0 +1,104 @@
+name: LIBXSMM Arm Graviton 3
+
+on:
+  workflow_dispatch:
+  push:
+  schedule:
+    # Runs every week to keep the AWS node working
+    - cron: '0 0 * * 6'
+
+env:
+  LIBXSMM_VERBOSE: 4
+  SYM: 2
+
+jobs:
+  ec2-start:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 2: Set up AWS CLI
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      # Step 3: Start EC2 instance
+      - name: Start EC2 instance
+        run: |
+          aws ec2 start-instances --instance-ids i-0133c8f6344ff0d86
+
+  GEMM:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: GEMM
+        run: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+
+  BCSC_SPMM:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: BCSC_SPMM
+        run: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+
+  ELTWISE:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: ELTWISE
+        run: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+
+  EQUATION:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: EQUATION
+        run: "scripts/tool_test.sh samples/equation/run_test.sh"
+
+  FSSPMDM:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: FSSPMDM
+        run: |-
+          ENVS="LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3" \
+          TEST_N=48 scripts/tool_test.sh samples/pyfr/test.sh
+
+  Test_4:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: TEST_4
+        run: "scripts/tool_test.sh 4"
+
+  Test_6:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: TEST_6
+        run: "scripts/tool_test.sh 6"
+
+  Test_11:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: TEST_11
+        run: "scripts/tool_test.sh 11"
+
+  Fortran:
+    runs-on: [ self-hosted, graviton ]
+    needs: ec2-start
+    steps:
+      - uses: actions/checkout@v4
+      - name: FORTRAN
+        run: "scripts/tool_test.sh 5"

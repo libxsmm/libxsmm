@@ -21,6 +21,8 @@
 #define SCATTER 1
 #define EXPANSION_FACTOR 4
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void create_unique_random_array(unsigned long long *inout_array, int n) {
@@ -306,8 +308,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
     : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES);
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
   unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
-  l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
-    if ( l_kernel == NULL ) {
+  l_kernel    = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
+  libxsmm_get_kernel_info((const void*) l_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
+  if ( l_kernel == NULL ) {
     fprintf( stderr, "JIT for GATHER-SCATTER TPP failed. Bailing...!\n");
     exit(-1);
   }
@@ -329,7 +333,6 @@ int compare_results(float *sout, float *sout_ref, libxsmm_bfloat16 *bout, libxsm
     libxsmm_blasint out_m, libxsmm_blasint out_n, libxsmm_blasint out_ld,
     unsigned int use_gather_or_scatter, unsigned int use_rows_cols_offs, unsigned int use_16bit_dtype, unsigned int use_64bit_index) {
   int ret = EXIT_SUCCESS;
-  double check_norm;
   libxsmm_blasint result_size_check;
   libxsmm_matdiff_info norms_elts, diff;
   libxsmm_matdiff_clear(&norms_elts);
@@ -449,10 +452,9 @@ int compare_results(float *sout, float *sout_ref, libxsmm_bfloat16 *bout, libxsm
   printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_elts);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
 
-  if ( check_norm > 0 ) {
+  if ( norms_elts.normf_rel > 0 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -687,5 +689,6 @@ int main(int argc, char* argv[])
     fprintf(stderr, "ERROR at test: M = %u, N = %u, ldi = %i, ldo = %i, gs = %u, rowcolsoffs = %u, 32b/16b = %u, idxtype = %u\n", m, n, ld_in, ld_out, use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index );
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

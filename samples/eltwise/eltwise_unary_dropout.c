@@ -14,6 +14,7 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
 
 LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
@@ -206,8 +207,8 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   libxsmm_blasint i, j;
   unsigned int s;
   float p = 0.3f;
-  double check_norm;
   int ret = EXIT_SUCCESS;
+  libxsmm_kernel_info info;
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
@@ -255,7 +256,9 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
     exit(-1);
@@ -273,10 +276,9 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( check_norm > 0.00001 ) {
+  if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -330,8 +332,8 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unsigned char *mask_gold;
   libxsmm_blasint i;
   float p = 0.3f;
-  double check_norm;
   int ret = EXIT_SUCCESS;
+  libxsmm_kernel_info info;
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
@@ -375,7 +377,9 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unary_param.out.primary = (void*)out;
 
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
     exit(-1);
@@ -393,10 +397,9 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( check_norm > 0.00001 ) {
+  if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -486,5 +489,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

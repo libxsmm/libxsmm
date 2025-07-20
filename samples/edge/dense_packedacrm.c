@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 #if defined(__EDGE_EXECUTE_F32__)
@@ -107,7 +108,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* JIT code */
-    mykernel = libxsmm_create_packed_gemm_ac_rm_v2(gemm_shape, l_flags, l_prefetch_flags, l_r);
+    mykernel = libxsmm_create_packed_gemm_ac_rm(gemm_shape, l_flags, l_prefetch_flags, l_r);
 
     /* run reference */
     matMulFusedAC(l_r,

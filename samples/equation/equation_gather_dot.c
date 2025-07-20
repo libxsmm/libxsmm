@@ -13,6 +13,9 @@
 #include <libxsmm_intrinsics_x86.h>
 #endif
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
+
 LIBXSMM_INLINE
 void eqn_gather_dot_one_f32_gold( const libxsmm_blasint M,
                             const libxsmm_blasint cols,
@@ -119,8 +122,8 @@ void eqn_gather_dot_one_f32_tpp2( const libxsmm_blasint M,
                            float* i_tmp_mat,
                            float* o_vec_out,
                            const long long* i_idx,
-                           libxsmm_matrix_eqn_function i_eqn ) {
-  libxsmm_matrix_eqn_param l_eqn_param;
+                           libxsmm_meqn_function i_eqn ) {
+  libxsmm_meqn_param l_eqn_param;
   libxsmm_matrix_arg l_arg_array[2];
   libxsmm_blasint i;
 
@@ -222,7 +225,11 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   /* equation for mul + reduce add TPP */
   libxsmm_blasint l_eqn_0_idx = 0;
   libxsmm_meqn_arg_shape l_eqn_0_shape_out;
-  libxsmm_matrix_eqn_function l_eqn_0 = NULL;
+  libxsmm_meqn_function l_eqn_0 = NULL;
+  libxsmm_meqn_arg_metadata l_eqn_0_arg_metadata;
+  libxsmm_meqn_op_metadata l_eqn_0_op_metadata;
+  libxsmm_meqn_arg_shape l_eqn_0_arg_shape_in;
+  libxsmm_matrix_arg_attributes l_eqn_0_arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   /* gather + GEMM TPP */
   libxsmm_meltwfunction_unary l_gather = NULL;
   libxsmm_meltw_unary_shape   l_gahter_shape = libxsmm_create_meltw_unary_shape( M, idxblk_gemm, M, M, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -278,30 +285,52 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   }
 
   /* first TPP implementation we just run a reduce muladd */
-  l_mul = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
-  l_addreduce = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
-
+  l_mul = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  libxsmm_get_kernel_info((const void*) l_mul, &info);
+  is_reference_kernel = info.is_reference_kernel;
+  l_addreduce = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  libxsmm_get_kernel_info((const void*) l_addreduce, &info);
+  is_reference_kernel = info.is_reference_kernel;
   /* second TPP implementation equation for reduce muladd */
-  l_eqn_0_idx = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
-                                         LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( l_eqn_0_idx, LIBXSMM_MELTW_TYPE_BINARY_MUL,
-                                          LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( l_eqn_0_idx, M, 1, M, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_tree_print( l_eqn_0_idx );
-  libxsmm_matrix_eqn_rpn_print( l_eqn_0_idx );
+  l_eqn_0_idx = libxsmm_meqn_create();
+  l_eqn_0_op_metadata   = libxsmm_create_meqn_op_metadata(l_eqn_0_idx, -1);
+  libxsmm_meqn_push_back_unary_op( l_eqn_0_op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD,
+                                         LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  libxsmm_meqn_push_back_binary_op( l_eqn_0_op_metadata, LIBXSMM_MELTW_TYPE_BINARY_MUL,
+                                          LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE );
+  l_eqn_0_arg_shape_in  = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
+  l_eqn_0_arg_metadata  = libxsmm_create_meqn_arg_metadata(l_eqn_0_idx, 0);
+  libxsmm_meqn_push_back_arg(l_eqn_0_arg_metadata, l_eqn_0_arg_shape_in, l_eqn_0_arg_singular_attr);
+  l_eqn_0_arg_shape_in  = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
+  l_eqn_0_arg_metadata  = libxsmm_create_meqn_arg_metadata(l_eqn_0_idx, 1);
+  libxsmm_meqn_push_back_arg(l_eqn_0_arg_metadata, l_eqn_0_arg_shape_in, l_eqn_0_arg_singular_attr);
+  libxsmm_meqn_tree_print( l_eqn_0_idx );
+  libxsmm_meqn_rpn_print( l_eqn_0_idx );
   l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
-  l_eqn_0 = libxsmm_dispatch_matrix_eqn_v2( l_eqn_0_idx, l_eqn_0_shape_out );
+  l_eqn_0 = libxsmm_dispatch_meqn( l_eqn_0_idx, l_eqn_0_shape_out );
+  libxsmm_get_kernel_info((const void*) l_eqn_0, &info);
+  is_reference_kernel = info.is_reference_kernel;
 
   /* third TPP implementation we run gather and than matmul */
-  l_gather = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_gather_gemm.gemm = libxsmm_dispatch_gemm_v2( l_gather_gemm_shape, l_gather_gemm_flags, l_gather_gemm_prefetch_flags );
+  l_gather = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
+  libxsmm_get_kernel_info((const void*) l_gather, &info);
+  is_reference_kernel = info.is_reference_kernel;
+  l_gather_gemm.gemm = libxsmm_dispatch_gemm( l_gather_gemm_shape, l_gather_gemm_flags, l_gather_gemm_prefetch_flags );
+  libxsmm_get_kernel_info((const void*) l_gather_gemm.gemm, &info);
+  is_reference_kernel = info.is_reference_kernel;
 
   /* forth TPP implementation we run gather and reduce muladd */
-  l_gather_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_2_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  l_mul_2 = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_2_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 );
-  l_addreduce_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_2_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  l_gather_2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_2_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
+  libxsmm_get_kernel_info((const void*) l_gather_2, &info);
+  is_reference_kernel = info.is_reference_kernel;
+
+  l_mul_2 = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_2_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 );
+  libxsmm_get_kernel_info((const void*) l_mul_2, &info);
+  is_reference_kernel = info.is_reference_kernel;
+  l_addreduce_2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_2_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
+  libxsmm_get_kernel_info((const void*) l_addreduce_2, &info);
+  is_reference_kernel = info.is_reference_kernel;
+
 
   if ( (l_gather == NULL) || (l_gather_gemm.xmm == NULL) ) {
     printf("JIT failed for gather+gemm, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
@@ -468,5 +497,6 @@ int main( int argc, char* argv[] ) {
     ret = eqn_gather_dot_one_f32(cols, M, idxblk, numidx, iters);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

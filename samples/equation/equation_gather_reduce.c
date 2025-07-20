@@ -12,6 +12,8 @@
 
 #define EXPANSION_FACTOR 8
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, unsigned int *cols_ind_array, float *out) {
@@ -27,11 +29,11 @@ void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.0001, check_norm;
+  double error_bound = 0.0001;
   libxsmm_blasint my_eqn0;
-  libxsmm_matrix_eqn_function func0;
+  libxsmm_meqn_function func0;
   libxsmm_blasint i, j,it;
-  libxsmm_matrix_eqn_param eqn_param;
+  libxsmm_meqn_param eqn_param;
   libxsmm_timer_tickint l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
@@ -45,8 +47,8 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg f16_arg_array[1];
   libxsmm_matrix_arg bf8_arg_array[1];
   libxsmm_matrix_arg hf8_arg_array[1];
-  libxsmm_matrix_eqn_arg_metadata arg_metadata;
-  libxsmm_matrix_eqn_op_metadata  op_metadata;
+  libxsmm_meqn_arg_metadata arg_metadata;
+  libxsmm_meqn_op_metadata  op_metadata;
   libxsmm_meqn_arg_shape          arg_shape_in, arg_shape_out;
   libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   unsigned int       *cols_ind_array;
@@ -136,19 +138,22 @@ int main( int argc, char* argv[] ) {
     cols_ind_array_64b[i] = (unsigned long long) unique_random_array[i];
     cols_ind_array[i] = (unsigned int) cols_ind_array_64b[i];
   }
-  my_eqn0       = libxsmm_matrix_eqn_create();
-  arg_metadata  = libxsmm_create_matrix_eqn_arg_metadata(my_eqn0, 0);
-  op_metadata   = libxsmm_create_matrix_eqn_op_metadata(my_eqn0, -1);
+  my_eqn0       = libxsmm_meqn_create();
+  arg_metadata  = libxsmm_create_meqn_arg_metadata(my_eqn0, 0);
+  op_metadata   = libxsmm_create_meqn_op_metadata(my_eqn0, -1);
   arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, 1, ld, out_dt);
   unary_flags   = (libxsmm_meltw_unary_flags)(idx_type == 0
     ? (LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES)
     : (LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES));
 
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, in_dt, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape_in, arg_singular_attr);
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, in_dt, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
+  libxsmm_meqn_push_back_unary_op(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
+  libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr);
+  func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
+  libxsmm_get_kernel_info((const void*) func0, &info);
+  is_reference_kernel = info.is_reference_kernel;
+
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for equation failed. Bailing...!\n");
     exit(-1);
@@ -271,10 +276,9 @@ int main( int argc, char* argv[] ) {
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  check_norm = libxsmm_matdiff_epsilon(&norms_out);
-  printf("Check-norm    : %.24f\n\n", check_norm);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( check_norm > error_bound ) {
+  if ( norms_out.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -323,5 +327,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(hf8_out);
   libxsmm_free(hf8_eqn_out);
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

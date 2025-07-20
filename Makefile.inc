@@ -356,6 +356,11 @@ ifeq (0,$(GNU))
       CC := icx
     endif
   endif
+else ifneq (,$(filter-out default undefined,$(origin CC) $(origin CXX) $(origin FC)))
+  $(info WARNING: GNU=$(GNU) was given but CC, CXX, or FC was specified!)
+  FC := gfortran
+  CC := gcc
+  CXX := g++
 endif
 
 # adopt extra flags from C if not set individually
@@ -1137,16 +1142,6 @@ else # non-Intel
 endif
 SLDFLAGS ?= $(NULL)
 
-LIBATOMIC ?= 0
-ifneq (0,$(THREADS))
-ifneq (0,$(LIBATOMIC))
-ifneq (,$(call ldclib,$(LD),$(SLDFLAGS),atomic))
-  LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),atomic)
-  DFLAGS += -DLIBXSMM_LIBATOMIC
-endif
-endif
-endif
-
 LIBGFORTRAN := $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
 LIBPTHREAD := $(call ldclib,$(LD),$(SLDFLAGS),pthread)
 QUADMATH := $(call ldclib,$(LD),$(SLDFLAGS),quadmath)
@@ -1386,10 +1381,12 @@ ifneq (0,$(INTEL))
   ifneq (0,$(SIMD))
   ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION_NUM)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
-    CXXFLAGS += -qopenmp-simd
-    CFLAGS += -qopenmp-simd
-    ifeq (,$(strip $(GFC)))
-      FCFLAGS += -qopenmp-simd
+    ifeq (0,$(OMP))
+      CXXFLAGS += -qopenmp-simd
+      CFLAGS += -qopenmp-simd
+      ifeq (,$(strip $(GFC)))
+        FCFLAGS += -qopenmp-simd
+      endif
     endif
     SIMD ?= 1
   endif
@@ -1466,7 +1463,9 @@ else # GCC assumed
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros \
                  -Wno-unused-parameter -Wwrite-strings \
-                 -Wmissing-field-initializers
+                 -Wmissing-field-initializers -Wwrite-strings \
+                 -Wcast-qual -Wmissing-field-initializers \
+                 -Wimplicit-fallthrough -Wmisleading-indentation
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
@@ -1585,8 +1584,9 @@ else # GCC assumed
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
       FCFLAGS += $(FFORM_FLAG)
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
-        CSTD := -std=c89
+        CSTD := -std=c99
       endif
+      CFLAGS += $(CSTD)
     endif
   endif
   # flag specifying output directory must be last
@@ -1874,13 +1874,14 @@ else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
 #else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
   #override CTARGET := $(NULL)
 endif
-ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
-  ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
-    CTARGET := -march=native -mtune=native
-  else # revoke target flags
-    CTARGET := $(NULL)
-  endif
-endif
+# The following logic is causing reset of .state flags when FORTRAN=0 is exported
+#ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
+#  ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
+#    CTARGET := -march=native -mtune=native
+#  else # revoke target flags
+#    CTARGET := $(NULL)
+#  endif
+#endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
   TARGET ?= $(CTARGET)
@@ -2137,6 +2138,16 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
   endif
 else ifneq (0,$(PGI))
   LIBATOMIC ?= 1
+endif
+
+LIBATOMIC ?= 0
+ifneq (0,$(THREADS))
+ifneq (0,$(LIBATOMIC))
+ifneq (,$(call ldclib,$(LD),$(SLDFLAGS),atomic))
+  LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),atomic)
+  DFLAGS += -DLIBXSMM_LIBATOMIC
+endif
+endif
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
@@ -2514,21 +2525,26 @@ extname = $(subst .,,$(call qsuffix,$(1)))
 # derives the name of an object files for a given source file
 objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$(ARG)),%-$(call extname,$(ARG)).o,$(call qndir,$(ARG)))))
 
-MAKSTATE := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
-STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
-  $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
-  DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
-  NOBLAS% DNOBLAS %LIB FLDFLAGS OPSYS %DEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN CLDFLAGS \
-  GNU CCAR LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME DYNAMIC \
-  CPEDANTIC FREEFORM FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS PYTHON% HOST% TMUX %COLORS \
-  HEREDIR HOMEDIR UNUSED TEST% MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %_FLAG \
-  CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR FINFO ENVBIN FSTD GINFO XDG_DATA_DIRS ONEVERSION \
-  LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR \
-  $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
-  $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
-  $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
-  $(if $(filter 0,$(MKL)),MKL_%), \
-  $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
+STATEMAK := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
+ifneq (0,$(STATEFLT))
+  STATEVAR := $(filter-out \
+    $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
+    DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
+    NOBLAS% DNOBLAS %LIB FLDFLAGS OPSYS %DEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN CLDFLAGS \
+    GNU CCAR LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME DYNAMIC \
+    CPEDANTIC FREEFORM FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS PYTHON% HOST% TMUX %COLORS \
+    HEREDIR HOMEDIR UNUSED TEST% MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %_FLAG \
+    CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR FINFO ENVBIN FSTD GINFO XDG_DATA_DIRS ONEVERSION \
+    LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR \
+    $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
+    $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
+    $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
+    $(if $(filter 0,$(MKL)),MKL_%), \
+    $(.VARIABLES))
+else # debug
+  STATEVAR := $(filter-out FMAIN REVERSION%,$(.VARIABLES))
+endif
+STATE := $(sort $(foreach V,$(filter $(STATEMAK),$(STATEVAR)),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
 ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$V)))
 VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   /$(USER),$(if $(USER),/$$USER),$(patsubst $(USER)%,$(if $(USER),$$USER%),$(subst \

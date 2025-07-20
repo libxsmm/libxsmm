@@ -184,7 +184,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   if (NULL != aa_dense) {
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
       N_dense, M, K, ldb, K, ldc, datatype, datatype, datatype, datatype);
-    k_dense = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch_flags);
+    k_dense = libxsmm_dispatch_gemm(gemm_shape, flags, prefetch_flags);
   }
 
   switch ((int)datatype) {
@@ -243,21 +243,21 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     if (N_sparse1 <= N && (0 == fsspmdm_hint || 1 == fsspmdm_hint)) {
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse1, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
-      k_sparse1 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
+      k_sparse1 = libxsmm_create_spgemm_csr_areg(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* Try to JIT a second (wider) sparse kernel */
     if (N_sparse1 <= N && 0 == (N % N_sparse2) && (0 == fsspmdm_hint || 2 == fsspmdm_hint)) {
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse2, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
-      k_sparse2 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
+      k_sparse2 = libxsmm_create_spgemm_csr_areg(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* Try to JIT an even wider kernel */
     if (N_sparse1 <= N && 0 == (N % N_sparse4) && (0 == fsspmdm_hint || 3 == fsspmdm_hint)) {
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse4, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
-      k_sparse4 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
+      k_sparse4 = libxsmm_create_spgemm_csr_areg(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
   }
@@ -488,6 +488,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const void* B, void* C)
 {
   libxsmm_gemm_param gemm_param;
@@ -512,6 +514,7 @@ LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const vo
     }
   }
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_dfsspmdm_execute(const libxsmm_dfsspmdm* handle, const double* B, double* C)

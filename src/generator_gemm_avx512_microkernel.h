@@ -27,48 +27,42 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
                                                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                              const unsigned int                 i_m_blocking,
-                                                                             const unsigned int                 i_n_blocking,
-                                                                             const int                          i_offset );
+                                                                             const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( libxsmm_generated_code*            io_generated_code,
                                                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                                       const unsigned int                 i_m_blocking,
-                                                                                      const unsigned int                 i_n_blocking,
-                                                                                      const int                          i_offset );
+                                                                                      const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_i8_ss_uu_emu_nofsdbcst( libxsmm_generated_code*            io_generated_code,
+                                                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                          const unsigned int                 i_m_blocking,
+                                                                                          const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_i8_ss_uu_emu_nofsdbcst( libxsmm_generated_code*            io_generated_code,
+                                                                                             const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                             const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                             const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                             const unsigned int                 i_m_blocking,
+                                                                                             const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsdbcst( libxsmm_generated_code*            io_generated_code,
                                                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                                       const unsigned int                 i_m_blocking,
-                                                                                      const unsigned int                 i_n_blocking,
-                                                                                      const int                          i_offset );
+                                                                                      const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_nofsdbcst( libxsmm_generated_code*            io_generated_code,
                                                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                                          const unsigned int                 i_m_blocking,
-                                                                                         const unsigned int                 i_n_blocking,
-                                                                                         const int                          i_offset );
-
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdbcst( libxsmm_generated_code*            io_generated_code,
-                                                                                     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                                     const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                                     const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                                     const unsigned int                 i_m_blocking,
-                                                                                     const unsigned int                 i_n_blocking,
-                                                                                     const int                          i_offset );
-
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nofsdbcst( libxsmm_generated_code*            io_generated_code,
-                                                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                                        const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                                        const unsigned int                 i_m_blocking,
-                                                                                        const unsigned int                 i_n_blocking,
-                                                                                        const int                          i_offset );
+                                                                                         const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code*            io_generated_code,
                                                                            const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
@@ -76,13 +70,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                            const unsigned int                 i_n_blocking,
                                                                            const unsigned int                 i_k_blocking );
-
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( libxsmm_generated_code*            io_generated_code,
-                                                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                                const unsigned int                 i_n_blocking,
-                                                                                const unsigned int                 i_k_blocking );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_loadNinterleave_A_pair_k_i8_to_bf16( libxsmm_generated_code*            io_generated_code,
                                                                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
@@ -106,5 +93,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
                                                                                   unsigned int                       i_m,
                                                                                   unsigned int                       i_m_blocking,
                                                                                   unsigned int                       io_A_vreg );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A_for_i4i8 ( libxsmm_generated_code*            io_generated_code,
+                                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                  unsigned int                       i_m,
+                                                                                  unsigned int                       i_m_blocking,
+                                                                                  unsigned int                       io_A_vreg );
+
 #endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_H */
 

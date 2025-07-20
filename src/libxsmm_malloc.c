@@ -445,6 +445,8 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API_INLINE
 LIBXSMM_ATTRIBUTE_NO_SANITIZE(address)
 internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
@@ -511,6 +513,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
   }
   return result;
 }
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_type* exclude)
@@ -597,7 +600,10 @@ LIBXSMM_API_INTERN void internal_scratch_free(const void* memory, internal_mallo
   const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
   char *const pool_buffer = pool->instance.buffer;
 # if (!defined(NDEBUG) || defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
   char *const buffer = (char*)memory; /* non-const */
+#pragma GCC diagnostic pop
   LIBXSMM_ASSERT(pool_buffer <= buffer && buffer < pool_buffer + pool->instance.minsize);
 # endif
   LIBXSMM_ASSERT(pool_buffer <= pool->instance.head);
@@ -1851,10 +1857,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
           | (LIBXSMM_MALLOC_ALIGNMAX < size ? 0 : MAP_NORESERVE)
 # endif
 # if defined(MAP_32BIT)
-          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32
-            && (LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid)
-            && (LIBXSMM_X86_AVX512 < libxsmm_target_archid ||
-                LIBXSMM_X86_AVX > libxsmm_target_archid)) ? MAP_32BIT : 0)
+          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32) ? MAP_32BIT : 0)
 # endif
 # if defined(MAP_HUGETLB) && defined(LIBXSMM_MALLOC_HUGE_PAGES)
           | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)

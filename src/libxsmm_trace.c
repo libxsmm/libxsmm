@@ -191,6 +191,8 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE unsigned int libxsmm_backtrace(const void* /*buffer*/[], unsigned int /*size*/, unsigned int /*skip*/);
 LIBXSMM_API
 #if defined(_WIN32)
@@ -257,6 +259,7 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
   return result;
 }
 #endif
+#pragma GCC diagnostic pop
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE

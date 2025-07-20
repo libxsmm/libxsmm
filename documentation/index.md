@@ -305,6 +305,14 @@ Syntactically up to three arguments separated by commas (which allows to omit ar
 
 Although the `ltrace` (Linux utility) provides similar insight, the trace facility might be useful due to the afore mentioned filtering expressions. Please note that the trace facility is severely impacting the performance (even with LIBXSMM_TRACE=0), and this is not just because of console output but rather since inlining (internal) functions might be prevented along with additional call overhead on each function entry and exit. Therefore, debug symbols can be also enabled separately (`make SYM=1`; implied by TRACE=1 or DBG=1) which might be useful when profiling an application.
 
+### Verification
+
+This section refers to testing correctness of an application using LIBXSMM utilities, i.e., using `libxsmm_matdiff` or `libxsmm_matdiff_epsilon` in particular. The former function (`libxsmm_matdiff`) compares two matrices (which can degenerate to vector shape), and yields a structure with information about the difference of both matrices (gold vs. test). The latter function (`libxsmm_matdiff_epsilon`) combines absolute and relative norms (given by afore mentioned structure) and calculates a scalar "epsilon" which can be used to check against a margin.
+
+Using `libxsmm_matdiff_epsilon` in an application exposes an environment variable `LIBXSMM_MATDIFF` which can specify a file or directory path (`LIBXSMM_MATDIFF=1` simply uses some filename as default). In any case, the application appends one line to the respective file for each call of `libxsmm_matdiff_epsilon`. A data record consists of the epsilon and the command line used to launch the application. A generated file can be further evaluated, e.g., `sort -gk1 libxsmm_matdiff.log | tail -n 10` which yields the largest ten epsilon values discovered along with the application's command line.
+
+The environment variable `LIBXSMM_MATDIFF` can carry optional space-separated arguments to amend each file entry like `export LIBXSMM_MATDIFF="libxsmm_matdiff.log hello world"`. In sophisticated cases this can be used to amend a value only known at runtime, e.g., the actual margin which is used to judge the epsilon (`putenv`).
+
 ## Performance
 
 <a name="profiling"></a>Profiling an application, which uses LIBXSMM's JIT-code is well-supported. The library supports <span>Intel&#160;VTune&#160;Amplifier</span> and <span>Linux&#160;perf</span>. Details are given on how to include profiler support, and how to run the application.
@@ -355,7 +363,7 @@ Please note that comparing performance results depends on whether the operands o
 
 <b>[11]&#160;</b>[https://github.com/intel/intel-extension-for-pytorch](https://github.com/intel/intel-extension-for-pytorch): Intel Extension for PyTorch aims for a smooth user experience of PyTorch on CPUs by the means of good performance. The extension pack started to rely on [LIBXSMM for achieving high performance on CPUs](https://arxiv.org/abs/2005.04680).
 
-<b>[12]&#160;</b>[https://github.com/libxsmm/tpp-pytorch-extension](https://github.com/libxsmm/tpp-pytorch-extension): Intel(R) Tensor Processing Primitive Extension for pytorch is an open source software library the integrates Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) into pytorch. It is aiming for a smooth user experience of PyTorch on CPUs by the means of good performance. Intel's MLPerf Training submission codes leverage this [project](https://github.com/mlcommons/training_results_v2.1/tree/main/Intel/benchmarks/bert/implementations/pytorch-cpu).
+<b>[12]&#160;</b>[https://github.com/libxsmm/tpp-pytorch-extension](https://github.com/libxsmm/tpp-pytorch-extension): Intel(R) Tensor Processing Primitive Extension for pytorch is an open source software library the integrates Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) into pytorch. It is aiming for a smooth user experience of PyTorch on CPUs by the means of good performance. Intel's MLPerf Training submission codes leverage this [project](https://github.com/mlcommons/training_results.1/tree/main/Intel/benchmarks/bert/implementations/pytorch-cpu).
 
 <b>[13]&#160;</b>[https://github.com/libxsmm/libxsmm-dnn](https://github.com/libxsmm/libxsmm-dnn): LIBXSMM-DNN is an open source software library that demonstrates how Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) can be used to implement various deep learning primitives such as convolutions, linear layers or even pooling and norming. Due to the use of TPP not a single line of platform-specific code is needed. 
 

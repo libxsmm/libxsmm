@@ -55,13 +55,13 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
                                                 unsigned int                  i_prefetch );
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generated_code,
-                                             const unsigned int      i_gp_struct_params,
-                                             const unsigned int      skip_callee_save );
+void libxsmm_x86_instruction_open_stream_alt( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_gp_struct_params,
+                                              const unsigned int      skip_callee_save );
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      skip_callee_save );
+void libxsmm_x86_instruction_close_stream_alt( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      skip_callee_save );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
@@ -698,5 +698,22 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_tile_src_reg_number_0,
                                            const unsigned int      i_tile_src_reg_number_1,
                                            const unsigned int      i_tile_dst_reg_number );
+/**
+ * Generates tile->zmm instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
+ * @param i_tmove_instr actual tile mem instruction variant
+ * @param i_vec_reg_number 1st zmm register which starts to hold the tile, either zmm0 or zmm16
+ * @param i_tile_reg_number_0 the tile register number (tmm: 0-7)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_extract( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_instruction_set,
+                                           const unsigned int      i_tmove_instr,
+                                           const unsigned int      i_tile_reg_number,
+                                           const unsigned int      i_immediate,
+                                           const unsigned int      i_gp_reg_cntl,
+                                           const unsigned int      i_vec_reg_number );
 
 #endif /* GENERATOR_X86_INSTRUCTIONS_H */

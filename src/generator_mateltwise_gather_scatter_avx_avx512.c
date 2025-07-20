@@ -14,9 +14,6 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 
-#if !defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-# define LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC
-#endif
 #if 0
 #define USE_ENV_TUNING
 #endif
@@ -91,7 +88,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_mn_loop_unrolled( libxsmm_
 
       if (is_gather == 1) {
         /* Gather based on index vector im*/
-        if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+        if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
           if (use_m_masking > 0) {
             if (im == m_unroll_factor-1) {
               libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORW, mask_reg, mask_reg, help_mask_reg, 0);
@@ -194,17 +191,14 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0, gp_idx_mat_base_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
 #endif
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
 #if defined(USE_ENV_TUNING)
   if ( 0 == env_max_m_unroll ) {
@@ -217,7 +211,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
   }
 #endif
 
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS : LIBXSMM_X86_INSTR_VGATHERDPS;
   } else {
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS_VEX : LIBXSMM_X86_INSTR_VGATHERDPS_VEX;
@@ -241,7 +235,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_base_reg,
         0 );
 
@@ -249,7 +243,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -257,7 +251,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -269,7 +263,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -277,7 +271,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_idx_mat_base_reg,
         0 );
 
@@ -285,7 +279,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        72,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -294,7 +288,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     dtype_size_reg_mat = i_micro_kernel_config->datatype_size_in;
   }
 
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
     n_unroll_factor = 1;
     vlen = 32/i_micro_kernel_config->datatype_size_in;
     vname_load = 'y';
@@ -320,11 +314,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
       }
     }
 #if 0
-    else {
-      /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-      free(p_jump_label_tracker);
-#endif
+    else { /* should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
       return;
     }
@@ -345,7 +335,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     n_unroll_factor--;
   }
 
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
       LIBXSMM_X86_INSTR_MOVQ,
       LIBXSMM_X86_GP_REG_RAX,
@@ -361,7 +351,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
   }
 
   if (use_m_masking == 1) {
-    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
       /* Calculate mask reg 1 for reading/output-writing */
       mask_inout_count = vlen - (m % vlen);
       mask_reg = 1;
@@ -374,11 +364,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         }
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -448,9 +434,6 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)n_unroll_factor * m * idx_tsize);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -481,7 +464,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_mn_loop_unrolled( libxsmm_
     for (in = 0; in < n_unroll_factor; in++) {
       if (is_gather == 1) {
         /* Gather based on index vector im*/
-        if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+        if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
           if (use_m_masking > 0) {
             if (im == m_unroll_factor-1) {
               libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORW, mask_reg, mask_reg, help_mask_reg, 0);
@@ -763,13 +746,10 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
   const char *const env_pf_dist = getenv("PF_DIST_GATHER_SCATTER");
   const char *const env_pf_type = getenv("PF_TYPE_GATHER_SCATTER");
   const char *const env_nts     = getenv("NTS_GATHER_SCATTER");
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   if ( 0 == env_max_m_unroll ) {
   } else {
@@ -808,7 +788,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_base_reg,
         0 );
 
@@ -816,7 +796,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -824,7 +804,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -837,7 +817,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -845,7 +825,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_idx_mat_base_reg,
         0 );
 
@@ -853,7 +833,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        72,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -864,12 +844,12 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
     pf_instr  = LIBXSMM_X86_INSTR_PREFETCHW;
   }
 
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_SKX) {
     vlen = 32/i_micro_kernel_config->datatype_size_in;
     vname = 'y';
     vstore_instr  = LIBXSMM_X86_INSTR_VMOVUPS;
     vload_instr   = LIBXSMM_X86_INSTR_VMOVUPS;
-  } else if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+  } else if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
     vlen = 32/i_micro_kernel_config->datatype_size_in;
     vname = 'y';
   }
@@ -882,7 +862,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
   peeled_m_trips    = 0;
 
   if (use_m_masking == 1) {
-    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
       /* Calculate mask reg 1 for reading/output-writing */
       use_mask_move_instr = 1;
       mask_inout_count = vlen - (m % vlen);
@@ -891,11 +871,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_F32);
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -917,11 +893,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         if ((m % vlen) % 2 == 1) {
           use_m_scalar_loads_stores = m % vlen;
         }
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -984,9 +956,6 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat);
   libxsmm_generator_mateltwise_footer_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, i_gp_reg_mapping->gp_reg_n);
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1003,13 +972,10 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0;
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_X86_GP_REG_R9;
   i_gp_reg_mapping->gp_reg_m_loop   = LIBXSMM_X86_GP_REG_RAX;
@@ -1026,7 +992,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_reg,
         0 );
 
@@ -1034,7 +1000,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1042,7 +1008,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -1055,7 +1021,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -1063,7 +1029,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_idx_mat_reg,
         0 );
 
@@ -1071,7 +1037,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        72,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1117,9 +1083,6 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
 
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat * n - (long long)dtype_size_reg_mat);
   libxsmm_generator_generic_loop_footer_with_idx_inc( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1, m);
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1136,13 +1099,10 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0;
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_X86_GP_REG_R9;
   i_gp_reg_mapping->gp_reg_m_loop   = LIBXSMM_X86_GP_REG_RAX;
@@ -1159,7 +1119,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_reg,
         0 );
 
@@ -1167,7 +1127,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1175,7 +1135,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -1187,7 +1147,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -1195,7 +1155,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_idx_mat_reg,
         0 );
 
@@ -1203,7 +1163,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        72,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1245,9 +1205,6 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)idx_tsize * m);
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat);
   libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1274,17 +1231,14 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0, gp_idx_mat_base_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
 #endif
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
-#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
-#endif
-  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
 #if defined(USE_ENV_TUNING)
   if ( 0 == env_max_m_unroll ) {
@@ -1297,7 +1251,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   }
 #endif
 
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS : LIBXSMM_X86_INSTR_VGATHERDPS;
   } else {
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS_VEX : LIBXSMM_X86_INSTR_VGATHERDPS_VEX;
@@ -1321,7 +1275,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_idx_mat_base_reg,
         0 );
 
@@ -1329,7 +1283,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        40,
+        l_offset_ptr_a + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1337,7 +1291,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_reg_mat_reg,
         0 );
 
@@ -1350,7 +1304,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        32,
+        l_offset_ptr_a,
         gp_reg_mat_reg,
         0 );
 
@@ -1358,7 +1312,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        64,
+        l_offset_ptr_b,
         gp_idx_mat_base_reg,
         0 );
 
@@ -1366,7 +1320,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        72,
+        l_offset_ptr_b + 8,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
 
@@ -1376,7 +1330,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
     dtype_size_reg_mat = i_micro_kernel_config->datatype_size_in;
   }
 
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
     vlen = 32/i_micro_kernel_config->datatype_size_in;
     vname_load = 'y';
     vname_store = 'y';
@@ -1399,16 +1353,13 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
       } else {
         vname_load = 'x';
       }
-    } else {
+    }
 #if 0
-      /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-      free(p_jump_label_tracker);
-#endif
+    else { /* should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
       return;
-#endif
     }
+#endif
   } else {
     idx_vload_instr = LIBXSMM_X86_INSTR_VMOVUPS;
   }
@@ -1425,7 +1376,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
     n_unroll_factor--;
   }
 
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
       LIBXSMM_X86_INSTR_MOVQ,
       LIBXSMM_X86_GP_REG_RAX,
@@ -1441,7 +1392,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   }
 
   if (use_m_masking == 1) {
-    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) {
       /* Calculate mask reg 1 for reading/output-writing */
       mask_inout_count = vlen - (m % vlen);
       mask_reg = 1;
@@ -1454,11 +1405,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         }
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
-      } else {
-        /* should not happen */
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-        free(p_jump_label_tracker);
-#endif
+      } else { /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -1550,9 +1497,6 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
     libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, (long long)n_unroll_factor * ld_idx_mat * dtype_size_idx_mat);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-  free(p_jump_label_tracker);
-#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1565,14 +1509,14 @@ void libxsmm_generator_gather_scatter_avx_avx512_microkernel( libxsmm_generated_
     libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS ) > 0 ) {
     if ( (i_micro_kernel_config->datatype_size_in == 4) && (i_micro_kernel_config->datatype_size_out == 4) &&
-         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) || ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
+         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
       libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     }
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS ) > 0 ) {
     if ( (i_micro_kernel_config->datatype_size_in == 4) && (i_micro_kernel_config->datatype_size_out == 4) &&
-         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) || ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
+         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
       libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );

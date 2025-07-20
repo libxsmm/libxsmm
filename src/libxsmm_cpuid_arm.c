@@ -26,6 +26,7 @@
 # if 0
 #   define LIBXSMM_CPUID_ARM_MODEL_FALLBACK
 # elif defined(__APPLE__) && defined(__arm64__)
+#   include <sys/sysctl.h>
 #   define LIBXSMM_CPUID_ARM_MODEL_FALLBACK
 # endif
 #endif
@@ -121,6 +122,23 @@ LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void)
 #endif
 }
 
+LIBXSMM_API int libxsmm_cpuid_arm_m4_use_neon_non_gemm(void){
+#if defined(LIBXSMM_PLATFORM_X86)
+  return 0;
+#else
+  const char *const l_env_use_neon = getenv("LIBXSMM_AARCH64_USE_NEON");
+  int result = 0;
+  if( 0 == l_env_use_neon){
+    result = 0;
+  } else {
+    if( atoi(l_env_use_neon) != 0){
+      result = 1;
+    }
+    }
+  return result;
+#endif
+}
+
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
@@ -144,7 +162,20 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 # else
     void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
 #   if defined(__APPLE__) && defined(__arm64__)
-    result = LIBXSMM_AARCH64_APPL_M1;
+    int sme_supported = 0;
+    size_t size = sizeof(sme_supported);
+
+    if (sysctlbyname("hw.optional.arm.FEAT_SME", &sme_supported, &size, NULL, 0) == 0) {
+      if (sme_supported == 1 && libxsmm_cpuid_arm_m4_use_neon_non_gemm() == 0) {
+          result = LIBXSMM_AARCH64_APPL_M4;
+      } else {
+          result = LIBXSMM_AARCH64_APPL_M1;
+      }
+    } else {
+      fprintf(stderr, "LIBXSMM WARNING: Apple CPU detection failed !\n");
+    }
+
+    return result;
 #   else
     result = LIBXSMM_AARCH64_V81;
 #   endif
@@ -166,8 +197,11 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
         if (0 != (0xF & (id_aa64pfr0_el1 >> 32)) || 0 != no_access) { /* SVE */
           const int vlen_bytes = libxsmm_cpuid_arm_svcntb();
           switch (vlen_bytes) {
-            case 16: { /* SVE 128-bit */
-              if (LIBXSMM_AARCH64_SVE128 > result) result = LIBXSMM_AARCH64_SVE128;
+            case 16: { /* SVE 256-bit */
+              const int sve128 = (1 == (0xF & (id_aa64isar1_el1 >> 44))
+                ? LIBXSMM_AARCH64_NEOV2 /* BF16 */
+                : LIBXSMM_AARCH64_SVE128);
+              if (sve128 > result) result = sve128;
             } break;
             case 32: { /* SVE 256-bit */
               const int sve256 = (1 == (0xF & (id_aa64isar1_el1 >> 44))

@@ -1,0 +1,48 @@
+env:
+  LIBXSMM_VERBOSE: 4
+  SLURM: 0
+  SYM: 2
+
+steps:
+  - label: "GEMM"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    agents:
+      queue: "ftp"
+
+  - label: "BCSC SPMM"
+    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    agents:
+      queue: "ftp"
+
+  - label: "ELTWISE"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    agents:
+      queue: "ftp"
+
+  #- label: "OPREDUCE"
+  #  command: "scripts/tool_test.sh samples/eltwise/run_test_opreduce.sh"
+  #  agents:
+  #    queue: "ftp"
+
+  #- label: "EQUATION"
+  #  command: "scripts/tool_test.sh samples/equation/run_test.sh"
+  #  agents:
+  #    queue: "ftp"
+
+  - label: "FSSPMDM SP"
+    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    env:
+      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3"
+      REALTYPE: "float"
+      PEXEC_SP: "-2"
+    agents:
+      queue: "ftp"
+
+  - label: "FSSPMDM DP"
+    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    env:
+      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3"
+      REALTYPE: "double"
+      PEXEC_SP: "-2"
+    agents:
+      queue: "ftp"

@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 
@@ -48,7 +49,7 @@ int main(int argc, char* argv[])
     for (i = 0; i < nrpt; ++i) {
       printf("-------------------------------------------------\n");
       /* initialize the data */
-      libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
+      libxsmm_rng_seq(a, nbytes);
       memcpy(b, a, nbytes); /* same content */
       /* benchmark libxsmm_diff (always strided) */
       if (elsize < 256) {
@@ -67,7 +68,7 @@ int main(int argc, char* argv[])
       { /* benchmark libxsmm_memcmp */
         libxsmm_timer_tickint start;
         /* reinitialize the data (flush caches) */
-        libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
+        libxsmm_rng_seq(a, nbytes);
         memcpy(b, a, nbytes); /* same content */
         start = libxsmm_timer_tick();
         if (stride == elsize && 0 == strided) {
@@ -89,7 +90,7 @@ int main(int argc, char* argv[])
       { /* benchmark stdlib's memcmp */
         libxsmm_timer_tickint start;
         /* reinitialize the data (flush caches) */
-        libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
+        libxsmm_rng_seq(a, nbytes);
         memcpy(b, a, nbytes); /* same content */
         start = libxsmm_timer_tick();
         if (stride == elsize && 0 == strided) {

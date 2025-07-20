@@ -56,7 +56,7 @@ if __name__ == "__main__":
             print(
                 "   || (LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid)"
             )
-            print("   || (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid &&")
+            print("   || (LIBXSMM_X86_AVX512_SKX <= libxsmm_target_archid &&")
             print("       libxsmm_cpuid_vlen32(LIBXSMM_STATIC_TARGET_ARCH) ==")
             print("       libxsmm_cpuid_vlen32(libxsmm_target_archid)))")
             print("#endif")

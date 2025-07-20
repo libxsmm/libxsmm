@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Xing Liu (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 
@@ -234,7 +235,7 @@ int main(int argc, char **argv) {
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
     for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
-        mykernel[blk_idx] = libxsmm_create_packed_spgemm_csc_v2(
+        mykernel[blk_idx] = libxsmm_create_packed_spgemm_csc(
             gemm_shape, l_flags, l_prefetch_flags, nb,
             b_colptr[blk_idx], b_rowidx[blk_idx], (const void *)b_values[blk_idx]);
     }

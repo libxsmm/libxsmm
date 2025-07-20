@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012,SC2153,SC2206
+# shellcheck disable=SC2012,SC2086,SC2153,SC2206
 
 if [ "$1" ]; then  # argument takes precedence
   LOGFILE=$1
@@ -45,20 +45,20 @@ fi
 # optionally enable script debug
 if [ "${LOGRPT_DEBUG}" ] && [ "0" != "${LOGRPT_DEBUG}" ]; then
   echo "*** DEBUG ***"
-  if [[ ${LOGRPT_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
-    set -xv
-  else
-    set "${LOGRPT_DEBUG}"
-  fi
-  PYTHON=$(command -v python3)
+  PYTHON=$(command -v python3 || true)
   if [ ! "${PYTHON}" ]; then
-    PYTHON=$(command -v python)
+    PYTHON=$(command -v python || true)
   fi
   if [ "${PYTHON}" ]; then
     ${PYTHON} -m site --user-site 2>&1 && echo
   fi
   env
   echo "*** DEBUG ***"
+  if [[ ${LOGRPT_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+    set -xv
+  else
+    set "${LOGRPT_DEBUG}"
+  fi
 fi
 
 # determine artifact directory
@@ -100,6 +100,8 @@ then
       DBSCRT=${LOGDIR}/tool_report.sh
     elif [ -e "${HERE}/tool_report.sh" ]; then
       DBSCRT=${HERE}/tool_report.sh
+    elif [ -e "${HERE}/tool_report.py" ]; then
+      DBSCRT=${HERE}/tool_report.py
     fi
   fi
   if [ ! "${DBSCRT}" ]; then
@@ -116,8 +118,9 @@ then
   PARENT_PID=${PPID}
   while [ "${PARENT_PID}" ]; do
     if PSOUT=$(ps -o args= ${PARENT_PID} 2>/dev/null); then
-      PARENT=$(echo "${PSOUT}" \
-        | sed -n "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p")
+      PARENT=$(sed -n \
+          "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p" \
+        <<<"${PSOUT}")
       if [ "${PARENT}" ]; then
         PARENT_PID=$(ps -oppid ${PARENT_PID} | tail -n1)
         if [ -e "${PARENT}.weights.json" ]; then
@@ -170,30 +173,29 @@ if [ "${LOGDIR}" ]; then
       EXACT="-e"
     fi
     if [ "${LOGRPTSEP}" ] && [ "0" != "${LOGRPTSEP}" ]; then
-      UNTIED="-u"
+      UNTIED="-u ${LOGRPTSEP}"
     fi
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ]; then
       VERBOSITY=-1
     else
       VERBOSITY=1
     fi
-    mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
-      -p "${PIPELINE}" -b "${LOGRPTBRN}" \
-      -f "${LOGDIR}/${PIPELINE}.json" \
-      -g "${LOGDIR}/${PIPELINE}/${JOBID} ${LOGRPTFMT}" \
-      -i /dev/stdin -j "${JOBID}" ${EXACT} \
+    ARTDIR=${LOGDIR}/${PIPELINE}/${JOBID}
+    mkdir -p "${ARTDIR}"
+    if ! OUTPUT=$(${DBSCRT} -v "${VERBOSITY}" \
+      -p "${PIPELINE}" -b "${LOGRPTBRN}" -t "${LOGRPTBND}" \
+      -f "${LOGDIR}/${PIPELINE}.json" -g "${ARTDIR} ${LOGRPTFMT}" \
+      -i /dev/stdin -j "${JOBID}" -q "${LOGRPTQOP}" \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -q "${LOGRPTQOP}" ${UNTIED} \
-      -t "${LOGRPTBND}" \
-      -v ${VERBOSITY});
+      ${EXACT} ${UNTIED} \
+      <<<"${FINPUT}");
     then  # ERROR=$?
       ERROR=1
     fi
     FIGPAT="[[:space:]][[:space:]]*created\."
-    FIGURE=$(echo "${OUTPUT}" | sed -n "/${FIGPAT}/p" | sed '$!d')
+    FIGURE=$(sed -n "/${FIGPAT}/p" <<<"${OUTPUT}" | sed '$!d')
     if [ "${FIGURE}" ]; then
-      OUTPUT=$(echo "${OUTPUT}" | sed "/${FIGPAT}/d")
+      OUTPUT=$(sed "/${FIGPAT}/d" <<<"${OUTPUT}")
     fi
     if [ "${OUTPUT}" ] && [[ ("${ERROR}") || ("0" != "$((0>VERBOSITY))") ]]; then
       echo "${OUTPUT}"
@@ -206,7 +208,7 @@ if [ "${LOGDIR}" ]; then
     if [ "$(command -v base64)" ] && \
        [ "$(command -v cut)" ];
     then
-      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)  # filename
+      FIGURE=$(cut -d' ' -f1 <<<"${OUTPUT}")  # filename
       if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
         RPTFMT=${LOGRPTDOC:-pdf}
         FORMAT=(${LOGRPTFMT:-${FIGURE##*.}})
@@ -214,7 +216,7 @@ if [ "${LOGDIR}" ]; then
         # echo parsed/captured JSON
         if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
         if [ -e "${REPORT}" ]; then  # print after summary
-          # normalize path to report file (buildkite-agent)
+          # normalize path to report file (buildkite)
           REPDIR="$(cd "$(dirname "${REPORT}")" && pwd -P)"
           REPFLE=$(basename "${REPORT}")
           if [ "$(command -v tr)" ]; then
@@ -223,14 +225,8 @@ if [ "${LOGDIR}" ]; then
             LABEL=${RPTFMT^^}
           fi
           if [ -e "${REPDIR}/${REPFLE}" ]; then
-            if [[ "${PIPELINE}" != *"libxsmm"*  ]]; then
-              if [ "/" = "${REPDIR:0:1}" ]; then ARTDIR=${REPDIR:1}; else ARTDIR=${REPDIR}; fi
-              printf "\n\033]1339;url=\"artifact://%s/%s\";content=\"%s\"\a\n\n" \
-                "${ARTDIR}" "${REPFLE}" "${LABEL}"
-            else
-              printf "\n\033]1339;url=\"artifact://%s\";content=\"%s\"\a\n\n" \
-                "${REPFLE}" "${LABEL}"
-            fi
+            printf "\n\033]1339;url=\"artifact://%s\";content=\"%s\"\a\n\n" \
+              "${REPFLE}" "${LABEL}"
           fi
         fi
         # embed figure if report is not exclusive

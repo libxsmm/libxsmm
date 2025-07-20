@@ -11,11 +11,19 @@
 #ifndef LIBXSMM_EQUATION_COMMON_H
 #define LIBXSMM_EQUATION_COMMON_H
 
+#include <libxsmm_utils.h>
 #include <libxsmm.h>
 
 #define EPS 1.19209290e-03F
 #define DEPS 1.19209290e-06F
 
+int libxsmm_return_success_code(unsigned int i_used_reference_kernel) {
+  if (i_used_reference_kernel > 0) {
+    return 254;
+  } else {
+    return EXIT_SUCCESS;
+  }
+}
 
 LIBXSMM_INLINE
 void print_dt_info(int datatype_mode) {

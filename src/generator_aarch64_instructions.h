@@ -260,6 +260,16 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST   0x0ddf8002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_R_POST   0x0dc08003
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_4        0x0c402000 /* loads 4 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_3        0x0c406000 /* loads 3 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_2        0x0c40A000 /* loads 2 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_1        0x0c407000 /* loads 1 values to vector register */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_4        0x0c002000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_3        0x0c006000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_2        0x0c00a000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_1        0x0c007000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_INDEX    0x0d408000
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ST1_INDEX    0X0d008000
 
 /* ASIMD <-> GPR moves */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e
@@ -441,15 +451,20 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P      0x650c80a2 /* divide, b/a, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_SMAX_V_I       0x25a8c026
+#define LIBXSMM_AARCH64_INSTR_SVE_SMIN_V_I       0x25aac026
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188086 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P      0x65002082 /* reduce all active elements into a scalar (add), and place result into asimd register, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P      0x65062082 /* reduce all active elements into a scalar (max), and place result into asimd register, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMINV_V_P      0x65072082 /* reduce all active elements into a scalar (min), and place result into asimd register, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P     0x6502a082 /* round float to integral number, towards minus infinity, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRINTI_V_P     0x6507a082 /* round float to integral number, (current mode), predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS  0x659ca082 /* convert 32 bit fp to 32 bit signed int, SS = single -> single */
 #define LIBXSMM_AARCH64_INSTR_SVE_SCVTF_V_P_SS   0x6594a082 /* convert 32 bit signed int to 32 bit fp, SS = single -> single */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMEQ_P_V      0x65006083 /* fp compare equal, store result into pred reg (dst is pred reg) */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMNE_P_V      0x65006093 /* fp compare not equal, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004093 /* 0x10 belongs to the instruction, not to the flags! */
                                                             /* fp compare greater than, store result into predicate register (dst is predicate register!) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V      0x65004183 /* fp compare less than, store result into pred reg (dst is pred reg) */
@@ -474,6 +489,24 @@
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
+#define LIBXSMM_AARCH64_INSTR_SVE2_WHILELT       0x25204410
+
+/* define SME instructions */
+#define LIBXSMM_AARCH64_INSTR_SME_FMOPA_SP                    0x80800000 /* compute outer product */
+#define LIBXSMM_AARCH64_INSTR_SME_SMSTART                     0xd503477f /* start SVE streaming mode and za regsiter*/
+#define LIBXSMM_AARCH64_INSTR_SME_SMSTOP                      0xd503467f /* stop  SVE streaming mode and za regsiter*/
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_H_TILE_TO_VECTOR       0xc0860400 /* move tile to 4 vectors */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_H_VECTOR_TO_TILE       0xc0840400 /* move 4 vectors to tile */
+#define LIBXSMM_AARCH64_INSTR_SME_MOVA_V_TILE_TO_VECTOR       0xc0868400 /* mova vertical */
+#define LIBXSMM_AARCH64_INSTR_SME_LD1W_2                      0xa1404000 /* 0b10100001010000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SME_LD1W_4                      0xa140c000
+#define LIBXSMM_AARCH64_INSTR_SME_ST1W_2                      0xa1604000 /* 0b10100001011000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SME_ST1W_4                      0xa160c000
+#define LIBXSMM_AARCH64_INSTR_SVE2_LD1W_2                     0xa0404000 /* 0b10100000010000000100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SVE2_LD1W_4                     0xa040c000 /* 0b10100000010000001100000000000000 */
+#define LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER           0x25207810
+#define LIBXSMM_AARCH64_INSTR_SME_FMAX_2                      0xc1a0a100
+#define LIBXSMM_AARCH64_INSTR_SME_FMAX_4                      0xc1a0a900
 
 /**
  * shift mode */
@@ -978,5 +1011,73 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
                                                      const unsigned int          i_gp_reg_cmp,
                                                      const unsigned int          i_label_no,
                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
+  * Execute sme outer-product operation
+  *
+  * @param io_generated_code pointer to the pointer of the generated code structure
+  * @param i_matrix_instr actual matrix instruction
+  * @param i_tile the tile number 0-3
+  * @param i_vec_reg_src_0 first source register
+  * @param i_vec_reg_src_1 second source register
+  * @param i_pred_reg_0 first predicate register
+  * @param i_pred_reg_1 second predicate register
+  */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_compute( libxsmm_generated_code* io_generated_code,
+                                              unsigned int            i_matrix_instr,
+                                              unsigned int            i_tile,
+                                              unsigned int            i_vec_reg_src_0,
+                                              unsigned int            i_vec_reg_src_1,
+                                              unsigned int            i_pred_reg_0,
+                                              unsigned int            i_pred_reg_1 );
+/**
+  * mov streaming sve register
+  **/
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_mov( libxsmm_generated_code* io_generated_code,
+                                          unsigned int            i_instr,
+                                          unsigned int            i_vec_reg,
+                                          unsigned int            i_gp_reg,
+                                          unsigned int            i_imm4,
+                                          unsigned int            i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_code,
+                                           unsigned int            i_instr,
+                                           unsigned int            i_tile,
+                                           unsigned int            i_index_reg,
+                                           unsigned int            i_vec_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sm( libxsmm_generated_code* io_generated_code,
+                                     unsigned int            i_instr );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_code* io_generated_code,
+                                                            unsigned int            i_instr,
+                                                            unsigned int            i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_fmax( libxsmm_generated_code* io_generated_code,
+                                           unsigned int             i_instr,
+                                           unsigned int             i_vec_src_reg_0,
+                                           unsigned int             i_vec_src_dst_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_set_predication_as_counter( libxsmm_generated_code* io_generated_code,
+                                                             unsigned int             i_instr,
+                                                             unsigned int             i_pred_reg,
+                                                             unsigned int             i_gp_reg_0,
+                                                             unsigned int             i_vl,
+                                                             unsigned int             i_gp_reg_1,
+                                                             unsigned int             i_size );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_r_move_index( libxsmm_generated_code*               io_generated_code,
+                                                     const unsigned int                    i_vmove_instr,
+                                                     const unsigned int                    i_gp_reg_addr,
+                                                     const unsigned int                    i_vec_reg,
+                                                     const unsigned char                   i_index );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */

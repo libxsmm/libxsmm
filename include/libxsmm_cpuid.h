@@ -29,28 +29,33 @@
 #define LIBXSMM_X86_AVX2              1006
 #define LIBXSMM_X86_AVX2_ADL          1007
 #define LIBXSMM_X86_AVX2_SRF          1008
-#define LIBXSMM_X86_AVX512_VL128      1041
-#define LIBXSMM_X86_AVX512_VL256      1051
+#define LIBXSMM_X86_AVX512_VL128_SKX  1041
+#define LIBXSMM_X86_AVX512_VL256_SKX  1051
 #define LIBXSMM_X86_AVX512_VL256_CLX  1052
 #define LIBXSMM_X86_AVX512_VL256_CPX  1053
-#define LIBXSMM_X86_AVX512            1101
-#define LIBXSMM_X86_AVX512_MIC        1102 /* KNL */
-#define LIBXSMM_X86_AVX512_KNM        1103
-#define LIBXSMM_X86_AVX512_CORE       1104 /* SKX */
-#define LIBXSMM_X86_AVX512_CLX        1105
-#define LIBXSMM_X86_AVX512_CPX        1106
-#define LIBXSMM_X86_AVX512_SPR        1107
-#define LIBXSMM_X86_AVX512_GNR        1108
+#define LIBXSMM_X86_AVX512_SKX        1101
+#define LIBXSMM_X86_AVX512_CLX        1102
+#define LIBXSMM_X86_AVX512_CPX        1103
+#define LIBXSMM_X86_AVX512_SPR        1104
+#define LIBXSMM_X86_AVX512_GNR        1105
+#define LIBXSMM_X86_AVX512_DMR        1106
 #define LIBXSMM_X86_ALLFEAT           1999
 #define LIBXSMM_AARCH64_V81           2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
 #define LIBXSMM_AARCH64_APPL_M1       2101 /* Apple M1 */
 #define LIBXSMM_AARCH64_SVE128        2201 /* SVE 128 */
+#define LIBXSMM_AARCH64_NEOV2         2202 /* Neoverse V2, NVIDIA Grace, Graviton 4 */
 #define LIBXSMM_AARCH64_SVE256        2301 /* SVE 256 */
 #define LIBXSMM_AARCH64_NEOV1         2302 /* Neoverse V1, Graviton 3 */
 #define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
+#define LIBXSMM_AARCH64_APPL_M4       2501 /* Apple M4 SME without SVE*/
 #define LIBXSMM_AARCH64_ALLFEAT       2999
+#define LIBXSMM_RV64_MVL128           3001 /* RISCV 128-bit RVV */
+#define LIBXSMM_RV64_MVL256           3002 /* RISCV 256-bit RVV */
+#define LIBXSMM_RV64_MVL128_LMUL      3003 /* RISCV 128-bit RVV with non-unit LMUL */
+#define LIBXSMM_RV64_MVL256_LMUL      3004 /* RISCV 256-bit RVV witb non-unit LMUL */
+#define LIBXSMM_RV64_ALLFEAT          3999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
@@ -75,8 +80,9 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
  * Might be needed to overwrite BFMMLA with BFDOT for performance study.
  */
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
+LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
-
+LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void);
 LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void);
 
 /**
@@ -99,6 +105,11 @@ LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 LIBXSMM_API const char* libxsmm_cpuid_name(int id);
 
 /**
+ * Translate the CPU name to LIBXSMM's internal ID
+ */
+LIBXSMM_API int libxsmm_cpuid_id(const char* name);
+
+/**
  * SIMD vector length (VLEN) in 32-bit elements.
  * Do not use libxsmm_cpuid() to match the current CPU!
  * Use libxsmm_get_target_archid() instead.
@@ -111,5 +122,25 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
  * Use libxsmm_get_target_archid() instead.
  */
 #define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
+
+LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+
+/* Get reuse A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_a(void);
+
+/* Get reuse B knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_b(void);
+
+/* Get reuse C knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_c(void);
+
+/* Get prefetch A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_a(void);
+
+/* Get prefetch B knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_b(void);
+
+/* Get prefetch stride of A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_m_prefetch_stride(void);
 
 #endif /*LIBXSMM_CPUID_H*/
