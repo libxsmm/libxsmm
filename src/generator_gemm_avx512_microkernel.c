@@ -508,8 +508,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       libxsmm_generator_gemm_avx512_microkernel_loadNinterleave_A_pair_k_i8_to_bf16( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc,
           1+l_m+l_vreg_ab_offset, l_vreg_ab_offset, 0, l_m_blocking, l_m );
     } else if (l_is_Ai16_Bi16_flat_gemm != 0) {
-      unsigned int l_a_offset_flat = (i_micro_kernel_config->datatype_size_in * i_micro_kernel_config->vector_length * (l_m%2) * l_k_pack_factor) +
-                                     (i_micro_kernel_config->datatype_size_in * (l_m/2) * i_xgemm_desc->lda);
+      unsigned int l_a_reg_map[4] = { 0, 6, 5, 7 };
+      unsigned int l_a_offset_flat = (i_micro_kernel_config->datatype_size_in * i_micro_kernel_config->vector_length * (l_m/2) * l_k_pack_factor) +
+                                     (i_micro_kernel_config->datatype_size_in * (l_m%2) * i_xgemm_desc->lda);
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
           l_a_vmove_instruction,
@@ -517,7 +518,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           l_a_offset_flat,
           l_a_vname,
-          ( l_m != 0) ? 4+l_m : 0, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+          l_a_reg_map[l_m], ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
     } else {
       if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) {
         unsigned int l_current_mask_reg = (3+l_m)%8;
