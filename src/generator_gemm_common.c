@@ -78,6 +78,13 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai16_Bi16_flat_gemm ( const libxs
   return result;
 }
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai8_Bi8_flat_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
+                          (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
+                          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ? 1 : 0;
+  return result;
+}
+
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( libxsmm_generated_code*    io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       libxsmm_micro_kernel_config*   i_micro_kernel_config,
@@ -4384,6 +4391,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   unsigned int l_is_Amxfp4_Bfp32_gemm = libxsmm_x86_is_Amxfp4_Bfp32_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bi8_gemm = libxsmm_x86_is_Amxfp4_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Ai16_Bi16_flat_gemm = libxsmm_x86_is_Ai16_Bi16_flat_gemm(i_xgemm_desc);
+  unsigned int l_is_Ai8_Bi8_flat_gemm = libxsmm_x86_is_Ai8_Bi8_flat_gemm(i_xgemm_desc);
   const unsigned int l_m_blocking = ( i_m_blocking % i_micro_kernel_config->vector_length == 0
     ? (i_m_blocking/i_micro_kernel_config->vector_length) : (i_m_blocking/i_micro_kernel_config->vector_length + 1));
   /* start register of accumulator */
@@ -4413,6 +4421,24 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
             i_micro_kernel_config->vector_name, 1, 1, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) + 1, 0xd8 );
+      }
+    }
+  }
+  if ( l_is_Ai8_Bi8_flat_gemm != 0 ) {
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m+=2 ) {
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
+            i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) + 1, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_m, 0x44 );
+
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
+            i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) + 1, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_m + 1, 0xee );
+      }
+      for ( l_m = 0; l_m < l_m_blocking/2; l_m++ ) {
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
+            i_micro_kernel_config->vector_name, l_m + 2, l_m, l_vec_reg_acc_start + (l_m*2) + (l_m_blocking * l_n), 0x88 );
+
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
+            i_micro_kernel_config->vector_name, l_m + 2, l_m, l_vec_reg_acc_start + (l_m*2) + (l_m_blocking * l_n) + 1, 0xdd );
       }
     }
   }
