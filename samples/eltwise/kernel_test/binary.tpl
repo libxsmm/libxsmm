@@ -37,7 +37,7 @@ for i in $(cat ${TESTFILE1}); do
   PREC_OUT=$(echo ${PREC} | awk -F"_" '{print $3}')
   PREC_COMP=$(echo ${PREC} | awk -F"_" '{print $4}')
   for BCAST in 0 1 2 3 4 5 6; do
-    ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO} ${RMODE}
+    ${BIN_INSTR_TOOL} ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO} ${RMODE}
   done
 done
 

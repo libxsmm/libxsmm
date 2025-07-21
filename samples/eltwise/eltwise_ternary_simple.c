@@ -31,6 +31,8 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
+
 LIBXSMM_INLINE
 void set_opname(unsigned int op, char *opname) {
   if ( op == SELECT_OP ) {
@@ -204,7 +206,7 @@ int test_ternary_op( const libxsmm_blasint M, const libxsmm_blasint N, const lib
   char *out, *out_gold;
   unsigned int *rng_state = NULL;
   unsigned int *rng_state_gold = NULL;
-
+  libxsmm_kernel_info info;
   int ret = EXIT_SUCCESS;
   libxsmm_meltwfunction_ternary ternary_kernel;
   libxsmm_meltw_ternary_param ternary_param /*= { 0 }*/;
@@ -328,6 +330,8 @@ int test_ternary_op( const libxsmm_blasint M, const libxsmm_blasint N, const lib
   }
 
   ternary_kernel = libxsmm_dispatch_meltw_ternary( ternary_type, ternary_shape, ternary_flags );
+  libxsmm_get_kernel_info((const void*) ternary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
   if ( ternary_kernel == NULL ) {
     fprintf( stderr, "JIT for TERNARY TPP. Bailing...!\n");
     exit(-1);
@@ -500,6 +504,6 @@ int main( int argc, char* argv[] ) {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6/7/8/9] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [prec_in2: F32/BF16/F16/BF8/HF8]  [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
-
+  res = (res == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : res;
   return res;
 }

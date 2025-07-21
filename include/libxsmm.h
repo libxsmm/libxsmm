@@ -124,17 +124,6 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 
-LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                          const libxsmm_blasint lda, const libxsmm_blasint ldb, const libxsmm_blasint ldc,
-                                                          const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
-LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
-                                                                                      const libxsmm_blasint br_stride_a_hint, const libxsmm_blasint br_stride_b_hint,
-                                                                                      const unsigned char br_unroll_hint );
-LIBXSMM_API libxsmm_gemm_ext_unary_argops libxsmm_create_gemm_ext_unary_argops( const libxsmm_blasint ldap, const libxsmm_meltw_unary_type ap_unary_type, const libxsmm_bitfield ap_unary_flags, const libxsmm_blasint store_ap,
-                                                                                const libxsmm_blasint ldbp, const libxsmm_meltw_unary_type bp_unary_type, const libxsmm_bitfield bp_unary_flags, const libxsmm_blasint store_bp,
-                                                                                const libxsmm_blasint ldcp, const libxsmm_meltw_unary_type cp_unary_type, const libxsmm_bitfield cp_unary_flags, const libxsmm_blasint store_cp );
-LIBXSMM_API libxsmm_gemm_ext_binary_postops libxsmm_create_gemm_ext_binary_postops( const libxsmm_blasint ldd, const libxsmm_datatype d_in_type, const libxsmm_meltw_binary_type d_binary_type, const libxsmm_bitfield d_binary_flags );
-
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 /** Query or JIT-generate SMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
@@ -249,15 +238,6 @@ LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
 
 /** Code generation routine for matrix-eltwise using a descriptor. */
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw( const libxsmm_meltw_descriptor* descriptor );
-LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                        const libxsmm_blasint ldi, const libxsmm_blasint ldo,
-                                                                        const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
-LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                          const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
-                                                                          const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
-LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                            const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldi3, const libxsmm_blasint ldo,
-                                                                            const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype in2_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
 LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags );
 LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary( const libxsmm_meltw_binary_type binary_type, const libxsmm_meltw_binary_shape binary_shape, const libxsmm_bitfield binary_flags );
 LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary( const libxsmm_meltw_ternary_type ternary_type, const libxsmm_meltw_ternary_shape ternary_shape, const libxsmm_bitfield ternary_flags );
@@ -425,9 +405,9 @@ template<int PREFETCH> inline/*superfluous*/ void libxsmm_mmfunction_prefetch(
   LIBXSMM_ASSERT(LIBXSMM_GEMM_PREFETCH_NONE != PREFETCH);
   if (0/*EXIT_SUCCESS*/ == libxsmm_get_mmkernel_info(xmm, &info) && LIBXSMM_GEMM_PREFETCH_NONE != info.prefetch) {
     const size_t itypesize = LIBXSMM_TYPESIZE(info.iprecision), otypesize = LIBXSMM_TYPESIZE(info.oprecision);
-    args.a.quaternary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
-    args.b.quaternary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
-    args.c.quaternary = static_cast<char*>(args.c.primary) + otypesize * info.m * info.n;
+    args.a.senary = static_cast<char*>(args.a.primary) + itypesize * info.m * info.k;
+    args.b.senary = static_cast<char*>(args.b.primary) + itypesize * info.k * info.n;
+    args.c.senary = static_cast<char*>(args.c.primary) + otypesize * info.m * info.n;
   }
 }
 template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_GEMM_PREFETCH_NONE>(
@@ -437,7 +417,7 @@ template<> inline/*superfluous*/ void libxsmm_mmfunction_prefetch<LIBXSMM_GEMM_P
 #if defined(NDEBUG)
   LIBXSMM_UNUSED(args);
 #else
-  args.a.quaternary = args.b.quaternary = args.c.quaternary = NULL;
+  args.a.senary = args.b.senary = args.c.senary = NULL;
 #endif
 }
 
@@ -519,9 +499,9 @@ public:
     args.a.primary = const_cast<itype*>(a);
     args.b.primary = const_cast<itype*>(b);
     args.c.primary = c;
-    args.a.quaternary = const_cast<itype*>(pa);
-    args.b.quaternary = const_cast<itype*>(pb);
-    args.c.quaternary = const_cast<otype*>(pc);
+    args.a.senary = const_cast<itype*>(pa);
+    args.b.senary = const_cast<itype*>(pb);
+    args.c.senary = const_cast<otype*>(pc);
     LIBXSMM_ASSERT(NULL != m_function);
     m_function(&args);
   }

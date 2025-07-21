@@ -562,6 +562,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_xinfo {
   unsigned int registered;
   /** Number of FLoating Point OPerationS (FLOPS). */
   unsigned int nflops;
+  unsigned int is_reference_kernel;
 } libxsmm_kernel_xinfo;
 
 /** Receive information about JIT-generated code. */

@@ -809,6 +809,7 @@ int libxsmm_meqn_is_unary_opcode_reduce_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MUL) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
@@ -897,6 +898,7 @@ LIBXSMM_API_INTERN void libxsmm_meqn_adjust_tmp_sizes( libxsmm_meqn_elem* cur_no
       cur_node->tmp.n = cur_node->le->tmp.n;
       cur_node->tmp.ld = cur_node->le->tmp.m;
     }
+    cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->max_tmp_size,  cur_node->tmp.m * cur_node->tmp.n);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_meqn_adjust_tmp_sizes( cur_node->le);
     libxsmm_meqn_adjust_tmp_sizes( cur_node->ri);
@@ -913,6 +915,7 @@ LIBXSMM_API_INTERN void libxsmm_meqn_adjust_tmp_sizes( libxsmm_meqn_elem* cur_no
       cur_node->tmp.n = LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n);
       cur_node->tmp.ld = LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m);
     }
+    cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->max_tmp_size,  cur_node->tmp.m * cur_node->tmp.n);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     libxsmm_meqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_meqn_adjust_tmp_sizes( cur_node->ri);
@@ -926,6 +929,7 @@ LIBXSMM_API_INTERN void libxsmm_meqn_adjust_tmp_sizes( libxsmm_meqn_elem* cur_no
       cur_node->tmp.n = LIBXSMM_MAX(cur_node->r2->tmp.n, LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n));
       cur_node->tmp.ld = LIBXSMM_MAX( cur_node->r2->tmp.m, LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m));
     }
+    cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->max_tmp_size,  cur_node->tmp.m * cur_node->tmp.n);
   }
 }
 

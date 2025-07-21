@@ -57,12 +57,16 @@
     <ClInclude Include="..\include\utils\libxsmm_mhd.h" />
     <ClInclude Include="..\include\utils\libxsmm_timer.h" />
     <ClInclude Include="..\src\generator_aarch64_instructions.h" />
+    <ClInclude Include="..\src\generator_aarch64_reference.h" />
     <ClInclude Include="..\src\generator_common_aarch64.h" />
     <ClInclude Include="..\src\generator_common_x86.h" />
     <ClInclude Include="..\src\generator_gemm_aarch64.h" />
     <ClInclude Include="..\src\generator_gemm_amx.h" />
     <ClInclude Include="..\src\generator_gemm_amx_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_common_aarch64.h" />
+    <ClInclude Include="..\src\generator_gemm_reference_impl.h" />
+    <ClInclude Include="..\src\generator_gemm_sme.h" />
+    <ClInclude Include="..\src\generator_gemm_sme_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_sse_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_sse_microkernel.h" />
     <ClInclude Include="..\src\generator_mateltwise_aarch64.h" />
@@ -73,6 +77,7 @@
     <ClInclude Include="..\src\generator_mateltwise_misc_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_reduce_aarch64.h" />
     <ClInclude Include="..\src\generator_mateltwise_reduce_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_mateltwise_reference_impl.h" />
     <ClInclude Include="..\src\generator_mateltwise_sse_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_aarch64_asimd.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_aarch64_sve.h" />
@@ -85,6 +90,7 @@
     <ClInclude Include="..\src\generator_mateltwise_unary_binary_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_matequation_reference_impl.h" />
     <ClInclude Include="..\src\generator_matequation_regblocks_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_regblocks_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_aarch64.h" />
@@ -109,6 +115,7 @@
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.h" />
+    <ClInclude Include="..\src\generator_x86_reference.h" />
     <ClInclude Include="..\src\libxsmm_diff.h" />
     <ClInclude Include="..\src\generator_common.h" />
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h" />
@@ -138,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_aarch64_instructions.c" />
+    <ClCompile Include="..\src\generator_aarch64_reference.c" />
     <ClCompile Include="..\src\generator_common.c" />
     <ClCompile Include="..\src\generator_common_aarch64.c" />
     <ClCompile Include="..\src\generator_common_x86.c" />
@@ -145,6 +153,9 @@
     <ClCompile Include="..\src\generator_gemm_amx.c" />
     <ClCompile Include="..\src\generator_gemm_amx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_common_aarch64.c" />
+    <ClCompile Include="..\src\generator_gemm_reference_impl.c" />
+    <ClCompile Include="..\src\generator_gemm_sme.c" />
+    <ClCompile Include="..\src\generator_gemm_sme_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_sse_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_gemm_sse_microkernel.c" />
     <ClCompile Include="..\src\generator_mateltwise.c" />
@@ -162,6 +173,7 @@
     <ClCompile Include="..\src\generator_gemm_avx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_common.c" />
     <ClCompile Include="..\src\generator_gemm_noarch.c" />
+    <ClCompile Include="..\src\generator_mateltwise_reference_impl.c" />
     <ClCompile Include="..\src\generator_mateltwise_sse_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_aarch64_asimd.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_aarch64_sve.c" />
@@ -175,6 +187,7 @@
     <ClCompile Include="..\src\generator_matequation.c" />
     <ClCompile Include="..\src\generator_matequation_aarch64.c" />
     <ClCompile Include="..\src\generator_matequation_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_matequation_reference_impl.c" />
     <ClCompile Include="..\src\generator_matequation_regblocks_aarch64.c" />
     <ClCompile Include="..\src\generator_matequation_regblocks_avx_avx512.c" />
     <ClCompile Include="..\src\generator_matequation_scratch_aarch64.c" />
@@ -211,6 +224,7 @@
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
+    <ClCompile Include="..\src\generator_x86_reference.c" />
     <ClCompile Include="..\src\libxsmm_barrier.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_arm.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c" />

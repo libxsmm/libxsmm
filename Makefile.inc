@@ -1594,8 +1594,9 @@ else # GCC assumed
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
       FCFLAGS += $(FFORM_FLAG)
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
-        CSTD := -std=c89
+        CSTD := -std=c99
       endif
+      CFLAGS += $(CSTD)
     endif
   endif
   # flag specifying output directory must be last

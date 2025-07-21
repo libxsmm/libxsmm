@@ -628,6 +628,13 @@ void libxsmm_generator_store_prng_state_avx_avx512( libxsmm_generated_code* io_g
                                                     const unsigned int      prng_state3_vreg );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_load_vreg_signmask(libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_vreg_signmask,
+                                                   libxsmm_datatype        i_dtype);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_load_vreg_infinity(libxsmm_generated_code* io_generated_code,
                                                    const unsigned char     i_vname,
                                                    const unsigned int      i_gp_reg_tmp,
@@ -870,6 +877,12 @@ void libxsmm_generator_cvt_to_ps_avx512( libxsmm_generated_code* io_generated_co
                                                   const unsigned int      i_vec_reg,
                                                   const unsigned int      o_vec_reg );
 LIBXSMM_API_INTERN
+void libxsmm_generator_cvt_from_ps_avx512( libxsmm_generated_code* io_generated_code,
+                                                  const char              i_vname,
+                                                  libxsmm_datatype        i_out_prec,
+                                                  const unsigned int      i_vec_reg,
+                                                  const unsigned int      o_vec_reg );
+LIBXSMM_API_INTERN
 void libxsmm_generator_cvthf8ps_avx512( libxsmm_generated_code* io_generated_code,
                                          const char              i_vname,
                                          const unsigned int      i_vec_reg,
@@ -933,13 +946,25 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated_code,
                                             const libxsmm_datatype  i_datatype,
                                             const unsigned int      io_vec_reg,
-                                            const unsigned int      i_scf_vec_reg );
+                                            const unsigned int      i_scf_vec_reg,
+                                            unsigned int            i_skip_scaling,
+                                            unsigned int            i_sign_sat );
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2int_avx( libxsmm_generated_code* io_generated_code,
+                                            const libxsmm_datatype  i_datatype,
+                                            const unsigned int      io_vec_reg,
+                                            const unsigned int      i_scf_vec_reg,
+                                            const unsigned int      i_perm_reg_1,
+                                            const unsigned int      i_perm_reg_2,
+                                            unsigned int            i_skip_scaling,
+                                            unsigned int            i_sign_sat );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtint2ps_avx512( libxsmm_generated_code* io_generated_code,
                                           const libxsmm_datatype  i_datatype,
                                           const unsigned int      io_vec_reg,
-                                          const unsigned int      i_scf_vec_reg );
+                                          const unsigned int      i_scf_vec_reg,
+                                          unsigned int            i_skip_scaling  );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_generated_code,

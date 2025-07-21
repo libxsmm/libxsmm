@@ -61,11 +61,15 @@
     (defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64))
 # define LIBXSMM_PLATFORM_AARCH64
 #endif
+#if !defined(LIBXSMM_PLATFORM_RV64) && \
+    (defined(__riscv) && 64 == (__riscv_xlen))
+# define LIBXSMM_PLATFORM_RV64
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_RV64)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error LIBXSMM requires X86_64, AArch64, or compatible CPUs!
+#   error LIBXSMM requires X86_64, AArch64, RV64 or compatible CPUs!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
@@ -795,6 +799,7 @@ LIBXSMM_PRAGMA_DIAG_POP()
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_LO2((N) + ((NPOT) - 1), NPOT)
 /** Examples: N+10%->UPF(N,1,10), N-10%->UPF(N,-1,10), N*90%->UPF(N,-1,10) */
 #define LIBXSMM_UPF(N, NOM, DEN) (((N) * ((DEN) + (NOM))) / (DEN))
+#define LIBXSMM_SIGN(A) (0 < (A) ? (1) : ( 0 == (A) ? (0) : (-1)))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))

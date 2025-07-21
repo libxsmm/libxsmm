@@ -29,6 +29,7 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
   unsigned int l_idx_tsize = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES) > 0 ) ? 8 : 4;
   unsigned int l_mask_reg = 1;
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  unsigned char l_is_sme = (io_generated_code->arch >= LIBXSMM_AARCH64_APPL_M4) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
   unsigned int l_vlen = l_vector_length/i_micro_kernel_config->datatype_size_in;
   unsigned int l_is_gather = 1;
@@ -37,6 +38,8 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
   unsigned int l_gp_idx_mat_reg = 0, l_gp_idx_mat_reg_precision = 0, l_gp_reg_mat_reg = 0, l_gp_idx_mat_base_reg = 0;
   unsigned int l_gp_reg_ld = 0;
   unsigned int l_aux_vreg_start = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const l_env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
 #endif
@@ -65,20 +68,20 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
 
   if (l_is_gather == 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_idx_mat_base_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_idx_mat_base_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 40, i_gp_reg_mapping->gp_reg_ind_base );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + 8, i_gp_reg_mapping->gp_reg_ind_base );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mat_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_reg_mat_reg );
     l_ld_reg_mat = i_mateltwise_desc->ldo;
     l_dtype_size_reg_mat = i_micro_kernel_config->datatype_size_out;
   } else {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mat_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_reg_mat_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_idx_mat_base_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_idx_mat_base_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 72, i_gp_reg_mapping->gp_reg_ind_base );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + 8, i_gp_reg_mapping->gp_reg_ind_base );
     l_ld_reg_mat = i_mateltwise_desc->ldi;
     l_dtype_size_reg_mat = i_micro_kernel_config->datatype_size_in;
   }
@@ -90,6 +93,11 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
   l_m_unroll_factor   = l_m_trips;
   l_m_trips_loop      = 1;
   l_peeled_m_trips    = 0;
+
+  if( l_is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTART);
+  }
 
   if (l_is_sve > 0) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
@@ -146,14 +154,14 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
       unsigned int aux_vreg = l_aux_vreg_start + l_im;
       if (l_is_gather == 1) {
         /* Load gather vector */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 0, 0 );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 0, 0 , l_is_sve);
         /* Store gathered vector */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 1, 0 );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 1, 0 , l_is_sve );
       } else {
         /* Load vector to be scattered */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 0, 0 );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 0, 0, l_is_sve );
         /* Store vector to indexed column*/
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 1, 0 );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, 0, 1, 1, 0, l_is_sve );
       }
     }
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1);
@@ -166,24 +174,27 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
       unsigned int aux_vreg = l_aux_vreg_start + l_im;
       if (l_is_gather == 1) {
         /* Load gather vector */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_l_mask_reg) );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_l_mask_reg), l_is_sve );
         /* Store gathered vector */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_l_mask_reg) );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_l_mask_reg), l_is_sve );
       } else {
         /* Load vector to be scattered */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_l_mask_reg) );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_l_mask_reg), l_is_sve );
         /* Store vector to indexed column*/
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_l_mask_reg) );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, l_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg, l_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_l_mask_reg), l_is_sve );
       }
     }
   }
-
   if (((long long)l_ld_reg_mat * l_dtype_size_reg_mat - (long long)l_m * l_dtype_size_reg_mat) > 0) {
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    l_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_gp_reg_mat_reg, (long long)l_ld_reg_mat * l_dtype_size_reg_mat -(long long)l_m * l_dtype_size_reg_mat );
   }
-
   libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
+
+  if( l_is_sme ){
+    libxsmm_aarch64_instruction_sm( io_generated_code,
+                                    LIBXSMM_AARCH64_INSTR_SME_SMSTOP);
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -206,7 +217,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_gen
                                                                      const unsigned int                                   i_gp_reg_mat_reg,
                                                                      const unsigned int                                   i_dtype_size_reg_mat,
                                                                      const unsigned int                                   i_ld_reg_mat ) {
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4);
   unsigned int l_im = 0, l_in = 0;
   unsigned int l_ld_bytes_reg = i_ld_reg_mat * i_dtype_size_reg_mat;
   unsigned int l_m_adjust_reg = ( i_m_remainder_elements == 0 ) ? i_vlen * i_dtype_size_reg_mat * i_m_unroll_factor : i_dtype_size_reg_mat * ( (i_vlen * (i_m_unroll_factor-1)) + i_m_remainder_elements );
@@ -240,11 +251,11 @@ void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_gen
         }
         /* Store gathered vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_aux_vreg,
-                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
+                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg), l_is_sve );
       } else {
         /* Load vector to be scattered */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_aux_vreg,
-                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
+                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_i_mask_reg), l_is_sve );
         /* Scatter based on index vector im*/
         if (l_is_sve > 0) {
           if (l_is_16bit_gs || l_is_64bit_idx) {
@@ -289,8 +300,8 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
   unsigned int l_mask_reg = 1;
   unsigned int l_idx_maskreg = 2;
   unsigned int l_mask_reg_full_frac_vlen = 3;
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4);
+  unsigned int l_vector_length = (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) ? libxsmm_cpuid_vlen(io_generated_code->arch) : 16;
   unsigned int l_vlen = l_vector_length/l_idx_tsize; /* The granularity of work is determined by the idx size */
   unsigned int l_is_gather = 1;
   unsigned int l_ld_reg_mat = 0;
@@ -298,6 +309,8 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
   unsigned int l_dtype_size_reg_mat = 0;
   unsigned int l_gp_idx_mat_reg = 0, l_gp_reg_mat_reg = 0, l_gp_idx_mat_base_reg = 0;
   unsigned int l_idx_vreg_start = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const l_env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const l_env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
@@ -336,21 +349,21 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
 
   if (l_is_gather == 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_idx_mat_base_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_idx_mat_base_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 40, i_gp_reg_mapping->gp_reg_ind_base );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + 8, i_gp_reg_mapping->gp_reg_ind_base );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mat_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_reg_mat_reg );
     l_ld_reg_mat = i_mateltwise_desc->ldo;
     l_ld_idx_mat = i_mateltwise_desc->ldi;
     l_dtype_size_reg_mat = i_micro_kernel_config->datatype_size_out;
   } else {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mat_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_reg_mat_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_idx_mat_base_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_idx_mat_base_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 72, i_gp_reg_mapping->gp_reg_ind_base );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + 8, i_gp_reg_mapping->gp_reg_ind_base );
     l_ld_reg_mat = i_mateltwise_desc->ldi;
     l_ld_idx_mat = i_mateltwise_desc->ldo;
     l_dtype_size_reg_mat = i_micro_kernel_config->datatype_size_in;
@@ -418,7 +431,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
       unsigned int l_idx_masked_elements =  0;
       unsigned int l_idx_mask_load = 0;
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_scratch_0, idx_vreg_id,
-                                                        l_idx_tsize, l_idx_masked_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_idx_mask_load) );
+                                                        l_idx_tsize, l_idx_masked_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_idx_mask_load), l_is_sve );
     }
 
     libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, l_n);
@@ -452,7 +465,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
       unsigned int l_idx_masked_elements = (l_im == l_peeled_m_trips - 1) ? l_m_remainder_elements : 0;
       unsigned int l_idx_mask_load = (l_im == l_peeled_m_trips - 1) ? ((l_m_remainder_elements > 0) ? l_idx_maskreg : 0) : 0;
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_scratch_0, idx_vreg_id,
-                                                        l_idx_tsize, l_idx_masked_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_idx_mask_load) );
+                                                        l_idx_tsize, l_idx_masked_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_idx_mask_load), l_is_sve );
     }
 
     libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, l_n);
@@ -493,7 +506,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
                                                                      const unsigned int                                   i_gp_reg_mat_reg,
                                                                      const unsigned int                                   i_dtype_size_reg_mat,
                                                                      const unsigned int                                   i_ld_reg_mat ) {
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4);
   unsigned int l_im= 0, l_in = 0;
   unsigned int l_aux_vreg_start = i_m_unroll_factor*i_n_unroll_factor;
   unsigned int l_idx_vreg_start = 0;
@@ -517,7 +530,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
                                                                                 : (l_im == i_m_unroll_factor - 1) ? (i_m_remainder_elements > 0) ? i_mask_reg : i_mask_reg_full_frac_vlen : i_mask_reg_full_frac_vlen;
 
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_idx_base_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_idx_vreg_id,
-                                                        i_idx_tsize, l_idx_masked_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_idx_mask_load) );
+                                                        i_idx_tsize, l_idx_masked_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_idx_mask_load), l_is_sve );
       if (i_is_gather == 1) {
         /* Gather based on index vector im*/
         if (l_is_sve > 0) {
@@ -534,11 +547,11 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
         }
         /* Store gathered vector */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_aux_vreg,
-                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
+                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg), l_is_sve );
       } else {
         /* Load vector to be scattered */
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, l_aux_vreg,
-                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
+                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_i_mask_reg), l_is_sve );
         /* Scatter based on index vector im*/
         if (l_is_sve > 0) {
           if (l_is_16bit_gs || l_is_64bit_idx) {
@@ -585,14 +598,16 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
   unsigned int l_mask_reg = 1;
   unsigned int l_idx_mask_reg = 2;
   unsigned int l_mask_reg_full_frac_vlen = 3;
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch < LIBXSMM_AARCH64_APPL_M4);
+  unsigned int l_vector_length = (io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) ? libxsmm_cpuid_vlen(io_generated_code->arch) : 16;
   unsigned int l_idx_vlen = l_vector_length/l_idx_tsize;
   unsigned int l_vlen = l_vector_length/l_idx_tsize; /* The granularity of work is determined by the idx size */
   unsigned int l_is_gather = 1;
   unsigned int l_ld_reg_mat = 0;
   unsigned int l_dtype_size_reg_mat = 0;
   unsigned int l_gp_idx_mat_reg = 0, l_gp_reg_mat_reg = 0, l_gp_idx_mat_base_reg = 0;
+  int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
+  int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
 #if defined(USE_ENV_TUNING)
   const char *const l_env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const l_env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
@@ -631,20 +646,20 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
 
   if (l_is_gather == 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_idx_mat_base_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_idx_mat_base_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 40, i_gp_reg_mapping->gp_reg_ind_base );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a + 8, i_gp_reg_mapping->gp_reg_ind_base );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mat_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_reg_mat_reg );
     l_ld_reg_mat = i_mateltwise_desc->ldo;
     l_dtype_size_reg_mat = i_micro_kernel_config->datatype_size_out;
   } else {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mat_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_a, l_gp_reg_mat_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_idx_mat_base_reg );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b, l_gp_idx_mat_base_reg );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 72, i_gp_reg_mapping->gp_reg_ind_base );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset_ptr_b + 8, i_gp_reg_mapping->gp_reg_ind_base );
     l_ld_reg_mat = i_mateltwise_desc->ldi;
     l_dtype_size_reg_mat = i_micro_kernel_config->datatype_size_in;
   }
@@ -752,6 +767,8 @@ void libxsmm_generator_gather_scatter_aarch64_microkernel( libxsmm_generated_cod
                                                            libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                            const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                            const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+  unsigned int l_is_scatter = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ? 1 : 0;
+  if( l_is_scatter && io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) io_generated_code->arch = LIBXSMM_AARCH64_APPL_M1;
   if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS ) > 0 ) {
     libxsmm_generator_gather_scatter_cols_aarch64_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS ) > 0 ) {

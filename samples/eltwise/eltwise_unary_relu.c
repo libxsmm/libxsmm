@@ -15,6 +15,8 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+unsigned int is_reference_kernel = 0;
+libxsmm_kernel_info info;
 
 LIBXSMM_INLINE
 void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint ldo_mask, const void *in, void *out, const float alpha, unsigned char *out_mask, const unsigned char type, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
@@ -266,6 +268,8 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   }
 
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
@@ -411,6 +415,8 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
+  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  is_reference_kernel = info.is_reference_kernel;
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
@@ -551,5 +557,6 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  ret = (ret == EXIT_SUCCESS) ? libxsmm_return_success_code(is_reference_kernel) : ret;
   return ret;
 }

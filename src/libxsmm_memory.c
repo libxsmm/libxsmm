@@ -504,25 +504,31 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 LIBXSMM_API unsigned int libxsmm_hash8(unsigned int data)
 {
   const unsigned int hash = libxsmm_hash16(data);
-  return libxsmm_crc32_u8(hash >> 8, &hash) & 0xFF;
+  uint8_t tmp_data = (uint8_t)hash;
+  unsigned int tmp_seed = (unsigned int)(hash >> 8);
+  return libxsmm_crc32_u8(tmp_seed, &tmp_data) & 0xFF;
 }
 
 
 LIBXSMM_API unsigned int libxsmm_hash16(unsigned int data)
 {
-  return libxsmm_crc32_u16(data >> 16, &data) & 0xFFFF;
+  uint16_t tmp_data = (uint16_t)data;
+  unsigned int tmp_seed = (unsigned int)(data >> 16);
+  return libxsmm_crc32_u16(tmp_seed, &tmp_data) & 0xFFFF;
 }
 
 
 LIBXSMM_API unsigned int libxsmm_hash32(unsigned long long data)
 {
-  return libxsmm_crc32_u32(data >> 32, &data) & 0xFFFFFFFF;
+  uint32_t tmp_data = (uint32_t)data;
+  unsigned int tmp_seed = (unsigned int)(data >> 32);
+  return libxsmm_crc32_u32(tmp_seed, &tmp_data) & 0xFFFFFFFF;
 }
 
 
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
 {
-  unsigned long long result;
+  unsigned long long result = 0;
   const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
     const size_t length2 = LIBXSMM_MAX(length / 2, sizeof(result));

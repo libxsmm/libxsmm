@@ -418,16 +418,21 @@
 #define LIBXSMM_X86_INSTR_VPMOVSXWD        0x20052523
 #define LIBXSMM_X86_INSTR_VPMOVDB          0x28062431
 #define LIBXSMM_X86_INSTR_VPMOVSDB         0x28062421
+#define LIBXSMM_X86_INSTR_VPMOVSDW         0x28062523
 #define LIBXSMM_X86_INSTR_VPMOVUSDB        0x28062411
+#define LIBXSMM_X86_INSTR_VPMOVUSDW        0x28062513
 #define LIBXSMM_X86_INSTR_VPMOVZXWD        0x20052533
 #define LIBXSMM_X86_INSTR_VPMOVSXBW        0x20052520
 #define LIBXSMM_X86_INSTR_VPMOVZXBW        0x20052530
-
 #define LIBXSMM_X86_INSTR_VPMOVSXBD        0x20052421
 #define LIBXSMM_X86_INSTR_VPMOVZXBD        0x20052431
 #define LIBXSMM_X86_INSTR_VPMOVUSWB        0xe0062510
 #define LIBXSMM_X86_INSTR_VPMOVSWB         0xe0062520
 #define LIBXSMM_X86_INSTR_VPMOVWB          0xe0062530
+#define LIBXSMM_X86_INSTR_VPACKSSWB        0x30051663
+#define LIBXSMM_X86_INSTR_VPACKSSDW        0x3005166b
+#define LIBXSMM_X86_INSTR_VPACKUSWB        0x30051667
+#define LIBXSMM_X86_INSTR_VPACKUSDW        0x3005262b
 
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
@@ -498,6 +503,7 @@
 #define LIBXSMM_X86_INSTR_VPSUBB           0x300516f8
 #define LIBXSMM_X86_INSTR_VPMAXSD          0x3005263d
 #define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
+#define LIBXSMM_X86_INSTR_VPMAXSB          0x3005263c
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
 
 /* AVX512 VNNI */
@@ -589,6 +595,22 @@
 #define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
 #define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
 #define LIBXSMM_X86_INSTR_VCVTW2PH         0xe106567d
+
+/* AVX10 FP8 converts */
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2BF8   0xe0042674
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2BF8S  0xe0045674
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2HF8   0xe0045618
+#define LIBXSMM_X86_INSTR_VCVTBIASPH2HF8S  0xe004561b
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2BF8    0xf0072674
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2BF8S   0xf0075674
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2HF8    0xf0075618
+#define LIBXSMM_X86_INSTR_VCVTNE2PH2HF8S   0xf007561b
+#define LIBXSMM_X86_INSTR_VCVTNEPH2BF8     0xe0062674
+#define LIBXSMM_X86_INSTR_VCVTNEPH2BF8S    0xe0065674
+#define LIBXSMM_X86_INSTR_VCVTNEPH2HF8     0xe0065618
+#define LIBXSMM_X86_INSTR_VCVTNEPH2HF8S    0xe006561b
+#define LIBXSMM_X86_INSTR_VCVTNEHF82PH     0xe007551e
+#define LIBXSMM_X86_INSTR_VCVT2PS2PHX     0xf0052667
 
 /* AVX512 Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
@@ -1261,6 +1283,55 @@
 #define LIBXSMM_X86_INSTR_TDPBF16PS          0x7006205c
 /* CPUID: AMX-FP16 INTERCEPT: GNR */
 #define LIBXSMM_X86_INSTR_TDPFP16PS          0x7007205c
+/* CPUID: AMX-FP8 INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_TDPBF8PS           0x700450fd
+#define LIBXSMM_X86_INSTR_TDPBHF8PS          0x700750fd
+#define LIBXSMM_X86_INSTR_TDPHBF8PS          0x700650fd
+#define LIBXSMM_X86_INSTR_TDPHF8PS           0x700550fd
+/* CPUID: AMX-MOVRS INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_TILELOADDRS        0x6007204a
+#define LIBXSMM_X86_INSTR_TILELOADDRST1      0x6005204a
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS      0x600450f8
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0RST1    0x600450f9
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1RS      0x600550f8
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1RST1    0x600550f9
+/* CPUID: AMX-AVX512-CVTROW INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_TCVTROWD2PS         50010
+#define LIBXSMM_X86_INSTR_TCVTROWD2PS_GPR     0xf006204a
+#define LIBXSMM_X86_INSTR_TCVTROWD2PS_IMM     0xe00e3007
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16H     50011
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16H_GPR 0xf007206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16H_IMM 0xe00f3007
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16L     50012
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16L_GPR 0xf006206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2BF16L_IMM 0xe00e3077
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHH       50013
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHH_GPR   0xf004206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHH_IMM   0xe00c3007
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHL       50014
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHL_GPR   0xf005206d
+#define LIBXSMM_X86_INSTR_TCVTROWPS2PHL_IMM   0xe00f3077
+#define LIBXSMM_X86_INSTR_TILEMOVROW          50015
+#define LIBXSMM_X86_INSTR_TILEMOVROW_GPR      0xf005204a
+#define LIBXSMM_X86_INSTR_TILEMOVROW_IMM      0xe00d3007
+/* CPUID: AMX-TF32 */
+#define LIBXSMM_X86_INSTR_TMMULTF32PS         0x70052048
+#define LIBXSMM_X86_INSTR_TTMMULTF32PS        0x70042048
+/* CPUID: AMX-COMPLEX */
+#define LIBXSMM_X86_INSTR_TCMMIMFP16PS        0x7005206c
+#define LIBXSMM_X86_INSTR_TCMMRLFP16PS        0x7004206c
+#define LIBXSMM_X86_INSTR_TCONJTCMMIMFP16PS   0x7004206b
+#define LIBXSMM_X86_INSTR_TCONJTFP16          0x7005206b
+#define LIBXSMM_X86_INSTR_TTCMMIMFP16PS       0x7007206b
+#define LIBXSMM_X86_INSTR_TTCMMRLFP16PS       0x7006206b
+/* CPUID: AMX-TRANSPOSE INTERCEPT: DMR */
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0         0x6004206e
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1       0x6004206f
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1         0x6005206e
+#define LIBXSMM_X86_INSTR_T2RPNTLVWZ1T1       0x6005206f
+#define LIBXSMM_X86_INSTR_TTDPBF16PS          0x7006206c
+#define LIBXSMM_X86_INSTR_TTDPFP16PS          0x7007206c
+#define LIBXSMM_X86_INSTR_TTRANSPOSED         0x6006205f
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL               90000
@@ -1318,6 +1389,10 @@
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
 #define LIBXSMM_ERR_BCSC_BLOCK_SIZE       90054
+
+/* define some magic numbers (in bytes) for accessing the param structs
+   in the JIT code generators */
+#define LIBXSMM_MATRIX_ARG_OFFSET_PREFETCH            40
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, __FILE__, __LINE__, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -1387,6 +1462,13 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
   unsigned int const_data_nload_insns;
 } libxsmm_const_data_tracker;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
+  unsigned int tiles;
+  unsigned int sizes[4];
+  unsigned int blocking;
+  unsigned int block_size;
+} libxsmm_blocking_info_t;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -1445,6 +1527,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int vnni_perm_reg;
+  unsigned int vnni_perm_reg2;
   unsigned int zero_reg;
   unsigned int scf_vreg;
   unsigned int aux_vreg;
@@ -1471,7 +1554,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int norm_to_normT_mask_reg_1;
   unsigned int mask_m_fp32;
   unsigned int mask_m_bf16;
-  unsigned int mask_m_fp8_cvt;
+  unsigned int mask_m_lp_cvt;
+  unsigned int mask_k_lp_cvt;
+  unsigned int mask_m_lp_cvt_st;
+  unsigned int mask_k_lp_cvt_st;
   unsigned int mask_lo_i4;
   unsigned int mask_hi_i4;
   unsigned int perm_table_zpt_bcast;
@@ -1494,6 +1580,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _C_tile_mate_id[4];
   int _im_offset_prefix_sums[4];
   int _in_offset_prefix_sums[4];
+  int config_trans_a_tile;
+  libxsmm_blocking_info_t m_blocking_info[2];
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
@@ -1512,16 +1600,24 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int br_loop_index;
   unsigned int cur_unroll_factor;
   unsigned int is_peeled_br_loop;
+  /* TODO: should be by-value, not by-pointer? */
   libxsmm_jump_label_tracker *p_jump_label_tracker;
   unsigned int loop_label_id;
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
+  unsigned int enforce_Mx1_amx_tile_blocking;
 
   /* Auxiliary fields for LP emulations and stack-based data prepartion */
+  unsigned int use_custom_bf8_preproc;
   unsigned int bf8_gemm_via_stack_alloc_tensors;
   unsigned int hf8_gemm_via_stack_alloc_tensors;
   unsigned int atrans_gemm_stack_alloc_tensors;
+  unsigned int avnni_gemm_stack_alloc_tensors;
+  unsigned int avnni_gemm_sw_pipeline;
+  unsigned int atvnni_gemm_stack_alloc_tensors;
+  unsigned int avnni_btrans_gemm_stack_alloc_tensors;
+  unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
   unsigned int bvnni_btrans_gemm_stack_alloc_tensors;
 } libxsmm_micro_kernel_config;
 
@@ -1901,13 +1997,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   char vector_name;
 } libxsmm_transpose_kernel_config;
 
-LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
-  unsigned int tiles;
-  unsigned int sizes[4];
-  unsigned int blocking;
-  unsigned int block_size;
-} libxsmm_blocking_info_t;
-
 typedef enum libxsmm_meltw_field_type {
   LIBXSMM_MELTW_FIELD_IN0              =  0,
   LIBXSMM_MELTW_FIELD_IN1              =  1,
@@ -2031,7 +2120,15 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR           = 29,
   LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR       = 30,
   LIBXSMM_GEMM_STACK_VAR_ZPT_PTR                = 31,
-  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32
+  LIBXSMM_GEMM_STACK_VAR_AUX_VAR                = 32,
+  LIBXSMM_GEMM_STACK_VAR_MXSCALE_PTR            = 33,
+  LIBXSMM_GEMM_STACK_VAR_SCF_BRGEMM_PTR         = 34,
+  LIBXSMM_GEMM_STACK_VAR_ZPT_BRGEMM_PTR         = 35,
+  LIBXSMM_GEMM_STACK_VAR_BSCALE_PTR             = 36,
+  LIBXSMM_GEMM_STACK_VAR_BSCALE_BRGEMM_PTR      = 37,
+  LIBXSMM_GEMM_STACK_VAR_LDA_PTR                = 38,
+  LIBXSMM_GEMM_STACK_VAR_LDB_PTR                = 39,
+  LIBXSMM_GEMM_STACK_VAR_LDC_PTR                = 40
 } libxsmm_gemm_stack_var;
 
 #if 0
@@ -2164,6 +2261,9 @@ LIBXSMM_API_INTERN
 void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping );
 
 LIBXSMM_API_INTERN
+void libxsmm_reset_rv64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping );
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
 
 /* some string manipulation helper needed to generated code */
@@ -2214,6 +2314,15 @@ typedef enum libxsmm_ulp_precision {
   LIBXSMM_ULP_PRECISION_ONE_ULP, /* perfect except for last bit */
   LIBXSMM_ULP_PRECISION_ESTIMATE /* can be pretty bad, but should have the correct order of magnitude */
 } libxsmm_ulp_precision;
+
+typedef union libxsmm_ref_code_pointer {
+  void (*ptr_gemm_fn)(void*, const libxsmm_gemm_descriptor*);
+  void (*ptr_eltw_fn)(void*, const libxsmm_meltw_descriptor *i_mateltwise_desc);
+  void (*ptr_meqn_fn)(void*, void*, void*, unsigned long long);
+  void* ptr;
+  uintptr_t uval;
+  intptr_t ival;
+} libxsmm_ref_code_pointer;
 
 /** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or estimate for just an estimate
  * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}

@@ -1,19 +1,7 @@
 # Security Policy
 
-## Supported Versions
-
-LIBXSMM is distributed as source code package. In case of an issue, please report at https://github.com/libxsmm/libxsmm/issues. There is no formal commitment to update an existing release. Please feel free to write down such an expectation as part of the issue report!
-
-Determine accurate build information in case of an upstreamed package (binary distribution):
-
-```bash
-export LIBXSMM_DUMP_BUILD=1
-./application_linked_with_libxsmm ...
-```
-
-Build information is available when LIBXSMM was dynamically or statically linked with an application (not for header-only).
+Intel is committed to rapidly addressing security vulnerabilities affecting our customers and providing clear guidance on the solution, impact, severity and mitigation.
 
 ## Reporting a Vulnerability
 
-Please report any kind of issue at https://github.com/libxsmm/libxsmm/issues or leave a reference to a report made elsewhere.
-
+Please report any security vulnerabilities in this project [utilizing the guidelines here](https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html).

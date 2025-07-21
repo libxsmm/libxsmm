@@ -29,8 +29,8 @@
 
 /** Generic prefetch applicable for all domains. */
 #define LIBXSMM_PREFETCH_NONE 0
-/** Attempt to automatically select a strategy. */
-#define LIBXSMM_PREFETCH_AUTO -1
+/** Attempt to automatically select a strategy --> AUTO is NONE */
+#define LIBXSMM_PREFETCH_AUTO 0
 
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
@@ -249,7 +249,9 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS,
   LIBXSMM_MELTW_FLAG_UNARY_GS_COLS            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS,
   LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS            = 8192,
-  LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT           = 16384
+  LIBXSMM_MELTW_FLAG_UNARY_NTS_HINT           = 16384,
+  LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT       = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH,
+  LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT     = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -322,7 +324,14 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM     = 66,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM     = 67,
   LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MIN       = 68,
-  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN              = 69
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MIN              = 69,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ABSMAX           = 70,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8      = 71,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T    = 72,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T     = 73,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD  = 74,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM     = 75,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_NORM      = 76
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -487,6 +496,10 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2 = 2097152,
   LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV = 4194304,
   LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK = 8388608,
+  LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2 = 16777216,
+  LIBXSMM_GEMM_FLAG_USE_MxK_ZPT = 33554432,
+  LIBXSMM_GEMM_FLAG_USE_MxK_SCF = 67108864,
+  LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI8_INTLV = 134217728,
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0                      = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS        = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
@@ -517,7 +530,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_AB_UNSIGNED         = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   /** Marker flag; do not use. */
-  LIBXSMM_GEMM_FLAG_INVALID = 16777216
+  LIBXSMM_GEMM_FLAG_INVALID = 268435456
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch strategies. */
@@ -526,19 +539,15 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
   /** Prefetch PA using accesses to A. */
   LIBXSMM_GEMM_PREFETCH_AL2                = 1,
-  /** Prefetch PA (aggressive). */
-  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 2,
-  /** Prefetch A ahead. */
-  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 4,
-  LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2,
-  LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_AHEAD,
-  /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C (Eigen library). */
-  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
-  /** Current B into L1. */
-  LIBXSMM_GEMM_PREFETCH_BL1                = 8,
-  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 16,
-  LIBXSMM_GEMM_PREFETCH_C_SCRATCH          = 32,
-  LIBXSMM_GEMM_PREFETCH_C                  = 64
+  /** Prefetch PA using accesses to B. */
+  LIBXSMM_GEMM_PREFETCH_BL2                = 2
+#if 0
+    ,
+  /** Prefetch PA using accesses to C. */
+  LIBXSMM_GEMM_PREFETCH_CL1                = 4,
+  LIBXSMM_GEMM_PREFETCH_AL2BL2             = 3,
+  LIBXSMM_GEMM_PREFETCH_AL2BL2CL1          = 7
+#endif
 } libxsmm_gemm_prefetch_type;
 
 /** Enumeration of the batchreduce type. */
@@ -568,6 +577,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_arg {
   void* secondary;
   void* tertiary;
   void* quaternary;
+  void* quinary;
+  void* senary;
 } libxsmm_matrix_arg;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_matrix_op_arg {
@@ -817,11 +828,17 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_info {
   unsigned int nflops;
   /** Code size (Bytes). */
   size_t code_size;
+  unsigned int is_reference_kernel;
 } libxsmm_kernel_info;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 LIBXSMM_EXTERN_C typedef struct libxsmm_registry_info {
   size_t capacity, size, nbytes, nstatic, ncache;
 } libxsmm_registry_info;
+
+LIBXSMM_EXTERN_C typedef enum libxsmm_aarch64_acc_layout {
+  LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT = 0,
+  LIBXSMM_AARCH64_ACC_LAYOUT_B_TRANSPOSE = 1
+} libxsmm_aarch64_acc_layout;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/

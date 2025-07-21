@@ -114,13 +114,13 @@
 /** Default-initialize libxsmm_gemm_param structure for the given prefetch-strategy. */
 #if (LIBXSMM_PREFETCH_NONE != LIBXSMM_PREFETCH) /* LIBXSMM_GEMM_PREFETCH_NONE is an enumerator! */
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) do { \
-    (ARGS).a.quaternary = ((char*)(ARGS).a.primary) + sizeof(ITYPE) * (M) * (K); \
-    (ARGS).b.quaternary = ((char*)(ARGS).b.primary) + sizeof(ITYPE) * (K) * (N); \
-    (ARGS).c.quaternary = ((char*)(ARGS).c.primary) + sizeof(OTYPE) * (M) * (N); \
+    (ARGS).a.senary = ((char*)(ARGS).a.primary) + sizeof(ITYPE) * (M) * (K); \
+    (ARGS).b.senary = ((char*)(ARGS).b.primary) + sizeof(ITYPE) * (K) * (N); \
+    (ARGS).c.senary = ((char*)(ARGS).c.primary) + sizeof(OTYPE) * (M) * (N); \
   } while(0)
 #elif !defined(NDEBUG)
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS) \
-    (ARGS).a.quaternary = (ARGS).b.quaternary = (ARGS).c.quaternary = NULL
+    (ARGS).a.senary = (ARGS).b.senary = (ARGS).c.senary = NULL
 #else
 # define LIBXSMM_XGEMM_PREFETCH(ITYPE, OTYPE, M, N, K, ARGS);
 #endif

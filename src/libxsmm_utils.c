@@ -17,7 +17,6 @@
 # define LIBXSMM_RNG_DRAND48
 #endif
 
-
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 {
   unsigned int result;
