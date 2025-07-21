@@ -364,7 +364,7 @@ int main(int argc, char* argv[]) {
       char* c1 = (char*) libxsmm_aligned_malloc( l_ldc*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_c), 64 );
       char* c2 = (char*) libxsmm_aligned_malloc( l_ldc*l_n*l_r*LIBXSMM_TYPESIZE(l_dtype_c), 64 );
       /* init libxsmm kernel */
-      libxsmm_xmmfunction mykernel = { NULL };
+      libxsmm_gemmfunction mykernel = NULL;
       const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_dtype_a,
         l_dtype_b, l_dtype_c, l_dtype_comp );
@@ -381,9 +381,9 @@ int main(int argc, char* argv[]) {
       libxsmm_blasint i = 0;
 
       /* JIT code */
-      mykernel.gemm = libxsmm_create_packed_gemm(gemm_shape, l_flags, l_prefetch_flags, l_r);
+      mykernel = libxsmm_create_packed_gemm(gemm_shape, l_flags, l_prefetch_flags, l_r);
 
-      if ( mykernel.gemm == NULL ) {
+      if ( mykernel == NULL ) {
         printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
         exit(-1);
       }
@@ -414,7 +414,7 @@ int main(int argc, char* argv[]) {
       gemm_param.a.primary = (void*)a;
       gemm_param.b.primary = (void*)b;
       gemm_param.c.primary = (void*)c2;
-      mykernel.gemm(&gemm_param);
+      mykernel(&gemm_param);
 
       /* check correctness */
       l_max_error = check_data( l_r, l_m, l_n, l_ldc, l_dtype_c, c1, c2 );
@@ -425,11 +425,11 @@ int main(int argc, char* argv[]) {
       l_start = libxsmm_timer_tick();
       for (i = 0; i < l_reps; ++i) {
         /* run optimized */
-        mykernel.gemm(&gemm_param);
+        mykernel(&gemm_param);
       }
       l_end = libxsmm_timer_tick();
       l_total_opt = libxsmm_timer_duration(l_start, l_end);
-      libxsmm_get_kernel_info(mykernel.ptr_const, &l_kinfo);
+      libxsmm_get_kernel_info(LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
       l_libxsmmflops = l_kinfo.nflops;
 
       l_gflops_opt = (l_flops / l_total_opt) / 1e9;

@@ -2252,7 +2252,6 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
   int l_asize_divide_factor = 1;
-  const float* l_scf;
 
   if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
@@ -2447,8 +2446,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   gemm_param.op.tertiary = &l_br;
   gemm_param.c.primary = (void*)o_c;
-  l_scf = (( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
-  LIBXSMM_VALUE_ASSIGN(gemm_param.c.tertiary, l_scf);
+  gemm_param.c.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
   gemm_param.a.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f16 :
       (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_BF16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f32 : NULL));
   gemm_param.a.quaternary = (void*)((i_gemm_def->is_Ai4Bf16_gemm > 0 && i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32)) ? i_gemm_def->zpt_f16 : NULL);
@@ -2474,8 +2472,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.a.primary = (void*)i_a;
+    gemm_param.b.primary = (void*)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       gemm_param.a.senary = (void*)i_a;
       gemm_param.b.senary = (void*)i_b;
@@ -2487,8 +2485,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_test_jit.gemm( &gemm_param );
 #endif
   } else if (i_gemm_def->br_type == 1) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, l_a_addr);
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, l_b_addr);
+    gemm_param.a.primary = l_a_addr;
+    gemm_param.b.primary = l_b_addr;
     for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
       if (i_gemm_def->trans_a == 0) {
         l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
@@ -2519,9 +2517,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_test_jit.gemm( &gemm_param );
 #endif
   } else if (i_gemm_def->br_type == 2) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
+    gemm_param.a.primary = (void*)i_a;
     gemm_param.a.secondary = l_a_offs;
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.b.primary = (void*)i_b;
     gemm_param.b.secondary = l_b_offs;
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
@@ -2529,8 +2527,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_test_jit.gemm( &gemm_param );
 #endif
   } else if (i_gemm_def->br_type == 3) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.a.primary = (void*)i_a;
+    gemm_param.b.primary = (void*)i_b;
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
 #else
@@ -2539,7 +2537,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   } else if (i_gemm_def->br_type == 4) {
     gemm_param.a.primary = (void*)l_compressed_weights;
     gemm_param.a.secondary = (void*)l_decompress_bitmap;
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.b.primary = (void*)i_b;
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
 #else
@@ -2550,8 +2548,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   gemm_param.c.primary = (void*)o_c_perf;
   l_start = libxsmm_timer_tick();
   if (i_gemm_def->br_type == 0) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.a.primary = (void*)i_a;
+    gemm_param.b.primary = (void*)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
       gemm_param.a.senary = (void*)i_a;
       gemm_param.b.senary = (void*)i_b;
@@ -2600,9 +2598,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
     }
   } else if (i_gemm_def->br_type == 2) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
+    gemm_param.a.primary = (void*)i_a;
     gemm_param.a.secondary = l_a_offs;
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.b.primary = (void*)i_b;
     gemm_param.b.secondary = l_b_offs;
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
@@ -2612,8 +2610,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
     }
   } else if (i_gemm_def->br_type == 3) {
-    LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, i_a);
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.a.primary = (void*)i_a;
+    gemm_param.b.primary = (void*)i_b;
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
       l_test_jit.gemm_ext( &gemm_param );
@@ -2624,7 +2622,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   } else if (i_gemm_def->br_type == 4) {
     gemm_param.a.primary = (void*)l_compressed_weights;
     gemm_param.a.secondary = (void*)l_decompress_bitmap;
-    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, i_b);
+    gemm_param.b.primary = (void*)i_b;
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
       l_test_jit.gemm_ext( &gemm_param );
