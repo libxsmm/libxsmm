@@ -1717,7 +1717,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int2int8_srf( libxsmm_generated_cod
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
       /* issue fma */
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                  i_micro_kernel_config->vmul_instruction,
+                                                  ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) >  0) ? i_micro_kernel_config->vector_name : LIBXSMM_X86_INSTR_VPDPBSSD,
                                                   i_micro_kernel_config->vector_name,
                                                   l_vreg_ab_offset + l_m,
                                                   l_vreg_ab_offset+4,
