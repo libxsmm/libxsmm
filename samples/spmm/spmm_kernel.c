@@ -447,8 +447,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   }
 
   /* run correctness */
-  gemm_param.a.primary, (void*)i_a;
-  gemm_param.b.primary, (void*)i_b;
+  gemm_param.a.primary = (void*)i_a;
+  gemm_param.b.primary = (void*)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
@@ -466,8 +466,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run performance */
   l_start = libxsmm_timer_tick();
-  gemm_param.a.primary, (void*)i_a;
-  gemm_param.b.primary, (void*)i_b;
+  gemm_param.a.primary = (void*)i_a;
+  gemm_param.b.primary = (void*)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
