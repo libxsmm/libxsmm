@@ -40,7 +40,7 @@
 #endif
 
 /* like LIBXSMM_ACCESS (LIBXSMM_INDEX1), but based on Byte-measured index/stride; returns the value */
-#define LIBXSMM_VALUE1(TYPE, ARRAY, ...) (*(TYPE*)LIBXSMM_ACCESS(1, char, ARRAY, __VA_ARGS__))
+#define LIBXSMM_VALUE1(TYPE, ARRAY, ...) (*(TYPE*)LIBXSMM_ACCESS(1, const char, ARRAY, __VA_ARGS__))
 /* like LIBXSMM_VALUE1, but if ARRAY is NULL then FB is returned */
 #define LIBXSMM_VALUE1_CHECKED(TYPE, FB, ARRAY, ...) (NULL != (ARRAY) ? LIBXSMM_VALUE1(TYPE, ARRAY, __VA_ARGS__) : (FB))
 
@@ -56,7 +56,7 @@
 
 #define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) do { \
   libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
-  libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
+  LIBXSMM_VALUE_ASSIGN(libxsmm_mzero_call_args_.in.primary, SRC); \
   libxsmm_mzero_call_args_.out.primary = (DST); \
   LIBXSMM_ASSERT(NULL != (KERNEL).function); \
   (KERNEL).function(&libxsmm_mzero_call_args_); \
@@ -64,7 +64,7 @@
 } while(0)
 #define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) do { \
   libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
-  libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
+  LIBXSMM_VALUE_ASSIGN(libxsmm_mcopy_call_args_.in.primary, SRC); \
   libxsmm_mcopy_call_args_.out.primary = (DST); \
   LIBXSMM_ASSERT(NULL != (KERNEL).function); \
   (KERNEL).function(&libxsmm_mcopy_call_args_); \
@@ -79,7 +79,7 @@
 /* call JIT-kernel (transpose) */
 #define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) do { \
   libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
-  libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
+  LIBXSMM_VALUE_ASSIGN(libxsmm_tcopy_call_args_.in.primary, SRC); \
   libxsmm_tcopy_call_args_.out.primary = (DST); \
   LIBXSMM_ASSERT(NULL != (KERNEL).function); \
   (KERNEL).function(&libxsmm_tcopy_call_args_); \

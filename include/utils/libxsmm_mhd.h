@@ -16,30 +16,39 @@
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_mhd_elemtype {
-  LIBXSMM_MHD_ELEMTYPE_F64  = LIBXSMM_DATATYPE_F64,         /* MET_DOUBLE */
-  LIBXSMM_MHD_ELEMTYPE_F32  = LIBXSMM_DATATYPE_F32,         /* MET_FLOAT */
-  LIBXSMM_MHD_ELEMTYPE_F16  = LIBXSMM_DATATYPE_F16,         /* MET_HALF */
-  LIBXSMM_MHD_ELEMTYPE_BF16 = LIBXSMM_DATATYPE_BF16,        /* MET_BFLOAT */
-  LIBXSMM_MHD_ELEMTYPE_BF8  = LIBXSMM_DATATYPE_BF8,         /* MET_BFLOAT8 */
-  LIBXSMM_MHD_ELEMTYPE_I64  = LIBXSMM_DATATYPE_I64,         /* MET_LONG */
-  LIBXSMM_MHD_ELEMTYPE_I32  = LIBXSMM_DATATYPE_I32,         /* MET_INT */
-  LIBXSMM_MHD_ELEMTYPE_I16  = LIBXSMM_DATATYPE_I16,         /* MET_SHORT */
-  LIBXSMM_MHD_ELEMTYPE_I8   = LIBXSMM_DATATYPE_I8,          /* MET_CHAR */
-  LIBXSMM_MHD_ELEMTYPE_U64  = LIBXSMM_DATATYPE_UNSUPPORTED, /* MET_ULONG */
-  LIBXSMM_MHD_ELEMTYPE_U32, /* MET_UINT */
-  LIBXSMM_MHD_ELEMTYPE_U16, /* MET_USHORT */
-  LIBXSMM_MHD_ELEMTYPE_U8,  /* MET_UCHAR */
-  LIBXSMM_MHD_ELEMTYPE_UNKNOWN
+  LIBXSMM_MHD_ELEMTYPE_F64  = LIBXSMM_DATATYPE_F64,   /* MET_DOUBLE */
+  LIBXSMM_MHD_ELEMTYPE_F32  = LIBXSMM_DATATYPE_F32,   /* MET_FLOAT */
+  LIBXSMM_MHD_ELEMTYPE_F16  = LIBXSMM_DATATYPE_F16,   /* MET_HALF */
+  LIBXSMM_MHD_ELEMTYPE_BF16 = LIBXSMM_DATATYPE_BF16,  /* MET_BFLOAT */
+  LIBXSMM_MHD_ELEMTYPE_BF8  = LIBXSMM_DATATYPE_BF8,   /* MET_BFLOAT8 */
+  LIBXSMM_MHD_ELEMTYPE_I64  = LIBXSMM_DATATYPE_I64,   /* MET_LONG */
+  LIBXSMM_MHD_ELEMTYPE_I32  = LIBXSMM_DATATYPE_I32,   /* MET_INT */
+  LIBXSMM_MHD_ELEMTYPE_I16  = LIBXSMM_DATATYPE_I16,   /* MET_SHORT */
+  LIBXSMM_MHD_ELEMTYPE_I8   = LIBXSMM_DATATYPE_I8,    /* MET_CHAR */
+  LIBXSMM_MHD_ELEMTYPE_U64  = LIBXSMM_DATATYPE_U64,   /* MET_ULONG */
+  LIBXSMM_MHD_ELEMTYPE_U32  = LIBXSMM_DATATYPE_U32,   /* MET_UINT */
+  LIBXSMM_MHD_ELEMTYPE_U16  = LIBXSMM_DATATYPE_U16,   /* MET_USHORT */
+  LIBXSMM_MHD_ELEMTYPE_U8   = LIBXSMM_DATATYPE_U8,    /* MET_UCHAR */
+  LIBXSMM_MHD_ELEMTYPE_UNKNOWN = LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_mhd_elemtype;
 
+typedef enum libxsmm_mhd_element_conversion_hint {
+  LIBXSMM_MHD_ELEMENT_CONVERSION_DEFAULT,
+  LIBXSMM_MHD_ELEMENT_CONVERSION_MODULUS
+} libxsmm_mhd_element_conversion_hint;
+
+LIBXSMM_EXTERN_C typedef struct libxsmm_mhd_element_handler_info {
+  libxsmm_mhd_elemtype type;
+  libxsmm_mhd_element_conversion_hint hint;
+} libxsmm_mhd_element_handler_info;
 
 /**
  * Function type used for custom data-handler or element conversion.
  * The value-range (src_min, src_max) may be used to scale values
  * in case of a type-conversion.
  */
-LIBXSMM_EXTERN_C typedef int (*libxsmm_mhd_element_handler)(
-  void* dst, libxsmm_mhd_elemtype dst_type, libxsmm_mhd_elemtype src_type,
+LIBXSMM_EXTERN_C typedef int (*libxsmm_mhd_element_handler)(void* dst,
+  const libxsmm_mhd_element_handler_info* dst_info, libxsmm_mhd_elemtype src_type,
   const void* src, const void* src_min, const void* src_max);
 
 /**
@@ -47,8 +56,8 @@ LIBXSMM_EXTERN_C typedef int (*libxsmm_mhd_element_handler)(
  * Scales source-values in case of non-NULL src_min and src_max,
  * or otherwise clamps to the destination-type.
  */
-LIBXSMM_API int libxsmm_mhd_element_conversion(
-  void* dst, libxsmm_mhd_elemtype dst_type, libxsmm_mhd_elemtype src_type,
+LIBXSMM_API int libxsmm_mhd_element_conversion(void* dst,
+  const libxsmm_mhd_element_handler_info* dst_info, libxsmm_mhd_elemtype src_type,
   const void* src, const void* src_min, const void* src_max);
 
 /**
@@ -56,16 +65,19 @@ LIBXSMM_API int libxsmm_mhd_element_conversion(
  * In case of different types, libxsmm_mhd_element_conversion
  * is performed to compare values using the source-type.
  */
-LIBXSMM_API int libxsmm_mhd_element_comparison(
-  void* dst, libxsmm_mhd_elemtype dst_type, libxsmm_mhd_elemtype src_type,
+LIBXSMM_API int libxsmm_mhd_element_comparison(void* dst,
+  const libxsmm_mhd_element_handler_info* dst_info, libxsmm_mhd_elemtype src_type,
   const void* src, const void* src_min, const void* src_max);
 
 
-/** Returns the name and size of the element type; result may be NULL/0 in case of an unknown type. */
-LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize, const char** ctypename);
+/** Returns the name of the element type; result may be NULL/0 in case of an unknown type. */
+LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, const char** ctypename);
 
-/** Returns the type of the element for a given type-name. */
+/** Returns the type of the element for a given type-name, e.g., "MET_FLOAT". */
 LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char elemname[]);
+
+/** Returns the size of the element-type in question. */
+LIBXSMM_API size_t libxsmm_mhd_typesize(libxsmm_mhd_elemtype type);
 
 
 /**
@@ -118,17 +130,20 @@ LIBXSMM_API int libxsmm_mhd_read(
   size_t header_size,
   /* Data element type as stored (pixel type). */
   libxsmm_mhd_elemtype type_stored,
-  /* Storage type (data conversion, optional). */
-  const libxsmm_mhd_elemtype* type_data,
   /* Buffer where the data is read into. */
   void* data,
+  /**
+   * Destination info including type. If given, data
+   * is type-converted (no custom handler necessary).
+   */
+  const libxsmm_mhd_element_handler_info* handler_info,
   /**
    * Optional callback executed per entry when reading the data.
    * May assign the value to the left-most argument, but also
    * allows to only compare with present data. Can be used to
    * avoid allocating an actual destination.
    */
-  libxsmm_mhd_element_handler handle_element,
+  libxsmm_mhd_element_handler handler,
   /* Post-content data (extension, optional). */
   char extension[],
   /* Size of the extension; can be zero. */
@@ -152,10 +167,20 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   size_t ncomponents,
   /* Type (input). */
   libxsmm_mhd_elemtype type_data,
-  /* Type (data conversion, optional). */
-  const libxsmm_mhd_elemtype* type,
   /* Raw data to be saved. */
   const void* data,
+  /**
+   * Destination info including type. If given, data
+   * is type-converted (no custom handler necessary).
+   */
+  const libxsmm_mhd_element_handler_info* handler_info,
+  /**
+   * Optional callback executed per entry when reading the data.
+   * May assign the value to the left-most argument, but also
+   * allows to only compare with present data. Can be used to
+   * avoid allocating an actual destination.
+   */
+  libxsmm_mhd_element_handler handler,
   /* Size of the header; can be a NULL-argument (optional). */
   size_t* header_size,
   /* Extension header data; can be NULL. */

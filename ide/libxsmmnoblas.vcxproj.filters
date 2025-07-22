@@ -11,11 +11,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\libxsmm_ext.h">
-      <Filter>src</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\LICENSE.md" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />
