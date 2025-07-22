@@ -1776,7 +1776,11 @@ void libxsmm_generator_gemm_avx2_microkernel_int1int8_srf( libxsmm_generated_cod
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSHUFB, i_micro_kernel_config->vector_name, l_lut_expand, l_vreg_ab_offset+l_m, l_vreg_ab_offset+l_m, 0, 0, 0, 0 );
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name, l_vreg_ab_offset+l_m, l_mask_bits, l_vreg_ab_offset+l_m );
     libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQB, i_micro_kernel_config->vector_name, l_vreg_ab_offset+l_m, l_mask_bits, l_vreg_ab_offset+l_m, 0);
+#if 0
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name, l_vreg_ab_offset+l_m, l_vreg_one, l_vreg_ab_offset+l_m );
+#else
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDVB, i_micro_kernel_config->vector_name, l_vreg_ab_offset+l_m, l_vreg_one, l_vreg_ab_offset+l_m,  0, 0, 0, (l_vreg_ab_offset+l_m) << 4);
+#endif
   }
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, (long long)(i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor)/8 );
@@ -1801,7 +1805,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int1int8_srf( libxsmm_generated_cod
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
       /* issue fma */
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                  i_micro_kernel_config->vmul_instruction,
+                                                  ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) >  0) ? i_micro_kernel_config->vector_name : LIBXSMM_X86_INSTR_VPDPBSSD,
                                                   i_micro_kernel_config->vector_name,
                                                   l_vreg_ab_offset+4,
                                                   l_vreg_ab_offset + l_m,
