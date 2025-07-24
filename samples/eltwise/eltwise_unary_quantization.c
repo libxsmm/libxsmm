@@ -40,6 +40,9 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     fprintf( stderr, "test_float_to_int8_to_float: ldi needs to be equal to or bigger than M\n");
     exit(-1);
   }
+  if ( (M == 0) || (N == 0) ) {
+    return ret;
+  }
 
   in                 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
   char_data          = (char*)  libxsmm_aligned_malloc( sizeof(char)*N*ldo, 64);
@@ -226,6 +229,9 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     fprintf( stderr, "test_float_to_int8_to_float: ldi needs to be equal to or bigger than M\n");
     exit(-1);
   }
+  if ( (M == 0) || (N == 0) ) {
+    return ret;
+  }
 
   in                  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
   short_data          = (short*) libxsmm_aligned_malloc( sizeof(short)*N*ldo, 64);
@@ -408,6 +414,9 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   if ( M > ldi ) {
     fprintf( stderr, "test_float_to_int8_to_float: ldi needs to be equal to or bigger than M\n");
     exit(-1);
+  }
+  if ( (M == 0) || (N == 0) ) {
+    return ret;
   }
 
   in                = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
