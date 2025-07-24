@@ -234,6 +234,7 @@ libxsmm_mhd_read
 libxsmm_mhd_read_header
 libxsmm_mhd_typeinfo
 libxsmm_mhd_typename
+libxsmm_mhd_typesize
 libxsmm_mhd_write
 libxsmm_offset
 libxsmm_original_dgemm

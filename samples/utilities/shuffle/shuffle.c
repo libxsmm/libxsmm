@@ -54,10 +54,13 @@ int main(int argc, char* argv[])
   const int insize = (2 < argc ? atoi(argv[2]) : 0);
   const int niters = (3 < argc ? atoi(argv[3]) : 1);
   const int repeat = (4 < argc ? atoi(argv[4]) : 3);
-  const int elsize = (0 >= insize ? 8 : insize);
+  const int elsize = (0 >= insize ? 4 : insize);
   const int random = (NULL == getenv("RANDOM")
     ? 0 : atoi(getenv("RANDOM")));
-  const int split = (0 < random ? random : 1);
+  const int split = (NULL == getenv("SPLIT")
+    ? 1 : atoi(getenv("SPLIT")));
+  const int stats = (NULL == getenv("STATS")
+    ? 0 : atoi(getenv("STATS")));
   const size_t m = (0 <= niters ? niters : 1);
   const size_t n = (0 >= nelems
     ? (((size_t)64 << 20/*64 MB*/) / elsize)
@@ -75,8 +78,18 @@ int main(int argc, char* argv[])
     size_t g1 = 0, g2 = 0, g3 = 0, h1 = 0, h2 = 0, h3 = 0;
     size_t n0 = 0, n1 = 0, n2 = 0, n3 = 0, j;
     double d0, d1 = 0, d2 = 0, d3 = 0;
+    const libxsmm_mhd_elemtype elemtypes[] = {
+      LIBXSMM_MHD_ELEMTYPE_U64,
+      LIBXSMM_MHD_ELEMTYPE_U32,
+      LIBXSMM_MHD_ELEMTYPE_U16,
+      LIBXSMM_MHD_ELEMTYPE_U8
+    };
+    libxsmm_mhd_element_handler_info mhdinfo = { 0 };
+    const size_t nelemtypes = sizeof(elemtypes) / sizeof(*elemtypes);
+    const size_t nchannels = 1, mhdsize = n / nchannels;
+    size_t shape[2], y = 0, typesize = 0;
     libxsmm_timer_tickint start;
-    int i = 0;
+    int elemtype = -1, i;
 
     /* initialize the data */
     if (sizeof(size_t) < elsize) memset(data1, 0, nbytes);
@@ -85,53 +98,97 @@ int main(int argc, char* argv[])
         LIBXSMM_MIN(elsize, sizeof(size_t)));
     }
 
-    for (; i <= repeat; ++i) {
+    /* prepare writing MHD-image files */
+    y = (size_t)libxsmm_isqrt_u64(mhdsize);
+    shape[0] = mhdsize / y; shape[1] = y;
+    for (j = 0; j < nelemtypes; ++j) {
+      typesize = libxsmm_mhd_typesize(elemtypes[j]);
+      if (elsize == typesize) {
+        mhdinfo.hint = LIBXSMM_MHD_ELEMENT_CONVERSION_MODULUS;
+        mhdinfo.type = LIBXSMM_MHD_ELEMTYPE_U8;
+        elemtype = (int)j;
+        break;
+      }
+    }
+    if (0 > elemtype) {
+      printf("---------------------------------------\n");
+      printf("Unsupported type for writing MHD-file!\n");
+    }
+
+    for (i = 0; i <= repeat && EXIT_SUCCESS == result; ++i) {
       printf("---------------------------------------\n");
 
-      { /* benchmark RNG-based shuffle routine */
+      if (EXIT_SUCCESS == result) { /* benchmark RNG-based shuffle routine */
         memcpy(data2, data1, nbytes); n0 = 0;
         start = libxsmm_timer_tick();
         for (j = 0; j < m; ++j) n0 += shuffle(data2, elsize, n);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
-        if (0 != random && i == repeat) { /* only last iteration */
-          a1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
-          b1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
-          g1 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
-          h1 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
-          n1 = uint_bsort_asc(data2, elsize, n);
+        if (i == repeat) { /* only last iteration */
+          if (0 != stats) {
+            a1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
+            b1 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
+            g1 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
+            h1 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
+          }
+          if (0 == random) {
+            if (0 <= elemtype) {
+              result = libxsmm_mhd_write("shuffle_rng.mhd", NULL/*offset*/, shape, NULL/*pitch*/, 2,
+                nchannels, elemtypes[elemtype], data2, &mhdinfo, NULL/*handler*/, NULL/*header_size*/,
+                NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
+            }
+          }
+          else n1 = uint_bsort_asc(data2, elsize, n);
         }
         if (0 < d0) printf("RNG-shuffle: %.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
         if (0 < i) d1 += d0; /* ignore first iteration */
       }
 
-      { /* benchmark DS1-based shuffle routine */
+      if (EXIT_SUCCESS == result) { /* benchmark in-place shuffle (DS1) */
         memcpy(data2, data1, nbytes);
         start = libxsmm_timer_tick();
         libxsmm_shuffle(data2, elsize, n, NULL, &m);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
-        if (0 != random && i == repeat) { /* only last iteration */
-          a2 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
-          b2 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
-          g2 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
-          h2 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
-          n2 = uint_bsort_asc(data2, elsize, n);
+        if (i == repeat) { /* only last iteration */
+          if (0 != stats) {
+            a2 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
+            b2 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
+            g2 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
+            h2 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
+          }
+          if (0 == random) {
+            if (0 <= elemtype) {
+              result = libxsmm_mhd_write("shuffle_ds1.mhd", NULL/*offset*/, shape, NULL/*pitch*/, 2,
+                nchannels, elemtypes[elemtype], data2, &mhdinfo, NULL/*handler*/, NULL/*header_size*/,
+                NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
+            }
+          }
+          else n2 = uint_bsort_asc(data2, elsize, n);
         }
         if (0 < d0) printf("DS1-shuffle: %.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
         if (0 < i) d2 += d0; /* ignore first iteration */
       }
 
-      { /* benchmark DS2-based shuffle routine */
+      if (EXIT_SUCCESS == result) { /* benchmark out-of-place shuffle (DS2) */
         start = libxsmm_timer_tick();
         libxsmm_shuffle2(data2, data1, elsize, n, NULL, &m);
         d0 = libxsmm_timer_duration(start, libxsmm_timer_tick()) / mm;
-        if (0 != random && i == repeat) { /* only last iteration */
-          a3 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
-          b3 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
-          g3 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
-          h3 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
-          n3 = uint_bsort_asc(data2, elsize, n);
+        if (i == repeat) { /* only last iteration */
+          if (0 != stats) {
+            a3 = uint_reduce_op(data2, elsize, n, redop_mdistance, split);
+            b3 = uint_reduce_op(data2, elsize, n, redop_mdistance, split * 2);
+            g3 = uint_reduce_op(data2, elsize, n, redop_imbalance, split);
+            h3 = uint_reduce_op(data2, elsize, n, redop_imbalance, split * 2);
+          }
+          if (0 == random) {
+            if (0 <= elemtype) {
+              result = libxsmm_mhd_write("shuffle_ds2.mhd", NULL/*offset*/, shape, NULL/*pitch*/, 2,
+                nchannels, elemtypes[elemtype], data2, &mhdinfo, NULL/*handler*/, NULL/*header_size*/,
+                NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
+            }
+          }
+          else n3 = uint_bsort_asc(data2, elsize, n);
         }
         if (0 < d0) printf("DS2-shuffle: %.8f s (%i MB/s)\n", d0,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d0)));
@@ -139,7 +196,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    if (1 < repeat) {
+    if (1 < repeat && EXIT_SUCCESS == result) {
       const unsigned long long nn = (n * n - n + 3) / 4;
       printf("---------------------------------------\n");
       printf("Arithmetic average of %i iterations\n", repeat);
@@ -148,13 +205,15 @@ int main(int argc, char* argv[])
       if (0 < d1) {
         printf("RNG-shuffle: %.8f s (%i MB/s)\n", d1,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d1)));
-        if (0 != random) {
+        if (0 != stats) {
           printf("             dst%i=%llu%% dst%i=%llu%%\n",
             split * 2, (100ULL * b1 + n - 1) / n,
             split, (100ULL * a1 + n - 1) / n);
           printf("             imb%i=%llu%% imb%i=%llu%%\n",
             split * 2, (100ULL * h1 + n - 1) / n,
             split, (100ULL * g1 + n - 1) / n);
+        }
+        if (0 != random) {
           n0 = (nn * n - 1 + LIBXSMM_MIN(LIBXSMM_MIN(n1, nn) * n, n0 * nn)
             * 100ULL) / (nn * n);
           printf("             rand=%llu%%\n", (unsigned long long)n0);
@@ -163,13 +222,15 @@ int main(int argc, char* argv[])
       if (0 < d2) {
         printf("DS1-shuffle: %.8f s (%i MB/s)\n", d2,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d2)));
-        if (0 != random) {
+        if (0 != stats) {
           printf("             dst%i=%llu%% dst%i=%llu%%\n",
             split * 2, (100ULL * b2 + n - 1) / n,
             split, (100ULL * a2 + n - 1) / n);
           printf("             imb%i=%llu%% imb%i=%llu%%\n",
             split * 2, (100ULL * h2 + n - 1) / n,
             split, (100ULL * g2 + n - 1) / n);
+        }
+        if (0 != random) {
           printf("             rand=%llu%%\n",
             (100ULL * LIBXSMM_MIN(n2, nn) + nn - 1) / nn);
         }
@@ -177,13 +238,15 @@ int main(int argc, char* argv[])
       if (0 < d3) {
         printf("DS2-shuffle: %.8f s (%i MB/s)\n", d3,
           (int)LIBXSMM_ROUND((2.0 * nbytes) / ((1024.0 * 1024.0) * d3)));
-        if (0 != random) {
+        if (0 != stats) {
           printf("             dst%i=%llu%% dst%i=%llu%%\n",
             split * 2, (100ULL * b3 + n - 1) / n,
             split, (100ULL * a3 + n - 1) / n);
           printf("             imb%i=%llu%% imb%i=%llu%%\n",
             split * 2, (100ULL * h3 + n - 1) / n,
             split, (100ULL * g3 + n - 1) / n);
+        }
+        if (0 != random) {
           printf("             rand=%llu%%\n",
             (100ULL * LIBXSMM_MIN(n3, nn) + nn - 1) / nn);
         }
@@ -273,6 +336,7 @@ size_t uint_bsort_asc(void* inout, size_t elemsize, size_t count) {
     int swap = 1;
     for (; 0 != swap; --count) {
       size_t i = 0, j, k;
+      assert(0 != count);
       for (swap = 0; i < elemsize * (count - 1); i += elemsize) {
         for (j = i + elemsize, k = elemsize; 0 < k; --k) {
           const unsigned char x = data[i + k - 1], y = data[j + k - 1];

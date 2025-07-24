@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info( LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
+    libxsmm_get_kernel_info( mykernel, &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;
     printf("%fs for sparse (asm)\n", l_total);
     printf("%f GFLOPS for sparse (asm), calculated\n", ((double)((double)REPS * (double)N * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));

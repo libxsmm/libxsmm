@@ -356,8 +356,10 @@ ifeq (0,$(GNU))
       CC := icx
     endif
   endif
-else ifneq (,$(filter-out default undefined,$(origin CC) $(origin CXX) $(origin FC)))
-  $(info WARNING: GNU=$(GNU) was given but CC, CXX, or FC was specified!)
+else # GNU
+  ifneq (,$(filter environment%,$(origin CC) $(origin CXX) $(origin FC)))
+    $(info WARNING: GNU=$(GNU) given but CC, CXX, or FC are specified by environment!)
+  endif
   FC := gfortran
   CC := gcc
   CXX := g++
@@ -1150,9 +1152,18 @@ LIBRT := $(call ldclib,$(LD),$(SLDFLAGS),rt)
 LIBDL := $(call ldclib,$(LD),$(SLDFLAGS),dl)
 ifneq (0,$(INTEL))
   LIBM := $(call ldclib,$(LD),$(SLDFLAGS),imf)
+else
+  LIBM := $(call ldclib,$(LD),$(SLDFLAGS),m)
 endif
-LIBM ?= $(call ldclib,$(LD),$(SLDFLAGS),m)
 LIBC := $(call ldclib,$(LD),$(SLDFLAGS),c)
+
+# fallback
+ifeq (,$(LIBM))
+  LIBM := -lm
+endif
+ifeq (,$(LIBC))
+  LIBC := -lc
+endif
 
 # (default) runtime library dependencies
 ifneq (0,$(FORCE_CXX)) # incl. undefined
@@ -1463,9 +1474,8 @@ else # GCC assumed
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros \
                  -Wno-unused-parameter -Wwrite-strings \
-                 -Wmissing-field-initializers -Wwrite-strings \
-                 -Wcast-qual -Wmissing-field-initializers \
-                 -Wimplicit-fallthrough -Wmisleading-indentation
+                 -Wmissing-field-initializers \
+                 -Wcast-qual
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
@@ -2242,7 +2252,7 @@ endif
 
 ifneq (,$(strip $(MKLROOT)))
   ifeq (0,$(PGI))
-    MKL ?= $(BLAS)
+    MKL ?= $(if $(BLASLIB),0,$(BLAS))
     ifneq (,$(strip $(FC)))
       ifneq (0,$(shell echo "$$((0==$(XSMM_GCC)||40600<=$(GCC_VERSION_NUM)))"))
         MKL_DIRECT ?= 0
@@ -2531,11 +2541,11 @@ ifneq (0,$(STATEFLT))
     $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
     DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
     NOBLAS% DNOBLAS %LIB FLDFLAGS OPSYS %DEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN CLDFLAGS \
-    GNU CCAR LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME DYNAMIC \
-    CPEDANTIC FREEFORM FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS PYTHON% HOST% TMUX %COLORS \
+    GNU CCAR LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME STATEMAK \
+    CPEDANTIC FREEFORM FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS PYTHON% HOST% TMUX %COLORS WHOLE_% \
     HEREDIR HOMEDIR UNUSED TEST% MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %_FLAG \
     CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR FINFO ENVBIN FSTD GINFO XDG_DATA_DIRS ONEVERSION \
-    LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR \
+    LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR DYNAMIC XGROUP_% \
     $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
     $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
     $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
