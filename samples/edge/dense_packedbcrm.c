@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
     }
     l_end = libxsmm_timer_tick();
     l_total_opt = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info( LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
+    libxsmm_get_kernel_info( mykernel, &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;
 
     gflops_ref = (flops/l_total_ref)/1e9;

@@ -191,8 +191,6 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE unsigned int libxsmm_backtrace(const void* /*buffer*/[], unsigned int /*size*/, unsigned int /*skip*/);
 LIBXSMM_API
 #if defined(_WIN32)
@@ -204,15 +202,18 @@ unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned
 {
   unsigned int result;
   if (NULL != buffer && 0 != size && skip < size) {
+    const void **const src = buffer;
+    void** dst;
+    LIBXSMM_VALUE_ASSIGN(dst, src);
     skip += LIBXSMM_TRACE_MINDEPTH;
 #if defined(_WIN32) || defined(__CYGWIN__)
-    result = CaptureStackBackTrace(skip, LIBXSMM_MIN(size, LIBXSMM_TRACE_MAXDEPTH), (PVOID*)buffer, NULL/*hash*/);
+    result = CaptureStackBackTrace(skip, LIBXSMM_MIN(size, LIBXSMM_TRACE_MAXDEPTH), dst, NULL/*hash*/);
 #else
-    { const int n = backtrace((void**)buffer, LIBXSMM_MIN((int)(size + skip), LIBXSMM_TRACE_MAXDEPTH));
+    { const int n = backtrace(dst, LIBXSMM_MIN((int)(size + skip), LIBXSMM_TRACE_MAXDEPTH));
       if ((int)skip < n) {
         result = n - skip;
         if (0 != skip) {
-          memmove(buffer, buffer + skip, result * sizeof(void*));
+          memmove(dst, dst + skip, result * sizeof(void*));
         }
       }
       else {
@@ -241,8 +242,10 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
     result = map;
   }
 #else
+  void* buffer;
+  LIBXSMM_VALUE_ASSIGN(buffer, address);
   LIBXSMM_ASSERT(NULL != address && NULL != map);
-  backtrace_symbols_fd((void**)&address, 1, fd);
+  backtrace_symbols_fd(&buffer, 1, fd);
   if (fdoff == lseek(fd, fdoff, SEEK_SET) /* reset map */
     /* limit input to 256 characters (LIBXSMM_TRACE_SYMBOLSIZE) */
     && 1 == sscanf(map, "%*[^(](%256s0x", map))
@@ -259,7 +262,6 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
   return result;
 }
 #endif
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE
