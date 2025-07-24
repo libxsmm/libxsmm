@@ -10,6 +10,10 @@
 ******************************************************************************/
 #include "eltwise_common.h"
 
+#if 0
+#define PRINT_VERBOSE
+#endif
+
 unsigned int is_reference_kernel = 0;
 libxsmm_kernel_info info;
 
@@ -48,12 +52,21 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     for ( j = 0; j < M; ++j ) {
       in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
       max_value = ( max_value < in[(i*ldi)+j] ) ? in[(i*ldi)+j] : max_value;
+#ifdef PRINT_VERBOSE
+      printf("%f ", in[(i*ldi)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
 
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
+  /* devide by 128 as we want to scale into the range of -128 to 127 */
+  maxexp -= 7;
+  /* create floating point scale */
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
@@ -139,13 +152,19 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( char_data_gold[(j*ldo)+i] != char_data[(j*ldo)+i] ) {
-        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, char_data_gold[(j*ldo)+i], char_data[(j*ldo)+i]);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( char_data_gold[(i*ldo)+j] != char_data[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, char_data_gold[(i*ldo)+j], char_data[(i*ldo)+j]);
         s = 1;
       }
+#ifdef PRINT_VERBOSE
+      printf("%i ", char_data_gold[(i*ldo)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
   if ( s == 0 ) {
     printf("SUCCESS unary quant FP32 -> int8\n");
@@ -154,13 +173,19 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     ret = EXIT_FAILURE;
   }
   s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( f32_char_data_gold[(j*ldi)+i] != f32_char_data[(j*ldi)+i] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_char_data_gold[(j*ldi)+i], f32_char_data[(j*ldi)+i]);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( f32_char_data_gold[(i*ldi)+j] != f32_char_data[(i*ldi)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_char_data_gold[(i*ldi)+j], f32_char_data[(i*ldi)+j]);
         s = 1;
       }
+#ifdef PRINT_VERBOSE
+      printf("%f ", f32_char_data_gold[(i*ldi)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
   if ( s == 0 ) {
     printf("SUCCESS unary quant int8 -> FP32\n");
@@ -213,12 +238,19 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     for ( j = 0; j < M; ++j ) {
       in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
       max_value = ( max_value < in[(i*ldi)+j] ) ? in[(i*ldi)+j] : max_value;
+#ifdef PRINT_VERBOSE
+      printf("%f ", in[(i*ldi)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
 
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
+  maxexp -= 15;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
@@ -303,13 +335,19 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( short_data_gold[(j*ldo)+i] != short_data[(j*ldo)+i] ) {
-        printf("error at position i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(j*ldo)+i], short_data[(j*ldo)+i]);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( short_data_gold[(i*ldo)+j] != short_data[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(i*ldo)+j], short_data[(i*ldo)+j]);
         s = 1;
       }
+#ifdef PRINT_VERBOSE
+      printf("%i ", short_data_gold[(i*ldo)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
   if ( s == 0 ) {
     printf("SUCCESS unary quant FP32 -> int16\n");
@@ -318,13 +356,19 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     ret = EXIT_FAILURE;
   }
   s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( f32_short_data_gold[(j*ldi)+i] != f32_short_data[(j*ldi)+i] ) {
-        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(j*ldi)+i], f32_short_data[(j*ldi)+i]);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( f32_short_data_gold[(i*ldi)+j] != f32_short_data[(i*ldi)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(i*ldi)+j], f32_short_data[(i*ldi)+j]);
         s = 1;
       }
+#ifdef PRINT_VERBOSE
+      printf("%f ", f32_short_data_gold[(i*ldi)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
   if ( s == 0 ) {
     printf("SUCCESS unary quant int16 -> FP32\n");
@@ -377,12 +421,19 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     for ( j = 0; j < M; ++j ) {
       in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
       max_value = ( max_value < in[(i*ldi)+j] ) ? in[(i*ldi)+j] : max_value;
+#ifdef PRINT_VERBOSE
+      printf("%f ", in[(i*ldi)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
 
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
+  maxexp -= 30;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
@@ -457,13 +508,19 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( int_data_gold[(j*ldo)+i] != int_data[(j*ldo)+i] ) {
-        printf("error at position i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(j*ldo)+i], int_data[(j*ldo)+i]);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( int_data_gold[(i*ldo)+j] != int_data[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(i*ldo)+j], int_data[(i*ldo)+j]);
         s = 1;
       }
+#ifdef PRINT_VERBOSE
+      printf("%i ", int_data_gold[(i*ldo)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
   if ( s == 0 ) {
     printf("SUCCESS unary quant FP32 -> int32\n");
@@ -472,13 +529,19 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     ret = EXIT_FAILURE;
   }
   s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( f32_int_data_gold[(j*ldi)+i] != f32_int_data[(j*ldi)+i] ) {
-        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(j*ldi)+i], f32_int_data[(j*ldi)+i]);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( f32_int_data_gold[(i*ldi)+j] != f32_int_data[(i*ldi)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(i*ldi)+j], f32_int_data[(i*ldi)+j]);
         s = 1;
       }
+#ifdef PRINT_VERBOSE
+      printf("%f ", f32_int_data_gold[(i*ldi)+j]);
+#endif
     }
+#ifdef PRINT_VERBOSE
+    printf("\n");
+#endif
   }
   if ( s == 0 ) {
     printf("SUCCESS unary quant int32 -> FP32\n");
