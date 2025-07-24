@@ -65,7 +65,9 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   /* devide by 128 as we want to scale into the range of -128 to 127 */
+#if 0
   maxexp -= 7;
+#endif
   /* create floating point scale */
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
@@ -250,7 +252,9 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
+#if 0
   maxexp -= 15;
+#endif
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
@@ -433,7 +437,9 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
+#if 0
   maxexp -= 30;
+#endif
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
