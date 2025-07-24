@@ -236,7 +236,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
+      in[(i*ldi)+j] = (float)(((i*ldi)+j)%64);
       max_value = ( max_value < in[(i*ldi)+j] ) ? in[(i*ldi)+j] : max_value;
 #ifdef PRINT_VERBOSE
       printf("%f ", in[(i*ldi)+j]);
@@ -250,9 +250,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
-#if 0
   maxexp -= 15;
-#endif
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
@@ -421,7 +419,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
+      in[(i*ldi)+j] = (float)(((i*ldi)+j)%64);
       max_value = ( max_value < in[(i*ldi)+j] ) ? in[(i*ldi)+j] : max_value;
 #ifdef PRINT_VERBOSE
       printf("%f ", in[(i*ldi)+j]);
@@ -435,9 +433,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
-#if 0
   maxexp -= 30;
-#endif
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   if (skip_scf_cvt > 0) {
