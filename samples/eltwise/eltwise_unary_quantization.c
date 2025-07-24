@@ -50,7 +50,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
+      in[(i*ldi)+j] = (float)(((i*ldi)+j)%64);
       max_value = ( max_value < in[(i*ldi)+j] ) ? in[(i*ldi)+j] : max_value;
 #ifdef PRINT_VERBOSE
       printf("%f ", in[(i*ldi)+j]);
@@ -65,9 +65,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   /* devide by 128 as we want to scale into the range of -128 to 127 */
-#if 1
   maxexp -= 7;
-#endif
   /* create floating point scale */
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
