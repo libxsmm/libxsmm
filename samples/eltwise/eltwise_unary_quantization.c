@@ -65,7 +65,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   /* devide by 128 as we want to scale into the range of -128 to 127 */
-#if 0
+#if 1
   maxexp -= 7;
 #endif
   /* create floating point scale */
