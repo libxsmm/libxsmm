@@ -81,8 +81,6 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 4;
 
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
-
   for (int i = 0; i < 4; i++){
     /* Load even register */
     if (i < i_valid_e_regs) {
@@ -365,13 +363,13 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 1, l_reg_scratch_start, 0xcc, 0x33, 2);
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 2, l_reg_scratch_start, 0xf0, 0x0f, 4);
 
-  /* Load tensor from the src registers */
-  libxsmm_generator_transform_store_regblock_8x8_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, (i_n / 2 + i_n % 2), i_n / 2, i_micro_kernel_config, i_mateltwise_desc );
+  /* Store the registers to the dst */
+  libxsmm_generator_transform_store_regblock_8x8_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, (i_m / 2 + i_m % 2), i_m / 2, i_micro_kernel_config, i_mateltwise_desc );
 
-  /* advance input pointer */
+  /* Reset output pointer for next m block*/
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
-                                              i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in,
-                                              ((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_n) - (8LL * (long long)i_micro_kernel_config->datatype_size_in) );
+                                              i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out,
+                                              ((long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out * i_n) - (8LL * (long long)i_micro_kernel_config->datatype_size_out) );
 }
 
 LIBXSMM_API_INTERN
@@ -454,12 +452,11 @@ void libxsmm_generator_transform_norm_to_normt_32bit_rvv_microkernel( libxsmm_ge
 
       /* advance output pointer */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                       i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (8LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) );
+        i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (8LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_out * i_mateltwise_desc->n) );
 
       /* advance input pointer */
-      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                       i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in, -1 * (((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (8LL * i_micro_kernel_config->datatype_size_in)) );
-
+      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
+                                       i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in, (((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (8LL * i_micro_kernel_config->datatype_size_in)) );
       /* close m loop */
       libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, 8 );
     }
@@ -471,7 +468,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_rvv_microkernel( libxsmm_ge
 
         /* call shuffle network */
         libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( io_generated_code, io_loop_label_tracker, i_gp_reg_in,
-                                                                                i_gp_reg_out, i_gp_reg_scratch, 8, i_mateltwise_desc->m % 8,
+                                                                                i_gp_reg_out, i_gp_reg_scratch, i_mateltwise_desc->m % 8, 8,
                                                                                 i_micro_kernel_config, i_mateltwise_desc );
 
         /* close n footer */
@@ -481,7 +478,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_rvv_microkernel( libxsmm_ge
       if ( i_mateltwise_desc->n % 8 != 0 ) {
         /* call shuffle network */
         libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( io_generated_code, io_loop_label_tracker, i_gp_reg_in,
-                                                                                i_gp_reg_out, i_gp_reg_scratch, 8, i_mateltwise_desc->m % 8,
+                                                                                i_gp_reg_out, i_gp_reg_scratch, i_mateltwise_desc->m % 8, i_mateltwise_desc->n % 8,
                                                                                 i_micro_kernel_config, i_mateltwise_desc );
       }
     }
