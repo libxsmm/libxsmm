@@ -158,7 +158,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( char_data_gold[(i*ldo)+j] != char_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, char_data_gold[(i*ldo)+j], char_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, char_data_gold[(i*ldo)+j], char_data[(i*ldo)+j]);
         s = 1;
       }
 #ifdef PRINT_VERBOSE
@@ -179,7 +179,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( f32_char_data_gold[(i*ldi)+j] != f32_char_data[(i*ldi)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_char_data_gold[(i*ldi)+j], f32_char_data[(i*ldi)+j]);
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_char_data_gold[(i*ldi)+j], f32_char_data[(i*ldi)+j]);
         s = 1;
       }
 #ifdef PRINT_VERBOSE
@@ -344,7 +344,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( short_data_gold[(i*ldo)+j] != short_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(i*ldo)+j], short_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, short_data_gold[(i*ldo)+j], short_data[(i*ldo)+j]);
         s = 1;
       }
 #ifdef PRINT_VERBOSE
@@ -365,7 +365,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( f32_short_data_gold[(i*ldi)+j] != f32_short_data[(i*ldi)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(i*ldi)+j], f32_short_data[(i*ldi)+j]);
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_short_data_gold[(i*ldi)+j], f32_short_data[(i*ldi)+j]);
         s = 1;
       }
 #ifdef PRINT_VERBOSE
@@ -520,7 +520,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( int_data_gold[(i*ldo)+j] != int_data[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(i*ldo)+j], int_data[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i, %i\n", i, j, int_data_gold[(i*ldo)+j], int_data[(i*ldo)+j]);
         s = 1;
       }
 #ifdef PRINT_VERBOSE
@@ -541,7 +541,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( f32_int_data_gold[(i*ldi)+j] != f32_int_data[(i*ldi)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(i*ldi)+j], f32_int_data[(i*ldi)+j]);
+        printf("error at position i=%i, j=%i, %f, %f\n", i, j, f32_int_data_gold[(i*ldi)+j], f32_int_data[(i*ldi)+j]);
         s = 1;
       }
 #ifdef PRINT_VERBOSE
