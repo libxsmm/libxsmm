@@ -155,7 +155,6 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
 
   /* compare result */
   s = 0;
-#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( char_data_gold[(i*ldo)+j] != char_data[(i*ldo)+j] ) {
@@ -170,7 +169,6 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     printf("\n");
 #endif
   }
-#endif
   if ( s == 0 ) {
     printf("SUCCESS unary quant FP32 -> int8\n");
   } else {
@@ -178,7 +176,6 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     ret = EXIT_FAILURE;
   }
   s = 0;
-#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( f32_char_data_gold[(i*ldi)+j] != f32_char_data[(i*ldi)+j] ) {
@@ -193,7 +190,6 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     printf("\n");
 #endif
   }
-#endif
   if ( s == 0 ) {
     printf("SUCCESS unary quant int8 -> FP32\n");
   } else {
@@ -345,7 +341,6 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* compare result */
   s = 0;
-#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( short_data_gold[(i*ldo)+j] != short_data[(i*ldo)+j] ) {
@@ -360,7 +355,6 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     printf("\n");
 #endif
   }
-#endif
   if ( s == 0 ) {
     printf("SUCCESS unary quant FP32 -> int16\n");
   } else {
@@ -368,7 +362,6 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     ret = EXIT_FAILURE;
   }
   s = 0;
-#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( f32_short_data_gold[(i*ldi)+j] != f32_short_data[(i*ldi)+j] ) {
@@ -383,7 +376,6 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     printf("\n");
 #endif
   }
-#endif
   if ( s == 0 ) {
     printf("SUCCESS unary quant int16 -> FP32\n");
   } else {
@@ -525,7 +517,6 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* compare result */
   s = 0;
-#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( int_data_gold[(i*ldo)+j] != int_data[(i*ldo)+j] ) {
@@ -540,7 +531,6 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     printf("\n");
 #endif
   }
-#endif
   if ( s == 0 ) {
     printf("SUCCESS unary quant FP32 -> int32\n");
   } else {
@@ -548,7 +538,6 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     ret = EXIT_FAILURE;
   }
   s = 0;
-#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( f32_int_data_gold[(i*ldi)+j] != f32_int_data[(i*ldi)+j] ) {
@@ -563,7 +552,6 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     printf("\n");
 #endif
   }
-#endif
   if ( s == 0 ) {
     printf("SUCCESS unary quant int32 -> FP32\n");
   } else {
