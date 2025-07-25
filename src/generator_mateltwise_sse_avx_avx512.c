@@ -920,16 +920,16 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
       }
     }
   }
+#if 0
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
       (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT) ) {
     is_valid_arch_prec = 0;
   }
-#if 0
+#endif
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY )  &&
       (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DEQUANT) ) {
     is_valid_arch_prec = 0;
   }
-#endif
 
   return is_valid_arch_prec;
 }
