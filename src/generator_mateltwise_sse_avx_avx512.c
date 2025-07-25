@@ -920,6 +920,9 @@ libxsmm_blasint libxsmm_generator_mateltwise_x86_valid_arch_precision( libxsmm_g
       }
     }
   }
+  if ( is_unary_quant_tpp > 0 ) {
+    is_valid_arch_prec = 0;
+  }
 
   return is_valid_arch_prec;
 }
