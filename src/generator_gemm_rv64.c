@@ -563,6 +563,9 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   /* setting up the stack frame */
   libxsmm_generator_gemm_setup_stack_frame_rv64( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config);
 
+   /* Apply potential opA / opB */
+  libxsmm_generator_gemm_apply_opA_opB_rv64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa, i_xgemm_desc);
+
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* calling gemm kernel with the modified pointer to the first matrix (now trans_a on the stack) should go here */
