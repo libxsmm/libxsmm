@@ -19,7 +19,6 @@
 #include "utils/libxsmm_barrier.h"
 #include "utils/libxsmm_timer.h"
 #include "utils/libxsmm_math.h"
-#include "utils/libxsmm_mhd.h"
 
 #if defined(__BLAS) && (1 == __BLAS)
 # if defined(__OPENBLAS)

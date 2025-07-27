@@ -226,14 +226,6 @@ libxsmm_meqn_push_back_ternary_op
 libxsmm_meqn_push_back_unary_op
 libxsmm_meqn_rpn_print
 libxsmm_meqn_tree_print
-libxsmm_mhd_element_comparison
-libxsmm_mhd_element_conversion
-libxsmm_mhd_read
-libxsmm_mhd_read_header
-libxsmm_mhd_typeinfo
-libxsmm_mhd_typename
-libxsmm_mhd_typesize
-libxsmm_mhd_write
 libxsmm_offset
 libxsmm_original_dgemm
 libxsmm_original_dgemm_batch
