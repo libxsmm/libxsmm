@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: BCSC_SPMM
-        run: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+        run: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
 
   ELTWISE:
     runs-on: [ self-hosted, graviton ]
@@ -69,7 +69,7 @@ jobs:
       - name: FSSPMDM
         run: |-
           ENVS="LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3" \
-          TEST_N=48 scripts/tool_test.sh samples/pyfr/test.sh
+          TEST_N=48 scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh
 
   Test_4:
     runs-on: [ self-hosted, graviton ]
