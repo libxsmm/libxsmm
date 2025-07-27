@@ -925,14 +925,6 @@ samples: $(DIRS_SAMPLES)
 $(DIRS_SAMPLES): libs
 	@$(FLOCK) $@ "$(MAKE)"
 
-.PHONY: cp2k
-cp2k: libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory"
-
-.PHONY: nek
-nek: libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory"
-
 .PHONY: smm
 smm: libs
 	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory"
@@ -940,50 +932,6 @@ smm: libs
 .PHONY: specfem
 specfem: libs
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory"
-
-$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
-	@echo "#!/usr/bin/env sh" >$@
-	@echo >>$@
-	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >>$@
-	@echo "FILE=cp2k-perf.txt" >>$@
-ifneq (,$(strip $(INDICES)))
-	@echo "RUNS=\"$(INDICES)\"" >>$@
-else
-	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >>$@
-endif
-	@echo >>$@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >>$@
-	@echo "  FILE=\$$1" >>$@
-	@echo "  shift" >>$@
-	@echo "fi" >>$@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >>$@
-	@echo "  SIZE=\$$1" >>$@
-	@echo "  shift" >>$@
-	@echo "else" >>$@
-	@echo "  SIZE=0" >>$@
-	@echo "fi" >>$@
-	@echo "cat /dev/null >\$${FILE}" >>$@
-	@echo >>$@
-	@echo "NRUN=1" >>$@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >>$@
-	@echo "for RUN in \$${RUNS}; do" >>$@
-	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >>$@
-	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
-	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
-	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >>\$${FILE}; } 2>&1)" >>$@
-	@echo "  RESULT=\$$?" >>$@
-	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
-	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
-	@echo "    exit 1" >>$@
-	@echo "  else" >>$@
-	@echo "    echo \"OK \$${ERROR}\"" >>$@
-	@echo "  fi" >>$@
-	@echo "  echo >>\$${FILE}" >>$@
-	@echo "  NRUN=\$$((NRUN+1))" >>$@
-	@echo "done" >>$@
-	@echo >>$@
-	@chmod +x $@
 
 $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh: $(ROOTDIR)/$(UTLDIR)/smmbench/.make $(ROOTDIR)/Makefile
 	@echo "#!/usr/bin/env sh" >$@
@@ -1023,129 +971,6 @@ endif
 	@echo >>$@
 	@chmod +x $@
 
-$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
-	@echo "#!/usr/bin/env sh" >$@
-	@echo >>$@
-	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >>$@
-	@echo "FILE=\$${HERE}/axhm-perf.txt" >>$@
-ifneq (,$(strip $(INDICES)))
-	@echo "RUNS=\"$(INDICES)\"" >>$@
-else
-	@echo "RUNS=\"4_6_9 8_8_8 13_13_13 16_8_13\"" >>$@
-endif
-	@echo >>$@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >>$@
-	@echo "  FILE=\$$1" >>$@
-	@echo "  shift" >>$@
-	@echo "fi" >>$@
-	@echo "cat /dev/null >\$${FILE}" >>$@
-	@echo >>$@
-	@echo "NRUN=1" >>$@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >>$@
-	@echo "for RUN in \$${RUNS}; do" >>$@
-	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >>$@
-	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
-	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
-	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
-	@echo "  RESULT=\$$?" >>$@
-	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
-	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
-	@echo "    exit 1" >>$@
-	@echo "  else" >>$@
-	@echo "    echo \"OK \$${ERROR}\"" >>$@
-	@echo "  fi" >>$@
-	@echo "  echo >>\$${FILE}" >>$@
-	@echo "  NRUN=\$$((NRUN+1))" >>$@
-	@echo "done" >>$@
-	@echo >>$@
-	@chmod +x $@
-
-$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
-	@echo "#!/usr/bin/env sh" >$@
-	@echo >>$@
-	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >>$@
-	@echo "FILE=\$${HERE}/grad-perf.txt" >>$@
-ifneq (,$(strip $(INDICES)))
-	@echo "RUNS=\"$(INDICES)\"" >>$@
-else
-	@echo "RUNS=\"4_6_9 8_8_8 13_13_13 16_8_13\"" >>$@
-endif
-	@echo >>$@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >>$@
-	@echo "  FILE=\$$1" >>$@
-	@echo "  shift" >>$@
-	@echo "fi" >>$@
-	@echo "cat /dev/null >\$${FILE}" >>$@
-	@echo >>$@
-	@echo "NRUN=1" >>$@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >>$@
-	@echo "for RUN in \$${RUNS}; do" >>$@
-	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >>$@
-	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
-	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
-	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
-	@echo "  RESULT=\$$?" >>$@
-	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
-	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
-	@echo "    exit 1" >>$@
-	@echo "  else" >>$@
-	@echo "    echo \"OK \$${ERROR}\"" >>$@
-	@echo "  fi" >>$@
-	@echo "  echo >>\$${FILE}" >>$@
-	@echo "  NRUN=\$$((NRUN+1))" >>$@
-	@echo "done" >>$@
-	@echo >>$@
-	@chmod +x $@
-
-$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
-	@echo "#!/usr/bin/env sh" >$@
-	@echo >>$@
-	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >>$@
-	@echo "FILE=\$${HERE}/rstr-perf.txt" >>$@
-ifneq (,$(strip $(INDICES)))
-	@echo "RUNS=\"$(INDICES)\"" >>$@
-	@echo "RUNT=\"$(INDICES)\"" >>$@
-else
-	@echo "RUNS=\"4_4_4 8_8_8\"" >>$@
-	@echo "RUNT=\"7_7_7 10_10_10\"" >>$@
-endif
-	@echo >>$@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >>$@
-	@echo "  FILE=\$$1" >>$@
-	@echo "  shift" >>$@
-	@echo "fi" >>$@
-	@echo "cat /dev/null >\$${FILE}" >>$@
-	@echo >>$@
-	@echo "NRUN=1" >>$@
-	@echo "NRUNS=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >>$@
-	@echo "NRUNT=\$$(echo \$${RUNT} | wc -w | tr -d ' ')" >>$@
-	@echo "NMAX=\$$((NRUNS*NRUNT))" >>$@
-	@echo "for RUN1 in \$${RUNS}; do" >>$@
-	@echo "  for RUN2 in \$${RUNT}; do" >>$@
-	@echo "  MVALUE=\$$(echo \$${RUN1} | cut -d_ -f1)" >>$@
-	@echo "  NVALUE=\$$(echo \$${RUN1} | cut -d_ -f2)" >>$@
-	@echo "  KVALUE=\$$(echo \$${RUN1} | cut -d_ -f3)" >>$@
-	@echo "  MMVALUE=\$$(echo \$${RUN2} | cut -d_ -f1)" >>$@
-	@echo "  NNVALUE=\$$(echo \$${RUN2} | cut -d_ -f2)" >>$@
-	@echo "  KKVALUE=\$$(echo \$${RUN2} | cut -d_ -f3)" >>$@
-	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (MNK=\$${MVALUE}x\$${NVALUE}x\$${KVALUE} MNK2=\$${MMVALUE}x\$${NNVALUE}x\$${KKVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
-	@echo "  RESULT=\$$?" >>$@
-	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
-	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
-	@echo "    exit 1" >>$@
-	@echo "  else" >>$@
-	@echo "    echo \"OK \$${ERROR}\"" >>$@
-	@echo "  fi" >>$@
-	@echo "  echo >>\$${FILE}" >>$@
-	@echo "  NRUN=\$$((NRUN+1))" >>$@
-	@echo "done" >>$@
-	@echo "done" >>$@
-	@echo >>$@
-	@chmod +x $@
-
 .PHONY: test-all
 test-all: tests
 
@@ -1163,33 +988,11 @@ build-tests: libs
 tests: libs
 	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory test"
 
-.PHONY: test-cp2k
-test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
-$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh libs cp2k
-	@$(FLOCK) $(call qdir,$@) "./cp2k-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*128)))"
-
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
 test-smm: $(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt
 $(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt: $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh libs smm
 	@$(FLOCK) $(call qdir,$@) "./smmf-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
-endif
-
-.PHONY: test-nek
-ifneq (,$(strip $(FC)))
-test-nek: \
-	$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt \
-	$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt \
-	$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
-$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory axhm"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
-$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory grad"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
-$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory rstr"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 endif
 
 $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
@@ -1347,11 +1150,7 @@ deepclean: realclean
 	@find . -type f \( -name .make -or -name .state \) -exec rm {} \;
 	@-rm -f $(ROOTSCR)/libxsmm_utilities.pyc
 	@-rm -rf $(ROOTSCR)/__pycache__
-	@-rm -f $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh
 	@-rm -f $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh
-	@-rm -f $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh
-	@-rm -f $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh
-	@-rm -f $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh
 	@-rm -f $(HEREDIR)/python3
 
 .PHONY: distclean
@@ -1500,11 +1299,9 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
 	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(SPLDIR)
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) \
 						$(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 endif
 
