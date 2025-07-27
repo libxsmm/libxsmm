@@ -11,13 +11,13 @@ env:
 
 steps:
   - label: "Normalized"
-    command: "scripts/tool_test.sh 13"
+    command: "scripts/tool_test.sh 12"
     env:
       STATIC_ANALYSIS: 1
   - wait
 
   - label: "Quick-SA"
-    command: "scripts/tool_test.sh 12"
+    command: "scripts/tool_test.sh 11"
     env:
       CONFIG: clang-160
       STATIC_ANALYSIS: 1
@@ -39,14 +39,6 @@ steps:
     env:
       CONFIG: gcc-81
       AVX: 3
-
-  - label: "GCC-NEW"
-    command: "scripts/tool_test.sh 11"
-    env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
-      CONFIG: gcc-131
-      LIBXSMM_MALLOC: 1
-      MALLOC: -1
 
   - label: "Clang"
     command: "scripts/tool_test.sh 4"
@@ -92,13 +84,8 @@ steps:
       LIBXSMM_TARGETS: "sse42 avx2 auto"
       CONFIG: clang-160
 
-  #- label: "PGI"
-  #  command: "scripts/tool_test.sh 11"
-  #  env:
-  #    CONFIG: pgi
-
   - label: "ABI"
-    command: "scripts/tool_test.sh 14"
+    command: "scripts/tool_test.sh 13"
     env:
       CONFIG: gcc-131
       STATIC_ANALYSIS: 1

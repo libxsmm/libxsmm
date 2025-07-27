@@ -39,9 +39,6 @@ steps:
 
   - label: "#11"
     command: "scripts/tool_test.sh 11"
-
-  - label: "#12"
-    command: "scripts/tool_test.sh 12"
     env:
       CONFIG: "clang-160"
       STATIC_ANALYSIS: 1

@@ -87,14 +87,6 @@ jobs:
       - name: TEST_6
         run: "scripts/tool_test.sh 6"
 
-  Test_11:
-    runs-on: [ self-hosted, graviton ]
-    needs: ec2-start
-    steps:
-      - uses: actions/checkout@v4
-      - name: TEST_11
-        run: "scripts/tool_test.sh 11"
-
   Fortran:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
