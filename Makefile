@@ -937,10 +937,6 @@ nek: libs
 smm: libs
 	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory"
 
-.PHONY: specfem
-specfem: libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory"
-
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "#!/usr/bin/env sh" >$@
 	@echo >>$@
@@ -1505,7 +1501,6 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) \
 						$(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 endif
 
 ifeq (Windows_NT,$(UNAME))
