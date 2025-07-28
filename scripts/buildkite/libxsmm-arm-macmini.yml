@@ -65,9 +65,3 @@ steps:
     concurrency_group: "libxsmm-arm-macmini"
     cancel_on_build_failing: true
     command: "scripts/tool_test.sh 6"
-
-  #- label: "Test #11"
-  #  concurrency: 1
-  #  concurrency_group: "libxsmm-arm-macmini"
-  #  cancel_on_build_failing: true
-  #  command: "scripts/tool_test.sh 11"

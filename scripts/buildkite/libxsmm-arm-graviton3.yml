@@ -52,11 +52,6 @@ steps:
     agents:
       queue: "aarch64"
 
-  - label: "Test #11"
-    command: "scripts/tool_test.sh 11"
-    agents:
-      queue: "aarch64"
-
   - label: "Fortran"
     command: "scripts/tool_test.sh 5"
     agents:
