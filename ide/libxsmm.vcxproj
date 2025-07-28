@@ -54,7 +54,6 @@
     <ClInclude Include="..\include\utils\libxsmm_barrier.h" />
     <ClInclude Include="..\include\utils\libxsmm_lpflt_quant.h" />
     <ClInclude Include="..\include\utils\libxsmm_math.h" />
-    <ClInclude Include="..\include\utils\libxsmm_mhd.h" />
     <ClInclude Include="..\include\utils\libxsmm_timer.h" />
     <ClInclude Include="..\src\generator_aarch64_instructions.h" />
     <ClInclude Include="..\src\generator_aarch64_reference.h" />
@@ -238,7 +237,6 @@
     <ClCompile Include="..\src\libxsmm_math.c" />
     <ClCompile Include="..\src\libxsmm_matrixeqn.c" />
     <ClCompile Include="..\src\libxsmm_memory.c" />
-    <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_rng.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />

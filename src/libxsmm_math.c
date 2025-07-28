@@ -12,12 +12,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
-# if !defined(LIBXSMM_MATHDIFF_MHD)
-#   include <utils/libxsmm_mhd.h>
-#   define LIBXSMM_MATHDIFF_MHD
-# endif
-#endif
 #if !defined(LIBXSMM_MATH_DELIMS)
 # define LIBXSMM_MATH_DELIMS " \t;,:"
 #endif
@@ -241,41 +235,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
       LIBXSMM_INIT
       if (NULL != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
-#if defined(LIBXSMM_MATHDIFF_MHD)
-          const char *const defaultname = ((('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env);
-          const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
-          const int envi = atoi(env), reshape = (1 < envi || -1 > envi);
-          size_t shape[2] = { 0 }, size[2] = { 0 };
-          char filename[256] = "";
-          libxsmm_mhd_element_handler_info info_dst;
-          LIBXSMM_MEMZERO127(&info_dst);
-          if (0 == reshape) {
-            shape[0] = (size_t)mm; shape[1] = (size_t)nn;
-            size[0] = (size_t)ldr; size[1] = (size_t)nn;
-          }
-          else { /* reshape */
-            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)ntotal);
-            shape[0] = ntotal / y; shape[1] = y;
-            size[0] = shape[0];
-            size[1] = shape[1];
-          }
-          info_dst.type = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
-          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
-          libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
-            type_src, ref, &info_dst, NULL/*handler*/, NULL/*header_size*/, NULL/*extension_header*/,
-            NULL/*extension*/, 0/*extension_size*/);
-#endif
           if (NULL != tst) {
-#if defined(LIBXSMM_MATHDIFF_MHD)
-            if (0 == reshape) {
-              size[0] = (size_t)ldt;
-              size[1] = (size_t)nn;
-            }
-            LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
-            libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
-              type_src, tst, &info_dst, NULL/*handler*/, NULL/*header_size*/, NULL/*extension_header*/,
-              NULL/*extension*/, 0/*extension_size*/);
-#endif
             if ('-' == *env && '1' < env[1]) {
               printf("LIBXSMM MATDIFF (%s): m=%" PRIuPTR " n=%" PRIuPTR " ldi=%" PRIuPTR " ldo=%" PRIuPTR " failed.\n",
                 libxsmm_get_typename(datatype), (uintptr_t)m, (uintptr_t)n, (uintptr_t)ldr, (uintptr_t)ldt);
