@@ -10,7 +10,7 @@ steps:
       queue: "ftp"
 
   - label: "BCSC SPMM"
-    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     agents:
       queue: "ftp"
 
@@ -30,7 +30,7 @@ steps:
   #    queue: "ftp"
 
   - label: "FSSPMDM SP"
-    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3"
       REALTYPE: "float"
@@ -39,7 +39,7 @@ steps:
       queue: "ftp"
 
   - label: "FSSPMDM DP"
-    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3"
       REALTYPE: "double"

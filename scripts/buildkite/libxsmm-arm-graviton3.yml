@@ -9,7 +9,7 @@ steps:
       queue: "aarch64"
 
   - label: "BCSC SPMM"
-    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     agents:
       queue: "aarch64"
 
@@ -24,7 +24,7 @@ steps:
       queue: "aarch64"
 
   - label: "FSSPMDM"
-    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     agents:
       queue: "aarch64"
     env:
@@ -32,7 +32,7 @@ steps:
       TEST_N: 48
 
   #- label: "PyFR"
-    #command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
+    #command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/performance.sh -r"
     #agents:
       #queue: "aarch64"
     #env:

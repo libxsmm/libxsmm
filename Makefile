@@ -331,7 +331,6 @@ HEADERS_UTILS := \
           $(ROOTINC)/utils/libxsmm_barrier.h \
           $(ROOTINC)/utils/libxsmm_timer.h \
           $(ROOTINC)/utils/libxsmm_math.h \
-          $(ROOTINC)/utils/libxsmm_mhd.h \
           $(NULL)
 HEADERS_MAIN := \
           $(ROOTINC)/libxsmm_generator.h \
@@ -354,7 +353,7 @@ SRCFILES_LIB := $(patsubst %,$(ROOTSRC)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
           libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c \
           libxsmm_utils.c libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_barrier.c \
-          libxsmm_rng.c libxsmm_mhd.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_rv64_reference.c)
+          libxsmm_rng.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_rv64_reference.c)
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(filter-out $(ROOTSRC)/generator_x86_reference.c $(ROOTSRC)/generator_aarch64_reference.c $(ROOTSRC)/generator_rv64_reference.c $(ROOTSRC)/generator_gemm_reference_impl.c $(ROOTSRC)/generator_mateltwise_reference_impl.c $(ROOTSRC)/generator_matequation_reference_impl.c, $(wildcard $(ROOTSRC)/generator_*.c))) \
           libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 SRCFILES := $(SRCFILES_LIB) $(SRCFILES_GEN_LIB) $(SRCFILES_KERNELS)
@@ -749,11 +748,11 @@ $(foreach OBJ,$(OBJFILES_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(DFLAGS) $(IFLAGS) $(call applyif,1,libxsmm_main,$(OBJ),-I$(BLDDIR)) $(CTARGET) $(CFLAGS))))
 else
-$(foreach OBJ,$(filter-out $(BLDDIR)/intel64/libxsmm_mhd.o,$(OBJFILES_LIB)),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(filter-out $(OBJFILES_LIB)),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTSRC)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(DFLAGS) $(IFLAGS) $(call applyif,1,libxsmm_main,$(OBJ),-I$(BLDDIR)) $(CTARGET) $(CFLAGS))))
-$(foreach OBJ,$(BLDDIR)/intel64/libxsmm_mhd.o,$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTSRC)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(patsubst $(OPTFLAGS),$(OPTFLAG1),$(CFLAGS)))))
@@ -915,8 +914,6 @@ endif
 
 # use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
 DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
-	| grep -v /deeplearning/embbag_distri/ \
-	| grep -v /deeplearning/sparse_adagrad_fused/ \
 	| grep -v /encoder/ \
 	$(NULL)))
 
@@ -928,10 +925,6 @@ $(DIRS_SAMPLES): libs
 .PHONY: smm
 smm: libs
 	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory"
-
-.PHONY: specfem
-specfem: libs
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory"
 
 $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh: $(ROOTDIR)/$(UTLDIR)/smmbench/.make $(ROOTDIR)/Makefile
 	@echo "#!/usr/bin/env sh" >$@
@@ -1064,12 +1057,12 @@ $(ROOTDIR)/$(DOCDIR)/libxsmm_compat.md $(ROOTDIR)/$(DOCDIR)/libxsmm_valid.md $(R
 		-o $(call qndir,$@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(UTLDIR)/*/README.md
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(UTLDIR)/*/README.md
 	@cd $(ROOTDIR)
 	@if [ "$$(command -v git)" ] && [ "$$(git ls-files version.txt)" ]; then \
-		git ls-files $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(UTLDIR)/*/README.md | xargs -I {} cat {}; \
+		git ls-files $(SPLDIR)/*/README.md $(UTLDIR)/*/README.md | xargs -I {} cat {}; \
 	else \
-		cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(UTLDIR)/*/README.md; \
+		cat $(SPLDIR)/*/README.md $(UTLDIR)/*/README.md; \
 	fi \
 	| $(SED) \
 		-e 's/^#/##/' \
@@ -1302,7 +1295,6 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) \
 						$(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 endif
 
 ifeq (Windows_NT,$(UNAME))
