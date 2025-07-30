@@ -39,15 +39,12 @@ steps:
 
   - label: "#11"
     command: "scripts/tool_test.sh 11"
-
-  - label: "#12"
-    command: "scripts/tool_test.sh 12"
     env:
       CONFIG: "clang-160"
       STATIC_ANALYSIS: 1
 
-  - label: "PyFR"
-    command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
+  - label: "Sparse A in regs"
+    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/performance.sh -r"
     env:
       CONFIG: "clang-160"
       PARTITIONS: "clxap"
@@ -59,13 +56,13 @@ steps:
       LOGRPTQRY: ""
 
   - label: "FSSPMDM"
-    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_TARGET=x86 LIBXSMM_TARGET=wsm LIBXSMM_TARGET=avx"
       CONFIG: "clang-160"
 
   - label: "FSSPMDM-HINT"
-    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 FSSPMDM_NOTUNE=1"
       PARTITIONS: "clxap"

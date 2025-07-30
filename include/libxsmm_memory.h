@@ -43,14 +43,18 @@
   LIBXSMM_MEMCPY127(DST, SRC, sizeof(*(SRC))); \
 } while(0)
 
-#define LIBXSMM_MEMSWP127_RHS(TYPE, DST, SRC, IDX) \
-  LIBXSMM_ISWAP((DST)[IDX], ((TYPE*)(SRC))[IDX])
-#define LIBXSMM_MEMSWP127(DST, SRC, SIZE) do { \
-  LIBXSMM_ASSERT((DST) != (SRC)); \
-  LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
+#define LIBXSMM_MEMSWP127_RHS(TYPE, A, B, IDX) \
+  LIBXSMM_ISWAP((A)[IDX], ((TYPE*)(B))[IDX])
+#define LIBXSMM_MEMSWP127(A, B, SIZE) do { \
+  LIBXSMM_ASSERT((A) != (B)); \
+  LIBXSMM_MEMORY127_LOOP(A, B, SIZE, \
   LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS); \
 } while (0)
 
+/** Assigns SRC to DST (must be L-values). Can be used to cast const-qualifiers. */
+#define LIBXSMM_VALUE_ASSIGN(DST, SRC) LIBXSMM_ASSIGN127(&(DST), &(SRC))
+/** Swap two arbitrary-sized values (must be L-values) */
+#define LIBXSMM_VALUE_SWAP(A, B) LIBXSMM_MEMSWP127(&(A), &(B), sizeof(DST))
 
 /** Returns the type-size of data-type (can be also libxsmm_datatype). */
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
@@ -105,26 +109,5 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
  * Optional delimiters determine characters splitting words (can be NULL).
  */
 LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char delims[]);
-
-/** Out-of-place shuffling of data given by elemsize and count. */
-LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
-  /** Shall be co-prime to count-argument; uses libxsmm_coprime2(count) if shuffle=NULL. */
-  const size_t* shuffle,
-  /** If NULL, the default value is one. */
-  const size_t* nrepeat);
-
-/** Out-of-place shuffling of data given by elemsize and count. */
-LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count,
-  /** Shall be co-prime to count-argument; uses libxsmm_coprime2(count) if shuffle=NULL. */
-  const size_t* shuffle,
-  /** If NULL, the default value is one. If zero, an ordinary copy is performed. */
-  const size_t* nrepeat);
-
-/** Determines the number of calls to restore the original data (libxsmm_shuffle2). */
-LIBXSMM_API size_t libxsmm_unshuffle(
-  /** The number of elements to be unshuffled. */
-  size_t count,
-  /** Shall be co-prime to count-argument; uses libxsmm_coprime2(count) if shuffle=NULL. */
-  const size_t* shuffle);
 
 #endif /*LIBXSMM_MEMORY_H*/
