@@ -68,7 +68,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( lib
   libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, (i_mateltwise_desc->m) ? 1 : 0 );
 }
 
-
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*  io_generated_code,
                                                          const unsigned int       i_gp_reg_addr,
                                                          const unsigned int       i_gp_reg_dst,
@@ -114,6 +114,7 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
   }
 }
 
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code* io_generated_code,
                                                           const unsigned int      i_gp_reg_addr,
                                                           const unsigned int      i_gp_reg_dst,
@@ -155,6 +156,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
   }
 }
 
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_store_regblock_2x8_rv64( libxsmm_generated_code* io_generated_code,
                                                           const unsigned int      i_gp_reg_addr,
                                                           const unsigned int      i_gp_reg_dst,
@@ -193,6 +195,7 @@ void libxsmm_generator_transform_store_regblock_2x8_rv64( libxsmm_generated_code
 }
 
 /* Performs 32bit 8x8 transpose */
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv( libxsmm_generated_code* io_generated_code,
                                                                                const unsigned int      i_gp_reg_dst_e,
                                                                                const unsigned int      i_gp_reg_dst_o,
@@ -271,6 +274,7 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv( l
 }
 
 /* Performs 64bit 4x8 transpose */
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x8_rvv( libxsmm_generated_code* io_generated_code,
                                                                                const unsigned int      i_gp_reg_dst_e,
                                                                                const unsigned int      i_gp_reg_dst_o,
