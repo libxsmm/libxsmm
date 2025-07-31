@@ -125,7 +125,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 4;
 
-  int i;
+  unsigned int i;
 
   printf("In regblock store valid %d %d ldo %d\n", i_valid_e_regs, i_valid_o_regs, i_mateltwise_desc->ldo);
 
@@ -166,7 +166,7 @@ void libxsmm_generator_transform_store_regblock_2x8_rv64( libxsmm_generated_code
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 4;
 
-  int i;
+  unsigned int i;
 
   for (i = 0; i < 2; i++){
     /* Store even register */
@@ -204,7 +204,7 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv( l
   int o_reg = i_gp_reg_dst_o;
   int s_reg = i_gp_reg_scratch;
 
-  int i;
+  unsigned int i;
 
   /* Store the even mask */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0,
@@ -282,7 +282,7 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x8_rvv( l
   int o_reg = i_gp_reg_dst_o;
   int s_reg = i_gp_reg_scratch;
 
-  int i;
+  unsigned int i;
 
   /* Store the even mask */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0,
@@ -515,7 +515,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_rvv_microkernel( libxsmm_ge
                                                                       const unsigned int                      i_gp_reg_scratch,
                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  // For small matrices invoke scalar transpose
+  /* For small matrices invoke scalar transpose */
   if ( (i_mateltwise_desc->m < 2) && (i_mateltwise_desc->n < 4) ) {
     libxsmm_generator_transform_norm_to_normt_mbit_scalar_rv64_microkernel( io_generated_code, io_loop_label_tracker,
                                                                           i_gp_reg_in, i_gp_reg_out,
