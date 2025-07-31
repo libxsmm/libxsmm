@@ -140,27 +140,30 @@ void libxsmm_generator_gemm_rv64_setup_k_strides( libxsmm_generated_code*       
                                                   const unsigned int                 i_m_blocking,
                                                   const unsigned int                 i_n_blocking );
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack_rv64( libxsmm_generated_code*        io_generated_code,
-                                                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                                                           const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                                                           libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                                                           libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                                                           libxsmm_datatype               i_in_dtype );
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack_rv64( libxsmm_generated_code*        io_generated_code,
+                                                                                        libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                                        const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                                        libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                                                        libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                                                        const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
+                                                                                        libxsmm_datatype               i_in_dtype );
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack_rv64( libxsmm_generated_code*        io_generated_code,
-                                                                               libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                               const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                               libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                               libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                               const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                               libxsmm_datatype               i_in_dtype );
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack_rv64( libxsmm_generated_code*        io_generated_code,
+                                                            libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                            const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                            libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                            libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                            const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
+                                                            libxsmm_datatype               i_in_dtype );
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB_rv64( libxsmm_generated_code*        io_generated_code,
-                                                                   libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                   const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                   libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                   libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc_orig );
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_opA_opB_rv64( libxsmm_generated_code*        io_generated_code,
+                                                libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                const libxsmm_gemm_descriptor* i_xgemm_desc_orig );
 #endif /* GENERATOR_GEMM_COMMON_RV64_H */
 

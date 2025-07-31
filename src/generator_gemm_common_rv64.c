@@ -15,38 +15,40 @@
 #include "generator_mateltwise_unary_binary_rv64.h"
 #include "generator_common_rv64.h"
 #include "generator_mateltwise_rv64.h"
+#include "generator_mateltwise_transform_rv64.h"
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_rv64( libxsmm_generated_code*    io_generated_code,
-                                                                                      libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                                      libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                                      libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                                      unsigned int                   i_gp_reg_in,
-                                                                                      unsigned int                   i_struct_gp_reg,
-                                                                                      unsigned int                   i_tmp_reg,
-                                                                                      unsigned int                   i_loop_reg,
-                                                                                      unsigned int                   i_bound_reg,
-                                                                                      unsigned int                   i_tmp_reg2,
-                                                                                      unsigned int                   i_tmp_reg3,
-                                                                                      libxsmm_meltw_unary_type       i_op_type,
-                                                                                      libxsmm_blasint                i_m,
-                                                                                      libxsmm_blasint                i_n,
-                                                                                      libxsmm_blasint                i_ldi,
-                                                                                      libxsmm_blasint                i_ldo,
-                                                                                      libxsmm_blasint                i_tensor_stride,
-                                                                                      libxsmm_datatype               i_in_dtype,
-                                                                                      libxsmm_datatype               i_comp_dtype,
-                                                                                      libxsmm_datatype               i_out_dtype,
-                                                                                      libxsmm_gemm_stack_var         i_stack_var_offs_ptr,
-                                                                                      libxsmm_gemm_stack_var         i_stack_var_scratch_ptr,
-                                                                                      libxsmm_gemm_stack_var         i_stack_var_dst_ptr,
-                                                                                      libxsmm_meltw_unary_type       i_op2_type,
-                                                                                      libxsmm_blasint                i_m2,
-                                                                                      libxsmm_blasint                i_n2,
-                                                                                      libxsmm_blasint                i_ldi2,
-                                                                                      libxsmm_blasint                i_ldo2,
-                                                                                      libxsmm_datatype               i_in2_dtype,
-                                                                                      libxsmm_datatype               i_comp2_dtype,
-                                                                                      libxsmm_datatype               i_out2_dtype ) {
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_rv64( libxsmm_generated_code*    io_generated_code,
+                                                                            libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                            libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                                            libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                                            unsigned int                   i_gp_reg_in,
+                                                                            unsigned int                   i_struct_gp_reg,
+                                                                            unsigned int                   i_tmp_reg,
+                                                                            unsigned int                   i_loop_reg,
+                                                                            unsigned int                   i_bound_reg,
+                                                                            unsigned int                   i_tmp_reg2,
+                                                                            unsigned int                   i_tmp_reg3,
+                                                                            libxsmm_meltw_unary_type       i_op_type,
+                                                                            libxsmm_blasint                i_m,
+                                                                            libxsmm_blasint                i_n,
+                                                                            libxsmm_blasint                i_ldi,
+                                                                            libxsmm_blasint                i_ldo,
+                                                                            libxsmm_blasint                i_tensor_stride,
+                                                                            libxsmm_datatype               i_in_dtype,
+                                                                            libxsmm_datatype               i_comp_dtype,
+                                                                            libxsmm_datatype               i_out_dtype,
+                                                                            libxsmm_gemm_stack_var         i_stack_var_offs_ptr,
+                                                                            libxsmm_gemm_stack_var         i_stack_var_scratch_ptr,
+                                                                            libxsmm_gemm_stack_var         i_stack_var_dst_ptr,
+                                                                            libxsmm_meltw_unary_type       i_op2_type,
+                                                                            libxsmm_blasint                i_m2,
+                                                                            libxsmm_blasint                i_n2,
+                                                                            libxsmm_blasint                i_ldi2,
+                                                                            libxsmm_blasint                i_ldo2,
+                                                                            libxsmm_datatype               i_in2_dtype,
+                                                                            libxsmm_datatype               i_comp2_dtype,
+                                                                            libxsmm_datatype               i_out2_dtype ) {
   libxsmm_descriptor_blob           l_meltw_blob;
   libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
@@ -82,7 +84,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
     libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_in, i_loop_reg, 0 );
   }
 
-  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, i_struct_gp_reg, LIBXSMM_RV64_GP_REG_UNDEF, l_offset_ptr_a, i_gp_reg_in );
+  libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, i_struct_gp_reg, i_gp_reg_in, l_offset_ptr_a );
 
   if ((is_offset_brgemm > 0) || (is_address_brgemm > 0)) {
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_tmp_reg2, i_gp_reg_in, 0 );
@@ -90,7 +92,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
 
   if (i_op2_type != LIBXSMM_MELTW_TYPE_UNARY_NONE) {
     libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, i_stack_var_scratch_ptr, i_tmp_reg);
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_RV64_GP_REG_UNDEF, l_offset_ptr_b, i_tmp_reg );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, i_struct_gp_reg, i_tmp_reg, l_offset_ptr_b );
   } else {
     libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, i_stack_var_dst_ptr, i_tmp_reg);
     if (is_brgemm > 0) {
@@ -136,7 +138,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
 
   if (is_brgemm > 0) {
     if (is_stride_brgemm > 0) {
-      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_gp_reg_in, i_gp_reg_in, (long long)i_tensor_stride );
+      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_gp_reg_in, i_tmp_reg, i_gp_reg_in, (long long)i_tensor_stride );
     }
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_loop_reg, i_loop_reg, 8 );
     libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_bound_reg, 1 );
@@ -1074,7 +1076,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_t
           LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
       i_xgemm_desc->ldb = (l_is_trans_b) ? i_xgemm_desc->n : i_xgemm_desc->k;
       libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg);
-      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, tmp_reg, i_gp_reg_mapping->gp_reg_b, 0, 0 );
+      libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, tmp_reg, i_gp_reg_mapping->gp_reg_b, 0 );
     }
   }
 
@@ -1183,12 +1185,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack_rv64( l
   libxsmm_rv64_instruction_restore_regs( io_generated_code, 0xe0f );
 }
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB_rv64( libxsmm_generated_code*        io_generated_code,
-                                                                   libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                   const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                   libxsmm_micro_kernel_config*   i_micro_kernel_config,
-                                                                   libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc_orig ) {
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_opA_opB_rv64( libxsmm_generated_code*        io_generated_code,
+                                                libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                const libxsmm_gemm_descriptor* i_xgemm_desc_orig ) {
   if ( ( i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_A) && (i_xgemm_desc_orig->m != 0) && (i_xgemm_desc_orig->k != 0) ) {
     /* if A needs to be transposed, use scratch in stack */
     libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ));

@@ -81,7 +81,7 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 4;
 
-  int i;
+  unsigned int i;
 
   for (i = 0; i < 4; i++){
     /* Load even register */
