@@ -128,8 +128,6 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
 
   unsigned int i;
 
-  printf("In regblock store valid %d %d ldo %d\n", i_valid_e_regs, i_valid_o_regs, i_mateltwise_desc->ldo);
-
   LIBXSMM_UNUSED(e_reg);
   LIBXSMM_UNUSED(o_reg);
 
@@ -141,7 +139,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out);
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
     }
 
     /* store odd register */
@@ -151,7 +149,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out);
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
     }
   }
 }
@@ -178,7 +176,7 @@ void libxsmm_generator_transform_store_regblock_2x8_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, LIBXSMM_RV64_GP_REG_X18, i_gp_reg_addr, 4 * i_micro_kernel_config->datatype_size_out);
+          i_gp_reg_addr, LIBXSMM_RV64_GP_REG_X28, i_gp_reg_addr, 4 * i_micro_kernel_config->datatype_size_out);
     }
 
     /* Store odd register */
@@ -188,7 +186,7 @@ void libxsmm_generator_transform_store_regblock_2x8_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, LIBXSMM_RV64_GP_REG_X18, 4 * i_micro_kernel_config->datatype_size_out);
+          i_gp_reg_addr, LIBXSMM_RV64_GP_REG_X28, 4 * i_micro_kernel_config->datatype_size_out);
 
     }
   }
@@ -370,19 +368,19 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
-  /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
-
   /* Load tensor from the src registers */
   libxsmm_generator_transform_load_regblock_8x8_rv64(io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, (i_n / 2) + (i_n % 2), i_n / 2, i_micro_kernel_config, i_mateltwise_desc);
+
+  /* Set SEW and VL */
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Pass through shuffle network */
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 4, l_reg_scratch_start, 0xaa, 0x55, 1);
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 1, l_reg_scratch_start, 0xcc, 0x33, 2);
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 2, l_reg_scratch_start, 0xf0, 0x0f, 4);
 
-  /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  /* Set SEW and VL for store */
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Store the registers to the dst */
   libxsmm_generator_transform_store_regblock_8x8_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, (i_m / 2 + i_m % 2), i_m / 2, i_micro_kernel_config, i_mateltwise_desc );
@@ -390,10 +388,10 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
-  /* Reset output pointer for next m block*/
+  /* Reset output pointer for next m block */
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
                                               i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out,
-                                              ((long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out * i_n) - (8LL * (long long)i_micro_kernel_config->datatype_size_out) );
+                                              ((long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out * i_m) - (i_n * (long long)i_micro_kernel_config->datatype_size_out) );
 }
 
 LIBXSMM_API_INTERN
@@ -494,7 +492,6 @@ void libxsmm_generator_transform_norm_to_normt_32bit_rvv_microkernel( libxsmm_ge
         libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( io_generated_code, io_loop_label_tracker, i_gp_reg_in,
                                                                                 i_gp_reg_out, i_gp_reg_scratch, i_mateltwise_desc->m % 8, 8,
                                                                                 i_micro_kernel_config, i_mateltwise_desc );
-
         /* close n footer */
         libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, 8 );
       }
@@ -552,11 +549,11 @@ void libxsmm_generator_transform_norm_to_normt_64bit_rvv_microkernel( libxsmm_ge
 
       /* advance output pointer */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                       i_gp_reg_out, LIBXSMM_RV64_GP_REG_X18, i_gp_reg_out, (8LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) );
+                                       i_gp_reg_out, LIBXSMM_RV64_GP_REG_X28, i_gp_reg_out, (8LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) );
 
       /* advance input pointer */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                       i_gp_reg_in, LIBXSMM_RV64_GP_REG_X18, i_gp_reg_in, -1 * (((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (8LL * i_micro_kernel_config->datatype_size_in)) );
+                                       i_gp_reg_in, LIBXSMM_RV64_GP_REG_X28, i_gp_reg_in, -1 * (((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (8LL * i_micro_kernel_config->datatype_size_in)) );
 
       /* close m loop */
       libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, (i_mateltwise_desc->m/4)*4 );
