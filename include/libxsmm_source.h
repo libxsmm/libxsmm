@@ -119,11 +119,7 @@
 #include "../src/libxsmm_cpuid_arm.c"
 #include "../src/libxsmm_cpuid_rv64.c"
 #include "../src/libxsmm_cpuid_x86.c"
-#include "../src/libxsmm_ext.c"
-#include "../src/libxsmm_ext_gemm.c"
-#include "../src/libxsmm_ext_xcopy.c"
 #include "../src/libxsmm_fsspmdm.c"
-#include "../src/libxsmm_gemm.c"
 #include "../src/libxsmm_generator.c"
 #include "../src/libxsmm_hash.c"
 #include "../src/libxsmm_lpflt_quant.c"
@@ -138,6 +134,5 @@
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"
 #include "../src/libxsmm_utils.c"
-#include "../src/libxsmm_xcopy.c"
 
 #endif /*LIBXSMM_SOURCE_H*/

@@ -530,6 +530,9 @@ LIBXSMM_API void libxsmm_xfree(const void* memory, int check);
 /** Determines the given value in double-precision (EXIT_SUCCESS if value is NULL). */
 LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 
+/** get GEMM prefetch type */
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
+
 /**
  * Format for instance an amount of Bytes like libxsmm_format_value(result, sizeof(result), nbytes, "KMGT", "B", 10).
  * The value returned is in requested/determined unit so that the user can decide about printing the buffer.

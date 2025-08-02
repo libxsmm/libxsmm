@@ -25,6 +25,7 @@ include $(DEPDIR)/Makefile.inc
 # necessary include directories
 IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(DEPDIR)/include)
+LDFLAGS += -lblas
 
 OUTNAME := pyfr
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \

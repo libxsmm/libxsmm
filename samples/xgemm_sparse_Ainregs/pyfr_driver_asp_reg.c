@@ -19,16 +19,11 @@
 #define EPSILON_double 1e-8
 #define EPSILON_float 1e-4
 
-#if !defined(GEMM)
-# if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
-     (defined(LIBXSMM_PLATFORM_X86))
-#   include <mkl.h>
-# else
-LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
-# endif
-# define GEMM LIBXSMM_GEMM_SYMBOL(REALTYPE)
-#endif
+int dgemm_(char *transa, char *transb, int *m, int *n,
+  int *k, double *alpha, double *a, int *lda,
+  double *b, int *ldb, double *beta, double *c, int *ldc);
 
+#define GEMM dgemm_
 
 LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
   unsigned int** o_row_idx, unsigned int** o_column_idx, REALTYPE** o_values,

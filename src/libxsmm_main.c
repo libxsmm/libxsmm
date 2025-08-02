@@ -10,8 +10,6 @@
 ******************************************************************************/
 #include "libxsmm_main.h"
 #include "libxsmm_trace.h"
-#include "libxsmm_xcopy.h"
-#include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
 #if defined(LIBXSMM_PERF)
@@ -1231,7 +1229,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_ASSERT(NULL != new_cache); /* SA: suppress false positive */
       memset(new_cache, 0, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type));
 #endif
-      libxsmm_xcopy_init(libxsmm_target_archid);
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) ((libxsmm_code_pointer*)new_registry)[i].ptr = NULL;
       LIBXSMM_ASSERT(NULL == internal_registry && NULL == internal_registry_keys);
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1242,7 +1239,6 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
-      libxsmm_gemm_init();
 #if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -1484,8 +1480,6 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_finalize();
 #endif
-      libxsmm_xcopy_finalize();
-      libxsmm_gemm_finalize();
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST); /* invalidate code cache (TLS) */
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1808,6 +1802,21 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
   }
   return result;
 }
+
+
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
+{
+  libxsmm_gemm_prefetch_type result;
+  if (0 > prefetch) {
+    LIBXSMM_INIT /* load configuration */
+    result = LIBXSMM_GEMM_PREFETCH_NONE;
+  }
+  else {
+    result = (libxsmm_gemm_prefetch_type)prefetch;
+  }
+  return result;
+}
+
 
 LIBXSMM_API_INLINE const char* libxsmm_get_i4gemm_typename(const unsigned char* datatype)
 {
@@ -3320,10 +3329,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     wrap.kind = (libxsmm_descriptor_kind)(descriptor->flags < LIBXSMM_GEMM_FLAG_DESC_ISBIG
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
-    if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
-      const int gemm_prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-      wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
-    }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
   }
 #if !defined(NDEBUG)
@@ -3361,7 +3366,7 @@ LIBXSMM_API libxsmm_tilecfgfunction libxsmm_dispatch_tilecfg_gemm( const libxsmm
     gemm_shape.b_in_type, gemm_shape.comp_type, gemm_shape.out_type,
     gemm_shape.m, gemm_shape.n, gemm_shape.k,
     gemm_shape.lda, gemm_shape.ldb, gemm_shape.ldc,
-    l_gemm_flags, libxsmm_get_gemm_prefetch(0));
+    l_gemm_flags, LIBXSMM_GEMM_PREFETCH_NONE);
 
   /* JIT! */
   result = libxsmm_xmmdispatch(desc);
