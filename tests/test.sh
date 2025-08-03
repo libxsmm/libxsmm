@@ -26,25 +26,17 @@ fi
 
 #Eventually disable a set of tests e.g., TESTS_DISABLED="headeronly"
 
-# list of tests that produce "application shall be linked against LAPACK/BLAS dgemm" in case of BLAS=0
-TESTS_NEEDBLAS="gemm.c gemmbatch.c wrap.sh"
-# grep pattern based on TESTS_NEEDBLAS
-TESTS_NEEDBLAS_GREP=$(echo "${TESTS_NEEDBLAS}" | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
   TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
     dispatch.sh eltwise.sh equation.sh \
     fsspmdm.sh memcmp.sh \
-    packed.sh smm.sh wrap.sh"
+    packed.sh smm.sh"
   if [ "${SORT}" ]; then
     TESTS=$(echo "${TESTS}" | ${TR} -s " " "\n" | ${SORT})
   fi
 else
   TESTS="$*"
-fi
-
-if [ "${TESTS}" ] && [ "$(${GREP} 'BLAS=0' "${HERE}/../.state" 2>/dev/null)" ]; then
-  TESTS=$(echo "${TESTS}" | ${GREP} -v "${TESTS_NEEDBLAS_GREP}")
 fi
 
 if [ "Windows_NT" = "${OS}" ]; then
@@ -75,7 +67,7 @@ for TEST in ${TESTS}; do
   if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
     cd "${HERE}" || exit 1
     if [ -e "${HERE}/${NAME}.sh" ]; then
-      RESULT=0
+      ERROR=$(bash ${HERE}/${NAME}.sh)
     elif [ -e "${HERE}/${NAME}${EXE}" ]; then
       ERROR=$({ \
         if [ "$(${LDD} "${HERE}/${NAME}${EXE}" 2>/dev/null | ${GREP} libiomp5\.)" ]; then \

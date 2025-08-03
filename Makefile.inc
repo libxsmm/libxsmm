@@ -435,13 +435,6 @@ ifeq (0,$(STATIC))
   endif
 endif
 
-# BLAS is not used by default
-ifneq (0,$(LNKSOFT))
-  BLAS ?= 0
-else
-  BLAS ?= 2
-endif
-
 CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
 ifeq (,$(CXX_VERSION))
   CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
@@ -735,9 +728,6 @@ else # MinGW
   ILIBEXT ?= a
 endif
 
-# Separate control on how to link against the BLAS library
-BLAS_STATIC ?= $(STATIC)
-
 # PGI: ignore env. variable (same name)
 override PGI := 0
 ifeq (0,$(XSMM_GCC)) # not GCC
@@ -922,23 +912,6 @@ else
   DYNAMIC := 1
 endif
 DYNAMIC ?= 0
-
-# enable MKL (if available)
-ifeq (,$(strip $(MKLROOT)))
-  BLAS_INCFILE := $(wildcard /opt/intel/oneapi/mkl/latest/include/mkl.h)
-  ifeq (,$(BLAS_INCFILE))
-    BLAS_INCFILE := $(call wildcard1,/opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)
-  endif
-  ifneq (,$(BLAS_INCFILE))
-    MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/..)
-  endif
-endif
-ifeq (,$(strip $(MKLROOT)))
-  BLAS_INCFILE := $(strip $(wildcard /usr/include/mkl/mkl.h))
-  ifneq (,$(BLAS_INCFILE))
-    MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/../..)
-  endif
-endif
 
 # Compiler is used for link stage
 ifneq (Darwin,$(UNAME))
@@ -2100,7 +2073,7 @@ ifeq (Darwin,$(UNAME))
 endif
 
 ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
-  ifneq (,$(filter-out 0,$(THREADS) $(BLAS)))
+  ifneq (,$(filter-out 0,$(THREADS)))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
   endif
@@ -2199,253 +2172,6 @@ ifneq (0,$(ILP64))
   MAKE_ILP64 := $(ILP64)
 endif
 endif
-ifneq (0,$(MAKE_ILP64))
-  BLAS_BITS := 64
-  MKL_BITS := ilp64
-else
-  MKL_BITS := lp64
-endif
-
-ifneq (0,$(BLAS))
-  ifneq (Darwin,$(UNAME))
-    MKL_PLATFORM := linux
-  else # macOS
-    MKL_PLATFORM := mac
-  endif
-endif
-
-ifneq (0,$(BLAS_STATIC))
-  BLASLIBEXT ?= $(SLIBEXT)
-else # shared (DLL)
-  BLASLIBEXT ?= $(ILIBEXT)
-endif
-
-ifneq (,$(strip $(MKLROOT)))
-  ifeq (0,$(PGI))
-    MKL ?= $(if $(BLASLIB),0,$(BLAS))
-    ifneq (,$(strip $(FC)))
-      ifneq (0,$(shell echo "$$((0==$(XSMM_GCC)||40600<=$(GCC_VERSION_NUM)))"))
-        MKL_DIRECT ?= 0
-      else
-        MKL_DIRECT := 0
-      endif
-    else
-      MKL_DIRECT := 0
-    endif
-  else
-    MKL ?= 0
-  endif
-else # disable
-  MKL := 0
-endif
-ifneq (0,$(MKL))
-  ifeq (1,$(MKL_DIRECT))
-    ifeq (1,$(MKL))
-      BLAS_FLAGS += -DMKL_DIRECT_CALL_SEQ
-    else
-      BLAS_FLAGS += -DMKL_DIRECT_CALL
-    endif
-    ifneq (0,$(XSMM_GCC))
-      CXXFLAGS += -Wno-unused-value
-      CFLAGS += -Wno-unused-value
-    endif
-  else ifneq (0,$(MKL_DIRECT))
-    ifeq (1,$(MKL))
-      BLAS_FLAGS += -DMKL_DIRECT_CALL_SEQ_JIT
-    else
-      BLAS_FLAGS += -DMKL_DIRECT_CALL_JIT
-    endif
-    ifneq (0,$(XSMM_GCC))
-      CXXFLAGS += -Wno-unused-value
-      CFLAGS += -Wno-unused-value
-    endif
-  endif
-  BLAS_FLAGS += -D__CBLAS
-endif
-ifneq (Darwin,$(UNAME))
-  ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
-    MKL_ARCH := x86_64-linux-gnu
-  else
-    MKL_ARCH := intel64
-  endif
-endif
-
-ifeq (,$(wildcard $(BLAS_INCFILE) $(MKLROOT)/include/mkl.h))
-  MKL := 0
-endif
-ifeq (1,$(MKL)) # sequential
-  BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
-  MKL_THREADS := sequential
-else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
-  MKL_THREADS := $(MKL_OMPRTL)_thread
-  ifeq (0,$(OMP))
-    ifneq (gnu,$(MKL_OMPRTL))
-      BLAS_LDFLAGS += $(OMPLIB)
-    else
-      BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),gomp)
-    endif
-  else ifeq (gnu,$(OMPLIB)$(MKL_OMPRTL))
-    BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),gomp)
-  endif
-  ifneq (0,$(THREADS))
-    BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
-  endif
-endif
-
-ifneq (0,$(MKL))
-  ifeq (,$(BLAS_INCFILE))
-    BLAS_IFLAGS += -I$(call quote,$(MKLROOT)/include)
-  else
-    BLAS_IFLAGS += -I$(call qdir,$(BLAS_INCFILE))
-  endif
-  BLAS_LDFLAGS += $(call abslibpath_force,$(MKLROOT)/lib/$(MKL_ARCH))
-  ifeq (0,$(BLAS_STATIC)) # shared
-    BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
-      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(ILIBEXT)) \
-      $(call abslibfile,libmkl_core.$(ILIBEXT)) \
-      $(call abslibfile,libmkl_$(MKL_THREADS).$(ILIBEXT)) \
-      $(BLAS_LDFLAGS)
-  else # static
-    BLAS_LDFLAGS := $(XGROUP_BEGIN) \
-      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(SLIBEXT) \
-      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
-      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_THREADS).$(SLIBEXT) \
-    $(XGROUP_END) $(BLAS_LDFLAGS)
-  endif
-else ifneq (0,$(BLAS)) # generic
-  ifneq (,$(AOCL_ROOT))
-    ifeq (0,$(BLAS_STATIC)) # shared
-      ifeq (1,$(BLAS)) # sequential
-        BLAS_LDFLAGS := -L$(AOCL_ROOT)/lib -lblis $(BLAS_LDFLAGS)
-      else # multi-threaded
-        BLAS_LDFLAGS := -L$(AOCL_ROOT)/lib -lblis-mt $(BLAS_LDFLAGS)
-      endif
-    else # static
-      ifeq (1,$(BLAS)) # sequential
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.$(SLIBEXT) $(BLAS_LDFLAGS)
-      else # multi-threaded
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.$(SLIBEXT) $(BLAS_LDFLAGS)
-      endif
-    endif
-  else ifeq (,$(strip $(BLASLIB)))
-    ifneq (1,$(BLAS))
-      ifneq (0,$(OMP))
-        BLAS_THREADS := o
-      else
-        BLAS_THREADS := p
-      endif
-    endif
-    BLASDIR ?= $(wildcard $(LIBFIND) /usr/lib /usr/lib64 $(subst :, ,$(LD_LIBRARY_PATH)))
-    BLASROOT := $(wildcard $(patsubst %,%/..,$(BLASDIR)))
-    ifeq (0,$(BLAS_STATIC)) # shared
-      BLASTEST := $(filter-out -static,$(SLDFLAGS)) $(patsubst %,-L%,$(BLASDIR))
-    else # static
-      BLASTEST := $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
-    endif
-    BLASLIBFILE := $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
-    ifeq (,$(BLASLIBFILE)) # newer distributions symlink non-decorated library to threaded OpenBLAS
-      BLASLIBFILE := $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_BITS))
-    endif
-    # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
-    ifeq (0,$(PGI))
-      OPENBLAS := $(if $(BLASLIBFILE),1,0)
-    else # PGI
-      OPENBLAS := 0
-    endif
-    ifneq (0,$(OPENBLAS)) # OpenBLAS
-      # OpenBLAS also carries the CBLAS bits
-      BLAS_FLAGS += -D__BLAS=$(BLAS) -D__OPENBLAS
-      ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT)))))
-      else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT)))))
-      else ifneq (,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT)))))
-      endif
-    else ifneq (0,$(filter 0,$(BLASREF))) # BLAS (reference)
-      BLAS_FLAGS += -D__BLAS
-      ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
-        BLASLIBFILE := $(call libpath,$(LD),$(BLASTEST),blas$(BLAS_BITS).dll)
-      else
-        BLASLIBFILE := $(call libpath,$(LD),$(BLASTEST),blas$(BLAS_BITS))
-      endif
-    endif
-    ifneq (,$(BLASLIBFILE))
-      ifeq (0,$(BLAS_STATIC)) # shared (END/BEGIN not BEGIN/END)
-        BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call abslib,$(BLASLIBFILE)) $(XLIB_BEGIN_FORCE)
-      else # static
-        BLAS_LDFLAGS += $(BLASLIBFILE)
-      endif
-      BLASREF ?= 1
-    else ifneq (,$(call ctest,$(LD),-framework Accelerate)) # macOS
-      BLAS_INCFILE := $(shell $(LD) $(call linkopt,-v) 2>&1 \
-                     | grep -i frameworks 2>/dev/null \
-                     | xargs -I {} find {} -name cblas.h 2>/dev/null \
-                     | head -n1)
-      ifneq (,$(BLAS_INCFILE))
-        BLAS_FLAGS += -I$(call qapath,$(call qdir,$(BLAS_INCFILE)))
-      endif
-      #EXCLUDE_VALUE += -framework Accelerate
-      BLAS_LDFLAGS += -framework Accelerate
-      BLAS_FLAGS += -D__CBLAS
-    else # fallback (END/BEGIN not BEGIN/END)
-      #BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
-      BLAS_LDFLAGS += -lblas
-      BLASREF ?= 1
-    endif
-    BLASREF ?= 0
-    ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
-    ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
-      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslib,$(OMPLIBFILE)) $(XLIB_END)
-      else # common link BLAS/OMP-link flags (all compilers)
-        BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(OMPLIBFILE)) $(XLIB_END)
-      endif
-    endif
-    endif
-  else # BLAS library is specified via BLASLIB
-    #BLASTEST := $(NULL)
-    BLAS_FLAGS += -D__BLAS=$(BLAS)
-    ifneq (,$(findstring openblas,$(call qndir,$(BLASLIB))))
-      BLAS_FLAGS += -D__OPENBLAS
-    endif
-    ifneq (./,$(firstword $(BLASDIR))$(call qdir,$(BLASLIB)))
-      ifeq (./,$(call qdir,$(BLASLIB)))
-        BLAS_LDFLAGS += $(call abslib,$(firstword $(BLASDIR))/$(if $(call qsuffix,$(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
-      else
-        BLAS_LDFLAGS += $(call abslib,$(if $(call qsuffix,$(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
-      endif
-    else # fallback
-      BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),$(BLASLIB))
-    endif
-  endif
-endif
-ifneq (0,$(BLAS))
-ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
-  ifneq (,$(LIBGFORTRAN))
-    ifneq (0,$(STATIC))
-      BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) $(XLIB_END)
-    else
-      BLAS_LDFLAGS += $(call abslibrpath,$(LIBGFORTRAN))
-    endif
-  endif
-  ifneq (,$(QUADMATH))
-    ifneq (0,$(STATIC))
-      BLAS_CLDFLAGS += $(XLIB_BEGIN) $(QUADMATH) $(XLIB_END)
-    else
-      BLAS_LDFLAGS += $(call abslibrpath,$(QUADMATH))
-    endif
-  endif
-  ifneq (,$(LIBM))
-    ifneq (0,$(STATIC))
-      BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBM) $(XLIB_END)
-    else
-      BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
-    endif
-  endif
-endif
-endif
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
 # cleanup eventually duplicated flags and slashes
@@ -2467,28 +2193,21 @@ FLDFLAGS := $(call uniqadd,FLDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
 LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
 LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
 
-# no-BLAS flags: cleanup and extra flags; merged ("=" rather than ":=")
-NOBLAS_CXXCLEAN := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_CXXFLAGS  = $(NOBLAS_CXXCLEAN)
-NOBLAS_FCCLEAN  := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS   = $(NOBLAS_FCCLEAN)
-NOBLAS_CCLEAN   := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS    = $(NOBLAS_CCLEAN)
-NOBLAS_FLAGS     = $(call cleanup,$(filter-out -D__BLAS%,$(DFLAGS)))
-NOBLAS_LDCLEAN  := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
-NOBLAS_LDFLAGS   = $(NOBLAS_LDCLEAN)
-NOBLAS_CLDCLEAN := $(call cleanld,$(CLDFLAGS))
-NOBLAS_CLDFLAGS  = $(NOBLAS_CLDCLEAN)
-NOBLAS_IFLAGS    = $(call cleanup,$(IFLAGS))
-
-# regular flags: cleanup
-CXXFLAGS   := $(call cleanup,$(BLAS_CXXFLAGS) $(NOBLAS_CXXFLAGS))
-FCFLAGS    := $(call cleanup,$(BLAS_FCFLAGS) $(NOBLAS_FCFLAGS))
-CFLAGS     := $(call cleanup,$(BLAS_CFLAGS) $(NOBLAS_CFLAGS))
-DFLAGS     := $(call cleanup,$(BLAS_FLAGS) $(NOBLAS_FLAGS))
-IFLAGS     := $(call cleanup,$(BLAS_IFLAGS) $(NOBLAS_IFLAGS))
-CLDFLAGS   := $(call cleanld,$(BLAS_CLDFLAGS) $(NOBLAS_CLDFLAGS))
-LDFLAGS    := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
+# cleanup and extra flags; merged ("=" rather than ":=")
+CXXCLEAN   := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+CXXFLAGS    = $(CXXCLEAN)
+FCCLEAN    := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+FCFLAGS     = $(FCCLEAN)
+CCLEAN     := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+CFLAGS      = $(CCLEAN)
+DCLEAN     := $(call cleanup,$(DFLAGS))
+DFLAGS      = $(DCLEAN)
+LDCLEAN    := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
+LDFLAGS     = $(LDCLEAN)
+CLDCLEAN   := $(call cleanld,$(CLDFLAGS))
+CLDFLAGS    = $(CLDCLEAN)
+ICLEAN     := $(call cleanup,$(IFLAGS))
+IFLAGS      = $(ICLEAN)
 CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
 FLDFLAGS   := $(call cleanld,$(FLDFLAGS))
 
@@ -2509,15 +2228,14 @@ STATEMAK := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFI
 ifneq (0,$(STATEFLT))
   STATEVAR := $(filter-out \
     $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
-    DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
-    %LIB FLDFLAGS OPSYS %DEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN CLDFLAGS \
+    DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE \
+    %LIB FLDFLAGS OPSYS %DEP LIBFIND LIBDL LIBRT LIBM LIBCPP SUITE PEDANTIC CMAIN CLDFLAGS \
     GNU CCAR LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME STATEMAK \
     CPEDANTIC FREEFORM FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS PYTHON% HOST% TMUX %COLORS WHOLE_% \
     HEREDIR HOMEDIR UNUSED TEST% MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %_FLAG \
     CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR FINFO ENVBIN FSTD GINFO XDG_DATA_DIRS ONEVERSION \
-    LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR DYNAMIC XGROUP_% \
+    LIBPTHREAD CSTD CWARNEXTRA QUADMATH FYPPEXE INCLUDEMAKE LIBDIR OBJDIR DYNAMIC XGROUP_% \
     $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
-    $(if $(filter $(BLAS_STATIC),$(STATIC)),BLAS_STATIC) \
     $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
     $(if $(filter 0,$(MKL)),MKL_%), \
     $(.VARIABLES))

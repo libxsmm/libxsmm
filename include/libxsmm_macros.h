@@ -202,30 +202,6 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-LIBXSMM_PRAGMA_DIAG_PUSH()
-LIBXSMM_PRAGMA_DIAG_OFF_VARUNUSED()
-/** MKL_DIRECT_CALL requires to include the MKL interface. */
-#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL) || \
-    (defined(__MKL) && !defined(LIBXSMM_BUILD) && \
-    (!defined(__BLAS) || (0 != __BLAS)))) && \
-    (defined(LIBXSMM_PLATFORM_X86))
-# if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
-#   error "Inconsistent ILP64 configuration detected!"
-# endif
-# include <mkl.h>
-#endif
-/** __INTEL_MKL__ is needed later to fix some NOTHROW issue. */
-#if defined(__MKL) && !defined(__INTEL_MKL__) && defined(LIBXSMM_PLATFORM_X86) && \
-    defined(NOTHROW)
-# include <mkl_version.h>
-#endif
-/** Calculation of INTEL_MKL_VERSION has no continuous history. */
-#if defined(__INTEL_MKL__) && defined(__INTEL_MKL_MINOR__) && defined(__INTEL_MKL_UPDATE__)
-# define LIBXSMM_MKL_VERSION3 LIBXSMM_VERSION3(__INTEL_MKL__, __INTEL_MKL_MINOR__, __INTEL_MKL_UPDATE__)
-# define LIBXSMM_MKL_VERSION2 LIBXSMM_VERSION2(__INTEL_MKL__, __INTEL_MKL_MINOR__)
-#endif
-LIBXSMM_PRAGMA_DIAG_POP()
-
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
 #define LIBXSMM_IS_INTEGER(TYPE, VALUE, LO, HI) ( \
   ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && LIBXSMM_MIN(1ULL*(VALUE),HI) <= (HI) && \
@@ -276,59 +252,6 @@ LIBXSMM_PRAGMA_DIAG_POP()
 # define LIBXSMM_CAST_BLASINT(VALUE) LIBXSMM_CAST_INT(VALUE)
 #endif
 
-/* Const-qualify BLAS functions */
-#if defined(LIBXSMM_BLAS_CONST)
-# undef LIBXSMM_BLAS_CONST
-# define LIBXSMM_BLAS_CONST const
-#elif defined(OPENBLAS_CONST)
-# define LIBXSMM_BLAS_CONST OPENBLAS_CONST
-#elif (defined(LIBXSMM_BLAS_NONCONST) || defined(__OPENBLAS) || defined(__OPENBLAS77)) \
-   && !defined(LIBXSMM_BUILD)
-# define LIBXSMM_BLAS_CONST
-#else
-# define LIBXSMM_BLAS_CONST const
-#endif
-
-/* Control BLAS dependency */
-#if !defined(LIBXSMM_NO_BLAS)
-# if (!defined(__BLAS) || (0 != __BLAS)) && \
-      !(defined(LIBXSMM_PLATFORM_AARCH64) && defined(_WIN32))
-#   define LIBXSMM_NO_BLAS 0
-#   define LIBXSMM_BLAS 1
-# else
-#   define LIBXSMM_NO_BLAS 1
-#   define LIBXSMM_BLAS 0
-# endif
-#endif
-
-#if defined(LIBXSMM_BUILD)
-# if defined(LIBXSMM_BUILD_EXT) && defined(_WINDLL) && \
-    (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
-#   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_APIEXT
-# elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
-#   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_API
-# endif
-#endif
-#if !defined(LIBXSMM_BLAS_SYMBOL_VISIBILITY)
-# define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_EXTERN LIBXSMM_VISIBILITY_IMPORT
-#endif
-
-#if defined(NOTHROW)
-# define LIBXSMM_BLAS_NOEXCEPT_AUX NOTHROW
-#else
-# define LIBXSMM_BLAS_NOEXCEPT_AUX LIBXSMM_NOEXCEPT
-#endif
-#define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
-#if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided LIBXSMM_BLAS_NOEXCEPT_AUX
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOEXCEPT_AUX
-#else
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch
-#endif
-#define LIBXSMM_BLAS_NOEXCEPT_gemm LIBXSMM_BLAS_NOEXCEPT_AUX
-#define LIBXSMM_BLAS_NOEXCEPT_gemv LIBXSMM_BLAS_NOEXCEPT_AUX
-
 /** Construct BLAS-style prefixes. */
 #define LIBXSMM_TPREFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_, TYPE)
 #define LIBXSMM_TPREFIX(TYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), FUNCTION)
@@ -340,90 +263,6 @@ LIBXSMM_PRAGMA_DIAG_POP()
 
 /* Construct prefix names, function type or dispatch function from given input and output types. */
 #define LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION) LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), FUNCTION)
-
-/** Construct symbol name from a given real type name (float, double, etc.). */
-#define LIBXSMM_BLAS_SYMBOL(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, KIND))
-#define LIBXSMM_CBLAS_SYMBOL LIBXSMM_TPREFIX
-
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch_strided(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR /*m*/, libxsmm_blasint CONST_STAR /*n*/, libxsmm_blasint CONST_STAR /*k*/, \
-  TYPE CONST_STAR /*alpha*/, TYPE CONST_STAR /*a*/, libxsmm_blasint CONST_STAR /*lda*/, libxsmm_blasint CONST_STAR /*stride_a*/, \
-                             TYPE CONST_STAR /*b*/, libxsmm_blasint CONST_STAR /*ldb*/, libxsmm_blasint CONST_STAR /*stride_b*/, \
-  TYPE CONST_STAR /*beta*/,  TYPE       STAR /*c*/, libxsmm_blasint CONST_STAR /*ldc*/, libxsmm_blasint CONST_STAR /*stride_c*/, \
-  libxsmm_blasint CONST_STAR /*batchsize*/
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE STAR STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemv(CONST_STAR, STAR, TYPE) char CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_SYMBOL_SIGNATURE_, KIND)(CONST_STAR, STAR, TYPE)
-#define LIBXSMM_BLAS_SYMBOL_FDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
-#define LIBXSMM_BLAS_SYMBOL_CDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_CBLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
-
-#define LIBXSMM_BLAS_DECL(TYPE, KIND, DECL) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_, LIBXSMM_TPREFIX(TYPE, KIND))(DECL)
-#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-# define LIBXSMM_BLAS_dgemm(DECL) DECL;
-# define LIBXSMM_BLAS_sgemm(DECL) DECL;
-# define LIBXSMM_BLAS_dgemv(DECL) DECL;
-# define LIBXSMM_BLAS_sgemv(DECL) DECL;
-#else
-# define LIBXSMM_BLAS_dgemm
-# define LIBXSMM_BLAS_sgemm
-# define LIBXSMM_BLAS_dgemv
-# define LIBXSMM_BLAS_sgemv
-#endif
-
-#if (0 != LIBXSMM_BLAS) /* BLAS available */
-# define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND) LIBXSMM_BLAS_DECL(TYPE, KIND, LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, TYPE, KIND))
-#else
-# define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND)
-#endif
-
-/** Map to appropriate BLAS function (or fallback). */
-#define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
-#if (0 != LIBXSMM_BLAS)
-# if defined(LIBXSMM_INIT_COMPLETED)
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
-# else
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided()
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch()
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv()
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
-# endif
-#else /* no BLAS */
-# define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_blas_error("dgemm_batch_strided")
-# define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_blas_error("sgemm_batch_strided")
-# define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_blas_error("dgemm_batch")
-# define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_blas_error("sgemm_batch")
-# define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_blas_error("dgemm")
-# define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_blas_error("sgemm")
-# define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_blas_error("dgemv")
-# define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_blas_error("sgemv")
-#endif
-
-/** Short-cut macros to construct desired BLAS function symbol. */
-#define LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm_batch_strided)
-#define LIBXSMM_GEMM_BATCH_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm_batch)
-#define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm)
-#define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemv)
 
 /** Consolidate BLAS-transpose into a set of flags. */
 #define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \

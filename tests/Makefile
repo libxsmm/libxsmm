@@ -86,10 +86,10 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh all
 HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
-ifneq ($(words $(EXTLIB)),$(words $(wildcard $(EXTLIB))))
+ifneq ($(words $(MAINLIB)),$(words $(wildcard $(MAINLIB))))
 $(1): $(2) $(OBJECTX) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(MAINLIB)) \
 		$(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(1)

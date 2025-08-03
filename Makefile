@@ -1393,7 +1393,6 @@ deb:
 		echo >>rules; \
 		echo "13" >compat; \
 		$(CP) ../LICENSE.md copyright; \
-		rm -f ../$(TSTDIR)/mhd_test.mhd; \
 		chmod +x rules; \
 		debuild \
 			-e PREFIX=debian/$${ARCHIVE_NAME}/usr \
