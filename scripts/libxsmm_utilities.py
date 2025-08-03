@@ -296,11 +296,6 @@ def libxsmm_target_arch():
         os.environ["LD_LIBRARY_PATH"] = libpath
         libext = ".so"
     os.environ["LIBXSMM_VERBOSE"] = "0"
-    xsmmnoblas = (
-        "libxsmmnoblas" + libext
-        if os.path.exists(os.path.join(libpath, "libxsmmnoblas" + libext))
-        else ctypes.util.find_library("xsmmnoblas")
-    )
     xsmm = (
         "libxsmm" + libext
         if os.path.exists(os.path.join(libpath, "libxsmm" + libext))
@@ -308,9 +303,6 @@ def libxsmm_target_arch():
     )
     target = "generic"
     try:
-        libxsmm = ctypes.CDLL(
-            os.path.join(libpath, xsmmnoblas), mode=ctypes.RTLD_GLOBAL
-        )
         libxsmm = ctypes.CDLL(
             os.path.join(libpath, xsmm), mode=ctypes.RTLD_GLOBAL
         )
