@@ -30,7 +30,7 @@ MACHINE=`uname -m`
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
   if [ "Linux" = "${UNIX}" ]; then
-    if [ "riscv64" = "$(MACHINE)" ]; then
+    if [ "riscv64" = "${MACHINE}" ]; then
       TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
         smm.sh"
     else
