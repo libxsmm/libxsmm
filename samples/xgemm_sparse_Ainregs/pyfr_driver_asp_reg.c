@@ -19,9 +19,96 @@
 #define EPSILON_double 1e-8
 #define EPSILON_float 1e-4
 
+#if __USE_BLAS
 int dgemm_(char *transa, char *transb, int *m, int *n,
   int *k, double *alpha, double *a, int *lda,
   double *b, int *ldb, double *beta, double *c, int *ldc);
+#else
+int dgemm_(char *transa, char *transb, int *m, int *n,
+  int *k, double *alpha, double *a, int *lda,
+  double *b, int *ldb, double *beta, double *c, int *ldc) {
+  int l_m, l_n, l_k;
+  int c_m, c_n, c_k;
+  int l_lda, l_ldb, l_ldc;
+  char l_transa, l_transb;
+  double l_alpha, l_beta;
+  int l_tra, l_trb;
+
+  l_m = *m;
+  l_n = *n;
+  l_k = *k;
+  l_lda = *lda;
+  l_ldb = *ldb;
+  l_ldc = *ldc;
+  l_transa = *transa;
+  l_transb = *transb;
+  l_alpha = *alpha;
+  l_beta = *beta;
+
+  l_tra = (l_transa == 'n' || l_transa == 'N') ? 0 : 1;
+  l_trb = (l_transb == 'n' || l_transb == 'N') ? 0 : 1;
+
+  if ( (l_tra == 0) && (l_trb == 0) ) {
+#if defined(_OPENMP)
+#   pragma omp parallel for private(c_n, c_m, c_k)
+#endif
+    for ( c_n = 0; c_n < l_n; c_n++ ) {
+      for ( c_m = 0; c_m < l_m; c_m++ ) {
+        double tmp = 0.0;
+        for ( c_k = 0; c_k < l_k; c_k++ ) {
+          tmp = a[(c_k*l_lda)+c_m] * b[(c_n*l_ldb)*c_k];
+        }
+        tmp *= l_alpha;
+        c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
+      }
+    }
+  } else if ( (l_tra == 1) && (l_trb == 0) ) {
+#if defined(_OPENMP)
+#   pragma omp parallel for private(c_n, c_m, c_k)
+#endif
+    for ( c_n = 0; c_n < l_n; c_n++ ) {
+      for ( c_m = 0; c_m < l_m; c_m++ ) {
+        double tmp = 0.0;
+        for ( c_k = 0; c_k < l_k; c_k++ ) {
+          tmp = a[(c_m*l_lda)+c_k] * b[(c_n*l_ldb)*c_k];
+        }
+        tmp *= l_alpha;
+        c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
+      }
+    }
+  } else if ( (l_tra == 0) && (l_trb == 1) ) {
+#if defined(_OPENMP)
+#   pragma omp parallel for private(c_n, c_m, c_k)
+#endif
+    for ( c_n = 0; c_n < l_n; c_n++ ) {
+      for ( c_m = 0; c_m < l_m; c_m++ ) {
+        double tmp = 0.0;
+        for ( c_k = 0; c_k < l_k; c_k++ ) {
+          tmp = a[(c_k*l_lda)+c_m] * b[(c_k*l_ldb)*c_n];
+        }
+        tmp *= l_alpha;
+        c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
+      }
+    }
+  } else if ( (l_tra == 1) && (l_trb == 1) ) {
+#if defined(_OPENMP)
+#   pragma omp parallel for private(c_n, c_m, c_k)
+#endif
+    for ( c_n = 0; c_n < l_n; c_n++ ) {
+      for ( c_m = 0; c_m < l_m; c_m++ ) {
+        double tmp = 0.0;
+        for ( c_k = 0; c_k < l_k; c_k++ ) {
+          tmp = a[(c_m*l_lda)+c_k] * b[(c_k*l_ldb)*c_n];
+        }
+        tmp *= l_alpha;
+        c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
+      }
+    }
+  }
+
+  return 0;
+}
+#endif
 
 #define GEMM dgemm_
 
