@@ -1208,7 +1208,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_MEMZERO127(&internal_statistic[0/*DP*/][i]);
       LIBXSMM_MEMZERO127(&internal_statistic[1/*SP*/][i]);
     }
-    internal_statistic_mnk = LIBXSMM_MAX_DIM;
+    internal_statistic_mnk = 64;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
     LIBXSMM_ASSERT(LIBXSMM_ISPOT(LIBXSMM_CAPACITY_REGISTRY));

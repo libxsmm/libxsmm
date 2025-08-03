@@ -325,13 +325,12 @@ if __name__ == "__main__":
         arg1 = 0
     if -1 >= arg1:
         if 5 < argc:
-            # threshold = int(sys.argv[2])
-            mnk_size = int(sys.argv[3])
+            mnk_size = int(sys.argv[2])
             dims = load_mnklist(
-                sys.argv[4 : 4 + mnk_size], 0, -1  # noqa: E203
+                sys.argv[3 : 3 + mnk_size], 0, -1  # noqa: E203
             )  # noqa: E203
             dims = load_mnklist(
-                sys.argv[4 + mnk_size :], 0, -2, dims  # noqa: E203
+                sys.argv[3 + mnk_size :], 0, -2, dims  # noqa: E203
             )  # noqa: E203
             mnklist = map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))
             print(" ".join(mnklist))

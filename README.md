@@ -39,9 +39,7 @@ int main(int argc, char* argv[]) {
 
 Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/main/samples/hello).
 
-<a name="what-is-a-small-matrix-multiplication"></a>**What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within <i>(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64</i> (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](documentation/libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
-
-<a name="what-is-a-small-convolution"></a>**What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy-to-use invocation of small (direct) convolutions, which are intended for CNN training and classification.
+<a name="what-is-a-small-matrix-multiplication"></a>**What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within <i>(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64</i> (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library does not employ multiplevel K,M,N blocking. Using LIBXSMM for much larger sizes may generate excessive amounts of code (due to unrolling in M or K dimension), but also misses to implement a tiling scheme to effectively utilize the cache hierarchy. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
 
 ## Interfaces and Domains<a name="interfaces"></a>
 
@@ -73,12 +71,10 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 
 * [Small, tiled, and parallelized matrix multiplications](documentation/libxsmm_mm.md#overview)
 * [Manual code dispatch (customized matrix batches)](documentation/libxsmm_mm.md#manual-code-dispatch)
-* [Batched multiplication (explicit interface)](documentation/libxsmm_mm.md#batched-multiplication)
-* [Call wrapper (static and dynamic linkage)](documentation/libxsmm_mm.md#call-wrapper)
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-The Deep Learning domain is detailed by the following [sample codes](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided as part of [LIBXSMM_DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
+Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided as part of [LIBXSMM_DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
 
 ### Service Functions
 
@@ -90,7 +86,6 @@ The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routi
 * [Getting and setting the verbosity](documentation/libxsmm_aux.md#getting-and-setting-the-verbosity)
 * [Measuring time durations (timer)](documentation/libxsmm_aux.md#timer-facility)
 * [Dispatching user-data and multiple kernels](documentation/libxsmm_aux.md#user-data-dispatch)
-* [Loading and storing data (I/O)](documentation/libxsmm_aux.md#meta-image-file-io)
 * [Allocating memory](documentation/libxsmm_aux.md#memory-allocation)
 
 ### Backend<a name="jit-backend"></a>
@@ -198,12 +193,7 @@ target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
 target_compile_definitions(xsmm PUBLIC
   LIBXSMM_DEFAULT_CONFIG
 )
-target_compile_definitions(xsmm PRIVATE
-  __BLAS=0
-)
 ```
-
-Above, LIBXSMM_DEFAULT_CONFIG is propagated to dependent code (`PUBLIC`) and further, LIBXSMM is configured to not require a LAPACK/BLAS library/fallback (`-D__BLAS=0`).
 
 ## Link Instructions
 
@@ -275,7 +265,6 @@ The tables are distinct between single-precision and double-precision, but eithe
 
 The TRY counter represents all attempts to register statically generated kernels, and all attempts to dynamically generate and register kernels. The TRY counter includes rejected JIT requests due to unsupported GEMM arguments. The JIT and STA counters distinct the successful cases of the afore mentioned event (TRY) into dynamically (JIT) and statically (STA) generated code. In case the capacity (<span>O(*n*)&#160;=&#160;10<sup>5</sup></span>) of the code registry is exhausted, no more kernels can be registered although further attempts are not prevented. Registering many kernels (<span>O(*n*)&#160;=&#160;10<sup>3</sup></span>) may ramp the number of hash key collisions (COL), which can degrade performance. The latter is prevented if the small thread-local cache is utilized effectively.
 
-Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under the THRESHOLD criterion, the above table is extended by one line if large kernels have been requested. This indicates a missing threshold-criterion (customized dispatch) or asks for cache-blocking the matrix multiplication. Setting a verbosity level of at least two summarizes the number of registered JIT-generated kernels, which includes the total size and counters for GEMM, MCOPY (matrix copy), and TCOPY (matrix transpose) kernels.
 
 ```bash
 Registry: 20 MB (gemm=0 mcopy=14 tcopy=0)

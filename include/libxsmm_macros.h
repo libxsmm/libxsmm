@@ -23,11 +23,6 @@
 
 /** Parameters of GEMM domain (static kernels, etc). */
 #define LIBXSMM_PREFETCH LIBXSMM_CONFIG_PREFETCH
-#define LIBXSMM_MAX_MNK LIBXSMM_CONFIG_MAX_MNK
-#define LIBXSMM_MAX_DIM LIBXSMM_CONFIG_MAX_DIM
-#define LIBXSMM_MAX_M LIBXSMM_CONFIG_MAX_M
-#define LIBXSMM_MAX_N LIBXSMM_CONFIG_MAX_N
-#define LIBXSMM_MAX_K LIBXSMM_CONFIG_MAX_K
 #define LIBXSMM_FLAGS LIBXSMM_CONFIG_FLAGS
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
@@ -455,19 +450,6 @@ LIBXSMM_PRAGMA_DIAG_POP()
 
 /** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
 #define LIBXSMM_MNK_SIZE(M, N, K) (((size_t)(M)) * ((size_t)(N)) * ((size_t)(K)))
-/** Calculate total number of matrix-elements; matrices A, B, C are given per M, N, K, and emphasize (S) the C-size. */
-#define LIBXSMM_SIZE(M, N, K, S) \
-    (((size_t)(M) * (size_t)(K)) + ((size_t)(K) * (size_t)(N)) + \
-    (((size_t)(S) * (size_t)(M) * (size_t)(N))))
-/** Condition based on arithmetic intensity (AI) */
-#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) \
-    ((LIBXSMM_MNK_SIZE(M, N, K) * 2) <= ((size_t)(TYPESIZE) * 4/*AI*/ * LIBXSMM_SIZE(M, N, K, S)))
-/** Determine whether an SMM is suitable, i.e., small enough. */
-#if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
-# define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
-#else /* threshold based on arithmetic intensity */
-# define LIBXSMM_SMM LIBXSMM_SMM_AI
-#endif
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || \
   (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)

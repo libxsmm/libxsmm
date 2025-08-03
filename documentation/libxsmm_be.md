@@ -9,8 +9,6 @@ There can be situations in which it is up-front not clear which problem-sizes wi
 
 The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_TARGET=0`, or anything prior to <span>Intel&#160;AVX</span>). The latter is an environment variable which allows to set a code path independent of the CPUID (<span>LIBXSMM_TARGET=0&#124;1&#124;sse&#124;snb&#124;hsw&#124;skx&#124;clx&#124;cpx&#124;spr</span>). Please note that LIBXSMM_TARGET cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
-One can use the afore mentioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling `libxsmm_?mmdispatch`) fall not under a threshold for the problem-size. In any case, JIT code generation can be used for accompanying statically generated code.
-
 ### Generator Driver
 
 In rare situations, it might be useful to directly incorporate generated C code (with inline assembly regions). This is accomplished by invoking a driver program (with certain command-line arguments).

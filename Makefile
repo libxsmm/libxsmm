@@ -34,10 +34,6 @@ CFLAGS := $(RPM_OPT_FLAGS)
 CXXFLAGS := $(RPM_OPT_FLAGS)
 FCFLAGS := $(RPM_OPT_FLAGS)
 
-# THRESHOLD problem size (M x N x K) determining when to use BLAS
-# A value of zero (0) populates a default threshold
-THRESHOLD ?= 0
-
 # Generates M,N,K-combinations for each comma separated group, e.g., "1, 2, 3" generates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated, e.g., "1 2, 3" generates (1,1,1), (1,1,2),
 # (1,2,1), (1,2,2), (2,1,1), (2,1,2) (2,2,1) out of the first group, and a (3,3,3) for the second group
@@ -119,15 +115,6 @@ ALIGN ?= 0
 ifneq (0,$(ALIGN))
   DFLAGS += -DLIBXSMM_MALLOC_MOD
 endif
-
-# Determines the kind of routine called for intercepted GEMMs
-# >=1 and odd : sequential and non-tiled (small problem sizes only)
-# >=2 and even: parallelized and tiled (all problem sizes)
-# >=3 and odd : GEMV is intercepted; small problem sizes
-# >=4 and even: GEMV is intercepted; all problem sizes
-# negative: BLAS provides DGEMM_BATCH and SGEMM_BATCH
-# 0: disabled
-WRAP ?= 1
 
 # Attempts to pin OpenMP based threads
 AUTOPIN ?= 0
@@ -301,7 +288,7 @@ else # osx
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
-INDICES ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+INDICES ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py -1 $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES := $(words $(INDICES))
 
 SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
@@ -571,8 +558,8 @@ $(INCDIR)/libxsmm_config.h: $(ROOTSRC)/template/libxsmm_config.h $(DIRSTATE)/.st
 	@$(CP) $(SRCFILES) $(HEADERS_SRC) $(SRCDIR) 2>/dev/null || true
 	@$(PYTHON) $(ROOTSCR)/libxsmm_config.py $(ROOTSRC)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
-		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) >$@
+		$(shell echo "$$(($(THREADS)+$(OMP)))") \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(MALLOC) $(INDICES) >$@
 
 $(INCDIR)/libxsmm_version.h: $(ROOTSRC)/template/libxsmm_config.h $(INCDIR)/.make \
                              $(ROOTSRC)/template/libxsmm_version.h
@@ -604,13 +591,13 @@ $(INCDIR)/libxsmm.f: $(ROOTSCR)/libxsmm_interface.py \
 		$(shell echo "$$(($(PRECISION)+($(call qnum,$(FORTRAN),2)<<2)))") $(PREFETCH_TYPE) $(INDICES) \
 	| $(PYTHON) $(ROOTSCR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
-		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) >$@
+		$(shell echo "$$(($(THREADS)+$(OMP)))") \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(MALLOC) $(INDICES) >$@
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SRCFILES_KERNELS) $(ROOTSCR)/libxsmm_dispatch.py $(DIRSTATE)/.state
-	@$(PYTHON) $(call quote,$(ROOTSCR)/libxsmm_dispatch.py) $(call qapath,$(DIRSTATE)/.state) $(PRECISION) $(THRESHOLD) $(INDICES) >$@
+	@$(PYTHON) $(call quote,$(ROOTSCR)/libxsmm_dispatch.py) $(call qapath,$(DIRSTATE)/.state) $(PRECISION) $(INDICES) >$@
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTSCR)/libxsmm_utilities.py $(ROOTSCR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
