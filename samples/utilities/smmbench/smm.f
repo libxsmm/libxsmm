@@ -118,6 +118,7 @@
         !$OMP END PARALLEL
 
         WRITE(*, "(A)") "Streamed (A,B)... (auto-dispatched)"
+        ALLOCATE(sumxsmm(m,n))
         sumxsmm(:,:) = REAL(0, T)
         !$OMP PARALLEL PRIVATE(i, r, start)                             &
         !$OMP   DEFAULT(NONE)                                           &
