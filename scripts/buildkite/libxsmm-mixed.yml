@@ -25,13 +25,13 @@ steps:
   - label: "GCC"
     command: "scripts/tool_test.sh 3"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIG: gcc-95
 
   - label: "GCC-OLD"
     command: "scripts/tool_test.sh 6"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIGS: "gcc-42 gcc-49"
 
   - label: "GCC-SKX"
@@ -43,7 +43,7 @@ steps:
   - label: "Clang"
     command: "scripts/tool_test.sh 4"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIG: clang-160
       FORTRAN: 0
       MALLOC: 1
@@ -51,7 +51,7 @@ steps:
   - label: "Clang-OLD"
     command: "scripts/tool_test.sh 1"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIG: clang-37
 
   - label: "Clang-SKX"
@@ -63,7 +63,7 @@ steps:
   - label: "Intel"
     command: "scripts/tool_test.sh 5"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIG: intel-2023
 
   - label: "Intel-SKX"
@@ -75,13 +75,13 @@ steps:
   - label: "GFortran"
     command: "scripts/tool_test.sh 5"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIG: gcc-131
 
   - label: "Mixed"
     command: "scripts/tool_test.sh 5"
     env:
-      LIBXSMM_TARGETS: "sse42 avx2 auto"
+      LIBXSMM_TARGETS: "avx2 auto"
       CONFIG: clang-160
 
   - label: "ABI"

@@ -18,7 +18,7 @@ script:
   - make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0
       EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
 
-  - make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH}
       EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
 
   - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
