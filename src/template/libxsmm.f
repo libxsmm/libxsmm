@@ -458,6 +458,33 @@
           MODULE PROCEDURE libxsmm_smmavailable, libxsmm_dmmavailable
         END INTERFACE
 
+        !> Overloaded GEMM routines (double-precision).
+        INTERFACE libxsmm_dgemm
+          MODULE PROCEDURE libxsmm_dgemm0
+          MODULE PROCEDURE libxsmm_dgemm1
+          MODULE PROCEDURE libxsmm_dgemm2
+          MODULE PROCEDURE libxsmm_dgemm3
+        END INTERFACE
+
+        !> Overloaded GEMM routines (single-precision).
+        INTERFACE libxsmm_sgemm
+          MODULE PROCEDURE libxsmm_sgemm0
+          MODULE PROCEDURE libxsmm_sgemm1
+          MODULE PROCEDURE libxsmm_sgemm2
+        END INTERFACE
+
+        !> Overloaded GEMM routines.
+        INTERFACE libxsmm_gemm
+          MODULE PROCEDURE libxsmm_dgemm0
+          MODULE PROCEDURE libxsmm_dgemm1
+          MODULE PROCEDURE libxsmm_dgemm2
+          MODULE PROCEDURE libxsmm_dgemm3
+          MODULE PROCEDURE libxsmm_sgemm0
+          MODULE PROCEDURE libxsmm_sgemm1
+          MODULE PROCEDURE libxsmm_sgemm2
+          MODULE PROCEDURE libxsmm_sgemm3
+        END INTERFACE
+
         !> Calculate a hash value for a given key value (binary blob).
         !> Conceptually pure, but C_LOC may be (incorrectly) impure.
         INTERFACE libxsmm_hash
@@ -889,6 +916,178 @@
           END INTERFACE
           CALL internal_xdispatch(libxsmm_xdispatch, key, keysize)
         END FUNCTION
+
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
+        PURE SUBROUTINE libxsmm_dgemm0(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN) :: a, b
+          REAL(C_DOUBLE), INTENT(INOUT) :: c
+          INTERFACE
+            PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
+     &      BIND(C, NAME="libxsmm_dgemm_")
+              IMPORT :: C_CHAR, C_DOUBLE, LIBXSMM_BLASINT_KIND
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldb
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldc
+              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
+              REAL(C_DOUBLE), INTENT(IN) :: a, b
+              REAL(C_DOUBLE), INTENT(INOUT) :: c
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
+        PURE SUBROUTINE libxsmm_dgemm1(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN)    :: a(*), b(*)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(*)
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
+            CALL libxsmm_dgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
+        PURE SUBROUTINE libxsmm_dgemm2(transa, transb, m, n, k,         &
+     &  a, b, c, alpha, beta)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN)    :: a(m,*), b(k,*)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(m,*)
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
+            CALL libxsmm_dgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), m,                     &
+     &               b(LBOUND(b,1),LBOUND(b,2)), k,                     &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), m)
+          END IF
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
+        PURE SUBROUTINE libxsmm_dgemm3(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN)    :: a(lda,*), b(ldb,*)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
+            CALL libxsmm_dgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
+        PURE SUBROUTINE libxsmm_sgemm0(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN)    :: a, b
+          REAL(C_FLOAT), INTENT(INOUT) :: c
+          INTERFACE
+            PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
+     &      BIND(C, NAME="libxsmm_sgemm_")
+              IMPORT :: C_CHAR, C_FLOAT, LIBXSMM_BLASINT_KIND
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldb
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldc
+              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
+              REAL(C_FLOAT), INTENT(IN) :: a, b
+              REAL(C_FLOAT), INTENT(INOUT) :: c
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
+        PURE SUBROUTINE libxsmm_sgemm1(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN)    :: a(*), b(*)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(*)
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
+            CALL libxsmm_sgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
+        PURE SUBROUTINE libxsmm_sgemm2(transa, transb, m, n, k,         &
+     &  a, b, c, alpha, beta)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN)    :: a(m,*), b(k,*)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(m,*)
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
+            CALL libxsmm_sgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), m,                     &
+     &               b(LBOUND(b,1),LBOUND(b,2)), k,                     &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), m)
+          END IF
+        END SUBROUTINE
+
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
+        PURE SUBROUTINE libxsmm_sgemm3(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN)    :: a(lda,*), b(ldb,*)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
+            CALL libxsmm_sgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
+        END SUBROUTINE
 
         !> Returns the difference between two timer ticks (cycles).
         !> Implicit FORTRAN 77 interface: subroutine available.

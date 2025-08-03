@@ -106,7 +106,7 @@
           !$OMP DO
           DO i = LBOUND(a, 3), UBOUND(a, 3)
             ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
-            CALL libxsmm_blas_dgemm(m=m, n=n, k=k,                      &
+            CALL libxsmm_dgemm(m=m, n=n, k=k,                      &
      &              a=a(:,:,i), b=b(:,:,i), c=sumtmp)
           END DO
         END DO
@@ -116,38 +116,6 @@
         ! Deallocate thread-local arrays
         DEALLOCATE(sumtmp)
         !$OMP END PARALLEL
-
-        WRITE(*, "(A)") "Streamed (A,B)... (BLAS)"
-        ALLOCATE(sumxsmm(m,n))
-        sumxsmm(:,:) = REAL(0, T)
-        !$OMP PARALLEL PRIVATE(i, r, start)        &
-        !$OMP   DEFAULT(NONE)                                           &
-        !$OMP   SHARED(m, n, k, a, b, duration, repetitions, sumxsmm)
-        ALLOCATE(sumtmp(m,n))
-        sumtmp(:,:) = REAL(0, T)
-        !$OMP MASTER
-        start = libxsmm_timer_tick()
-        !$OMP END MASTER
-        !$OMP BARRIER
-        DO r = 1, repetitions
-          !$OMP DO
-          DO i = LBOUND(a, 3), UBOUND(a, 3)
-            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
-            CALL libxsmm_blas_dgemm(m=m, n=n, k=k,                      &
-     &              a=a(:,:,i), b=b(:,:,i), c=sumtmp)
-          END DO
-        END DO
-        !$OMP BARRIER
-        !$OMP MASTER
-        duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-        !$OMP END MASTER
-        !$OMP CRITICAL
-        sumxsmm(:,:) = sumxsmm(:,:) + sumtmp(:UBOUND(sumxsmm,1),:)
-        !$OMP END CRITICAL
-        ! Deallocate thread-local arrays
-        DEALLOCATE(sumtmp)
-        !$OMP END PARALLEL
-        CALL performance(duration, m, n, k, size2, m * k + k * n)
 
         WRITE(*, "(A)") "Streamed (A,B)... (auto-dispatched)"
         sumxsmm(:,:) = REAL(0, T)
