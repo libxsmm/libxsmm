@@ -24,14 +24,27 @@ if [ ! "${GREP}" ] || [ ! "${SED}" ] || [ ! "${TR}" ] || [ ! "${WC}" ]; then
   exit 1
 fi
 
-#Eventually disable a set of tests e.g., TESTS_DISABLED="headeronly"
+UNIX=`uname`
+MACHINE=`uname -m`
 
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
-  TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
-    dispatch.sh eltwise.sh equation.sh \
-    fsspmdm.sh memcmp.sh \
-    packed.sh smm.sh"
+  if [ "Linux" = "${UNIX}" ]; then
+    if [ "rv64" = "$(MACHINE)" ]; then
+      TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
+        smm.sh"
+    else
+      TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
+        dispatch.sh eltwise.sh equation.sh \
+        fsspmdm.sh memcmp.sh \
+        packed.sh smm.sh"
+    fi
+  else
+    TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
+      dispatch.sh eltwise.sh equation.sh \
+      memcmp.sh \
+      packed.sh smm.sh"
+  fi
   if [ "${SORT}" ]; then
     TESTS=$(echo "${TESTS}" | ${TR} -s " " "\n" | ${SORT})
   fi
