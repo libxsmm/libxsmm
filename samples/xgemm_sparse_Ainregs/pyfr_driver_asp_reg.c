@@ -56,7 +56,7 @@ int dgemm_(char *transa, char *transb, int *m, int *n,
       for ( c_m = 0; c_m < l_m; c_m++ ) {
         double tmp = 0.0;
         for ( c_k = 0; c_k < l_k; c_k++ ) {
-          tmp = a[(c_k*l_lda)+c_m] * b[(c_n*l_ldb)*c_k];
+          tmp += a[(c_k*l_lda)+c_m] * b[(c_n*l_ldb)+c_k];
         }
         tmp *= l_alpha;
         c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
@@ -70,7 +70,7 @@ int dgemm_(char *transa, char *transb, int *m, int *n,
       for ( c_m = 0; c_m < l_m; c_m++ ) {
         double tmp = 0.0;
         for ( c_k = 0; c_k < l_k; c_k++ ) {
-          tmp = a[(c_m*l_lda)+c_k] * b[(c_n*l_ldb)*c_k];
+          tmp += a[(c_m*l_lda)+c_k] * b[(c_n*l_ldb)+c_k];
         }
         tmp *= l_alpha;
         c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
@@ -84,7 +84,7 @@ int dgemm_(char *transa, char *transb, int *m, int *n,
       for ( c_m = 0; c_m < l_m; c_m++ ) {
         double tmp = 0.0;
         for ( c_k = 0; c_k < l_k; c_k++ ) {
-          tmp = a[(c_k*l_lda)+c_m] * b[(c_k*l_ldb)*c_n];
+          tmp += a[(c_k*l_lda)+c_m] * b[(c_k*l_ldb)+c_n];
         }
         tmp *= l_alpha;
         c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
@@ -98,7 +98,7 @@ int dgemm_(char *transa, char *transb, int *m, int *n,
       for ( c_m = 0; c_m < l_m; c_m++ ) {
         double tmp = 0.0;
         for ( c_k = 0; c_k < l_k; c_k++ ) {
-          tmp = a[(c_m*l_lda)+c_k] * b[(c_k*l_ldb)*c_n];
+          tmp += a[(c_m*l_lda)+c_k] * b[(c_k*l_ldb)+c_n];
         }
         tmp *= l_alpha;
         c[(c_n*l_ldc)+c_m] = tmp + l_beta*c[(c_n*l_ldc)+c_m];
