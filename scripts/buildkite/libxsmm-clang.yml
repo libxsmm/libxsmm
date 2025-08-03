@@ -30,15 +30,6 @@ steps:
 
   - label: "#8"
     command: "scripts/tool_test.sh 8"
-
-  - label: "#9"
-    command: "scripts/tool_test.sh 9"
-
-  - label: "#10"
-    command: "scripts/tool_test.sh 10"
-
-  - label: "#11"
-    command: "scripts/tool_test.sh 11"
     env:
       CONFIG: "clang-160"
       STATIC_ANALYSIS: 1

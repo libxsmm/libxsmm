@@ -11,13 +11,13 @@ env:
 
 steps:
   - label: "Normalized"
-    command: "scripts/tool_test.sh 12"
+    command: "scripts/tool_test.sh 9"
     env:
       STATIC_ANALYSIS: 1
   - wait
 
   - label: "Quick-SA"
-    command: "scripts/tool_test.sh 11"
+    command: "scripts/tool_test.sh 8"
     env:
       CONFIG: clang-160
       STATIC_ANALYSIS: 1
@@ -85,7 +85,7 @@ steps:
       CONFIG: clang-160
 
   - label: "ABI"
-    command: "scripts/tool_test.sh 13"
+    command: "scripts/tool_test.sh 10"
     env:
       CONFIG: gcc-131
       STATIC_ANALYSIS: 1

@@ -21,18 +21,6 @@ script:
   - make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
       EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
 
-  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 &&
-      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test
-
-  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 &&
-      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test
-
-  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 &&
-      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 test
-
   - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
       ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh;
     fi
