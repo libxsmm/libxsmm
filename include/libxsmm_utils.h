@@ -20,14 +20,4 @@
 #include "utils/libxsmm_timer.h"
 #include "utils/libxsmm_math.h"
 
-#if defined(__BLAS) && (1 == __BLAS)
-# if defined(__OPENBLAS)
-    LIBXSMM_EXTERN void openblas_set_num_threads(int num_threads);
-#   define LIBXSMM_BLAS_INIT openblas_set_num_threads(1);
-# endif
-#endif
-#if !defined(LIBXSMM_BLAS_INIT)
-# define LIBXSMM_BLAS_INIT
-#endif
-
 #endif /*LIBXSMM_UTILS_H*/
