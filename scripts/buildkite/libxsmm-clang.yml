@@ -44,6 +44,5 @@ steps:
     command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 FSSPMDM_NOTUNE=1"
-      PARTITIONS: "clxap"
       LIBXSMM_TARGET: avx2
       CONFIG: "clang-160"
