@@ -46,7 +46,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
                                                           const libxsmm_meltw_descriptor* i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_store_regblock_2x8_rv64( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_transform_store_regblock_4x4_rv64( libxsmm_generated_code* io_generated_code,
                                                           const unsigned int      i_gp_reg_addr,
                                                           const unsigned int      i_gp_reg_dst,
                                                           const unsigned int      i_gp_reg_scratch,
@@ -64,7 +64,7 @@ LIBXSMM_API_INTERN                                                              
                                                                                const unsigned int      i_shuffle_stride );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x8_rvv( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x4_rvv( libxsmm_generated_code* io_generated_code,
                                                                                const unsigned int      i_gp_reg_dst_e,
                                                                                const unsigned int      i_gp_reg_dst_o,
                                                                                const unsigned int      i_gp_reg_scratch,
@@ -82,7 +82,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
                                                                              const libxsmm_meltw_descriptor* i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_norm_to_normt_64bit_4x8_shufflenetwork_rvv( libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_rvv( libxsmm_generated_code*     io_generated_code,
                                                                              libxsmm_loop_label_tracker* io_loop_label_tracker,
                                                                              const unsigned int          i_gp_reg_in,                                                                             const unsigned int          i_gp_reg_out,
                                                                              const unsigned int          i_gp_reg_scratch,
