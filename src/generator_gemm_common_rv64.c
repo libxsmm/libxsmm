@@ -437,7 +437,7 @@ unsigned int libxsmm_generator_gemm_rv64_get_initial_m_blocking( libxsmm_micro_k
     } else if ( i_xgemm_desc->m >= 4 ) {
       l_m_blocking = 4;
     } else{
-      l_m_blocking = i_xgemm_desc->m;
+      l_m_blocking = i_xgemm_desc->m % 4;
     }
   } else if ( ( i_arch >= LIBXSMM_RV64_MVL128 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     /* TODO: check if there is a better blocking strategy */
@@ -484,7 +484,7 @@ unsigned int libxsmm_generator_gemm_rv64_update_m_blocking( libxsmm_micro_kernel
         l_m_blocking = 4;
       }
       else {
-        l_m_blocking = i_xgemm_desc->m;
+        l_m_blocking = i_xgemm_desc->m % 4;
       }
     } else if (i_current_m_blocking == 16 ) {
       if ((i_xgemm_desc->m % 16) >= 8){
@@ -494,7 +494,7 @@ unsigned int libxsmm_generator_gemm_rv64_update_m_blocking( libxsmm_micro_kernel
         l_m_blocking = 4;
       }
       else {
-        l_m_blocking = i_xgemm_desc->m;
+        l_m_blocking = i_xgemm_desc->m % 4;
       }
     } else if (i_current_m_blocking == 8 ) {
       if ((i_xgemm_desc->m % 8) >= 4){

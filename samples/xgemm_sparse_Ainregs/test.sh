@@ -7,11 +7,14 @@
 # Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
-# Hans Pabst (Intel Corp.)
-###############################################################################
-set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
 
-"${HERE}"/../samples/xgemm_norm_packed/test_dense_packedacrm.sh -o /dev/null "$@"
-"${HERE}"/../samples/xgemm_norm_packed/test_dense_packedbcrm.sh -o /dev/null "$@"
+export OMP_PROC_BIND=${OMP_PROC_BIND:-TRUE}
+#export OMP_NUM_THREADS=${OMP_NUM_THREADS:-2}
+export TEST_N=${TEST_N:-4800}
+
+for MTX in "${HERE}"/mats/p*/*/*-sp.mtx; do
+  echo "${HERE}/pyfr_driver_asp_reg ${MTX} ${TEST_N} 1"
+done | ${EXEC} -c 2- "$@"

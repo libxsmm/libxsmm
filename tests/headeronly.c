@@ -24,7 +24,7 @@ LIBXSMM_EXTERN_C libxsmm_gemmfunction mmdispatch(libxsmm_blasint m, libxsmm_blas
 
 int main(void)
 {
-  const libxsmm_blasint m = LIBXSMM_MAX_M, n = LIBXSMM_MAX_N, k = LIBXSMM_MAX_K;
+  const libxsmm_blasint m = 128, n = 128, k = 128;
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
     m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/,
     LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(ITYPE),

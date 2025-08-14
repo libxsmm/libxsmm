@@ -44,17 +44,21 @@
 #define LIBXSMM_TYPENAME_short i16
 #define LIBXSMM_TYPENAME_char i8
 
-/** Helper macro for type information: INFO := { FP }. */
-#define LIBXSMM_TYPEINFO(TYPE, INFO) LIBXSMM_CONCATENATE4(LIBXSMM_TYPEINFO_, INFO, _, TYPE)
+/** Helper macro for type information: INFO := { FP, UI }. */
+#define LIBXSMM_TYPEINFO(TYPE, INFO) LIBXSMM_CONCATENATE2(LIBXSMM_TYPEINFO_, INFO)(TYPE)
+#define LIBXSMM_TYPEINFO_FP(TYPE) LIBXSMM_CONCATENATE2(LIBXSMM_TYPEINFO_FP_, TYPE)
 #define LIBXSMM_TYPEINFO_FP_double 1
 #define LIBXSMM_TYPEINFO_FP_float 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat16 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_float16 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat8 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_hfloat8 1
+#define LIBXSMM_TYPEINFO_FP_long 0
 #define LIBXSMM_TYPEINFO_FP_int 0
 #define LIBXSMM_TYPEINFO_FP_short 0
 #define LIBXSMM_TYPEINFO_FP_char 0
+/** Evaluates to true if the type is unsigned (must be integer). */
+#define LIBXSMM_TYPEINFO_UI(TYPE) (LIBXSMM_TYPEINFO_FP(TYPE) && 0 < ((TYPE)-1) && 0 < ~((TYPE)-1))
 
 /** Helper macro for type postfixes. */
 #define LIBXSMM_TYPESYMBOL(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TYPESYMBOL_, TYPE)
@@ -833,5 +837,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_info {
 LIBXSMM_EXTERN_C typedef struct libxsmm_registry_info {
   size_t capacity, size, nbytes, nstatic, ncache;
 } libxsmm_registry_info;
+
+LIBXSMM_EXTERN_C typedef enum libxsmm_aarch64_acc_layout {
+  LIBXSMM_AARCH64_ACC_LAYOUT_DEFAULT = 0,
+  LIBXSMM_AARCH64_ACC_LAYOUT_B_TRANSPOSE = 1
+} libxsmm_aarch64_acc_layout;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/

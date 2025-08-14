@@ -126,15 +126,9 @@ int main(int argc, char* argv[])
     const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
     if (!xmm) throw "no specialized routine found!";
 
-    // arrays needed for the batch interface (indirect)
-    std::vector<const ITYPE*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
-    std::vector<OTYPE*> vc_array(static_cast<size_t>(s));
-    const ITYPE* *const a_array = &va_array[0];
-    const ITYPE* *const b_array = &vb_array[0];
-    OTYPE* *const c_array = &vc_array[0];
-
     switch (benchmark) {
-    case 0: { // batched
+    case 0:
+    case 1:  { // batched
       fprintf(stdout, "Batched (A,B,C)...\n");
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -155,48 +149,10 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1ULL << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-    } /* fallthrough */
-
-    case 1: { // batched/indirect
-      fprintf(stdout, "Indirect (A,B,C)...\n");
-      for (libxsmm_blasint i = 0; i < s; ++i) {
-        a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
-        b_array[i] = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-        c_array[i] = d + static_cast<size_t>(csize) * i;
-      }
-      const libxsmm_blasint ptrsize = sizeof(void*);
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
-          &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
-          0/*index_stride*/, 0/*index_base*/, s, 0/*batchcheck*/);
-      }
-      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
-      const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
-      if (0 < duration && 0 != ncycles) {
-        fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
-        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1ULL << 30)));
-      }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
-        libxsmm_matdiff_info diff;
-        libxsmm_matdiff_clear(&diff);
-        for (libxsmm_blasint h = 0; h < s; ++h) {
-          const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
-          libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
-          if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff, &dv);
-        }
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < diff.l2_rel) {
-          fprintf(stderr, "FAILED.\n");
-          result = EXIT_FAILURE;
-        }
-      }
     } break;
 
-    case 2: { // streaming A and C
+    case 2:
+    case 3: { // streaming A and C
       fprintf(stdout, "Streamed (A,C)...\n");
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -217,48 +173,10 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1ULL << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-    } /* fallthrough */
-
-    case 3: { // indirect A and C
-      fprintf(stdout, "Indirect (A,C)...\n");
-      for (libxsmm_blasint i = 0; i < s; ++i) {
-        a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
-        b_array[i] = b;
-        c_array[i] = d + static_cast<size_t>(csize) * i;
-      }
-      const libxsmm_blasint ptrsize = sizeof(void*);
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
-          &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
-          0/*index_stride*/, 0/*index_base*/, s, 0/*batchcheck*/);
-      }
-      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
-      const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
-      if (0 < duration && 0 != ncycles) {
-        fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
-        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1ULL << 30)));
-      }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
-        libxsmm_matdiff_info diff;
-        libxsmm_matdiff_clear(&diff);
-        for (libxsmm_blasint h = 0; h < s; ++h) {
-          const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
-          libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
-          if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff, &dv);
-        }
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < diff.l2_rel) {
-          fprintf(stderr, "FAILED.\n");
-          result = EXIT_FAILURE;
-        }
-      }
     } break;
 
-    case 4: { // streaming B and C
+    case 4:
+    case 5: { // streaming B and C
       fprintf(stdout, "Streamed (B,C)...\n");
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -279,48 +197,10 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1ULL << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-    } /* fallthrough */
-
-    case 5: { // indirect B and C
-      fprintf(stdout, "Indirect (B,C)...\n");
-      for (libxsmm_blasint i = 0; i < s; ++i) {
-        a_array[i] = a;
-        b_array[i] = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-        c_array[i] = d + static_cast<size_t>(csize) * i;
-      }
-      const libxsmm_blasint ptrsize = sizeof(void*);
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
-          &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
-          0/*index_stride*/, 0/*index_base*/, s, 0/*batchcheck*/);
-      }
-      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
-      const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
-      if (0 < duration && 0 != ncycles) {
-        fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
-        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1ULL << 30)));
-      }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
-        libxsmm_matdiff_info diff;
-        libxsmm_matdiff_clear(&diff);
-        for (libxsmm_blasint h = 0; h < s; ++h) {
-          const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
-          libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
-          if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff, &dv);
-        }
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < diff.l2_rel) {
-          fprintf(stderr, "FAILED.\n");
-          result = EXIT_FAILURE;
-        }
-      }
     } break;
 
-    case 6: { // streaming A and B
+    case 6:
+    case 7: { // streaming A and B
       fprintf(stdout, "Streamed (A,B)...\n");
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -344,51 +224,10 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - sizeof(OTYPE) * csize * 2) / (duration * (1ULL << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-    } /* fallthrough */
-
-    case 7: { // indirect A and B
-      fprintf(stdout, "Indirect (A,B)...\n");
-#if defined(_OPENMP)
-#     pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
-#endif
-      for (libxsmm_blasint i = 0; i < s; ++i) {
-        a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
-        b_array[i] = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-        if (0 == check) {
-          c_array[i] = d + static_cast<size_t>(csize) * chunksize * omp_get_thread_num();
-        }
-        else
-#endif
-        c_array[i] = d;
-      }
-      const libxsmm_blasint ptrsize = sizeof(void*);
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
-          &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
-          0/*index_stride*/, 0/*index_base*/, 0 == check ? -s : s, 0/*batchcheck*/);
-      }
-      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
-      const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
-      if (0 < duration && 0 != ncycles) {
-        fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
-        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - sizeof(OTYPE) * csize * 2) / (duration * (1ULL << 30)));
-      }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
-        libxsmm_matdiff_info diff;
-        result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, c, d, &ldc, &ldc);
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < diff.l2_rel) {
-          fprintf(stderr, "FAILED.\n");
-          result = EXIT_FAILURE;
-        }
-      }
     } break;
 
-    case 8: { // cached
+    case 8:
+    case 9: { // cached
       fprintf(stdout, "Cached...\n");
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -410,46 +249,6 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-    } /* fallthrough */
-
-    case 9: { // indirect cached
-      fprintf(stdout, "Indirect cached...\n");
-#if defined(_OPENMP)
-#     pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
-#endif
-      for (libxsmm_blasint i = 0; i < s; ++i) {
-        a_array[i] = a; b_array[i] = b;
-#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-        if (0 == check) {
-          c_array[i] = d + static_cast<size_t>(csize) * chunksize * omp_get_thread_num();
-        }
-        else
-#endif
-        c_array[i] = d;
-      }
-      const libxsmm_blasint ptrsize = sizeof(void*);
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-        USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb, m, n, k,
-          &alpha, &a_array[0], &lda, &ptrsize, &b_array[0], &ldb, &ptrsize, &beta, &c_array[0], &ldc, &ptrsize,
-          0/*index_stride*/, 0/*index_base*/, 0 == check ? -s : s, 0/*batchcheck*/);
-      }
-      const libxsmm_timer_tickint ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
-      const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
-      if (0 < duration && 0 != ncycles) {
-        fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
-        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-      }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
-        libxsmm_matdiff_info diff;
-        result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, c, d, &ldc, &ldc);
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < diff.l2_rel) {
-          fprintf(stderr, "FAILED.\n");
-          result = EXIT_FAILURE;
-        }
-      }
     } break;
     default: throw "invalid case selected!";
     } /*switch*/
