@@ -145,7 +145,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
 
   unsigned int dtype_in0 = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0);
   unsigned int dtype_out = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT);
-  //unsigned int dtype_in1 = LIBXSMM_DATATYPE_F32;
   unsigned int dtype_in1 = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1);
 
   unsigned int dtype_comp = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP);
@@ -163,8 +162,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
                      LIBXSMM_DATATYPE_F64 == dtype_out && LIBXSMM_DATATYPE_F64 == dtype_comp) ? 1 : 0;
 
   is_valid_arch_prec = ((is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp || is_transform_tpp) && is_fp32_inp_out) || (is_transform_tpp && is_fp64_inp_out);
-
-  printf("Transform TPP %d %d\n", is_transform_tpp, is_fp64_inp_out);
 
   if ((is_transform_tpp == 0) && (is_gather_scatter_tpp == 0) &&                                                                                                                 !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) &&
       !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR )) &&
