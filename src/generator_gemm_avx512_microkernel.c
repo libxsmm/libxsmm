@@ -203,8 +203,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
   libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
           LIBXSMM_X86_INSTR_VPBLENDMB,
           i_micro_kernel_config->vector_name,
-          i_vreg_ones,
           i_vreg_zero,
+          i_vreg_ones,
           i_vreg_out,
           i_mask_in,
           0 );
