@@ -30,30 +30,9 @@ steps:
 
   - label: "#8"
     command: "scripts/tool_test.sh 8"
-
-  - label: "#9"
-    command: "scripts/tool_test.sh 9"
-
-  - label: "#10"
-    command: "scripts/tool_test.sh 10"
-
-  - label: "#11"
-    command: "scripts/tool_test.sh 11"
     env:
       CONFIG: "clang-160"
       STATIC_ANALYSIS: 1
-
-  - label: "Sparse A in regs"
-    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/performance.sh -r"
-    env:
-      CONFIG: "clang-160"
-      PARTITIONS: "clxap"
-      MAKETGT: "all"
-      #ENV_PYTHON: "matplotlib"
-      #ENV_PYTHON: "1"
-      LOGRPTFMT: "svg pdf"
-      LOGRPTSUM: "mean"
-      LOGRPTQRY: ""
 
   - label: "FSSPMDM"
     command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
@@ -65,6 +44,5 @@ steps:
     command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 FSSPMDM_NOTUNE=1"
-      PARTITIONS: "clxap"
       LIBXSMM_TARGET: avx2
       CONFIG: "clang-160"

@@ -70,14 +70,12 @@ steps:
     env:
       LIBXSMM_TARGET: snb
 #      CONFIG: gcc-122
-      PARTITIONS: "clxap"
     label: "SMMs SNB"
 
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: wsm
 #      CONFIG: gcc-122
-      PARTITIONS: "clxap"
     label: "SMMs WSM"
 
   - command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
@@ -144,14 +142,12 @@ steps:
     env:
       LIBXSMM_TARGET: snb
 #      CONFIG: gcc-122
-      PARTITIONS: "clxap"
     label: "BCSC SPMM SNB"
 
   - command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     env:
       LIBXSMM_TARGET: wsm
 #      CONFIG: gcc-122
-      PARTITIONS: "clxap"
     label: "BCSC SPMM WSM"
 
   - label: "ELTWISE CPUID"
@@ -205,13 +201,11 @@ steps:
   - label: "ELTWISE SNB"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
-      PARTITIONS: "clxap"
       LIBXSMM_TARGET: "snb"
 
   - label: "ELTWISE WSM"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
-      PARTITIONS: "clxap"
       LIBXSMM_TARGET: "wsm"
 
   - label: "EQUATION CPUID"
@@ -276,13 +270,11 @@ steps:
   - label: "EQUATION SNB"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
-      PARTITIONS: "clxap"
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "snb"
 
   - label: "EQUATION WSM"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
-      PARTITIONS: "clxap"
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "wsm"

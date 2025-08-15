@@ -99,7 +99,7 @@ int main(void)
   const int flags = LIBXSMM_FLAGS /*| LIBXSMM_GEMM_FLAGS(transa, transb)*/
     | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
   const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const int max_shape = LIBXSMM_MAX_M;
+  const int max_shape = 128;
   int result = EXIT_SUCCESS, nkernels = MAX_NKERNELS, ndup = 0, i;
 #if defined(CHECK_SEPARATE)
   int mnk[3*MAX_NKERNELS] = { 8,8,8, 16,16,8 };

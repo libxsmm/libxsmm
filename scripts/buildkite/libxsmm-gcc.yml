@@ -30,12 +30,3 @@ steps:
 
   - command: "scripts/tool_test.sh 7"
     label: "#7"
-
-  - command: "scripts/tool_test.sh 8"
-    label: "#8"
-
-  - command: "scripts/tool_test.sh 9"
-    label: "#9"
-
-  - command: "scripts/tool_test.sh 10"
-    label: "#10"
