@@ -3641,7 +3641,7 @@ int main(int argc, char* argv []) {
 
           if (l_gemm_def.is_Ai1Bi8_gemm > 0) {
             /* We create a new tensor of i1 in vnni4  format from A... */
-            unsigned char *l_a_i1  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+3)/8)*8)/8) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
+            unsigned char *l_a_i1  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+7)/8)*8)/8) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
             char *c_a = (char*) l_a;
             char *c_b = (char*) l_b;
