@@ -230,17 +230,33 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   if ((io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )) {
     if (LIBXSMM_DATATYPE_UNSUPPORTED != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) {
+      /* Supported JITed combos: */
+      /* i2i8 && m=32 && arch == SRF (B both signed and unsigned) */
+      /* i1i8 && m=32 && arch == SRF */
+      /* i2i8 && m=32 && arch >= SPR (B both signed and unsigned) */
+      /* i2i8 && m=64 && arch >= ICX && arch < SPR && B unsigned */
+      /* i1i8 && m=64 && arch >= ICX && arch < SPR && B unsigned */
+
       if ((l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0) && (io_generated_code->arch < LIBXSMM_X86_AVX512_SKX)) {
         if ((l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0) && io_generated_code->arch == LIBXSMM_X86_AVX2_SRF) {
           /* We are good */
         } else {
+          #if 0
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-          return;
+          #endif
         }
       } else {
         if (l_is_Ai1_Bi8_gemm > 0) {
+          #if 0
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
           return;
+          #endif
+        }
+        if (l_is_Ai2_Bi8_gemm > 0 ) {
+          #if 0
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+          return;
+          #endif
         }
       }
     } else {

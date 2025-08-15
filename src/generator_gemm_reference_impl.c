@@ -16,6 +16,47 @@
 #include <utils/libxsmm_lpflt_quant.h>
 
 LIBXSMM_API_INTERN
+void unpack2bit(char* m0, char* m1, char* m2, char* m3, char packed) {
+  if ((packed & 0x3) == 0) {
+    *m0 = 0;
+  } else if ((packed & 0x3) == 1) {
+    *m0 = 1;
+  } else if ((packed & 0x3) == 2) {
+    *m0 = -1;
+  } else if ((packed & 0x3) == 3) {
+    *m0 = -1;
+  }
+  if (((packed >> 2) & 0x3) == 0) {
+    *m1 = 0;
+  } else if (((packed >> 2) & 0x3) == 1) {
+    *m1 = 1;
+  } else if (((packed >> 2) & 0x3) == 2) {
+    *m1 = -1;
+  } else if (((packed >> 2) & 0x3) == 3) {
+    *m1 = -1;
+  }
+  if (((packed >> 4) & 0x3) == 0) {
+    *m2 = 0;
+  } else if (((packed >> 4) & 0x3) == 1) {
+    *m2 = 1;
+  } else if (((packed >> 4) & 0x3) == 2) {
+    *m2 = -1;
+  } else if (((packed >> 4) & 0x3) == 3) {
+    *m2 = -1;
+  }
+  if (((packed >> 6) & 0x3) == 0) {
+    *m3 = 0;
+  } else if (((packed >> 6) & 0x3) == 1) {
+    *m3 = 1;
+  } else if (((packed >> 6) & 0x3) == 2) {
+    *m3 = -1;
+  } else if (((packed >> 6) & 0x3) == 3) {
+    *m3 = -1;
+  }
+  return;
+}
+
+LIBXSMM_API_INTERN
 float libxsmm_convert_mxfp4_to_float(unsigned char x) {
   float fp4_e2m1_lut[16] = {0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0};
   float result = fp4_e2m1_lut[x];
@@ -823,9 +864,156 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
         }
       }
     }
-  } else if (i_gemm_def->is_Ai1Bi8_gemm > 0) {
+  } else if ((i_gemm_def->is_Ai2Bi8_gemm > 0) && (i_gemm_def->unsigned_b == 0)) {
     char* c_a = (char*)a;
     char* c_b = (char*)b;
+    int*  i_c = (int*)c;
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m/4; l_i++) {
+        if ( i_gemm_def->beta == 0 ) {
+          long long l_i_m0 = (long long)l_i + 0*(m/4);
+          long long l_i_m1 = (long long)l_i + 1*(m/4);
+          long long l_i_m2 = (long long)l_i + 2*(m/4);
+          long long l_i_m3 = (long long)l_i + 3*(m/4);
+          i_c[(l_j * ldc) + l_i_m0] = 0;
+          i_c[(l_j * ldc) + l_i_m1] = 0;
+          i_c[(l_j * ldc) + l_i_m2] = 0;
+          i_c[(l_j * ldc) + l_i_m3] = 0;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
+          for (l_s = 0; l_s < (k / 4); l_s++) {
+            long long l_i_m0 = (long long)l_i + 0*(m/4);
+            long long l_i_m1 = (long long)l_i + 1*(m/4);
+            long long l_i_m2 = (long long)l_i + 2*(m/4);
+            long long l_i_m3 = (long long)l_i + 3*(m/4);
+            char m0k0 = 0, m1k0 = 0, m2k0 = 0, m3k0 = 0;
+            char spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 0];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+
+            spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 1];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+
+            spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 2];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+
+            spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 3];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+          }
+        }
+      }
+    }
+  } else if ((i_gemm_def->is_Ai2Bi8_gemm > 0) && (i_gemm_def->unsigned_b == 1)) {
+    char* c_a = (char*)a;
+    unsigned char* c_b = (unsigned char*)b;
+    int*  i_c = (int*)c;
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m/4; l_i++) {
+        if ( i_gemm_def->beta == 0 ) {
+          long long l_i_m0 = (long long)l_i + 0*(m/4);
+          long long l_i_m1 = (long long)l_i + 1*(m/4);
+          long long l_i_m2 = (long long)l_i + 2*(m/4);
+          long long l_i_m3 = (long long)l_i + 3*(m/4);
+          i_c[(l_j * ldc) + l_i_m0] = 0;
+          i_c[(l_j * ldc) + l_i_m1] = 0;
+          i_c[(l_j * ldc) + l_i_m2] = 0;
+          i_c[(l_j * ldc) + l_i_m3] = 0;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
+          for (l_s = 0; l_s < (k / 4); l_s++) {
+            long long l_i_m0 = (long long)l_i + 0*(m/4);
+            long long l_i_m1 = (long long)l_i + 1*(m/4);
+            long long l_i_m2 = (long long)l_i + 2*(m/4);
+            long long l_i_m3 = (long long)l_i + 3*(m/4);
+            char m0k0 = 0, m1k0 = 0, m2k0 = 0, m3k0 = 0;
+            char spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 0];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+
+            spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 1];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+
+            spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 2];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+
+            spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 3];
+            unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
+            i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+            i_c[(l_j * ldc) + l_i_m1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+            i_c[(l_j * ldc) + l_i_m2] += m2k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+            i_c[(l_j * ldc) + l_i_m3] += m3k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+          }
+        }
+      }
+    }
+  } else if ((i_gemm_def->is_Ai1Bi8_gemm > 0) && (i_gemm_def->unsigned_b == 0)) {
+    char* c_a = (char*)a;
+    char* c_b = (char*)b;
+    int*  i_c = (int*)c;
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i+=2) {
+        if ( i_gemm_def->beta == 0 ) {
+          i_c[(l_j * ldc) + l_i + 0] = 0;
+          i_c[(l_j * ldc) + l_i + 1] = 0;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
+          for (l_s = 0; l_s < (k / 4); l_s++) {
+            char m0k0 = 0, m0k1 = 0, m0k2 = 0, m0k3 = 0, m1k0 = 0, m1k1 = 0, m1k2 = 0, m1k3 = 0;
+            char spacked_char = c_a[offs_a + (l_s * lda)/2 + l_i/2];
+            m0k0 = ((spacked_char & 0x1) == 0) ? 1 : -1;
+            m0k1 = ((spacked_char & 0x2) == 0) ? 1 : -1;
+            m0k2 = ((spacked_char & 0x4) == 0) ? 1 : -1;
+            m0k3 = ((spacked_char & 0x8) == 0) ? 1 : -1;
+            m1k0 = ((spacked_char & 0x10) == 0) ? 1 : -1;
+            m1k1 = ((spacked_char & 0x20) == 0) ? 1 : -1;
+            m1k2 = ((spacked_char & 0x40) == 0) ? 1 : -1;
+            m1k3 = ((spacked_char & 0x80) == 0) ? 1 : -1;
+
+            i_c[(l_j * ldc) + l_i + 0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i + 0] += m0k1 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i + 0] += m0k2 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i + 0] += m0k3 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+
+            i_c[(l_j * ldc) + l_i + 1] += m1k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
+            i_c[(l_j * ldc) + l_i + 1] += m1k1 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 1];
+            i_c[(l_j * ldc) + l_i + 1] += m1k2 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 2];
+            i_c[(l_j * ldc) + l_i + 1] += m1k3 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 3];
+          }
+        }
+      }
+    }
+  } else if ((i_gemm_def->is_Ai1Bi8_gemm > 0) && (i_gemm_def->unsigned_b == 1)) {
+    char* c_a = (char*)a;
+    unsigned char* c_b = (unsigned char*)b;
     int*  i_c = (int*)c;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i+=2) {

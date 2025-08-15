@@ -758,18 +758,18 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                            'y',
                                                            l_vreg_one );
     } else {
-      unsigned char zeros[64];
+      char neg_ones[64];
       unsigned char ones[64];
       unsigned int __i;
 
       for (__i = 0; __i < 64; __i++) {
-        zeros[__i] = 0;
+        neg_ones[__i] = -1;
         ones[__i] = 1;
       }
 
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
-                                                           (const unsigned char *) zeros ,
-                                                           "my_zeros",
+                                                           (const unsigned char *) neg_ones ,
+                                                           "my_neg_ones",
                                                            'z',
                                                            0 );
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,

@@ -2874,7 +2874,7 @@ int main(int argc, char* argv []) {
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
     } else if (strcmp(argv[1], "I1") == 0) {
-      if (strcmp(argv[2], "I8") == 0) {
+      if (strcmp(argv[2], "U8") == 0 || strcmp(argv[2], "I8") == 0) {
         l_gemm_def.is_Ai1Bi8_gemm = 1;
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
@@ -3022,7 +3022,7 @@ int main(int argc, char* argv []) {
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
     } else if (strcmp(argv[1], "I1") == 0) {
-      if (strcmp(argv[2], "I8") == 0) {
+      if (strcmp(argv[2], "U8") == 0 || strcmp(argv[2], "I8") == 0) {
         l_gemm_def.is_Ai1Bi8_gemm = 1;
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
