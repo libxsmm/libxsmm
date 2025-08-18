@@ -155,11 +155,22 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
   if (is_binary_simple_rv64_tpp)
     dtype_in1 = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1);
 
-  is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
-                     LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
+  /* Check second input type only for binary ops */
+  if (is_unary_simple_rv64_tpp){
+    is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
+  } else {
+    is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
+  }
 
-  is_fp64_inp_out = (LIBXSMM_DATATYPE_F64 == dtype_in0 &&
-                     LIBXSMM_DATATYPE_F64 == dtype_out && LIBXSMM_DATATYPE_F64 == dtype_comp) ? 1 : 0;
+  if (is_unary_simple_rv64_tpp){
+    is_fp64_inp_out = (LIBXSMM_DATATYPE_F64 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_F64 == dtype_out && LIBXSMM_DATATYPE_F64 == dtype_comp) ? 1 : 0;
+  } else {
+    is_fp64_inp_out = (LIBXSMM_DATATYPE_F64 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_F64 == dtype_out && LIBXSMM_DATATYPE_F64 == dtype_comp) ? 1 : 0;
+  }
 
   is_valid_arch_prec = ((is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp || is_transform_tpp) && is_fp32_inp_out) || (is_transform_tpp && is_fp64_inp_out);
 
