@@ -1720,7 +1720,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int2int8_srf( libxsmm_generated_cod
                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) >  0) ? i_micro_kernel_config->vmul_instruction : LIBXSMM_X86_INSTR_VPDPBSSD,
                                                   i_micro_kernel_config->vector_name,
                                                   l_vreg_ab_offset + l_m,
-                                                  l_vreg_ab_offset+4,
+                                                  l_vreg_ab_offset + 4,
                                                   l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
     }
   }
@@ -1806,8 +1806,8 @@ void libxsmm_generator_gemm_avx2_microkernel_int1int8_srf( libxsmm_generated_cod
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                   ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) >  0) ? i_micro_kernel_config->vmul_instruction : LIBXSMM_X86_INSTR_VPDPBSSD,
                                                   i_micro_kernel_config->vector_name,
-                                                  l_vreg_ab_offset+4,
                                                   l_vreg_ab_offset + l_m,
+                                                  l_vreg_ab_offset + 4,
                                                   l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
     }
   }
