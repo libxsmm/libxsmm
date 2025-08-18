@@ -3851,7 +3851,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
                  ((long long)(i_m_blocking * i_micro_kernel_config->datatype_size_in* i_xgemm_desc->lda));
   } else {
 #endif
-    l_a_offset = ((long long)(i_xgemm_desc->k/l_k_scale) * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda) ) -
+    l_a_offset = ((long long)((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda))/l_k_scale) -
                  ((long long)i_m_blocking * (i_micro_kernel_config->datatype_size_in)* l_k_pack_factor/l_a_adjust);
 #if 0
   }

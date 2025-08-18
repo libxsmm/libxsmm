@@ -2315,7 +2315,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   if ( i_gemm_def->br_type == 2 ) {
     for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
       if (i_gemm_def->trans_a == 0) {
-        l_a_offs[l_r] = l_r * (long long)i_gemm_def->lda * (i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type);
+        l_a_offs[l_r] = l_r * (long long)(i_gemm_def->lda * i_gemm_def->k)/l_asize_divide_factor * LIBXSMM_TYPESIZE(i_gemm_def->a_type);
       } else {
         l_a_offs[l_r] = l_r * (long long)i_gemm_def->lda * i_gemm_def->m * LIBXSMM_TYPESIZE(i_gemm_def->a_type);
       }
@@ -2411,7 +2411,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-    l_brconfig.br_stride_a_hint = (i_gemm_def->trans_a == 0) ? i_gemm_def->lda*(i_gemm_def->k/l_asize_divide_factor)*LIBXSMM_TYPESIZE(i_gemm_def->a_type) : i_gemm_def->lda*i_gemm_def->m*LIBXSMM_TYPESIZE(i_gemm_def->a_type);
+    l_brconfig.br_stride_a_hint = (i_gemm_def->trans_a == 0) ? (i_gemm_def->lda*i_gemm_def->k)/l_asize_divide_factor*LIBXSMM_TYPESIZE(i_gemm_def->a_type) : i_gemm_def->lda*i_gemm_def->m*LIBXSMM_TYPESIZE(i_gemm_def->a_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->b_type) : i_gemm_def->ldb*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->b_type);
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else {
@@ -2547,7 +2547,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     gemm_param.b.primary = l_b_addr;
     for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
       if (i_gemm_def->trans_a == 0) {
-        l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
+        l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)(i_gemm_def->lda*i_gemm_def->k)/l_asize_divide_factor * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
         if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
           gemm_param.a.tertiary = l_a_scf_addr;
           l_a_scf_addr[l_r] = (char*)i_gemm_def->scf_u8 + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/32 * LIBXSMM_TYPESIZE(i_gemm_def->a_type)));
@@ -2627,7 +2627,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
       for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
         if (i_gemm_def->trans_a == 0) {
-          l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
+          l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)(i_gemm_def->lda * i_gemm_def->k)/l_asize_divide_factor * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
           if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
             gemm_param.a.tertiary = l_a_scf_addr;
             l_a_scf_addr[l_r] = (char*)i_gemm_def->scf_u8 + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/32 * LIBXSMM_TYPESIZE(i_gemm_def->a_type)));
