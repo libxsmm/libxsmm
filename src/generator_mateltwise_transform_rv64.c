@@ -73,8 +73,7 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
                                                          const unsigned int       i_gp_reg_addr,
                                                          const unsigned int       i_gp_reg_dst,
                                                          const unsigned int       i_gp_reg_scratch,
-                                                         const unsigned int       i_valid_e_regs,
-                                                         const unsigned int       i_valid_o_regs,
+                                                         const unsigned int       i_reg_count,
                                                          const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config,
                                                          const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   /* Consecutive registers are divided into even and odd sequence */
@@ -83,9 +82,12 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
 
   unsigned int i;
 
+  unsigned int l_valid_e_regs = i_reg_count / 2 + i_reg_count % 2;
+  unsigned int l_valid_o_regs = i_reg_count / 2;
+
   for (i = 0; i < 4; i++){
     /* Load even register */
-    if (i < i_valid_e_regs) {
+    if (i < l_valid_e_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VLE32_V,
           i_gp_reg_addr, i_gp_reg_scratch, e_reg + i, 1 );
 
@@ -99,7 +101,7 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
     }
 
     /* Load odd register */
-    if (i < i_valid_o_regs) {
+    if (i < l_valid_o_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VLE32_V,
           i_gp_reg_addr, i_gp_reg_scratch, o_reg + i, 1 );
 
@@ -119,13 +121,14 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
                                                           const unsigned int      i_gp_reg_addr,
                                                           const unsigned int      i_gp_reg_dst,
                                                           const unsigned int      i_gp_reg_scratch,
-                                                          const unsigned int      i_valid_e_regs,
-                                                          const unsigned int      i_valid_o_regs,
+                                                          const unsigned int      i_reg_count,
                                                           const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config,
                                                           const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 4;
 
+  unsigned int l_valid_e_regs = i_reg_count / 2 + i_reg_count % 2;
+  unsigned int l_valid_o_regs = i_reg_count / 2;
   unsigned int i;
 
   LIBXSMM_UNUSED(e_reg);
@@ -133,7 +136,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
 
   for (i = 0; i < 4; i++){
     /* store even register */
-    if (i < i_valid_e_regs) {
+    if (i < l_valid_e_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VSE32_V,
           i_gp_reg_addr, i_gp_reg_scratch, e_reg + i, 1 );
 
@@ -143,7 +146,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
     }
 
     /* store odd register */
-    if (i < i_valid_o_regs) {
+    if (i < l_valid_o_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VSE32_V,
           i_gp_reg_addr, i_gp_reg_scratch, o_reg + i, 1 );
 
@@ -159,19 +162,20 @@ void libxsmm_generator_transform_load_regblock_4x4_rv64( libxsmm_generated_code*
                                                          const unsigned int       i_gp_reg_addr,
                                                          const unsigned int       i_gp_reg_dst,
                                                          const unsigned int       i_gp_reg_scratch,
-                                                         const unsigned int       i_valid_e_regs,
-                                                         const unsigned int       i_valid_o_regs,
+                                                         const unsigned int       i_reg_count,
                                                          const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config,
                                                          const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   /* Consecutive registers are divided into even and odd sequence */
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 2;
 
+  unsigned int l_valid_e_regs = i_reg_count / 2 + i_reg_count % 2;
+  unsigned int l_valid_o_regs = i_reg_count / 2;
   unsigned int i;
 
   for (i = 0; i < 2; i++){
     /* Load even register */
-    if (i < i_valid_e_regs) {
+    if (i < l_valid_e_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VLE64_V,
           i_gp_reg_addr, i_gp_reg_scratch, e_reg + i, 1 );
 
@@ -185,7 +189,7 @@ void libxsmm_generator_transform_load_regblock_4x4_rv64( libxsmm_generated_code*
     }
 
     /* Load odd register */
-    if (i < i_valid_o_regs) {
+    if (i < l_valid_o_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VLE64_V,
           i_gp_reg_addr, i_gp_reg_scratch, o_reg + i, 1 );
 
@@ -205,13 +209,14 @@ void libxsmm_generator_transform_store_regblock_4x4_rv64( libxsmm_generated_code
                                                           const unsigned int      i_gp_reg_addr,
                                                           const unsigned int      i_gp_reg_dst,
                                                           const unsigned int      i_gp_reg_scratch,
-                                                          const unsigned int      i_valid_e_regs,
-                                                          const unsigned int      i_valid_o_regs,
+                                                          const unsigned int      i_reg_count,
                                                           const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config,
                                                           const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   int e_reg = i_gp_reg_dst;
   int o_reg = i_gp_reg_dst + 2;
 
+  unsigned int l_valid_e_regs = i_reg_count / 2 + i_reg_count % 2;
+  unsigned int l_valid_o_regs = i_reg_count / 2;
   unsigned int i;
 
   LIBXSMM_UNUSED(e_reg);
@@ -219,7 +224,7 @@ void libxsmm_generator_transform_store_regblock_4x4_rv64( libxsmm_generated_code
 
   for (i = 0; i < 2; i++){
     /* store even register */
-    if (i < i_valid_e_regs) {
+    if (i < l_valid_e_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VSE64_V,
           i_gp_reg_addr, i_gp_reg_scratch, e_reg + i, 1 );
 
@@ -229,7 +234,7 @@ void libxsmm_generator_transform_store_regblock_4x4_rv64( libxsmm_generated_code
     }
 
     /* store odd register */
-    if (i < i_valid_o_regs) {
+    if (i < l_valid_o_regs) {
       libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VSE64_V,
           i_gp_reg_addr, i_gp_reg_scratch, o_reg + i, 1 );
 
@@ -417,7 +422,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Load tensor from the src registers */
-  libxsmm_generator_transform_load_regblock_8x8_rv64(io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, (i_n / 2) + (i_n % 2), i_n / 2, i_micro_kernel_config, i_mateltwise_desc);
+  libxsmm_generator_transform_load_regblock_8x8_rv64(io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, i_n, i_micro_kernel_config, i_mateltwise_desc);
 
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
@@ -431,7 +436,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Store the registers to the dst */
-  libxsmm_generator_transform_store_regblock_8x8_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, (i_m / 2 + i_m % 2), i_m / 2, i_micro_kernel_config, i_mateltwise_desc );
+  libxsmm_generator_transform_store_regblock_8x8_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, i_m, i_micro_kernel_config, i_mateltwise_desc );
 
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
@@ -463,7 +468,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_rvv( lib
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
   /* Load tensor from the src registers */
-  libxsmm_generator_transform_load_regblock_4x4_rv64( io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, (i_n / 2) + (i_n % 2), i_n / 2, i_micro_kernel_config, i_mateltwise_desc );
+  libxsmm_generator_transform_load_regblock_4x4_rv64( io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, i_n, i_micro_kernel_config, i_mateltwise_desc );
 
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 4, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
@@ -477,7 +482,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_rvv( lib
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
   /* Store tensor to the dst */
-  libxsmm_generator_transform_store_regblock_4x4_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, (i_m / 2) + (i_m % 2), i_m / 2, i_micro_kernel_config, i_mateltwise_desc );
+  libxsmm_generator_transform_store_regblock_4x4_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, i_m, i_micro_kernel_config, i_mateltwise_desc );
 
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 4, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
