@@ -242,7 +242,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         int l_is_supported = 0;
         int l_b_unsigned = (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0;
 
-        if (l_is_Ai4_Bi8_gemm > 0 && io_generated_code->arch < LIBXSMM_X86_AVX512_SKX) {
+        if (l_is_Ai4_Bi8_gemm > 0 && io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) {
           l_is_supported = 1;
         }
         
