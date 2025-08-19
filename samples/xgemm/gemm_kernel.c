@@ -1114,6 +1114,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1139,6 +1142,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char* c_b = (char*)b;
     int*           i_c = (int*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1164,6 +1170,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     const char*          c_b = (const char*)b;
     int*                 i_c = (int*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1189,6 +1198,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     const unsigned char* c_b = (const unsigned char*)b;
     int*                 i_c = (int*)c;
     int l_k_block = (i_gemm_def->is_Ai4Bi8_gemm > 0) ? 4 : libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
