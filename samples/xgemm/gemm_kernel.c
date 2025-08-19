@@ -3630,7 +3630,6 @@ int main(int argc, char* argv []) {
                     l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 2] = packed_k2;
                     l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 3] = packed_k3;
                   } else {
-                    printf("INVALID INPUT M block size...\n");
                   }
                 }
               }

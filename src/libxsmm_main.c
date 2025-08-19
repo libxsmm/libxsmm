@@ -19,6 +19,7 @@
 #include "generator_x86_reference.h"
 #include "generator_aarch64_reference.h"
 #include "generator_rv64_reference.h"
+#include "generator_gemm_common.h"
 
 #include <signal.h>
 #if !defined(NDEBUG)
@@ -2231,6 +2232,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         libxsmm_generator_gemm_kernel(&generated_code, request->descriptor.gemm);
         /* Try reference code JITer */
+        /* I2/I1 GEMM have specific requirements */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          unsigned int l_is_Ai2_Bi8_gemm = libxsmm_x86_is_Ai2_Bi8_gemm(request->descriptor.gemm);
+          unsigned int l_is_Ai1_Bi8_gemm = libxsmm_x86_is_Ai1_Bi8_gemm(request->descriptor.gemm);
+          if (l_is_Ai2_Bi8_gemm || l_is_Ai1_Bi8_gemm) {
+            if (request->descriptor.gemm->m != 32 && request->descriptor.gemm->m != 64) {
+              libxsmm_disable_reference_gemm_fallback = 1;
+            }
+          }
+        }
         if (libxsmm_disable_reference_gemm_fallback == 0) {
           if (0 != generated_code.last_error) {
             generated_code.code_size = 0;
