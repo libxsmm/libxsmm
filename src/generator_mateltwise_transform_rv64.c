@@ -93,7 +93,7 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
     } else {
       /* Fill zero in the register */
       libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X0,
@@ -107,7 +107,7 @@ void libxsmm_generator_transform_load_regblock_8x8_rv64( libxsmm_generated_code*
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
     } else {
       /* Fill zero in the register */
       libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X0,
@@ -142,7 +142,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
     }
 
     /* store odd register */
@@ -152,7 +152,7 @@ void libxsmm_generator_transform_store_regblock_8x8_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
     }
   }
 }
@@ -181,7 +181,7 @@ void libxsmm_generator_transform_load_regblock_4x4_rv64( libxsmm_generated_code*
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
     } else {
       /* Fill zero in the register */
       libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X0,
@@ -195,7 +195,7 @@ void libxsmm_generator_transform_load_regblock_4x4_rv64( libxsmm_generated_code*
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in );
     } else {
       /* Fill zero in the register */
       libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X0,
@@ -230,7 +230,7 @@ void libxsmm_generator_transform_store_regblock_4x4_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
     }
 
     /* store odd register */
@@ -240,7 +240,7 @@ void libxsmm_generator_transform_store_regblock_4x4_rv64( libxsmm_generated_code
 
       /* Move to next in address */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
+          i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr, (unsigned long long)i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out );
     }
   }
 }
