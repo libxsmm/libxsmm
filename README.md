@@ -338,7 +338,7 @@ Please note that comparing performance results depends on whether the operands o
 
 <b>[4]&#160;</b>[https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000): Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
 
-<b>[5]&#160;</b>[http://pyfr.org/](http://pyfr.org/): PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR&#160;1.6.0 optionally [incorporates LIBXSMM](http://pyfr.org/user_guide.php) as a matrix multiplication provider for the OpenMP backend. Please also note LIBXSMM's [PyFR-related code sample](https://github.com/libxsmm/libxsmm/tree/main/samples/pyfr).
+<b>[5]&#160;</b>[https://www.pyfr.org/](https://www.pyfr.org/): PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR incorporates LIBXSMM as a matrix multiplication provider for the OpenMP backend.
 
 <b>[6]&#160;</b>[http://dial3343.org/about/](http://dial3343.org/about/): The Extreme-scale Discontinuous Galerkin Environment (EDGE) is a solver for hyperbolic partial differential equations with emphasis on seismic simulations. The EDGE [source code](https://github.com/3343/edge) optionally relies on LIBXSMM, but for high performance LIBXSMM's kernels are highly recommended.
 
