@@ -1,3 +1,0 @@
-spmm_kernel
-kernel_test/.generate_spmm_test_scripts
-kernel_test/*.slurm

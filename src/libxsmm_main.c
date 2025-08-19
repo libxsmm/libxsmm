@@ -10,8 +10,6 @@
 ******************************************************************************/
 #include "libxsmm_main.h"
 #include "libxsmm_trace.h"
-#include "libxsmm_xcopy.h"
-#include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
 #if defined(LIBXSMM_PERF)
@@ -1210,7 +1208,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_MEMZERO127(&internal_statistic[0/*DP*/][i]);
       LIBXSMM_MEMZERO127(&internal_statistic[1/*SP*/][i]);
     }
-    internal_statistic_mnk = LIBXSMM_MAX_DIM;
+    internal_statistic_mnk = 64;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
     LIBXSMM_ASSERT(LIBXSMM_ISPOT(LIBXSMM_CAPACITY_REGISTRY));
@@ -1231,7 +1229,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_ASSERT(NULL != new_cache); /* SA: suppress false positive */
       memset(new_cache, 0, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type));
 #endif
-      libxsmm_xcopy_init(libxsmm_target_archid);
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) ((libxsmm_code_pointer*)new_registry)[i].ptr = NULL;
       LIBXSMM_ASSERT(NULL == internal_registry && NULL == internal_registry_keys);
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1242,7 +1239,6 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
-      libxsmm_gemm_init();
 #if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -1484,8 +1480,6 @@ LIBXSMM_API_DTOR void libxsmm_finalize(void)
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_finalize();
 #endif
-      libxsmm_xcopy_finalize();
-      libxsmm_gemm_finalize();
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST); /* invalidate code cache (TLS) */
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1808,6 +1802,21 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
   }
   return result;
 }
+
+
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
+{
+  libxsmm_gemm_prefetch_type result;
+  if (0 > prefetch) {
+    LIBXSMM_INIT /* load configuration */
+    result = LIBXSMM_GEMM_PREFETCH_NONE;
+  }
+  else {
+    result = (libxsmm_gemm_prefetch_type)prefetch;
+  }
+  return result;
+}
+
 
 LIBXSMM_API_INLINE const char* libxsmm_get_i4gemm_typename(const unsigned char* datatype)
 {
@@ -3320,10 +3329,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     wrap.kind = (libxsmm_descriptor_kind)(descriptor->flags < LIBXSMM_GEMM_FLAG_DESC_ISBIG
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
-    if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
-      const int gemm_prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-      wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
-    }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
   }
 #if !defined(NDEBUG)
@@ -3361,7 +3366,7 @@ LIBXSMM_API libxsmm_tilecfgfunction libxsmm_dispatch_tilecfg_gemm( const libxsmm
     gemm_shape.b_in_type, gemm_shape.comp_type, gemm_shape.out_type,
     gemm_shape.m, gemm_shape.n, gemm_shape.k,
     gemm_shape.lda, gemm_shape.ldb, gemm_shape.ldc,
-    l_gemm_flags, libxsmm_get_gemm_prefetch(0));
+    l_gemm_flags, LIBXSMM_GEMM_PREFETCH_NONE);
 
   /* JIT! */
   result = libxsmm_xmmdispatch(desc);
@@ -3905,6 +3910,23 @@ LIBXSMM_API void libxsmm_release_kernel(const void* kernel)
   }
 }
 
+LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
 
 #if !defined(__linux__) && defined(__APPLE__)
 LIBXSMM_EXTERN char*** _NSGetArgv(void);
@@ -4265,6 +4287,36 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xrelease)(const void* key, const int* k
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xrelease specified!\n");
   }
 #endif
+}
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,
+  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*,
+  const double*, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char*, const char*,
+  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*,
+  const float*, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
