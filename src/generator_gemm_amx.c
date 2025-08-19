@@ -780,7 +780,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i2_tensor( libxsmm
             LIBXSMM_X86_INSTR_PREFETCHT0,
             i_gp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (int)((long long)im * 32 + u_ik * i_ldi + (long long)i_xgemm_desc->c1) );
+            (int)((long long)im * 32 + (long long)u_ik * i_ldi + (long long)i_xgemm_desc->c1) );
       }
 
       libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, l_vname, l_vreg_0, l_vreg_1, 4 );
