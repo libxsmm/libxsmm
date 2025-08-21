@@ -3585,7 +3585,6 @@ int main(int argc, char* argv []) {
             unsigned char *l_a_i2  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+3)/4)*4)/4) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
             char *c_a = (char*) l_a;
-            char *c_b = (char*) l_b;
             for (l_ar = 0; l_ar < l_br; l_ar++) {
               for (l_am = 0; l_am < l_m; l_am+=4) {
                 for (l_ak = 0; l_ak < l_k; l_ak+=4) {
@@ -3655,7 +3654,6 @@ int main(int argc, char* argv []) {
             unsigned char *l_a_i1  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+7)/8)*8)/8) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
             char *c_a = (char*) l_a;
-            char *c_b = (char*) l_b;
             for (l_ar = 0; l_ar < l_br; l_ar++) {
              for (l_ak = 0; l_ak < l_k; l_ak+=4) {
               for (l_am = 0; l_am < l_m; l_am+=2) {
