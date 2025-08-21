@@ -245,7 +245,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         if (l_is_Ai4_Bi8_gemm > 0 && io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) {
           l_is_supported = 1;
         }
-        
+
         /* i2i8 && m=32 && arch == SRF (B both signed and unsigned) */
         if (l_is_Ai2_Bi8_gemm > 0 && l_xgemm_desc_mod.m == 32 && io_generated_code->arch == LIBXSMM_X86_AVX2_SRF) {
           l_is_supported = 1;
@@ -259,18 +259,18 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
           l_is_supported = 1;
         }
         /* i2i8 && m=64 && arch >= AVX_512 && arch < SPR && B unsigned */
-        else if (l_is_Ai2_Bi8_gemm > 0 && l_xgemm_desc_mod.m == 64 && 
+        else if (l_is_Ai2_Bi8_gemm > 0 && l_xgemm_desc_mod.m == 64 &&
                  io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && l_b_unsigned) {
           l_is_supported = 1;
           io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
         }
         /* i1i8 && m=64 && arch >= SPR && B unsigned */
-        else if (l_is_Ai1_Bi8_gemm > 0 && l_xgemm_desc_mod.m == 64 && 
+        else if (l_is_Ai1_Bi8_gemm > 0 && l_xgemm_desc_mod.m == 64 &&
                  io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && l_b_unsigned) {
           l_is_supported = 1;
           io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
         }
-        
+
         if (!l_is_supported) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
           return;

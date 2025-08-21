@@ -760,7 +760,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i2_tensor( libxsmm
   while ( i_K % (4 * k_unroll) != 0) {
     k_unroll--;
   }
-  
+
   libxsmm_x86_instruction_push_reg( io_generated_code, cnt_reg );
   libxsmm_generator_gemm_header_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg );
   for (u_ik = 0; u_ik < k_unroll; u_ik++) {
