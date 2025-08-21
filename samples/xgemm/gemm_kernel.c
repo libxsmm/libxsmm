@@ -79,6 +79,8 @@ typedef struct gemm_def {
   unsigned int is_Amxfp4Bfp32_gemm;
   unsigned int is_Amxfp4Bi8_gemm;
   unsigned int is_Ai4Bi8_gemm;
+  unsigned int is_Ai2Bi8_gemm;
+  unsigned int is_Ai1Bi8_gemm;
   unsigned int is_Abf8Bbf16_gemm;
   unsigned int is_Abf8Bf16_gemm;
   unsigned int is_Ahf8Bbf16_gemm;
@@ -196,6 +198,36 @@ void compress_sparse_A_with_bitmap(const gemm_def*    i_gemm_def,
   }
   *io_decompress_bitmap = (unsigned short*)l_decompress_bitmap;
   *io_compressed_weights = (char*)l_compressed_weights;
+}
+
+LIBXSMM_INLINE
+unsigned char pack_2bit_encoding(char m0k0, char m1k0, char m2k0, char m3k0) {
+  unsigned char result = 0;
+  if (m0k0 == 1) {
+    result = result | 0x1;
+  }
+  if (m0k0 == -1) {
+    result = result | 0x2;
+  }
+  if (m1k0 == 1) {
+    result = result | 0x4;
+  }
+  if (m1k0 == -1) {
+    result = result | 0x8;
+  }
+  if (m2k0 == 1) {
+    result = result | 0x10;
+  }
+  if (m2k0 == -1) {
+    result = result | 0x20;
+  }
+  if (m3k0 == 1) {
+    result = result | 0x40;
+  }
+  if (m3k0 == -1) {
+    result = result | 0x80;
+  }
+  return result;
 }
 
 LIBXSMM_INLINE
@@ -741,11 +773,22 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
         } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
           s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(get_random_posneg_p5_num() * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-          if (i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0) {
-            if ( pos_val_only != 0 ) {
-              uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%16;
+          if (i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0 || i_gemm_def->is_Ai1Bi8_gemm > 0) {
+            if (i_gemm_def->is_Ai2Bi8_gemm > 0) {
+               if ( pos_val_only != 0 ) {
+                uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%256;
+              } else {
+                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%2;
+              }
+            } else if (i_gemm_def->is_Ai1Bi8_gemm > 0) {
+                unsigned char coin = ((unsigned char) (get_random_pos_p5_num() * 10.0))%2;
+                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (coin == 0) ? +1 : -1;
             } else {
-              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%8;
+              if ( pos_val_only != 0 ) {
+                uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%16;
+              } else {
+                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%8;
+              }
             }
           } else {
             if ( pos_val_only != 0 ) {
@@ -1071,6 +1114,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1096,6 +1142,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char* c_b = (char*)b;
     int*           i_c = (int*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1121,6 +1170,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     const char*          c_b = (const char*)b;
     int*                 i_c = (int*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1146,6 +1198,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     const unsigned char* c_b = (const unsigned char*)b;
     int*                 i_c = (int*)c;
     int l_k_block = (i_gemm_def->is_Ai4Bi8_gemm > 0) ? 4 : libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
+      l_k_block = 4;
+    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -2261,12 +2316,18 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   if (i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0 || i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0 || i_gemm_def->is_Ahf8Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
     l_asize_divide_factor = 2;
   }
+  if (i_gemm_def->is_Ai2Bi8_gemm > 0) {
+    l_asize_divide_factor = 4;
+  }
+  if (i_gemm_def->is_Ai1Bi8_gemm > 0) {
+    l_asize_divide_factor = 8;
+  }
 
   /* setup brgemm offsets */
   if ( i_gemm_def->br_type == 2 ) {
     for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
       if (i_gemm_def->trans_a == 0) {
-        l_a_offs[l_r] = l_r * (long long)i_gemm_def->lda * (i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type);
+        l_a_offs[l_r] = l_r * (long long)(i_gemm_def->lda * i_gemm_def->k)/l_asize_divide_factor * LIBXSMM_TYPESIZE(i_gemm_def->a_type);
       } else {
         l_a_offs[l_r] = l_r * (long long)i_gemm_def->lda * i_gemm_def->m * LIBXSMM_TYPESIZE(i_gemm_def->a_type);
       }
@@ -2309,6 +2370,15 @@ double jit_matmul( const gemm_def*    i_gemm_def,
       l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT;
     }
   }
+
+  if (i_gemm_def->is_Ai2Bi8_gemm > 0) {
+    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT2_VNNI4_INTLV;
+  }
+
+  if (i_gemm_def->is_Ai1Bi8_gemm > 0) {
+    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT1_VNNI4;
+  }
+
   if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0) {
     l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2;
   }
@@ -2353,7 +2423,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-    l_brconfig.br_stride_a_hint = (i_gemm_def->trans_a == 0) ? i_gemm_def->lda*(i_gemm_def->k/l_asize_divide_factor)*LIBXSMM_TYPESIZE(i_gemm_def->a_type) : i_gemm_def->lda*i_gemm_def->m*LIBXSMM_TYPESIZE(i_gemm_def->a_type);
+    l_brconfig.br_stride_a_hint = (i_gemm_def->trans_a == 0) ? (i_gemm_def->lda*i_gemm_def->k)/l_asize_divide_factor*LIBXSMM_TYPESIZE(i_gemm_def->a_type) : i_gemm_def->lda*i_gemm_def->m*LIBXSMM_TYPESIZE(i_gemm_def->a_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->b_type) : i_gemm_def->ldb*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->b_type);
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else {
@@ -2489,7 +2559,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     gemm_param.b.primary = l_b_addr;
     for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
       if (i_gemm_def->trans_a == 0) {
-        l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
+        l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)(i_gemm_def->lda*i_gemm_def->k)/l_asize_divide_factor * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
         if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
           gemm_param.a.tertiary = l_a_scf_addr;
           l_a_scf_addr[l_r] = (char*)i_gemm_def->scf_u8 + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/32 * LIBXSMM_TYPESIZE(i_gemm_def->a_type)));
@@ -2569,7 +2639,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
       for ( l_r = 0 ; l_r < (size_t)i_gemm_def->br_count; l_r++ ) {
         if (i_gemm_def->trans_a == 0) {
-          l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/l_asize_divide_factor) * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
+          l_a_addr[l_r] = (const char*)i_a + (l_r * (size_t)(i_gemm_def->lda * i_gemm_def->k)/l_asize_divide_factor * LIBXSMM_TYPESIZE(i_gemm_def->a_type));
           if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
             gemm_param.a.tertiary = l_a_scf_addr;
             l_a_scf_addr[l_r] = (char*)i_gemm_def->scf_u8 + (l_r * (size_t)i_gemm_def->lda * (size_t)(i_gemm_def->k/32 * LIBXSMM_TYPESIZE(i_gemm_def->a_type)));
@@ -2778,6 +2848,8 @@ int main(int argc, char* argv []) {
 
   l_gemm_def.is_Ai4Bf16_gemm = 0;
   l_gemm_def.is_Ai4Bi8_gemm = 0;
+  l_gemm_def.is_Ai2Bi8_gemm = 0;
+  l_gemm_def.is_Ai1Bi8_gemm = 0;
   l_gemm_def.is_Amxfp4Bbf16_gemm = 0;
   l_gemm_def.is_Amxfp4Bfp32_gemm = 0;
   l_gemm_def.is_Amxfp4Bi8_gemm = 0;
@@ -2808,6 +2880,16 @@ int main(int argc, char* argv []) {
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
       l_gemm_def.fuse_zpt_sub = 1;
+    } else if (strcmp(argv[1], "I2") == 0) {
+      if (strcmp(argv[2], "U8") == 0 || strcmp(argv[2], "I8") == 0) {
+        l_gemm_def.is_Ai2Bi8_gemm = 1;
+        l_dtype_a    = LIBXSMM_DATATYPE_I8;
+      }
+    } else if (strcmp(argv[1], "I1") == 0) {
+      if (strcmp(argv[2], "U8") == 0 || strcmp(argv[2], "I8") == 0) {
+        l_gemm_def.is_Ai1Bi8_gemm = 1;
+        l_dtype_a    = LIBXSMM_DATATYPE_I8;
+      }
     } else if (strcmp(argv[1], "MXFP4") == 0) {
       l_dtype_a_size = 0.53125;
       if (strcmp(argv[2], "BF16") == 0) {
@@ -2946,7 +3028,17 @@ int main(int argc, char* argv []) {
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
       }
       l_gemm_def.fuse_zpt_sub = 1;
-    } else if (strcmp(argv[1], "MXFP4") == 0) {
+    } else if (strcmp(argv[1], "I2") == 0) {
+      if (strcmp(argv[2], "U8") == 0 || strcmp(argv[2], "I8") == 0 ) {
+        l_gemm_def.is_Ai2Bi8_gemm = 1;
+        l_dtype_a    = LIBXSMM_DATATYPE_I8;
+      }
+    } else if (strcmp(argv[1], "I1") == 0) {
+      if (strcmp(argv[2], "U8") == 0 || strcmp(argv[2], "I8") == 0) {
+        l_gemm_def.is_Ai1Bi8_gemm = 1;
+        l_dtype_a    = LIBXSMM_DATATYPE_I8;
+      }
+    }  else if (strcmp(argv[1], "MXFP4") == 0) {
       if (strcmp(argv[2], "BF16") == 0) {
         l_gemm_def.is_Amxfp4Bbf16_gemm = 1;
         l_dtype_a    = LIBXSMM_DATATYPE_I8;
@@ -3488,6 +3580,104 @@ int main(int argc, char* argv []) {
             }
           }
 
+          if (l_gemm_def.is_Ai2Bi8_gemm > 0) {
+            /* We create a new tensor of i2 in vnni4-interleaved format from A... */
+            unsigned char *l_a_i2  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+3)/4)*4)/4) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
+            libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
+            char *c_a = (char*) l_a;
+            char *c_b = (char*) l_b;
+            for (l_ar = 0; l_ar < l_br; l_ar++) {
+              for (l_am = 0; l_am < l_m; l_am+=4) {
+                for (l_ak = 0; l_ak < l_k; l_ak+=4) {
+                  if (l_m == 64) {
+                    libxsmm_blasint l_am_load = (l_am/4)%16 + (l_am/4)/16*64;
+                    char m0k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 0];
+                    char m0k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 1];
+                    char m0k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 2];
+                    char m0k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 3];
+                    char m1k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 0];
+                    char m1k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 1];
+                    char m1k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 2];
+                    char m1k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 3];
+                    char m2k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 0];
+                    char m2k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 1];
+                    char m2k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 2];
+                    char m2k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 3];
+                    char m3k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 0];
+                    char m3k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 1];
+                    char m3k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 2];
+                    char m3k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 3];
+                    unsigned char packed_k0 = pack_2bit_encoding(m0k0, m1k0, m2k0, m3k0);
+                    unsigned char packed_k1 = pack_2bit_encoding(m0k1, m1k1, m2k1, m3k1);
+                    unsigned char packed_k2 = pack_2bit_encoding(m0k2, m1k2, m2k2, m3k2);
+                    unsigned char packed_k3 = pack_2bit_encoding(m0k3, m1k3, m2k3, m3k3);
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 0] = packed_k0;
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 1] = packed_k1;
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 2] = packed_k2;
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 3] = packed_k3;
+                  } else if (l_m == 32) {
+                    libxsmm_blasint l_am_load = (l_am/4)%8 + (l_am/4)/8*32;
+                    char m0k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 0];
+                    char m0k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 1];
+                    char m0k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 2];
+                    char m0k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 3];
+                    char m1k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 0];
+                    char m1k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 1];
+                    char m1k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 2];
+                    char m1k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 3];
+                    char m2k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 0];
+                    char m2k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 1];
+                    char m2k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 2];
+                    char m2k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 3];
+                    char m3k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 0];
+                    char m3k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 1];
+                    char m3k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 2];
+                    char m3k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 3];
+                    unsigned char packed_k0 = pack_2bit_encoding(m0k0, m1k0, m2k0, m3k0);
+                    unsigned char packed_k1 = pack_2bit_encoding(m0k1, m1k1, m2k1, m3k1);
+                    unsigned char packed_k2 = pack_2bit_encoding(m0k2, m1k2, m2k2, m3k2);
+                    unsigned char packed_k3 = pack_2bit_encoding(m0k3, m1k3, m2k3, m3k3);
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 0] = packed_k0;
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 1] = packed_k1;
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 2] = packed_k2;
+                    l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 3] = packed_k3;
+                  } else {
+                  }
+                }
+              }
+            }
+            l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a_i2, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
+            libxsmm_free(l_a_i2);
+          }
+
+          if (l_gemm_def.is_Ai1Bi8_gemm > 0) {
+            /* We create a new tensor of i1 in vnni4  format from A... */
+            unsigned char *l_a_i1  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+7)/8)*8)/8) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
+            libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
+            char *c_a = (char*) l_a;
+            char *c_b = (char*) l_b;
+            for (l_ar = 0; l_ar < l_br; l_ar++) {
+             for (l_ak = 0; l_ak < l_k; l_ak+=4) {
+              for (l_am = 0; l_am < l_m; l_am+=2) {
+                  char m0k0 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+0) * 4 + 0] == 1) ? 0 : 1;
+                  char m0k1 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+0) * 4 + 1] == 1) ? 0 : 1;
+                  char m0k2 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+0) * 4 + 2] == 1) ? 0 : 1;
+                  char m0k3 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+0) * 4 + 3] == 1) ? 0 : 1;
+                  char m1k0 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+1) * 4 + 0] == 1) ? 0 : 1;
+                  char m1k1 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+1) * 4 + 1] == 1) ? 0 : 1;
+                  char m1k2 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+1) * 4 + 2] == 1) ? 0 : 1;
+                  char m1k3 = (c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am+1) * 4 + 3] == 1) ? 0 : 1;
+                  unsigned char packed = 0;
+                  packed = m0k0 | (m0k1 << 1) | (m0k2 << 2) | (m0k3 << 3) | (m1k0 << 4) | (m1k1 << 5) | (m1k2 << 6) | (m1k3 << 7);
+                  l_a_i1[(l_ar * l_lda * l_k/8) + ((l_ak/4) * l_lda * 4)/8 + (l_am*4)/8] = packed;
+                }
+              }
+            }
+            l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a_i1, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
+            libxsmm_free(l_a_i1);
+          }
+
+
           if (l_gemm_def.is_Amxfp4Bbf16_gemm > 0) {
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0, l_akk = 0;
             char *l_a_mxfp4  = (char*)libxsmm_aligned_malloc((size_t)l_lda * ((size_t)l_k/2) * (size_t)l_br, 64);
@@ -3692,7 +3882,7 @@ int main(int argc, char* argv []) {
         }
         l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a_i4, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
         libxsmm_free(l_a_i4);
-      } else if ((l_gemm_def.is_Ai4Bi8_gemm > 0 || l_gemm_def.is_Abf8Bbf16_gemm > 0 || l_gemm_def.is_Ahf8Bbf16_gemm > 0 || l_gemm_def.is_Abf8Bf16_gemm > 0 || l_gemm_def.is_Amxfp4Bbf16_gemm > 0 || l_gemm_def.is_Amxfp4Bfp32_gemm > 0 || l_gemm_def.is_Amxfp4Bi8_gemm > 0) && (l_br_type != 4)) {
+      } else if ((l_gemm_def.is_Ai4Bi8_gemm > 0 || l_gemm_def.is_Ai2Bi8_gemm > 0 || l_gemm_def.is_Ai1Bi8_gemm > 0 || l_gemm_def.is_Abf8Bbf16_gemm > 0 || l_gemm_def.is_Ahf8Bbf16_gemm > 0 || l_gemm_def.is_Abf8Bf16_gemm > 0 || l_gemm_def.is_Amxfp4Bbf16_gemm > 0 || l_gemm_def.is_Amxfp4Bfp32_gemm > 0 || l_gemm_def.is_Amxfp4Bi8_gemm > 0) && (l_br_type != 4)) {
         /* Do nothing, already ran it... */
       } else {
         l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
