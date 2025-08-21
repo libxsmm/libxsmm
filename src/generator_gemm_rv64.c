@@ -482,13 +482,13 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   }
 
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3ff );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3fff );
 
   /* ensuring compatibility with X86 AMX */
   if ( !( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
           (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))    ) ) {
     /* close asm */
-    libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3ff );
+    libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
     return;
   }
 
@@ -563,7 +563,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   /* setting up the stack frame */
   libxsmm_generator_gemm_setup_stack_frame_rv64( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config);
 
-   /* Apply potential opA / opB */
+  /* Apply potential opA / opB */
   libxsmm_generator_gemm_apply_opA_opB_rv64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa, i_xgemm_desc);
 
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -972,7 +972,7 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   libxsmm_generator_gemm_destroy_stack_frame_rv64( io_generated_code );
 
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3ff );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
 }
 
 #undef MAX_FP_REG
