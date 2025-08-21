@@ -743,10 +743,10 @@ void libxsmm_rv64_instruction_rvv_compute_imm( libxsmm_generated_code*  io_gener
       return;
     }
 
-    /* fix bits */
+    /* Fix bits */
     code[code_head]  = i_vec_instr;
 
-    /* setting RS1 */
+    /* setting RS2 */
     code[code_head] |= (unsigned int)FILL_REGID(i_vec_reg_src, LIBXSMM_RV64_INSTR_FIELD_RS2);
     /* setting RD */
     code[code_head] |= (unsigned int)FILL_REGID(i_reg_dst, LIBXSMM_RV64_INSTR_FIELD_RD);
