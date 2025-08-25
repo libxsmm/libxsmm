@@ -462,8 +462,6 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_rvv( lib
 
   LIBXSMM_UNUSED(l_reg_scratch_start);
 
-  printf("Invoking 4x4 transpose for %d %d sizes\n", i_m, i_n);
-
   /* Set SEW and VL */
   libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
