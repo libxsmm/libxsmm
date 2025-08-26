@@ -346,7 +346,7 @@ Please note that comparing performance results depends on whether the operands o
 
 <b>[9]&#160;</b>[https://github.com/romeric/Fastor](https://github.com/romeric/Fastor): Fastor is a lightweight high performance tensor algebra framework for modern C++ and can optionally use LIBXSMM as [JIT-backend](https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend).
 
-### Machine Learning (ML)
+### Machine and Deep Learning (AI)
 
 <b>[10]&#160;</b>[https://github.com/plaidml/plaidml](https://github.com/plaidml/plaidml): PlaidML is an open source tensor compiler aiming for performance portability across a wide range of CPUs, GPUs and other accelerators. Combined with Intel’s nGraph compiler, PlaidML is targeting popular deep learning frameworks such as PyTorch, Keras (TensorFlow), and OpenVino. [PlaidML/v1](https://github.com/plaidml/plaidml/tree/plaidml-v1) (development branch) adopted [MLIR](https://mlir.llvm.org/), an extensible compiler infrastructure gaining industry-wide adoption. PlaidML/v1 started using LIBXSMM as backend for targeting CPUs.
 
