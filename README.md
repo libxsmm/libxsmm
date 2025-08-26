@@ -203,8 +203,6 @@ Using the [classic ABI](#classic-library-abi) (including [Fortran](#fortran) cod
 :-------------|---------
 libxsmm       | Thread-safe core functions (same routine can be called concurrently). Contains routines that can take a thread-ID and the number of library-external threads.
 libxsmmf      | Necessary when using the Fortran MODule but not when including `libxsmm.f` or relying on implicit interfaces ([Fortran 77](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility)).
-libxsmmext    | Provides library-internal OpenMP-threaded functions carrying the `omp` postfix when compared to function name names of the core library.
-libxsmmnoblas | Supplies faked symbols for `dgemm` (and others) and thereby removes the need to link against a LAPACK/BLAS library.
 
 <a name="pkg-config"></a>To ease linking with LIBXSMM, `pkg-config` can be used. For example:
 
