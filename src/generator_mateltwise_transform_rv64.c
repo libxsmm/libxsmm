@@ -262,13 +262,13 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv( l
 
   /* Store the even mask */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0,
-    LIBXSMM_RV64_GP_REG_X28, i_mask_e);
+    LIBXSMM_RV64_GP_REG_X5, i_mask_e);
 
   /* Store the odd mask */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0,
-    LIBXSMM_RV64_GP_REG_X29, i_mask_o);
+    LIBXSMM_RV64_GP_REG_X6, i_mask_o);
 
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X28,
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X5,
     LIBXSMM_RV64_GP_REG_V0, LIBXSMM_RV64_GP_REG_V0, 1);
 
   /* Copy the even registers (0, 2, 4, 6) to scratch */
@@ -306,7 +306,7 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv( l
   }
 
   /* Set the odd mask */
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X29,
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X6,
     LIBXSMM_RV64_GP_REG_V0, LIBXSMM_RV64_GP_REG_V0, 1);
 
   o_reg = i_gp_reg_dst_o;
@@ -341,13 +341,13 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x4_rvv( l
 
   /* Store the even mask */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0,
-    LIBXSMM_RV64_GP_REG_X28, i_mask_e);
+    LIBXSMM_RV64_GP_REG_X5, i_mask_e);
 
   /* Store the even mask */
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X0,
-    LIBXSMM_RV64_GP_REG_X29, i_mask_o);
+    LIBXSMM_RV64_GP_REG_X6, i_mask_o);
 
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X28,
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X5,
     LIBXSMM_RV64_GP_REG_V0, LIBXSMM_RV64_GP_REG_V0, 1);
 
   /* Copy the even registers (0, 2) to scratch */
@@ -385,7 +385,7 @@ void libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x4_rvv( l
   }
 
   /* Set the odd mask */
-  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X29,
+  libxsmm_rv64_instruction_rvv_compute( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VMV_V_X, LIBXSMM_RV64_GP_REG_X6,
     LIBXSMM_RV64_GP_REG_V0, LIBXSMM_RV64_GP_REG_V0, 1);
 
   o_reg = i_gp_reg_dst_o;
@@ -419,13 +419,13 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   LIBXSMM_UNUSED(l_reg_scratch_start);
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Load tensor from the src registers */
   libxsmm_generator_transform_load_regblock_8x8_rv64(io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, i_n, i_micro_kernel_config, i_mateltwise_desc);
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Pass through shuffle network */
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 4, l_reg_scratch_start, 0xaa, 0x55, 1);
@@ -433,13 +433,13 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_rvv( lib
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_32bit_8x8_rvv(io_generated_code, l_reg_in_start, l_reg_in_start + 2, l_reg_scratch_start, 0xf0, 0x0f, 4);
 
   /* Set SEW and VL for store */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Store the registers to the dst */
   libxsmm_generator_transform_store_regblock_8x8_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, i_m, i_micro_kernel_config, i_mateltwise_desc );
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 8, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_D, LIBXSMM_RV64_LMUL_M1);
 
   /* Reset output pointer for next m block */
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
@@ -463,13 +463,13 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_rvv( lib
   LIBXSMM_UNUSED(l_reg_scratch_start);
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_m, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
   /* Load tensor from the src registers */
   libxsmm_generator_transform_load_regblock_4x4_rv64( io_generated_code, i_gp_reg_in, l_reg_in_start, i_gp_reg_scratch, i_n, i_micro_kernel_config, i_mateltwise_desc );
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 4, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 4, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
   /* Pass through shuffle network */
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x4_rvv( io_generated_code, l_reg_in_start, l_reg_in_start + 2, l_reg_scratch_start, 0xaa, 0x55, 1 );
@@ -477,13 +477,13 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_rvv( lib
   libxsmm_generator_transform_norm_to_normt_shuffle_regblock_64bit_4x4_rvv( io_generated_code, l_reg_in_start, l_reg_in_start + 1, l_reg_scratch_start, 0xcc, 0x33, 2 );
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_n, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
   /* Store tensor to the dst */
   libxsmm_generator_transform_store_regblock_4x4_rv64( io_generated_code, i_gp_reg_out, l_reg_in_start, i_gp_reg_scratch, i_m, i_micro_kernel_config, i_mateltwise_desc );
 
   /* Set SEW and VL */
-  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 4, LIBXSMM_RV64_GP_REG_X28, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setivli( io_generated_code, 4, LIBXSMM_RV64_GP_REG_X5, LIBXSMM_RV64_SEW_Q, LIBXSMM_RV64_LMUL_M1);
 
   /* Reset output pointer for next m block */
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
@@ -607,11 +607,11 @@ void libxsmm_generator_transform_norm_to_normt_64bit_rvv_microkernel( libxsmm_ge
 
       /* advance output pointer */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                       i_gp_reg_out, LIBXSMM_RV64_GP_REG_X28, i_gp_reg_out, (4LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) );
+                                       i_gp_reg_out, LIBXSMM_RV64_GP_REG_X5, i_gp_reg_out, (4LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) );
 
       /* advance input pointer */
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
-                                       i_gp_reg_in, LIBXSMM_RV64_GP_REG_X28, i_gp_reg_in, -1 * (((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (4LL * i_micro_kernel_config->datatype_size_in)) );
+                                       i_gp_reg_in, LIBXSMM_RV64_GP_REG_X5, i_gp_reg_in, -1 * (((long long)i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (4LL * i_micro_kernel_config->datatype_size_in)) );
 
       /* close m loop */
       libxsmm_generator_loop_footer_rv64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, 4 );
