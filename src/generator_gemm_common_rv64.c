@@ -84,7 +84,8 @@ void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_rv64( libx
 
   if (is_address_brgemm > 0) {
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_in, i_tmp_reg2, 0 );
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_in, i_loop_reg, 0 );
+    libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_gp_reg_in, i_loop_reg, i_gp_reg_in );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_gp_reg_in, i_gp_reg_in, 0 );
   }
 
   libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, i_struct_gp_reg, i_gp_reg_in, l_offset_ptr_a );
