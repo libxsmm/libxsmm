@@ -510,8 +510,6 @@ void libxsmm_load_rv64_2d_reg_block( libxsmm_generated_code*                 io_
               i_gp_reg_mapping->gp_reg_in, ((long long)l_ld_bytes - l_m_adjust));
         }
     }
-
-    libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, i_gp_reg_mapping->gp_reg_scratch_0, l_sew, LIBXSMM_RV64_LMUL_M1);
   }
 
   /* Reset the base address */
@@ -607,8 +605,6 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
                                                   (unsigned long)i_vlen * i_micro_kernel_config->datatype_size_out);
       }
     }
-
-    libxsmm_rv64_instruction_rvv_setivli( io_generated_code, i_vlen, i_gp_reg_mapping->gp_reg_scratch_0, l_sew, LIBXSMM_RV64_LMUL_M1);
 
     if (l_m_adjust != l_ld_bytes)
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
@@ -1250,8 +1246,9 @@ void libxsmm_generator_unary_binary_rv64_microkernel( libxsmm_generated_code*   
   libxsmm_generator_configure_rv64_vlens(i_mateltwise_desc, i_micro_kernel_config);
 
   /* Configure the register mapping for this eltwise kernel */
-  i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X11;
-  i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X12;
+  i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X18;
+  i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X19;
+
   i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X13;
   i_gp_reg_mapping->gp_reg_n_loop    = LIBXSMM_RV64_GP_REG_X14;
   i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X15;

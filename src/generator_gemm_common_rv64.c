@@ -77,7 +77,8 @@ void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_rv64( libx
   if (is_offset_brgemm > 0) {
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, i_gp_reg_in, i_tmp_reg2, 0 );
     libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, i_stack_var_offs_ptr, i_tmp_reg);
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_tmp_reg, i_loop_reg, 0);
+    libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_tmp_reg, i_loop_reg, i_tmp_reg );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_LD, i_tmp_reg, i_tmp_reg, 0);
     libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD, i_tmp_reg, i_gp_reg_in, i_gp_reg_in );
   }
 
@@ -113,6 +114,7 @@ void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_rv64( libx
     libxsmm_generator_transform_rv64_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
   } else {
     libxsmm_generator_unary_binary_rv64_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc  );
+    libxsmm_generator_meltw_destroy_stack_frame_rv64(  io_generated_code, l_mateltwise_desc, &l_mateltwise_kernel_config );
   }
 
   if (i_op2_type != LIBXSMM_MELTW_TYPE_UNARY_NONE) {
@@ -322,7 +324,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64(
       if (is_offset_brgemm > 0 || is_address_brgemm > 0) {
         libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg);
         libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, temp_reg2, b_size );
-        libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_MUL, temp_reg, temp_reg2, temp_reg, 0 );
+        libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_MUL, temp_reg, temp_reg2, temp_reg );
         libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, temp_reg2, 0 );
         libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB, temp_reg2, temp_reg, temp_reg2 );
         libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, temp_reg2, LIBXSMM_RV64_GP_REG_XSP, 0 );
@@ -393,12 +395,10 @@ void libxsmm_generator_gemm_setup_stack_frame_rv64(
   }
 
   /* Now align RSP to 64 byte boundary */
-#if 0
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, temp_reg2, 0 );
   libxsmm_rv64_instruction_alu_compute( io_generated_code, LIBXSMM_RV64_INSTR_GP_AND, temp_reg2, temp_reg, temp_reg2  );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, temp_reg2, LIBXSMM_RV64_GP_REG_XSP, 0 );
-#endif
 
   /* Now allocate in stack required GEMM scratch if necessary*/
   libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, i_micro_kernel_config );
@@ -1082,6 +1082,7 @@ void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stac
         i_in_dtype, i_in_dtype, i_in_dtype,
         LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
+
     libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg);
     libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, tmp_reg, i_gp_reg_mapping->gp_reg_b, 0 );
     i_xgemm_desc->ldb = i_xgemm_desc->k;
@@ -1089,12 +1090,14 @@ void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stac
   } else {
     if ( (is_offset_brgemm > 0) || (is_address_brgemm > 0) ) {
       unsigned int l_is_trans_b = (i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_B);
+
       libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_rv64( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
           i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2, tmp_reg3,
           LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, (l_is_trans_b) ? i_xgemm_desc->n : i_xgemm_desc->k, (l_is_trans_b) ? i_xgemm_desc->k : i_xgemm_desc->n, i_xgemm_desc_orig->ldb, (l_is_trans_b) ? i_xgemm_desc->n : i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
           i_in_dtype, i_in_dtype, i_in_dtype,
           LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
           LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
+
       i_xgemm_desc->ldb = (l_is_trans_b) ? i_xgemm_desc->n : i_xgemm_desc->k;
       libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg);
       libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, tmp_reg, i_gp_reg_mapping->gp_reg_b, 0 );
