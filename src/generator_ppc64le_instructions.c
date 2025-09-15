@@ -1564,6 +1564,10 @@ void libxsmm_ppc64le_instr_3( libxsmm_generated_code *io_generated_code,
       case LIBXSMM_PPC64LE_FORM_X_555: {
         l_op = libxsmm_ppc64le_instr_x_form_555( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2 );
       } break;
+      /* X (581) form */
+      case LIBXSMM_PPC64LE_FORM_X_581: {
+        l_op = libxsmm_ppc64le_instr_x_form_581( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2 );
+      } break;
       /* XX2 (2) form */
       case LIBXSMM_PPC64LE_FORM_XX2_2: {
         l_op = libxsmm_ppc64le_instr_xx2_form_2( l_instr, (unsigned char)i_0, (unsigned char)i_1, (unsigned char)i_2 );
@@ -1810,6 +1814,13 @@ void libxsmm_ppc64le_instr_8( libxsmm_generated_code *io_generated_code,
   }
 }
 
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_pnop( libxsmm_generated_code *io_generated_code,
+                                 unsigned int            i_label ) {
+  unsigned long l_op = LIBXSMM_PPC64LE_INSTR_PNOP | (unsigned long)( 0xffff & i_label );
+  libxsmm_ppc64le_instr_prefix_append( io_generated_code, l_op );
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_prefix_append( libxsmm_generated_code *io_generated_code,
@@ -2941,7 +2952,7 @@ void libxsmm_ppc64le_instr_load_pair( libxsmm_generated_code *io_generated_code,
 
   if ( io_generated_code->arch >= LIBXSMM_PPC64LE_MMA ) {
     unsigned int l_tp = (0x1f & i_t) >> 1;
-    unsigned int l_tx = (0x20 & i_t) >> 5 ;
+    unsigned int l_tx = (0x20 & i_t) >> 5;
 
     if ( i_offset <= 0x7fff && i_offset >= -0x7fff && ( i_offset % 16 ) == 0 ) {
       unsigned int l_offset = (unsigned int)( 0xffff & i_offset ) >> 4;
@@ -3080,16 +3091,8 @@ void libxsmm_ppc64le_instr_load_splat( libxsmm_generated_code *io_generated_code
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_code,
                                         libxsmm_ppc64le_reg    *io_reg_tracker ) {
-<<<<<<< HEAD
-  /* From "64-Bit ELF V2 ABI Specification: Power Architecture"
-   * GPR3 contains the pointer to the first arguement
-   * The first arg to the gemm is a pointer to a libxsmm_gemm_param struct, which we
-   * can then unpack, into the standard register locations
-   */
-=======
   /* From "64-Bit ELF V2 ABI Specification: Power Architecture" */
   unsigned int i_reg, i;
->>>>>>> ac0a981d0 (Reference caller ppc64le (#950))
   unsigned int gpr_offset = LIBXSMM_PPC64LE_STACK_SIZE - 16 ;
   unsigned int fpr_offset = gpr_offset - (LIBXSMM_PPC64LE_GPR_NMAX - LIBXSMM_PPC64LE_GPR_IVOL)*8;
   unsigned int vsr_offset = fpr_offset - (LIBXSMM_PPC64LE_FPR_NMAX - LIBXSMM_PPC64LE_FPR_IVOL)*8;
@@ -3321,7 +3324,7 @@ LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_code,
                                           libxsmm_ppc64le_reg    *io_reg_tracker ) {
   /* From "64-Bit ELF V2 ABI Specification: Power Architecture" */
-  unsigned int i_reg, i;
+  unsigned int i_reg, i, l_npad;
   unsigned int gpr_offset = LIBXSMM_PPC64LE_STACK_SIZE - 16 ;
   unsigned int fpr_offset = gpr_offset - (LIBXSMM_PPC64LE_GPR_NMAX - LIBXSMM_PPC64LE_GPR_IVOL)*8;
   unsigned int vsr_offset = fpr_offset - (LIBXSMM_PPC64LE_FPR_NMAX - LIBXSMM_PPC64LE_FPR_IVOL)*8;
@@ -3395,6 +3398,13 @@ void libxsmm_ppc64le_instr_colapse_stack( libxsmm_generated_code *io_generated_c
 
   /* Return statement */
   libxsmm_ppc64le_instr_blr( io_generated_code );
+
+  /* Pad after return */
+  l_npad = (io_generated_code->code_size % 16) / 4;
+  for (i=0; i < l_npad; ++i) {
+    libxsmm_ppc64le_instr_nop( io_generated_code );
+  }
+
 }
 
 
@@ -3421,31 +3431,33 @@ void libxsmm_ppc64le_instr_close_data( libxsmm_generated_code*     io_generated_
     /* Copy the data into the buffer */
     memcpy( l_code_buffer + l_code_size, io_const_data->const_data, l_data_size );
 
-    /* Update the data size including unused space (page-size alignment */
+    /* Update the data size including unused space for page-size alignment */
     io_generated_code->data_size = l_code_size + l_data_size - io_generated_code->code_size;
 
     /* Fill in the load address */
     for ( l_i = 0; l_i < io_const_data->const_data_nload_insns; l_i++ ) {
       unsigned int l_adr_off = io_const_data->const_data_pc_load_insns[l_i];
       unsigned char l_gp;
-      unsigned int l_off, l_nia_off, l_instr, l_op;
+      unsigned int l_off, l_nia_off, l_nia_off_low, l_nia_off_high, l_instr, l_op;
 
       /* Read the user-provided offset and destination GP */
       memcpy( &l_off, l_code_buffer + l_adr_off, sizeof(l_off) );
 
-      /* Extract the GP from the top 5 bits */
+      /* Extract the GP from the top 5 bits, remaining 0x1fffff bit are the offset */
       l_gp = 0x1f & ( l_off >> 27 );
 
       /* Compute the NIA offset */
       l_nia_off = l_code_size - l_adr_off + ( 0x1fffff & l_off ) - 4;
+      l_nia_off_low = (unsigned int)( 0xffff & l_nia_off );
+      l_nia_off_high = (unsigned int)( (0xffff & ( l_nia_off >> 16 )) + ( 0x1 & ( l_nia_off_low >> 15 ) ) );
 
       /* Construct the ADDPCIS and ADDI instructions */
       l_op =  LIBXSMM_PPC64LE_INSTR_ADDPCIS & LIBXSMM_PPC64LE_32FMASK;
-      l_instr = libxsmm_ppc64le_instr_dx_form( l_op, l_gp, 0xffff & ( l_nia_off >> 16 ) );
+      l_instr = libxsmm_ppc64le_instr_dx_form( l_op, l_gp, l_nia_off_high );
       memcpy( l_code_buffer + l_adr_off, &l_instr, sizeof(l_instr) );
-      if ( 0 != ( 0xffff & l_nia_off ) ) {
+      if ( 0 != l_nia_off_low ) {
         l_op =  LIBXSMM_PPC64LE_INSTR_ADDI & LIBXSMM_PPC64LE_32FMASK;
-        l_instr = libxsmm_ppc64le_instr_d_form( l_op, l_gp, l_gp, 0xffff & l_nia_off );
+        l_instr = libxsmm_ppc64le_instr_d_form( l_op, l_gp, l_gp, l_nia_off_low );
       } else {
         l_instr = LIBXSMM_PPC64LE_INSTR_NOP;
       }

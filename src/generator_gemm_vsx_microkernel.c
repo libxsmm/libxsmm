@@ -228,7 +228,7 @@ void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
   unsigned int l_op;
 
   /* If beta is zero we only suport positive multiplication */
-  if ( ( i_beta == 0 ) && ( i_alpha != 1) ) {
+  if ( ( i_beta == 0 ) && ( i_alpha != 1 ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   } else if ( i_alpha == 0 ) {

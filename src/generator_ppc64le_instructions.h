@@ -510,7 +510,7 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_INSTR_NOP 0x60000000 /* NOP */
 #define LIBXSMM_PPC64LE_INSTR_BLR 0x4e800020 /* Branch Unconditionally to LR */
 #define LIBXSMM_PPC64LE_INSTR_TRAP 0x7fe00008 /* Unconditional trap */
-
+#define LIBXSMM_PPC64LE_INSTR_PNOP 0x0700000000000000UL /* Prefixed NOP */
 
 #define LIBXSMM_PPC64LE_32FMASK 0xfc1f07ff/* 32-bit opcode form index mask */
 #define LIBXSMM_PPC64LE_64FMASK 0xfff00000ffffffffUL/* 64-bit opcode form index mask */
@@ -667,6 +667,8 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_INSTR_STXVRWX 0x7c00699a /* Store VSX Vector Rightmost Word Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXVW4X 0x7c006f18 /* Store VSX Vector Word*4 Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXVX 0x7c006b18 /* Store VSX Vector Indexed X-form */
+#define LIBXSMM_PPC64LE_INSTR_TW 0x7c009808 /* Trap Word X(555)-form */
+#define LIBXSMM_PPC64LE_INSTR_TWI 0xc001000 /* Trap Word Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_XSABSDP 0xf000e564 /* VSX Scalar Absolute Double-Precision XX2(3)-form */
 #define LIBXSMM_PPC64LE_INSTR_XSCPSGNDP 0xf0200d80 /* VSX Scalar Copy Sign Double-Precision XX3(6)-form */
 #define LIBXSMM_PPC64LE_INSTR_XSCVDPHP 0xf011e56c /* VSX Scalar Convert with round Double-Precision to Half-Precision format XX2(3)-form */
@@ -1429,6 +1431,9 @@ void libxsmm_ppc64le_instr_8( libxsmm_generated_code *io_generated_code,
                               unsigned int            i_6,
                               unsigned int            i_7 );
 
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_pnop( libxsmm_generated_code *io_generated_code,
+                                 unsigned int            i_label);
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_prefix_append( libxsmm_generated_code *io_generated_code,

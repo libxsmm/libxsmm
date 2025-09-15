@@ -26,6 +26,8 @@
 #   define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
 # elif defined(__APPLE__)
 #   define LIBXSMM_PAGE_MINSIZE 16384 /* 16 KB */
+# elif (defined(__PPC64__) || defined(__powerpc64__))
+#   define LIBXSMM_PAGE_MINSIZE 65536 /* 64 KB */
 # else
 #   define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
 # endif
