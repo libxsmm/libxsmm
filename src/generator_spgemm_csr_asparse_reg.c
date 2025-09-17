@@ -1987,8 +1987,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
     }
   }
 
-  libxsmm_ppc64le_instr_pnop( io_generated_code, 2 );
-
   /* Set up the n-loop tracker */
   l_n_loop = libxsmm_ppc64le_get_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR );
   libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_n_loop, (unsigned int)i_xgemm_desc->c1/(l_vlen*l_n_blocking) );
@@ -2034,6 +2032,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
 
         int l_alpha = op.src_sgns[l_i];
         int l_beta = ( 0 == l_acc_neg_tbl[l_n][l_acc_idx] ) ? 1 : -1;
+        l_acc_neg_tbl[l_n][l_acc_idx] = 0;
 
         /* Load or zero accumulator if required */
         if ( LIBXSMM_ASPARSE_REG_FLAG_FIRST & op.flags[l_i] ) {
@@ -2041,8 +2040,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
           if ( 0 != l_beta0 ) {
             if ( -1 == l_alpha && ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_i] ) ) {
               for ( l_j = 0; l_j < l_n_b_reg; ++l_j) {
-                unsigned int l_reg = l_rvc + l_j;
-                libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_reg, 0, ( 0x20 & l_reg ) >> 5 ) ;
+                libxsmm_ppc64le_instr_vec_zero( io_generated_code, l_rvc + l_j );
               }
             } else if ( -1 == l_alpha ) {
               l_beta = 0;
@@ -2050,11 +2048,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
               l_acc_neg_tbl[l_n][l_acc_idx] = 1;
             } else if ( 1 == l_alpha ) {
               l_beta = 0;
-            } else if ( 0 == l_alpha ) {
-              for ( l_j = 0; l_j < l_n_b_reg; ++l_j) {
-                unsigned int l_reg = l_rvc + l_j;
-                libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, l_reg, 0, ( 0x20 & l_reg ) >> 5 ) ;
-              }
             }
           /* Otherwise load accumulator */
           } else {
@@ -2089,7 +2082,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
 
             /* Broadcast from packed register */
             if ( l_unique <= l_preg_unique ) {
-              unsigned int l_vp = l_u / l_vlen;
+              unsigned int l_vp = l_pack_base_reg + l_u / l_vlen;
               unsigned int l_lane = l_vlen - 1 - (l_u % l_vlen);
 
               libxsmm_ppc64le_instr_vec_splat( io_generated_code, l_datatype, l_vp, l_lane, l_rva );
@@ -2116,6 +2109,34 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
             libxsmm_ppc64le_instr_store_pair( io_generated_code, l_gp_reg_c, l_c_disp + l_n*l_vbytes, l_rvc);
           } else {
             libxsmm_ppc64le_instr_store( io_generated_code, l_gp_reg_c, l_c_disp + l_n*l_vbytes, l_rvc);
+          }
+        }
+      }
+    }
+  }
+
+  /* In the case of beta = 0 handle all-zero rows */
+  if ( l_beta0 ) {
+    unsigned int l_zeroed = 0;
+    unsigned int l_z_reg = l_c_base_reg;
+
+    for ( l_j = 0; l_j < i_xgemm_desc->m; l_j++ ) {
+      if ( i_row_idx[l_j + 1] == i_row_idx[l_j] ) {
+        unsigned int l_c_disp = l_j*i_xgemm_desc->ldc*l_fbytes;
+        if ( !l_zeroed ) {
+          /* Create a zero vector first time round */
+          libxsmm_ppc64le_instr_vec_zero( io_generated_code, l_z_reg );
+          if ( 2 == l_n_b_reg ) {
+            libxsmm_ppc64le_instr_vec_zero( io_generated_code, l_z_reg + 1 );
+          }
+          l_zeroed = 1;
+        }
+
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+          if ( 2 == l_n_b_reg ) {
+            libxsmm_ppc64le_instr_store_pair( io_generated_code, l_gp_reg_c, l_c_disp + l_n*l_vbytes, l_z_reg);
+          } else {
+            libxsmm_ppc64le_instr_store( io_generated_code, l_gp_reg_c, l_c_disp + l_n*l_vbytes, l_z_reg);
           }
         }
       }

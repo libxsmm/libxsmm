@@ -2695,6 +2695,14 @@ void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_zero( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_vec ) {
+  /* XXSPLTIB with 0 is zero cost via instruction decoding */
+  libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_XXSPLTIB, i_vec, 0, ( 0x20 & i_vec ) >> 5 ) ;
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_set_shift_left( libxsmm_generated_code *io_generated_code,
                                            unsigned int            i_src,
                                            unsigned int            i_dst,
