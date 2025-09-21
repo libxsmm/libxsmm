@@ -1219,7 +1219,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       io_generated_code->arch = LIBXSMM_AARCH64_V81;
       libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
     }
-  } else if ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 && io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) {
+  } else if ( ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 ) &&
+              ( io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT ) ) {
     libxsmm_generator_gemm_rv64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) ||
               (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) ) {

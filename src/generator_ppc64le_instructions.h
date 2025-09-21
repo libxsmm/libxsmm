@@ -119,7 +119,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 #define LIBXSMM_PPC64LE_GPR_SP 1 /* Stack pointer (GPR R1) */
 
 
-/* 5-bit chunks reversed for SPR */
+/* 5-bit chunks reversed for SPR, ie [9876543210] -> [4321098765] */
 #define LIBXSMM_PPC64LE_SPR_XER 0x00000020 /* REG 1 64-bit */
 #define LIBXSMM_PPC64LE_SPR_DSCR 0x00000060 /* REG 3 64-bit */
 #define LIBXSMM_PPC64LE_SPR_LR 0x00000100 /* REG 8 64-bit */
@@ -155,7 +155,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 #define LIBXSMM_PPC64LE_SPR_EBBRR 0x000000b9 /* REG 805 64-bit */
 #define LIBXSMM_PPC64LE_SPR_BESCR 0x000000d9 /* REG 806 64-bit */
 #define LIBXSMM_PPC64LE_SPR_DEXCR 0x00000199 /* REG 812 32-bit */
-#define LIBXSMM_PPC64LE_SPR_TAR 0x000001d9 /* REG 815 64-bit */
+#define LIBXSMM_PPC64LE_SPR_TAR 0x000001f9 /* REG 815 64-bit */
 #define LIBXSMM_PPC64LE_SPR_PPR 0x0000001c /* REG 896 64-bit */
 #define LIBXSMM_PPC64LE_SPR_PPR32 0x0000005c /* REG 898 32-bit */
 
@@ -574,6 +574,7 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_INSTR_BC 0x40000800 /* Branch Conditional B-form */
 #define LIBXSMM_PPC64LE_INSTR_BCCTR 0x4c00cc20 /* Branch Conditional to Count Register XL(4)-form */
 #define LIBXSMM_PPC64LE_INSTR_BCLR 0x4c00c820 /* Branch Conditional to Link Register XL(4)-form */
+#define LIBXSMM_PPC64LE_INSTR_BCTAR 0x4c00cc60 /* Branch Conditional to Branch Target Address Register XL(4)-form */
 #define LIBXSMM_PPC64LE_INSTR_CMPI 0x2c001800 /* Compare Immediate D(BF)-form */
 #define LIBXSMM_PPC64LE_INSTR_DCBF 0x7c0080ac /* Data Cache Block Flush X(355L)-form */
 #define LIBXSMM_PPC64LE_INSTR_DCBST 0x7c00906c /* Data Cache Block Store X(55)-form */
@@ -667,8 +668,6 @@ typedef struct libxsmm_ppc64le_reg {
 #define LIBXSMM_PPC64LE_INSTR_STXVRWX 0x7c00699a /* Store VSX Vector Rightmost Word Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXVW4X 0x7c006f18 /* Store VSX Vector Word*4 Indexed X-form */
 #define LIBXSMM_PPC64LE_INSTR_STXVX 0x7c006b18 /* Store VSX Vector Indexed X-form */
-#define LIBXSMM_PPC64LE_INSTR_TW 0x7c009808 /* Trap Word X(555)-form */
-#define LIBXSMM_PPC64LE_INSTR_TWI 0xc001000 /* Trap Word Immediate D-form */
 #define LIBXSMM_PPC64LE_INSTR_XSABSDP 0xf000e564 /* VSX Scalar Absolute Double-Precision XX2(3)-form */
 #define LIBXSMM_PPC64LE_INSTR_XSCPSGNDP 0xf0200d80 /* VSX Scalar Copy Sign Double-Precision XX3(6)-form */
 #define LIBXSMM_PPC64LE_INSTR_XSCVDPHP 0xf011e56c /* VSX Scalar Convert with round Double-Precision to Half-Precision format XX2(3)-form */
@@ -1756,6 +1755,11 @@ void libxsmm_ppc64le_instr_adr_data( libxsmm_generated_code*     io_generated_co
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_cia_add_value( libxsmm_generated_code *io_generated_code,
+                                          unsigned int            i_reg,
+                                          int                     i_val );
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
                                       unsigned int            i_dst,
                                       long                    i_val );
@@ -1763,6 +1767,26 @@ void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_vec_zero( libxsmm_generated_code *io_generated_code,
                                      unsigned int            i_vec );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_mone( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_vec );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_imm_splat( libxsmm_generated_code *io_generated_code,
+                                          libxsmm_datatype const  i_datatype,
+                                          unsigned int            i_dst,
+                                          void                   *i_const );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_imm32_splat( libxsmm_generated_code *io_generated_code,
+                                            unsigned int            i_dst,
+                                            void                   *i_const );
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_vec_imm64_splat( libxsmm_generated_code *io_generated_code,
+                                            unsigned int            i_dst,
+                                            void                   *i_const );
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_set_shift_left( libxsmm_generated_code *io_generated_code,
@@ -1884,6 +1908,7 @@ void libxsmm_ppc64le_instr_register_jump_back_label( libxsmm_generated_code     
  **/
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_cond_jump_back_to_label( libxsmm_generated_code     *io_generated_code,
+                                                    libxsmm_ppc64le_reg        *io_reg_tracker,
                                                     unsigned int                i_gpr,
                                                     libxsmm_loop_label_tracker *io_loop_label_tracker );
 
