@@ -533,6 +533,7 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
                                          unsigned int                            i_mask_last_m_chunk,
                                          unsigned int                            i_mask_reg) {
   unsigned int im, in, cur_vreg;
+  unsigned int l_store_instr = (i_micro_kernel_config->datatype_size_in == 8) ? LIBXSMM_RV64_INSTR_RVV_VSE64_V : LIBXSMM_RV64_INSTR_RVV_VSE32_V;
   unsigned int bcast_row = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0))
                              ? 1 : 0;
   unsigned int bcast_col = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0))
@@ -593,7 +594,7 @@ void libxsmm_store_rv64_2d_reg_block( libxsmm_generated_code*                 io
       if ((im == (i_m_blocking - 1)) && i_mask_last_m_chunk != 0)
         libxsmm_rv64_instruction_rvv_setvli( io_generated_code, i_avlen, i_gp_reg_mapping->gp_reg_scratch_0, l_sew, LIBXSMM_RV64_LMUL_M1);
 
-      libxsmm_rv64_instruction_rvv_move( io_generated_code, LIBXSMM_RV64_INSTR_RVV_VSE32_V,
+      libxsmm_rv64_instruction_rvv_move( io_generated_code, l_store_instr,
             i_gp_reg_mapping->gp_reg_out, LIBXSMM_RV64_GP_REG_UNDEF, cur_vreg, 1);
 
       /*  Increament in address */
@@ -1250,13 +1251,13 @@ void libxsmm_generator_unary_binary_rv64_microkernel( libxsmm_generated_code*   
   libxsmm_generator_configure_rv64_vlens(i_mateltwise_desc, i_micro_kernel_config);
 
   /* Configure the register mapping for this eltwise kernel */
-  i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X18;
-  i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X19;
+  i_gp_reg_mapping->gp_reg_in        = LIBXSMM_RV64_GP_REG_X14;
+  i_gp_reg_mapping->gp_reg_out       = LIBXSMM_RV64_GP_REG_X15;
 
-  i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X13;
-  i_gp_reg_mapping->gp_reg_n_loop    = LIBXSMM_RV64_GP_REG_X14;
-  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X15;
-  i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X16;
+  i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X22;
+  i_gp_reg_mapping->gp_reg_n_loop    = LIBXSMM_RV64_GP_REG_X30;
+  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X31;
+  i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X28;
 
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
     i_gp_reg_mapping->gp_reg_in2  = LIBXSMM_RV64_GP_REG_X17;
