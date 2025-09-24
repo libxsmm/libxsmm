@@ -1256,8 +1256,8 @@ void libxsmm_generator_unary_binary_rv64_microkernel( libxsmm_generated_code*   
 
   i_gp_reg_mapping->gp_reg_m_loop    = LIBXSMM_RV64_GP_REG_X22;
   i_gp_reg_mapping->gp_reg_n_loop    = LIBXSMM_RV64_GP_REG_X30;
-  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X31;
-  i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X28;
+  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_RV64_GP_REG_X8;
+  i_gp_reg_mapping->gp_reg_scratch_1 = LIBXSMM_RV64_GP_REG_X23;
 
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
     i_gp_reg_mapping->gp_reg_in2  = LIBXSMM_RV64_GP_REG_X17;
