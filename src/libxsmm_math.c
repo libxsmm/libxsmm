@@ -936,6 +936,53 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
 }
 
 
+LIBXSMM_API double libxsmm_nearbyint(double x) {
+#if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
+  return nearbyint(x);
+#else
+  double floor_x, frac_part;
+  double integral_part, half_rem;
+
+  if (x == 0.0 || x == -0.0) {
+    return x;
+  }
+  if (isinf(x)) {
+    return x;
+  }
+  if (isnan(x)) {
+    return x;
+  }
+
+  floor_x = floor(x);
+  frac_part = x - floor_x;
+
+  if (frac_part > 0.5) {
+    return floor_x + 1.0;
+  } else if (frac_part < 0.5) {
+    return floor_x;
+  } else {
+    integral_part = floor_x;
+    half_rem = fmod(fabs(integral_part), 2.0);
+
+    if (half_rem == 0.0) {
+      return integral_part;
+    } else {
+      return integral_part + 1.0;
+    }
+  }
+#endif
+}
+
+
+LIBXSMM_API float libxsmm_nearbyintf(float x) {
+#if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
+  return nearbyintf(x);
+#else
+  return (float)libxsmm_nearbyint((double)x);
+#endif
+}
+
+
 #if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */

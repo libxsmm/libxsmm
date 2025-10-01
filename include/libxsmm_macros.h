@@ -653,8 +653,6 @@ LIBXSMM_API_INLINE unsigned long long libxsmm_widen_u32u64(unsigned int value) {
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
-# define LIBXSMM_NEARBYINTF(A) nearbyintf(A)
-# define LIBXSMM_NEARBYINT(A) nearbyint(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
 # define LIBXSMM_SQRTF(A) sqrtf(A)
 # define LIBXSMM_EXP2F(A) exp2f(A)
@@ -667,35 +665,10 @@ LIBXSMM_API_INLINE unsigned long long libxsmm_widen_u32u64(unsigned int value) {
 # define LIBXSMM_EXPF(A) expf(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-#include <math.h>
-LIBXSMM_API_INLINE double libxsmm_nearbyint(double x) {
-  double floor_x, frac_part;
-  double integral_part, half_rem;
-
-  floor_x = floor(x);
-  frac_part = x - floor_x;
-
-  if (frac_part > 0.5) {
-    return floor_x + 1.0;
-  } else if (frac_part < 0.5) {
-    return floor_x;
-  } else {
-    integral_part = floor_x;
-    half_rem = fmod(fabs(integral_part), 2.0);
-
-    if (half_rem == 0.0) {
-      return integral_part;
-    } else {
-      return integral_part + 1.0;
-    }
-  }
-}
 # define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
-# define LIBXSMM_NEARBYINTF(A) (float)libxsmm_nearbyint(A)
-# define LIBXSMM_NEARBYINT(A) libxsmm_nearbyint(A)
 # define LIBXSMM_TANHF(A) ((float)tanh((float)(A)))
 # define LIBXSMM_SQRTF(A) ((float)sqrt((float)(A)))
 # define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)
