@@ -145,21 +145,49 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
 
   unsigned int dtype_in0 = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0);
   unsigned int dtype_out = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT);
-  unsigned int dtype_in1 = LIBXSMM_DATATYPE_F32;
+  unsigned int dtype_in1 = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1);
 
   unsigned int dtype_comp = libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP);
 
   unsigned int is_fp32_inp_out = 0;
+  unsigned int is_fp64_inp_out = 0;
+  unsigned int is_u32_inp_out  = 0;
+  unsigned int is_i32_inp_out  = 0;
+  unsigned int is_i64_inp_out  = 0;
 
   if (is_binary_simple_rv64_tpp)
     dtype_in1 = (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1);
 
-  is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
-                              LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
+  /* Check second input type only for binary ops */
+  if (is_unary_simple_rv64_tpp | is_transform_tpp){
+    is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
+    is_fp64_inp_out = (LIBXSMM_DATATYPE_F64 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_F64 == dtype_out && LIBXSMM_DATATYPE_F64 == dtype_comp) ? 1 : 0;
+    is_u32_inp_out  = (LIBXSMM_DATATYPE_U32 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_U32 == dtype_out && LIBXSMM_DATATYPE_U32 == dtype_comp) ? 1 : 0;
+    is_i32_inp_out  = (LIBXSMM_DATATYPE_I32 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_I32 == dtype_out && LIBXSMM_DATATYPE_I32 == dtype_comp) ? 1 : 0;
+    is_i64_inp_out  = (LIBXSMM_DATATYPE_I64 == dtype_in0 &&
+                       LIBXSMM_DATATYPE_I64 == dtype_out && LIBXSMM_DATATYPE_I64 == dtype_comp) ? 1 : 0;
+  } else {
+    is_fp32_inp_out = (LIBXSMM_DATATYPE_F32 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_F32 == dtype_out && LIBXSMM_DATATYPE_F32 == dtype_comp) ? 1 : 0;
+    is_fp64_inp_out = (LIBXSMM_DATATYPE_F64 == dtype_in0 && LIBXSMM_DATATYPE_F32 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_F64 == dtype_out && LIBXSMM_DATATYPE_F64 == dtype_comp) ? 1 : 0;
+    is_u32_inp_out  = (LIBXSMM_DATATYPE_U32 == dtype_in0 && LIBXSMM_DATATYPE_U32 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_U32 == dtype_out && LIBXSMM_DATATYPE_U32 == dtype_comp) ? 1 : 0;
+    is_i32_inp_out  = (LIBXSMM_DATATYPE_I32 == dtype_in0 && LIBXSMM_DATATYPE_I32 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_I32 == dtype_out && LIBXSMM_DATATYPE_I32 == dtype_comp) ? 1 : 0;
+    is_i64_inp_out  = (LIBXSMM_DATATYPE_I64 == dtype_in0 && LIBXSMM_DATATYPE_I64 == dtype_in1 &&
+                       LIBXSMM_DATATYPE_I64 == dtype_out && LIBXSMM_DATATYPE_I64 == dtype_comp) ? 1 : 0;
+  }
 
-  is_valid_arch_prec = (is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp || is_transform_tpp) && is_fp32_inp_out;
+  printf("TPP in out type %d %d %d %d %d\n", is_fp32_inp_out, is_fp64_inp_out, is_u32_inp_out, is_i32_inp_out, is_i64_inp_out);
 
-    if ((is_transform_tpp == 0) && (is_gather_scatter_tpp == 0) &&                                                                                                                 !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) &&
+  is_valid_arch_prec = ((is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp || is_transform_tpp) && is_fp32_inp_out) || (is_transform_tpp && (is_fp64_inp_out || is_u32_inp_out || is_i32_inp_out || is_i64_inp_out));
+
+  if ((is_transform_tpp == 0) && (is_gather_scatter_tpp == 0) &&                                                                                                                 !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) &&
       !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR )) &&
       !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY))) {                                 if ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
       LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
@@ -201,7 +229,7 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   libxsmm_generator_mateltwise_rv64_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, i_mateltwise_desc );
 
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0xfff );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3fff );
 
   libxsmm_generator_meltw_setup_stack_frame_rv64( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
@@ -221,5 +249,5 @@ void libxsmm_generator_mateltwise_rv64_kernel( libxsmm_generated_code*         i
   libxsmm_generator_meltw_destroy_stack_frame_rv64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
 
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0xfff );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
 }
