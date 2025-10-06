@@ -80,7 +80,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if (signed_sat > 0) {
-        float tmp = LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+        float tmp = libxsmm_nearbyintf( in[(i*ldi)+j] * scf_quant );
         if (tmp < -128) {
           tmp = -128.0;
         }
@@ -89,7 +89,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
         }
         char_data_gold[(i*ldo)+j] = (char) tmp;
       } else {
-        char_data_gold[(i*ldo)+j] = (char) (0x000000ff & ((int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
+        char_data_gold[(i*ldo)+j] = (char) (0x000000ff & ((int)libxsmm_nearbyintf( in[(i*ldi)+j] * scf_quant )));
       }
     }
   }
@@ -267,7 +267,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if (signed_sat > 0) {
-        float tmp = LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+        float tmp = libxsmm_nearbyintf( in[(i*ldi)+j] * scf_quant );
         if (tmp < -32768) {
           tmp = -32768.0;
         }
@@ -276,7 +276,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
         }
         short_data_gold[(i*ldo)+j] = (short) tmp;
       } else {
-        short_data_gold[(i*ldo)+j] = (short) ( 0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant )));
+        short_data_gold[(i*ldo)+j] = (short) ( 0x0000ffff & ((int)libxsmm_nearbyintf( in[(i*ldi)+j] * scf_quant )));
       }
     }
   }
@@ -452,7 +452,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      int_data_gold[(i*ldo)+j] = (int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
+      int_data_gold[(i*ldo)+j] = (int)libxsmm_nearbyintf( in[(i*ldi)+j] * scf_quant );
     }
   }
 

@@ -218,6 +218,8 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x)
 
 LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
 {
+  return libxsmm_sexp2((float)x);
+#if 0
   union { int i; float s; } result = { 0 };
   if (-128 != x) {
     const signed char ux = (signed char)LIBXSMM_ABS(x);
@@ -239,6 +241,7 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
     result.i = 0x200000;
   }
   return result.s;
+#endif
 }
 
 
