@@ -261,4 +261,9 @@ LIBXSMM_API double libxsmm_dsqrt(double x);
 /** SQRT with Newton's method using single-precision. */
 LIBXSMM_API float libxsmm_ssqrt(float x);
 
+/** nearbyint double */
+LIBXSMM_API double libxsmm_nearbyint(double x);
+/** nearbyint float */
+LIBXSMM_API float libxsmm_nearbyintf(float x);
+
 #endif /*LIBXSMM_MATH_H*/
