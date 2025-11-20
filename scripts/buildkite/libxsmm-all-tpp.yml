@@ -185,7 +185,7 @@ steps:
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "srf"
-      PARTITIONS: "srfap"
+      PARTITIONS: "srfsp"
 
   - label: "ELTWISE GNR"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
