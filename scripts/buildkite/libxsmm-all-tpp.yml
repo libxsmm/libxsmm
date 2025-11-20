@@ -14,6 +14,20 @@ steps:
 
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
+      LIBXSMM_TARGET: srf
+      PARTITIONS: "srfsp"
+#      CONFIG: gcc-122
+    label: "SMMs SRF"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: gnr
+      PARTITIONS: "gnrap"
+#      CONFIG: gcc-122
+    label: "SMMs GNR"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
       LIBXSMM_TARGET: spr
 #      CONFIG: gcc-122
     label: "SMMs SPR"
@@ -86,6 +100,20 @@ steps:
 
   - command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     env:
+      LIBXSMM_TARGET: srf
+      PARTITIONS: "srfsp"
+#      CONFIG: gcc-122
+    label: "BCSC SPMM GNR"
+
+  - command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: gnr
+      PARTITIONS: "gnrap"
+#      CONFIG: gcc-122
+    label: "BCSC SPMM GNR"
+
+  - command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
+    env:
       LIBXSMM_TARGET: spr
 #      CONFIG: gcc-122
     label: "BCSC SPMM SPR"
@@ -153,6 +181,18 @@ steps:
   - label: "ELTWISE CPUID"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
 
+  - label: "ELTWISE SRF"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "srf"
+      PARTITIONS: "srfap"
+
+  - label: "ELTWISE GNR"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      LIBXSMM_TARGET: "gnr"
+      PARTITIONS: "gnrap"
+
   - label: "ELTWISE SPR"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
@@ -212,6 +252,20 @@ steps:
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
     env:
       CONFIG: "gcc-system"
+
+  - label: "EQUATION SRF"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "srf"
+      PARTITIONS: "srfsp"
+
+  - label: "EQUATION GNR"
+    command: "scripts/tool_test.sh samples/equation/run_test.sh"
+    env:
+      CONFIG: "gcc-system"
+      LIBXSMM_TARGET: "gnr"
+      PARTITIONS: "gnrap"
 
   - label: "EQUATION SPR"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
