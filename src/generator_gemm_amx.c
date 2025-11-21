@@ -839,7 +839,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                     i_gp_reg_in, (long long)i_ldi);
+                                     i_gp_reg_in, (long long)i_ldi * i_micro_kernel_config->datatype_size_in);
 
     /* advance output pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -855,14 +855,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
-                                     i_gp_reg_in, ((long long)i_ldi * i_M) - ((long long)4) );
+                                     i_gp_reg_in, ((long long)i_ldi * i_micro_kernel_config->datatype_size_in * i_M) - ((long long)4) );
 
     /* close m loop */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_m_loop, i_K/4 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_m_loop, i_K/(4/i_micro_kernel_config->datatype_size_in) );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
 
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_in, ((long long)i_K));
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_out, ((long long)i_ldo * i_K) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_in, ((long long)i_K * i_micro_kernel_config->datatype_size_in ));
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg_out, ((long long)i_ldo * i_K * i_micro_kernel_config->datatype_size_in) );
 
     /* restore l_gp_temp */
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
