@@ -27,7 +27,7 @@
 # define CHECK
 #endif
 #if !defined(MAXSIZE)
-# define MAXSIZE LIBXSMM_MAX_M
+# define MAXSIZE 128
 #endif
 
 
@@ -303,9 +303,9 @@ int main(int argc, char* argv[])
 
 #if defined(CHECK)
     { /* calculate l1-norm for manual validation */
-      double a[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
-      double b[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
-      double c[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
+      double a[128 * 128];
+      double b[128 * 128];
+      double c[128 * 128];
       libxsmm_matdiff_info check;
       libxsmm_matdiff_clear(&check);
       LIBXSMM_MATINIT(double, 0, a, maxsize, maxsize, maxsize, 1.0);

@@ -54,12 +54,5 @@ set y2label "GFLOP/s"
 set xrange [0:LIMIT+0.85]
 set yrange [0:*]
 set autoscale fix
-if (0!=system("sh -c \"if [ -e smm-inlined.dat ]; then echo 1; else echo 0; fi\"")) {
-plot  "smm-inlined.dat" using FLOPS title "Inlined", \
-      "smm-blas.dat" using FLOPS title "BLAS", \
-      "smm-dispatched.dat" using FLOPS title "Dispatched", \
+plot  "smm-dispatched.dat"        using FLOPS title "BLAS", \
       "smm-specialized.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Specialized"
-} else {
-plot  "smm-blas.dat"        using FLOPS title "BLAS", \
-      "smm-specialized.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Specialized"
-}

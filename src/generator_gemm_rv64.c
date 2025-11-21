@@ -18,6 +18,11 @@
 
 #define MAX_FP_REG (20)
 #define MAX_UIMM   (0x7ff)
+#define REUSE_A    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_a())
+#define REUSE_B    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_b())
+#define REUSE_C    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_c())
+#define PREFETCH_A (libxsmm_cpuid_rv64_gemm_prefetch_a())
+#define PREFETCH_B (libxsmm_cpuid_rv64_gemm_prefetch_b())
 #define REG_GP(i)  (((i)->arch == LIBXSMM_RV64_MVL128_LMUL) || (((i)->arch == LIBXSMM_RV64_MVL128_LMUL)))
 
 LIBXSMM_API_INTERN
@@ -153,6 +158,24 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* If sw pipeline is enabled, fetch twice for first iteration and skip the last. */
   for (nld = 0; nld < max_loads; nld++){
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m += i_reg_gp ) {
+      if (PREFETCH_A){
+        int m_stride = libxsmm_cpuid_rv64_gemm_m_prefetch_stride();
+        int stride = i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in;
+
+        /* If m_stride is set prefetch next m block else next k iteration of current m block */
+        if (m_stride >= 1) {
+          stride = i_m_blocking * m_stride * i_micro_kernel_config->datatype_size_in;
+        }
+
+        /* Calculate prefetch address for A from acutal address */
+        libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+            i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_a_prefetch,
+            stride);
+
+        /* Prefetch A for next k loop */
+        libxsmm_rv64_instruction_prefetch( io_generated_code, LIBXSMM_RV64_INSTR_GP_PREFETCH_R, i_gp_reg_mapping->gp_reg_a_prefetch, 0 );
+      }
+
       libxsmm_rv64_instruction_rvv_move( io_generated_code,
           l_a_part_load_instr,
           i_gp_reg_mapping->gp_reg_a,
@@ -200,6 +223,17 @@ void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*       
   /* Prefetch B for the next k iteration */
 
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    /* Prefetch B for the next k iteration */
+    if (PREFETCH_B){
+      /* Calculate prefetch address for A from acutal address */
+      libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
+          i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b_prefetch,
+          (long long)i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in);
+
+      /* Prefetch A for next k loop */
+      libxsmm_rv64_instruction_prefetch( io_generated_code, LIBXSMM_RV64_INSTR_GP_PREFETCH_R, i_gp_reg_mapping->gp_reg_b_prefetch, 0 );
+    }
+
     /* Load scalar and then broadcast on b */
     libxsmm_rv64_instruction_alu_move( io_generated_code,
                                        l_b_load_scalar_instr,
@@ -430,10 +464,10 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_RV64_GP_REG_X23;
   l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_RV64_GP_REG_X24;      /* Offset reg are same as used for stride */
   l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_RV64_GP_REG_X25;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_RV64_GP_REG_X26;       /* storing forward counting BRGEMM interations */
-  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_RV64_GP_REG_X28;        /* for a ptr updates in BRGEMM */
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_RV64_GP_REG_X29;        /* for b ptr updates in BRGEMM */
-  l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_RV64_GP_REG_X30;  /* BRGEMM loop */
+  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_RV64_GP_REG_X26;        /* storing forward counting BRGEMM interations */
+  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_RV64_GP_REG_X27;        /* for a ptr updates in BRGEMM */
+  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_RV64_GP_REG_X28;        /* for b ptr updates in BRGEMM */
+  l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_RV64_GP_REG_X29;   /* BRGEMM loop */
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -448,13 +482,13 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   }
 
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3ff );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3fff );
 
   /* ensuring compatibility with X86 AMX */
   if ( !( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
           (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))    ) ) {
     /* close asm */
-    libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3ff );
+    libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
     return;
   }
 
@@ -528,6 +562,9 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
 
   /* setting up the stack frame */
   libxsmm_generator_gemm_setup_stack_frame_rv64( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config);
+
+  /* Apply potential opA / opB */
+  libxsmm_generator_gemm_apply_opA_opB_rv64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa, i_xgemm_desc);
 
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
@@ -935,8 +972,13 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
   libxsmm_generator_gemm_destroy_stack_frame_rv64( io_generated_code );
 
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3ff );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
 }
 
 #undef MAX_FP_REG
 #undef MAX_UIMM
+#undef REUSE_A
+#undef REUSE_B
+#undef REUSE_C
+#undef PREFETCH_A
+#undef PREFETCH_B

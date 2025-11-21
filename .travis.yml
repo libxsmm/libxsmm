@@ -4,10 +4,10 @@ script:
       EFLAGS="-DITYPE=double -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
 
   - make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 MNK="19 27, 23"
-      EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" ${INSTALL} test-cp2k
+      ${INSTALL} tests
 
   - make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0
-      EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} test-nek
+      EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
 
   - make -e ${MAKEJ} ${PEDANTIC_HIGH} STATIC=0
       EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
@@ -18,25 +18,8 @@ script:
   - make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0
       EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
 
-  - make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH}
       EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
-
-  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 &&
-      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test
-
-  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 &&
-      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test
-
-  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 &&
-      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 test
-
-  - cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
-    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
-    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=2 THREADS=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
-    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
 
   - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
       ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh;

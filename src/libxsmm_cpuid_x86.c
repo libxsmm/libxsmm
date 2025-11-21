@@ -198,7 +198,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                         if (LIBXSMM_CPUID_CHECK(eax, 0x00200000)) { /* AMX-FP16 */
                           feature_cpu = LIBXSMM_X86_AVX512_GNR;
                           LIBXSMM_CPUID_X86(0x1e, 1/*ecx*/, eax, ebx, ecx2, edx2);
-                          if (LIBXSMM_CPUID_CHECK(eax, 0x0000000f)) { /* AMX-FP8, AMX-Transpose, AMX-AVX512, AMX-TF32, AMX-MOVRS */
+                          if (LIBXSMM_CPUID_CHECK(eax, 0x000001f4)) { /* AMX-FP8, AMX-Transpose, AMX-AVX512, AMX-TF32, AMX-MOVRS */
                             feature_cpu = LIBXSMM_X86_AVX512_DMR;
                           }
                         }

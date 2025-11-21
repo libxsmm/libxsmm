@@ -126,4 +126,22 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
 
 LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
+/* Get reuse A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_a(void);
+
+/* Get reuse B knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_b(void);
+
+/* Get reuse C knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_c(void);
+
+/* Get prefetch A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_a(void);
+
+/* Get prefetch B knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_b(void);
+
+/* Get prefetch stride of A knob */
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_m_prefetch_stride(void);
+
 #endif /*LIBXSMM_CPUID_H*/

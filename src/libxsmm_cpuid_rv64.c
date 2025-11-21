@@ -53,3 +53,41 @@ LIBXSMM_API int libxsmm_cpuid_rv64(libxsmm_cpuid_info* info)
 
   return mvl;
 }
+
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_a(void){
+  const char *const env_gemm_prefetch_reuse_a = getenv("LIBXSMM_RV64_GEMM_PREFETCH_REUSE_A");
+  unsigned int result = (env_gemm_prefetch_reuse_a == 0) ? 0 : atoi(env_gemm_prefetch_reuse_a);
+  return result;
+}
+
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_b(void){
+  const char *const env_gemm_prefetch_reuse_b = getenv("LIBXSMM_RV64_GEMM_PREFETCH_REUSE_B");
+  unsigned int result = (env_gemm_prefetch_reuse_b == 0) ? 0 : atoi(env_gemm_prefetch_reuse_b);
+  return result;
+}
+
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_reuse_c(void){
+  const char *const env_gemm_prefetch_reuse_c = getenv("LIBXSMM_RV64_GEMM_PREFETCH_REUSE_C");
+  unsigned int result = (env_gemm_prefetch_reuse_c == 0) ? 0 : atoi(env_gemm_prefetch_reuse_c);
+  return result;
+}
+
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_a(void){
+  const char *const env_gemm_prefetch_a = getenv("LIBXSMM_RV64_GEMM_PREFETCH_A");
+  unsigned int result = (env_gemm_prefetch_a == 0) ? 0 : atoi(env_gemm_prefetch_a);
+  return result;
+}
+
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_prefetch_b(void){
+  const char *const env_gemm_prefetch_b = getenv("LIBXSMM_RV64_GEMM_PREFETCH_B");
+  unsigned int result = (env_gemm_prefetch_b == 0) ? 0 : atoi(env_gemm_prefetch_b);
+  return result;
+}
+
+LIBXSMM_API unsigned int libxsmm_cpuid_rv64_gemm_m_prefetch_stride(void){
+  const char *const env_gemm_m_prefetch_stride = getenv("LIBXSMM_RV64_GEMM_M_PREFETCH_STRIDE");
+  unsigned int result = (env_gemm_m_prefetch_stride == 0) ? 0 : atoi(env_gemm_m_prefetch_stride);
+  return result;
+}
+
+#undef VLMAX
