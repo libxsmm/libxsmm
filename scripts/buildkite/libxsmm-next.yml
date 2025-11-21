@@ -9,5 +9,4 @@ steps:
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test_dmr.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/dmr/sde64 -dmr --"
-      PARTITIONS: "gnrap"
     label: "SMMs DMR Prec. (DMR)"
