@@ -706,7 +706,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
     int l_offset = 0;
     unsigned int l_n_i = 0;
     unsigned int l_n = 0;
-    unsigned int i_n_blocking = 2;
     unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R11;
     unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
     unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
@@ -4447,6 +4446,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int l_defer_c_vnni_format = 0;
   int l_save_m = 0, l_save_k = 0, l_save_n = 0;
   unsigned int l_use_custom_bf8_preproc = 0;
+  libxsmm_tile_config tile_config;
+  LIBXSMM_MEMZERO127(&tile_config);
 
   /* SW piepline A transform to vnni */
   if ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) )) {
@@ -4476,9 +4477,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     l_avnni_gemm_sw_pipeline = 1;
     l_btrans_gemm_sw_pipeline = 1;
   }
-
-  libxsmm_tile_config tile_config;
-  LIBXSMM_MEMZERO127(&tile_config);
 
   /* Adjust descriptor to perform GEMM with BF16 inputs and F32 output */
   if ((bf8_gemm_via_stack_alloc_tensors > 0) || (hf8_gemm_via_stack_alloc_tensors > 0) ) {
@@ -5888,7 +5886,6 @@ void libxsmm_generator_gemm_amx_kernel_nloop( libxsmm_generated_code*           
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_sw_pipeline_A_preproc = ((l_is_Ai4_Bi8_gemm > 0 || l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) && ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) == 0)) ? 1 : 0;
-  libxsmm_jump_label_tracker l_jump_label_tracker;
   unsigned int l_sw_pipeline_B_preproc = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? 1 : 0;
   unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0) ? 1 : 0;
 
