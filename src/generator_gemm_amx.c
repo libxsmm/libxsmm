@@ -3609,8 +3609,8 @@ void libxsmm_generator_gemm_amx_adjust_m_advancement( libxsmm_generated_code* io
     l_a_packed_bytes = i_micro_kernel_config->datatype_size_in;
   }
   if (i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
-    l_a_packed_bytes = 4/i_micro_kernel_config->datatype_size_in;
-    a_vnni_adjustment = 4/i_micro_kernel_config->datatype_size_in;
+    l_a_packed_bytes = i_micro_kernel_config->datatype_size_in;
+    a_vnni_adjustment = 1;
   }
 
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) {
@@ -4601,14 +4601,20 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   }
 
   /* SW piepline B transform to vnni */
-  if ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
+  if ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
     bf8_gemm_via_stack_alloc_tensors = 0;
     l_btrans_gemm_sw_pipeline = 1;
   }
 
-  if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
+  if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
     l_avnni_btrans_gemm_stack_alloc_tensors = 0;
     l_avnni_gemm_sw_pipeline = 1;
+    l_btrans_gemm_sw_pipeline = 1;
+  }
+
+  if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
+    l_atvnni_btrans_gemm_stack_alloc_tensors = 0;
+    l_atrans_gemm_sw_pipeline = 1;
     l_btrans_gemm_sw_pipeline = 1;
   }
 
