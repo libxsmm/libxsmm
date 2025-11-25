@@ -1551,6 +1551,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int mask_lo;
   unsigned int perm_table_vnni_lo;
   unsigned int perm_table_vnni_hi;
+  unsigned int perm_table_vnni_lo_fullblend;
+  unsigned int perm_table_vnni_hi_fullblend;
   unsigned int norm_to_normT_mask_reg_0;
   unsigned int norm_to_normT_mask_reg_1;
   unsigned int mask_m_fp32;

@@ -1244,21 +1244,26 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
   unsigned int l_vreg_k3 = l_vreg_start + 3;
   unsigned int l_vreg_cpy = i_micro_kernel_config->tmp_reg0;
   unsigned int k_unroll = 4;
+
+  while (i_K % (4 * k_unroll) != 0 && k_unroll > 1) {
+    k_unroll--;
+  }
+
   for (im = 0; im < i_m_tiles; im += 4) {
     libxsmm_x86_instruction_push_reg( io_generated_code, cnt_reg );
     libxsmm_generator_gemm_header_dequant_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg );
     for (uk = 0; uk < k_unroll; uk++) {
-      l_vreg_k0 = l_vreg_start + 0 + uk * k_unroll;
-      l_vreg_k1 = l_vreg_start + 1 + uk * k_unroll;
-      l_vreg_k2 = l_vreg_start + 2 + uk * k_unroll;
-      l_vreg_k3 = l_vreg_start + 3 + uk * k_unroll;
+      l_vreg_k0 = l_vreg_start + 0 + uk * 4;
+      l_vreg_k1 = l_vreg_start + 1 + uk * 4;
+      l_vreg_k2 = l_vreg_start + 2 + uk * 4;
+      l_vreg_k3 = l_vreg_start + 3 + uk * 4;
       for (ik = 0; ik < 4; ik++) {
         libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             LIBXSMM_X86_INSTR_VMOVUPS,
             i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
             ik * i_ldi + i_ldi * 4 * uk + (im/4) * 64,
             l_vname_ld,
-            l_vreg_start + ik + uk * k_unroll, i_micro_kernel_config->mask_m_lp_cvt, i_micro_kernel_config->mask_m_lp_cvt, 0 );
+            l_vreg_start + ik + uk * 4, (im + 4 >= i_m_tiles) ? i_micro_kernel_config->mask_m_lp_cvt : 0, i_micro_kernel_config->mask_m_lp_cvt, 0 );
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) {
           libxsmm_x86_instruction_prefetch(io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -1269,23 +1274,25 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
       }
     }
     for (uk = 0; uk < k_unroll; uk++) {
-      l_vreg_k0 = l_vreg_start + 0 + uk * k_unroll;
-      l_vreg_k1 = l_vreg_start + 1 + uk * k_unroll;
-      l_vreg_k2 = l_vreg_start + 2 + uk * k_unroll;
-      l_vreg_k3 = l_vreg_start + 3 + uk * k_unroll;
+      unsigned int l_vnni_blend_lo = (i_m_tiles <= 2) ? i_micro_kernel_config->perm_table_vnni_lo : i_micro_kernel_config->perm_table_vnni_lo_fullblend;
+      unsigned int l_vnni_blend_hi = (i_m_tiles <= 2) ? i_micro_kernel_config->perm_table_vnni_hi : i_micro_kernel_config->perm_table_vnni_hi_fullblend;
+      l_vreg_k0 = l_vreg_start + 0 + uk * 4;
+      l_vreg_k1 = l_vreg_start + 1 + uk * 4;
+      l_vreg_k2 = l_vreg_start + 2 + uk * 4;
+      l_vreg_k3 = l_vreg_start + 3 + uk * 4;
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
           l_vreg_k0, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-          l_vreg_k1, i_micro_kernel_config->perm_table_vnni_lo, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+          l_vreg_k1, l_vnni_blend_lo, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-          l_vreg_cpy, i_micro_kernel_config->perm_table_vnni_hi, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+          l_vreg_cpy, l_vnni_blend_hi, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
           l_vreg_k2, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-          l_vreg_k3, i_micro_kernel_config->perm_table_vnni_lo, l_vreg_k2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+          l_vreg_k3, l_vnni_blend_lo, l_vreg_k2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
-          l_vreg_cpy, i_micro_kernel_config->perm_table_vnni_hi, l_vreg_k3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+          l_vreg_cpy, l_vnni_blend_hi, l_vreg_k3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
 
       if (i_m_tiles >= 4) {
@@ -1312,10 +1319,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
       }
     }
     for (uk = 0; uk < k_unroll; uk++) {
-      l_vreg_k0 = l_vreg_start + 0 + uk * k_unroll;
-      l_vreg_k1 = l_vreg_start + 1 + uk * k_unroll;
-      l_vreg_k2 = l_vreg_start + 2 + uk * k_unroll;
-      l_vreg_k3 = l_vreg_start + 3 + uk * k_unroll;
+      l_vreg_k0 = l_vreg_start + 0 + uk * 4;
+      l_vreg_k1 = l_vreg_start + 1 + uk * 4;
+      l_vreg_k2 = l_vreg_start + 2 + uk * 4;
+      l_vreg_k3 = l_vreg_start + 3 + uk * 4;
 
       if (i_m_tiles >= 4) {
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
@@ -1352,7 +1359,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
             o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
             0 + i_ldo * 4 * uk,
             l_vname_st,
-            l_vreg_k0, i_micro_kernel_config->mask_m_fp32, 0, 1 );
+            l_vreg_k0, (i_m_tiles == 1) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
 
         if (i_m_tiles > 1) {
           libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
@@ -3191,22 +3198,19 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
       unsigned int __i =0;
       char perm_table_vnni_lo_8bit[64];
       char perm_table_vnni_hi_8bit[64];
+      char perm_table_vnni_lo_8bit_fullblend[64];
+      char perm_table_vnni_hi_8bit_fullblend[64];
       short perm_table_vnni_zip[32];
       short perm_table_vnni_zip2[32];
-      unsigned int l_expand_a_m_preproc = libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity();
-
       for (__i = 0; __i < 64; __i += 2) {
-        if (l_expand_a_m_preproc <= 1) {
-          perm_table_vnni_lo_8bit[__i] = __i/2;
-          perm_table_vnni_lo_8bit[__i+1] = __i/2 + 64;
-          perm_table_vnni_hi_8bit[__i+1] = (__i/2 + 16);
-          perm_table_vnni_hi_8bit[__i] = (__i/2 + 16) + 64;
-        } else {
-          perm_table_vnni_lo_8bit[__i] = __i/2;
-          perm_table_vnni_lo_8bit[__i+1] = __i/2 + 64;
-          perm_table_vnni_hi_8bit[__i] = (__i/2 + 32) + 64;
-          perm_table_vnni_hi_8bit[__i+1] = (__i/2 + 32);
-        }
+        perm_table_vnni_lo_8bit[__i] = __i/2;
+        perm_table_vnni_lo_8bit[__i+1] = __i/2 + 64;
+        perm_table_vnni_hi_8bit[__i+1] = (__i/2 + 16);
+        perm_table_vnni_hi_8bit[__i] = (__i/2 + 16) + 64;
+        perm_table_vnni_lo_8bit_fullblend[__i] = __i/2;
+        perm_table_vnni_lo_8bit_fullblend[__i+1] = __i/2 + 64;
+        perm_table_vnni_hi_8bit_fullblend[__i] = (__i/2 + 32) + 64;
+        perm_table_vnni_hi_8bit_fullblend[__i+1] = (__i/2 + 32);
       }
       for (__i = 0; __i < 32; __i+=2) {
         perm_table_vnni_zip[__i] = __i/2 + 0;
@@ -3220,14 +3224,18 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
       i_micro_kernel_config->perm_table_vnni_hi = reserved_zmms;
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi_8bit, "perm_table_vnni_hi_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_hi);
       reserved_zmms++;
+      i_micro_kernel_config->perm_table_vnni_lo_fullblend = reserved_zmms;
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo_8bit_fullblend, "perm_table_vnni_lo_fullblend_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_lo_fullblend);
+      reserved_zmms++;
+      i_micro_kernel_config->perm_table_vnni_hi_fullblend = reserved_zmms;
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi_8bit_fullblend, "perm_table_vnni_hi_fullblend_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_hi_fullblend);
+      reserved_zmms++;
       i_micro_kernel_config->vnni_perm_reg2 = reserved_zmms;
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_zip, "vnni_perm_array2_", i_micro_kernel_config->vector_name, i_micro_kernel_config->vnni_perm_reg2);
       reserved_zmms++;
-      if (libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking() > 0 || l_expand_a_m_preproc >= 2) {
-        i_micro_kernel_config->vnni_perm_reg3 = reserved_zmms;
-        libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_zip2, "vnni_perm_array3_", i_micro_kernel_config->vector_name, i_micro_kernel_config->vnni_perm_reg3);
-        reserved_zmms++;
-      }
+      i_micro_kernel_config->vnni_perm_reg3 = reserved_zmms;
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_zip2, "vnni_perm_array3_", i_micro_kernel_config->vector_name, i_micro_kernel_config->vnni_perm_reg3);
+      reserved_zmms++;
       i_micro_kernel_config->tmp_reg0 = reserved_zmms;
       reserved_zmms++;
     } else {
