@@ -1589,6 +1589,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
+  unsigned int n_gemm_code_blocks;
   unsigned int gemm_scratch_ld;
   unsigned int emulate_cvt2bf16fp32;
   unsigned int emulate_cvt2bf16fp32_vperm;

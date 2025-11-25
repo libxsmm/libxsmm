@@ -4769,6 +4769,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(l_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
 
   /* Setup stack frame... */
+  l_micro_kernel_config.n_gemm_code_blocks = n_gemm_code_blocks;
   l_micro_kernel_config.m_tiles = m_blocking_info[0].tiles;
   l_micro_kernel_config.n_tiles = n_blocking_info[0].tiles;
   l_micro_kernel_config.m_blocking_info[0] = m_blocking_info[0];
@@ -4889,7 +4890,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
     if (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0 ) {
       if (l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0) {
-        libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ));
+        libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ));
       } else {
         libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_DATATYPE_BF16);
       }
@@ -4950,7 +4951,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
         /* Recycle reserved mask if need be */
         l_micro_kernel_config.reserved_mask_regs = LIBXSMM_MAX(0, l_micro_kernel_config.reserved_mask_regs - 1);
         if (l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0) {
-          libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt(io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype));
+          libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt(io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ));
         } else {
           libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_DATATYPE_BF16);
         }
@@ -5047,7 +5048,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
 
   libxsmm_jump_label_tracker l_jump_label_tracker;
   unsigned int l_sw_pipeline_B_preproc = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? 1 : 0;
-  unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0) ? 1 : 0;
+  unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0 && i_micro_kernel_config->n_gemm_code_blocks == 1) ? 1 : 0;
   unsigned int l_a_br_scratch_size = i_xgemm_desc->m * i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in;
   unsigned int l_b_br_scratch_size = i_xgemm_desc->k*i_micro_kernel_config->n_blocking*i_micro_kernel_config->datatype_size_in2;
   unsigned int l_expand_a_ld_preproc = i_xgemm_desc->m/l_m_blocking;
@@ -6086,7 +6087,7 @@ void libxsmm_generator_gemm_amx_kernel_nloop( libxsmm_generated_code*           
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_sw_pipeline_A_preproc = ((l_is_Ai4_Bi8_gemm > 0 || l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) && ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) == 0)) ? 1 : 0;
   unsigned int l_sw_pipeline_B_preproc = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? 1 : 0;
-  unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0) ? 1 : 0;
+  unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0 && i_micro_kernel_config->n_gemm_code_blocks == 1) ? 1 : 0;
 
   i_micro_kernel_config->m_loop_exists = m_assembly_loop_exists;
   i_micro_kernel_config->n_loop_exists = n_assembly_loop_exists;
