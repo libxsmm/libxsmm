@@ -4947,16 +4947,23 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     l_micro_kernel_config.m_blocking_info[1] = m_blocking_info[1];
     if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||
         (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) != 0))     ) {
+      libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
       if (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0) {
+        int recycled_masks = 0;
         /* Recycle reserved mask if need be */
-        l_micro_kernel_config.reserved_mask_regs = LIBXSMM_MAX(0, l_micro_kernel_config.reserved_mask_regs - 1);
+        if (l_micro_kernel_config.reserved_mask_regs == 8) {
+          l_micro_kernel_config.reserved_mask_regs = LIBXSMM_MAX(0, l_micro_kernel_config.reserved_mask_regs - 3);
+          recycled_masks = 1;
+        }
         if (l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0) {
           libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt(io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ));
         } else {
           libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_DATATYPE_BF16);
         }
+        if (recycled_masks == 1) {
+          l_micro_kernel_config.reserved_mask_regs = 8;
+        }
       }
-      libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
     }
 
     libxsmm_x86_instruction_tile_control( io_generated_code,
