@@ -907,6 +907,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_16bit( libxsmm_generate
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 1 );
     }
+    /* Store reserved masks */
+    for (i = 0; i < 3; i++) {
+      /* Mask move store to memory location gp_reg_gemm_scratch + i_micro_kernel_config->reserved_zmms * 64 */
+      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_ST, gp_reg_gemm_scratch,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 4, l_mask_regs[i + 1]);
+    }
 
     /* set the masks for the load+blend stage */
     l_mask = 0x00f0;
@@ -962,6 +968,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_16bit( libxsmm_generate
     for (i = 0; i < i_micro_kernel_config->reserved_zmms; i++) {
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 0 );
+    }
+    for (i = 0; i < 3; i++) {
+      /* Mask move load to memory location gp_reg_gemm_scratch + i_micro_kernel_config->reserved_zmms * 64 */
+      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_LD, gp_reg_gemm_scratch,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 4, l_mask_regs[i + 1]);
     }
 
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
@@ -1071,6 +1082,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_8bit( libxsmm_generated
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 1 );
     }
+    /* Store reserved masks */
+    for (i = 0; i < 3; i++) {
+      /* Mask move store to memory location gp_reg_gemm_scratch + i_micro_kernel_config->reserved_zmms * 64 */
+      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_ST, gp_reg_gemm_scratch,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 4, l_mask_regs[i + 1]);
+    }
 
     /* set the masks for the load+blend stage */
     l_mask = 0x00f0;
@@ -1126,6 +1143,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_8bit( libxsmm_generated
     for (i = 0; i < i_micro_kernel_config->reserved_zmms; i++) {
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 0 );
+    }
+    for (i = 0; i < 3; i++) {
+      /* Mask move load to memory location gp_reg_gemm_scratch + i_micro_kernel_config->reserved_zmms * 64 */
+      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_LD, gp_reg_gemm_scratch,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 4, l_mask_regs[i + 1]);
     }
 
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
