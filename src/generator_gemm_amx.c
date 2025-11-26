@@ -2213,9 +2213,6 @@ void libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( libxsmm_generated_co
   i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
 }
 
-#ifdef __INTEL_LLVM_COMPILER
-#pragma clang optimize off
-#endif
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*            io_generated_code,
                                                     const libxsmm_gemm_descriptor*      i_xgemm_desc,
@@ -2315,6 +2312,9 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
       unsigned short perm_table_vnni_hi[32];
       unsigned short array_ones[32];
       unsigned short fp4_e2m1_bf16_lut[32];
+#ifdef __INTEL_LLVM_COMPILER
+#pragma novector
+#endif
       for (luti = 0; luti < 32; luti++) {
         libxsmm_float_uint uint_elem;
         float fval = fp4_e2m1_lut[luti%16];
@@ -2514,9 +2514,6 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->reserved_zmms      = reserved_zmms;
   i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
 }
-#ifdef __INTEL_LLVM_COMPILER
-#pragma clang optimize on
-#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_descriptor*      i_xgemm_desc,
