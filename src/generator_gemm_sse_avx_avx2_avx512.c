@@ -1492,11 +1492,11 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
   } else if ( ( (i_arch >= LIBXSMM_X86_AVX2) && (i_arch < LIBXSMM_X86_AVX512_VL128_SKX) ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) {
     libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 16, 4, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ((i_arch >= LIBXSMM_X86_AVX512_VL256_CPX) && (i_arch < LIBXSMM_X86_AVX512_SKX)) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 )  ) {
-    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 32, 32, &l_m_blocking, &l_use_masking_a_c );
+    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 32, 16, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ((i_arch >= LIBXSMM_X86_AVX512_VL256_SKX) && (i_arch < LIBXSMM_X86_AVX512_SKX)) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 )  ) {
     libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 8, 8, &l_m_blocking, &l_use_masking_a_c );
       } else if ( ((i_arch >= LIBXSMM_X86_AVX512_CPX) && (i_arch <= LIBXSMM_X86_ALLFEAT)) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) == 0 )) {
-    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 64, 64, &l_m_blocking, &l_use_masking_a_c );
+    libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 64, 32, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ((i_arch >= LIBXSMM_X86_AVX512_SKX) && (i_arch <= LIBXSMM_X86_ALLFEAT)) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK) == 0 )) {
     libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, 16, 16, &l_m_blocking, &l_use_masking_a_c );
   } else if ( (i_arch == LIBXSMM_X86_AVX512_VL256_SKX) && ( ( LIBXSMM_DATATYPE_I8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )  ||
