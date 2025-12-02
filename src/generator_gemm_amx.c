@@ -3048,29 +3048,32 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
 
 
   if (l_is_Amxfp4_Bbf16_gemm > 0) {
-    unsigned int luti = 0;
     if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
         (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))     ) {
+      unsigned int luti = 0;
       unsigned short perm_table_vnni_lo[32] = {0, 32, 1, 33, 2, 34, 3, 35, 4, 36, 5, 37, 6, 38, 7, 39, 8, 40, 9, 41, 10, 42, 11, 43, 12, 44, 13, 45, 14, 46, 15, 47};
+      float fp4_e2m1_lut[16] = {0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0};
       unsigned short perm_table_vnni_hi[32];
       unsigned short array_ones[32];
-      float fp4_e2m1_lut[16] = {0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0};
       unsigned short fp4_e2m1_bf16_lut[32];
+#ifdef __INTEL_LLVM_COMPILER
+#pragma novector
+#endif
       for (luti = 0; luti < 32; luti++) {
-        unsigned int *uint_elem_ptr = (unsigned int*)&fp4_e2m1_lut[luti%16];
+        libxsmm_float_uint uint_elem;
         float fval = fp4_e2m1_lut[luti%16];
-        unsigned int uint_elem = *uint_elem_ptr;
         unsigned short new_bf16_val = 0;
         unsigned short unbiased_exp = 0;
-        uint_elem = ((uint_elem << 1) >> 24) - 126;
-        unbiased_exp = (unsigned short) ((uint_elem << 24) >> 17);
-        unbiased_exp = unbiased_exp & 0x7f80;
-        uint_elem = *uint_elem_ptr;
-        uint_elem = (uint_elem >> 16) & 0x0000ffff;
-        new_bf16_val = (unsigned short)uint_elem;
+        uint_elem.f = fval;
+        uint_elem.u = ((uint_elem.u & 0x7fffffff) >> 23) - 126;
+        unbiased_exp = (unsigned short)(uint_elem.u << 7);
+        unbiased_exp = (unsigned short)(unbiased_exp & 0x7f80);
+        uint_elem.f = fval;
+        uint_elem.u = (uint_elem.u >> 16) & 0x0000ffff;
+        new_bf16_val = (unsigned short)uint_elem.u;
         new_bf16_val = new_bf16_val & 0x807f;
         new_bf16_val = new_bf16_val | unbiased_exp;
-        if ( fval == 0.0f || fval == -0.0f)  {
+        if ( fval == 0.0f || fval == -0.0f) {
           new_bf16_val = 0x0001;
         }
         fp4_e2m1_bf16_lut[luti] = new_bf16_val;
@@ -3301,7 +3304,6 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->reserved_zmms      = reserved_zmms;
   i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
 }
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_descriptor*      i_xgemm_desc,
