@@ -107,7 +107,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_ABF16_BBF16_flat_cpx_gemm ( libxs
                           (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
                           ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ? 1 : 0;
 
-  if ( (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) &&
+  if ( /*(io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ||*/ ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) &&
        (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT)) ) {
     result = (result == 1) ? 1 : 0;
   } else {
@@ -4449,7 +4449,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   /* shuffle accum;ator in case of delayed VNNI transform */
   if ( (l_is_Ai16_Bi16_flat_gemm != 0) || (l_is_ABF16_BBF16_flat_cpx_gemm != 0) ) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      for ( l_m = 0; l_m < l_m_blocking; l_m+=2 ) {
+      for ( l_m = 0; l_m < l_m_blocking-1; l_m+=2 ) {
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
             i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) + 1, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, 0x44 );
 
@@ -4461,6 +4461,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
             i_micro_kernel_config->vector_name, 1, 1, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) + 1, 0xd8 );
+      }
+      if ( l_m < l_m_blocking ) {
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VSHUFI64X2,
+            i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0xd8 );
       }
     }
   }
