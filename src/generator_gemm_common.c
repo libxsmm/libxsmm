@@ -1393,6 +1393,7 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( libxsmm_
   int l_offset_ptr_d = (int)(sizeof(libxsmm_matrix_op_arg) + 3*sizeof(libxsmm_matrix_arg));
   int l_offset_ptr_e = (int)(sizeof(libxsmm_matrix_op_arg) + 4*sizeof(libxsmm_matrix_arg));
   int l_offset_ptr_f = (int)(sizeof(libxsmm_matrix_op_arg) + 5*sizeof(libxsmm_matrix_arg));
+  unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0 && i_micro_kernel_config->n_gemm_code_blocks == 1) ? 1 : 0;
 
   if (has_scf == 1) {
     libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
@@ -1418,13 +1419,17 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( libxsmm_
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_PFB_PTR, temp_reg );
   }
 
-  if ((is_brgemm == 1) && (( i_micro_kernel_config->decompress_A == 1) || (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) ||
-                           (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors > 0) ||
-                           (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors > 0) ||
-                           (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors > 0) ||
-                           (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0) ||
-                           (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) ||
-                           (i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0) || (i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) || (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0))) {
+  if ((is_brgemm == 1) &&
+      ((i_micro_kernel_config->decompress_A == 1) || (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) ||
+        (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0) ||
+        (i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) || (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ||
+        (l_sw_pipeline_panels > 0)) ){
     libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduce_count, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
   }
