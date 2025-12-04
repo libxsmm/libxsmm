@@ -333,6 +333,14 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                       const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_C_vnni_inline( libxsmm_generated_code*             io_generated_code,
+                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                const unsigned int                 i_m_blocking,
+                                                const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN
 int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack_var );
 
 LIBXSMM_API_INTERN
