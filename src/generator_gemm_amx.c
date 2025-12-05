@@ -1823,24 +1823,42 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxN_mxfp4_tensor_intlv
   const libxsmm_gemm_descriptor* i_xgemm_desc, unsigned int i_n_blocking, unsigned int i_K, unsigned int i_ldi, unsigned int i_ldo,
   unsigned int i_gp_reg, unsigned int i_gp_scf, unsigned int o_gp_reg) {
   unsigned int cnt_reg = LIBXSMM_X86_GP_REG_R11;
+  unsigned int scratch_reg = LIBXSMM_X86_GP_REG_R15;
+
   unsigned int l_scf_vreg_n0 = i_micro_kernel_config->reserved_zmms + 0;
   unsigned int l_scf_vreg_n1 = i_micro_kernel_config->reserved_zmms + 1;
   unsigned int l_vreg_lo = l_scf_vreg_n1 + 1;
   unsigned int l_vreg_hi = l_scf_vreg_n1 + 2;
 
+
+
   /* This will work only for i_n_blocking = 32 and i_K = 32 */
+  libxsmm_x86_instruction_push_reg(io_generated_code, scratch_reg);
   libxsmm_x86_instruction_push_reg(io_generated_code, cnt_reg);
+
+  /* Get in scratch reg the GEMM scratch pointer */
+  libxsmm_generator_gemm_getval_stack_var(
+    io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, scratch_reg);
+  /* Load all 32 scales for corresponding N blocks */
+  libxsmm_x86_instruction_unified_vec_move(
+    io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_scf, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', l_scf_vreg_n0, 0, 0, 0);
+  libxsmm_x86_instruction_vec_compute_2reg(
+    io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXBW, i_micro_kernel_config->vector_name, l_scf_vreg_n0, l_scf_vreg_n0);
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_micro_kernel_config->vector_name, l_scf_vreg_n0, l_scf_vreg_n0, 7);
+  /* Store the 32 B scales in the scratch register */
+  libxsmm_x86_instruction_vec_move(io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS, scratch_reg,
+    LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_micro_kernel_config->vector_name, l_scf_vreg_n0, 0, 0, 1);
+
   libxsmm_generator_gemm_header_dequant_loop_amx(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg);
 
-  /* Bcast + upcvtscale for N0 */
-  libxsmm_x86_instruction_unified_vec_move(io_generated_code, LIBXSMM_X86_INSTR_VPBROADCASTB, i_gp_scf, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', l_scf_vreg_n0, 0, 0, 0);
-  libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXBW, i_micro_kernel_config->vector_name, l_scf_vreg_n0, l_scf_vreg_n0);
-  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_micro_kernel_config->vector_name, l_scf_vreg_n0, l_scf_vreg_n0, 7);
+  /* Bcast scale for N0 */
+  libxsmm_x86_instruction_unified_vec_move(
+    io_generated_code, LIBXSMM_X86_INSTR_VPBROADCASTW, scratch_reg, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'z', l_scf_vreg_n0, 0, 0, 0);
 
-  /* Bcast + upcvtscale for N1 */
-  libxsmm_x86_instruction_unified_vec_move(io_generated_code, LIBXSMM_X86_INSTR_VPBROADCASTB, i_gp_scf, LIBXSMM_X86_GP_REG_UNDEF, 0, 1, 'y', l_scf_vreg_n1, 0, 0, 0);
-  libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXBW, i_micro_kernel_config->vector_name, l_scf_vreg_n1, l_scf_vreg_n1);
-  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_micro_kernel_config->vector_name, l_scf_vreg_n1, l_scf_vreg_n1, 7);
+  /* Bcast scale for N1 */
+  libxsmm_x86_instruction_unified_vec_move(
+    io_generated_code, LIBXSMM_X86_INSTR_VPBROADCASTW, scratch_reg, LIBXSMM_X86_GP_REG_UNDEF, 0, 2, 'z', l_scf_vreg_n1, 0, 0, 0);
 
   /* Load [32k][2n] */
   libxsmm_x86_instruction_unified_vec_move(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU8, i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', l_vreg_lo, 0, 0, 0);
@@ -1862,13 +1880,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxN_mxfp4_tensor_intlv
 
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg, (long long)i_ldi * i_micro_kernel_config->datatype_size_in);
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, o_gp_reg, 128);
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_scf, 2);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, scratch_reg, 4);
   libxsmm_generator_gemm_footer_dequant_loop_amx(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, cnt_reg, (i_n_blocking / 2));
   libxsmm_x86_instruction_pop_reg(io_generated_code, cnt_reg);
+  libxsmm_x86_instruction_pop_reg(io_generated_code, scratch_reg);
 
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg,  (long long)i_ldi * (i_n_blocking / 2) * i_micro_kernel_config->datatype_size_in);
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, o_gp_reg, (long long) 64 * i_n_blocking);
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_scf, (long long)i_n_blocking);
 }
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor_intlv( libxsmm_generated_code*   io_generated_code,
