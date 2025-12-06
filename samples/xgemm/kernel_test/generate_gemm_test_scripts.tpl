@@ -98,7 +98,7 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # loading A in VNNI layout is mandatory for select precision
-                  if [[ ("$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I2_U8_I32_I32' || "$PREC" == 'I2_I8_I32_I32' || "$PREC" == 'I1_U8_I32_I32' || "$PREC" == 'I1_I8_I32_I32') && ( "$AVNNI" == '0' ) ]]; then
+                  if [[ ("$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I2_U8_I32_I32' || "$PREC" == 'I2_I8_I32_I32' || "$PREC" == 'I1_U8_I32_I32' || "$PREC" == 'I1_I8_I32_I32') && ( "$AVNNI" == '0' ) ]]; then
                     continue
                   fi
 
@@ -127,8 +127,12 @@ for BINARY_POSTOP in 0 1; do
                     OUTNAME="dgemm_"
                   elif [ "$PREC" == 'F32_F32_F32_F32' ] ; then
                     OUTNAME="sgemm_"
-                  elif [ "$PREC" == 'I16_I16_I32_I32' ] ; then
+                  elif [[ ("$PREC" == 'I16_I16_I32_I32') && ("$AVNNI" == '1') ]] ; then
                     OUTNAME="i16i32gemm_"
+                    KSTART=2
+                    KSTEP=2
+                  elif [[ ("$PREC" == 'I16_I16_I32_I32') && ("$AVNNI" == '0') ]] ; then
+                    OUTNAME="i16i32flatgemm_"
                     KSTART=2
                     KSTEP=2
                   elif [ "$PREC" == 'I8_BF16_F32_F32' ] ; then
@@ -295,12 +299,20 @@ for BINARY_POSTOP in 0 1; do
                     OUTNAME="u4f16f32f32gemm_"
                     KSTART=2
                     KSTEP=2
-                  elif [ "$PREC" == 'U8_I8_I32_I32' ] ; then
+                  elif [[ ("$PREC" == 'U8_I8_I32_I32') && ("$AVNNI" == '1') ]] ; then
                     OUTNAME="usi8i32gemm_"
                     KSTART=4
                     KSTEP=4
-                  elif [ "$PREC" == 'I8_U8_I32_I32' ] ; then
+                  elif [[ ("$PREC" == 'U8_I8_I32_I32') && ("$AVNNI" == '0') ]] ; then
+                    OUTNAME="usi8i32flatgemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ "$PREC" == 'I8_U8_I32_I32' && ("$AVNNI" == '1') ]] ; then
                     OUTNAME="sui8i32gemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ "$PREC" == 'I8_U8_I32_I32' && ("$AVNNI" == '0') ]] ; then
+                    OUTNAME="sui8i32flatgemm_"
                     KSTART=4
                     KSTEP=4
                   elif [ "$PREC" == 'U8_U8_I32_I32' ] ; then
