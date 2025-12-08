@@ -1178,7 +1178,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     short* s_a = (short*)a;
     short* s_b = (short*)b;
     int*   i_c = (int*)c;
-    libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1204,7 +1204,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     unsigned char* c_a = (unsigned char*)a;
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
-    libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1230,7 +1230,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     char* c_a = (char*)a;
     char* c_b = (char*)b;
     int*           i_c = (int*)c;
-    libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1256,7 +1256,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     unsigned char* c_a = (unsigned char*)a;
     char*          c_b = (char*)b;
     int*           i_c = (int*)c;
-    libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1282,7 +1282,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     char*          c_a = (char*)a;
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
-    libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
+    libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {

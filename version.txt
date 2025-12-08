@@ -1,1 +1,1 @@
-fix_icx_mxfp4-1.17-3800
+feature_avx512_vnni_inline_convert-1.17-3810
