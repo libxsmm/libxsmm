@@ -709,7 +709,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
     unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R11;
     unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
     unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
-    unsigned int l_vreg_start = i_micro_kernel_config->reserved_zmms;
+    unsigned int l_vreg_start = (i_micro_kernel_config->reserved_zmms % 4 == 0) ? i_micro_kernel_config->reserved_zmms : i_micro_kernel_config->reserved_zmms + (4 - (i_micro_kernel_config->reserved_zmms %4));
     unsigned int i_b_start = 16 + l_vreg_start;
 
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_m_loop );
@@ -764,9 +764,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
           i_micro_kernel_config->vector_name, l_vreg_start + l_n_i + 1, l_vreg_start + l_n_i, i_b_start + 4*l_n + l_n_i/2 +4, 0xdd );
     }
     /* transpose four 4x4 blocks */
-    libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_b_start + 4*l_n, 0 );
+    libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_b_start + 4*l_n, l_vreg_start );
     /* transpose four 4x4 blocks */
-    libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_b_start + 4*l_n + 4, 0 );
+    libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_b_start + 4*l_n + 4, l_vreg_start );
 
     for ( l_n_i = 0; l_n_i < 8; l_n_i++ ) {
       l_offset = i_ldo * l_n_i * 4;
