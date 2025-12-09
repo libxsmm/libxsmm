@@ -1295,20 +1295,24 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
           l_vreg_cpy, l_vnni_blend_hi, l_vreg_k3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
 
-      if (i_m_tiles >= 4) {
+      if (i_m_tiles >= 3) {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
             l_vreg_k0, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
                                                                 l_vreg_k2, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
                                                                 l_vreg_cpy, i_micro_kernel_config->vnni_perm_reg3, l_vreg_k2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-            l_vreg_k1, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-
-        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+        if (i_m_tiles == 3) {
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
                                                                 l_vreg_k3, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                                l_vreg_cpy, i_micro_kernel_config->vnni_perm_reg3, l_vreg_k3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+        } else {
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+              l_vreg_k1, LIBXSMM_X86_VEC_REG_UNDEF, l_vreg_cpy, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                                l_vreg_k3, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                                 l_vreg_cpy, i_micro_kernel_config->vnni_perm_reg3, l_vreg_k3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+        }
       } else {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
                                                                 l_vreg_k2, i_micro_kernel_config->vnni_perm_reg2, l_vreg_k0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
@@ -1324,35 +1328,36 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
       l_vreg_k2 = l_vreg_start + 2 + uk * 4;
       l_vreg_k3 = l_vreg_start + 3 + uk * 4;
 
-      if (i_m_tiles >= 4) {
+      if (i_m_tiles >= 3) {
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
             o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
             0 + i_ldo * 4 * uk + (im/4)*256,
             l_vname_st,
-            l_vreg_k0, i_micro_kernel_config->mask_m_fp32, 0, 1 );
+            l_vreg_k0, 0, 0, 1 );
 
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
             o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_vlen + i_ldo * 4 * uk + (im/4)*256,
             l_vname_st,
-            l_vreg_k2, i_micro_kernel_config->mask_m_fp32, 0, 1 );
+            l_vreg_k2, 0, 0, 1 );
 
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
             o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
             2*l_vlen + i_ldo * 4 * uk + (im/4)*256,
             l_vname_st,
-            l_vreg_k1, i_micro_kernel_config->mask_m_fp32, 0, 1 );
+            l_vreg_k1, (i_m_tiles == 3) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
 
-        libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VMOVUPS,
-            o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-            3*l_vlen + i_ldo * 4 * uk + (im/4)*256,
-            l_vname_st,
-            l_vreg_k3, i_micro_kernel_config->mask_m_fp32, 0, 1 );
-
+        if (i_m_tiles > 3) {
+          libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVUPS,
+              o_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
+              3*l_vlen + i_ldo * 4 * uk + (im/4)*256,
+              l_vname_st,
+              l_vreg_k3, (i_m_tiles == 4) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
+        }
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
