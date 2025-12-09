@@ -32,6 +32,13 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Abf8_Bf16_gemm ( const libxsmm_ge
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ahf8_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai16_Bi16_flat_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai8_Bi8_flat_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_ABF16_BBF16_flat_cpx_gemm ( libxsmm_generated_code*        io_generated_code,
+                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( libxsmm_generated_code*    io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       libxsmm_micro_kernel_config*   i_micro_kernel_config,
@@ -324,6 +331,14 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                       const unsigned int                 i_m_blocking,
                                       const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_C_vnni_inline( libxsmm_generated_code*             io_generated_code,
+                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                const unsigned int                 i_m_blocking,
+                                                const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN
 int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack_var );
