@@ -710,7 +710,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
     unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
     unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
     unsigned int l_vreg_start = (i_micro_kernel_config->reserved_zmms % 4 == 0) ? i_micro_kernel_config->reserved_zmms : i_micro_kernel_config->reserved_zmms + (4 - (i_micro_kernel_config->reserved_zmms %4));
-    unsigned int i_b_start = 16 + l_vreg_start;
+    unsigned int i_b_start = 8 + l_vreg_start;
 
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_m_loop );
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_n_loop );
