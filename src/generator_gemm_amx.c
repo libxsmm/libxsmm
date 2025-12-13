@@ -1245,6 +1245,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
   unsigned int l_vreg_cpy = i_micro_kernel_config->tmp_reg0;
   unsigned int k_unroll = 4;
 
+  /* Restrict unrolling in case of sigmoid fusion */
+  if (i_micro_kernel_config->fused_sigmoid > 0) {
+    k_unroll = 1;
+  }
+
   while (i_K % (4 * k_unroll) != 0 && k_unroll > 1) {
     k_unroll--;
   }
