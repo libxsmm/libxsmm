@@ -1657,6 +1657,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
   unsigned int bvnni_btrans_gemm_stack_alloc_tensors;
+  unsigned int adjust_amx_store_tiles_for_partial_avnni;
 } libxsmm_micro_kernel_config;
 
 /* structure for storing the current gp reg mapping */

@@ -1647,7 +1647,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   if ((i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0) ||
       (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors > 0) ||
       (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors > 0) ||
-      (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0) ||
+      (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->adjust_amx_store_tiles_for_partial_avnni > 0) ||
       (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) ) {
     int is_stride_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
     int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
@@ -1683,6 +1683,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, bias_size );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
       }
+    }
+    if (i_micro_kernel_config->adjust_amx_store_tiles_for_partial_avnni > 0) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, c_size );
+      libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
     }
     if (is_brgemm == 0) {
       if ( i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0 ) {
