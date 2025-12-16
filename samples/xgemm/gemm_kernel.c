@@ -3575,7 +3575,7 @@ int main(int argc, char* argv []) {
         init_garbage_matrix( l_gemm_def.c_type, l_c_perf, 1, l_ldc, l_n );
         init_garbage_matrix( l_gemm_def.c_type, l_c_gold, 1, l_ldc, l_n );
       } else {
-#if 0
+#if 1
         init_random_matrix( &l_gemm_def, l_gemm_def.c_type, l_c, 1, l_ldc, l_n, 1 );
         memcpy( l_c_perf, l_c, (size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.c_type) );
         memcpy( l_c_gold, l_c, (size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.c_type) );
