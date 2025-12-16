@@ -637,6 +637,22 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void) {
   return result;
 }
 
+LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_allow_xform_instr(void) {
+  int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char* const l_env_x86_amx_gemm_allow_xform_instr = getenv("LIBXSMM_X86_AMX_GEMM_ALLOW_XFORM_INSTR");
+  if (0 == l_env_x86_amx_gemm_allow_xform_instr) {
+    result = 0;
+  }
+  else {
+    if (atoi(l_env_x86_amx_gemm_allow_xform_instr) != 0) {
+      result = 1;
+    }
+  }
+#endif
+  return result;
+}
+
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void) {
   int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
