@@ -28,9 +28,24 @@ steps:
 
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
+      LIBXSMM_TARGET: gnr
+      LIBXSMM_X86_AMX_GEMM_PANEL_SW_PIPELINE_GRANULARITY: 1
+      PARTITIONS: "gnrap"
+#      CONFIG: gcc-122
+    label: "SMMs PANEL SW PIPELINE GNR"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
       LIBXSMM_TARGET: spr
 #      CONFIG: gcc-122
     label: "SMMs SPR"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      LIBXSMM_TARGET: spr
+      LIBXSMM_X86_AMX_GEMM_PANEL_SW_PIPELINE_GRANULARITY: 1
+#      CONFIG: gcc-122
+    label: "SMMs PANEL SW PIPELINE SPR"
 
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
