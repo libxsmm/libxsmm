@@ -430,8 +430,10 @@ void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamm
   v_reduce_rows_params.in.primary    = &tmp[S3];
   v_reduce_rows_params.out.primary   = &v;
 
+#if 0
 #ifdef __INTEL_LLVM_COMPILER
 #pragma novector
+#endif
 #endif
   for (s2 = 0; s2 < S2; s2++) {
     reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
@@ -478,8 +480,10 @@ void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, l
   v_reduce_rows_params.in.primary    = &tmp[S3];
   v_reduce_rows_params.out.primary   = &v;
 
+#if 0
 #ifdef __INTEL_LLVM_COMPILER
 #pragma novector
+#endif
 #endif
    for (s2 = 0; s2 < S2; s2++) {
     reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
@@ -524,8 +528,10 @@ void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp
   arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, 0, 0, S3);
   arg_array[7].primary = &c;
 
+#if 0
 #ifdef __INTEL_LLVM_COMPILER
 #pragma novector
+#endif
 #endif
    for (s2 = 0; s2 < S2; s2++) {
     a = var[s2];
@@ -577,8 +583,10 @@ void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, 
   arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, 0, 0, S3);
   arg_array[7].primary = &c;
 
+#if 0
 #ifdef __INTEL_LLVM_COMPILER
 #pragma novector
+#endif
 #endif
    for (s2 = 0; s2 < S2; s2++) {
     a = var[s2];
