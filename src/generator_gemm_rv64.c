@@ -23,7 +23,7 @@
 #define REUSE_C    (libxsmm_cpuid_rv64_gemm_prefetch_reuse_c())
 #define PREFETCH_A (libxsmm_cpuid_rv64_gemm_prefetch_a())
 #define PREFETCH_B (libxsmm_cpuid_rv64_gemm_prefetch_b())
-#define REG_GP(i)  (((i)->arch == LIBXSMM_RV64_MVL128_LMUL) || (((i)->arch == LIBXSMM_RV64_MVL128_LMUL)))
+#define REG_GP(i)  (((i)->arch == LIBXSMM_RV64_MVL128_LMUL) || (((i)->arch == LIBXSMM_RV64_MVL256_LMUL)))
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_rv64_microkernel_rvv( libxsmm_generated_code*            io_generated_code,
