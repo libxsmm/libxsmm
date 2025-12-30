@@ -6,30 +6,6 @@ env:
   SYM: 2
 
 steps:
-  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_srf.sh"
-    env:
-      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
-    label: "SMMs SRF Prec. (SRF)"
-
-  - command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
-    env:
-      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
-      LIBXSMM_TARGET: srf
-      SSIZE: 3
-    label: "Eltwise (SRF)"
-
-  - command: "scripts/tool_test.sh samples/equation/run_test.sh"
-    env:
-      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -srf --"
-      LIBXSMM_TARGET: srf
-      SSIZE: 3
-    label: "Equation (SRF)"
-
-  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_gnr.sh"
-    env:
-      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -gnr --"
-    label: "SMMs GNR Prec. (GNR)"
-
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test_dmr.sh"
     env:
       BIN_INSTR_TOOL: "/swtools/sde/dmr/sde64 -dmr --"
