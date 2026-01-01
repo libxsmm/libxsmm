@@ -5,27 +5,45 @@ env:
   SYM: 2
 
 steps:
-  - label: "GEMM"
+  - label: "GEMM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       SSIZE: 5
+      LIBXSMM_TARGET: "arm_v82"
       PARTITIONS: "orion"
 
-  - label: "BCSC SPMM"
+  - label: "GEMM (sve128)"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 5
+      LIBXSMM_TARGET: "sve128"
+      PARTITIONS: "orion"
+
+  - label: "BCSC SPMM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     env:
       SSIZE: 5
+      LIBXSMM_TARGET: "arm_v82"
       PARTITIONS: "orion"
 
-  - label: "ELTWISE"
+  - label: "ELTWISE (Neon)"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
-      SSIZE: 4
+      SSIZE: 5
+      LIBXSMM_TARGET: "arm_v82"
       PARTITIONS: "orion"
 
-  - label: "FSSPMDM"
+  - label: "ELTWISE (sve128)"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      SSIZE: 5
+      LIBXSMM_TARGET: "sve128"
+      PARTITIONS: "orion"
+
+  - label: "FSSPMDM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 REALTYPE=float"
+      LIBXSMM_TARGET: "arm_v82"
       PARTITIONS: "orion"
       TEST_N: 48
