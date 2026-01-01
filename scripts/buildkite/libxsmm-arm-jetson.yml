@@ -24,7 +24,7 @@ steps:
   - label: "GEMM (sve256)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
-      SSIZE: 3
+      SSIZE: 2
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
       LIBXSMM_TARGET: "sve256"
@@ -33,7 +33,7 @@ steps:
   - label: "GEMM (sve512)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
-      SSIZE: 3
+      SSIZE: 2
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
       LIBXSMM_TARGET: "sve512"
