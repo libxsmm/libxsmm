@@ -4610,7 +4610,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int ldb_adjustment = (kernel_with_abvnniloads > 0) ? 2 : 1;
 
   /* AMX specific blocking info */
-  libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
+  libxsmm_blocking_info_t m_blocking_info[2] = { 0 };
+  libxsmm_blocking_info_t n_blocking_info[2] = { 0 };
   unsigned int n_gemm_code_blocks = 0;
 
   /* Emulating BF8 gemm on AMX */

@@ -1,43 +1,117 @@
 env:
-  LIBXSMM_VERBOSE_BANNER: 0
   LIBXSMM_VERBOSE: 4
-  INSTALL: "install"
-  #LIMIT: 10800
   PEDANTIC: 2
   MALLOC: 1
   SYM: 2
 
 steps:
-  - label: "GEMM"
-    concurrency: 1
-    concurrency_group: "libxsmm-arm-jetson"
-    cancel_on_build_failing: true
+  - label: "GEMM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       SSIZE: 4
+      NP: 12
+      LIBXSMM_TARGET: "arm_v82"
+      PARTITIONS: "orion"
 
-  - label: "BCSC SPMM"
-    concurrency: 1
-    concurrency_group: "libxsmm-arm-jetson"
-    cancel_on_build_failing: true
+  - label: "GEMM (sve128)"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 4
+      NP: 12
+      LIBXSMM_TARGET: "sve128"
+      PARTITIONS: "orion"
+
+  - label: "GEMM (sve256)"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 2
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
+      LIBXSMM_TARGET: "sve256"
+      PARTITIONS: "orion"
+
+  - label: "GEMM (sve512)"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 2
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
+      LIBXSMM_TARGET: "sve512"
+      PARTITIONS: "orion"
+
+  - label: "BCSC SPMM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     env:
       SSIZE: 4
+      NP: 12
+      LIBXSMM_TARGET: "arm_v82"
+      PARTITIONS: "orion"
 
-  - label: "ELTWISE"
-    concurrency: 1
-    concurrency_group: "libxsmm-arm-jetson"
-    cancel_on_build_failing: true
+  - label: "BCSC SPMM (sve128)"
+    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
+    env:
+      SSIZE: 4
+      NP: 12
+      LIBXSMM_TARGET: "sve128"
+      PARTITIONS: "orion"
+
+  - label: "BCSC SPMM (sve256)"
+    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
+    env:
+      SSIZE: 3
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
+      LIBXSMM_TARGET: "sve256"
+      PARTITIONS: "orion"
+
+  - label: "BCSC SPMM (sve512)"
+    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
+    env:
+      SSIZE: 3
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
+      LIBXSMM_TARGET: "sve512"
+      PARTITIONS: "orion"
+
+  - label: "ELTWISE (Neon)"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
-      #LIBXSMM_MATDIFF: "/data/nfs_home/buildkite/artifacts/eltwise-armeps.log"
       SSIZE: 4
+      NP: 12
+      LIBXSMM_TARGET: "arm_v82"
+      PARTITIONS: "orion"
 
-  - label: "FSSPMDM"
-    concurrency: 1
-    concurrency_group: "libxsmm-arm-jetson"
-    cancel_on_build_failing: true
+  - label: "ELTWISE (sve128)"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      SSIZE: 4
+      NP: 12
+      LIBXSMM_TARGET: "sve128"
+      PARTITIONS: "orion"
+
+  - label: "ELTWISE (sve256)"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      SSIZE: 3
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
+      LIBXSMM_TARGET: "sve256"
+      PARTITIONS: "orion"
+
+  - label: "ELTWISE (sve512)"
+    command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
+    env:
+      SSIZE: 3
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
+      LIBXSMM_TARGET: "sve512"
+      PARTITIONS: "orion"
+
+  - label: "FSSPMDM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
     env:
+      NP: 12
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 REALTYPE=float"
+      LIBXSMM_TARGET: "arm_v82"
+      PARTITIONS: "orion"
       TEST_N: 48

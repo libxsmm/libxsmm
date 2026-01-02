@@ -15,7 +15,7 @@ steps:
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
     env:
       LIBXSMM_TARGET: srf
-      PARTITIONS: "srfsp"
+      PARTITIONS: "srf"
 #      CONFIG: gcc-122
     label: "SMMs SRF"
 
@@ -116,7 +116,7 @@ steps:
   - command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     env:
       LIBXSMM_TARGET: srf
-      PARTITIONS: "srfsp"
+      PARTITIONS: "srf"
 #      CONFIG: gcc-122
     label: "BCSC SPMM GNR"
 
@@ -200,7 +200,7 @@ steps:
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
     env:
       LIBXSMM_TARGET: "srf"
-      PARTITIONS: "srfsp"
+      PARTITIONS: "srf"
 
   - label: "ELTWISE GNR"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
@@ -273,7 +273,7 @@ steps:
     env:
       CONFIG: "gcc-system"
       LIBXSMM_TARGET: "srf"
-      PARTITIONS: "srfsp"
+      PARTITIONS: "srf"
 
   - label: "EQUATION GNR"
     command: "scripts/tool_test.sh samples/equation/run_test.sh"
