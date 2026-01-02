@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <generator_riscv_instructions.h>
+#include <generator_rv64_instructions.h>
 
 #define INST(o) (LIBXSMM_RISCV_INSTR_GP_##o)
 
