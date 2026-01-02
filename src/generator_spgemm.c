@@ -125,8 +125,9 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
       libxsmm_generator_spgemm_csr_asparse_reg_x86( io_generated_code, i_xgemm_desc,
                                                     i_row_idx, i_column_idx, i_values );
     /* aarch64 without SVE */
-    } else if ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
-                io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+    } else if ( ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
+                  io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) ||
+                  io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
       libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( io_generated_code, i_xgemm_desc,
                                                              i_row_idx, i_column_idx, i_values );
     /* aarch64 with SVE */

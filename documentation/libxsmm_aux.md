@@ -120,23 +120,6 @@ To improve thread-scalability and to avoid frequent memory allocation/deallocati
 
 **Note**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
-### Meta Image File I/O
-
-Loading and storing data (I/O) is normally out of LIBXSMM's scope. However, comparing results (correctness) or writing files for visual inspection is clearly desired. This is particularly useful for the DNN domain. The MHD library domain provides support for the Meta Image File format (MHD). Tools such as [ITK-SNAP](http://itksnap.org/) or [ParaView](https://www.paraview.org/) can be used to inspect, compare, and modify images (even beyond two-dimensional images).
-
-Writing an image is per `libxsmm_mhd_write`, and loading an image is split in two stages: <span>(1)&#160;</span>`libxsmm_mhd_read_header`, and <span>(2)&#160;</span>`libxsmm_mhd_read`. The first step allows to allocate a properly sized buffer, which is then used to obtain the data per `libxsmm_mhd_read`. When reading data, an on-the-fly type conversion is supported. Further, data that is already in memory can be compared against file-data without allocating memory or reading this file into memory.
-
-To load an image from a familiar format (JPG, PNG, etc.), one may save the raw data using for instance [IrfanView](http://www.irfanview.com/) and rely on a "header-only" MHD-file (plain text). This may look like:
-
-```ini
-NDims = 2
-DimSize = 202 134
-ElementType = MET_UCHAR
-ElementNumberOfChannels = 1
-ElementDataFile = mhd_image.raw
-```
-
-In the above case, a single channel (gray-scale) 202x134-image is described with pixel data stored separately (`mhd_image.raw`). Multi-channel images are expected to interleave the pixel data. The pixel type is per `libxsmm_mhd_elemtype` ([libxsmm_mhd.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_mhd.h#L38)).
 
 ### Thread Synchronization
 

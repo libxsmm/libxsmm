@@ -12,12 +12,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(LIBXSMM_DEFAULT_CONFIG) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED))
-# if !defined(LIBXSMM_MATHDIFF_MHD)
-#   include <utils/libxsmm_mhd.h>
-#   define LIBXSMM_MATHDIFF_MHD
-# endif
-#endif
 #if !defined(LIBXSMM_MATH_DELIMS)
 # define LIBXSMM_MATH_DELIMS " \t;,:"
 #endif
@@ -241,39 +235,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
       LIBXSMM_INIT
       if (NULL != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
-#if defined(LIBXSMM_MATHDIFF_MHD)
-          const char *const defaultname = ((('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env);
-          const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
-          const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
-          char filename[256] = "";
-          const int envi = atoi(env), reshape = (1 < envi || -1 > envi);
-          size_t shape[2] = { 0 }, size[2] = { 0 };
-          if (0 == reshape) {
-            shape[0] = (size_t)mm; shape[1] = (size_t)nn;
-            size[0] = (size_t)ldr; size[1] = (size_t)nn;
-          }
-          else { /* reshape */
-            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)ntotal);
-            shape[0] = ntotal / y; shape[1] = y;
-            size[0] = shape[0];
-            size[1] = shape[1];
-          }
-          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
-          libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
-            type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
-            NULL/*extension*/, 0/*extension_size*/);
-#endif
           if (NULL != tst) {
-#if defined(LIBXSMM_MATHDIFF_MHD)
-            if (0 == reshape) {
-              size[0] = (size_t)ldt;
-              size[1] = (size_t)nn;
-            }
-            LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
-            libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
-              type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
-              NULL/*extension*/, 0/*extension_size*/);
-#endif
             if ('-' == *env && '1' < env[1]) {
               printf("LIBXSMM MATDIFF (%s): m=%" PRIuPTR " n=%" PRIuPTR " ldi=%" PRIuPTR " ldo=%" PRIuPTR " failed.\n",
                 libxsmm_get_typename(datatype), (uintptr_t)m, (uintptr_t)n, (uintptr_t)ldr, (uintptr_t)ldt);
@@ -492,31 +454,38 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 LIBXSMM_API size_t libxsmm_coprime(size_t n, size_t minco)
 {
   const size_t s = (0 != (n & 1) ? ((LIBXSMM_MAX(minco, 1) - 1) | 1) : (minco & ~1));
-  const size_t d = (0 != (n & 1) ? 1 : 2);
-  size_t result = (1 < n ? 1 : 0), i;
-  for (i = (d < n ? (n - 1) : 0); d < i; i -= d) {
-    const size_t c = LIBXSMM_DELTA(s, i);
-    size_t a = n, b = c;
+  const size_t j = (0 != (n & 1) ? 1 : 2);
+  size_t result = (1 < n ? 1 : 0), g = 0, h = 1, i;
+  for (i = (j < n ? (n - 1) : 0); j < i; i -= j) {
+    const size_t d = LIBXSMM_DELTA(s, i);
+    size_t a = n, b = d;
     assert(i != s);
     do { /* GCD of initial A and initial B (result is in A) */
-      const size_t r = a % b;
-      a = b; b = r;
+      const size_t c = a % b;
+      a = b; b = c;
     } while (0 != b);
+    assert(0 != d);
     if (1 == a) {
-      result = c;
-      if (c <= minco) i = d; /* break */
+      const size_t r = n % d;
+      result = d;
+      if (g < r) {
+        g = r;
+        h = d;
+      }
+      if (d <= minco) {
+        i = j; /* break */
+      }
     }
   }
-  if (minco < result) result = 1;
+  if (minco < result) result = h;
   assert((0 == result && 1 >= n) || (result < n && 1 == libxsmm_gcd(result, n)));
-  assert(0 == minco || (result <= minco));
   return result;
 }
 
 
 LIBXSMM_API size_t libxsmm_coprime2(size_t n)
 {
-  return libxsmm_coprime(n, n / 2);
+  return libxsmm_coprime(n, libxsmm_isqrt_u64(n));
 }
 
 
@@ -964,6 +933,53 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
   result = y;
 #endif
   return result;
+}
+
+
+LIBXSMM_API double libxsmm_nearbyint(double x) {
+#if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
+  return nearbyint(x);
+#else
+  double floor_x, frac_part;
+  double integral_part, half_rem;
+
+  if (x == 0.0 || x == -0.0) {
+    return x;
+  }
+  if (isinf(x)) {
+    return x;
+  }
+  if (isnan(x)) {
+    return x;
+  }
+
+  floor_x = floor(x);
+  frac_part = x - floor_x;
+
+  if (frac_part > 0.5) {
+    return floor_x + 1.0;
+  } else if (frac_part < 0.5) {
+    return floor_x;
+  } else {
+    integral_part = floor_x;
+    half_rem = fmod(fabs(integral_part), 2.0);
+
+    if (half_rem == 0.0) {
+      return integral_part;
+    } else {
+      return integral_part + 1.0;
+    }
+  }
+#endif
+}
+
+
+LIBXSMM_API float libxsmm_nearbyintf(float x) {
+#if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
+  return nearbyintf(x);
+#else
+  return (float)libxsmm_nearbyint((double)x);
+#endif
 }
 
 

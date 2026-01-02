@@ -82,6 +82,19 @@ int main(int argc, char* argv[])
     }
   }
 
+  /* check libxsmm_offset */
+  if (EXIT_SUCCESS == result) {
+    const size_t shape[] = { 17, 13, 64, 4 }, ndims = sizeof(shape) / sizeof(*shape);
+    size_t size1 = 0, n;
+    for (n = 0; n < ndims && EXIT_SUCCESS == result; ++n) {
+      if (0 != libxsmm_offset(NULL, shape, n, NULL)) result = EXIT_FAILURE;
+    }
+    for (n = 0; n < ndims && EXIT_SUCCESS == result; ++n) {
+      const size_t offset1 = libxsmm_offset(shape, shape, n, &size1);
+      if (offset1 != size1) result = EXIT_FAILURE;
+    }
+  }
+
   /* check LIBXSMM_MEMCPY127 and libxsmm_diff_n */
   if (EXIT_SUCCESS == result) {
     char *const data = (char*)malloc(elemsize * count);
@@ -131,85 +144,6 @@ int main(int argc, char* argv[])
       }
       if (0 != strcmp(a, init)) {
         FPRINTF(stderr, "LIBXSMM_MEMSWP127: incorrect result!\n");
-        result = EXIT_FAILURE;
-        break;
-      }
-    }
-  }
-
-  if (EXIT_SUCCESS == result) { /* check libxsmm_shuffle */
-    char a[sizeof(init)] = { 0 }, b[sizeof(init)] = { 0 };
-    const size_t size = sizeof(init);
-    size_t i = 1, j;
-    memcpy(a, init, size);
-    for (; i < size; ++i) {
-      LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle(a, 1, size - i, NULL, NULL));
-      LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, init, 1, size - i, NULL, NULL));
-      if (0 == strncmp(a, b, size - i)) {
-        const size_t r = libxsmm_unshuffle(size - i, NULL);
-        for (j = 0; j < r; ++j) {
-          libxsmm_shuffle(a, 1, size - i, NULL, NULL);
-        }
-        if (0 != strcmp(a, init)) {
-          FPRINTF(stderr, "libxsmm_shuffle: data not restored!\n");
-          result = EXIT_FAILURE; break;
-        }
-      }
-      else {
-        FPRINTF(stderr, "libxsmm_shuffle: result does not match libxsmm_shuffle2!\n");
-        result = EXIT_FAILURE; break;
-      }
-    }
-  }
-
-  if (EXIT_SUCCESS == result) { /* check libxsmm_shuffle2 */
-    char a[sizeof(init)], b[sizeof(init)];
-    const size_t size = sizeof(init);
-    size_t s = 0, i;
-    for (; s < size; ++s) {
-      const size_t shuffle = libxsmm_coprime2(s);
-      const size_t gcd = libxsmm_gcd(shuffle, s);
-      if (1 == gcd) {
-        const size_t r = libxsmm_unshuffle(s, &shuffle);
-        int cmp;
-        memset(a, 0, size); /* clear */
-        LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(a, init, 1, s, &shuffle, NULL));
-        cmp = memcmp(a, init, s);
-        if ((1 >= s || 0 == cmp) && (1 < s || 0 != cmp)) {
-          FPRINTF(stderr, "libxsmm_shuffle2: data not shuffled or copy failed!\n");
-          result = EXIT_FAILURE; break;
-        }
-        /* shuffle restores initial input */
-        for (i = 0; i < r; ++i) {
-          memset(b, 0, size); /* clear */
-          LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, a, 1, s, &shuffle, NULL));
-          /* every shuffle is different from input */
-          if (1 < s && 0 == memcmp(a, b, s)) {
-            FPRINTF(stderr, "libxsmm_shuffle2: data not shuffled!\n");
-            result = EXIT_FAILURE; break;
-          }
-          if (0 == memcmp(b, init, s)) break; /* restored */
-          else if (r == (i + 1)) {
-            FPRINTF(stderr, "libxsmm_shuffle2: data not restored!\n");
-            result = EXIT_FAILURE;
-          }
-          memcpy(a, b, s);
-        }
-        if (EXIT_SUCCESS == result) {
-          memset(a, 0, size); /* clear */
-          LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(a, init, 1, s, &shuffle, NULL));
-          memset(b, 0, size); /* clear */
-          LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_shuffle2(b, a, 1, s, &shuffle, &r));
-          if (0 != memcmp(b, init, s)) {
-            FPRINTF(stderr, "libxsmm_shuffle2: data not restored!\n");
-            result = EXIT_FAILURE;
-            break;
-          }
-        }
-        else break; /* previous error */
-      }
-      else {
-        FPRINTF(stderr, "libxsmm_shuffle2: shuffle argument not coprime!\n");
         result = EXIT_FAILURE;
         break;
       }
