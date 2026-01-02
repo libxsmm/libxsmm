@@ -1737,6 +1737,12 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VCVTNEHF82PH", &mycode, LIBXSMM_X86_INSTR_VCVTNEHF82PH, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VCVT2PS2PHX", &mycode, LIBXSMM_X86_INSTR_VCVT2PS2PHX, 2, LIBXSMM_X86_IMM_UNDEF, 32, 1, 0 );
 
+  /* MOVRS */
+  test_evex_compute_mem_2reg_general( "evex_mem_VMOVRSB", &mycode, LIBXSMM_X86_INSTR_VMOVRSB, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VMOVRSW", &mycode, LIBXSMM_X86_INSTR_VMOVRSW, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VMOVRSD", &mycode, LIBXSMM_X86_INSTR_VMOVRSD, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VMOVRSQ", &mycode, LIBXSMM_X86_INSTR_VMOVRSQ, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+
   /* testing AVX512 masking */
   test_mask_move( "mask_move_KMOVB_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVB_GPR_LD );
   test_mask_move( "mask_move_KMOVW_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVW_GPR_LD );
