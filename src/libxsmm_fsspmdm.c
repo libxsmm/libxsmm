@@ -413,7 +413,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
     else if (NULL != k_sparse1) {
       void* fp = NULL;
-      LIBXSMM_ASSIGN127(&fp, &k_sparse1);
+      LIBXSMM_VALUE_ASSIGN(fp, k_sparse1);
       libxsmm_free(fp);
     }
 
@@ -429,7 +429,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
     else if (NULL != k_sparse2) {
       void* fp = NULL;
-      LIBXSMM_ASSIGN127(&fp, &k_sparse2);
+      LIBXSMM_VALUE_ASSIGN(fp, k_sparse2);
       libxsmm_free(fp);
     }
 
@@ -445,7 +445,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     }
     else if (NULL != k_sparse4) {
       void* fp = NULL;
-      LIBXSMM_ASSIGN127(&fp, &k_sparse4);
+      LIBXSMM_VALUE_ASSIGN(fp, k_sparse4);
       libxsmm_free(fp);
     }
 
@@ -494,8 +494,6 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const void* B, void* C)
 {
   libxsmm_gemm_param gemm_param;
@@ -505,7 +503,7 @@ LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const vo
 #endif
   if (NULL == handle->a_dense) {
     gemm_param.a.primary = NULL;
-    gemm_param.b.primary = (void*)B;
+    LIBXSMM_VALUE_ASSIGN(gemm_param.b.primary, B);
     gemm_param.c.primary = (void*)C;
     handle->kernel(&gemm_param);
   }
@@ -514,13 +512,13 @@ LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const vo
     int i;
     gemm_param.b.primary = handle->a_dense;
     for (i = 0; i < handle->N; i += handle->N_chunksize) {
-      gemm_param.a.primary = (char*)B + i * typesize;
+      const char *const pb = (const char*)B + i * typesize;
+      LIBXSMM_VALUE_ASSIGN(gemm_param.a.primary, pb);
       gemm_param.c.primary = (char*)C + i * typesize;
       handle->kernel(&gemm_param);
     }
   }
 }
-#pragma GCC diagnostic pop
 
 
 LIBXSMM_API void libxsmm_dfsspmdm_execute(const libxsmm_dfsspmdm* handle, const double* B, double* C)
@@ -548,7 +546,7 @@ LIBXSMM_API void libxsmm_fsspmdm_destroy(libxsmm_fsspmdm* handle)
          do not use libxsmm_release_kernel here! We also need to work
          around pointer-to-function to pointer-to-object conversion */
       void* fp = NULL;
-      LIBXSMM_ASSIGN127(&fp, &handle->kernel);
+      LIBXSMM_VALUE_ASSIGN(fp, handle->kernel);
       libxsmm_free(fp);
     }
     free(handle);

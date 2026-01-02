@@ -21,7 +21,7 @@
 # define LIBXSMM_MEMORY_SW
 #endif
 
-#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime(N, (N) / 2)
+#define LIBXSMM_MEMORY_SHUFFLE_COPRIME(N) libxsmm_coprime2(N)
 #define LIBXSMM_MEMORY_SHUFFLE(INOUT, ELEMSIZE, COUNT, SHUFFLE, NREPEAT) do { \
   unsigned char *const LIBXSMM_RESTRICT data = (unsigned char*)(INOUT); \
   const size_t c = (COUNT) - 1, c2 = ((COUNT) + 1) / 2; \
@@ -72,7 +72,7 @@ LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], s
     result = (NULL != offset ? offset[0] : 0);
     size1 = shape[0];
     for (i = 1; i < ndims; ++i) {
-      result += (NULL != offset ? offset[i] : 0) * size1;
+      result += ((NULL != offset && 0 != offset[i]) ? (offset[i] - 1) : 0) * size1;
       size1 *= shape[i];
     }
   }
@@ -159,6 +159,7 @@ unsigned char internal_diff_avx2(const void* a, const void* b, unsigned char siz
 }
 
 
+#if defined(LIBXSMM_DIFF_AVX512_ENABLED)
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_SKX)
 unsigned char internal_diff_avx512(const void* a, const void* b, unsigned char size)
 {
@@ -177,6 +178,7 @@ unsigned char internal_diff_avx512(const void* a, const void* b, unsigned char s
   return internal_diff_sw(a, b, size);
 #endif
 }
+#endif
 
 
 LIBXSMM_API_INLINE
@@ -239,6 +241,7 @@ int internal_memcmp_avx2(const void* a, const void* b, size_t size)
 }
 
 
+#if defined(LIBXSMM_DIFF_AVX512_ENABLED)
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_SKX)
 int internal_memcmp_avx512(const void* a, const void* b, size_t size)
 {
@@ -257,6 +260,7 @@ int internal_memcmp_avx512(const void* a, const void* b, size_t size)
   return internal_memcmp_sw(a, b, size);
 #endif
 }
+#endif
 
 
 LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch)
@@ -618,104 +622,6 @@ LIBXSMM_API int libxsmm_strimatch(const char a[], const char b[], const char del
     } while ('\0' != *a);
     if (nwords < result) result = nwords;
   } else result = -1;
-  return result;
-}
-
-
-LIBXSMM_API int libxsmm_shuffle(void* inout, size_t elemsize, size_t count,
-  const size_t* shuffle, const size_t* nrepeat)
-{
-  int result;
-  if (NULL != inout || 0 == elemsize || 0 == count) {
-    const size_t s = (NULL == shuffle ? LIBXSMM_MEMORY_SHUFFLE_COPRIME(count) : *shuffle);
-    const size_t n = (NULL == nrepeat ? 1 : *nrepeat);
-    switch (elemsize) {
-      case 8:   LIBXSMM_MEMORY_SHUFFLE(inout, 8, count, s, n); break;
-      case 4:   LIBXSMM_MEMORY_SHUFFLE(inout, 4, count, s, n); break;
-      case 2:   LIBXSMM_MEMORY_SHUFFLE(inout, 2, count, s, n); break;
-      case 1:   LIBXSMM_MEMORY_SHUFFLE(inout, 1, count, s, n); break;
-      default:  LIBXSMM_MEMORY_SHUFFLE(inout, elemsize, count, s, n);
-    }
-    result = EXIT_SUCCESS;
-  }
-  else result = EXIT_FAILURE;
-  return result;
-}
-
-
-LIBXSMM_API int libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count,
-  const size_t* shuffle, const size_t* nrepeat)
-{
-  const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
-  unsigned char *const LIBXSMM_RESTRICT out = (unsigned char*)dst;
-  const size_t size = elemsize * count;
-  int result;
-  if ((NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out)) || 0 == size) {
-    const size_t s = (NULL == shuffle ? LIBXSMM_MEMORY_SHUFFLE_COPRIME(count) : *shuffle);
-    size_t i = 0, j = 1;
-    if (NULL == nrepeat || 1 == *nrepeat) {
-      if (elemsize < 128) {
-        switch (elemsize) {
-          case 8: for (; i < size; i += 8, j += s) {
-            if (count < j) j -= count;
-            *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - 8 * j);
-          } break;
-          case 4: for (; i < size; i += 4, j += s) {
-            if (count < j) j -= count;
-            *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - 4 * j);
-          } break;
-          case 2: for (; i < size; i += 2, j += s) {
-            if (count < j) j -= count;
-            *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - 2 * j);
-          } break;
-          case 1: for (; i < size; ++i, j += s) {
-            if (count < j) j -= count;
-            out[i] = inp[size-j];
-          } break;
-          default: for (; i < size; i += elemsize, j += s) {
-            if (count < j) j -= count;
-            LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
-          }
-        }
-      }
-      else { /* generic path */
-        for (; i < size; i += elemsize, j += s) {
-          if (count < j) j -= count;
-          memcpy(out + i, inp + size - elemsize * j, elemsize);
-        }
-      }
-    }
-    else if (0 != *nrepeat) { /* generic path */
-      const size_t c = count - 1;
-      for (; i < count; ++i) {
-        size_t k = 0;
-        LIBXSMM_ASSERT(NULL != inp && NULL != out);
-        for (j = i; k < *nrepeat; ++k) j = c - ((s * j) % count);
-        memcpy(out + elemsize * i, inp + elemsize * j, elemsize);
-      }
-    }
-    else { /* ordinary copy */
-      memcpy(out, inp, size);
-    }
-    result = EXIT_SUCCESS;
-  }
-  else result = EXIT_FAILURE;
-  return result;
-}
-
-
-LIBXSMM_API size_t libxsmm_unshuffle(size_t count, const size_t* shuffle)
-{
-  size_t result = 0;
-  if (0 < count) {
-    const size_t n = (NULL == shuffle ? LIBXSMM_MEMORY_SHUFFLE_COPRIME(count) : *shuffle);
-    size_t c = count - 1, j = c, d = 0;
-    for (; result < count; ++result, j = c - d) {
-      d = (j * n) % count;
-      if (0 == d) break;
-    }
-  }
-  assert(result <= count);
   return result;
 }
 

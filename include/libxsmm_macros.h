@@ -23,11 +23,6 @@
 
 /** Parameters of GEMM domain (static kernels, etc). */
 #define LIBXSMM_PREFETCH LIBXSMM_CONFIG_PREFETCH
-#define LIBXSMM_MAX_MNK LIBXSMM_CONFIG_MAX_MNK
-#define LIBXSMM_MAX_DIM LIBXSMM_CONFIG_MAX_DIM
-#define LIBXSMM_MAX_M LIBXSMM_CONFIG_MAX_M
-#define LIBXSMM_MAX_N LIBXSMM_CONFIG_MAX_N
-#define LIBXSMM_MAX_K LIBXSMM_CONFIG_MAX_K
 #define LIBXSMM_FLAGS LIBXSMM_CONFIG_FLAGS
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
@@ -114,23 +109,7 @@
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
 #define LIBXSMM_ELIDE(...)
 
-/** MKL_DIRECT_CALL requires to include the MKL interface. */
-#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL) || \
-    (defined(__MKL) && !defined(LIBXSMM_BUILD) && \
-    (!defined(__BLAS) || (0 != __BLAS)))) && \
-    (defined(LIBXSMM_PLATFORM_X86))
-# if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
-#   error "Inconsistent ILP64 configuration detected!"
-# endif
-# include <mkl.h>
-#endif
-/** __INTEL_MKL__ is needed later to fix some NOTHROW issue. */
-#if defined(__MKL) && !defined(__INTEL_MKL__) && defined(LIBXSMM_PLATFORM_X86) && \
-    defined(NOTHROW)
-# include <mkl_version.h>
-#endif
-
-/** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
+ /** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
 #define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
@@ -144,10 +123,10 @@
 # define LIBXSMM_VERSION_NUMBER LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, \
     LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
 #endif
-
-#define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
-  (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
-
+#if !defined(LIBXSMM_VERSION_CHECK)
+# define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
+    (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
+#endif
 /**
  * Macro to check minimum version requirements in code, for example:
  * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
@@ -159,10 +138,79 @@
 #define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
   LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
 
-/** Calculation of INTEL_MKL_VERSION has no continuous history. */
-#if defined(__INTEL_MKL__) && defined(__INTEL_MKL_MINOR__) && defined(__INTEL_MKL_UPDATE__)
-# define LIBXSMM_MKL_VERSION3 LIBXSMM_VERSION3(__INTEL_MKL__, __INTEL_MKL_MINOR__, __INTEL_MKL_UPDATE__)
-# define LIBXSMM_MKL_VERSION2 LIBXSMM_VERSION2(__INTEL_MKL__, __INTEL_MKL_MINOR__)
+/** Make LIBXSMM_PRAGMA available early. */
+#if defined(__cplusplus)
+# if (201103L <= __cplusplus) /*C99 compatibility*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# endif
+#else /* C */
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# elif defined(__GNUC__) /*|| defined(__clang__)*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# endif
+#endif /*__cplusplus*/
+#if !defined(LIBXSMM_PRAGMA)
+# if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
+# else
+#   define LIBXSMM_PRAGMA(DIRECTIVE)
+# endif
+#endif
+
+/** Allow control of diagnostics. */
+#if !defined(__INTEL_COMPILER)
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# endif
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG)
+# define LIBXSMM_PRAGMA_DIAG_PUSH()
+# define LIBXSMM_PRAGMA_DIAG_POP()
+# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+# define LIBXSMM_PRAGMA_DIAG_OFF_PEDANTIC() LIBXSMM_PRAGMA_DIAG_OFF("-Wpedantic")
+# define LIBXSMM_PRAGMA_DIAG_OFF_CASTQUAL() LIBXSMM_PRAGMA_DIAG_OFF("-Wcast-qual")
+# if (defined(__GNUC__) && !defined(__clang__)) || \
+      LIBXSMM_VERSION2(9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
+#   define LIBXSMM_PRAGMA_DIAG_OFF_FADDRESS() LIBXSMM_PRAGMA_DIAG_OFF("-Wframe-address")
+# endif
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_OFF_WUNKNOWN() LIBXSMM_PRAGMA_DIAG_OFF("-Wunknown-warning-option")
+# else
+#   define LIBXSMM_PRAGMA_DIAG_OFF_WUNKNOWN() LIBXSMM_PRAGMA_DIAG_OFF("-Wpragmas")
+# endif
+# define LIBXSMM_PRAGMA_DIAG_OFF_VARUNUSED() LIBXSMM_PRAGMA_DIAG_OFF("-Wunused-variable")
+#else
+# define LIBXSMM_PRAGMA_DIAG_OFF_PEDANTIC()
+# define LIBXSMM_PRAGMA_DIAG_OFF_CASTQUAL()
+# define LIBXSMM_PRAGMA_DIAG_OFF_WUNKNOWN()
+# define LIBXSMM_PRAGMA_DIAG_OFF_VARUNUSED()
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG_OFF_FADDRESS)
+# define LIBXSMM_PRAGMA_DIAG_OFF_FADDRESS()
+#endif
+#if defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
+#elif defined(__clang__)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(clang optimize off)
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(clang optimize on)
+#elif defined(__GNUC__)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(GCC push_options) LIBXSMM_PRAGMA(GCC optimize("O0"))
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(GCC pop_options)
+#else
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
@@ -215,59 +263,6 @@
 # define LIBXSMM_CAST_BLASINT(VALUE) LIBXSMM_CAST_INT(VALUE)
 #endif
 
-/* Const-qualify BLAS functions */
-#if defined(LIBXSMM_BLAS_CONST)
-# undef LIBXSMM_BLAS_CONST
-# define LIBXSMM_BLAS_CONST const
-#elif defined(OPENBLAS_CONST)
-# define LIBXSMM_BLAS_CONST OPENBLAS_CONST
-#elif (defined(LIBXSMM_BLAS_NONCONST) || defined(__OPENBLAS) || defined(__OPENBLAS77)) \
-   && !defined(LIBXSMM_BUILD)
-# define LIBXSMM_BLAS_CONST
-#else
-# define LIBXSMM_BLAS_CONST const
-#endif
-
-/* Control BLAS dependency */
-#if !defined(LIBXSMM_NO_BLAS)
-# if (!defined(__BLAS) || (0 != __BLAS)) && \
-      !(defined(LIBXSMM_PLATFORM_AARCH64) && defined(_WIN32))
-#   define LIBXSMM_NO_BLAS 0
-#   define LIBXSMM_BLAS 1
-# else
-#   define LIBXSMM_NO_BLAS 1
-#   define LIBXSMM_BLAS 0
-# endif
-#endif
-
-#if defined(LIBXSMM_BUILD)
-# if defined(LIBXSMM_BUILD_EXT) && defined(_WINDLL) && \
-    (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
-#   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_APIEXT
-# elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
-#   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_API
-# endif
-#endif
-#if !defined(LIBXSMM_BLAS_SYMBOL_VISIBILITY)
-# define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_EXTERN LIBXSMM_VISIBILITY_IMPORT
-#endif
-
-#if defined(NOTHROW)
-# define LIBXSMM_BLAS_NOEXCEPT_AUX NOTHROW
-#else
-# define LIBXSMM_BLAS_NOEXCEPT_AUX LIBXSMM_NOEXCEPT
-#endif
-#define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
-#if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided LIBXSMM_BLAS_NOEXCEPT_AUX
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOEXCEPT_AUX
-#else
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch
-#endif
-#define LIBXSMM_BLAS_NOEXCEPT_gemm LIBXSMM_BLAS_NOEXCEPT_AUX
-#define LIBXSMM_BLAS_NOEXCEPT_gemv LIBXSMM_BLAS_NOEXCEPT_AUX
-
 /** Construct BLAS-style prefixes. */
 #define LIBXSMM_TPREFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_, TYPE)
 #define LIBXSMM_TPREFIX(TYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), FUNCTION)
@@ -279,90 +274,6 @@
 
 /* Construct prefix names, function type or dispatch function from given input and output types. */
 #define LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION) LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), FUNCTION)
-
-/** Construct symbol name from a given real type name (float, double, etc.). */
-#define LIBXSMM_BLAS_SYMBOL(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, KIND))
-#define LIBXSMM_CBLAS_SYMBOL LIBXSMM_TPREFIX
-
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch_strided(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR /*m*/, libxsmm_blasint CONST_STAR /*n*/, libxsmm_blasint CONST_STAR /*k*/, \
-  TYPE CONST_STAR /*alpha*/, TYPE CONST_STAR /*a*/, libxsmm_blasint CONST_STAR /*lda*/, libxsmm_blasint CONST_STAR /*stride_a*/, \
-                             TYPE CONST_STAR /*b*/, libxsmm_blasint CONST_STAR /*ldb*/, libxsmm_blasint CONST_STAR /*stride_b*/, \
-  TYPE CONST_STAR /*beta*/,  TYPE       STAR /*c*/, libxsmm_blasint CONST_STAR /*ldc*/, libxsmm_blasint CONST_STAR /*stride_c*/, \
-  libxsmm_blasint CONST_STAR /*batchsize*/
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE STAR STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
-  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemv(CONST_STAR, STAR, TYPE) char CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
-  TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
-#define LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_SYMBOL_SIGNATURE_, KIND)(CONST_STAR, STAR, TYPE)
-#define LIBXSMM_BLAS_SYMBOL_FDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
-#define LIBXSMM_BLAS_SYMBOL_CDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_CBLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
-
-#define LIBXSMM_BLAS_DECL(TYPE, KIND, DECL) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_, LIBXSMM_TPREFIX(TYPE, KIND))(DECL)
-#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
-# define LIBXSMM_BLAS_dgemm(DECL) DECL;
-# define LIBXSMM_BLAS_sgemm(DECL) DECL;
-# define LIBXSMM_BLAS_dgemv(DECL) DECL;
-# define LIBXSMM_BLAS_sgemv(DECL) DECL;
-#else
-# define LIBXSMM_BLAS_dgemm
-# define LIBXSMM_BLAS_sgemm
-# define LIBXSMM_BLAS_dgemv
-# define LIBXSMM_BLAS_sgemv
-#endif
-
-#if (0 != LIBXSMM_BLAS) /* BLAS available */
-# define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND) LIBXSMM_BLAS_DECL(TYPE, KIND, LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, TYPE, KIND))
-#else
-# define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND)
-#endif
-
-/** Map to appropriate BLAS function (or fallback). */
-#define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
-#if (0 != LIBXSMM_BLAS)
-# if defined(LIBXSMM_INIT_COMPLETED)
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
-# else
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_original_dgemm_batch_strided()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_original_sgemm_batch_strided()
-#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch()
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv()
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
-# endif
-#else /* no BLAS */
-# define LIBXSMM_BLAS_FUNCTION_dgemm_batch_strided libxsmm_blas_error("dgemm_batch_strided")
-# define LIBXSMM_BLAS_FUNCTION_sgemm_batch_strided libxsmm_blas_error("sgemm_batch_strided")
-# define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_blas_error("dgemm_batch")
-# define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_blas_error("sgemm_batch")
-# define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_blas_error("dgemm")
-# define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_blas_error("sgemm")
-# define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_blas_error("dgemv")
-# define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_blas_error("sgemv")
-#endif
-
-/** Short-cut macros to construct desired BLAS function symbol. */
-#define LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm_batch_strided)
-#define LIBXSMM_GEMM_BATCH_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm_batch)
-#define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm)
-#define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemv)
 
 /** Consolidate BLAS-transpose into a set of flags. */
 #define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
@@ -389,19 +300,6 @@
 
 /** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
 #define LIBXSMM_MNK_SIZE(M, N, K) (((size_t)(M)) * ((size_t)(N)) * ((size_t)(K)))
-/** Calculate total number of matrix-elements; matrices A, B, C are given per M, N, K, and emphasize (S) the C-size. */
-#define LIBXSMM_SIZE(M, N, K, S) \
-    (((size_t)(M) * (size_t)(K)) + ((size_t)(K) * (size_t)(N)) + \
-    (((size_t)(S) * (size_t)(M) * (size_t)(N))))
-/** Condition based on arithmetic intensity (AI) */
-#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) \
-    ((LIBXSMM_MNK_SIZE(M, N, K) * 2) <= ((size_t)(TYPESIZE) * 4/*AI*/ * LIBXSMM_SIZE(M, N, K, S)))
-/** Determine whether an SMM is suitable, i.e., small enough. */
-#if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
-# define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
-#else /* threshold based on arithmetic intensity */
-# define LIBXSMM_SMM LIBXSMM_SMM_AI
-#endif
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || \
   (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
@@ -507,7 +405,6 @@
 # define LIBXSMM_EXTERN extern
 # define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
-#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_CALLER __func__
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
@@ -516,7 +413,7 @@
 #   define LIBXSMM_FUNCNAME __FUNCTION__
 #   define LIBXSMM_INLINE_KEYWORD __inline
 #   define LIBXSMM_INLINE_FIXUP
-# elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
+# elif (defined(__GNUC__) /*|| defined(__clang__)*/) && !defined(__STRICT_ANSI__)
 #   define LIBXSMM_CALLER __PRETTY_FUNCTION__
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)
@@ -639,14 +536,6 @@
 # endif
 #endif /*LIBXSMM_RESTRICT*/
 
-#if !defined(LIBXSMM_PRAGMA)
-# if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
-#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
-# else
-#   define LIBXSMM_PRAGMA(DIRECTIVE)
-# endif
-#endif
-
 #if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_OPENMP_SIMD
@@ -719,39 +608,6 @@
 # endif
 #endif
 
-#if !defined(__INTEL_COMPILER)
-# if defined(__clang__)
-#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
-#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
-#   define LIBXSMM_PRAGMA_DIAG
-# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
-#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
-#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
-#   define LIBXSMM_PRAGMA_DIAG
-# endif
-#endif
-#if !defined(LIBXSMM_PRAGMA_DIAG)
-# define LIBXSMM_PRAGMA_DIAG_PUSH()
-# define LIBXSMM_PRAGMA_DIAG_POP()
-# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
-#endif
-
-#if defined(LIBXSMM_INTEL_COMPILER)
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
-#elif defined(__clang__)
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(clang optimize off)
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(clang optimize on)
-#elif defined(__GNUC__)
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(GCC push_options) LIBXSMM_PRAGMA(GCC optimize("O0"))
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(GCC pop_options)
-#else
-# define LIBXSMM_PRAGMA_OPTIMIZE_OFF
-# define LIBXSMM_PRAGMA_OPTIMIZE_ON
-#endif
-
 #if defined(_OPENMP) && (200805/*v3.0*/ <= _OPENMP) \
  && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
@@ -791,8 +647,6 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
-#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE, ((double)(A) / 2.0)) * 2)))
-#define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 #define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
 LIBXSMM_API_INLINE   signed long long libxsmm_widen_u32i64(unsigned int value) { return value; }
@@ -810,8 +664,6 @@ LIBXSMM_API_INLINE unsigned long long libxsmm_widen_u32u64(unsigned int value) {
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
-# define LIBXSMM_NEARBYINTF(A) nearbyintf(A)
-# define LIBXSMM_NEARBYINT(A) nearbyint(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
 # define LIBXSMM_SQRTF(A) sqrtf(A)
 # define LIBXSMM_EXP2F(A) exp2f(A)
@@ -828,8 +680,6 @@ LIBXSMM_API_INLINE unsigned long long libxsmm_widen_u32u64(unsigned int value) {
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
-# define LIBXSMM_NEARBYINTF(A) LIBXSMM_NEARBYINTX(float, A)
-# define LIBXSMM_NEARBYINT(A) LIBXSMM_NEARBYINTX(double, A)
 # define LIBXSMM_TANHF(A) ((float)tanh((float)(A)))
 # define LIBXSMM_SQRTF(A) ((float)sqrt((float)(A)))
 # define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)
@@ -963,7 +813,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 /** Address of an ARRAY of elements (of TYPESIZE) using linear index according to LIBXSMM_INDEX1. */
-#define LIBXSMM_ACCESS_RAW(NDIMS, TYPESIZE, ARRAY, ...) ((void*)(((char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
+#define LIBXSMM_ACCESS_RO(NDIMS, TYPESIZE, ARRAY, ...) ((const void*)(((const char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
+#define LIBXSMM_ACCESS_RW(NDIMS, TYPESIZE, ARRAY, ...) ((void*)(((char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
 /** Address of an ARRAY of TYPE (can be const-qualified) using linear index according to LIBXSMM_INDEX1. */
 #define LIBXSMM_ACCESS(NDIMS, TYPE, ARRAY, ...) (((TYPE*)(ARRAY)) + LIBXSMM_INDEX1(NDIMS, __VA_ARGS__))
 
@@ -1005,7 +856,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 /** Append "_omp" postfix to the given symbol. */
 #define LIBXSMM_USEOMP(FUNCTION) LIBXSMM_CONCATENATE(FUNCTION, _omp)
 
-#if defined(LIBXSMM_BUILD) && (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+#if defined(LIBXSMM_BUILD) && (defined(__GNUC__) || defined(__clang__)) && \
+   !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(_WIN32)
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
 # define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
 #else
@@ -1170,8 +1022,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_EXPECT_DEBUG LIBXSMM_EXPECT_ELIDE
 #endif
-#if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
+#if defined(_OPENMP) /*&& defined(LIBXSMM_SYNC_OMP)*/
+LIBXSMM_PRAGMA_DIAG_PUSH()
+LIBXSMM_PRAGMA_DIAG_OFF_PEDANTIC()
 # include <omp.h>
+LIBXSMM_PRAGMA_DIAG_POP()
 #endif
 #include <inttypes.h>
 #include <stdint.h>

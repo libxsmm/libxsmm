@@ -258,16 +258,7 @@
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_aarch64.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_mhd.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_timer.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_utils.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\utils\libxsmm_intrinsics_x86.h">
       <Filter>include\utils</Filter>
     </ClInclude>
     <ClInclude Include="..\include\utils\libxsmm_lpflt_quant.h">
@@ -299,6 +290,18 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_matdiff.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_utils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_gemm_aarch64.h">
       <Filter>src\generator</Filter>
@@ -360,9 +363,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_mhd.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_generator.c">
@@ -603,6 +603,12 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_avx_avx2_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_packed_gemm.c">
