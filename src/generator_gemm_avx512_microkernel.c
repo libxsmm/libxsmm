@@ -713,7 +713,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         } else {
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
+#if 0
+              LIBXSMM_X86_INSTR_VMOVRSD,
+#else
               l_a_vmove_instruction,
+#endif
               i_gp_reg_mapping->gp_reg_a,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m * l_k_pack_factor,

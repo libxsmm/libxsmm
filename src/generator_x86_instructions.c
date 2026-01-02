@@ -935,6 +935,10 @@ unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_VPINSRD:
     case LIBXSMM_X86_INSTR_VPINSRQ:
     case LIBXSMM_X86_INSTR_VPERMQ:
+    case LIBXSMM_X86_INSTR_VMOVRSB:
+    case LIBXSMM_X86_INSTR_VMOVRSW:
+    case LIBXSMM_X86_INSTR_VMOVRSD:
+    case LIBXSMM_X86_INSTR_VMOVRSQ:
       break;
     default:
       l_return = 0;
