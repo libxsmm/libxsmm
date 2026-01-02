@@ -29,6 +29,7 @@ jobs:
       - name: ELTWISE
         run: |
           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/eltwise/run_test.sh"
+
   Test_4:
       runs-on: self-hosted
       needs: Pull_Branch
@@ -36,6 +37,7 @@ jobs:
       - name: Test 4
         run: |
           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh 4"
+
   Fortran:
       runs-on: self-hosted
       needs: Pull_Branch
