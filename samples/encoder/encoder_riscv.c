@@ -14,33 +14,34 @@
 
 #include <generator_rv64_instructions.h>
 
-#define INST(o) (LIBXSMM_RISCV_INSTR_GP_##o)
+#define INST(o)   (LIBXSMM_RV64_INSTR_GP_##o)
+#define VINST(o)  (LIBXSMM_RV64_INSTR_RVV_##o)
 
 #define TEST_IMM12_I(o, c, i, s, d) do          \
 {                                               \
   int i1=0, i2=4095, i3=4096, i4=4097;          \
-  libxsmm_riscv_instruction_##o(c, i, s, d, i1);\
-  libxsmm_riscv_instruction_##o(c, i, s, d, i2);\
-  libxsmm_riscv_instruction_##o(c, i, s, d, i3);\
-  libxsmm_riscv_instruction_##o(c, i, s, d, i4);\
+  libxsmm_rv64_instruction_##o(c, i, s, d, i1);\
+  libxsmm_rv64_instruction_##o(c, i, s, d, i2);\
+  libxsmm_rv64_instruction_##o(c, i, s, d, i3);\
+  libxsmm_rv64_instruction_##o(c, i, s, d, i4);\
 }while(0)
 
 #define TEST_IMM20_I(o, c, i, d) do               \
 {                                                 \
   int i1=0, i2=(0x00ffe), i3=(1<<20), i4=(1<<21); \
-  libxsmm_riscv_instruction_##o(c, i, d, i1);     \
-  libxsmm_riscv_instruction_##o(c, i, d, i2);     \
-  libxsmm_riscv_instruction_##o(c, i, d, i3);     \
-  libxsmm_riscv_instruction_##o(c, i, d, i4);     \
+  libxsmm_rv64_instruction_##o(c, i, d, i1);     \
+  libxsmm_rv64_instruction_##o(c, i, d, i2);     \
+  libxsmm_rv64_instruction_##o(c, i, d, i3);     \
+  libxsmm_rv64_instruction_##o(c, i, d, i4);     \
 }while(0)
 
 #define TEST_IMM64_I(o, c, d) do                  \
 {                                                 \
   unsigned long long i1=0, i2=(0xffe), i3=(0xfff1), i4=(0xfffff1);\
-  libxsmm_riscv_instruction_##o(c, d, i1);        \
-  libxsmm_riscv_instruction_##o(c, d, i2);        \
-  libxsmm_riscv_instruction_##o(c, d, i3);        \
-  libxsmm_riscv_instruction_##o(c, d, i4);        \
+  libxsmm_rv64_instruction_##o(c, d, i1);        \
+  libxsmm_rv64_instruction_##o(c, d, i2);        \
+  libxsmm_rv64_instruction_##o(c, d, i3);        \
+  libxsmm_rv64_instruction_##o(c, d, i4);        \
 }while(0)
 
 void reset_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
@@ -48,7 +49,6 @@ void reset_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
   mycode->code_size = 0;
   mycode->code_type = 2;
   mycode->last_error = 0;
-  mycode->sf_size = 0;
   memset( (unsigned char*)mycode->generated_code, 0, mycode->buffer_size );
 }
 
@@ -107,7 +107,7 @@ void test_alu_compute( char* test_name, libxsmm_generated_code* mycode, unsigned
   for (a = 0; a < 33; ++a ) {
     for (b = 0; b < 33; ++b ) {
       for (d = 0; d < 33; ++d ) {
-        libxsmm_riscv_instruction_alu_compute( mycode, instr, a, b, d );
+        libxsmm_rv64_instruction_alu_compute( mycode, instr, a, b, d );
       }
     }
   }
@@ -188,8 +188,8 @@ void test_rvv_setvl( char* test_name, libxsmm_generated_code* mycode, unsigned i
 
   reset_code_buffer( mycode, test_name );
 
-  libxsmm_riscv_instruction_rvv_setvli( mycode, LIBXSMM_RISCV_GP_REG_X3,
-    LIBXSMM_RISCV_GP_REG_X4, LIBXSMM_RISCV_SEW_B, LIBXSMM_RISCV_LMUL_M1);
+  libxsmm_rv64_instruction_rvv_setvli( mycode, LIBXSMM_RV64_GP_REG_X3,
+    LIBXSMM_RV64_GP_REG_X4, LIBXSMM_RV64_SEW_B, LIBXSMM_RV64_LMUL_M1);
 
   dump_code_buffer( mycode, test_name );
 }
@@ -198,8 +198,8 @@ void test_rvv_move( char* test_name, libxsmm_generated_code* mycode, unsigned in
 
   reset_code_buffer( mycode, test_name );
 
-  libxsmm_riscv_instruction_rvv_move( mycode, instr, LIBXSMM_RISCV_GP_REG_V3,
-    LIBXSMM_RISCV_GP_REG_V4, LIBXSMM_RISCV_GP_REG_V5);
+  libxsmm_rv64_instruction_rvv_move( mycode, instr, LIBXSMM_RV64_GP_REG_V3,
+    LIBXSMM_RV64_GP_REG_V4, LIBXSMM_RV64_GP_REG_V5, 1);
 
   dump_code_buffer( mycode, test_name );
 }
@@ -208,8 +208,8 @@ void test_rvv_compute( char* test_name, libxsmm_generated_code* mycode, unsigned
 
   reset_code_buffer( mycode, test_name );
 
-  libxsmm_riscv_instruction_rvv_compute( mycode, instr, LIBXSMM_RISCV_GP_REG_V3,
-    LIBXSMM_RISCV_GP_REG_V4, LIBXSMM_RISCV_GP_REG_V5, 0);
+  libxsmm_rv64_instruction_rvv_compute( mycode, instr, LIBXSMM_RV64_GP_REG_V3,
+    LIBXSMM_RV64_GP_REG_V4, LIBXSMM_RV64_GP_REG_V5, 0);
 
   dump_code_buffer( mycode, test_name );
 }
@@ -218,8 +218,8 @@ void test_rvv_compute_imm( char* test_name, libxsmm_generated_code* mycode, unsi
 
   reset_code_buffer( mycode, test_name );
 
-  libxsmm_riscv_instruction_rvv_compute( mycode, instr, LIBXSMM_RISCV_GP_REG_V3,
-    0x2, LIBXSMM_RISCV_GP_REG_V5, 0);
+  libxsmm_rv64_instruction_rvv_compute( mycode, instr, LIBXSMM_RV64_GP_REG_V3,
+    0x2, LIBXSMM_RV64_GP_REG_V5, 0);
 
   dump_code_buffer( mycode, test_name );
 }
@@ -231,7 +231,7 @@ int main( /*int argc, char* argv[]*/ ) {
   /* init generated code object */
   mycode.generated_code = codebuffer;
   mycode.buffer_size = 8388608;
-  mycode.arch = LIBXSMM_RISCV;
+  mycode.arch = LIBXSMM_RV64_MVL256;
 
   /* testing ALU ldr/str instructions */
   test_alu_move( "alu_mov_LB", &mycode, INST(LB) );
@@ -253,57 +253,57 @@ int main( /*int argc, char* argv[]*/ ) {
 
   test_alu_set_imm64( "alu_set_imm64", &mycode, INST(LW) );
 
-  test_rvv_setvl( "setvli", &mycode, INST(VSETVLI) );
-  test_rvv_setvl( "setivli", &mycode, INST(VSETIVLI) );
-  test_rvv_setvl( "setvl", &mycode, INST(VSETVL) );
+  test_rvv_setvl( "setvli", &mycode, VINST(VSETVLI) );
+  test_rvv_setvl( "setivli", &mycode, VINST(VSETIVLI) );
+  test_rvv_setvl( "setvl", &mycode, VINST(VSETVL) );
 
-  test_rvv_move( "vle8_v", &mycode, INST(VLE8_V) );
-  test_rvv_move( "vle16_v", &mycode, INST(VLE16_V) );
-  test_rvv_move( "vle32_v", &mycode, INST(VLE32_V) );
-  test_rvv_move( "vle32_v", &mycode, INST(VLE64_V) );
+  test_rvv_move( "vle8_v", &mycode, VINST(VLE8_V) );
+  test_rvv_move( "vle16_v", &mycode, VINST(VLE16_V) );
+  test_rvv_move( "vle32_v", &mycode, VINST(VLE32_V) );
+  test_rvv_move( "vle32_v", &mycode, VINST(VLE64_V) );
 
-  test_rvv_move( "vse8_v", &mycode, INST(VSE8_V) );
-  test_rvv_move( "vse16_v", &mycode, INST(VSE16_V) );
-  test_rvv_move( "vse32_v", &mycode, INST(VSE32_V) );
-  test_rvv_move( "vse32_v", &mycode, INST(VSE64_V) );
+  test_rvv_move( "vse8_v", &mycode, VINST(VSE8_V) );
+  test_rvv_move( "vse16_v", &mycode, VINST(VSE16_V) );
+  test_rvv_move( "vse32_v", &mycode, VINST(VSE32_V) );
+  test_rvv_move( "vse32_v", &mycode, VINST(VSE64_V) );
 
-  test_rvv_move( "vlse8_v", &mycode, INST(VLSE8_V) );
-  test_rvv_move( "vlse16_v", &mycode, INST(VLSE16_V) );
-  test_rvv_move( "vlse32_v", &mycode, INST(VLSE32_V) );
-  test_rvv_move( "vlse32_v", &mycode, INST(VLSE64_V) );
+  test_rvv_move( "vlse8_v", &mycode, VINST(VLSE8_V) );
+  test_rvv_move( "vlse16_v", &mycode, VINST(VLSE16_V) );
+  test_rvv_move( "vlse32_v", &mycode, VINST(VLSE32_V) );
+  test_rvv_move( "vlse32_v", &mycode, VINST(VLSE64_V) );
 
-  test_rvv_move( "vsse8_v", &mycode, INST(VSSE8_V) );
-  test_rvv_move( "vsse16_v", &mycode, INST(VSSE16_V) );
-  test_rvv_move( "vsse32_v", &mycode, INST(VSSE32_V) );
-  test_rvv_move( "vsse32_v", &mycode, INST(VSSE64_V) );
+  test_rvv_move( "vsse8_v", &mycode, VINST(VSSE8_V) );
+  test_rvv_move( "vsse16_v", &mycode, VINST(VSSE16_V) );
+  test_rvv_move( "vsse32_v", &mycode, VINST(VSSE32_V) );
+  test_rvv_move( "vsse32_v", &mycode, VINST(VSSE64_V) );
 
-  test_rvv_move( "vluxei8_v", &mycode, INST(VLUXEI8_V) );
-  test_rvv_move( "vluxei16_v", &mycode, INST(VLUXEI16_V) );
-  test_rvv_move( "vluxei32_v", &mycode, INST(VLUXEI32_V) );
-  test_rvv_move( "vluxei32_v", &mycode, INST(VLUXEI64_V) );
+  test_rvv_move( "vluxei8_v", &mycode, VINST(VLUXEI8_V) );
+  test_rvv_move( "vluxei16_v", &mycode, VINST(VLUXEI16_V) );
+  test_rvv_move( "vluxei32_v", &mycode, VINST(VLUXEI32_V) );
+  test_rvv_move( "vluxei32_v", &mycode, VINST(VLUXEI64_V) );
 
-  test_rvv_move( "vloxei8_v", &mycode, INST(VLOXEI8_V) );
-  test_rvv_move( "vloxei16_v", &mycode, INST(VLOXEI16_V) );
-  test_rvv_move( "vloxei32_v", &mycode, INST(VLOXEI32_V) );
-  test_rvv_move( "vloxei32_v", &mycode, INST(VLOXEI64_V) );
+  test_rvv_move( "vloxei8_v", &mycode, VINST(VLOXEI8_V) );
+  test_rvv_move( "vloxei16_v", &mycode, VINST(VLOXEI16_V) );
+  test_rvv_move( "vloxei32_v", &mycode, VINST(VLOXEI32_V) );
+  test_rvv_move( "vloxei32_v", &mycode, VINST(VLOXEI64_V) );
 
-  test_rvv_move( "vsuxei8_v", &mycode, INST(VSUXEI8_V) );
-  test_rvv_move( "vsuxei16_v", &mycode, INST(VSUXEI16_V) );
-  test_rvv_move( "vsuxei32_v", &mycode, INST(VSUXEI32_V) );
-  test_rvv_move( "vsuxei32_v", &mycode, INST(VSUXEI64_V) );
+  test_rvv_move( "vsuxei8_v", &mycode, VINST(VSUXEI8_V) );
+  test_rvv_move( "vsuxei16_v", &mycode, VINST(VSUXEI16_V) );
+  test_rvv_move( "vsuxei32_v", &mycode, VINST(VSUXEI32_V) );
+  test_rvv_move( "vsuxei32_v", &mycode, VINST(VSUXEI64_V) );
 
-  test_rvv_move( "vsoxei8_v", &mycode, INST(VSOXEI8_V) );
-  test_rvv_move( "vsoxei16_v", &mycode, INST(VSOXEI16_V) );
-  test_rvv_move( "vsoxei32_v", &mycode, INST(VSOXEI32_V) );
-  test_rvv_move( "vsoxei32_v", &mycode, INST(VSOXEI64_V) );
+  test_rvv_move( "vsoxei8_v", &mycode, VINST(VSOXEI8_V) );
+  test_rvv_move( "vsoxei16_v", &mycode, VINST(VSOXEI16_V) );
+  test_rvv_move( "vsoxei32_v", &mycode, VINST(VSOXEI32_V) );
+  test_rvv_move( "vsoxei32_v", &mycode, VINST(VSOXEI64_V) );
 
-  test_rvv_move( "vlm_v", &mycode, INST(VLM_V) );
+  test_rvv_move( "vlm_v", &mycode, VINST(VLM_V) );
 
-  test_rvv_compute( "vadd_vv", &mycode, INST(VADD_VV) );
-  test_rvv_compute( "vadd_vx", &mycode, INST(VADD_VX) );
-  test_rvv_compute( "vfadd_vf", &mycode, INST(VFADD_VF) );
+  test_rvv_compute( "vadd_vv", &mycode, VINST(VADD_VV) );
+  test_rvv_compute( "vadd_vx", &mycode, VINST(VADD_VX) );
+  test_rvv_compute( "vfadd_vf", &mycode, VINST(VFADD_VF) );
 
-  test_rvv_compute_imm( "vadd_vi", &mycode, INST(VADD_VI) );
+  test_rvv_compute_imm( "vadd_vi", &mycode, VINST(VADD_VI) );
 
   free( codebuffer );
 
