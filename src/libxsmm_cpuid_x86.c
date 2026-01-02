@@ -198,7 +198,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                         if (LIBXSMM_CPUID_CHECK(eax, 0x00200000)) { /* AMX-FP16 */
                           feature_cpu = LIBXSMM_X86_AVX512_GNR;
                           LIBXSMM_CPUID_X86(0x1e, 1/*ecx*/, eax, ebx, ecx2, edx2);
-                          if (LIBXSMM_CPUID_CHECK(eax, 0x0000000f)) { /* AMX-FP8, AMX-Transpose, AMX-AVX512, AMX-TF32, AMX-MOVRS */
+                          if (LIBXSMM_CPUID_CHECK(eax, 0x000001f4)) { /* AMX-FP8, AMX-Transpose, AMX-AVX512, AMX-TF32, AMX-MOVRS */
                             feature_cpu = LIBXSMM_X86_AVX512_DMR;
                           }
                         }
@@ -662,6 +662,21 @@ LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void) {
   } else {
     if ( atoi(l_env_x86_amx_gemm_enforce_mx1_tile_blocking) != 0 ) {
       result = 1;
+    }
+  }
+#endif
+  return result;
+}
+
+LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity(void) {
+  int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *const l_env_x86_amx_gemm_panel_sw_pipeline_granularity = getenv("LIBXSMM_X86_AMX_GEMM_PANEL_SW_PIPELINE_GRANULARITY");
+  if ( 0 == l_env_x86_amx_gemm_panel_sw_pipeline_granularity ) {
+    result = 0;
+  } else {
+    if (atoi(l_env_x86_amx_gemm_panel_sw_pipeline_granularity) != 0 ) {
+      result = atoi(l_env_x86_amx_gemm_panel_sw_pipeline_granularity);
     }
   }
 #endif

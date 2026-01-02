@@ -29,11 +29,10 @@ if __name__ == "__main__":
             print("}")
             print("#endif")
             base = 2
-        if (base + 2) < argc:
+        if (base + 1) < argc:
             precision = int(sys.argv[base + 0])
-            threshold = int(sys.argv[base + 1])
             mnklist = libxsmm_utilities.load_mnklist(
-                sys.argv[base + 2 :], 0  # noqa: E203
+                sys.argv[base + 1 :], 0  # noqa: E203
             )
             print(
                 "/* omit registering code if JIT is enabled"

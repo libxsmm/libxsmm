@@ -77,10 +77,8 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   fi
 
   ${RM} -f *.dat
-  capturedTxtToDataFile smm-blas
   capturedTxtToDataFile smm-specialized
-  #capturedTxtToDataFile smm-dispatched
-  #capturedTxtToDataFile smm-inlined
+  capturedTxtToDataFile smm-dispatched
 
   env \
     GDFONTPATH=/cygdrive/c/Windows/Fonts \

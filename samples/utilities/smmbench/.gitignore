@@ -1,12 +1,8 @@
-blas
 dispatched
-inlined
 specialized
 smm
 smm-specialized.txt
-smm-blas.txt
 smm-dispatched.txt
-smm-inlined.txt
 smmf-perf.sh
 smmf-perf.txt
 smm-test.txt
