@@ -1765,6 +1765,10 @@ void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
                                       long                    i_val );
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_gpr_zero( libxsmm_generated_code *io_generated_code,
+                                     unsigned int            i_gpr);
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_vec_zero( libxsmm_generated_code *io_generated_code,
                                      unsigned int            i_vec );
 
