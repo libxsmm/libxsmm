@@ -300,7 +300,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   }
 
   /* Currently, RVV supports F32 without transpose only */
-  if ((io_generated_code->arch >= LIBXSMM_RV64_MVL128)) {
+  if ((io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT)) {
     if (!(((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  &&
           (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)
         ) || ((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F64)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F64)  &&
@@ -1219,7 +1219,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       io_generated_code->arch = LIBXSMM_AARCH64_V81;
       libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
     }
-  } else if ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 ) {
+  } else if ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 && io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) {
     libxsmm_generator_gemm_rv64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( (io_generated_code->arch == LIBXSMM_PPC64LE_VSX) ||
               (io_generated_code->arch == LIBXSMM_PPC64LE_MMA) ) {
