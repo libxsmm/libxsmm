@@ -47,8 +47,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-#XFILES := $(OUTDIR)/encoder_x86 $(OUTDIR)/encoder_aarch64 $(OUTDIR)/encoder_riscv $(OUTDIR)/jit_bigsur_test
-XFILES := $(OUTDIR)/encoder_x86 $(OUTDIR)/encoder_aarch64 $(OUTDIR)/jit_bigsur_test
+XFILES := $(OUTDIR)/encoder_x86 $(OUTDIR)/encoder_aarch64 $(OUTDIR)/encoder_riscv $(OUTDIR)/jit_bigsur_test
 
 .PHONY: all
 all: $(XFILES)

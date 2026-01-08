@@ -85,7 +85,6 @@ void test_alu_move( char* test_name, libxsmm_generated_code* mycode, unsigned in
 }
 
 void test_alu_set_imm64( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
-  unsigned char a;
   unsigned char d;
 
   reset_code_buffer( mycode, test_name );
