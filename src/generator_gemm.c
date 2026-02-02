@@ -970,9 +970,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
     if( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(l_xgemm_desc_mod.datatype) &&
         ((i_xgemm_desc->flags == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI ) ||
-         (i_xgemm_desc->flags == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI + LIBXSMM_GEMM_FLAG_TRANS_B )) ){
+         (i_xgemm_desc->flags == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI + LIBXSMM_GEMM_FLAG_TRANS_B ) ||
+        (i_xgemm_desc->flags == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI + LIBXSMM_GEMM_FLAG_TRANS_B + LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE ) ) ){
       libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( io_generated_code, &l_xgemm_desc_mod );
     } else {
+      io_generated_code->arch = LIBXSMM_AARCH64_V81;
       libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
     }
   } else if ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 ) {
