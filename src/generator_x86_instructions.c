@@ -2836,7 +2836,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 
   /* Check if provided immediate is outside of int32 range and yield proper instruction */
-  if (((i_immediate > 0x7FFFFFFF) || (i_immediate < -0x80000000)) &&
+  if (((i_immediate > 0x7FFFFFFFLL) || (i_immediate < -0x80000000LL)) &&
       (i_alu_instr == LIBXSMM_X86_INSTR_ADDQ ||
        i_alu_instr == LIBXSMM_X86_INSTR_ANDQ ||
        i_alu_instr == LIBXSMM_X86_INSTR_CMPQ ||
