@@ -2835,6 +2835,33 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       return;
   }
 
+  /* Check if provided immediate is outside of int32 range and yield proper instruction */
+  if (((i_immediate > 0x7FFFFFFFLL) || (i_immediate < -0x80000000LL)) &&
+      (i_alu_instr == LIBXSMM_X86_INSTR_ADDQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_ANDQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_CMPQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_IMUL ||
+       i_alu_instr == LIBXSMM_X86_INSTR_MOVQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_SUBQ)) {
+    if ( i_alu_instr == LIBXSMM_X86_INSTR_MOVQ ) {
+      libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_alu_instr, i_gp_reg_number, i_immediate );
+    } else {
+      /* Find a temp gpr */
+      unsigned int l_tmp_reg = LIBXSMM_X86_GP_REG_R15;
+      if ( i_gp_reg_number == LIBXSMM_X86_GP_REG_R15 ) {
+        l_tmp_reg = LIBXSMM_X86_GP_REG_R14;
+      }
+      /* Push the temp reg */
+      libxsmm_x86_instruction_push_reg( io_generated_code, l_tmp_reg );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_tmp_reg, i_immediate );
+      libxsmm_x86_instruction_alu_reg( io_generated_code, i_alu_instr, l_tmp_reg, i_gp_reg_number );
+      /* Pop the temp reg */
+      libxsmm_x86_instruction_pop_reg( io_generated_code, l_tmp_reg );
+    }
+    return;
+  }
+
+
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_reg_number_dst = 0;
     unsigned int l_reg_number_src0 = i_gp_reg_number;
