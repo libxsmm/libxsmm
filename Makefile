@@ -312,6 +312,7 @@ HEADERS_MAIN := \
           $(ROOTINC)/libxsmm_sync.h \
           $(ROOTINC)/libxsmm_utils.h \
           $(ROOTINC)/libxsmm_intrinsics_x86.h \
+          $(ROOTINC)/libxsmm_intrinsics_rv64.h \
           $(NULL)
 HEADERS_SRC := $(wildcard $(ROOTSRC)/*.h)
 HEADERS := \
