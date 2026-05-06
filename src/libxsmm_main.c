@@ -3999,7 +3999,7 @@ LIBXSMM_API_INTERN int libxsmm_print_cmdline(void* buffer, size_t buffer_size, c
   argv = (NULL != _NSGetArgv() ? *_NSGetArgv() : NULL);
   argc = (NULL != _NSGetArgc() ? *_NSGetArgc() : 0);
 # endif
-  if (0 < argc) {
+  if (0 < argc && NULL != argv && NULL != argv[0]) {
     int i = 1;
     if (NULL != prefix && '\0' != *prefix) {
 # if defined(_WIN32)
