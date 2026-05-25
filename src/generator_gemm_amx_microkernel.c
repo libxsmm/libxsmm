@@ -1445,14 +1445,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   /* Pick the proper tile compute instruction */
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Abf8_Bbf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) {
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPBF16PS;
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
-      tile_compute_instr = LIBXSMM_X86_INSTR_TTDPBF16PS;
-    }
   } else if (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Abf8_Bf16_gemm > 0) {
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPFP16PS;
-    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) {
-      tile_compute_instr = LIBXSMM_X86_INSTR_TTDPFP16PS;
-    }
   } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
     if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBUUD;
@@ -1487,208 +1481,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     }
   }
 
-  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
-    /* A is in flat format */
-    /* This is the NN GEMM */
-    if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0)) {
-      A_tload_instr = (streaming_tileload_a > 0) ? ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_T2RPNTLVWZ0RST1 : LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1) : ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS : LIBXSMM_X86_INSTR_T2RPNTLVWZ0);
-      B_tload_instr = (streaming_tileload_b > 0) ? ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_TILELOADDRST1 : LIBXSMM_X86_INSTR_TILELOADDT1) : ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_TILELOADDRS : LIBXSMM_X86_INSTR_TILELOADD);
-
-      if (m_tiles == 2 && n_tiles == 2) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 1, 0, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 0, 1, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 5, 4, 5);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 7, 7);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, 7, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, 1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, B_tload_instr, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr);
-      }
-
-      if (m_tiles == 2 && n_tiles == 1) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 0, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 5, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
-      }
-
-      if (m_tiles == 1 && n_tiles == 2) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 0, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 4, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 7, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, 7, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, B_tload_instr, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
-      }
-
-      if (m_tiles == 1 && n_tiles == 1) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, -1, -1, -1);
-      }
-      /* Fill in the accumulator IDs properly and the A/B offsets*/
-      for (i = 0; i < 4; i++) {
-        _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * 2;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * (long long)l_ldb * i_micro_kernel_config->datatype_size_in2;
-      }
-    }
-
-    /* This is the TN GEMM */
-    if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0)) {
-      A_tload_instr = (streaming_tileload_a > 0) ? ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_TILELOADDRST1 : LIBXSMM_X86_INSTR_TILELOADDT1) : ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_TILELOADDRS : LIBXSMM_X86_INSTR_TILELOADD);
-      B_tload_instr = (streaming_tileload_b > 0) ? ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_TILELOADDRST1 : LIBXSMM_X86_INSTR_TILELOADDT1) : ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_TILELOADDRS : LIBXSMM_X86_INSTR_TILELOADD);
-
-      if (m_tiles == 2 && n_tiles == 2) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 1, 0, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 0, 1, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 5, 4, 5);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, 5, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 7, 7);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, 7, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, 1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, A_tload_instr, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, B_tload_instr, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr);
-      }
-
-      if (m_tiles == 2 && n_tiles == 1) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 0, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 5, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, 5, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, A_tload_instr, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
-      }
-
-      if (m_tiles == 1 && n_tiles == 2) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 0, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 4, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 5, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 7, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, 7, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, B_tload_instr, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
-      }
-
-      if (m_tiles == 1 && n_tiles == 1) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 5, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, -1, -1, -1);
-      }
-      /* Fill in the accumulator IDs properly and the A/B offsets*/
-      for (i = 0; i < 4; i++) {
-        _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + (long long)_im_offset_prefix_sums[_im[i]] * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in;
-        _B_offsets[i] = offset_B + ((long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * l_ldb * i_micro_kernel_config->datatype_size_in2 );
-      }
-    }
-    /* This is the NT GEMM */
-    if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0)) {
-      A_tload_instr = (streaming_tileload_a > 0) ? ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_T2RPNTLVWZ0RST1 : LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1) : ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS : LIBXSMM_X86_INSTR_T2RPNTLVWZ0);
-      B_tload_instr = (streaming_tileload_b > 0) ? ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_T2RPNTLVWZ0RST1 : LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1) : ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS : LIBXSMM_X86_INSTR_T2RPNTLVWZ0);
-      if (m_tiles == 2 && n_tiles == 2) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 1, 0, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 0, 1, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 5, 4, 5);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, 7, 7);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr, tile_compute_instr);
-      }
-      if (m_tiles == 2 && n_tiles == 1) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 1, 0, 1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 0, 0, 0);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 5, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 6, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
-      }
-      if (m_tiles == 1 && n_tiles == 2) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, 0, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, 1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, 4, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, 7, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, tile_compute_instr, -1, -1);
-      }
-      if (m_tiles == 1 && n_tiles == 1) {
-        /* Encode loop iterations */
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_im, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tile_id_load, 4, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tile_id_load, 6, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_in_tileloads_B, 0, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_A_tileload_instr, A_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_B_tileload_instr, B_tload_instr, -1, -1, -1);
-        libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tilecomp_instr, tile_compute_instr, -1, -1, -1);
-      }
-
-      /* Fill in the accumulator IDs properly and the A/B offsets*/
-      for (i = 0; i < 4; i++) {
-        _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * 2;
-        _B_offsets[i] = offset_B + (long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * i_micro_kernel_config->datatype_size_in ;
-      }
-    }
-  } else {
+  {
+    /* A is always VNNI-formatted here. */
     if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0)) {
       A_tload_instr = (streaming_tileload_a > 0) ? ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_TILELOADDRST1 : LIBXSMM_X86_INSTR_TILELOADDT1) : ((readshared_tileload_a > 0) ? LIBXSMM_X86_INSTR_TILELOADDRS : LIBXSMM_X86_INSTR_TILELOADD);
       B_tload_instr = (streaming_tileload_b > 0) ? ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_TILELOADDRST1 : LIBXSMM_X86_INSTR_TILELOADDT1) : ((readshared_tileload_b > 0) ? LIBXSMM_X86_INSTR_TILELOADDRS : LIBXSMM_X86_INSTR_TILELOADD);
@@ -1924,15 +1718,6 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             4/lda_adjustment,
             (int)(_A_offsets[i] * i_micro_kernel_config->sparsity_factor_A),
             _A_tile_id_load[i]);
-      }
-
-      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) {
-        libxsmm_x86_instruction_tile_compute( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_TTRANSPOSED,
-            _A_tile_id_load[i],
-            0,
-            _A_tile_id[i]);
       }
 
       if ((fully_unrolled_brloop == 1 && i_brgemm_loop >= 0 && pf_dist > 0) && (((i_brgemm_loop + pf_dist < i_micro_kernel_config->cur_unroll_factor) && (i_micro_kernel_config->is_peeled_br_loop == 1)) || i_micro_kernel_config->is_peeled_br_loop == 0)) {
