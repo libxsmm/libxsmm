@@ -9,7 +9,7 @@ steps:
       queue: "rv64"
 
 #  - label: "BCSC SPMM"
-#    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+#    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
 #    agents:
 #      queue: "rv64"
 
@@ -23,25 +23,6 @@ steps:
 #    agents:
 #      queue: "aarch64"
 
-#  - label: "FSSPMDM"
-#    command: "scripts/tool_test.sh samples/pyfr/test.sh"
-#    agents:
-#      queue: "aarch64"
-#    env:
-#      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3"
-#      TEST_N: 48
-
-  #- label: "PyFR"
-    #command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
-    #agents:
-      #queue: "aarch64"
-    #env:
-      #ARTIFACT_UPLOAD_DB: "1"
-      #LOGRPTFMT: "svg pdf"
-      #LOGRPTSUM: "mean"
-      #LOGRPTQRY: ""
-      #MAKETGT: "all"
-
   - label: "Test #4"
     command: "scripts/tool_test.sh 4"
     agents:
@@ -49,11 +30,6 @@ steps:
 
 #  - label: "Test #6"
 #    command: "scripts/tool_test.sh 6"
-#    agents:
-#      queue: "rv64"
-
-#  - label: "Test #11"
-#    command: "scripts/tool_test.sh 11"
 #    agents:
 #      queue: "rv64"
 

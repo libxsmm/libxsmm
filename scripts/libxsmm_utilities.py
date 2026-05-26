@@ -296,11 +296,6 @@ def libxsmm_target_arch():
         os.environ["LD_LIBRARY_PATH"] = libpath
         libext = ".so"
     os.environ["LIBXSMM_VERBOSE"] = "0"
-    xsmmnoblas = (
-        "libxsmmnoblas" + libext
-        if os.path.exists(os.path.join(libpath, "libxsmmnoblas" + libext))
-        else ctypes.util.find_library("xsmmnoblas")
-    )
     xsmm = (
         "libxsmm" + libext
         if os.path.exists(os.path.join(libpath, "libxsmm" + libext))
@@ -308,9 +303,6 @@ def libxsmm_target_arch():
     )
     target = "generic"
     try:
-        libxsmm = ctypes.CDLL(
-            os.path.join(libpath, xsmmnoblas), mode=ctypes.RTLD_GLOBAL
-        )
         libxsmm = ctypes.CDLL(
             os.path.join(libpath, xsmm), mode=ctypes.RTLD_GLOBAL
         )
@@ -333,13 +325,12 @@ if __name__ == "__main__":
         arg1 = 0
     if -1 >= arg1:
         if 5 < argc:
-            # threshold = int(sys.argv[2])
-            mnk_size = int(sys.argv[3])
+            mnk_size = int(sys.argv[2])
             dims = load_mnklist(
-                sys.argv[4 : 4 + mnk_size], 0, -1  # noqa: E203
+                sys.argv[3 : 3 + mnk_size], 0, -1  # noqa: E203
             )  # noqa: E203
             dims = load_mnklist(
-                sys.argv[4 + mnk_size :], 0, -2, dims  # noqa: E203
+                sys.argv[3 + mnk_size :], 0, -2, dims  # noqa: E203
             )  # noqa: E203
             mnklist = map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))
             print(" ".join(mnklist))

@@ -796,8 +796,8 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VFNMSUB132SH:
     case LIBXSMM_X86_INSTR_VFNMSUB213SH:
     case LIBXSMM_X86_INSTR_VFNMSUB231SH:
-    case LIBXSMM_X86_INSTR_VPCLASSPH:
-    case LIBXSMM_X86_INSTR_VPCLASSSH:
+    case LIBXSMM_X86_INSTR_VFPCLASSPH:
+    case LIBXSMM_X86_INSTR_VFPCLASSSH:
     case LIBXSMM_X86_INSTR_VGETEXPPH:
     case LIBXSMM_X86_INSTR_VGETEXPSH:
     case LIBXSMM_X86_INSTR_VGETMANTPH:
@@ -845,6 +845,35 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VCVTNEPH2HF8S:
     case LIBXSMM_X86_INSTR_VCVTNEHF82PH:
     case LIBXSMM_X86_INSTR_VCVT2PS2PHX:
+    case LIBXSMM_X86_INSTR_VADDBF16:
+    case LIBXSMM_X86_INSTR_VCMPBF16:
+    case LIBXSMM_X86_INSTR_VCOMSBF16:
+    case LIBXSMM_X86_INSTR_VDIVBF16:
+    case LIBXSMM_X86_INSTR_VFMADD132BF16:
+    case LIBXSMM_X86_INSTR_VFMADD213BF16:
+    case LIBXSMM_X86_INSTR_VFMADD231BF16:
+    case LIBXSMM_X86_INSTR_VFMSUB132BF16:
+    case LIBXSMM_X86_INSTR_VFMSUB213BF16:
+    case LIBXSMM_X86_INSTR_VFMSUB231BF16:
+    case LIBXSMM_X86_INSTR_VFNMADD132BF16:
+    case LIBXSMM_X86_INSTR_VFNMADD213BF16:
+    case LIBXSMM_X86_INSTR_VFNMADD231BF16:
+    case LIBXSMM_X86_INSTR_VFNMSUB132BF16:
+    case LIBXSMM_X86_INSTR_VFNMSUB213BF16:
+    case LIBXSMM_X86_INSTR_VFNMSUB231BF16:
+    case LIBXSMM_X86_INSTR_VFPCLASSBF16:
+    case LIBXSMM_X86_INSTR_VGETEXPBF16:
+    case LIBXSMM_X86_INSTR_VGETMANTBF16:
+    case LIBXSMM_X86_INSTR_VMAXBF16:
+    case LIBXSMM_X86_INSTR_VMINBF16:
+    case LIBXSMM_X86_INSTR_VMULBF16:
+    case LIBXSMM_X86_INSTR_VRCPBF16:
+    case LIBXSMM_X86_INSTR_VREDUCEBF16:
+    case LIBXSMM_X86_INSTR_VRNDSCALEBF16:
+    case LIBXSMM_X86_INSTR_VRSQRTBF16:
+    case LIBXSMM_X86_INSTR_VSCALEFBF16:
+    case LIBXSMM_X86_INSTR_VSQRTBF16:
+    case LIBXSMM_X86_INSTR_VSUBBF16:
       break;
     default:
       l_return = 0;
@@ -906,6 +935,10 @@ unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_VPINSRD:
     case LIBXSMM_X86_INSTR_VPINSRQ:
     case LIBXSMM_X86_INSTR_VPERMQ:
+    case LIBXSMM_X86_INSTR_VMOVRSB:
+    case LIBXSMM_X86_INSTR_VMOVRSW:
+    case LIBXSMM_X86_INSTR_VMOVRSD:
+    case LIBXSMM_X86_INSTR_VMOVRSQ:
       break;
     default:
       l_return = 0;
@@ -2810,6 +2843,33 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
   }
+
+  /* Check if provided immediate is outside of int32 range and yield proper instruction */
+  if (((i_immediate > 0x7FFFFFFFLL) || (i_immediate < -0x80000000LL)) &&
+      (i_alu_instr == LIBXSMM_X86_INSTR_ADDQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_ANDQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_CMPQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_IMUL ||
+       i_alu_instr == LIBXSMM_X86_INSTR_MOVQ ||
+       i_alu_instr == LIBXSMM_X86_INSTR_SUBQ)) {
+    if ( i_alu_instr == LIBXSMM_X86_INSTR_MOVQ ) {
+      libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_alu_instr, i_gp_reg_number, i_immediate );
+    } else {
+      /* Find a temp gpr */
+      unsigned int l_tmp_reg = LIBXSMM_X86_GP_REG_R15;
+      if ( i_gp_reg_number == LIBXSMM_X86_GP_REG_R15 ) {
+        l_tmp_reg = LIBXSMM_X86_GP_REG_R14;
+      }
+      /* Push the temp reg */
+      libxsmm_x86_instruction_push_reg( io_generated_code, l_tmp_reg );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_tmp_reg, i_immediate );
+      libxsmm_x86_instruction_alu_reg( io_generated_code, i_alu_instr, l_tmp_reg, i_gp_reg_number );
+      /* Pop the temp reg */
+      libxsmm_x86_instruction_pop_reg( io_generated_code, l_tmp_reg );
+    }
+    return;
+  }
+
 
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_reg_number_dst = 0;

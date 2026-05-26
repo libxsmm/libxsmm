@@ -21,7 +21,7 @@ steps:
     concurrency: 1
     concurrency_group: "libxsmm-arm-macmini"
     cancel_on_build_failing: true
-    command: "scripts/tool_test.sh samples/spmm/kernel_test.sh"
+    command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
     env:
       SSIZE: 6
 
@@ -38,7 +38,7 @@ steps:
 #    concurrency: 1
 #    concurrency_group: "libxsmm-arm-macmini"
 #    cancel_on_build_failing: true
-#    command: "scripts/tool_test.sh samples/pyfr/test.sh"
+#    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
 #    env:
 #      ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 REALTYPE=float"
 #      TEST_N: 48
@@ -47,7 +47,7 @@ steps:
 #    concurrency: 1
 #    concurrency_group: "libxsmm-arm-macmini"
 #    cancel_on_build_failing: true
-#    command: "scripts/tool_test.sh samples/pyfr/performance.sh -r"
+#    command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/performance.sh -r"
 #    env:
 #      MAKETGT: "all"
 #      LOGRPTFMT: "svg pdf"
@@ -65,9 +65,3 @@ steps:
     concurrency_group: "libxsmm-arm-macmini"
     cancel_on_build_failing: true
     command: "scripts/tool_test.sh 6"
-
-  #- label: "Test #11"
-  #  concurrency: 1
-  #  concurrency_group: "libxsmm-arm-macmini"
-  #  cancel_on_build_failing: true
-  #  command: "scripts/tool_test.sh 11"

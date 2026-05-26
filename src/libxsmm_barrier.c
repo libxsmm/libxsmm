@@ -18,7 +18,7 @@ LIBXSMM_EXTERN_C typedef struct internal_sync_core_tag { /* per-core */
   volatile uint8_t core_sense;
   volatile uint8_t* thread_senses;
   volatile uint8_t* my_flags[2];
-  uint8_t** partner_flags[2];
+  volatile uint8_t** partner_flags[2];
   uint8_t parity;
   uint8_t sense;
 } internal_sync_core_tag;
@@ -67,8 +67,6 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
 LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 {
 #if (0 == LIBXSMM_SYNC)
@@ -106,7 +104,7 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
         core->my_flags[i] = (uint8_t*)libxsmm_aligned_malloc(
           barrier->ncores_nbits * sizeof(uint8_t) * LIBXSMM_CACHELINE,
           LIBXSMM_CACHELINE);
-        core->partner_flags[i] = (uint8_t**)libxsmm_aligned_malloc(
+        core->partner_flags[i] = (volatile uint8_t**)libxsmm_aligned_malloc(
           barrier->ncores_nbits * sizeof(uint8_t*),
           LIBXSMM_CACHELINE);
       }
@@ -136,8 +134,8 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
         const int dissem_cid = (cid + (1 << i)) % barrier->ncores;
         assert(0 != core); /* initialized under the same condition; see above */
         core->my_flags[0][di] = core->my_flags[1][di] = 0;
-        core->partner_flags[0][i] = (uint8_t*)&barrier->cores[dissem_cid]->my_flags[0][di];
-        core->partner_flags[1][i] = (uint8_t*)&barrier->cores[dissem_cid]->my_flags[1][di];
+        core->partner_flags[0][i] = &barrier->cores[dissem_cid]->my_flags[0][di];
+        core->partner_flags[1][i] = &barrier->cores[dissem_cid]->my_flags[1][di];
       }
     }
 
@@ -235,15 +233,18 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 
 LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
 {
+  union { const void* pc; volatile void* pv; void* p; } cast;
 #if (0 != LIBXSMM_SYNC)
   if (NULL != barrier && 1 < barrier->nthreads) {
     if (2 == barrier->init_done) {
       int i;
       for (i = 0; i < barrier->ncores; ++i) {
         int j;
-        libxsmm_free((const void*)barrier->cores[i]->thread_senses);
+        cast.pv = barrier->cores[i]->thread_senses;
+        libxsmm_free(cast.p);
         for (j = 0; j < 2; ++j) {
-          libxsmm_free((const void*)barrier->cores[i]->my_flags[j]);
+          cast.pv = barrier->cores[i]->my_flags[j];
+          libxsmm_free(cast.p);
           libxsmm_free(barrier->cores[i]->partner_flags[j]);
         }
         libxsmm_free(barrier->cores[i]);
@@ -256,6 +257,6 @@ LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
     libxsmm_free(barrier->cores);
   }
 #endif
-  free((libxsmm_barrier*)barrier);
+  cast.pc = barrier;
+  free(cast.p);
 }
-#pragma GCC diagnostic pop

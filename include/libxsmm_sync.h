@@ -258,10 +258,10 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) /* matches bit-width of LIBXSMM_ATOMIC_LOCKTYPE */ \
             (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
 # endif
-# define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
+# define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) do { \
           LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
           while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
-          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
+          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE"); } while(0)
 # if !defined(LIBXSMM_SYNC_NPAUSE)
 #   define LIBXSMM_SYNC_NPAUSE 4096
 # endif
@@ -553,7 +553,7 @@ typedef enum libxsmm_atomic_kind {
  * libxsmm and libxsmmext are built with OpenMP support.
  */
 # if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
-#   include <omp.h>
+/*#   include <omp.h>*/
 #   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
 #     define LIBXSMM_LOCK_ACQUIRED_spin 1
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
@@ -629,7 +629,7 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 1
 #     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin volatile LIBXSMM_ATOMIC_LOCKTYPE
-#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); }
+#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) do { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); } while(0)
 #     define LIBXSMM_LOCK_DESTROY_spin(LOCK) LIBXSMM_UNUSED(LOCK)
 #     define LIBXSMM_LOCK_TRYLOCK_spin(LOCK) (LIBXSMM_LOCK_ACQUIRED_spin + !LIBXSMM_ATOMIC_TRYLOCK(LOCK, LIBXSMM_ATOMIC_RELAXED))
 #     define LIBXSMM_LOCK_ACQUIRE_spin(LOCK) LIBXSMM_ATOMIC_ACQUIRE(LOCK, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED)
@@ -646,7 +646,7 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 1
 #     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #     define LIBXSMM_LOCK_TYPE_mutex volatile LIBXSMM_ATOMIC_LOCKTYPE
-#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); }
+#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) do { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); } while(0)
 #     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) LIBXSMM_UNUSED(LOCK)
 #     define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) (LIBXSMM_LOCK_ACQUIRED_mutex + !LIBXSMM_ATOMIC_TRYLOCK(LOCK, LIBXSMM_ATOMIC_RELAXED))
 #     define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) LIBXSMM_ATOMIC_ACQUIRE(LOCK, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED)
@@ -663,7 +663,7 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 1
 #     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 0
 #     define LIBXSMM_LOCK_TYPE_rwlock volatile LIBXSMM_ATOMIC_LOCKTYPE
-#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); }
+#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) do { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); } while(0)
 #     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) LIBXSMM_UNUSED(LOCK)
 #     define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) (LIBXSMM_LOCK_ACQUIRED_rwlock + !LIBXSMM_ATOMIC_TRYLOCK(LOCK, LIBXSMM_ATOMIC_RELAXED))
 #     define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) LIBXSMM_ATOMIC_ACQUIRE(LOCK, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED)

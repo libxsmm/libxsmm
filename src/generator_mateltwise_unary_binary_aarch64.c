@@ -2377,6 +2377,7 @@ void libxsmm_compute_ternary_aarch64_2d_reg_block( libxsmm_generated_code*      
   unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_TYPESIZE(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)));
+  LIBXSMM_UNUSED(i_mask_reg);
 
   if ( l_is_sve ) {
     /* define predicate registers 0 and 1 for loading */

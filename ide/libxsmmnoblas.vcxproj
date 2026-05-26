@@ -42,9 +42,6 @@
     <ClCompile Include="..\src\libxsmm_ext.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\libxsmm_ext.h" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\LICENSE.md" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />

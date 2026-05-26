@@ -45,9 +45,6 @@
     <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\libxsmm_ext.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\src\libxsmm_ext.c" />
     <ClCompile Include="..\src\libxsmm_ext_gemm.c" />
     <ClCompile Include="..\src\libxsmm_ext_xcopy.c" />

@@ -1917,7 +1917,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
           for ( i = 0; i < M; ++i ) {
             float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
             if (signed_sat > 0) {
-              float tmp = LIBXSMM_NEARBYINTF( in_f * scf_quant );
+              float tmp = libxsmm_nearbyintf( in_f * scf_quant );
               if (tmp < -128) {
                 tmp = -128.0;
               }
@@ -1926,7 +1926,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
               }
               char_data[(j*ldo)+i] = (char) tmp;
             } else {
-              char_data[(j*ldo)+i] = (char) (0x000000ff & ((int)LIBXSMM_NEARBYINTF( in_f * scf_quant )));
+              char_data[(j*ldo)+i] = (char) (0x000000ff & ((int)libxsmm_nearbyintf( in_f * scf_quant )));
             }
           }
         }
@@ -1936,7 +1936,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
           for ( i = 0; i < M; ++i ) {
             float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
             if (signed_sat > 0) {
-              float tmp = LIBXSMM_NEARBYINTF( in_f * scf_quant );
+              float tmp = libxsmm_nearbyintf( in_f * scf_quant );
               if (tmp < -32768) {
                 tmp = -32768.0;
               }
@@ -1945,7 +1945,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
               }
               short_data[(j*ldo)+i] = (short) tmp;
             } else {
-              short_data[(j*ldo)+i] = (short) (0x0000ffff & ((int)LIBXSMM_NEARBYINTF( in_f * scf_quant )));
+              short_data[(j*ldo)+i] = (short) (0x0000ffff & ((int)libxsmm_nearbyintf( in_f * scf_quant )));
             }
           }
         }
@@ -1954,7 +1954,7 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
         for ( j = 0; j < N; ++j ) {
           for ( i = 0; i < M; ++i ) {
             float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
-            int_data[(j*ldo)+i] = LIBXSMM_NEARBYINTF( in_f * scf_quant );
+            int_data[(j*ldo)+i] = libxsmm_nearbyintf( in_f * scf_quant );
           }
         }
       } else {

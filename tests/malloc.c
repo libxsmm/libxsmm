@@ -49,18 +49,26 @@ int main(void)
     void* pool[128];
     char storage[8*sizeof(pool)/sizeof(*pool)];
     void* backup[sizeof(pool)];
-    const int npool = sizeof(pool) / sizeof(*pool);
+    const int npool = sizeof(pool) / sizeof(*pool), nrep = 1024;
     size_t num = npool;
     int i, j;
 
     libxsmm_pmalloc_init(sizeof(storage) / num, &num, pool, storage);
     memcpy(backup, pool, sizeof(pool));
-    for (i = 0; i < 1024; ++i) {
+    for (i = 0; i < nrep; ++i) {
 # if defined(_OPENMP)
 #     pragma omp parallel for private(j) schedule(dynamic,1)
 # endif
       for (j = 0; j < npool; ++j) {
         void *const p = libxsmm_pmalloc(pool, &num);
+        LIBXSMM_EXPECT(NULL != p);
+      }
+# if defined(_OPENMP)
+#     pragma omp parallel for private(j) schedule(dynamic,1)
+# endif
+      for (j = 0; j < npool; ++j) {
+        const int k = npool - j - 1;
+        void *const p = backup[k];
         libxsmm_pfree(p, pool, &num);
       }
       if (npool != (int)num) break;

@@ -64,14 +64,13 @@ REALTYPE := $(word $(if $(REALTYPE_INDEX),$(REALTYPE_INDEX),1),double float)
 
 .PHONY: all
 all: $(XFILES)
-	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory tests"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_sparse_Ainregs "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory tests"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory"
-	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_norm_packed "$(MAKE) --no-print-directory"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -87,10 +86,10 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh all
 HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
-ifneq ($(words $(EXTLIB)),$(words $(wildcard $(EXTLIB))))
+ifneq ($(words $(MAINLIB)),$(words $(wildcard $(MAINLIB))))
 $(1): $(2) $(OBJECTX) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(MAINLIB)) \
 		$(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(1)
@@ -174,34 +173,31 @@ endif
 
 .PHONY: clean
 clean: clean-private
-	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_sparse_Ainregs "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_norm_packed "$(MAKE) --no-print-directory clean"
 
 .PHONY: realclean
 realclean: realclean-private
-	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_sparse_Ainregs "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_norm_packed "$(MAKE) --no-print-directory realclean"
 
 .PHONY: deepclean
 deepclean: realclean-private
-	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_sparse_Ainregs "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory deepclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory deepclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory deepclean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory deepclean"
 	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory deepclean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory deepclean"
 	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory deepclean"
-	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm_norm_packed "$(MAKE) --no-print-directory deepclean"
 	@-rm -f .make .state
