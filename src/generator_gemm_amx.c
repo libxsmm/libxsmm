@@ -1982,6 +1982,8 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_a_packed_bytes = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 ) ? 2 : ((l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Ai2_Bi8_gemm > 0) ? 1 : 4);
+  int l_c_dtype_size = 1;
+  unsigned int vnni_c_adjustment = 1;
 
   if (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0) {
     l_a_packed_bytes = i_micro_kernel_config->datatype_size_in;
@@ -1990,9 +1992,6 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
     l_a_packed_bytes = 4/i_micro_kernel_config->datatype_size_in;
     a_vnni_adjustment = 4/i_micro_kernel_config->datatype_size_in;
   }
-
-  int l_c_dtype_size = 1;
-  unsigned int vnni_c_adjustment = 1;
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) {
     l_c_dtype_size = 2;
   } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) {
