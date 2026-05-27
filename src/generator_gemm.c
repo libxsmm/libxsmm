@@ -814,6 +814,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
         if (( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&  io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR) {
           /* We are good */
+        } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
+          /* 8-bit AMX path via upfront stack reformatting to BF16 (handles TRANS_A for archs < DMR) */
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
           return;
@@ -858,6 +860,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
          (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
       if (( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR) {
         /* We are good */
+      } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
+        /* 8-bit AMX path: upfront stack reformatting to BF16 handles TRANS_A on archs < DMR */
       } else {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
         return;
