@@ -453,6 +453,18 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     } else {
       l_vector_length = 8;
     }
+  } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) &&
+              ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ||
+                (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) ) {
+    /* BF8/HF8 on AVX2/AVX2_SRF: handled by the AVX wrapper which up-converts A/B to F32 on the stack.
+     * Inner GEMM operates on F32 with AVX2 vector length 8.
+     * HF8->F32 conversion requires AVX-512 mask register instructions (KORW/KANDW), so HF8 on AVX2/AVX2_SRF
+     * is not supported here -> error out so the dispatcher falls back to the reference kernel. */
+    if ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
+    l_vector_length = 8;
   } else if ( ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ) ||
               ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2_SRF ) && ( l_is_Amxfp4_Bi8_gemm > 0) ) ) {
     l_vector_length = 8;
@@ -814,8 +826,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
         if (( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&  io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR) {
           /* We are good */
-        } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
-          /* 8-bit AMX path via upfront stack reformatting to BF16 (handles TRANS_A for archs < DMR) */
+        } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
+          /* 8-bit path via upfront stack reformatting to BF16/F32: AMX (SPR+) handles via setup_f8_ABC_tensors_to_stack_for_amx,
+           * non-AMX archs (pre-SPR) handle via setup_f8_AB_tensors_to_stack in the AVX wrapper */
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
           return;
@@ -860,8 +873,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
          (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
       if (( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR) {
         /* We are good */
-      } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
-        /* 8-bit AMX path: upfront stack reformatting to BF16 handles TRANS_A on archs < DMR */
+      } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
+        /* 8-bit path: upfront stack reformatting to BF16/F32 handles TRANS_A on AMX (SPR+) and non-AMX (pre-SPR) archs */
       } else {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
         return;
