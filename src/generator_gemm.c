@@ -396,6 +396,32 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
+  /* Route BF8/HF8 GEMMs to the reference fallback for targets that have no working dedicated JIT:
+   *   - x86 archs < AVX-512 SKX:
+   *       * HF8 (any output): HF8->F32 conversion needs AVX-512 mask-register instructions
+   *         (KORW/KANDW), so AVX2 cannot handle it.
+   *       * BF8 with BF8 output: AVX2 wrapper only supports F32 accumulation/output correctly.
+   *       (BF8 with F32 output on AVX2/AVX2_SRF is handled by the AVX wrapper and stays on JIT.)
+   *   - AArch64 and RV64: no dedicated BF8/HF8 JIT paths exist. */
+  if ( ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) &&
+       ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+  }
+  if ( ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) &&
+       ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) ) &&
+       ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+  }
+  if ( ( ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) ||
+         ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) ) &&
+       ( io_generated_code->arch > LIBXSMM_X86_ALLFEAT ) ) {
+    /* non-x86 (AArch64/RV64): route through reference */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+  }
+
   /* determining vector length depending on architecture and precision */
   if ( io_generated_code->arch <= LIBXSMM_TARGET_ARCH_GENERIC ) {
     /* nothing to do */
@@ -456,14 +482,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL128_SKX ) &&
               ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ||
                 (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) ) {
-    /* BF8/HF8 on AVX2/AVX2_SRF: handled by the AVX wrapper which up-converts A/B to F32 on the stack.
-     * Inner GEMM operates on F32 with AVX2 vector length 8.
-     * HF8->F32 conversion requires AVX-512 mask register instructions (KORW/KANDW), so HF8 on AVX2/AVX2_SRF
-     * is not supported here -> error out so the dispatcher falls back to the reference kernel. */
-    if ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-      return;
-    }
+    /* BF8/HF8 on AVX2/AVX2_SRF are handled via the reference fallback (see check earlier in this function);
+     * this branch is effectively unreachable but kept for completeness. */
     l_vector_length = 8;
   } else if ( ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ) ||
               ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2_SRF ) && ( l_is_Amxfp4_Bi8_gemm > 0) ) ) {
