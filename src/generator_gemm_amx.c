@@ -4681,35 +4681,29 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     l_btrans_gemm_sw_pipeline = 1;
   }
 
-  /* HF8 SW-pipeline guard: when C output is HF8 and a fused RELU bitmask is requested, the standard fused-RELU path computes the bitmask via a byte-level signed compare on the already-quantized HF8 output. Tiny negative F32 accumulator values can round to HF8 +0 (0x00) and flip the bitmask bit vs. the F32 reference. Fall back to via_stack which defers the bitmask compute to the F32 accumulator stage. */
-  {
-    const unsigned int l_hf8_swpipe_skip = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) &&
-                                            ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0)) ? 1 : 0;
+  /* SW pipeline HF8 on DMR: A-VNNI for nn (mirrors BF8 nn block above) */
+  if ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) )) {
+    hf8_gemm_via_stack_alloc_tensors = 0;
+    l_avnni_gemm_sw_pipeline = 1;
+  }
 
-    /* SW pipeline HF8 on DMR: A-VNNI for nn (mirrors BF8 nn block above) */
-    if ((l_hf8_swpipe_skip == 0) && (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) )) {
-      hf8_gemm_via_stack_alloc_tensors = 0;
-      l_avnni_gemm_sw_pipeline = 1;
-    }
+  /* SW pipeline HF8 on DMR: A-trans for tn */
+  if ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) )) {
+    hf8_gemm_via_stack_alloc_tensors = 0;
+    l_atrans_gemm_sw_pipeline = 1;
+  }
 
-    /* SW pipeline HF8 on DMR: A-trans for tn */
-    if ((l_hf8_swpipe_skip == 0) && (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) )) {
-      hf8_gemm_via_stack_alloc_tensors = 0;
-      l_atrans_gemm_sw_pipeline = 1;
-    }
+  /* SW pipeline HF8 on DMR: B-trans for nt */
+  if ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
+    hf8_gemm_via_stack_alloc_tensors = 0;
+    l_btrans_gemm_sw_pipeline = 1;
+  }
 
-    /* SW pipeline HF8 on DMR: B-trans for nt */
-    if ((l_hf8_swpipe_skip == 0) && (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
-      hf8_gemm_via_stack_alloc_tensors = 0;
-      l_btrans_gemm_sw_pipeline = 1;
-    }
-
-    /* SW pipeline HF8 on DMR: A-trans + B-trans for tt */
-    if ((l_hf8_swpipe_skip == 0) && (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
-      hf8_gemm_via_stack_alloc_tensors = 0;
-      l_atrans_gemm_sw_pipeline = 1;
-      l_btrans_gemm_sw_pipeline = 1;
-    }
+  /* SW pipeline HF8 on DMR: A-trans + B-trans for tt */
+  if ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
+    hf8_gemm_via_stack_alloc_tensors = 0;
+    l_atrans_gemm_sw_pipeline = 1;
+    l_btrans_gemm_sw_pipeline = 1;
   }
 
   if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
