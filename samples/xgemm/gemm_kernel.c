@@ -8,6 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#define _POSIX_C_SOURCE 200112L
+#include <stdlib.h>
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
@@ -84,6 +86,7 @@ typedef struct gemm_def {
   unsigned int is_Abf8Bbf16_gemm;
   unsigned int is_Abf8Bf16_gemm;
   unsigned int is_Ahf8Bbf16_gemm;
+  unsigned int is_Abf32Bbf32_gemm;
   unsigned int fuse_zpt_sub;
 } gemm_def;
 
@@ -2907,6 +2910,7 @@ int main(int argc, char* argv []) {
   l_gemm_def.is_Abf8Bbf16_gemm = 0;
   l_gemm_def.is_Abf8Bf16_gemm = 0;
   l_gemm_def.is_Ahf8Bbf16_gemm = 0;
+  l_gemm_def.is_Abf32Bbf32_gemm = 0;
   /* check argument count for a valid range */
   if ( argc == 25 || argc == 26 || argc == 27 || argc == 28 ) {
     /* datatypes */
@@ -2967,11 +2971,20 @@ int main(int argc, char* argv []) {
       l_dtype_a_size = 1;
       l_gemm_def.is_Ahf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
+    } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
+      l_gemm_def.is_Abf32Bbf32_gemm = 1;
+      l_dtype_a    = LIBXSMM_DATATYPE_F32;
+      l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
+      setenv("LIBXSMM_X86_USE_FP32_VIA_BF16", "1", 1);
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(l_dtype_a));
     }
-    l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    if (l_gemm_def.is_Abf32Bbf32_gemm) {
+      l_dtype_b = LIBXSMM_DATATYPE_F32;
+    } else {
+      l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    }
     l_dtype_comp = char_to_libxsmm_datatype( l_comp_dt );
     l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
     l_dtype_b_size = (double)(LIBXSMM_TYPESIZE(l_dtype_b));
@@ -3111,10 +3124,18 @@ int main(int argc, char* argv []) {
     } else if (strcmp(argv[1], "HF8") == 0 && strcmp(argv[2], "BF16") == 0) {
       l_gemm_def.is_Ahf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
+    } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
+      l_gemm_def.is_Abf32Bbf32_gemm = 1;
+      l_dtype_a    = LIBXSMM_DATATYPE_F32;
+      setenv("LIBXSMM_X86_USE_FP32_VIA_BF16", "1", 1);
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
     }
-    l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    if (l_gemm_def.is_Abf32Bbf32_gemm) {
+      l_dtype_b = LIBXSMM_DATATYPE_F32;
+    } else {
+      l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    }
     l_dtype_comp = char_to_libxsmm_datatype( l_comp_dt );
     l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
 
