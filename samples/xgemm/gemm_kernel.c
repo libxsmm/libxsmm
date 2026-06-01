@@ -1000,32 +1000,45 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
     const float* f_a = (const float*)a;
     const float* f_b = (const float*)b;
-    float*       f_c = (float*)c;
-
+    float* f_c = (float*)c;
+    const char* env_fp32_via_bf16 = getenv("LIBXSMM_X86_USE_FP32_VIA_BF16");
+    int l_use_bf16 = (env_fp32_via_bf16 != NULL && env_fp32_via_bf16[0] != '0') ? 1 : 0;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
-        if ( i_gemm_def->beta == 0 ) {
+        if (i_gemm_def->beta == 0) {
           f_c[(l_j * ldc) + l_i] = 0.0f;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < k; l_s++) {
+            float a_val, b_val;
             if (i_gemm_def->trans_b == 0) {
               if (i_gemm_def->trans_a == 0) {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
-              } else {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                a_val = f_a[(l_r * lda * k) + (l_s * lda) + l_i];
+                b_val = f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+              }
+              else {
+                a_val = f_a[(l_r * lda * m) + (l_i * lda) + l_s];
+                b_val = f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
               } /* if-else l_trans_a */
-            } else {
+            }
+            else {
               if (i_gemm_def->trans_a == 0) {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
-              } else {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+                a_val = f_a[(l_r * lda * k) + (l_s * lda) + l_i];
+                b_val = f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+              }
+              else {
+                a_val = f_a[(l_r * lda * m) + (l_i * lda) + l_s];
+                b_val = f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
               } /* if-else l_trans_a */
             } /* if-else l_trans_b */
+            if (l_use_bf16) {
+              libxsmm_bfloat16 tmp_bf16;
+              libxsmm_rne_convert_fp32_bf16(&a_val, &tmp_bf16, 1);
+              libxsmm_convert_bf16_f32(&tmp_bf16, &a_val, 1);
+              libxsmm_rne_convert_fp32_bf16(&b_val, &tmp_bf16, 1);
+              libxsmm_convert_bf16_f32(&tmp_bf16, &b_val, 1);
+            }
+            f_c[(l_j * ldc) + l_i] += a_val * b_val;
           }
         }
       }

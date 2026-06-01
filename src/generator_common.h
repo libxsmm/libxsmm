@@ -1609,6 +1609,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int blend_reg;
   unsigned int tmp_reg0;
   unsigned int tmp_reg1;
+  unsigned int fp32_cvt_tmp_reg;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
@@ -1659,6 +1660,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int avnni_gemm_sw_pipeline;
   unsigned int atrans_gemm_sw_pipeline;
   unsigned int btrans_gemm_sw_pipeline;
+  unsigned int fp32_via_bf16_sw_pipeline;
+  unsigned int fp32_to_bf16_b_sw_pipeline;
+  unsigned int fp32_via_bf16_k_pad;
+  unsigned int fp32_via_bf16_original_lda;
   unsigned int atvnni_gemm_stack_alloc_tensors;
   unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int atvnni_btrans_gemm_stack_alloc_tensors;

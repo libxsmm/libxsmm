@@ -1339,7 +1339,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   int lda_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ? 4/i_micro_kernel_config->datatype_size_in : i_micro_kernel_config->datatype_size_in;
   int ldb_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 2 : 1;
-  unsigned int l_ldb = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? i_xgemm_desc->k: i_xgemm_desc->ldb;
+  unsigned int l_ldb = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? i_xgemm_desc->k: ((i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) ? i_xgemm_desc->k : i_xgemm_desc->ldb);
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
@@ -2119,7 +2119,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   unsigned int l_is_Ai2_Bi8_gemm = libxsmm_x86_is_Ai2_Bi8_gemm(i_xgemm_desc);
   unsigned int l_expand_lda = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0 && i_micro_kernel_config->n_gemm_code_blocks == 1) ? i_xgemm_desc->m/m_blocking_info->blocking : 1;
   unsigned int l_lda = (l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0 || l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) ? m_blocking_info->blocking * l_expand_lda: i_xgemm_desc->lda;
-  unsigned int l_ldb = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? i_xgemm_desc->k: i_xgemm_desc->ldb;
+  unsigned int l_ldb = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? i_xgemm_desc->k: ((i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) ? i_xgemm_desc->k : i_xgemm_desc->ldb);
   unsigned int l_a_dtype_size = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ? 2 : i_micro_kernel_config->datatype_size_in;
 
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0) {
