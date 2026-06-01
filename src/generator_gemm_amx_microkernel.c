@@ -493,6 +493,19 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
       } else {
         libxsmm_load_vreg_from_amx_tile( io_generated_code, i_micro_kernel_config,
             use_gemm_scratch, gp_reg_gemm_scratch, ((tile_in_last_tilerow > 0) ? i_micro_kernel_config->mask_m_fp32 : 0), tile0, col, reg_0);
+        /* For 8-bit C output + fused RELU, compute the RELU bitmask from the F32 accumulator's
+           sign (VPCMPD: 0 > F32 ⇒ bit=1 means "was negative") BEFORE quantization. The legacy
+           byte-level VPCMPB on the quantized BF8/HF8 byte disagrees with the F32 reference when
+           tiny negatives underflow-round to +0 (0x00). */
+        if ((fuse_relu == 1) && ((is_output_bf8 > 0) || (is_output_hf8 > 0))) {
+          current_mask_reg = reserved_mask_regs + (col % (8-reserved_mask_regs));
+          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+              LIBXSMM_X86_INSTR_VPCMPD,
+              i_micro_kernel_config->vector_name,
+              i_micro_kernel_config->zero_reg,
+              reg_0,
+              current_mask_reg, 6 );
+        }
         libxsmm_generator_cvt_from_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), reg_0, reg_0 );
       }
       /* Also store the result before any eltwise to original C */
@@ -511,12 +524,15 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
     if (fuse_relu == 1) {
       current_mask_reg = reserved_mask_regs + (col % (8-reserved_mask_regs));
 
-      libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
-          (is_output_bf16 > 0 || is_output_f16 > 0) ? LIBXSMM_X86_INSTR_VPCMPW : ((is_output_bf8 > 0 || is_output_hf8 > 0) ? LIBXSMM_X86_INSTR_VPCMPB : LIBXSMM_X86_INSTR_VPCMPD),
-          i_micro_kernel_config->vector_name,
-          i_micro_kernel_config->zero_reg,
-          reg_0,
-          current_mask_reg, 6 );
+      /* For BF8/HF8 the mask was already computed from the F32 accumulator above. */
+      if (!((is_output_bf8 > 0) || (is_output_hf8 > 0))) {
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+            (is_output_bf16 > 0 || is_output_f16 > 0) ? LIBXSMM_X86_INSTR_VPCMPW : LIBXSMM_X86_INSTR_VPCMPD,
+            i_micro_kernel_config->vector_name,
+            i_micro_kernel_config->zero_reg,
+            reg_0,
+            current_mask_reg, 6 );
+      }
 
       /* Store relu mask */
       if ( overwrite_C == 1 ) {
