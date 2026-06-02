@@ -80,7 +80,7 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
  * Might be needed to overwrite BFMMLA with BFDOT for performance study.
  */
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
-LIBXSMM_API int libxsmm_cpuid_x86_use_fp32_via_bf16(void);
+LIBXSMM_API int libxsmm_cpuid_use_fp32_via_bf16(void);
 LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking(void);
 LIBXSMM_API int libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity(void);

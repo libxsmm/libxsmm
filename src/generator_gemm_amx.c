@@ -5317,7 +5317,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
                                               (io_generated_code->arch < LIBXSMM_X86_ALLFEAT) &&
                                               ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) &&
                                               ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) &&
-                                              (libxsmm_cpuid_x86_use_fp32_via_bf16() > 0)) ? 1 : 0;
+                                              (libxsmm_cpuid_use_fp32_via_bf16() > 0)) ? 1 : 0;
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
 

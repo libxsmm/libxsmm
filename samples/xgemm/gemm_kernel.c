@@ -8,11 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#define _POSIX_C_SOURCE 200112L
-#include <stdlib.h>
+#define _DEFAULT_SOURCE
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
+#include <stdio.h>
+#include <stdlib.h>
 #if defined(__APPLE__) && defined(__arm64__)
 # include <pthread.h>
 #endif
@@ -1004,7 +1005,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     const float* f_a = (const float*)a;
     const float* f_b = (const float*)b;
     float* f_c = (float*)c;
-    const char* env_fp32_via_bf16 = getenv("LIBXSMM_X86_USE_FP32_VIA_BF16");
+    const char* env_fp32_via_bf16 = getenv("LIBXSMM_USE_FP32_VIA_BF16");
     int l_use_bf16 = (env_fp32_via_bf16 != NULL && env_fp32_via_bf16[0] != '0') ? 1 : 0;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -2975,7 +2976,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.is_Abf32Bbf32_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_F32;
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
-      setenv("LIBXSMM_X86_USE_FP32_VIA_BF16", "1", 1);
+      setenv("LIBXSMM_USE_FP32_VIA_BF16", "1", 1);
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(l_dtype_a));
