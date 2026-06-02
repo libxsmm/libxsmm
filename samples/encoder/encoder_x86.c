@@ -1823,10 +1823,6 @@ int main( /*int argc, char* argv[]*/ ) {
   test_tile_move( "tile_mov_TILELOADDT1", &mycode, LIBXSMM_X86_INSTR_TILELOADDT1 );
   test_tile_move( "tile_mov_TILESTORED", &mycode, LIBXSMM_X86_INSTR_TILESTORED );
   test_tile_move( "tile_mov_TILEZERO", &mycode, LIBXSMM_X86_INSTR_TILEZERO );
-  test_tile_move( "tile_mov_T2RPNTLVWZ0", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0 );
-  test_tile_move( "tile_mov_T2RPNTLVWZ0T1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1 );
-  test_tile_move( "tile_mov_T2RPNTLVWZ1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ1 );
-  test_tile_move( "tile_mov_T2RPNTLVWZ1T1", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ1T1 );
   test_tile_move( "tile_mov_TILELOADDRS", &mycode, LIBXSMM_X86_INSTR_TILELOADDRS );
   test_tile_move( "tile_mov_TILELOADDRST1", &mycode, LIBXSMM_X86_INSTR_TILELOADDRST1 );
   test_tile_move( "tile_mov_T2RPNTLVWZ0RS", &mycode, LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS );
@@ -1844,18 +1840,13 @@ int main( /*int argc, char* argv[]*/ ) {
   test_tile_compute( "tile_reg_TDPBHF8PS", &mycode, LIBXSMM_X86_INSTR_TDPBHF8PS, 0 );
   test_tile_compute( "tile_reg_TDPHF8PS", &mycode, LIBXSMM_X86_INSTR_TDPHF8PS, 0 );
   test_tile_compute( "tile_reg_TDPBF16PS", &mycode, LIBXSMM_X86_INSTR_TDPBF16PS, 0 );
-  test_tile_compute( "tile_reg_TTDPBF16PS", &mycode, LIBXSMM_X86_INSTR_TTDPBF16PS, 0 );
   test_tile_compute( "tile_reg_TDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TDPFP16PS, 0 );
-  test_tile_compute( "tile_reg_TTDPFP16PS", &mycode, LIBXSMM_X86_INSTR_TTDPFP16PS, 0 );
   test_tile_compute( "tile_reg_TMMULTF32PS", &mycode, LIBXSMM_X86_INSTR_TMMULTF32PS, 0 );
   test_tile_compute( "tile_reg_TTMMULTF32PS", &mycode, LIBXSMM_X86_INSTR_TTMMULTF32PS, 0 );
   test_tile_compute( "tile_reg_TCMMIMFP16PS", &mycode, LIBXSMM_X86_INSTR_TCMMIMFP16PS, 0 );
   test_tile_compute( "tile_reg_TCMMRLFP16PS", &mycode, LIBXSMM_X86_INSTR_TCMMRLFP16PS, 0 );
   test_tile_compute( "tile_reg_TCONJTCMMIMFP16PS", &mycode, LIBXSMM_X86_INSTR_TCONJTCMMIMFP16PS, 0 );
   test_tile_compute( "tile_reg_TCONJTFP16", &mycode, LIBXSMM_X86_INSTR_TCONJTFP16, 0 );
-  test_tile_compute( "tile_reg_TTCMMIMFP16PS", &mycode, LIBXSMM_X86_INSTR_TTCMMIMFP16PS, 0 );
-  test_tile_compute( "tile_reg_TTCMMRLFP16PS", &mycode, LIBXSMM_X86_INSTR_TTCMMRLFP16PS, 0 );
-  test_tile_compute( "tile_reg_TTRANSPOSED", &mycode, LIBXSMM_X86_INSTR_TTRANSPOSED, 1 );
 
   /* testing tile extract */
   test_tile_extract( "tile_zmm_TCVTROWD2PS", &mycode, LIBXSMM_X86_INSTR_TCVTROWD2PS );
