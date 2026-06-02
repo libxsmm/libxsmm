@@ -1808,10 +1808,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxN_f32_to_bf16( libxsmm_
   unsigned int l_k_pad   = (i_micro_kernel_config->fp32_via_bf16_k_pad > 0) ? 1u : 0u;
   unsigned int l_k_chunks = i_K / 32;
   unsigned int l_k_tail   = i_K % 32;
-  if (l_k_pad > 0 && l_k_tail == 0 && l_k_chunks > 0) {
-    l_k_chunks -= 1;
-    l_k_tail = 32;
-  }
   unsigned int l_vreg_lo  = i_micro_kernel_config->reserved_zmms;
   unsigned int l_vreg_hi  = i_micro_kernel_config->reserved_zmms + 1;
   unsigned int l_vreg_out = i_micro_kernel_config->reserved_zmms + 2;
@@ -1821,8 +1817,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxN_f32_to_bf16( libxsmm_
   unsigned int l_mask_hi = 6;
   unsigned int l_mask_st = 5;
   /* Number of *valid* F32 lanes in the tail chunk = l_k_tail - l_k_pad. */
-  unsigned int l_k_tail_valid = (l_k_tail > l_k_pad) ? (l_k_tail - l_k_pad) : 0u;
+  unsigned int l_k_tail_valid = 0;
   LIBXSMM_UNUSED( i_xgemm_desc );
+
+  if (l_k_pad > 0 && l_k_tail == 0 && l_k_chunks > 0) {
+    l_k_chunks -= 1;
+    l_k_tail = 32;
+  }
+  l_k_tail_valid = (l_k_tail > l_k_pad) ? (l_k_tail - l_k_pad) : 0u;
+
   libxsmm_x86_instruction_push_reg( io_generated_code, cnt_reg );
   if (l_k_tail > 0) {
     unsigned int l_lo_lanes = LIBXSMM_MIN(l_k_tail_valid, 16u);
@@ -1926,6 +1929,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( li
                                                                               unsigned int                       o_gp_reg ) {
   unsigned int l_k_pad = (i_micro_kernel_config->fp32_via_bf16_k_pad > 0) ? 1u : 0u;
   unsigned int l_k_real = (i_K > l_k_pad) ? (i_K - l_k_pad) : 0u;
+  unsigned int l_gp_temp1 = LIBXSMM_X86_GP_REG_R11;
+  unsigned int l_gp_temp2 = LIBXSMM_X86_GP_REG_R10;
+  unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
+  unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
+  unsigned int i_gp_reg_in = i_gp_reg;
+  unsigned int i_gp_reg_out = o_gp_reg;
+  LIBXSMM_UNUSED(i_xgemm_desc);
+
   if ( l_k_pad == 0 && i_K == 32 && (i_N % 8) == 0 ) {
     unsigned int l_gp_temp_fast = LIBXSMM_X86_GP_REG_R11;
     unsigned int l_gp_reg_gemm_scratch = LIBXSMM_X86_GP_REG_R12;
@@ -2025,15 +2036,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( li
     return;
   }
   /* ---------- Scalar slow path (general K/N) ---------- */
-
-  unsigned int l_gp_temp1 = LIBXSMM_X86_GP_REG_R11;
-  unsigned int l_gp_temp2 = LIBXSMM_X86_GP_REG_R10;
-  unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
-  unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
-  unsigned int i_gp_reg_in = i_gp_reg;
-  unsigned int i_gp_reg_out = o_gp_reg;
-
-  LIBXSMM_UNUSED( i_xgemm_desc );
 
   libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_m_loop );
   libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_n_loop );
@@ -5318,6 +5320,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
                                               ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) &&
                                               ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) &&
                                               (libxsmm_cpuid_use_fp32_via_bf16() > 0)) ? 1 : 0;
+  unsigned int l_fp32_to_bf16_b_sw_pipeline = 0;
+  unsigned int l_fp32_via_bf16_k_pad = 0;
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
 
@@ -5391,8 +5395,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   /* SW pipeline F32->BF16 conversion: enable BF16 SW-pipeline rails so the preproc step
    * loads F32, converts to BF16 (vcvtne2ps2bf16) and feeds the existing VNNI/transpose
    * snippets that store BF16 to the ping-pong scratch. The AMX inner kernel is unchanged. */
-  unsigned int l_fp32_to_bf16_b_sw_pipeline = 0;
-  unsigned int l_fp32_via_bf16_k_pad = 0;
   if (l_fp32_via_bf16_sw_pipeline != 0) {
     if (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0)) {
       l_avnni_gemm_sw_pipeline = 1;
