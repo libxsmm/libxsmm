@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#define _DEFAULT_SOURCE
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
@@ -2976,7 +2975,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.is_Abf32Bbf32_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_F32;
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
-      setenv("LIBXSMM_USE_FP32_VIA_BF16", "1", 1);
+      putenv("LIBXSMM_USE_FP32_VIA_BF16=1");
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(l_dtype_a));
@@ -3128,7 +3127,7 @@ int main(int argc, char* argv []) {
     } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
       l_gemm_def.is_Abf32Bbf32_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_F32;
-      setenv("LIBXSMM_X86_USE_FP32_VIA_BF16", "1", 1);
+      putenv("LIBXSMM_USE_FP32_VIA_BF16=1");
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
     }
