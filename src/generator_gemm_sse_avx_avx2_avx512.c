@@ -263,6 +263,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     }
     l_xgemm_desc->lda = l_xgemm_desc->m;
     l_xgemm_desc->ldb = l_xgemm_desc->k;
+    /* Clear TRANS_A/TRANS_B on the inner descriptor: the BF8/HF8 stack reformat
+     * (libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack) checks the ORIGINAL
+     * descriptor flags (i_xgemm_desc_orig) for TRANS_A/TRANS_B and produces a
+     * non-transposed BF16/F32 panel in stack that the inner GEMM consumes. */
+    l_xgemm_desc->flags = (unsigned int)((unsigned int)(l_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
+    l_xgemm_desc->flags = (unsigned int)((unsigned int)(l_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_B));
   }
 
   /* @TODO check if we can make this smarter and don't need two times the same if */

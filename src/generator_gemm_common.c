@@ -446,6 +446,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
   int is_address_brgemm       = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
   int is_brgemm               = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
   unsigned int a_in_vnni      = ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 0;
+  unsigned int a_is_trans     = ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ? 1 : 0;
+  unsigned int b_is_trans     = ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 1 : 0;
   unsigned int struct_gp_reg  = LIBXSMM_X86_GP_REG_R15;
   unsigned int tmp_reg        = LIBXSMM_X86_GP_REG_R14;
   unsigned int loop_reg       = LIBXSMM_X86_GP_REG_R13;
@@ -462,7 +464,30 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
   /* If A is originally in VNNI4 format: Second convert BF8 to BF16 */
   /* If A is originally in flat format: First convert BF8 to BF16 */
   /* If A is originally in flat format: Second transform NORM to VNNI2 */
-  if (a_in_vnni > 0) {
+  if (a_is_trans > 0) {
+    /* A is BF8/HF8 stored transposed (K x M) with original lda >= K.
+     * Target BF16 (CPX+): Step 1 BF8->BF16 IDENTITY into A_SCRATCH as compact (K x M) BF16 (ldo=K);
+     *   Step 2 NORM_TO_NORMT on the F32-packed view (K/2 x M) -> (M x K/2) F32 = (M x K) BF16 VNNI2 (ldo=M=lda).
+     * Target F32 (older archs): Step 1 BF8->F32 IDENTITY into A_SCRATCH as (K x M) F32 (ldo=K);
+     *   Step 2 NORM_TO_NORMT F32 (K x M) -> (M x K) F32 flat (ldo=M=lda). */
+    if (i_target_dtype == LIBXSMM_DATATYPE_BF16) {
+      libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
+          i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
+          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc_orig->lda, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
+          i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
+          LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
+          LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->k/2, i_xgemm_desc->m, i_xgemm_desc->k/2, i_xgemm_desc->m,
+          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    } else {
+      libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
+          i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
+          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc_orig->lda, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
+          i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+          LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
+          LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc->m,
+          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    }
+  } else if (a_in_vnni > 0) {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         (i_target_dtype == LIBXSMM_DATATYPE_F32) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc_orig->lda, i_xgemm_desc->lda, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
@@ -481,12 +506,25 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
   }
 
   /* Setup B in stack */
-  libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
-      i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
-      LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc_orig->ldb, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
-      i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype,
-      LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
-      LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
+  if (b_is_trans > 0) {
+    /* B is BF8/HF8 stored transposed (N x K) with original ldb >= N.
+     * Step 1: BF8/HF8 -> target_dtype IDENTITY into A_SCRATCH as compact (N x K) tensor (ldo=N).
+     * Step 2: NORM_TO_NORMT target_dtype (N x K) -> (K x N) flat (ldo=K=ldb) for the inner GEMM. */
+    libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
+        i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
+        LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->n, i_xgemm_desc->k, i_xgemm_desc_orig->ldb, i_xgemm_desc->n, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
+        i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype,
+        LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
+        LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->n, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc->k,
+        i_target_dtype, i_target_dtype, i_target_dtype);
+  } else {
+    libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
+        i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
+        LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc_orig->ldb, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
+        i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype,
+        LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
+        LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
+  }
 
   /* Adjust A/B gp_regs to point to the fp32 tensors in stack */
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR, tmp_reg );
@@ -1673,7 +1711,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     }
     bias_size += bias_pad;
     if ((i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0)) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, a_size );
+      /* A_SCRATCH is reused as the BF8->BF16 intermediate buffer for both A and B (in the TRANS_A/TRANS_B paths),
+       * so it must be sized for the larger of the two tensors. */
+      unsigned int scratch_size = (a_size > b_size) ? a_size : b_size;
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
     }
     if (((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) && ((i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0))) {
