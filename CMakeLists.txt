@@ -58,6 +58,30 @@ endif()
 
 set(XSMM_INCLUDE_DIRS ${XSMM_ROOT_DIR}/include)
 
+# Generate libxsmm_version.h
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+set(XSMM_GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
+file(MAKE_DIRECTORY ${XSMM_GENERATED_INCLUDE_DIR})
+
+execute_process(
+  COMMAND ${Python3_EXECUTABLE}
+          ${XSMM_ROOT_DIR}/scripts/libxsmm_config.py
+          ${XSMM_ROOT_DIR}/src/template/libxsmm_version.h
+  OUTPUT_FILE ${XSMM_GENERATED_INCLUDE_DIR}/libxsmm_version.h
+  RESULT_VARIABLE LIBXSMM_VERSION_HEADER_RC
+  WORKING_DIRECTORY ${XSMM_ROOT_DIR})
+
+if(NOT LIBXSMM_VERSION_HEADER_RC EQUAL 0)
+  message(FATAL_ERROR "Failed to generate libxsmm_version.h")
+endif()
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${XSMM_ROOT_DIR}/version.txt
+  ${XSMM_ROOT_DIR}/scripts/libxsmm_config.py
+  ${XSMM_ROOT_DIR}/scripts/libxsmm_utilities.py
+  ${XSMM_ROOT_DIR}/src/template/libxsmm_version.h)
+
 if(XSMM_STATIC)
   add_library(xsmm STATIC ${XSMM_SRCS})
 else()
@@ -77,6 +101,7 @@ endif()
 target_include_directories(xsmm
   PUBLIC
     $<BUILD_INTERFACE:${XSMM_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${XSMM_GENERATED_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_compile_definitions(xsmm
@@ -124,6 +149,8 @@ install(DIRECTORY ${XSMM_ROOT_DIR}/include/
     PATTERN "*.h"
     PATTERN "*.hpp"
     PATTERN "*.f")
+install(FILES ${XSMM_GENERATED_INCLUDE_DIR}/libxsmm_version.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT libxsmmTargets
   NAMESPACE libxsmm::
   FILE libxsmmTargets.cmake
