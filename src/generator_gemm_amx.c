@@ -710,14 +710,23 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_MxK_f32_to_bf16_vnn
   unsigned int l_gp_kp_loop = LIBXSMM_X86_GP_REG_R14;
   unsigned int l_gp_in = i_gp_reg;
   unsigned int l_gp_out = o_gp_reg;
+  /* Scratch vector reg + 2-lane BF16 store mask for the AVX512 F32->BF16 convert
+   * (VCVTNEPS2BF16). A VNNI K-pair = 2 contiguous F32 -> 2 contiguous BF16, so
+   * one convert handles both lanes. High vreg (never reserved) + mask 7. */
+  unsigned int l_vreg_cvt = 31;
+  unsigned int l_mask_st2 = 7;
 
   LIBXSMM_UNUSED(i_xgemm_desc);
+  LIBXSMM_UNUSED(l_gp_t2);
 
   libxsmm_x86_instruction_push_reg(io_generated_code, l_gp_kp_loop);
   libxsmm_x86_instruction_push_reg(io_generated_code, l_gp_mt_loop);
   libxsmm_x86_instruction_push_reg(io_generated_code, l_gp_mit_loop);
   libxsmm_x86_instruction_push_reg(io_generated_code, l_gp_t1);
   libxsmm_x86_instruction_push_reg(io_generated_code, l_gp_t2);
+
+  /* Build a 2-lane BF16 store mask (k7 = 0x3) to write one VNNI K-pair. */
+  libxsmm_generator_initialize_avx512_mask(io_generated_code, l_gp_t1, l_mask_st2, 30, LIBXSMM_DATATYPE_BF16);
 
   if (l_k_full_pairs > 0) {
     /* kp loop header */
@@ -730,27 +739,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_MxK_f32_to_bf16_vnn
     libxsmm_x86_instruction_register_jump_back_label(io_generated_code, io_loop_label_tracker);
     libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_mt_loop, 1);
 
-    /* VNNI lane 0: load F32 [in+0], RNE convert, store BF16 [out+0] */
-    libxsmm_x86_instruction_alu_mem(io_generated_code, LIBXSMM_X86_INSTR_MOVD, l_gp_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_t1, 0);
-    libxsmm_x86_instruction_alu_reg(io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_t1, l_gp_t2);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_t2, 16);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ANDQ, l_gp_t2, 1);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_t1, 0x7FFF);
-    libxsmm_x86_instruction_alu_reg(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_t2, l_gp_t1);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_t1, 16);
-    libxsmm_x86_instruction_alu_mem(
-      io_generated_code, LIBXSMM_X86_INSTR_MOVW, l_gp_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_t1, 1);
-
-    /* VNNI lane 1: load F32 [in+4], RNE convert, store BF16 [out+2] */
-    libxsmm_x86_instruction_alu_mem(io_generated_code, LIBXSMM_X86_INSTR_MOVD, l_gp_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 4, l_gp_t1, 0);
-    libxsmm_x86_instruction_alu_reg(io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_t1, l_gp_t2);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_t2, 16);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ANDQ, l_gp_t2, 1);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_t1, 0x7FFF);
-    libxsmm_x86_instruction_alu_reg(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_t2, l_gp_t1);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_t1, 16);
-    libxsmm_x86_instruction_alu_mem(
-      io_generated_code, LIBXSMM_X86_INSTR_MOVW, l_gp_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 2, l_gp_t1, 1);
+    /* VNNI K-pair: load 2 contiguous F32 [in+0],[in+4] into lanes 0,1, convert
+     * both with AVX512 VCVTNEPS2BF16, masked-store the 2 BF16 (VNNI2 layout:
+     * lane0 -> [out+0], lane1 -> [out+2]). */
+    libxsmm_x86_instruction_vec_move(io_generated_code, i_micro_kernel_config->instruction_set,
+      LIBXSMM_X86_INSTR_VMOVSD, l_gp_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'x', l_vreg_cvt, 0, 0, 0);
+    libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
+      'x', l_vreg_cvt, l_vreg_cvt);
+    libxsmm_x86_instruction_vec_move(io_generated_code, i_micro_kernel_config->instruction_set,
+      LIBXSMM_X86_INSTR_VMOVDQU16, l_gp_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'x', l_vreg_cvt, l_mask_st2, 0, 1);
 
     /* Advance pointers by one M step:
      *   in  += i_ldi*4 bytes  (next M lane in K-major source)
@@ -782,21 +779,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_MxK_f32_to_bf16_vnn
     libxsmm_x86_instruction_register_jump_back_label(io_generated_code, io_loop_label_tracker);
     libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_mt_loop, 1);
 
-    /* VNNI lane 0: real F32 -> BF16 */
-    libxsmm_x86_instruction_alu_mem(io_generated_code, LIBXSMM_X86_INSTR_MOVD, l_gp_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_t1, 0);
-    libxsmm_x86_instruction_alu_reg(io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_t1, l_gp_t2);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_t2, 16);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ANDQ, l_gp_t2, 1);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_t1, 0x7FFF);
-    libxsmm_x86_instruction_alu_reg(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_t2, l_gp_t1);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_t1, 16);
-    libxsmm_x86_instruction_alu_mem(
-      io_generated_code, LIBXSMM_X86_INSTR_MOVW, l_gp_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_t1, 1);
-
-    /* VNNI lane 1: zero pad */
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_gp_t1, 0);
-    libxsmm_x86_instruction_alu_mem(
-      io_generated_code, LIBXSMM_X86_INSTR_MOVW, l_gp_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 2, l_gp_t1, 1);
+    /* VNNI lane 0: real F32 -> BF16 via AVX512 VCVTNEPS2BF16; lane 1 is the
+     * odd-K zero pad (VMOVSS zeroes the upper lanes, so it converts to BF16 0). */
+    libxsmm_x86_instruction_vec_move(io_generated_code, i_micro_kernel_config->instruction_set,
+      LIBXSMM_X86_INSTR_VMOVSS, l_gp_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'x', l_vreg_cvt, 0, 0, 0);
+    libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
+      'x', l_vreg_cvt, l_vreg_cvt);
+    libxsmm_x86_instruction_vec_move(io_generated_code, i_micro_kernel_config->instruction_set,
+      LIBXSMM_X86_INSTR_VMOVDQU16, l_gp_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'x', l_vreg_cvt, l_mask_st2, 0, 1);
 
     /* Advance pointers */
     libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_in, (long long)i_ldi * 4);
@@ -1929,13 +1919,21 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( li
                                                                               unsigned int                       o_gp_reg ) {
   unsigned int l_k_pad = (i_micro_kernel_config->fp32_via_bf16_k_pad > 0) ? 1u : 0u;
   unsigned int l_k_real = (i_K > l_k_pad) ? (i_K - l_k_pad) : 0u;
+  /* NOTE: l_gp_temp2 must NOT alias the caller-provided input pointer register
+   * (some call sites pass R10 as i_gp_reg). Use R8 to avoid clobbering it. */
   unsigned int l_gp_temp1 = LIBXSMM_X86_GP_REG_R11;
-  unsigned int l_gp_temp2 = LIBXSMM_X86_GP_REG_R10;
+  unsigned int l_gp_temp2 = LIBXSMM_X86_GP_REG_R8;
   unsigned int i_gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
   unsigned int i_gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
   unsigned int i_gp_reg_in = i_gp_reg;
   unsigned int i_gp_reg_out = o_gp_reg;
+  /* Scratch vector reg + 1-lane BF16 store mask for the AVX512 F32->BF16 convert
+   * (VCVTNEPS2BF16). Use a high vector reg (never in reserved_zmms) and mask 7
+   * (consistent with the transient masks used by convert_KxN). */
+  unsigned int l_vreg_cvt = 31;
+  unsigned int l_mask_st  = 7;
   LIBXSMM_UNUSED(i_xgemm_desc);
+  LIBXSMM_UNUSED(l_gp_temp2);
 
   if ( l_k_pad == 0 && i_K == 32 && (i_N % 8) == 0 ) {
     unsigned int l_gp_temp_fast = LIBXSMM_X86_GP_REG_R11;
@@ -2042,6 +2040,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( li
   libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_temp1 );
   libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_temp2 );
 
+  /* Build a 1-lane BF16 store mask (k7 = 0x1) used to write exactly one BF16. */
+  libxsmm_generator_initialize_avx512_mask( io_generated_code, l_gp_temp1, l_mask_st, 31, LIBXSMM_DATATYPE_BF16 );
+
   /* m loop header: iterate over N (output rows = B^T cols) */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
@@ -2053,24 +2054,19 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( li
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 1 );
 
-    /* Load F32 (4 bytes) into l_gp_temp1 (MOVD_LD zero-extends to 64-bit) */
-    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD,
-                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                     l_gp_temp1, 0 );
-    /* F32 -> BF16 RNE conversion:
-     *   temp2 = (temp1 >> 16) & 1;
-     *   temp1 = (temp1 + 0x7FFF + temp2) >> 16;
-     *   store low 16 bits. */
-    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_temp1, l_gp_temp2 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_temp2, 16 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, l_gp_temp2, 1 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_temp1, 0x7FFF );
-    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_temp2, l_gp_temp1 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SHRQ, l_gp_temp1, 16 );
-    /* Store BF16 (2 bytes) */
-    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVW,
-                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                     l_gp_temp1, 1 );
+    /* F32 -> BF16 via the AVX512 VCVTNEPS2BF16 instruction (first slot only):
+     * load one F32 element into lane 0 of a scratch vector register, downconvert
+     * with RNE rounding, and masked-store the single resulting BF16 element. */
+    libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+                                      LIBXSMM_X86_INSTR_VMOVSS,
+                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                      'x', l_vreg_cvt, 0, 0, 0 );
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
+                                              'x', l_vreg_cvt, l_vreg_cvt );
+    libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+                                      LIBXSMM_X86_INSTR_VMOVDQU16,
+                                      i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                      'x', l_vreg_cvt, l_mask_st, 0, 1 );
 
     /* advance input pointer by one K-row in B^T (i_ldi F32 = i_ldi*4 bytes) */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_in, (long long)i_ldi * 4 );
@@ -2675,7 +2671,7 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
 
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-            i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->lda*i_xgemm_desc->m)*(4/a_vnni_adjustment)) );
+            i_gp_reg_mapping->gp_reg_a, ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? ((long long)i_micro_kernel_config->fp32_via_bf16_original_lda * i_xgemm_desc->m * 4u) : ((i_xgemm_desc->lda*i_xgemm_desc->m)*(4/a_vnni_adjustment))) );
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
             i_gp_reg_mapping->gp_reg_a, ((long long)i_xgemm_desc->m*l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -2777,7 +2773,7 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
     if (i_m_loop_exists) {
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-            i_gp_reg_mapping->gp_reg_a_base, ((i_xgemm_desc->lda * i_xgemm_desc->m)*(4/a_vnni_adjustment)) );
+            i_gp_reg_mapping->gp_reg_a_base, ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? ((long long)i_micro_kernel_config->fp32_via_bf16_original_lda * i_xgemm_desc->m * 4u) : ((i_xgemm_desc->lda * i_xgemm_desc->m)*(4/a_vnni_adjustment))) );
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
             i_gp_reg_mapping->gp_reg_a_base, ((long long)i_xgemm_desc->m*l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -2831,7 +2827,7 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
     if (i_m_loop_exists) {
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-          i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->lda * i_xgemm_desc->m)*(4/a_vnni_adjustment)) );
+          i_gp_reg_mapping->gp_reg_a, ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? ((long long)i_micro_kernel_config->fp32_via_bf16_original_lda * i_xgemm_desc->m * 4u) : ((i_xgemm_desc->lda * i_xgemm_desc->m)*(4/a_vnni_adjustment))) );
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
             i_gp_reg_mapping->gp_reg_a, ((long long)i_xgemm_desc->m*l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -3015,7 +3011,7 @@ void libxsmm_generator_gemm_footer_mloop_amx( libxsmm_generated_code*           
           0 );
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
-            (i_m_blocking * i_xgemm_desc->lda * ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? 4u : i_micro_kernel_config->datatype_size_in)) );
+            (i_m_blocking * ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? (i_micro_kernel_config->fp32_via_bf16_original_lda * 4u) : (i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in))) );
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
             (i_m_blocking * (l_a_packed_bytes/a_vnni_adjustment)) );
@@ -3087,7 +3083,7 @@ void libxsmm_generator_gemm_footer_mloop_amx( libxsmm_generated_code*           
       /* advance A pointer */
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base,
-            (i_m_blocking * i_xgemm_desc->lda * ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? 4u : i_micro_kernel_config->datatype_size_in)) );
+            (i_m_blocking * ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? (i_micro_kernel_config->fp32_via_bf16_original_lda * 4u) : (i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in))) );
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base,
             ((long long)i_m_blocking * l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -3120,7 +3116,7 @@ void libxsmm_generator_gemm_footer_mloop_amx( libxsmm_generated_code*           
       /* advance A pointer */
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
-          (i_xgemm_desc->lda *  i_m_blocking * ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? 4u : i_micro_kernel_config->datatype_size_in) ));
+          (i_m_blocking * ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? (i_micro_kernel_config->fp32_via_bf16_original_lda * 4u) : (i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in)) ));
       } else {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
             ((long long)i_m_blocking * l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -4403,7 +4399,7 @@ void libxsmm_generator_gemm_amx_adjust_m_advancement( libxsmm_generated_code* io
         0 );
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
-          ((long long)(i_m_adjustment*i_xgemm_desc->lda)*l_a_packed_bytes/a_vnni_adjustment) );
+          ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? ((long long)i_m_adjustment * i_micro_kernel_config->fp32_via_bf16_original_lda * 4u) : ((long long)(i_m_adjustment*i_xgemm_desc->lda)*l_a_packed_bytes/a_vnni_adjustment)) );
     } else {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
           ((long long)i_m_adjustment * l_a_packed_bytes/a_vnni_adjustment) );
@@ -4474,7 +4470,7 @@ void libxsmm_generator_gemm_amx_adjust_m_advancement( libxsmm_generated_code* io
     /* advance A pointer */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base,
-          ((long long)(i_m_adjustment*i_xgemm_desc->lda)* l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
+          ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? ((long long)i_m_adjustment * i_micro_kernel_config->fp32_via_bf16_original_lda * 4u) : (((long long)(i_m_adjustment*i_xgemm_desc->lda)* l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A)) );
     } else {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base,
           ((long long)i_m_adjustment * l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -4507,7 +4503,7 @@ void libxsmm_generator_gemm_amx_adjust_m_advancement( libxsmm_generated_code* io
     /* advance A pointer */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
-          ((long long)(i_m_adjustment*i_xgemm_desc->lda)* l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
+          ((i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) ? ((long long)i_m_adjustment * i_micro_kernel_config->fp32_via_bf16_original_lda * 4u) : (((long long)(i_m_adjustment*i_xgemm_desc->lda)* l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A)) );
     } else {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a,
           ((long long)i_m_adjustment * l_a_packed_bytes/a_vnni_adjustment)/i_micro_kernel_config->sparsity_factor_A );
@@ -6882,7 +6878,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
           }
         } else if (i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) {
           libxsmm_generator_gemm_convert_KxN_f32_to_bf16( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
-               i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_micro_kernel_config->n_blocking, l_gp_reg_b, l_gp_reg_scratch);
+               i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, l_gp_reg_b, l_gp_reg_scratch);
         }
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BUF2, l_gp_reg_scratch );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AUX_VAR2, i_gp_reg_mapping->gp_reg_b );
