@@ -4,10 +4,10 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
 
 Name: libxsmm
-Description: Specialized tensor operations
+Description: @PROJECT_DESCRIPTION@
 URL: https://github.com/libxsmm/libxsmm/
 Version: @PROJECT_VERSION@
 
 Cflags: -I${includedir}
-Libs: @LIBXSMM_PC_LIBS@
-Libs.private: @LIBXSMM_PC_LIBS_PRIVATE@
+Libs: -L${libdir} -lxsmm
+Libs.private: @LIBXSMM_PC_PRIVATE_LIBS@

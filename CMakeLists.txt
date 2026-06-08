@@ -1,22 +1,15 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 set(LIBXSMM_VERSION "1.17")
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/version.txt")
-  file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/version.txt" LIBXSMM_VERSION_TXT LIMIT_COUNT 1)
-  string(REGEX MATCH "([0-9]+)\\.([0-9]+)(\\.([0-9]+))?" LIBXSMM_VERSION_MATCH "${LIBXSMM_VERSION_TXT}")
-  if(LIBXSMM_VERSION_MATCH)
-    set(LIBXSMM_VERSION_MAJOR "${CMAKE_MATCH_1}")
-    set(LIBXSMM_VERSION_MINOR "${CMAKE_MATCH_2}")
-    if(CMAKE_MATCH_4)
-      set(LIBXSMM_VERSION_UPDATE "${CMAKE_MATCH_4}")
-    else()
-      set(LIBXSMM_VERSION_UPDATE "0")
-    endif()
-    set(LIBXSMM_VERSION "${LIBXSMM_VERSION_MAJOR}.${LIBXSMM_VERSION_MINOR}.${LIBXSMM_VERSION_UPDATE}")
-  endif()
-endif()
 
-project(libxsmm VERSION ${LIBXSMM_VERSION} LANGUAGES C CXX)
+project(libxsmm
+  VERSION ${LIBXSMM_VERSION}
+  DESCRIPTION "Library for specialized dense and sparse matrix operations and deep learning primitives"
+  LANGUAGES C CXX)
+
+message(WARNING
+  "CMake is not the reference build system for LIBXSMM yet; "
+  "GNU Make remains the tested and preferred build path.")
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -119,13 +112,6 @@ if(XSMM_LIBRT)
   target_link_libraries(xsmm PUBLIC rt)
 endif()
 
-# The source-tree libxsmm_source.h uses ../src for header-only usage.  The
-# install-tree layout used by make install places the implementation files under
-# include/libxsmm instead, so generate the same relocatable header for CMake.
-file(READ "${XSMM_ROOT_DIR}/include/libxsmm_source.h" LIBXSMM_SOURCE_HEADER)
-string(REPLACE "\"../src/" "\"libxsmm/" LIBXSMM_SOURCE_HEADER "${LIBXSMM_SOURCE_HEADER}")
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/libxsmm_source.h" "${LIBXSMM_SOURCE_HEADER}")
-
 install(TARGETS xsmm
   EXPORT libxsmmTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -138,14 +124,6 @@ install(DIRECTORY ${XSMM_ROOT_DIR}/include/
     PATTERN "*.h"
     PATTERN "*.hpp"
     PATTERN "*.f")
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libxsmm_source.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(DIRECTORY ${XSMM_ROOT_DIR}/src/
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libxsmm
-  FILES_MATCHING
-    PATTERN "*.c"
-    PATTERN "*.h")
-
 install(EXPORT libxsmmTargets
   NAMESPACE libxsmm::
   FILE libxsmmTargets.cmake
