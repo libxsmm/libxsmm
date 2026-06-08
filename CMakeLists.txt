@@ -91,7 +91,8 @@ add_library(libxsmm::libxsmm ALIAS xsmm)
 
 set_target_properties(xsmm PROPERTIES
   EXPORT_NAME libxsmm
-  OUTPUT_NAME xsmm)
+  OUTPUT_NAME xsmm
+  POSITION_INDEPENDENT_CODE ON)
 if(NOT XSMM_STATIC)
   set_target_properties(xsmm PROPERTIES
     VERSION ${PROJECT_VERSION}
