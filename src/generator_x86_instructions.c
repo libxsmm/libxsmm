@@ -3893,10 +3893,6 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
   switch ( i_tmove_instr ) {
     case LIBXSMM_X86_INSTR_TILELOADD:
     case LIBXSMM_X86_INSTR_TILELOADDT1:
-    case LIBXSMM_X86_INSTR_T2RPNTLVWZ0:
-    case LIBXSMM_X86_INSTR_T2RPNTLVWZ1:
-    case LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1:
-    case LIBXSMM_X86_INSTR_T2RPNTLVWZ1T1:
     case LIBXSMM_X86_INSTR_TILELOADDRS:
     case LIBXSMM_X86_INSTR_TILELOADDRST1:
     case LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS:
@@ -3948,10 +3944,6 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
     switch ( i_tmove_instr ) {
       case LIBXSMM_X86_INSTR_TILELOADD:
       case LIBXSMM_X86_INSTR_TILELOADDT1:
-      case LIBXSMM_X86_INSTR_T2RPNTLVWZ0:
-      case LIBXSMM_X86_INSTR_T2RPNTLVWZ1:
-      case LIBXSMM_X86_INSTR_T2RPNTLVWZ0T1:
-      case LIBXSMM_X86_INSTR_T2RPNTLVWZ1T1:
       case LIBXSMM_X86_INSTR_TILELOADDRS:
       case LIBXSMM_X86_INSTR_TILELOADDRST1:
       case LIBXSMM_X86_INSTR_T2RPNTLVWZ0RS:
@@ -4034,17 +4026,12 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
     case LIBXSMM_X86_INSTR_TDPHF8PS:
     case LIBXSMM_X86_INSTR_TDPBF16PS:
     case LIBXSMM_X86_INSTR_TDPFP16PS:
-    case LIBXSMM_X86_INSTR_TTDPBF16PS:
-    case LIBXSMM_X86_INSTR_TTDPFP16PS:
     case LIBXSMM_X86_INSTR_TMMULTF32PS:
     case LIBXSMM_X86_INSTR_TTMMULTF32PS:
     case LIBXSMM_X86_INSTR_TCMMIMFP16PS:
     case LIBXSMM_X86_INSTR_TCMMRLFP16PS:
     case LIBXSMM_X86_INSTR_TCONJTCMMIMFP16PS:
     case LIBXSMM_X86_INSTR_TCONJTFP16:
-    case LIBXSMM_X86_INSTR_TTCMMIMFP16PS:
-    case LIBXSMM_X86_INSTR_TTCMMRLFP16PS:
-    case LIBXSMM_X86_INSTR_TTRANSPOSED:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: 0x%08x\n", i_tcompute_instr);
@@ -4089,16 +4076,12 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
       case LIBXSMM_X86_INSTR_TDPHF8PS:
       case LIBXSMM_X86_INSTR_TDPBF16PS:
       case LIBXSMM_X86_INSTR_TDPFP16PS:
-      case LIBXSMM_X86_INSTR_TTDPBF16PS:
-      case LIBXSMM_X86_INSTR_TTDPFP16PS:
       case LIBXSMM_X86_INSTR_TMMULTF32PS:
       case LIBXSMM_X86_INSTR_TTMMULTF32PS:
       case LIBXSMM_X86_INSTR_TCMMIMFP16PS:
       case LIBXSMM_X86_INSTR_TCMMRLFP16PS:
       case LIBXSMM_X86_INSTR_TCONJTCMMIMFP16PS:
       case LIBXSMM_X86_INSTR_TCONJTFP16:
-      case LIBXSMM_X86_INSTR_TTCMMIMFP16PS:
-      case LIBXSMM_X86_INSTR_TTCMMRLFP16PS:
       {
         if ( io_generated_code->code_type == 0 ) {
           l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
@@ -4106,18 +4089,6 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
         } else {
           l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u, %%tmm%u\n",
                                                        l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
-        }
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-        break;
-      }
-      case LIBXSMM_X86_INSTR_TTRANSPOSED:
-      {
-        if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
-                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_dst_reg_number );
-        } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u\n",
-                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_dst_reg_number );
         }
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
         break;
