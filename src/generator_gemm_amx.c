@@ -948,14 +948,17 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_MxK_32bit( libxsmm_generate
 
     /* advance output pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, o_gp_reg, (long long)2 * 4 * 16 - 2 * 16 * i_ldo);
-    /* advance input pointer (rewind 2 M-blocks, then step 16 K positions forward) */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, i_gp_reg, (long long)2 * i_ldi * 16 * l_in_dsize - 16 * l_in_dsize);
+    /* advance input pointer (rewind 2 M-blocks, then step forward by half the K-span).
+     * The forward step equals (i_K * l_in_dsize)/2: for the 8-bit/16-bit cases this is
+     * 64/2 = 32 (matching the original hardcoded constant), and for the fused F32->BF16
+     * case (i_K==32, l_in_dsize==4) this is 64. */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, i_gp_reg, (long long)2 * i_ldi * 16 * l_in_dsize - (long long)i_K * l_in_dsize / 2);
 
     /* close m loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_gp_reg_m_loop, 2 );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
 
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg, ((long long)2 * 16 * l_in_dsize));
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  i_gp_reg, ((long long)i_K * l_in_dsize));
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,  o_gp_reg, ((long long)4 * 16 * i_ldo) );
 
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
