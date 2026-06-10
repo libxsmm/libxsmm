@@ -1244,11 +1244,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_8bit( libxsmm_generated
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 1 );
     }
-    /* Store reserved masks */
+    /* Store reserved masks (use 64-bit KMOVQ + 8-byte stride: reserved masks may be
+       64-bit wide, e.g. mask_m_lp_cvt for BF8, and a 32-bit KMOVD would truncate them) */
     for (i = 0; i < 3; i++) {
       /* Mask move store to memory location gp_reg_gemm_scratch + i_micro_kernel_config->reserved_zmms * 64 */
-      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_ST, gp_reg_gemm_scratch,
-        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 4, l_mask_regs[i + 1]);
+      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVQ_ST, gp_reg_gemm_scratch,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 8, l_mask_regs[i + 1]);
     }
 
     /* set the masks for the load+blend stage */
@@ -1306,10 +1307,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_trans_KxN_8bit( libxsmm_generated
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVDQU64, gp_reg_gemm_scratch, LIBXSMM_X86_GP_REG_UNDEF, 0, i*64, 'z', i, 0, 0, 0 );
     }
+    /* Restore reserved masks (64-bit KMOVQ + 8-byte stride to match the store above) */
     for (i = 0; i < 3; i++) {
       /* Mask move load to memory location gp_reg_gemm_scratch + i_micro_kernel_config->reserved_zmms * 64 */
-      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_LD, gp_reg_gemm_scratch,
-        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 4, l_mask_regs[i + 1]);
+      libxsmm_x86_instruction_mask_move_mem(io_generated_code, LIBXSMM_X86_INSTR_KMOVQ_LD, gp_reg_gemm_scratch,
+        LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->reserved_zmms * 64 + i * 8, l_mask_regs[i + 1]);
     }
 
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
