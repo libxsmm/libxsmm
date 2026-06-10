@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+
+Name: libxsmm
+Description: @PROJECT_DESCRIPTION@
+URL: https://github.com/libxsmm/libxsmm/
+Version: @PROJECT_VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lxsmm
+Libs.private: @LIBXSMM_PC_PRIVATE_LIBS@

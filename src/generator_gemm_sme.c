@@ -246,7 +246,7 @@ void libxsmm_generator_gemm_aarch64_kloop_sme_het( libxsmm_generated_code*      
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_mapping->gp_reg_scf,
                                                           i_gp_reg_mapping->gp_reg_reduce_count, i_gp_reg_mapping->gp_reg_reduce_count, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     }
-    
+
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_mapping->gp_reg_help_2,
                                                           i_gp_reg_mapping->gp_reg_help_4, i_gp_reg_mapping->gp_reg_help_4, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_mapping->gp_reg_scf,
