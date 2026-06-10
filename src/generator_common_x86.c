@@ -1895,10 +1895,31 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
                                          i_vec_c0, i_vec_x2, i_vec_denom );
   }
 
+  /* Improve VRCPPS with one Newton-Raphson iteration. */
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VRCPPS,
                                        'y',
-                                       i_vec_denom, i_vec_denom );
+                                       i_vec_denom, i_vec_x2 );           /* x2    = r0 = rcp(d) */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMULPS,
+                                       'y',
+                                       i_vec_denom, i_vec_x2, i_vec_denom ); /* denom = d*r0 */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VSUBPS,
+                                       'y',
+                                       i_vec_ones, i_vec_denom, i_vec_denom ); /* denom = d*r0 - 1 */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMULPS,
+                                       'y',
+                                       i_vec_x2, i_vec_denom, i_vec_denom ); /* denom = r0*(d*r0 - 1) */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VSUBPS,
+                                       'y',
+                                       i_vec_denom, i_vec_x2, i_vec_denom ); /* denom = r0 - r0*(d*r0-1) = r0*(2 - d*r0) */
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                         LIBXSMM_X86_INSTR_VMULPS,
