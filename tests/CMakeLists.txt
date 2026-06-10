@@ -1,5 +1,5 @@
-# CMake-native test support mirroring the legacy tests/Makefile test entries.
-# Keep the build independent from the legacy Makefile path: CTest may reuse the
+# CMake-native test support mirroring the GNU Makefile test entries.
+# Keep the build independent from the GNU Makefile path: CTest may reuse the
 # existing shell runners, but all executables are built by CMake.
 
 find_package(BLAS QUIET)

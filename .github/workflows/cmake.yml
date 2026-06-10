@@ -1,0 +1,75 @@
+name: LIBXSMM tests with CMake
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shared: [static, shared]
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Install dependencies and tools
+      run: |
+        sudo apt update -y
+        sudo apt install -y gcc g++ gfortran libopenblas-openmp-dev ninja-build
+
+    - name: Configure
+      run: |
+        cmake -B build -GNinja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_INSTALL_PREFIX=$HOME/libxsmm-install \
+          -DBUILD_TESTING=ON \
+          -DBUILD_SHARED_LIBS=${{ matrix.shared == 'shared' && 'ON' || 'OFF' }}
+
+    - name: Build
+      run: cmake --build build -j $(nproc)
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure --parallel $(nproc)
+
+    - name: Install
+      run: cmake --install build
+
+    - name: Verify install
+      run: |
+        test -f $HOME/libxsmm-install/include/libxsmm.h
+        test -f $HOME/libxsmm-install/include/libxsmm_config.h
+        test -f $HOME/libxsmm-install/include/libxsmm_source.h
+        test -f $HOME/libxsmm-install/include/libxsmm_version.h
+        test -d $HOME/libxsmm-install/include/utils
+        ls $HOME/libxsmm-install/lib/libxsmm* >/dev/null
+        ls $HOME/libxsmm-install/lib/pkgconfig/libxsmm.pc >/dev/null
+        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmmConfig.cmake
+        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmmTargets.cmake
+
+    - name: Verify find_package
+      run: |
+        mkdir -p /tmp/test_find
+        cat > /tmp/test_find/CMakeLists.txt <<'EOF'
+        cmake_minimum_required(VERSION 3.13)
+        project(test_find C)
+        find_package(libxsmm CONFIG REQUIRED)
+        add_executable(test_find test_find.c)
+        target_link_libraries(test_find libxsmm::libxsmm)
+        EOF
+        cat > /tmp/test_find/test_find.c <<'EOF'
+        #include <libxsmm.h>
+        int main(void) { libxsmm_init(); libxsmm_finalize(); return 0; }
+        EOF
+        cmake -B /tmp/test_find/build -S /tmp/test_find \
+          -DCMAKE_PREFIX_PATH=$HOME/libxsmm-install
+        cmake --build /tmp/test_find/build
+        /tmp/test_find/build/test_find
