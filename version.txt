@@ -1,1 +1,1 @@
-feature_8bit_amx_gemms_via_stack-1.17-3820
+fix_hsw_gemm-1.17-3815
