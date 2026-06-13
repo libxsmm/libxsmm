@@ -298,10 +298,9 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo, ldi2, ldi3;
-  /** Size of data element. */
-  unsigned char datatype;
-  unsigned char datatype1;
-  unsigned char datatype2;
+  /** Combined datatype field, six bits per sub-field:
+   *  IN0=datatypes[5:0], IN1=datatypes[11:6], IN2=datatypes[17:12], OUT=datatypes[23:18], COMP=datatypes[29:24] */
+  unsigned int datatypes;
   /** Set of flags */
   unsigned short flags;
   /** combined param/operation field (bits[2:0]=operation, bits[15:3]=param) */

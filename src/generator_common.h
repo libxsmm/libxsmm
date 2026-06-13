@@ -2382,4 +2382,11 @@ LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char 
 LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype);
 LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
 
+LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_IN0_PREC(const unsigned int datatypes);
+LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_IN1_PREC(const unsigned int datatypes);
+LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_IN2_PREC(const unsigned int datatypes);
+LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_OUT_PREC(const unsigned int datatypes);
+LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_COMP_PREC(const unsigned int datatypes);
+LIBXSMM_API_INTERN void LIBXSMM_MELTW_SET_DESC_DATATYPE(libxsmm_datatype in0_dt, libxsmm_datatype in1_dt, libxsmm_datatype in2_dt, libxsmm_datatype out_dt, libxsmm_datatype comp_dt, unsigned int *out_datatypes);
+
 #endif /* GENERATOR_COMMON_H */

@@ -915,19 +915,54 @@ void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt
 }
 
 LIBXSMM_API_INTERN
+int LIBXSMM_MELTW_GETENUM_IN0_PREC(const unsigned int datatypes) {
+  return (int)( datatypes & 0x3f );
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_MELTW_GETENUM_IN1_PREC(const unsigned int datatypes) {
+  return (int)( (datatypes >> 6) & 0x3f );
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_MELTW_GETENUM_IN2_PREC(const unsigned int datatypes) {
+  return (int)( (datatypes >> 12) & 0x3f );
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_MELTW_GETENUM_OUT_PREC(const unsigned int datatypes) {
+  return (int)( (datatypes >> 18) & 0x3f );
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_MELTW_GETENUM_COMP_PREC(const unsigned int datatypes) {
+  return (int)( (datatypes >> 24) & 0x3f );
+}
+
+LIBXSMM_API_INTERN
+void LIBXSMM_MELTW_SET_DESC_DATATYPE(libxsmm_datatype in0_dt, libxsmm_datatype in1_dt, libxsmm_datatype in2_dt, libxsmm_datatype out_dt, libxsmm_datatype comp_dt, unsigned int *out_datatypes) {
+  unsigned int ui_in0  = ((unsigned int)in0_dt ) & 0x3f; /* IN0  -> datatypes[5:0]   */
+  unsigned int ui_in1  = ((unsigned int)in1_dt ) & 0x3f; /* IN1  -> datatypes[11:6]  */
+  unsigned int ui_in2  = ((unsigned int)in2_dt ) & 0x3f; /* IN2  -> datatypes[17:12] */
+  unsigned int ui_out  = ((unsigned int)out_dt ) & 0x3f; /* OUT  -> datatypes[23:18] */
+  unsigned int ui_comp = ((unsigned int)comp_dt) & 0x3f; /* COMP -> datatypes[29:24] */
+  *out_datatypes = ui_in0 | (ui_in1 << 6) | (ui_in2 << 12) | (ui_out << 18) | (ui_comp << 24);
+}
+
+LIBXSMM_API_INTERN
 int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwise_desc,
                                      libxsmm_meltw_field_type        type) {
   int result = 0;
   if (type == LIBXSMM_MELTW_FIELD_IN0) {
-    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype );
+    result = LIBXSMM_MELTW_GETENUM_IN0_PREC( i_mateltwise_desc->datatypes );
   } else if (type == LIBXSMM_MELTW_FIELD_IN1) {
-    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype1 );
+    result = LIBXSMM_MELTW_GETENUM_IN1_PREC( i_mateltwise_desc->datatypes );
   } else if (type == LIBXSMM_MELTW_FIELD_IN2) {
-    result = LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype1 );
+    result = LIBXSMM_MELTW_GETENUM_IN2_PREC( i_mateltwise_desc->datatypes );
   } else if (type == LIBXSMM_MELTW_FIELD_OUT) {
-    result = LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype );
+    result = LIBXSMM_MELTW_GETENUM_OUT_PREC( i_mateltwise_desc->datatypes );
   } else if (type == LIBXSMM_MELTW_FIELD_COMP) {
-    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype2 );
+    result = LIBXSMM_MELTW_GETENUM_COMP_PREC( i_mateltwise_desc->datatypes );
   }
   return result;
 }
