@@ -2050,19 +2050,6 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
 }
 
 
-LIBXSMM_API_INLINE void internal_get_typesize_string(char buffer[4], int buffer_size, size_t typesize)
-{
-  LIBXSMM_ASSERT(256 > typesize && 4 <= buffer_size);
-  if (10 > typesize) {
-    buffer[0] = (char)('0' + typesize);
-    buffer[1] = 0;
-  }
-  else {
-    LIBXSMM_SNPRINTF(buffer, buffer_size, "%i", (int)(typesize & 0xFF));
-  }
-}
-
-
 LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique, int overwrite)
 {
   int result;
@@ -2581,19 +2568,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          char tsizename[4];
-          char tsizename1[4];
-          char tsizename2[4];
-          char tsizename3[4];
-          char tsizename4[4];
           const unsigned int meltw_datatypes = request->descriptor.meltw->datatypes;
-          internal_get_typesize_string(tsizename, sizeof(tsizename), (unsigned char)LIBXSMM_MELTW_GETENUM_IN0_PREC(meltw_datatypes));
-          internal_get_typesize_string(tsizename1, sizeof(tsizename1), (unsigned char)LIBXSMM_MELTW_GETENUM_IN1_PREC(meltw_datatypes));
-          internal_get_typesize_string(tsizename2, sizeof(tsizename2), (unsigned char)LIBXSMM_MELTW_GETENUM_IN2_PREC(meltw_datatypes));
-          internal_get_typesize_string(tsizename3, sizeof(tsizename3), (unsigned char)LIBXSMM_MELTW_GETENUM_OUT_PREC(meltw_datatypes));
-          internal_get_typesize_string(tsizename4, sizeof(tsizename4), (unsigned char)LIBXSMM_MELTW_GETENUM_COMP_PREC(meltw_datatypes));
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename, tsizename1, tsizename2, tsizename3, tsizename4,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch,
+            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_IN0_PREC(meltw_datatypes)),
+            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_IN1_PREC(meltw_datatypes)),
+            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_IN2_PREC(meltw_datatypes)),
+            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_OUT_PREC(meltw_datatypes)),
+            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_COMP_PREC(meltw_datatypes)),
             request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo, request->descriptor.meltw->ldi2, request->descriptor.meltw->ldi3,
             (unsigned int)libxsmm_meltw_descriptor_get_operation(request->descriptor.meltw), (unsigned int)request->descriptor.meltw->flags, (unsigned int)libxsmm_meltw_descriptor_get_param(request->descriptor.meltw));
         }
@@ -2616,9 +2598,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), (size_t)LIBXSMM_MEQN_GETENUM_OUT_PREC(request->descriptor.meqn->datatype));
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u_eqn-idx%u.meltw", target_arch, tsizename,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u_eqn-idx%u.meltw", target_arch,
+            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MEQN_GETENUM_OUT_PREC(request->descriptor.meqn->datatype)),
             request->descriptor.meqn->m, request->descriptor.meqn->n, request->descriptor.meqn->ldo,
             (unsigned int)request->descriptor.meqn->eqn_idx);
         }
