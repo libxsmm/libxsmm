@@ -2,12 +2,11 @@
 # Keep the build independent from the GNU Makefile path: CTest may reuse the
 # existing shell runners, but all executables are built by CMake.
 
-find_package(BLAS QUIET)
 find_package(OpenMP COMPONENTS C)
 
-set(LIBXSMM_CTEST_WITH_BLAS_SAMPLES "${BLAS_FOUND}" CACHE BOOL
-  "Build CTest sample programs which require external BLAS")
-if(LIBXSMM_CTEST_WITH_BLAS_SAMPLES AND NOT BLAS_FOUND)
+option(LIBXSMM_CTEST_WITH_BLAS_REFERENCE
+  "Build selected sample tests with an external BLAS reference path" OFF)
+if(LIBXSMM_CTEST_WITH_BLAS_REFERENCE)
   find_package(BLAS REQUIRED)
 endif()
 
@@ -109,9 +108,14 @@ function(libxsmm_add_c_sample target rel_dir output_name source)
   libxsmm_set_runtime_output(${target} "${rel_dir}" "${output_name}")
 endfunction()
 
-function(libxsmm_add_blas_c_sample target rel_dir output_name source)
+function(libxsmm_add_fsspmdm_sample target rel_dir output_name source)
   libxsmm_add_c_sample(${target} "${rel_dir}" "${output_name}" "${source}")
-  target_link_libraries(${target} PRIVATE ${BLAS_LIBRARIES})
+  if(LIBXSMM_CTEST_WITH_BLAS_REFERENCE)
+    target_compile_definitions(${target} PRIVATE __USE_BLAS=1)
+    target_link_libraries(${target} PRIVATE ${BLAS_LIBRARIES})
+  else()
+    target_compile_definitions(${target} PRIVATE __USE_BLAS=0)
+  endif()
 endfunction()
 
 set(LIBXSMM_HEADER_ONLY_TESTS
@@ -139,10 +143,8 @@ set(LIBXSMM_TEST_ENTRIES
   dispatch.sh
   eltwise.sh
   equation.sh)
-if(LIBXSMM_CTEST_WITH_BLAS_SAMPLES)
-  list(APPEND LIBXSMM_TEST_ENTRIES fsspmdm.sh)
-endif()
 list(APPEND LIBXSMM_TEST_ENTRIES
+  fsspmdm.sh
   memcmp.sh
   packed.sh
   smm.sh)
@@ -225,11 +227,9 @@ endforeach()
 libxsmm_add_c_sample(libxsmm_sample_gimmik
   "samples/xgemm_sparse_Ainregs" "gimmik"
   "samples/xgemm_sparse_Ainregs/gimmik.c")
-if(LIBXSMM_CTEST_WITH_BLAS_SAMPLES)
-  libxsmm_add_blas_c_sample(libxsmm_sample_pyfr_driver_asp_reg
-    "samples/xgemm_sparse_Ainregs" "pyfr_driver_asp_reg"
-    "samples/xgemm_sparse_Ainregs/pyfr_driver_asp_reg.c")
-endif()
+libxsmm_add_fsspmdm_sample(libxsmm_sample_pyfr_driver_asp_reg
+  "samples/xgemm_sparse_Ainregs" "pyfr_driver_asp_reg"
+  "samples/xgemm_sparse_Ainregs/pyfr_driver_asp_reg.c")
 
 add_custom_target(libxsmm_generate_eltwise_test_scripts ALL
   COMMAND "${CMAKE_COMMAND}" -E env bash ./generate_unary_simple_test_scripts.sh
@@ -307,7 +307,5 @@ libxsmm_require_test_files(packed
   "${LIBXSMM_SAMPLE_ROOT}/xgemm_norm_packed/dense_packedacrm_f64"
   "${LIBXSMM_SAMPLE_ROOT}/xgemm_norm_packed/dense_packedbcrm_f32"
   "${LIBXSMM_SAMPLE_ROOT}/xgemm_norm_packed/dense_packedbcrm_f64")
-if(LIBXSMM_CTEST_WITH_BLAS_SAMPLES)
-  libxsmm_require_test_files(fsspmdm
-    "${LIBXSMM_SAMPLE_ROOT}/xgemm_sparse_Ainregs/pyfr_driver_asp_reg")
-endif()
+libxsmm_require_test_files(fsspmdm
+  "${LIBXSMM_SAMPLE_ROOT}/xgemm_sparse_Ainregs/pyfr_driver_asp_reg")

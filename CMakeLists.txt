@@ -14,7 +14,6 @@ message(WARNING
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-option(XSMM_BLAS "Build libxsmm with external BLAS fallback support" OFF)
 option(BUILD_SHARED_LIBS "Build libxsmm as a shared library" OFF)
 option(BUILD_TESTING "Build unittests" OFF)
 
@@ -29,7 +28,6 @@ message(STATUS "  CMake command         : ${CMAKE_COMMAND}")
 message(STATUS "  System                : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Options:")
 message(STATUS "  BUILD_SHARED_LIBS     : ${BUILD_SHARED_LIBS}")
-message(STATUS "  XSMM_BLAS             : ${XSMM_BLAS}")
 
 # Platform
 set(LINUX False)
@@ -114,12 +112,8 @@ target_compile_definitions(xsmm
     $<$<BOOL:${LINUX}>:LIBXSMM_BUILD=2>
     $<$<NOT:$<BOOL:${LINUX}>>:LIBXSMM_BUILD=1>)
 
-if(NOT XSMM_BLAS)
-  target_compile_definitions(xsmm PRIVATE __BLAS=0)
-else()
-  find_package(BLAS REQUIRED)
-  target_link_libraries(xsmm PUBLIC ${BLAS_LIBRARIES})
-endif()
+# Keep the core library independent from classic BLAS wrappers/fallbacks.
+target_compile_definitions(xsmm PRIVATE __BLAS=0)
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
   target_compile_options(xsmm PRIVATE -U_DEBUG)
@@ -191,9 +185,6 @@ if(XSMM_LIBM)
 endif()
 if(XSMM_LIBRT)
   list(APPEND LIBXSMM_PC_PRIVATE_LIBS "-lrt")
-endif()
-if(XSMM_BLAS)
-  list(APPEND LIBXSMM_PC_PRIVATE_LIBS "${BLAS_LIBRARIES}")
 endif()
 list(JOIN LIBXSMM_PC_PRIVATE_LIBS " " LIBXSMM_PC_PRIVATE_LIBS)
 
