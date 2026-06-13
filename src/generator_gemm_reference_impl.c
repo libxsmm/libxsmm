@@ -396,8 +396,8 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
     }
   }
 
-  if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_BINARY) {
-    if (i_xgemm_desc->meltw_param == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
+  if (libxsmm_gemm_descriptor_get_meltw_operation(i_xgemm_desc) == LIBXSMM_MELTW_OPERATION_BINARY) {
+    if (libxsmm_gemm_descriptor_get_meltw_param(i_xgemm_desc) == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
       if (((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0 ) ||
           ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0 )) {
         l_gemm_def.fuse_colbias_add = 1;

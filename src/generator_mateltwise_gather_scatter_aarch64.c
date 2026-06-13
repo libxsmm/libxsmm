@@ -52,7 +52,7 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
     l_max_m_unrolling = (unsigned int)LIBXSMM_MAX(1, atoi(l_env_max_m_unroll));
   }
 #endif
-  l_is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  l_is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
 
   i_gp_reg_mapping->gp_reg_n        = LIBXSMM_AARCH64_GP_REG_X8;
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_AARCH64_GP_REG_X9;
@@ -334,7 +334,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
                                                                  : ((l_idx_tsize == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF_SCALE : LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF64_SCALE);
   l_scatter_instr = (i_micro_kernel_config->datatype_size_in == 4) ? ((l_idx_tsize == 4) ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF_SCALE : LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF64_SCALE)
                                                                  : ((l_idx_tsize == 4) ? LIBXSMM_AARCH64_INSTR_SVE_ST1H_V_OFF_SCALE : LIBXSMM_AARCH64_INSTR_SVE_ST1H_V_OFF64_SCALE);
-  l_is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  l_is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
 
   i_gp_reg_mapping->gp_reg_n        = LIBXSMM_AARCH64_GP_REG_X8;
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_AARCH64_GP_REG_X9;
@@ -631,7 +631,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
                                                                  : ((l_idx_tsize == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF_SCALE : LIBXSMM_AARCH64_INSTR_SVE_LD1H_V_OFF64_SCALE);
   l_scatter_instr = (i_micro_kernel_config->datatype_size_in == 4) ? ((l_idx_tsize == 4) ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF_SCALE : LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF64_SCALE)
                                                                  : ((l_idx_tsize == 4) ? LIBXSMM_AARCH64_INSTR_SVE_ST1H_V_OFF_SCALE : LIBXSMM_AARCH64_INSTR_SVE_ST1H_V_OFF64_SCALE);
-  l_is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  l_is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
 
   i_gp_reg_mapping->gp_reg_n        = LIBXSMM_AARCH64_GP_REG_X8;
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_AARCH64_GP_REG_X9;
@@ -767,7 +767,7 @@ void libxsmm_generator_gather_scatter_aarch64_microkernel( libxsmm_generated_cod
                                                            libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                            const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                            const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
-  unsigned int l_is_scatter = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ? 1 : 0;
+  unsigned int l_is_scatter = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ? 1 : 0;
   if( l_is_scatter && io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4) io_generated_code->arch = LIBXSMM_AARCH64_APPL_M1;
   if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS ) > 0 ) {
     libxsmm_generator_gather_scatter_cols_aarch64_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );

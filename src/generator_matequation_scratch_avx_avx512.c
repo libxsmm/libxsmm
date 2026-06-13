@@ -197,8 +197,8 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
   }
 
   if (cur_op->fusion_info.xgemm.fused_colbias_add_op == 1) {
-    desc->meltw_operation     = LIBXSMM_MELTW_OPERATION_BINARY;
-    desc->meltw_param         = LIBXSMM_MELTW_TYPE_BINARY_ADD;
+    libxsmm_gemm_descriptor_set_meltw_operation(desc, LIBXSMM_MELTW_OPERATION_BINARY);
+    libxsmm_gemm_descriptor_set_meltw_param(desc, LIBXSMM_MELTW_TYPE_BINARY_ADD);
     desc->meltw_flags         = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
     desc->meltw_datatype_aux  = LIBXSMM_CAST_UCHAR(cur_op->fusion_info.xgemm.colbias_dtype);
   }
@@ -743,7 +743,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         i_micro_kernel_config->meltw_kernel_config.rbp_offs_half = libxsmm_generator_mateqn_get_rbp_relative_offset(LIBXSMM_MEQN_STACK_VAR_CONST_5);
       }
       /* Call proper JITer */
-      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
+      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
         if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
           libxsmm_generator_meltw_setup_stack_frame( io_generated_code, meltw_desc, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config);
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
@@ -755,9 +755,9 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }
-      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(meltw_desc->param) > 0)) {
+      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
         libxsmm_generator_reduce_cols_index_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
-      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
+      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_transform_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
         libxsmm_generator_transform_x86_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) )) {
         libxsmm_generator_gather_scatter_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );

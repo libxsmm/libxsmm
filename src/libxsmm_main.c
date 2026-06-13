@@ -2352,7 +2352,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
               0 != (LIBXSMM_GEMM_FLAG_VNNI_A  & request->descriptor.gemm->flags) ? 1 : 0,
               0 != (LIBXSMM_GEMM_FLAG_VNNI_B  & request->descriptor.gemm->flags) ? 1 : 0,
               0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0,
-              (unsigned int)request->descriptor.gemm->meltw_param, meltw_tname, (unsigned int)request->descriptor.gemm->meltw_flags,
+              (unsigned int)libxsmm_gemm_descriptor_get_meltw_param(request->descriptor.gemm), meltw_tname, (unsigned int)request->descriptor.gemm->meltw_flags,
               request->descriptor.gemm->meltw_ldx, request->descriptor.gemm->meltw_ldy, request->descriptor.gemm->meltw_ldz,
               (unsigned int)request->descriptor.gemm->eltw_ap_param, (unsigned int)request->descriptor.gemm->eltw_ap_flags, request->descriptor.gemm->ldap,
               (unsigned int)request->descriptor.gemm->eltw_bp_param, (unsigned int)request->descriptor.gemm->eltw_bp_flags, request->descriptor.gemm->ldbp,
@@ -2624,7 +2624,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename, tsizename1, tsizename2,
             request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo, request->descriptor.meltw->ldi2, request->descriptor.meltw->ldi3,
-            (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags, (unsigned int)request->descriptor.meltw->param);
+            (unsigned int)libxsmm_meltw_descriptor_get_operation(request->descriptor.meltw), (unsigned int)request->descriptor.meltw->flags, (unsigned int)libxsmm_meltw_descriptor_get_param(request->descriptor.meltw));
         }
       }
     } break;
@@ -3124,7 +3124,7 @@ LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libx
         NULL != desc && LIBXSMM_KERNEL_KIND_MELTW == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
       info->datatype = desc->meltw.desc.datatype;
-      info->operation = desc->meltw.desc.operation;
+      info->operation = libxsmm_meltw_descriptor_get_operation(&desc->meltw.desc);
       info->flags = desc->meltw.desc.flags;
       info->ldi = desc->meltw.desc.ldi;
       info->ldo = desc->meltw.desc.ldo;
