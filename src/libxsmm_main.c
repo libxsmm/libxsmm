@@ -2058,7 +2058,7 @@ LIBXSMM_API_INLINE void internal_get_typesize_string(char buffer[4], int buffer_
     buffer[1] = 0;
   }
   else {
-    LIBXSMM_SNPRINTF(buffer, buffer_size, "%i", (int)typesize);
+    LIBXSMM_SNPRINTF(buffer, buffer_size, "%i", (int)(typesize & 0xFF));
   }
 }
 
