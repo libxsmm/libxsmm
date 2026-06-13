@@ -2045,41 +2045,7 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_U16:  return "u16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
     case LIBXSMM_DATATYPE_IMPLICIT:   return "implicit";
-    default: {
-      if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
-          LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
-      {
-        return "i16i32";
-      }
-      else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
-      {
-        return "i16f32";
-      }
-      else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
-      {
-        return "i8i32";
-      }
-      else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
-      {
-        return "bf16f32";
-      }
-      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
-      {
-        return "bf8f32";
-      }
-      else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
-      {
-        return "hf8f32";
-      }
-      else {
-        return "void";
-      }
-    }
+    default: return "void";
   }
 }
 
@@ -2618,12 +2584,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tsizename[4];
           char tsizename1[4];
           char tsizename2[4];
+          char tsizename3[4];
+          char tsizename4[4];
           const unsigned int meltw_datatypes = request->descriptor.meltw->datatypes;
-          internal_get_typesize_string(tsizename, sizeof(tsizename), (unsigned char)LIBXSMM_GETENUM(LIBXSMM_MELTW_GETENUM_IN0_PREC(meltw_datatypes), LIBXSMM_MELTW_GETENUM_OUT_PREC(meltw_datatypes)));
-          internal_get_typesize_string(tsizename1, sizeof(tsizename1), (unsigned char)LIBXSMM_GETENUM(LIBXSMM_MELTW_GETENUM_IN1_PREC(meltw_datatypes), LIBXSMM_MELTW_GETENUM_IN2_PREC(meltw_datatypes)));
-          internal_get_typesize_string(tsizename2, sizeof(tsizename2), (unsigned char)LIBXSMM_GETENUM(LIBXSMM_MELTW_GETENUM_COMP_PREC(meltw_datatypes), LIBXSMM_MELTW_GETENUM_OUT_PREC(meltw_datatypes)));
+          internal_get_typesize_string(tsizename, sizeof(tsizename), (unsigned char)LIBXSMM_MELTW_GETENUM_IN0_PREC(meltw_datatypes));
+          internal_get_typesize_string(tsizename1, sizeof(tsizename1), (unsigned char)LIBXSMM_MELTW_GETENUM_IN1_PREC(meltw_datatypes));
+          internal_get_typesize_string(tsizename2, sizeof(tsizename2), (unsigned char)LIBXSMM_MELTW_GETENUM_IN2_PREC(meltw_datatypes));
+          internal_get_typesize_string(tsizename3, sizeof(tsizename3), (unsigned char)LIBXSMM_MELTW_GETENUM_OUT_PREC(meltw_datatypes));
+          internal_get_typesize_string(tsizename4, sizeof(tsizename4), (unsigned char)LIBXSMM_MELTW_GETENUM_COMP_PREC(meltw_datatypes));
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename, tsizename1, tsizename2,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename, tsizename1, tsizename2, tsizename3, tsizename4,
             request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo, request->descriptor.meltw->ldi2, request->descriptor.meltw->ldi3,
             (unsigned int)libxsmm_meltw_descriptor_get_operation(request->descriptor.meltw), (unsigned int)request->descriptor.meltw->flags, (unsigned int)libxsmm_meltw_descriptor_get_param(request->descriptor.meltw));
         }
@@ -3124,7 +3094,7 @@ LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libx
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MELTW == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
-      info->datatype = (unsigned int)LIBXSMM_GETENUM(LIBXSMM_MELTW_GETENUM_IN0_PREC(desc->meltw.desc.datatypes), LIBXSMM_MELTW_GETENUM_OUT_PREC(desc->meltw.desc.datatypes));
+      info->datatype = (unsigned int)LIBXSMM_MELTW_GETENUM_IN0_PREC(desc->meltw.desc.datatypes);
       info->operation = libxsmm_meltw_descriptor_get_operation(&desc->meltw.desc);
       info->flags = desc->meltw.desc.flags;
       info->ldi = desc->meltw.desc.ldi;

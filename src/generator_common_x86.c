@@ -4070,7 +4070,7 @@ void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated
                                             const unsigned int      i_mask_reg,
                                             const unsigned int      i_mask_count,
                                             const libxsmm_datatype  i_datatype) {
-  const int datatype = LIBXSMM_GETENUM_INP(i_datatype); /* handle signed and unsigned types */
+  const int datatype = LIBXSMM_GETENUM_SIGNED_DATATYPE(i_datatype); /* handle signed and unsigned types */
   if ( datatype == LIBXSMM_DATATYPE_F64 || datatype == LIBXSMM_DATATYPE_I64 ) {
     unsigned long long mask_array[4] = {0, 0, 0, 0};
     unsigned int i;

@@ -844,7 +844,7 @@ LIBXSMM_API_INTERN
 int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype) {
   unsigned char uc_first_part = (unsigned char)datatype[0];
   unsigned char a_prec_bits = uc_first_part & 0x3f;
-  int result = LIBXSMM_GETENUM_INP(a_prec_bits);
+  int result = LIBXSMM_GETENUM_SIGNED_DATATYPE(a_prec_bits);
   return result;
 }
 
@@ -853,7 +853,7 @@ int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype) {
   unsigned char uc_first_part = ((unsigned char)datatype[0] & 0xc0) >> 6;
   unsigned char uc_second_part =((unsigned char)datatype[1] & 0x0f) << 2;
   unsigned char b_prec_bits = uc_first_part | uc_second_part;
-  int result = LIBXSMM_GETENUM_INP(b_prec_bits);
+  int result = LIBXSMM_GETENUM_SIGNED_DATATYPE(b_prec_bits);
   return result;
 }
 
@@ -862,7 +862,7 @@ int LIBXSMM_GEMM_GETENUM_C_PREC(const unsigned char *datatype) {
   unsigned char uc_first_part = ((unsigned char)datatype[1] & 0xf0) >> 4;
   unsigned char uc_second_part =((unsigned char)datatype[2] & 0x03) << 4;
   unsigned char c_prec_bits = uc_first_part | uc_second_part;
-  int result = LIBXSMM_GETENUM_INP(c_prec_bits);
+  int result = LIBXSMM_GETENUM_SIGNED_DATATYPE(c_prec_bits);
   return result;
 }
 
@@ -870,7 +870,7 @@ LIBXSMM_API_INTERN
 int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype) {
   unsigned char uc_first_part = (unsigned char)datatype[2];
   unsigned char c_prec_bits = (uc_first_part & 0xfc) >> 2;
-  int result = LIBXSMM_GETENUM_INP(c_prec_bits);
+  int result = LIBXSMM_GETENUM_SIGNED_DATATYPE(c_prec_bits);
   return result;
 }
 
@@ -952,7 +952,7 @@ void LIBXSMM_MELTW_SET_DESC_DATATYPE(libxsmm_datatype in0_dt, libxsmm_datatype i
 LIBXSMM_API_INTERN
 int LIBXSMM_MEQN_GETENUM_OUT_PREC(const unsigned char datatype) {
   unsigned char out_prec_bits = datatype & 0x3f; /* OUT -> datatype[5:0] */
-  int result = LIBXSMM_GETENUM_INP(out_prec_bits);
+  int result = LIBXSMM_GETENUM_SIGNED_DATATYPE(out_prec_bits);
   return result;
 }
 
