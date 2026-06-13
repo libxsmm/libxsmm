@@ -1637,12 +1637,13 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
   }
 
-  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0 || l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0 || i_micro_kernel_config->btrans_gemm_sw_pipeline > 0)) {
+  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0 || l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 || i_micro_kernel_config->atrans_gemm_sw_pipeline > 0 || i_micro_kernel_config->btrans_gemm_sw_pipeline > 0 || i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0)) {
     unsigned int l_sw_pipeline_panels = (libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity() > 0 && i_micro_kernel_config->n_gemm_code_blocks == 1) ? 1 : 0;
     unsigned int l_decompress_dtype = (l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0) ? 1 : 2;
     unsigned int scratch_a_decompress_size = 2 * (LIBXSMM_MIN(i_xgemm_desc->m, 64) * i_xgemm_desc->k) * l_decompress_dtype;
     unsigned int scratch_a_decompress_pad  = (scratch_a_decompress_size % 64 == 0) ? 0 : ((scratch_a_decompress_size + 63)/64) * 64 - scratch_a_decompress_size;
-    unsigned int scratch_b_decompress_size = 2 * (i_xgemm_desc->n * i_xgemm_desc->k * 2);
+    unsigned int l_b_dim_for_scratch = (i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) ? LIBXSMM_MAX(i_xgemm_desc->ldb, i_xgemm_desc->k) : i_xgemm_desc->k;
+    unsigned int scratch_b_decompress_size = 2 * (i_xgemm_desc->n * l_b_dim_for_scratch * 2);
     unsigned int scratch_b_decompress_pad  = (scratch_b_decompress_size % 64 == 0) ? 0 : ((scratch_b_decompress_size + 63)/64) * 64 - scratch_b_decompress_size;
     int is_stride_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
     int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
@@ -1653,7 +1654,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
       unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
       scratch_a_decompress_size = (i_xgemm_desc->m * i_xgemm_desc->k) * 2;
       scratch_a_decompress_pad  = (scratch_a_decompress_size % 64 == 0) ? 0 : ((scratch_a_decompress_size + 63)/64) * 64 - scratch_a_decompress_size;
-      scratch_b_decompress_size = (i_xgemm_desc->n * i_xgemm_desc->k) * 2;
+      scratch_b_decompress_size = (i_xgemm_desc->n * l_b_dim_for_scratch) * 2;
       scratch_b_decompress_pad  = (scratch_b_decompress_size % 64 == 0) ? 0 : ((scratch_b_decompress_size + 63)/64) * 64 - scratch_b_decompress_size;
       scratch_a_decompress_size += scratch_a_decompress_pad;
 
@@ -1662,7 +1663,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
       libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, temp_reg, LIBXSMM_X86_GP_REG_RSP );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BUF1, LIBXSMM_X86_GP_REG_RSP );
 
-      if (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) {
+      if (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0 || i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) {
         scratch_b_decompress_size += scratch_b_decompress_pad;
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, temp_reg, scratch_b_decompress_size);
@@ -1674,7 +1675,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_a_decompress_size );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BUF1, LIBXSMM_X86_GP_REG_RSP );
 
-      if (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) {
+      if (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0 || i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) {
         scratch_b_decompress_size += scratch_b_decompress_pad;
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_b_decompress_size );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BUF2, LIBXSMM_X86_GP_REG_RSP );

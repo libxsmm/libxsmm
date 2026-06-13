@@ -11,6 +11,8 @@
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
+#include <stdio.h>
+#include <stdlib.h>
 #if defined(__APPLE__) && defined(__arm64__)
 # include <pthread.h>
 #endif
@@ -84,6 +86,7 @@ typedef struct gemm_def {
   unsigned int is_Abf8Bbf16_gemm;
   unsigned int is_Abf8Bf16_gemm;
   unsigned int is_Ahf8Bbf16_gemm;
+  unsigned int is_Abf32Bbf32_gemm;
   unsigned int fuse_zpt_sub;
 } gemm_def;
 
@@ -1000,32 +1003,45 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
     const float* f_a = (const float*)a;
     const float* f_b = (const float*)b;
-    float*       f_c = (float*)c;
-
+    float* f_c = (float*)c;
+    const char* env_fp32_via_bf16 = getenv("LIBXSMM_USE_FP32_VIA_BF16");
+    int l_use_bf16 = (env_fp32_via_bf16 != NULL && env_fp32_via_bf16[0] != '0') ? 1 : 0;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
-        if ( i_gemm_def->beta == 0 ) {
+        if (i_gemm_def->beta == 0) {
           f_c[(l_j * ldc) + l_i] = 0.0f;
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < k; l_s++) {
+            float a_val, b_val;
             if (i_gemm_def->trans_b == 0) {
               if (i_gemm_def->trans_a == 0) {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
-              } else {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                a_val = f_a[(l_r * lda * k) + (l_s * lda) + l_i];
+                b_val = f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+              }
+              else {
+                a_val = f_a[(l_r * lda * m) + (l_i * lda) + l_s];
+                b_val = f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
               } /* if-else l_trans_a */
-            } else {
+            }
+            else {
               if (i_gemm_def->trans_a == 0) {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
-                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
-              } else {
-                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
-                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+                a_val = f_a[(l_r * lda * k) + (l_s * lda) + l_i];
+                b_val = f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+              }
+              else {
+                a_val = f_a[(l_r * lda * m) + (l_i * lda) + l_s];
+                b_val = f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
               } /* if-else l_trans_a */
             } /* if-else l_trans_b */
+            if (l_use_bf16) {
+              libxsmm_bfloat16 tmp_bf16;
+              libxsmm_rne_convert_fp32_bf16(&a_val, &tmp_bf16, 1);
+              libxsmm_convert_bf16_f32(&tmp_bf16, &a_val, 1);
+              libxsmm_rne_convert_fp32_bf16(&b_val, &tmp_bf16, 1);
+              libxsmm_convert_bf16_f32(&tmp_bf16, &b_val, 1);
+            }
+            f_c[(l_j * ldc) + l_i] += a_val * b_val;
           }
         }
       }
@@ -2894,6 +2910,7 @@ int main(int argc, char* argv []) {
   l_gemm_def.is_Abf8Bbf16_gemm = 0;
   l_gemm_def.is_Abf8Bf16_gemm = 0;
   l_gemm_def.is_Ahf8Bbf16_gemm = 0;
+  l_gemm_def.is_Abf32Bbf32_gemm = 0;
   /* check argument count for a valid range */
   if ( argc == 25 || argc == 26 || argc == 27 || argc == 28 ) {
     /* datatypes */
@@ -2954,11 +2971,20 @@ int main(int argc, char* argv []) {
       l_dtype_a_size = 1;
       l_gemm_def.is_Ahf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
+    } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
+      l_gemm_def.is_Abf32Bbf32_gemm = 1;
+      l_dtype_a    = LIBXSMM_DATATYPE_F32;
+      l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
+      putenv("LIBXSMM_USE_FP32_VIA_BF16=1");
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(l_dtype_a));
     }
-    l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    if (l_gemm_def.is_Abf32Bbf32_gemm) {
+      l_dtype_b = LIBXSMM_DATATYPE_F32;
+    } else {
+      l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    }
     l_dtype_comp = char_to_libxsmm_datatype( l_comp_dt );
     l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
     l_dtype_b_size = (double)(LIBXSMM_TYPESIZE(l_dtype_b));
@@ -3098,10 +3124,18 @@ int main(int argc, char* argv []) {
     } else if (strcmp(argv[1], "HF8") == 0 && strcmp(argv[2], "BF16") == 0) {
       l_gemm_def.is_Ahf8Bbf16_gemm = 1;
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
+    } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
+      l_gemm_def.is_Abf32Bbf32_gemm = 1;
+      l_dtype_a    = LIBXSMM_DATATYPE_F32;
+      putenv("LIBXSMM_USE_FP32_VIA_BF16=1");
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
     }
-    l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    if (l_gemm_def.is_Abf32Bbf32_gemm) {
+      l_dtype_b = LIBXSMM_DATATYPE_F32;
+    } else {
+      l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
+    }
     l_dtype_comp = char_to_libxsmm_datatype( l_comp_dt );
     l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
 
