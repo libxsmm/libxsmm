@@ -2647,7 +2647,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.meqn->datatype);
+          internal_get_typesize_string(tsizename, sizeof(tsizename), (size_t)LIBXSMM_MEQN_GETENUM_OUT_PREC(request->descriptor.meqn->datatype));
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u_eqn-idx%u.meltw", target_arch, tsizename,
             request->descriptor.meqn->m, request->descriptor.meqn->n, request->descriptor.meqn->ldo,
             (unsigned int)request->descriptor.meqn->eqn_idx);

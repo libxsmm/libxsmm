@@ -2389,4 +2389,7 @@ LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_OUT_PREC(const unsigned int datatyp
 LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_COMP_PREC(const unsigned int datatypes);
 LIBXSMM_API_INTERN void LIBXSMM_MELTW_SET_DESC_DATATYPE(libxsmm_datatype in0_dt, libxsmm_datatype in1_dt, libxsmm_datatype in2_dt, libxsmm_datatype out_dt, libxsmm_datatype comp_dt, unsigned int *out_datatypes);
 
+LIBXSMM_API_INTERN int LIBXSMM_MEQN_GETENUM_OUT_PREC(const unsigned char datatype);
+LIBXSMM_API_INTERN void LIBXSMM_MEQN_SET_DESC_DATATYPE(libxsmm_datatype out_dt, unsigned char *out_datatype);
+
 #endif /* GENERATOR_COMMON_H */

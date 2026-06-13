@@ -950,6 +950,18 @@ void LIBXSMM_MELTW_SET_DESC_DATATYPE(libxsmm_datatype in0_dt, libxsmm_datatype i
 }
 
 LIBXSMM_API_INTERN
+int LIBXSMM_MEQN_GETENUM_OUT_PREC(const unsigned char datatype) {
+  unsigned char out_prec_bits = datatype & 0x3f; /* OUT -> datatype[5:0] */
+  int result = LIBXSMM_GETENUM_INP(out_prec_bits);
+  return result;
+}
+
+LIBXSMM_API_INTERN
+void LIBXSMM_MEQN_SET_DESC_DATATYPE(libxsmm_datatype out_dt, unsigned char *out_datatype) {
+  *out_datatype = ((unsigned char)out_dt) & 0x3f; /* OUT -> datatype[5:0] */
+}
+
+LIBXSMM_API_INTERN
 int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwise_desc,
                                      libxsmm_meltw_field_type        type) {
   int result = 0;
