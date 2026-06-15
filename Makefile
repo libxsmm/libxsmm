@@ -20,7 +20,7 @@ DOCDIR := documentation
 PINCDIR ?= $(INCDIR)
 PSRCDIR ?= libxsmm
 POUTDIR ?= $(OUTDIR)
-PPKGDIR ?= $(OUTDIR)
+PPKGDIR ?= $(OUTDIR)/pkgconfig
 PCMKDIR ?= $(OUTDIR)/cmake/libxsmm
 PMODDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
@@ -775,7 +775,7 @@ $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 endif
 
 .PHONY: clib
-clib: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm-shared.pc $(PCMKDIR)/libxsmmConfig.cmake
+clib: $(PPKGDIR)/libxsmm-static.pc $(PPKGDIR)/libxsmm-shared.pc $(PCMKDIR)/libxsmmConfig.cmake
 ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmm.$(SLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
 	$(MAKE_AR) $(OUTDIR)/libxsmm.$(SLIBEXT) $(call tailwords,$^) $(JITPROFILINGOBJ)
@@ -792,7 +792,7 @@ endif
 
 .PHONY: flib
 ifneq (,$(strip $(FC)))
-flib: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf-shared.pc
+flib: $(PPKGDIR)/libxsmmf-static.pc $(PPKGDIR)/libxsmmf-shared.pc
 ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmmf.$(SLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT)
 	$(MAKE_AR) $(OUTDIR)/libxsmmf.$(SLIBEXT) $(BLDDIR)/intel64/libxsmm-mod.o
@@ -1034,6 +1034,7 @@ endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-rm -f $(OUTDIR)/libxsmm*.pc
+	@-rm -rf $(PPKGDIR)
 endif
 ifneq ($(call qapath,$(BINDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BINDIR)),$(HEREDIR))
@@ -1105,7 +1106,7 @@ endif
 	@echo
 	@echo "LIBXSMM installing pkg-config, CMake config, and module files..."
 	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
-	@$(CP) -va $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
+	@$(CP) -va $(PPKGDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
 	@$(MKDIR) -p $(PREFIX)/$(PCMKDIR)
 	@$(CP) -v $(PCMKDIR)/*.cmake $(PREFIX)/$(PCMKDIR) 2>/dev/null || true
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
@@ -1221,7 +1222,7 @@ ALIAS_INCDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix
 ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 ifeq (,$(filter-out 0 2,$(BUILD)))
-$(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT)
+$(PPKGDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
@@ -1242,14 +1243,14 @@ $(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT)
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
   endif
   ifeq (,$(filter-out 0 2,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmm.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmm.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmm-static.pc
+.PHONY: $(PPKGDIR)/libxsmm-static.pc
 endif
 
 ifeq (,$(filter-out 0 2,$(BUILD)))
-$(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT)
+$(PPKGDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm/f" >$@
 	@echo "Description: LIBXSMM for Fortran" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
@@ -1267,14 +1268,14 @@ $(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT)
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
   endif
   ifeq (,$(filter-out 0 2,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmf.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmmf.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmmf-static.pc
+.PHONY: $(PPKGDIR)/libxsmmf-static.pc
 endif
 
 ifeq (,$(filter-out 1 2,$(BUILD)))
-$(OUTDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT)
+$(PPKGDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
@@ -1292,14 +1293,14 @@ $(OUTDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
   endif
   ifeq (,$(filter-out 1,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmm.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmm.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmm-shared.pc
+.PHONY: $(PPKGDIR)/libxsmm-shared.pc
 endif
 
 ifeq (,$(filter-out 1 2,$(BUILD)))
-$(OUTDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT)
+$(PPKGDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm/f" >$@
 	@echo "Description: LIBXSMM for Fortran" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
@@ -1313,10 +1314,10 @@ $(OUTDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT)
 	@echo "Cflags: -I\$${includedir}" >>$@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
   ifeq (,$(filter-out 1,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmf.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmmf.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmmf-shared.pc
+.PHONY: $(PPKGDIR)/libxsmmf-shared.pc
 endif
 
 
@@ -1335,7 +1336,7 @@ $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "prepend-path PATH \"\$$PREFIX/bin\"" >>$@
 	@echo "prepend-path LD_LIBRARY_PATH \"\$$PREFIX/lib\"" >>$@
 	@echo >>$@
-	@echo "prepend-path PKG_CONFIG_PATH \"\$$PREFIX/lib\"" >>$@
+	@echo "prepend-path PKG_CONFIG_PATH \"\$$PREFIX/$(PPKGDIR)\"" >>$@
 	@echo "prepend-path LIBRARY_PATH \"\$$PREFIX/lib\"" >>$@
 	@echo "prepend-path CPATH \"\$$PREFIX/include\"" >>$@
 
