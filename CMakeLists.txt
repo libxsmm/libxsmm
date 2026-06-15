@@ -14,8 +14,9 @@ message(WARNING
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-option(XSMM_STATIC "Build libxsmm as a static library" ON)
-option(XSMM_BLAS "Build libxsmm with external BLAS fallback support" OFF)
+option(BUILD_SHARED_LIBS "Build libxsmm as a shared library" OFF)
+option(BUILD_TESTING "Build unittests" OFF)
+
 set(LIBXSMM_INSTALL_PKGCONFIGDIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE STRING
   "Installation directory for pkg-config files")
 
@@ -26,8 +27,7 @@ message(STATUS "  CMake version         : ${CMAKE_VERSION}")
 message(STATUS "  CMake command         : ${CMAKE_COMMAND}")
 message(STATUS "  System                : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Options:")
-message(STATUS "  XSMM_STATIC           : ${XSMM_STATIC}")
-message(STATUS "  XSMM_BLAS             : ${XSMM_BLAS}")
+message(STATUS "  BUILD_SHARED_LIBS     : ${BUILD_SHARED_LIBS}")
 
 # Platform
 set(LINUX False)
@@ -82,10 +82,10 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   ${XSMM_ROOT_DIR}/scripts/libxsmm_utilities.py
   ${XSMM_ROOT_DIR}/src/template/libxsmm_version.h)
 
-if(XSMM_STATIC)
-  add_library(xsmm STATIC ${XSMM_SRCS})
-else()
+if(BUILD_SHARED_LIBS)
   add_library(xsmm SHARED ${XSMM_SRCS})
+else()
+  add_library(xsmm STATIC ${XSMM_SRCS})
 endif()
 add_library(libxsmm::libxsmm ALIAS xsmm)
 
@@ -93,7 +93,7 @@ set_target_properties(xsmm PROPERTIES
   EXPORT_NAME libxsmm
   OUTPUT_NAME xsmm
   POSITION_INDEPENDENT_CODE ON)
-if(NOT XSMM_STATIC)
+if(BUILD_SHARED_LIBS)
   set_target_properties(xsmm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR})
@@ -112,12 +112,8 @@ target_compile_definitions(xsmm
     $<$<BOOL:${LINUX}>:LIBXSMM_BUILD=2>
     $<$<NOT:$<BOOL:${LINUX}>>:LIBXSMM_BUILD=1>)
 
-if(NOT XSMM_BLAS)
-  target_compile_definitions(xsmm PRIVATE __BLAS=0)
-else()
-  find_package(BLAS REQUIRED)
-  target_link_libraries(xsmm PUBLIC ${BLAS_LIBRARIES})
-endif()
+# Keep the core library independent from classic BLAS wrappers/fallbacks.
+target_compile_definitions(xsmm PRIVATE __BLAS=0)
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
   target_compile_options(xsmm PRIVATE -U_DEBUG)
@@ -136,6 +132,11 @@ endif()
 check_library_exists(rt sched_yield "" XSMM_LIBRT)
 if(XSMM_LIBRT)
   target_link_libraries(xsmm PUBLIC rt)
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
 endif()
 
 install(TARGETS xsmm
@@ -184,9 +185,6 @@ if(XSMM_LIBM)
 endif()
 if(XSMM_LIBRT)
   list(APPEND LIBXSMM_PC_PRIVATE_LIBS "-lrt")
-endif()
-if(XSMM_BLAS)
-  list(APPEND LIBXSMM_PC_PRIVATE_LIBS "${BLAS_LIBRARIES}")
 endif()
 list(JOIN LIBXSMM_PC_PRIVATE_LIBS " " LIBXSMM_PC_PRIVATE_LIBS)
 
