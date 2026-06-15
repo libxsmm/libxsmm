@@ -21,6 +21,7 @@ PINCDIR ?= $(INCDIR)
 PSRCDIR ?= libxsmm
 POUTDIR ?= $(OUTDIR)
 PPKGDIR ?= $(OUTDIR)
+PCMKDIR ?= $(OUTDIR)/cmake/libxsmm
 PMODDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
 PTSTDIR ?= $(TSTDIR)
@@ -172,7 +173,7 @@ TIMEOUT := 30
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE := \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
-  PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PSHRDIR PDOCDIR SCRDIR \
+  PBINDIR PINCDIR POUTDIR PPKGDIR PCMKDIR PMODDIR PSRCDIR PTSTDIR PSHRDIR PDOCDIR SCRDIR \
   SPLDIR UTLDIR SRCDIR TEST VERSION_STRING ALIAS_% %_TARGET %ROOT
 
 # fixed .state file directory (included by source)
@@ -774,7 +775,7 @@ $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 endif
 
 .PHONY: clib
-clib: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm-shared.pc
+clib: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm-shared.pc $(PCMKDIR)/libxsmmConfig.cmake
 ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmm.$(SLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
 	$(MAKE_AR) $(OUTDIR)/libxsmm.$(SLIBEXT) $(call tailwords,$^) $(JITPROFILINGOBJ)
@@ -1102,9 +1103,11 @@ endif
 	@$(CP) -va $(OUTDIR)/libxsmm*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@echo
-	@echo "LIBXSMM installing pkg-config and module files..."
+	@echo "LIBXSMM installing pkg-config, CMake config, and module files..."
 	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -va $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
+	@$(MKDIR) -p $(PREFIX)/$(PCMKDIR)
+	@$(CP) -v $(PCMKDIR)/*.cmake $(PREFIX)/$(PCMKDIR) 2>/dev/null || true
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
 		$(MKDIR) -p $(PREFIX)/$(PMODDIR); \
 		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
@@ -1315,6 +1318,13 @@ $(OUTDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT)
 else
 .PHONY: $(OUTDIR)/libxsmmf-shared.pc
 endif
+
+
+$(PCMKDIR)/libxsmmConfig.cmake: $(ROOTSCR)/libxsmmConfig.cmake $(ROOTSCR)/libxsmmConfigVersion.cmake.in $(PCMKDIR)/.make
+	@$(SED) $(ROOTSCR)/libxsmmConfig.cmake \
+		-e 's|@VERSION@|$(VERSION_STRING)|g' >$@
+	@$(SED) $(ROOTSCR)/libxsmmConfigVersion.cmake.in \
+		-e 's|@VERSION@|$(VERSION_STRING)|g' >$(PCMKDIR)/libxsmmConfigVersion.cmake
 
 $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" >$@
