@@ -49,11 +49,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
 file(GLOB XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${XSMM_ROOT_DIR}/include/libxsmm/*.c)
-list(REMOVE_ITEM XSMM_SRCS ${XSMM_ROOT_DIR}/include/libxsmm/libxsmm_generator_gemm_driver.c)
+list(REMOVE_ITEM XSMM_SRCS
+  ${XSMM_ROOT_DIR}/include/libxsmm/libxsmm_generator_gemm_driver.c
+  ${XSMM_ROOT_DIR}/include/libxsmm/libxsmm_binaryexport_generator.c)
 
 if(NOT XSMM_SRCS)
   file(GLOB XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${XSMM_ROOT_DIR}/src/*.c)
-  list(REMOVE_ITEM XSMM_SRCS ${XSMM_ROOT_DIR}/src/libxsmm_generator_gemm_driver.c)
+  list(REMOVE_ITEM XSMM_SRCS
+    ${XSMM_ROOT_DIR}/src/libxsmm_generator_gemm_driver.c
+    ${XSMM_ROOT_DIR}/src/libxsmm_binaryexport_generator.c)
 endif()
 
 set(XSMM_INCLUDE_DIRS ${XSMM_ROOT_DIR}/include)
@@ -133,6 +137,26 @@ check_library_exists(rt sched_yield "" XSMM_LIBRT)
 if(XSMM_LIBRT)
   target_link_libraries(xsmm PUBLIC rt)
 endif()
+
+foreach(generator IN ITEMS gemm binaryexport)
+  if(generator STREQUAL "gemm")
+    set(generator_source ${XSMM_ROOT_DIR}/src/libxsmm_generator_gemm_driver.c)
+    set(generator_target libxsmm_gemm_generator)
+  else()
+    set(generator_source ${XSMM_ROOT_DIR}/src/libxsmm_binaryexport_generator.c)
+    set(generator_target libxsmm_binaryexport_generator)
+  endif()
+
+  if(EXISTS "${generator_source}")
+    add_executable(${generator_target} ${generator_source})
+    target_include_directories(${generator_target} PRIVATE
+      ${XSMM_INCLUDE_DIRS}
+      ${XSMM_GENERATED_INCLUDE_DIR})
+    target_link_libraries(${generator_target} PRIVATE libxsmm::libxsmm)
+    install(TARGETS ${generator_target}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
+endforeach()
 
 include(CTest)
 if(BUILD_TESTING)
