@@ -1322,10 +1322,10 @@ endif
 
 
 $(PCMKDIR)/libxsmmConfig.cmake: $(ROOTSCR)/libxsmmConfig.cmake $(ROOTSCR)/libxsmmConfigVersion.cmake.in $(PCMKDIR)/.make
-	@$(SED) $(ROOTSCR)/libxsmmConfig.cmake \
-		-e 's|@VERSION@|$(VERSION_STRING)|g' >$@
-	@$(SED) $(ROOTSCR)/libxsmmConfigVersion.cmake.in \
-		-e 's|@VERSION@|$(VERSION_STRING)|g' >$(PCMKDIR)/libxsmmConfigVersion.cmake
+	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
+		"$(ROOTSCR)/libxsmmConfig.cmake" > "$@"
+	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
+		"$(ROOTSCR)/libxsmmConfigVersion.cmake.in" > "$(PCMKDIR)/libxsmmConfigVersion.cmake"
 
 $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" >$@
