@@ -971,7 +971,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   /* TODO: EVANGELOS -- AMMEND */
 #if 0
   if ( ( (io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) || (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) &&
-       ( l_xgemm_desc_mod.meltw_operation != LIBXSMM_MELTW_OPERATION_NONE ) ) {
+       ( libxsmm_gemm_descriptor_get_meltw_operation(&l_xgemm_desc_mod) != LIBXSMM_MELTW_OPERATION_NONE ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }

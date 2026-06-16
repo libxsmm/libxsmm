@@ -161,7 +161,7 @@ void libxsmm_generator_matequation_aarch64_reference_kernel( libxsmm_generated_c
     if (timestamp == last_timestamp) {
       unfolded_exec_tree[timestamp*5+0].reg_score = -1;
       unfolded_exec_tree[timestamp*5+0].tmp.ld = i_mateqn_desc->ldo;
-      unfolded_exec_tree[timestamp*5+0].tmp.dtype = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
+      unfolded_exec_tree[timestamp*5+0].tmp.dtype = (libxsmm_datatype) LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype);
     }
   }
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, l_temp_reg5, 0, 0 );

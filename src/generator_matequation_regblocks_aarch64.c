@@ -187,7 +187,7 @@ void libxsmm_generator_mateqn_adjust_args_addr_aarch64(libxsmm_generated_code*  
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
   unsigned int adjust_val = 0;
-  unsigned int output_tsize = LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype));
+  unsigned int output_tsize = LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype));
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   unsigned int temp_reg3 = i_gp_reg_mapping->temp_reg3;
@@ -340,7 +340,7 @@ void libxsmm_meqn_setup_input_output_masks_aarch64( libxsmm_generated_code*     
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
   unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned int mask_tsize = (LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) == 8) ? 8 : 4;
+  unsigned int mask_tsize = (LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) == 8) ? 8 : 4;
 
   LIBXSMM_UNUSED(i_meqn_desc);
   LIBXSMM_UNUSED(i_tmp_reg);
@@ -555,8 +555,8 @@ void libxsmm_generator_mateqn_store_2d_reg_block_aarch64( libxsmm_generated_code
   unsigned int in, im;
   unsigned int cur_vreg;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
-  unsigned int l_ld_bytes = i_meqn_desc->ldo * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype));
-  unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) * i_vlen * i_m_blocking : LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
+  unsigned int l_ld_bytes = i_meqn_desc->ldo * LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype));
+  unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) * i_vlen * i_m_blocking : LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED(i_mask_reg);
 
@@ -564,7 +564,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block_aarch64( libxsmm_generated_code
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
-      unsigned int l_is_f32_or_f64 = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype) || LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) ? 1 : 0;
+      unsigned int l_is_f32_or_f64 = (LIBXSMM_DATATYPE_F32 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype) || LIBXSMM_DATATYPE_F64 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) ? 1 : 0;
       unsigned int l_masked_elements = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0
                                                          : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_mask_last_m_chunk : i_vlen : i_vlen;
       unsigned int l_mask_store = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_f32_mask : 0 : 0
@@ -574,7 +574,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block_aarch64( libxsmm_generated_code
         libxsmm_generator_vcvt_f32bf16_aarch64( io_generated_code, cur_vreg, 0);
       }
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, cur_vreg,
-                                                        LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)), l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store), l_is_sve);
+                                                        LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)), l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store), l_is_sve);
     }
     if ( l_ld_bytes != l_m_adjust ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out, ((long long)l_ld_bytes - l_m_adjust) );
@@ -597,8 +597,8 @@ void libxsmm_generator_mateqn_unpackstore_2d_reg_block_aarch64( libxsmm_generate
   unsigned int in, im;
   unsigned int cur_vreg;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
-  unsigned int l_ld_bytes = i_meqn_desc->ldo * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype));
-  unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) * i_vlen * i_m_blocking : LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
+  unsigned int l_ld_bytes = i_meqn_desc->ldo * LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype));
+  unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) * i_vlen * i_m_blocking : LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED( i_mask_reg );
 
@@ -606,14 +606,14 @@ void libxsmm_generator_mateqn_unpackstore_2d_reg_block_aarch64( libxsmm_generate
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
-      unsigned int l_masked_elements = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0
+      unsigned int l_masked_elements = (LIBXSMM_DATATYPE_F32 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0
                                                                                                                                        : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_mask_last_m_chunk : i_vlen : i_vlen;
-      unsigned int l_mask_store = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_f32_mask : 0 : 0
+      unsigned int l_mask_store = (LIBXSMM_DATATYPE_F32 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_f32_mask : 0 : 0
                                                                                                                                   : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_bf16_mask : i_micro_kernel_config->full_vlen_bf16_mask : i_micro_kernel_config->full_vlen_bf16_mask;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, cur_vreg, cur_vreg, 0, i_micro_kernel_config->tmp_vreg, 0, libxsmm_generator_aarch64_get_sve_type(2) );
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_1, i_micro_kernel_config->tmp_vreg,
-                                                        LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)), l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store), l_is_sve);
+                                                        LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)), l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store), l_is_sve);
     }
     if ( l_ld_bytes != l_m_adjust ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -630,14 +630,14 @@ void libxsmm_generator_mateqn_unpackstore_2d_reg_block_aarch64( libxsmm_generate
                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
-      unsigned int l_masked_elements = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0
+      unsigned int l_masked_elements = (LIBXSMM_DATATYPE_F32 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0
                                                                                                                                        : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_mask_last_m_chunk : i_vlen : i_vlen;
-      unsigned int l_mask_store = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_f32_mask : 0 : 0
+      unsigned int l_mask_store = (LIBXSMM_DATATYPE_F32 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_f32_mask : 0 : 0
                                                                                                                                   : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_micro_kernel_config->out_bf16_mask : i_micro_kernel_config->full_vlen_bf16_mask : i_micro_kernel_config->full_vlen_bf16_mask;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP2_V, cur_vreg, cur_vreg, 0, i_micro_kernel_config->tmp_vreg, 0, libxsmm_generator_aarch64_get_sve_type(2) );
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_1, i_micro_kernel_config->tmp_vreg,
-                                                            LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)), l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store), l_is_sve);
+                                                            LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)), l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store), l_is_sve);
     }
     if ( l_ld_bytes != l_m_adjust ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -666,16 +666,16 @@ void libxsmm_generator_mateqn_store_reduce_to_scalar_output_aarch64( libxsmm_gen
   if ( is_sve ) {
     libxsmm_aarch64_instruction_sve_compute(io_generated_code, hreduce_instr, i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg, 0, i_micro_kernel_config->reduce_vreg, 0, sve_type );
   } else {
-    libxsmm_generator_hinstrps_aarch64(io_generated_code, hreduce_instr, i_micro_kernel_config->reduce_vreg, (LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) == 8) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+    libxsmm_generator_hinstrps_aarch64(io_generated_code, hreduce_instr, i_micro_kernel_config->reduce_vreg, (LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)) == 8) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
   }
 
   if (i_micro_kernel_config->cvt_result_to_bf16 == 1) {
     libxsmm_generator_vcvt_f32bf16_aarch64( io_generated_code, i_micro_kernel_config->reduce_vreg, 0);
     libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST, i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF,
-        LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)), i_micro_kernel_config->reduce_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
+        LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)), i_micro_kernel_config->reduce_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
   } else {
     libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST, i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF,
-        LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)), i_micro_kernel_config->reduce_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+        LIBXSMM_TYPESIZE(LIBXSMM_MEQN_GETENUM_OUT_PREC(i_meqn_desc->datatype)), i_micro_kernel_config->reduce_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
   }
   return ;
 }
@@ -1553,7 +1553,7 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
   libxsmm_mark_reserved_zmms_aarch64( io_generated_code, i_micro_kernel_config, eqn->eqn_root);
   i_micro_kernel_config->meltw_kernel_config.reserved_zmms = 0;
   i_micro_kernel_config->meltw_kernel_config.reserved_mask_regs = 1;
-  i_micro_kernel_config->meltw_kernel_config.datatype_size_in = (LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_F64) ? 8 : 4; /* Default to SP computations */
+  i_micro_kernel_config->meltw_kernel_config.datatype_size_in = (LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_F64) ? 8 : 4; /* Default to SP computations */
   meltw_config = (libxsmm_mateltwise_kernel_config*) &(i_micro_kernel_config->meltw_kernel_config);
 
   if (l_is_sve) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
@@ -1606,7 +1606,7 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
     /* Should not happen */
   }
 
-  if ((eqn_root_dtype == LIBXSMM_DATATYPE_F32) && (LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_BF16)) {
+  if ((eqn_root_dtype == LIBXSMM_DATATYPE_F32) && (LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_BF16)) {
     i_micro_kernel_config->cvt_result_to_bf16 = 1;
     i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
   } else {
