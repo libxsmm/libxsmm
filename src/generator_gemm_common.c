@@ -3670,7 +3670,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     }
     /* sub-byte A with i8 B is computed via the i8 path, so use i8's VNNI k-packing factor
        (AB_COMMON_PREC is UNSUPPORTED for the sub-byte/i8 mixed-precision descriptor) */
-    if ( l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0 || l_is_Ai4_Bi8_gemm > 0 ) {
+    if ( l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0 || l_is_Ai4_Bi8_gemm > 0 || l_is_Amxfp4_Bi8_gemm > 0 ) {
       l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_DATATYPE_I8 );
     }
 
@@ -3814,7 +3814,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     }
     /* sub-byte A with i8 B is computed via the i8 path, so use i8's VNNI k-packing factor
        (AB_COMMON_PREC is UNSUPPORTED for the sub-byte/i8 mixed-precision descriptor) */
-    if ( l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0 || l_is_Ai4_Bi8_gemm > 0 ) {
+    if ( l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0 || l_is_Ai4_Bi8_gemm > 0 || l_is_Amxfp4_Bi8_gemm > 0 ) {
       l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_DATATYPE_I8 );
     }
 
@@ -3910,7 +3910,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
   }
   /* sub-byte A with i8 B is computed via the i8 path, so use i8's VNNI k-packing factor
      (AB_COMMON_PREC is UNSUPPORTED for the sub-byte/i8 mixed-precision descriptor) */
-  if ( l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0 || l_is_Ai4_Bi8_gemm > 0 ) {
+  if ( l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0 || l_is_Ai4_Bi8_gemm > 0 || l_is_Amxfp4_Bi8_gemm > 0 ) {
     l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_DATATYPE_I8 );
   }
 
