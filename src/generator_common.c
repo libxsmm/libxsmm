@@ -902,7 +902,7 @@ void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt
   unsigned char uc_b = (unsigned char) b_dt;
   unsigned char uc_c = (unsigned char) c_dt;
   unsigned char uc_comp = (unsigned char) comp_dt;
-  unsigned char first = uc_a & 0xcf; /* 6 bits for a  */
+  unsigned char first = uc_a & 0x3f; /* 6 bits for a  */
   unsigned char second = uc_b << 6;  /* Last 2 bits for b */
   unsigned char third = uc_b >> 2;   /* First 4 bits for b */
   unsigned char fourth = uc_c << 4;  /* Last 4 bits for c */
