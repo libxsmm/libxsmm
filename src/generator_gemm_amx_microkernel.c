@@ -1353,6 +1353,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
+  unsigned int l_is_Abyte_Bi8_gemm = libxsmm_x86_is_Abyte_Bi8_gemm(i_xgemm_desc);
   int lda_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ? 4/i_micro_kernel_config->datatype_size_in : i_micro_kernel_config->datatype_size_in;
   int ldb_adjustment = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? 2 : 1;
   unsigned int l_ldb = (i_micro_kernel_config->btrans_gemm_sw_pipeline > 0) ? i_xgemm_desc->k: ((i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline > 0) ? i_xgemm_desc->k : i_xgemm_desc->ldb);
@@ -1463,7 +1464,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPBF16PS;
   } else if (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Abf8_Bf16_gemm > 0) {
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPFP16PS;
-  } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+  } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_Abyte_Bi8_gemm > 0) {
     if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBUUD;
     } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
@@ -1910,7 +1911,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
-  unsigned int l_k_pack_factor = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ? 2 : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+  unsigned int l_is_Abyte_Bi8_gemm = libxsmm_x86_is_Abyte_Bi8_gemm(i_xgemm_desc);
+  unsigned int l_k_pack_factor = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ? 2 : ((l_is_Abyte_Bi8_gemm > 0) ? libxsmm_cpuid_dot_pack_factor( LIBXSMM_DATATYPE_I8 ) : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) ));
   unsigned int k;
   long long offset_A = 0;
   long long offset_B = 0;
@@ -1927,7 +1929,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     l_k_blocking = 32;
   } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||
              LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||
-             LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+             LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||
+             l_is_Abyte_Bi8_gemm > 0) {
     l_k_blocking = 64;
   }
 
