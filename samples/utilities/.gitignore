@@ -7,6 +7,5 @@ memcmp/memcmp
 memcmp/memcmpf
 rng/rng
 rng/rng_avx512
-scratch/scratch
 sync/sync_barrier
 sync/sync_lock
