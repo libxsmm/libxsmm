@@ -1878,7 +1878,9 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 # endif
     }
     else { /* recognize pointers not issued by LIBXSMM */
-      __real_free((void*)memory);
+      union { const void* in; void* out; } cast;
+      cast.in = memory;
+      __real_free(cast.out);
     }
 #endif
   }
