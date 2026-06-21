@@ -2235,11 +2235,11 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             kernabi = 0;
           }
           /* query A/B sign combinations */
-          if ( (LIBXSMM_GEMM_FLAG_AB_UNSIGNED & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_AB_UNSIGNED ) {
+          if ( LIBXSMM_GEMM_GETENUM_A_UNSIGNED(request->descriptor.gemm->datatype) && LIBXSMM_GEMM_GETENUM_B_UNSIGNED(request->descriptor.gemm->datatype) ) {
             typesigns = 3;
-          } else  if ( (LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_A_UNSIGNED ) {
+          } else  if ( LIBXSMM_GEMM_GETENUM_A_UNSIGNED(request->descriptor.gemm->datatype) ) {
             typesigns = 1;
-          } else if ( (LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.gemm->flags) == LIBXSMM_GEMM_FLAG_B_UNSIGNED ) {
+          } else if ( LIBXSMM_GEMM_GETENUM_B_UNSIGNED(request->descriptor.gemm->datatype) ) {
             typesigns = 2;
           } else {
             typesigns = 0;
@@ -2406,11 +2406,11 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tc_option[16] = { 0 };
           char tname_print[16];
           if (strcmp(tname, "i8i32") == 0) {
-            if (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) == 0)) {
+            if ((LIBXSMM_GEMM_GETENUM_A_UNSIGNED(request->descriptor.pspgemm_bcsc->gemm->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(request->descriptor.pspgemm_bcsc->gemm->datatype) == 0)) {
               LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "u8s8s32");
-            } else if (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) == 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0)) {
+            } else if ((LIBXSMM_GEMM_GETENUM_A_UNSIGNED(request->descriptor.pspgemm_bcsc->gemm->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(request->descriptor.pspgemm_bcsc->gemm->datatype) > 0)) {
               LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "s8u8s32");
-            } else if (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.pspgemm_bcsc->gemm->flags) > 0)) {
+            } else if ((LIBXSMM_GEMM_GETENUM_A_UNSIGNED(request->descriptor.pspgemm_bcsc->gemm->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(request->descriptor.pspgemm_bcsc->gemm->datatype) > 0)) {
               LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "u8u8u32");
             } else {
               LIBXSMM_SNPRINTF(tname_print, sizeof(tname_print), "s8s8s32");

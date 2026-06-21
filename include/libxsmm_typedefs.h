@@ -88,11 +88,12 @@
   (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_U8   == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I4X2 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_U4X2 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_MXFP4X2 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I2X4 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I1X8 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))))))))))
+    0/*invalid*/)))))))))))))))))))))
 
 /* Get signed precision datatype regardless of signed or unsigned input */
 #define LIBXSMM_GETENUM_SIGNED_DATATYPE(SRC) ( \
@@ -111,13 +112,14 @@
   (LIBXSMM_DATATYPE_I8          == (SRC)) ? LIBXSMM_DATATYPE_I8 : ( \
   (LIBXSMM_DATATYPE_U8          == (SRC)) ? LIBXSMM_DATATYPE_I8 : ( \
   (LIBXSMM_DATATYPE_I4X2        == (SRC)) ? LIBXSMM_DATATYPE_I4X2 : ( \
+  (LIBXSMM_DATATYPE_U4X2        == (SRC)) ? LIBXSMM_DATATYPE_I4X2 : ( \
   (LIBXSMM_DATATYPE_MXFP4X2     == (SRC)) ? LIBXSMM_DATATYPE_MXFP4X2 : ( \
   (LIBXSMM_DATATYPE_I2X4        == (SRC)) ? LIBXSMM_DATATYPE_I2X4 : ( \
   (LIBXSMM_DATATYPE_I1X8        == (SRC)) ? LIBXSMM_DATATYPE_I1X8 : ( \
   (LIBXSMM_DATATYPE_IMPLICIT    == (SRC)) ? LIBXSMM_DATATYPE_IMPLICIT : ( \
   (LIBXSMM_DATATYPE_UNSUPPORTED == (SRC)) ? LIBXSMM_DATATYPE_UNSUPPORTED : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))))))))))))
+    0/*invalid*/)))))))))))))))))))))))
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
 #define LIBXSMM_DATATYPE(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_DATATYPE_, LIBXSMM_TYPESYMBOL(TYPE))
@@ -217,6 +219,7 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_I8,
   LIBXSMM_DATATYPE_U8,
   LIBXSMM_DATATYPE_I4X2,
+  LIBXSMM_DATATYPE_U4X2,
   LIBXSMM_DATATYPE_MXFP4X2,
   LIBXSMM_DATATYPE_I2X4,
   LIBXSMM_DATATYPE_I1X8,
@@ -464,14 +467,8 @@ typedef enum libxsmm_gemm_flags {
   /** AMX hint to avoid tileconfig/release, it's negated bits, so that 0 is default "on" */
   LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG = 64,
   LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG = 128,
-  /* in case of integer GEMM, if A is unsigned */
-  LIBXSMM_GEMM_FLAG_A_UNSIGNED = 256,
-  /* in case of integer GEMM, if B is unsigned */
-  LIBXSMM_GEMM_FLAG_B_UNSIGNED = 512,
-  /* in case of integer GEMM, if C is unsigned */
-  LIBXSMM_GEMM_FLAG_C_UNSIGNED = 1024,
-  /* in case of integer GEMM, if A and B are unsigned */
-  LIBXSMM_GEMM_FLAG_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
+  /* Note: bits 256/512/1024 are reserved (formerly A/B/C_UNSIGNED); operand
+   * signedness is now derived from the (unsigned) datatype, e.g. LIBXSMM_DATATYPE_U8. */
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates A */
   LIBXSMM_GEMM_FLAG_VNNI_A = 2048,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
@@ -511,66 +508,6 @@ typedef enum libxsmm_gemm_flags {
                                                            LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE = LIBXSMM_GEMM_FLAG_BETA_0 | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
                                                                   LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_A_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                         LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS_A_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_ADDRESS_A_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                              LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                              LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
-                                                                              LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_OFFSET_A_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_OFFSET_A_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                             LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                             LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
-                                                                             LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_A_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_A_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                             LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                             LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
-                                                                             LIBXSMM_GEMM_FLAG_A_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_B_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                         LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS_B_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_ADDRESS_B_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                              LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                              LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
-                                                                              LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_OFFSET_B_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_OFFSET_B_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                             LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                             LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
-                                                                             LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_B_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_B_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                             LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                             LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
-                                                                             LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                          LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS_AB_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_ADDRESS_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                               LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                               LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
-                                                                               LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_OFFSET_AB_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_OFFSET_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                              LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                              LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
-                                                                              LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_AB_UNSIGNED =
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_BETA_0 |
-                                                                              LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
-                                                                              LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
-                                                                              LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   /** Marker flag; do not use. */
   LIBXSMM_GEMM_FLAG_INVALID = 33554432
 } libxsmm_gemm_flags;

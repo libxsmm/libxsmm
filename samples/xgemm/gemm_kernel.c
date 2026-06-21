@@ -2393,13 +2393,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   }
 
-  /* set up the flags */
-  if ( i_gemm_def->unsigned_a != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED;
-  }
-  if ( i_gemm_def->unsigned_b != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED;
-  }
+  /* unsigned A/B operands are encoded directly via the (unsigned) datatype in the GEMM shape */
   if ( (i_gemm_def->a_type == LIBXSMM_DATATYPE_I8) && (i_gemm_def->b_type == LIBXSMM_DATATYPE_F16) && ((i_gemm_def->c_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->c_type == LIBXSMM_DATATYPE_F32)) ) {
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF;
   }
@@ -2459,11 +2453,11 @@ double jit_matmul( const gemm_def*    i_gemm_def,
       i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
       (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 :
       ((i_gemm_def->is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 :
-      ((i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I4X2 :
+      ((i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0) ? (i_gemm_def->unsigned_a ? LIBXSMM_DATATYPE_U4X2 : LIBXSMM_DATATYPE_I4X2) :
       ((i_gemm_def->is_Ai2Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I2X4 :
       ((i_gemm_def->is_Ai1Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I1X8 :
       ((i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) ? LIBXSMM_DATATYPE_MXFP4X2 :
-      i_gemm_def->a_type))))), i_gemm_def->b_type, i_gemm_def->c_type, i_gemm_def->comp_type );
+      (i_gemm_def->unsigned_a ? LIBXSMM_DATATYPE_U8 : i_gemm_def->a_type)))))), (i_gemm_def->unsigned_b ? LIBXSMM_DATATYPE_U8 : i_gemm_def->b_type), i_gemm_def->c_type, i_gemm_def->comp_type );
 #else
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
       i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,

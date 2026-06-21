@@ -403,13 +403,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     return EXIT_FAILURE;
   }
 
-  /* set up the flags */
-  if ( i_spmm_def->unsigned_a != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED;
-  }
-  if ( i_spmm_def->unsigned_b != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED;
-  }
+  /* unsigned A/B operands are encoded directly via the (unsigned) datatype in the GEMM shape */
 
   l_flags |= (0 != i_spmm_def->trans_b ? LIBXSMM_GEMM_FLAG_TRANS_B : 0);
   l_flags |= (0 != i_spmm_def->vnni_a ? LIBXSMM_GEMM_FLAG_VNNI_A : 0);
@@ -421,7 +415,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   /* setting update GEMM struct */
   l_shape = libxsmm_create_gemm_shape( i_spmm_def->m_blocks,  0, i_spmm_def->k,
       i_spmm_def->k, 0, i_spmm_def->n,
-      i_spmm_def->a_type, i_spmm_def->b_type, i_spmm_def->c_type, i_spmm_def->comp_type );
+      (i_spmm_def->unsigned_a ? LIBXSMM_DATATYPE_U8 : i_spmm_def->a_type), (i_spmm_def->unsigned_b ? LIBXSMM_DATATYPE_U8 : i_spmm_def->b_type), i_spmm_def->c_type, i_spmm_def->comp_type );
 
   /* setting prefetch flags */
   l_prefetch_flags = i_spmm_def->prefetch;
