@@ -1134,14 +1134,14 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
         }
       }
     }
-  } else if ( (i_gemm_def->a_type    == LIBXSMM_DATATYPE_F32) &&
-              (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F32) &&
+  } else if ( ((i_gemm_def->a_type    == LIBXSMM_DATATYPE_F32) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_BF32)) &&
+              ((i_gemm_def->b_type    == LIBXSMM_DATATYPE_F32) || (i_gemm_def->b_type == LIBXSMM_DATATYPE_BF32)) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
     float* f_a = (float*)a;
     float* f_b = (float*)b;
     float* f_c = (float*)c;
-    unsigned int l_cvt_ab_to_bf16 = ((libxsmm_cpuid_use_fp32_via_bf16() > 0)) ? 1 : 0;
+    unsigned int l_cvt_ab_to_bf16 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_BF32) ? 1 : 0;
     float a_val = 0.0f, b_val = 0.0f;
     libxsmm_bfloat16 tmp_bf16;
 

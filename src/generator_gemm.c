@@ -36,6 +36,18 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_var_ld = ( (l_xgemm_desc_mod.lda == 0) && (l_xgemm_desc_mod.ldb == 0) && (l_xgemm_desc_mod.ldc == 0) );
+  /* BF32 GEMM: A/B are BF32 (stored as F32), C is F32. Normalize the working
+     descriptor to F32 so all generic processing treats it as plain F32; the
+     BF32 marker is restored before dispatching to the AMX kernel. */
+  unsigned int l_is_bf32_gemm = ((LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype)) &&
+                                 (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(i_xgemm_desc->datatype))) ? 1 : 0;
+
+  if ( l_is_bf32_gemm > 0 ) {
+    LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+      (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(i_xgemm_desc->datatype),
+      (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC(i_xgemm_desc->datatype),
+      l_xgemm_desc_mod.datatype);
+  }
 
   /* Support this precision only in avx2 for now  */
   if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {
@@ -422,11 +434,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     return;
   }
 
-  /* If we have f32 via bf16 and we are not >= SPR and x86 we use reference code */
+  /* If we have BF32 (f32 via bf16) and we are not >= SPR and x86 we use reference code */
   if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC(l_xgemm_desc_mod.datatype)) &&
       (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(l_xgemm_desc_mod.datatype)) &&
       (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc_mod.datatype)) &&
-      (libxsmm_cpuid_use_fp32_via_bf16() > 0) &&
+      (l_is_bf32_gemm > 0) &&
       !((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT))) {
     LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_ARCH_PREC);
     return;
@@ -1006,7 +1018,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
                 ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) ) &&
                 ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) &&
                 ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0 ) &&
-                ( libxsmm_cpuid_use_fp32_via_bf16() > 0 ) ) {
+                ( l_is_bf32_gemm > 0 ) ) {
+      /* restore the BF32 marker so the AMX kernel selects the bf16-emulated f32 pipeline */
+      LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_BF32, LIBXSMM_DATATYPE_BF32,
+        (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc_mod.datatype),
+        (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC(l_xgemm_desc_mod.datatype),
+        l_xgemm_desc_mod.datatype);
       libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     } else {
       libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );

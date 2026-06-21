@@ -519,12 +519,6 @@ for BINARY_POSTOP in 0 1; do
                     cp ${TMPFILE} ${HERE}/${OUTNAME}
                   fi
 
-                  # Export LIBXSMM_X86_USE_FP32_VIA_BF16 variable for BF32
-                  if [ "$PREC" == 'BF32_BF32_F32_F32' ] ; then
-                    sed 's/LIBXSMM_ENV_VAR/LIBXSMM_X86_USE_FP32_VIA_BF16/g' ${HERE}/${OUTNAME} >${TMPFILE}
-                    cp ${TMPFILE} ${HERE}/${OUTNAME}
-                  fi
-
                   # Export BFDOT variable
                   if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
                     sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_BFDOT/g' ${HERE}/${OUTNAME} >${TMPFILE}
