@@ -3538,7 +3538,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr(
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
   if ( (NULL == row_ptr) || (NULL == column_idx) || (NULL == values) ) {
@@ -3581,7 +3582,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc(
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
   if ( (NULL == column_ptr) || (NULL == row_idx) || (NULL == values) ) {
@@ -3626,7 +3628,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
   /* if we try to hoist tileconfig, this call should return NULL */
@@ -3671,7 +3674,8 @@ LIBXSMM_API libxsmm_tilecfgfunction libxsmm_create_tilecfg_packed_spgemm_bcsc(co
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
   /* if we try to hoist tileconfig, this call should return NULL */
@@ -3713,7 +3717,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm( const libxsmm_gemm_
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
 
@@ -3748,7 +3753,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm( const libxsmm
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
 
@@ -3783,7 +3789,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm( const libxsmm
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
 
@@ -3820,7 +3827,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg( const libxsmm_g
   LIBXSMM_INIT
 
   /* TODO: some checks */
-  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+  /* A and B must share the same precision; signedness may differ (encoded in the datatype) */
+  if ( LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.a_in_type) != LIBXSMM_GETENUM_SIGNED_DATATYPE(gemm_shape.b_in_type) ) {
     return NULL;
   }
   if ( (NULL == row_ptr) || (NULL == column_idx) || (NULL == values) ) {
