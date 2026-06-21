@@ -467,33 +467,31 @@ typedef enum libxsmm_gemm_flags {
   /** AMX hint to avoid tileconfig/release, it's negated bits, so that 0 is default "on" */
   LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG = 64,
   LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG = 128,
-  /* Note: bits 256/512/1024 are reserved (formerly A/B/C_UNSIGNED); operand
-   * signedness is now derived from the (unsigned) datatype, e.g. LIBXSMM_DATATYPE_U8. */
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates A */
-  LIBXSMM_GEMM_FLAG_VNNI_A = 2048,
+  LIBXSMM_GEMM_FLAG_VNNI_A = 256,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
-  LIBXSMM_GEMM_FLAG_VNNI_B = 4096,
+  LIBXSMM_GEMM_FLAG_VNNI_B = 512,
   /* for low precision we also require post packed formats "VNNI" for best performance, this flag indicated C */
-  LIBXSMM_GEMM_FLAG_VNNI_C = 8192,
+  LIBXSMM_GEMM_FLAG_VNNI_C = 1024,
   /** use GEMM ABI */
-  LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI = 16384,
+  LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI = 2048,
   /** use XGEMM_EXT ABI */
-  LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI = 32768,
+  LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI = 4096,
 
   /* Pseudo-flag denoting big descriptor */
-  LIBXSMM_GEMM_FLAG_DESC_ISBIG = 65536,
+  LIBXSMM_GEMM_FLAG_DESC_ISBIG = 8192,
   /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS = 65536,
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS = 8192,
   /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 131072,
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 16384,
   /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 262144,
-  LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF = 524288,
-  LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT = 1048576,
-  LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT = 2097152,
-  LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK = 4194304,
-  LIBXSMM_GEMM_FLAG_USE_MxK_ZPT = 8388608,
-  LIBXSMM_GEMM_FLAG_USE_MxK_SCF = 16777216,
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 32768,
+  LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF = 65536,
+  LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT = 131072,
+  LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT = 262144,
+  LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK = 524288,
+  LIBXSMM_GEMM_FLAG_USE_MxK_ZPT = 1048576,
+  LIBXSMM_GEMM_FLAG_USE_MxK_SCF = 2097152,
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = LIBXSMM_GEMM_FLAG_BETA_0 | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
@@ -509,7 +507,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE = LIBXSMM_GEMM_FLAG_BETA_0 | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT |
                                                                   LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE,
   /** Marker flag; do not use. */
-  LIBXSMM_GEMM_FLAG_INVALID = 33554432
+  LIBXSMM_GEMM_FLAG_INVALID = 4194304
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch strategies. */
