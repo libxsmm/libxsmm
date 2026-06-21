@@ -162,7 +162,7 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
     if (timestamp == last_timestamp) {
       unfolded_exec_tree[timestamp*5+0].reg_score = -1;
       unfolded_exec_tree[timestamp*5+0].tmp.ld = i_mateqn_desc->ldo;
-      unfolded_exec_tree[timestamp*5+0].tmp.dtype = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
+      unfolded_exec_tree[timestamp*5+0].tmp.dtype = (libxsmm_datatype) LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype);
     }
   }
 

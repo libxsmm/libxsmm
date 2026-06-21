@@ -2408,17 +2408,19 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF;
   }
   if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
   if (i_gemm_def->is_Ai4Bf16_gemm > 0) {
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT;
   }
   if (i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI8_INTLV;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_flags |= LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT;
   }
 
   if (i_gemm_def->is_Ai4Bi8_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_flags |= LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT;
     if (i_gemm_def->br_type == 1 || i_gemm_def->br_type == 2 || i_gemm_def->br_type == 3) {
       l_flags |= LIBXSMM_GEMM_FLAG_USE_MxK_ZPT;
     } else {
@@ -2427,18 +2429,16 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   }
 
   if (i_gemm_def->is_Ai2Bi8_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT2_VNNI4_INTLV;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_flags |= LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT;
   }
 
   if (i_gemm_def->is_Ai1Bi8_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT1_VNNI4;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
 
   if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2;
-  }
-  if (i_gemm_def->is_Amxfp4Bbf16_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
   if (l_decompress > 0) {
     l_flags |= LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK;
@@ -2458,7 +2458,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #if 1
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
       i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
-      (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((i_gemm_def->is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : i_gemm_def->a_type), i_gemm_def->b_type, i_gemm_def->c_type, i_gemm_def->comp_type );
+      (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 :
+      ((i_gemm_def->is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 :
+      ((i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I4X2 :
+      ((i_gemm_def->is_Ai2Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I2X4 :
+      ((i_gemm_def->is_Ai1Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I1X8 :
+      ((i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) ? LIBXSMM_DATATYPE_MXFP4X2 :
+      i_gemm_def->a_type))))), i_gemm_def->b_type, i_gemm_def->c_type, i_gemm_def->comp_type );
 #else
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
       i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,

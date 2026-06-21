@@ -68,14 +68,15 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
     libxsmm_meltw_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result = { 0 };
+  unsigned int l_datatypes = 0;
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   LIBXSMM_ASSERT(NULL != result.ptr);
-  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in_type, out_type);
-  result.ptr->datatype2 = 0;
+  LIBXSMM_MELTW_SET_DESC_DATATYPE(in_type, LIBXSMM_DATATYPE_IMPLICIT, LIBXSMM_DATATYPE_IMPLICIT, out_type, LIBXSMM_DATATYPE_IMPLICIT, &l_datatypes);
+  result.ptr->datatypes = l_datatypes;
   result.ptr->flags = (unsigned short)flags;
-  result.ptr->operation = (unsigned char)operation;
-  result.ptr->param = (unsigned short)param;
+  libxsmm_meltw_descriptor_set_operation(result.ptr, (unsigned char)operation);
+  libxsmm_meltw_descriptor_set_param(result.ptr, (unsigned short)param);
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
   result.ptr->ldi2 = 0;
@@ -96,15 +97,15 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
     libxsmm_meltw_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result = { 0 };
+  unsigned int l_datatypes = 0;
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   LIBXSMM_ASSERT(NULL != result.ptr);
-  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in0_type, out_type);
-  result.ptr->datatype1 = (unsigned char)LIBXSMM_GETENUM(in1_type, in2_type);
-  result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(comp_type, out_type);
+  LIBXSMM_MELTW_SET_DESC_DATATYPE(in0_type, in1_type, in2_type, out_type, comp_type, &l_datatypes);
+  result.ptr->datatypes = l_datatypes;
   result.ptr->flags = (unsigned short)flags;
-  result.ptr->operation = (unsigned char)operation;
-  result.ptr->param = (unsigned short)param;
+  libxsmm_meltw_descriptor_set_operation(result.ptr, (unsigned char)operation);
+  libxsmm_meltw_descriptor_set_param(result.ptr, (unsigned short)param);
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
   result.ptr->ldi2 = ldi2;
@@ -126,7 +127,11 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   LIBXSMM_ASSERT(NULL != result.ptr);
-  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( out_type, out_type);
+  {
+    unsigned char l_datatype = 0;
+    LIBXSMM_MEQN_SET_DESC_DATATYPE(out_type, &l_datatype);
+    result.ptr->datatype = l_datatype;
+  }
   result.ptr->eqn_idx = eqn_idx;
   result.ptr->ldo = ldo;
   result.ptr->m = m;
@@ -286,8 +291,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init_brgemm_ext( li
   /* setting binary post-op eltwise fields */
   desc->meltw_datatype_aux = (unsigned char)binary_postops.d_in_type;
   desc->meltw_flags = (unsigned short)binary_postops.d_binary_flags;
-  desc->meltw_param = (unsigned short)binary_postops.d_binary_type;
-  desc->meltw_operation = LIBXSMM_CAST_UCHAR(( binary_postops.d_binary_type == LIBXSMM_MELTW_TYPE_BINARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_BINARY);
+  libxsmm_gemm_descriptor_set_meltw_param(desc, (unsigned short)binary_postops.d_binary_type);
+  libxsmm_gemm_descriptor_set_meltw_operation(desc, LIBXSMM_CAST_UCHAR(( binary_postops.d_binary_type == LIBXSMM_MELTW_TYPE_BINARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_BINARY));
   desc->meltw_ldx = binary_postops.ldd;
   desc->meltw_ldy = 0;
   desc->meltw_ldz = 0;

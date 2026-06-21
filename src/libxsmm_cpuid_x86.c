@@ -685,7 +685,7 @@ LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
 LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
 {
   /* handle signed and unsigned types */
-  const int type = LIBXSMM_GETENUM_INP(datatype);
+  const int type = LIBXSMM_GETENUM_SIGNED_DATATYPE(datatype);
   int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
   if ( (type == LIBXSMM_DATATYPE_BF16) ||

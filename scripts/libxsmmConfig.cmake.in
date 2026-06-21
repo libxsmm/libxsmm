@@ -3,14 +3,8 @@
 include(CMakeFindDependencyMacro)
 
 set(LIBXSMM_VERSION "@PROJECT_VERSION@")
-set(LIBXSMM_STATIC "@XSMM_STATIC@")
-set(LIBXSMM_BLAS "@XSMM_BLAS@")
-
+set(LIBXSMM_FORTRAN "@LIBXSMM_FORTRAN@")
 find_dependency(Threads)
-if(LIBXSMM_BLAS)
-  find_dependency(BLAS)
-endif()
-
 set_and_check(LIBXSMM_TARGETS_FILE
   "${CMAKE_CURRENT_LIST_DIR}/libxsmmTargets.cmake")
 include("${LIBXSMM_TARGETS_FILE}")

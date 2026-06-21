@@ -273,12 +273,10 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
   unsigned char c3;
   /** LDx, LDy, LDz,  additional meltw LDs */
   unsigned int meltw_ldx, meltw_ldy, meltw_ldz;
-  /** optional param field */
-  unsigned short meltw_param;
+  /** combined param/operation field (bits[2:0]=operation, bits[15:3]=param) */
+  unsigned short meltw_param_operation;
   /** Set of flags */
   unsigned short meltw_flags;
-  /** operation specifier */
-  unsigned char meltw_operation;
   /* Ap, Bp, Cp */
   unsigned char eltw_ap_op;
   unsigned char eltw_bp_op;
@@ -300,17 +298,53 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo, ldi2, ldi3;
-  /** Size of data element. */
-  unsigned char datatype;
-  unsigned char datatype1;
-  unsigned char datatype2;
+  /** Combined datatype field, six bits per sub-field:
+   *  IN0=datatypes[5:0], IN1=datatypes[11:6], IN2=datatypes[17:12], OUT=datatypes[23:18], COMP=datatypes[29:24] */
+  unsigned int datatypes;
   /** Set of flags */
   unsigned short flags;
-  /** optional param field */
-  unsigned short param;
-  /** operation specifier */
-  unsigned char operation;
+  /** combined param/operation field (bits[2:0]=operation, bits[15:3]=param) */
+  unsigned short param_operation;
 };
+
+/**
+* Accessors for the combined param/operation field of libxsmm_meltw_descriptor and
+* libxsmm_gemm_descriptor. The combined field stores 'operation' in the lowest 3 bits
+* and 'param' in the upper 13 bits, allowing the rest of the code to interact with the
+* descriptors as if both fields still existed separately.
+*/
+#define LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS 3
+#define LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK 0x7
+
+LIBXSMM_API_INLINE unsigned short libxsmm_meltw_descriptor_get_param(const libxsmm_meltw_descriptor* desc) {
+  return (unsigned short)(desc->param_operation >> LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS);
+}
+LIBXSMM_API_INLINE unsigned char libxsmm_meltw_descriptor_get_operation(const libxsmm_meltw_descriptor* desc) {
+  return (unsigned char)(desc->param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK);
+}
+LIBXSMM_API_INLINE void libxsmm_meltw_descriptor_set_param(libxsmm_meltw_descriptor* desc, unsigned short param) {
+  desc->param_operation = (unsigned short)((desc->param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)((unsigned int)param << LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS));
+}
+LIBXSMM_API_INLINE void libxsmm_meltw_descriptor_set_operation(libxsmm_meltw_descriptor* desc, unsigned char operation) {
+  desc->param_operation = (unsigned short)((desc->param_operation & (unsigned short)~LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)(operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK));
+}
+
+LIBXSMM_API_INLINE unsigned short libxsmm_gemm_descriptor_get_meltw_param(const libxsmm_gemm_descriptor* desc) {
+  return (unsigned short)(desc->meltw_param_operation >> LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS);
+}
+LIBXSMM_API_INLINE unsigned char libxsmm_gemm_descriptor_get_meltw_operation(const libxsmm_gemm_descriptor* desc) {
+  return (unsigned char)(desc->meltw_param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK);
+}
+LIBXSMM_API_INLINE void libxsmm_gemm_descriptor_set_meltw_param(libxsmm_gemm_descriptor* desc, unsigned short param) {
+  desc->meltw_param_operation = (unsigned short)((desc->meltw_param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)((unsigned int)param << LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS));
+}
+LIBXSMM_API_INLINE void libxsmm_gemm_descriptor_set_meltw_operation(libxsmm_gemm_descriptor* desc, unsigned char operation) {
+  desc->meltw_param_operation = (unsigned short)((desc->meltw_param_operation & (unsigned short)~LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)(operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK));
+}
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csr_descriptor {
   const libxsmm_gemm_descriptor* gemm;

@@ -179,28 +179,29 @@ int export_gemm( int argc, char* argv [] ) {
 
   if (strcmp(argv[4], "I4") == 0) {
     l_is_Ai4Bf16_gemm = 1;
-    l_dtype_a         = LIBXSMM_DATATYPE_I8;
+    l_dtype_a         = LIBXSMM_DATATYPE_I4X2;
   } else if (strcmp(argv[4], "U4") == 0) {
     if (strcmp(argv[5], "F16") == 0) {
       l_is_Ai4Bf16_gemm = 1;
-      l_dtype_a         = LIBXSMM_DATATYPE_U8;
+      l_dtype_a         = LIBXSMM_DATATYPE_I4X2;
+      l_flags          |= LIBXSMM_GEMM_FLAG_A_UNSIGNED;
     }
     if (strcmp(argv[5], "U8") == 0) {
       l_is_Ai4Bi8_gemm = 1;
-      l_dtype_a        = LIBXSMM_DATATYPE_I8;
+      l_dtype_a        = LIBXSMM_DATATYPE_I4X2;
     }
   } else if (strcmp(argv[4], "MXFP4") == 0) {
     if (strcmp(argv[5], "BF16") == 0) {
       l_is_Amxfp4Bbf16_gemm = 1;
-      l_dtype_a             = LIBXSMM_DATATYPE_I8;
+      l_dtype_a             = LIBXSMM_DATATYPE_MXFP4X2;
     }
     if (strcmp(argv[5], "F32") == 0) {
       l_is_Amxfp4Bfp32_gemm = 1;
-      l_dtype_a             = LIBXSMM_DATATYPE_I8;
+      l_dtype_a             = LIBXSMM_DATATYPE_MXFP4X2;
     }
     if (strcmp(argv[5], "I8") == 0) {
       l_is_Amxfp4Bi8_gemm = 1;
-      l_dtype_a           = LIBXSMM_DATATYPE_I8;
+      l_dtype_a           = LIBXSMM_DATATYPE_MXFP4X2;
     }
   } else if (strcmp(argv[4], "BF8") == 0 && strcmp(argv[5], "BF16") == 0) {
     l_is_Abf8Bbf16_gemm = 1;
@@ -359,7 +360,9 @@ int export_gemm( int argc, char* argv [] ) {
          ((l_dtype_a == LIBXSMM_DATATYPE_HF8)  && (l_dtype_b == LIBXSMM_DATATYPE_HF8)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_HF8)  && (l_dtype_b == LIBXSMM_DATATYPE_HF8)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_HF8))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_HF8)  && (l_dtype_b == LIBXSMM_DATATYPE_HF8)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_HF8))
-        ) ) {
+        ) &&
+        (l_is_Ai4Bf16_gemm == 0) && (l_is_Ai4Bi8_gemm == 0) &&
+        (l_is_Amxfp4Bbf16_gemm == 0) && (l_is_Amxfp4Bfp32_gemm == 0) && (l_is_Amxfp4Bi8_gemm == 0) ) {
     fprintf(stderr, "ERROR: libxsmm_exportbinary_generator: Unsupported precion combination: a: %s, b: %s, comp: %s, c: %s!\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
     return EXIT_FAILURE;
   }
@@ -380,23 +383,25 @@ int export_gemm( int argc, char* argv [] ) {
     l_dtype_b = LIBXSMM_DATATYPE_I8;
     l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED;
   }
-  if ( (l_dtype_a == LIBXSMM_DATATYPE_I8) && (l_dtype_b == LIBXSMM_DATATYPE_F16) && ((l_dtype_c == LIBXSMM_DATATYPE_F16) || (l_dtype_b == LIBXSMM_DATATYPE_F32)) ) {
+  if ( ((l_dtype_a == LIBXSMM_DATATYPE_I8) || (l_is_Ai4Bf16_gemm > 0)) && (l_dtype_b == LIBXSMM_DATATYPE_F16) && ((l_dtype_c == LIBXSMM_DATATYPE_F16) || (l_dtype_b == LIBXSMM_DATATYPE_F32)) ) {
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF;
   }
   if ( (l_is_Amxfp4Bbf16_gemm == 0) && (l_dtype_a == LIBXSMM_DATATYPE_I8) && (l_dtype_b == LIBXSMM_DATATYPE_BF16) && ((l_dtype_c == LIBXSMM_DATATYPE_BF16) || (l_dtype_c == LIBXSMM_DATATYPE_F32)) ) {
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_SCF;
   }
   if (l_is_Ai4Bf16_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI2;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
   if (l_is_Ai4Bf16_gemm > 0) {
     l_flags |= LIBXSMM_GEMM_FLAG_USE_COL_VEC_ZPT;
   }
   if (l_is_Amxfp4Bi8_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI8_INTLV;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_flags |= LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT;
   }
   if (l_is_Ai4Bi8_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_INT4_VNNI8_INTLV;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_flags |= LIBXSMM_GEMM_FLAG_INTLV_A_FORMAT;
     if (l_br_type == 1 || l_br_type == 2 || l_br_type == 3) {
       l_flags |= LIBXSMM_GEMM_FLAG_USE_MxK_ZPT;
     } else {
@@ -404,10 +409,7 @@ int export_gemm( int argc, char* argv [] ) {
     }
   }
   if (l_is_Amxfp4Bbf16_gemm > 0 || l_is_Amxfp4Bfp32_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2;
-  }
-  if (l_is_Amxfp4Bbf16_gemm > 0) {
-    l_flags |= LIBXSMM_GEMM_FLAG_INTERPRETE_A_AS_MXFP4_VNNI2;
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
   if (l_br_type == 4) {
     l_flags |= LIBXSMM_GEMM_FLAG_DECOMPRESS_A_VIA_BITMASK;
