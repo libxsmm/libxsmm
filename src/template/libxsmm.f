@@ -71,17 +71,16 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_DATATYPE_F64          = 0,                            &
      &    LIBXSMM_DATATYPE_F32          = 1,                            &
-     &    LIBXSMM_DATATYPE_BF32         = 2,                            &
-     &    LIBXSMM_DATATYPE_BF16         = 3,                            &
-     &    LIBXSMM_DATATYPE_F16          = 4,                            &
-     &    LIBXSMM_DATATYPE_BF8          = 5,                            &
-     &    LIBXSMM_DATATYPE_HF8          = 6,                            &
-     &    LIBXSMM_DATATYPE_I64          = 7,                            &
-     &    LIBXSMM_DATATYPE_I32          = 8,                            &
-     &    LIBXSMM_DATATYPE_I16          = 9,                            &
-     &    LIBXSMM_DATATYPE_I8           = 10,                           &
-     &    LIBXSMM_DATATYPE_UNSIGNED     = 11,                           &
-     &    LIBXSMM_DATATYPE_UNSUPPORTED  = 12
+     &    LIBXSMM_DATATYPE_BF16         = 2,                            &
+     &    LIBXSMM_DATATYPE_F16          = 3,                            &
+     &    LIBXSMM_DATATYPE_BF8          = 4,                            &
+     &    LIBXSMM_DATATYPE_HF8          = 5,                            &
+     &    LIBXSMM_DATATYPE_I64          = 6,                            &
+     &    LIBXSMM_DATATYPE_I32          = 7,                            &
+     &    LIBXSMM_DATATYPE_I16          = 8,                            &
+     &    LIBXSMM_DATATYPE_I8           = 9,                            &
+     &    LIBXSMM_DATATYPE_UNSIGNED     = 10,                           &
+     &    LIBXSMM_DATATYPE_UNSUPPORTED  = 11
 
         !> Enumeration of prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
