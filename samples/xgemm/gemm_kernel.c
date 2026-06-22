@@ -757,6 +757,8 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
           d_data[(l_r * ld * n) + (l_j * ld) + l_i] = (pos_val_only > 0 ) ? get_random_pos_p5_num() :  get_random_posneg_p5_num();
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (pos_val_only > 0 ) ? (float)get_random_pos_p5_num() : (float)get_random_posneg_p5_num();
+        } else if ( dtype == LIBXSMM_DATATYPE_BF32 ) {
+          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (pos_val_only > 0 ) ? (float)get_random_pos_p5_num() : (float)get_random_posneg_p5_num();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           libxsmm_bfloat16_f32 tmp /*= { 0 }*/;
           tmp.f = (pos_val_only > 0 ) ? (float)get_random_pos_p5_num() : (float)get_random_posneg_p5_num();
@@ -997,15 +999,14 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         }
       }
     }
-  } else if ( (i_gemm_def->a_type    == LIBXSMM_DATATYPE_F32) &&
-              (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F32) &&
+  } else if ( ((i_gemm_def->a_type    == LIBXSMM_DATATYPE_F32) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_BF32)) &&
+              ((i_gemm_def->b_type    == LIBXSMM_DATATYPE_F32) || (i_gemm_def->b_type == LIBXSMM_DATATYPE_BF32)) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
     const float* f_a = (const float*)a;
     const float* f_b = (const float*)b;
     float* f_c = (float*)c;
-    const char* env_fp32_via_bf16 = getenv("LIBXSMM_USE_FP32_VIA_BF16");
-    int l_use_bf16 = (env_fp32_via_bf16 != NULL && env_fp32_via_bf16[0] != '0') ? 1 : 0;
+    int l_use_bf16 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_BF32) ? 1 : 0;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
         if (i_gemm_def->beta == 0) {
@@ -2979,15 +2980,14 @@ int main(int argc, char* argv []) {
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
     } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
       l_gemm_def.is_Abf32Bbf32_gemm = 1;
-      l_dtype_a    = LIBXSMM_DATATYPE_F32;
-      l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
-      putenv("LIBXSMM_USE_FP32_VIA_BF16=1");
+      l_dtype_a    = LIBXSMM_DATATYPE_BF32;
+      l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF32));
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
       l_dtype_a_size = (double)(LIBXSMM_TYPESIZE(l_dtype_a));
     }
     if (l_gemm_def.is_Abf32Bbf32_gemm) {
-      l_dtype_b = LIBXSMM_DATATYPE_F32;
+      l_dtype_b = LIBXSMM_DATATYPE_BF32;
     } else {
       l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
     }
@@ -3132,13 +3132,12 @@ int main(int argc, char* argv []) {
       l_dtype_a    = LIBXSMM_DATATYPE_BF16;
     } else if (strcmp(argv[1], "BF32") == 0 && strcmp(argv[2], "BF32") == 0) {
       l_gemm_def.is_Abf32Bbf32_gemm = 1;
-      l_dtype_a    = LIBXSMM_DATATYPE_F32;
-      putenv("LIBXSMM_USE_FP32_VIA_BF16=1");
+      l_dtype_a    = LIBXSMM_DATATYPE_BF32;
     } else {
       l_dtype_a    = char_to_libxsmm_datatype( l_a_dt );
     }
     if (l_gemm_def.is_Abf32Bbf32_gemm) {
-      l_dtype_b = LIBXSMM_DATATYPE_F32;
+      l_dtype_b = LIBXSMM_DATATYPE_BF32;
     } else {
       l_dtype_b    = char_to_libxsmm_datatype( l_b_dt );
     }
@@ -3249,6 +3248,7 @@ int main(int argc, char* argv []) {
   if ( !(
          ((l_dtype_a == LIBXSMM_DATATYPE_F64)  && (l_dtype_b == LIBXSMM_DATATYPE_F64)  && (l_dtype_comp == LIBXSMM_DATATYPE_F64) && (l_dtype_c == LIBXSMM_DATATYPE_F64))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_F32)  && (l_dtype_b == LIBXSMM_DATATYPE_F32)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
+         ((l_dtype_a == LIBXSMM_DATATYPE_BF32) && (l_dtype_b == LIBXSMM_DATATYPE_BF32) && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_I16)  && (l_dtype_b == LIBXSMM_DATATYPE_I16)  && (l_dtype_comp == LIBXSMM_DATATYPE_I32) && (l_dtype_c == LIBXSMM_DATATYPE_I32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_U8)   && (l_dtype_b == LIBXSMM_DATATYPE_U8)   && (l_dtype_comp == LIBXSMM_DATATYPE_I32) && (l_dtype_c == LIBXSMM_DATATYPE_I32))  ||
          ((l_dtype_a == LIBXSMM_DATATYPE_I8)   && (l_dtype_b == LIBXSMM_DATATYPE_I8)   && (l_dtype_comp == LIBXSMM_DATATYPE_I32) && (l_dtype_c == LIBXSMM_DATATYPE_I32))  ||
