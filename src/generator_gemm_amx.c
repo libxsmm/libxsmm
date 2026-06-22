@@ -5203,6 +5203,11 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   /* Allow descriptor to be modified if need be */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   libxsmm_gemm_descriptor *l_xgemm_desc = &l_xgemm_desc_mod;
+  /* BF32 GEMM: A/B are BF32 (stored as F32), C is F32. Detect it, then normalize
+     the working descriptor to F32 so all subsequent processing treats it as F32;
+     the detection drives the bf16-emulated f32 software pipeline below. */
+  unsigned int l_is_bf32_gemm = ((LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) &&
+                                 (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ))) ? 1 : 0;
   unsigned int m0 = 0, m1 = 0;
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
@@ -5264,13 +5269,11 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   unsigned int l_use_custom_bf8_preproc = 0;
   /* Emulating F32 GEMM on AMX via BF16 instructions (SW pipeline converts F32 -> BF16).
    * Supports NN, NT (TRANS_B), TN (TRANS_A), and TT (TRANS_A | TRANS_B). */
-  unsigned int l_fp32_via_bf16_sw_pipeline = ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) &&
-                                              (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) &&
+  unsigned int l_fp32_via_bf16_sw_pipeline = ((l_is_bf32_gemm > 0) &&
                                               (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) &&
                                               (io_generated_code->arch < LIBXSMM_X86_ALLFEAT) &&
                                               ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) &&
-                                              ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) &&
-                                              (libxsmm_cpuid_use_fp32_via_bf16() > 0)) ? 1 : 0;
+                                              ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)) ? 1 : 0;
   unsigned int l_fp32_to_bf16_b_sw_pipeline = 0;
   unsigned int l_fp32_via_bf16_k_pad = 0;
   libxsmm_tile_config tile_config;
@@ -6406,7 +6409,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                   }
                 }
                 libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a);
-                libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, l_m_blocking * l_expand_a_ld_preproc);
+                libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, (long long)l_m_blocking * l_expand_a_ld_preproc);
               }
 
               if (l_sw_pipeline_B_preproc > 0) {
@@ -6444,7 +6447,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
                 }
                 libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a);
-                libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, l_m_blocking * l_expand_a_ld_preproc);
+                libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, (long long)l_m_blocking * l_expand_a_ld_preproc);
               }
               if (l_sw_pipeline_B_preproc > 0) {
                 libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BUF2, l_gp_reg_scratch );
@@ -6688,7 +6691,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
         }
 
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a);
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, l_m_blocking * l_expand_a_ld_preproc);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, (long long)l_m_blocking * l_expand_a_ld_preproc);
         libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_scratch );
       }
 
@@ -6815,7 +6818,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BUF1, l_gp_reg_scratch );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AUX_VAR, i_gp_reg_mapping->gp_reg_a );
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_a);
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, l_m_blocking * l_expand_a_ld_preproc);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, (long long)l_m_blocking * l_expand_a_ld_preproc);
         libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_a );
         libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_scratch );
       }
