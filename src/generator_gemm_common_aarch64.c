@@ -1002,7 +1002,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
                                                    l_vec_reg_acc_start + l_m_blocks[0] + (l_m_total_blocks * l_n),
                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
       }
-      if ( i_ld-l_m_bytes > 0 ) {
+      if ( i_ld > l_m_bytes ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_addr, i_gp_reg_scratch0, i_gp_reg_addr,
                                                        ((long long)i_ld - l_m_bytes) );

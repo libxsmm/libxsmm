@@ -623,7 +623,7 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
                                                 l_vec_reg_acc_start + l_m_blocks[0] + (l_m_total_blocks * l_n),
                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_S );
       }
-      if ( i_ld-l_m_bytes > 0 ) {
+      if ( i_ld > l_m_bytes ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
                                                        ((long long)i_ld - l_m_bytes) );
@@ -1512,7 +1512,7 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_S );
     }
 
-    if ( i_ld-l_m_bytes > 0 ) {
+    if ( i_ld > l_m_bytes ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
                                                      ((long long)i_ld - l_m_bytes) );
