@@ -2382,6 +2382,17 @@ LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_ABC_COMMON_PREC(const unsigned char 
 LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype);
 LIBXSMM_API_INTERN void LIBXSMM_GEMM_SET_DESC_DATATYPE(libxsmm_datatype a_dt, libxsmm_datatype b_dt, libxsmm_datatype c_dt, libxsmm_datatype comp_dt, unsigned char *out_datatype);
 
+/** Returns true if the given datatype enumerator is an unsigned integer type. */
+LIBXSMM_API_INTERN int LIBXSMM_DATATYPE_IS_UNSIGNED(const int datatype);
+/** Raw (sign-preserving) precision accessors for the packed GEMM datatype field. */
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_A_PREC_RAW(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_B_PREC_RAW(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_C_PREC_RAW(const unsigned char *datatype);
+/** Predicates deriving operand signedness from the packed GEMM datatype field. */
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_A_UNSIGNED(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_B_UNSIGNED(const unsigned char *datatype);
+LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_C_UNSIGNED(const unsigned char *datatype);
+
 LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_IN0_PREC(const unsigned int datatypes);
 LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_IN1_PREC(const unsigned int datatypes);
 LIBXSMM_API_INTERN int LIBXSMM_MELTW_GETENUM_IN2_PREC(const unsigned int datatypes);

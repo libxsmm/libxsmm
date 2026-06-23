@@ -422,11 +422,11 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   l_gemm_def.unsigned_b = 0;
   l_gemm_def.is_spmm = 0;
 
-  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) {
+  if (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype)) {
     l_gemm_def.unsigned_a = 1;
   }
 
-  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) {
+  if (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype)) {
     l_gemm_def.unsigned_b = 1;
   }
 

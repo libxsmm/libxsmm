@@ -264,7 +264,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       /* Check for supported i2i8 and i1i8 combinations */
       if (l_is_Ai4_Bi8_gemm > 0 || l_is_Ai2_Bi8_gemm > 0 || l_is_Ai1_Bi8_gemm > 0) {
         int l_is_supported = 0;
-        int l_b_unsigned = (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0;
+        int l_b_unsigned = LIBXSMM_GEMM_GETENUM_B_UNSIGNED(l_xgemm_desc_mod.datatype) > 0;
 
         if (l_is_Ai4_Bi8_gemm > 0 && io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) {
           l_is_supported = 1;
@@ -836,7 +836,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
-      if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 && (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0 ) {
+      if (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(l_xgemm_desc_mod.datatype) > 0 && LIBXSMM_GEMM_GETENUM_B_UNSIGNED(l_xgemm_desc_mod.datatype) == 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
