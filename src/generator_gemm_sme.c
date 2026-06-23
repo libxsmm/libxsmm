@@ -449,7 +449,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_gp_reg_mapping.gp_reg_b,
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     l_gp_reg_mapping.gp_reg_b ,
-                                                    (l_xgemm_desc_opa->k - l_trans_rest) * l_micro_kernel_config.datatype_size_in );
+                                                    ((unsigned long long)(l_xgemm_desc_opa->k - l_trans_rest)) * l_micro_kernel_config.datatype_size_in );
     } else {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                     LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -1379,7 +1379,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_gp_reg_mapping.gp_reg_b,
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     l_gp_reg_mapping.gp_reg_b ,
-                                                    (l_xgemm_desc_opa->k - l_trans_rest) * l_micro_kernel_config.datatype_size_in );
+                                                    ((unsigned long long)(l_xgemm_desc_opa->k - l_trans_rest)) * l_micro_kernel_config.datatype_size_in );
     }
 
     l_perfect_blocking_m = 32;
@@ -1772,7 +1772,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
                                                     l_gp_reg_mapping.gp_reg_b,
                                                     l_gp_reg_mapping.gp_reg_help_0,
                                                     l_gp_reg_mapping.gp_reg_b ,
-                                                    (l_xgemm_desc_opa->k - l_trans_rest) * l_micro_kernel_config.datatype_size_in );
+                                                    ((unsigned long long)(l_xgemm_desc_opa->k - l_trans_rest)) * l_micro_kernel_config.datatype_size_in );
     }
     l_perfect_blocking_m = 16;
     l_perfect_m_count = l_xgemm_desc_opa->m / 16;
