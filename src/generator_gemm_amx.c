@@ -1430,7 +1430,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( libxsmm
               LIBXSMM_X86_INSTR_PREFETCHT0,
               i_gp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              (int)((long long)ik * i_ldi + i_ldi * 4 * uk + (im/4) * 64 + (long long)i_xgemm_desc->c1) );
+              (int)((long long)ik * i_ldi + (long long)i_ldi * 4 * uk + (im/4) * 64 + (long long)i_xgemm_desc->c1) );
         }
       }
     }
