@@ -1003,7 +1003,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                    i_gp_reg_mapping->gp_reg_c,
                                                    l_gp_reg_scratch,
                                                    i_gp_reg_mapping->gp_reg_c,
-                                                   (i_packed_width * 2 * l_n_advancements) * i_micro_kernel_config->datatype_size_out );
+                                                   ((unsigned long long)i_packed_width * 2 * l_n_advancements) * i_micro_kernel_config->datatype_size_out );
     if (l_n_blocks > 1) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
