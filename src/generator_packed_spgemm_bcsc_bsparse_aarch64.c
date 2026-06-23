@@ -1257,7 +1257,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
                                                        l_tmp_a_gp_reg,
                                                        l_gp_reg_scratch,
                                                        l_tmp_a_gp_reg,
-                                                       ((long long)i_packed_width * l_vnni_block_size - l_a_adjustments * i_simd_packed_width * l_vnni_block_size ) * i_micro_kernel_config->datatype_size_in );
+                                                       ((long long)i_packed_width * l_vnni_block_size - (long long)l_a_adjustments * i_simd_packed_width * l_vnni_block_size ) * i_micro_kernel_config->datatype_size_in );
       }
 
       /* loop over the columns of B/C */
