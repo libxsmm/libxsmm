@@ -46,12 +46,6 @@
 #if !defined(LIBXSMM_NTHREADS_USE) && 0
 # define LIBXSMM_NTHREADS_USE
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
-# define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_NTHREADS_MAX
-#endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
-# define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
-#endif
 #if !defined(LIBXSMM_MALLOC_LIMIT)
 # define LIBXSMM_MALLOC_LIMIT (2U << 20) /* 2 MB */
 #endif
@@ -496,6 +490,22 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
+/** Function types accepted for memory allocation (library-internal allocator). */
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_malloc_ctx)(size_t /*size*/, const void* /*context*/);
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_malloc_fun)(size_t /*size*/);
+LIBXSMM_EXTERN_C typedef union libxsmm_malloc_function {
+  libxsmm_malloc_ctx ctx_form;
+  libxsmm_malloc_fun function;
+} libxsmm_malloc_function;
+
+/** Function types accepted for releasing memory (library-internal allocator). */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_free_ctx)(void* /*buffer*/, const void* /*context*/);
+LIBXSMM_EXTERN_C typedef void (*libxsmm_free_fun)(void* /*buffer*/);
+LIBXSMM_EXTERN_C typedef union libxsmm_free_function {
+  libxsmm_free_ctx ctx_form;
+  libxsmm_free_fun function;
+} libxsmm_free_function;
+
 LIBXSMM_EXTERN_C typedef void* (*libxsmm_realloc_fun)(void* /*ptr*/, size_t /*size*/);
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
@@ -550,18 +560,11 @@ LIBXSMM_API_INTERN void libxsmm_malloc_finalize(void);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
-/** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
+/** Set the default memory allocator (library-internal), taking a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
-/** Same as libxsmm_get_default_allocator, but takes a lock (can be NULL). */
+/** Get the default memory allocator (library-internal), taking a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
-
-/** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
-/** Same as libxsmm_get_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /**
@@ -580,9 +583,6 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   const char* name,
   /** If data_size if given, amount of memory-attribution is lowered by data_size. */
   const size_t* data_size);
-
-/** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
 LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
@@ -652,20 +652,10 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_nosync);
 
 /** Function used to allocate default memory. */
 LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_default_malloc_fn);
-/** Function used to allocate scratch memory. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
 /** Function used to release default memory. */
 LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_default_free_fn);
-/** Function used to release scratch memory. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
 LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_default_allocator_context);
-/** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_scratch_allocator_context);
-/** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_scratch_pools);
-/** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_APIVAR_PRIVATE(double libxsmm_scratch_scale);
 /** Number of seconds per RDTSC-cycle (zero or negative if RDTSC invalid). */
 LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 /** Counts the number of attempts to create an SPMDM-handle. */
