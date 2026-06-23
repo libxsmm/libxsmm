@@ -622,19 +622,6 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   return result;
 }
 
-LIBXSMM_API int libxsmm_cpuid_use_fp32_via_bf16(void) {
-  int result = 0;
-  const char* const l_env_fp32_via_bf16 = getenv("LIBXSMM_USE_FP32_VIA_BF16");
-  if (0 == l_env_fp32_via_bf16) {
-    result = 0;
-  } else {
-    if (atoi(l_env_fp32_via_bf16) != 0) {
-      result = 1;
-    }
-  }
-  return result;
-}
-
 LIBXSMM_API int libxsmm_cpuid_x86_use_high_prec_eltwise_approx(void) {
   int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
