@@ -873,6 +873,50 @@ int LIBXSMM_GEMM_GETENUM_COMP_PREC(const unsigned char *datatype) {
 }
 
 LIBXSMM_API_INTERN
+int LIBXSMM_DATATYPE_IS_UNSIGNED(const int datatype) {
+  return ((LIBXSMM_DATATYPE_U8  == datatype) || (LIBXSMM_DATATYPE_U16 == datatype) ||
+          (LIBXSMM_DATATYPE_U32 == datatype) || (LIBXSMM_DATATYPE_U64 == datatype) ||
+          (LIBXSMM_DATATYPE_U4X2 == datatype)) ? 1 : 0;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_A_PREC_RAW(const unsigned char *datatype) {
+  unsigned char a_prec_bits = (unsigned char)datatype[0] & 0x3f;
+  return (int)a_prec_bits;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_B_PREC_RAW(const unsigned char *datatype) {
+  unsigned char uc_first_part = ((unsigned char)datatype[0] & 0xc0) >> 6;
+  unsigned char uc_second_part =((unsigned char)datatype[1] & 0x0f) << 2;
+  unsigned char b_prec_bits = uc_first_part | uc_second_part;
+  return (int)b_prec_bits;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_C_PREC_RAW(const unsigned char *datatype) {
+  unsigned char uc_first_part = ((unsigned char)datatype[1] & 0xf0) >> 4;
+  unsigned char uc_second_part =((unsigned char)datatype[2] & 0x03) << 4;
+  unsigned char c_prec_bits = uc_first_part | uc_second_part;
+  return (int)c_prec_bits;
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_A_UNSIGNED(const unsigned char *datatype) {
+  return LIBXSMM_DATATYPE_IS_UNSIGNED(LIBXSMM_GEMM_GETENUM_A_PREC_RAW(datatype));
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_B_UNSIGNED(const unsigned char *datatype) {
+  return LIBXSMM_DATATYPE_IS_UNSIGNED(LIBXSMM_GEMM_GETENUM_B_PREC_RAW(datatype));
+}
+
+LIBXSMM_API_INTERN
+int LIBXSMM_GEMM_GETENUM_C_UNSIGNED(const unsigned char *datatype) {
+  return LIBXSMM_DATATYPE_IS_UNSIGNED(LIBXSMM_GEMM_GETENUM_C_PREC_RAW(datatype));
+}
+
+LIBXSMM_API_INTERN
 int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype) {
   int result = 0;
   if (LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) {

@@ -652,7 +652,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   unsigned int l_bf16_kernel = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
   unsigned int l_vnni_block_size = (l_i8i32_kernel > 0) ? 8 : 4;
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
-  unsigned int l_is_s8u8s32_kernel = ((l_i8i32_kernel > 0) && ((LIBXSMM_GEMM_FLAG_A_UNSIGNED & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & i_xgemm_desc->flags) > 0) ) ? 1 : 0;
+  unsigned int l_is_s8u8s32_kernel = ((l_i8i32_kernel > 0) && (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) ? 1 : 0;
 
   /* Auxiliary GPRs  */
   unsigned int l_gp_reg_scratch = i_gp_reg_mapping->gp_reg_help_2;
@@ -1089,7 +1089,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   unsigned int l_load_a_instr = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ? LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF : (( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ? LIBXSMM_AARCH64_INSTR_SVE_LD1B_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF);
   unsigned int l_store_c_instr = (l_c_bf16 > 0) ? LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF;
   unsigned int l_beta_0 = (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ? 1 : 0;
-  unsigned int l_is_s8u8s32_kernel = ((l_i8_comp > 0) && ((LIBXSMM_GEMM_FLAG_A_UNSIGNED & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & i_xgemm_desc->flags) > 0) ) ? 1 : 0;
+  unsigned int l_is_s8u8s32_kernel = ((l_i8_comp > 0) && (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) ? 1 : 0;
 
   unsigned int l_fma_iters = i_bk/l_vnni_block_size;
   unsigned int l_assm_fma_iters = 1;
