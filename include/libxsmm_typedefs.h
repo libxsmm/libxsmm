@@ -94,7 +94,7 @@
   (LIBXSMM_DATATYPE_I2X4 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I1X8 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/)))))))))))))))))))))
+    0/*invalid*/))))))))))))))))))))))
 
 /* Get signed precision datatype regardless of signed or unsigned input */
 #define LIBXSMM_GETENUM_SIGNED_DATATYPE(SRC) ( \
@@ -121,7 +121,7 @@
   (LIBXSMM_DATATYPE_IMPLICIT    == (SRC)) ? LIBXSMM_DATATYPE_IMPLICIT : ( \
   (LIBXSMM_DATATYPE_UNSUPPORTED == (SRC)) ? LIBXSMM_DATATYPE_UNSUPPORTED : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/)))))))))))))))))))))))
+    0/*invalid*/))))))))))))))))))))))))
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
 #define LIBXSMM_DATATYPE(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_DATATYPE_, LIBXSMM_TYPESYMBOL(TYPE))
