@@ -1701,7 +1701,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
     }
 
     if (load_acc == 1) {
-      long long l_adj_offset = m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out;
+      long long l_adj_offset = (long long)m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out;
       if (l_is_peeled_loop) {
         l_adj_offset = (long long)peeled_m_trips * i_micro_kernel_config->datatype_size_out * vlen - (long long)use_m_masking * ((long long)vlen - mask_count) * i_micro_kernel_config->datatype_size_out;
       }
