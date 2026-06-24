@@ -402,6 +402,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
     case LIBXSMM_X86_INSTR_VPSLLD_I:
     case LIBXSMM_X86_INSTR_VPSLLW_I:
+    case LIBXSMM_X86_INSTR_VPSRLW_I:
     case LIBXSMM_X86_INSTR_VPSRAD_I:
     case LIBXSMM_X86_INSTR_VPSRAW_I:
     case LIBXSMM_X86_INSTR_VPSRLD_I:
@@ -465,6 +466,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPMAXSW:
     case LIBXSMM_X86_INSTR_VPMAXSB:
     case LIBXSMM_X86_INSTR_VPMINSD:
+    case LIBXSMM_X86_INSTR_VPMINSW:
     case LIBXSMM_X86_INSTR_VPDPBUSD:
     case LIBXSMM_X86_INSTR_VPDPBUSDS:
     case LIBXSMM_X86_INSTR_VPDPWSSD:
@@ -864,6 +866,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VFPCLASSBF16:
     case LIBXSMM_X86_INSTR_VGETEXPBF16:
     case LIBXSMM_X86_INSTR_VGETMANTBF16:
+    case LIBXSMM_X86_INSTR_VMINMAXBF16:
     case LIBXSMM_X86_INSTR_VMAXBF16:
     case LIBXSMM_X86_INSTR_VMINBF16:
     case LIBXSMM_X86_INSTR_VMULBF16:
@@ -874,6 +877,12 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VSCALEFBF16:
     case LIBXSMM_X86_INSTR_VSQRTBF16:
     case LIBXSMM_X86_INSTR_VSUBBF16:
+    case LIBXSMM_X86_INSTR_VPMULTISHIFTQB:
+    case LIBXSMM_X86_INSTR_BSRMOVF_LD:
+    case LIBXSMM_X86_INSTR_BSRMOVH_LD:
+    case LIBXSMM_X86_INSTR_BSRMOVH_ST:
+    case LIBXSMM_X86_INSTR_BSRMOVL_LD:
+    case LIBXSMM_X86_INSTR_BSRMOVL_ST:
       break;
     default:
       l_return = 0;
@@ -974,6 +983,17 @@ unsigned int libxsmm_x86_instruction_vec_is_regonly( const unsigned int i_instr 
     case LIBXSMM_X86_INSTR_PSRLQ_I:
     case LIBXSMM_X86_INSTR_VMOVSH_LD_3REG:
     case LIBXSMM_X86_INSTR_VMOVSH_ST_3REG:
+    case LIBXSMM_X86_INSTR_BSRINIT:
+    case LIBXSMM_X86_INSTR_TOP2BF16PS:
+    case LIBXSMM_X86_INSTR_TOP4BSSD:
+    case LIBXSMM_X86_INSTR_TOP4BSUD:
+    case LIBXSMM_X86_INSTR_TOP4BUSD:
+    case LIBXSMM_X86_INSTR_TOP4BUUD:
+    case LIBXSMM_X86_INSTR_TOP4MXBF8PS:
+    case LIBXSMM_X86_INSTR_TOP4MXBHF8PS:
+    case LIBXSMM_X86_INSTR_TOP4MXHBF8PS:
+    case LIBXSMM_X86_INSTR_TOP4MXHF8PS:
+    case LIBXSMM_X86_INSTR_TOP4MXBSSPS:
       break;
     default:
       l_return = 0;
@@ -2031,6 +2051,10 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       } else if ( ((i_vec_instr >> 28) & 0x3) == 0x1 )  {
         l_reg_number_src0 = i_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
+      } else if ( ((i_vec_instr >> 28) & 0x3) == 0x0 )  {
+        /* nothing todo */
+        l_reg_number_src0 = 0x00;
+        l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruction (0x%08x), i_reg_number_src1 or i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -2674,9 +2698,15 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
       return;
     }
 #endif
-    libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
-                                                   i_prefetch_instr, i_gp_reg_base,
-                                                   i_gp_reg_idx, i_scale, i_displacement, l_reg_op_ext );
+    if ( (i_prefetch_instr & 0xc0000000) == 0xc0000000 ) {
+      libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code, i_prefetch_instr, 0,
+                                                     i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement,
+                                                     LIBXSMM_X86_SIMD_NAME_ZMM, 0, l_reg_op_ext, 0, 1 );
+    } else {
+      libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
+                                                     i_prefetch_instr, i_gp_reg_base,
+                                                     i_gp_reg_idx, i_scale, i_displacement, l_reg_op_ext );
+    }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -3550,6 +3580,10 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
     case LIBXSMM_X86_INSTR_KXORW:
     case LIBXSMM_X86_INSTR_KXORD:
     case LIBXSMM_X86_INSTR_KXORQ:
+    case LIBXSMM_X86_INSTR_KMOVB_LD:
+    case LIBXSMM_X86_INSTR_KMOVW_LD:
+    case LIBXSMM_X86_INSTR_KMOVD_LD:
+    case LIBXSMM_X86_INSTR_KMOVQ_LD:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: unexpected instruction number: 0x%08x\n", i_mask_instr);
@@ -4137,6 +4171,15 @@ void libxsmm_x86_instruction_tile_extract( libxsmm_generated_code* io_generated_
     case LIBXSMM_X86_INSTR_TILEMOVROW:
     case LIBXSMM_X86_INSTR_TILEMOVROW_IMM:
     case LIBXSMM_X86_INSTR_TILEMOVROW_GPR:
+    case LIBXSMM_X86_INSTR_TILEMOVROW_IN:
+    case LIBXSMM_X86_INSTR_TILEMOVROW_IN_IMM:
+    case LIBXSMM_X86_INSTR_TILEMOVROW_IN_GPR:
+    case LIBXSMM_X86_INSTR_TILEMOVCOL_OUT:
+    case LIBXSMM_X86_INSTR_TILEMOVCOL_OUT_IMM:
+    case LIBXSMM_X86_INSTR_TILEMOVCOL_OUT_GPR:
+    case LIBXSMM_X86_INSTR_TILEMOVCOL_IN:
+    case LIBXSMM_X86_INSTR_TILEMOVCOL_IN_IMM:
+    case LIBXSMM_X86_INSTR_TILEMOVCOL_IN_GPR:
        break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_tile_extract: unexpected instruction number: %u\n", i_tmove_instr);
@@ -4171,6 +4214,15 @@ void libxsmm_x86_instruction_tile_extract( libxsmm_generated_code* io_generated_
       case LIBXSMM_X86_INSTR_TILEMOVROW:
         l_tmove_instr = (i_gp_reg_cntl == LIBXSMM_X86_GP_REG_UNDEF) ? LIBXSMM_X86_INSTR_TILEMOVROW_IMM : LIBXSMM_X86_INSTR_TILEMOVROW_GPR;
         break;
+      case LIBXSMM_X86_INSTR_TILEMOVROW_IN:
+        l_tmove_instr = (i_gp_reg_cntl == LIBXSMM_X86_GP_REG_UNDEF) ? LIBXSMM_X86_INSTR_TILEMOVROW_IN_IMM : LIBXSMM_X86_INSTR_TILEMOVROW_IN_GPR;
+        break;
+      case LIBXSMM_X86_INSTR_TILEMOVCOL_OUT:
+        l_tmove_instr = (i_gp_reg_cntl == LIBXSMM_X86_GP_REG_UNDEF) ? LIBXSMM_X86_INSTR_TILEMOVCOL_OUT_IMM : LIBXSMM_X86_INSTR_TILEMOVCOL_OUT_GPR;
+        break;
+      case LIBXSMM_X86_INSTR_TILEMOVCOL_IN:
+        l_tmove_instr = (i_gp_reg_cntl == LIBXSMM_X86_GP_REG_UNDEF) ? LIBXSMM_X86_INSTR_TILEMOVCOL_IN_IMM : LIBXSMM_X86_INSTR_TILEMOVCOL_IN_GPR;
+        break;
       default:
         l_tmove_instr = i_tmove_instr;
         break;
@@ -4204,6 +4256,9 @@ void libxsmm_x86_instruction_tile_extract( libxsmm_generated_code* io_generated_
       case LIBXSMM_X86_INSTR_TCVTROWPS2BF16H_GPR:
       case LIBXSMM_X86_INSTR_TCVTROWPS2PHH_GPR:
       case LIBXSMM_X86_INSTR_TILEMOVROW_GPR:
+      case LIBXSMM_X86_INSTR_TILEMOVROW_IN_GPR:
+      case LIBXSMM_X86_INSTR_TILEMOVCOL_OUT_GPR:
+      case LIBXSMM_X86_INSTR_TILEMOVCOL_IN_GPR:
       {
         /* check if we use a GPR as control */
         if ( i_gp_reg_cntl != LIBXSMM_X86_GP_REG_UNDEF ) {

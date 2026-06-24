@@ -103,7 +103,7 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # loading A in VNNI layout is mandatory for select precision
-                  if [[ ( "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' ) && ( "$AVNNI" == '0' ) ]]; then
+                  if [[ ( "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$AVNNI" == '0' ) ]]; then
                     continue
                   fi
 
@@ -114,7 +114,7 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # low precision has no transpose support
-                  if [[ ( (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I2_U8_I32_I32' || "$PREC" == 'I2_I8_I32_I32' || "$PREC" == 'I1_U8_I32_I32' || "$PREC" == 'I1_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
+                  if [[ ( (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I2_U8_I32_I32' || "$PREC" == 'I2_I8_I32_I32' || "$PREC" == 'I1_U8_I32_I32' || "$PREC" == 'I1_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
                     continue
                   fi
 
@@ -425,6 +425,34 @@ for BINARY_POSTOP in 0 1; do
                     OUTNAME="hf8f32_flatgemm_"
                     KSTART=4
                     KSTEP=4
+                  elif [[ ("$PREC" == 'MXBF8_MXBF8_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxbf8mxbf8f32gemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ ("$PREC" == 'MXHF8_MXHF8_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxhf8mxhf8f32gemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ ("$PREC" == 'MXBF6_MXBF6_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxbf6mxbf6f32gemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ ("$PREC" == 'MXHF6_MXHF6_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxhf6mxhf6f32gemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ ("$PREC" == 'MXFP4_MXFP4_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxfp4mxfp4f32gemm_"
+                    KSTART=8
+                    KSTEP=8
+                  elif [[ ("$PREC" == 'MXBF8_MXBF8_F32_MXBF8') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxbf8mxbf8mxbf8gemm_"
+                    KSTART=4
+                    KSTEP=4
+                  elif [[ ("$PREC" == 'MXFP4_MXFP4_F32_MXFP4') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxfp4mxfp4mxfp4gemm_"
+                    KSTART=8
+                    KSTEP=8
                    else
                     continue
                   fi
@@ -519,6 +547,12 @@ for BINARY_POSTOP in 0 1; do
                     cp ${TMPFILE} ${HERE}/${OUTNAME}
                   fi
 
+                  # MXFP4/MXBF8 C output only supports beta = 0, drop the beta = 1 (TESTFILE2) invocations
+                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) ]] ; then
+                    sed '/gemm_kernel.*TESTFILE2/d' ${HERE}/${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/${OUTNAME}
+                  fi
+
                   # Export BFDOT variable
                   if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$AVNNI" == '1') ]] ; then
                     sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_BFDOT/g' ${HERE}/${OUTNAME} >${TMPFILE}
@@ -536,6 +570,12 @@ for BINARY_POSTOP in 0 1; do
                     sed 's/randnumk = rnd.sample(range(32,101,32)/randnumk = rnd.sample(range(32,505,32)/g' ${HERE}/${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/${OUTNAME}
                     sed "s/+ '100 100 100'/+ '100 640 100'/g" ${HERE}/${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/${OUTNAME}
+                  fi
+
+                  # For C in MX format (A=B=C MX), ldc must be a multiple of 32; use 128 for the gtld case
+                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$LD" == 'gtld' ) ]] ; then
+                    sed "s/+ '100 100 100'/+ '128 128 128'/g" ${HERE}/${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/${OUTNAME}
                   fi
 
@@ -596,6 +636,194 @@ for BINARY_POSTOP in 0 1; do
                       -e 's/TRB=0/TRB=1/g' \
                       ${HERE}/${OUTNAME} >${HERE}/${NEWNAME}
                     chmod 755 ${HERE}/${NEWNAME}
+                  fi
+
+                  # ACE for FP32 emulation, k=4
+                  if [[ ( "$PREC" == 'BF32_BF32_F32_F32' ) && ("$UNARY_POSTOP" != '2') ]] ; then
+                    cp ${HERE}/${OUTNAME} ${HERE}/acef32_k4_${OUTNAME}
+                    sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(5,101,1), 4)/g' ${HERE}/acef32_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/acef32_k4_${OUTNAME}
+                    sed 's/randnumk = rnd.sample(range(1,101,1), .*)/randnumk = rnd.sample(range(4,101,4), 4)/g' ${HERE}/acef32_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/acef32_k4_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(5,101,1), 4)/g' ${HERE}/acef32_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/acef32_k4_${OUTNAME}
+                    chmod 755 ${HERE}/acef32_k4_${OUTNAME}
+                  fi
+
+                  # ACE for BF16, k=2
+                  if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$UNARY_POSTOP" != '2') ]] ; then
+                    if [[ ("$AVNNI" == '1') && ( "$TRA" == '1' ) ]] ; then
+                      continue
+                    fi
+                    cp ${HERE}/${OUTNAME} ${HERE}/ace_k2_${OUTNAME}
+                    sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
+                    sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(2,101,2), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(2,101,2), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
+                    if [ "$CVNNI" == '1' ] ; then
+                      sed 's/randnumn = rnd.sample(range(4,101,4), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
+                    fi
+                    chmod 755 ${HERE}/ace_k2_${OUTNAME}
+
+                    # create ACE scripts with B in VNNIT
+                    if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
+                      NEWNAME=ace_k2_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        ${HERE}/ace_k2_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                    fi
+                  fi
+
+                  # ACE for BF16, k=8
+                  if [[ ( "$PREC" == 'BF16_BF16_F32_F32' || "$PREC" == 'BF16_BF16_F32_BF16' ) && ("$UNARY_POSTOP" != '2') ]] ; then
+                    if [[ ("$AVNNI" == '1') && ( "$TRA" == '1' ) ]] ; then
+                      continue
+                    fi
+                    cp ${HERE}/${OUTNAME} ${HERE}/ace_k8_${OUTNAME}
+                    sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
+                    sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(2,101,2), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
+                    if [ "$CVNNI" == '1' ] ; then
+                      sed 's/randnumn = rnd.sample(range(4,101,4), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
+                    fi
+                    chmod 755 ${HERE}/ace_k8_${OUTNAME}
+
+                    # create ACE scripts with B in VNNIT
+                    if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
+                      NEWNAME=ace_k8_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        ${HERE}/ace_k8_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                    fi
+                  fi
+
+                  # ACE for BF8 and HF8, k=4
+                  if [[ ( "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' ) && ("$UNARY_POSTOP" != '2') ]] ; then
+                    if [[ ("$AVNNI" == '1') && ( "$TRA" == '1' ) ]] ; then
+                      continue
+                    fi
+                    cp ${HERE}/${OUTNAME} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(4,101,4), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(2,101,2), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    if [ "$CVNNI" == '1' ] ; then
+                      sed 's/randnumn = rnd.sample(range(4,101,4), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    fi
+                    chmod 755 ${HERE}/ace_k4_${OUTNAME}
+
+                    # create ACE scripts with B in VNNIT
+                    if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
+                      NEWNAME=ace_k4_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        ${HERE}/ace_k4_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                    fi
+                  fi
+
+                  # ACE for BF8 and HF8, k=16
+                  if [[ ( "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' ) && ("$UNARY_POSTOP" != '2') ]] ; then
+                    if [[ ("$AVNNI" == '1') && ( "$TRA" == '1' ) ]] ; then
+                      continue
+                    fi
+                    cp ${HERE}/${OUTNAME} ${HERE}/ace_k16_${OUTNAME}
+                    sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k16_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k16_${OUTNAME}
+                    sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k16_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k16_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k16_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k16_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(2,101,2), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k16_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k16_${OUTNAME}
+                    if [ "$CVNNI" == '1' ] ; then
+                      sed 's/randnumn = rnd.sample(range(4,101,4), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k16_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/ace_k16_${OUTNAME}
+                    fi
+                    chmod 755 ${HERE}/ace_k16_${OUTNAME}
+
+                    # create ACE scripts with B in VNNIT
+                    if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
+                      NEWNAME=ace_k16_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        ${HERE}/ace_k16_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                    fi
+                  fi
+
+                  # ACE for MXBF8, MXHF8, MXBF6, MXHF6 and MXFP4 (k multiple of 32, only A in VNNI and B in VNNI and transposed)
+                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ("$UNARY_POSTOP" == '0') && ("$BINARY_POSTOP" == '0') ]] ; then
+                    if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
+                      # all MX types share a scaling block of 32 elements along k, so k must be a multiple of 32
+                      ACEK="acemx_k32"
+                      cp ${HERE}/${OUTNAME} ${HERE}/${ACEK}_${OUTNAME}
+                      sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/${ACEK}_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${ACEK}_${OUTNAME}
+                      # For C in MX format (A=B=C MX), M (and thus ldc in the eqld case) must be a multiple of 32
+                      if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) ]] ; then
+                        sed 's/randnumm = rnd.sample(range(16,101,16), 4)/randnumm = rnd.sample(range(32,101,32), 3)/g' ${HERE}/${ACEK}_${OUTNAME} >${TMPFILE}
+                        cp ${TMPFILE} ${HERE}/${ACEK}_${OUTNAME}
+                      fi
+                      sed 's/randnumk = rnd.sample(range([0-9]*,101,[0-9]*), .*)/randnumk = rnd.sample(range(32,101,32), 3)/g' ${HERE}/${ACEK}_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${ACEK}_${OUTNAME}
+                      sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/${ACEK}_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${ACEK}_${OUTNAME}
+                      sed 's/randnumn = rnd.sample(range(2,101,2), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/${ACEK}_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/${ACEK}_${OUTNAME}
+
+                      # create ACE script with B in VNNIT
+                      NEWNAME=${ACEK}_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        -e 's/addrbr/strdbr/g' \
+                        -e 's/offsbr/strdbr/g' \
+                        ${HERE}/${ACEK}_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                      rm -f ${HERE}/${ACEK}_${OUTNAME}
+                      rm -f ${HERE}/${OUTNAME}
+                      continue
+                    fi
+                  fi
+
+                  # MX x MX only supports the A-VNNI / B-VNNI-and-transposed layout, so drop any
+                  # remaining plain base script (e.g. UNARY_POSTOP=2 which has no ACE variant)
+                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) ]] ; then
+                    rm -f ${HERE}/${OUTNAME}
+                    continue
                   fi
 
                   # remove env variable

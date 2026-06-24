@@ -1831,6 +1831,48 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
   {
     return "mxfp4i8f32";
   }
+  if (LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxbf8mxbf8f32";
+  }
+  if (LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxbf8mxbf8mxbf8";
+  }
+  if (LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxhf8mxhf8f32";
+  }
+  if (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxbf6mxbf6f32";
+  }
+  if (LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxhf6mxhf6f32";
+  }
+  if (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxfp4mxfp4f32";
+  }
+  if (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxfp4mxfp4mxfp4";
+  }
   else {
     return "void";
   }
@@ -1850,6 +1892,9 @@ LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* da
     case LIBXSMM_DATATYPE_I32:  return "i32";
     case LIBXSMM_DATATYPE_I16:  return "i16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
+    case LIBXSMM_DATATYPE_MXFP4X2: return "mxfp4x2";
+    case LIBXSMM_DATATYPE_NVFP4X2: return "nvfp4x2";
+    case LIBXSMM_DATATYPE_MXBF8:   return "mxbf8";
     default: {
       if (LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
           LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
@@ -1980,6 +2025,9 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_I16:  return "i16";
     case LIBXSMM_DATATYPE_U16:  return "u16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
+    case LIBXSMM_DATATYPE_MXFP4X2: return "mxfp4x2";
+    case LIBXSMM_DATATYPE_NVFP4X2: return "nvfp4x2";
+    case LIBXSMM_DATATYPE_MXBF8:   return "mxbf8";
     case LIBXSMM_DATATYPE_IMPLICIT:   return "implicit";
     default: return "void";
   }
@@ -2144,7 +2192,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = request->descriptor.gemm->prefetch;
-          const char *const tname = (LIBXSMM_DATATYPE_I4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i4gemm_typename(request->descriptor.gemm->datatype) : ((LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_mxfpgemm_typename(request->descriptor.gemm->datatype) : ((LIBXSMM_DATATYPE_I2X4 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i2gemm_typename(request->descriptor.gemm->datatype) : ((LIBXSMM_DATATYPE_I1X8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i1gemm_typename(request->descriptor.gemm->datatype) : libxsmm_get_gemm_typename(request->descriptor.gemm->datatype))));
+          const char *const tname = (LIBXSMM_DATATYPE_I4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i4gemm_typename(request->descriptor.gemm->datatype) :
+                                      ((LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_mxfpgemm_typename(request->descriptor.gemm->datatype) :
+                                        ((LIBXSMM_DATATYPE_I2X4 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i2gemm_typename(request->descriptor.gemm->datatype) :
+                                          ((LIBXSMM_DATATYPE_I1X8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i1gemm_typename(request->descriptor.gemm->datatype) :
+                                             libxsmm_get_gemm_typename(request->descriptor.gemm->datatype))));
           const char *const meltw_tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.gemm->meltw_datatype_aux);
           int typesigns = 0, br = 0, kernabi = 0, stride_a = 0, stride_b = 0;
           char tc_option[16] = { 0 };
@@ -2505,11 +2562,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const unsigned int meltw_datatypes = request->descriptor.meltw->datatypes;
+          const int meltw_in1_prec = LIBXSMM_MELTW_GETENUM_IN1_PREC(meltw_datatypes);
+          const int meltw_in2_prec = LIBXSMM_MELTW_GETENUM_IN2_PREC(meltw_datatypes);
+          /* only emit input operands which are actually used (skip unused IN1/IN2, e.g. for unary kernels) */
+          const char *const meltw_in1_name = (LIBXSMM_DATATYPE_UNSUPPORTED == meltw_in1_prec) ? "" : libxsmm_get_typename((libxsmm_datatype)meltw_in1_prec);
+          const char *const meltw_in2_name = (LIBXSMM_DATATYPE_UNSUPPORTED == meltw_in2_prec) ? "" : libxsmm_get_typename((libxsmm_datatype)meltw_in2_prec);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch,
             libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_IN0_PREC(meltw_datatypes)),
-            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_IN1_PREC(meltw_datatypes)),
-            libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_IN2_PREC(meltw_datatypes)),
+            meltw_in1_name,
+            meltw_in2_name,
             libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_OUT_PREC(meltw_datatypes)),
             libxsmm_get_typename((libxsmm_datatype)LIBXSMM_MELTW_GETENUM_COMP_PREC(meltw_datatypes)),
             request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo, request->descriptor.meltw->ldi2, request->descriptor.meltw->ldi3,

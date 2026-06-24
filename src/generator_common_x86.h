@@ -117,11 +117,18 @@ void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                    
     const unsigned int                             i_vec_tmp2);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_hinstrpd_avx_avx512( libxsmm_generated_code*                        io_generated_code,
-    unsigned int                                   instr,
-    const unsigned int                             i_vec_inout,
-    const unsigned int                             i_vec_tmp1,
-    const unsigned int                             i_vec_tmp2);
+void libxsmm_generator_hinstrbf16_avx512(libxsmm_generated_code* io_generated_code, unsigned int instr,
+  const unsigned int i_vec_inout, const unsigned int i_vec_tmp1, const unsigned int i_vec_tmp2, const unsigned char i_imm8);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrbf16_2par_avx512(libxsmm_generated_code* io_generated_code, unsigned int instr,
+  const unsigned int i_vec_inout0, const unsigned int i_vec_inout1, const unsigned int i_vec_tmp1, const unsigned int i_vec_tmp2, const unsigned char i_imm8);
+
+LIBXSMM_API_INTERN void libxsmm_generator_hinstrbf16_double_avx512(libxsmm_generated_code* io_generated_code, unsigned int instr,
+  const unsigned int i_vec_inout, const unsigned int i_vec_tmp1, const unsigned int i_vec_tmp2, const unsigned char i_imm8);
+
+LIBXSMM_API_INTERN void libxsmm_generator_hinstrpd_avx_avx512(libxsmm_generated_code* io_generated_code, unsigned int instr,
+  const unsigned int i_vec_inout, const unsigned int i_vec_tmp1, const unsigned int i_vec_tmp2);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrpd_avx512( libxsmm_generated_code*                        io_generated_code,
@@ -1075,6 +1082,127 @@ void libxsmm_generator_maskedstore_64bit_sse( libxsmm_generated_code* io_generat
                                               const unsigned int      i_scale,
                                               const int               i_displacement,
                                               const unsigned int      i_mask_count );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtbf162bf4s_avx512_prepped_regs( libxsmm_generated_code* io_generated_code,
+                                                          const char              i_vname,
+                                                          const unsigned int      io_vec_reg,
+                                                          const unsigned int      i_vec_tmp0,
+                                                          const unsigned int      i_vec_tmp1,
+                                                          const unsigned int      i_vec_absmask,
+                                                          const unsigned int      i_vec_bound0,
+                                                          const unsigned int      i_vec_bound1,
+                                                          const unsigned int      i_vec_bound2,
+                                                          const unsigned int      i_vec_bound3,
+                                                          const unsigned int      i_vec_bound4,
+                                                          const unsigned int      i_vec_bound5,
+                                                          const unsigned int      i_vec_bound6,
+                                                          const unsigned int      i_vec_ones16,
+                                                          const unsigned int      i_vec_zero,
+                                                          const unsigned int      i_blend_mask );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt2bf162bf4s_avx512_prepped_regs( libxsmm_generated_code* io_generated_code,
+                                                           const char              i_vname,
+                                                           const unsigned int      io_vec_reg0,
+                                                           const unsigned int      io_vec_reg1,
+                                                           const unsigned int      o_vec_reg,
+                                                           const unsigned int      i_vec_tmp0,
+                                                           const unsigned int      i_vec_tmp1,
+                                                           const unsigned int      i_vec_absmask,
+                                                           const unsigned int      i_vec_bound0,
+                                                           const unsigned int      i_vec_bound1,
+                                                           const unsigned int      i_vec_bound2,
+                                                           const unsigned int      i_vec_bound3,
+                                                           const unsigned int      i_vec_bound4,
+                                                           const unsigned int      i_vec_bound5,
+                                                           const unsigned int      i_vec_bound6,
+                                                           const unsigned int      i_vec_ones16,
+                                                           const unsigned int      i_vec_zero,
+                                                           const unsigned int      i_blend_mask );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mxfp_quant_apply_scale_avx512( libxsmm_generated_code* io_generated_code,
+                                                      const char              i_vname,
+                                                      const unsigned int      i_num_lanes,
+                                                      const unsigned int*     i_vec_exp,
+                                                      const unsigned int*     i_vec_data,
+                                                      const unsigned int*     i_blend_mask,
+                                                      const unsigned int      i_vec_zero,
+                                                      const unsigned int      i_vec_nan,
+                                                      const unsigned int      i_vec_expbias,
+                                                      const unsigned int      i_vec_infnan,
+                                                      const unsigned int      i_vec_recp_max,
+                                                      const unsigned int      i_sf_gp_reg,
+                                                      const unsigned int      i_sf_idx_reg,
+                                                      const unsigned int      i_sf_idx_scale,
+                                                      const int*              i_sf_displacement,
+                                                      const unsigned int      i_sf_mask_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mxfp_quant_scale_block_avx512( libxsmm_generated_code* io_generated_code,
+                                                      const char              i_vname,
+                                                      const unsigned int      io_vec_reg,
+                                                      const unsigned int      i_vec_tmp0,
+                                                      const unsigned int      i_vec_tmp1,
+                                                      const unsigned int      i_vec_tmp2,
+                                                      const unsigned int      i_vec_zero,
+                                                      const unsigned int      i_vec_nan,
+                                                      const unsigned int      i_vec_expbias,
+                                                      const unsigned int      i_vec_infnan,
+                                                      const unsigned int      i_vec_recp_max,
+                                                      const unsigned int      i_blend_mask,
+                                                      const unsigned int      i_sf_gp_reg,
+                                                      const unsigned int      i_sf_idx_reg,
+                                                      const unsigned int      i_sf_idx_scale,
+                                                      const int               i_sf_displacement,
+                                                      const unsigned int      i_sf_mask_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_nvfp4_quant_scale_block_avx512( libxsmm_generated_code* io_generated_code,
+                                                       const char              i_vname,
+                                                       const unsigned int      io_vec_reg,
+                                                       const unsigned int      i_vec_tmp0,
+                                                       const unsigned int      i_vec_tmp1,
+                                                       const unsigned int      i_vec_tmp2,
+                                                       const unsigned int      i_vec_zero,
+                                                       const unsigned int      i_vec_recp6,
+                                                       const unsigned int      i_vec_perm_bcast,
+                                                       const unsigned int      i_vec_perm_pack,
+                                                       const unsigned int      i_vec_recp_max,
+                                                       const unsigned int      i_blend_mask,
+                                                       const unsigned int      i_sf_gp_reg,
+                                                       const unsigned int      i_sf_idx_reg,
+                                                       const unsigned int      i_sf_idx_scale,
+                                                       const int               i_sf_displacement,
+                                                       const unsigned int      i_sf_mask_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtbf162bf8_avx512( libxsmm_generated_code* io_generated_code,
+                                            const char              i_vname,
+                                            const unsigned int      i_vec_reg,
+                                            const unsigned int      o_vec_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt2bf162bf8_avx512( libxsmm_generated_code* io_generated_code,
+                                             const char              i_vname,
+                                             const unsigned int      io_vec_reg0,
+                                             const unsigned int      io_vec_reg1,
+                                             const unsigned int      o_vec_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtbf162hf8_avx512( libxsmm_generated_code* io_generated_code,
+                                            const char              i_vname,
+                                            const unsigned int      i_vec_reg,
+                                            const unsigned int      o_vec_reg,
+                                            const unsigned int      i_vec_tmp );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvthf82bf16_avx512( libxsmm_generated_code* io_generated_code,
+                                            const char              i_vname,
+                                            const unsigned int      i_vec_reg,
+                                            const unsigned int      o_vec_reg,
+                                            const unsigned int      i_vec_tmp );
 
 #endif /* GENERATOR_COMMON_X86_H */
 

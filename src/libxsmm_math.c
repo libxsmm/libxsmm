@@ -218,6 +218,22 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
 #       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
 #       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
+      case LIBXSMM_DATATYPE_MXFP4X2:
+      case LIBXSMM_DATATYPE_NVFP4X2:
+      case LIBXSMM_DATATYPE_MXBF8: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE unsigned char
+        if (0 == matdiff_shuffle) {
+#         include "libxsmm_matdiff.h"
+        }
+        else {
+#         define LIBXSMM_MATDIFF_SHUFFLE
+#         include "libxsmm_matdiff.h"
+#         undef LIBXSMM_MATDIFF_SHUFFLE
+        }
+#       undef LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
       default: {
         static int error_once = 0;
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
