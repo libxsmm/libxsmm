@@ -2806,6 +2806,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         }
       } else if ( ((LIBXSMM_MIN(i_m_end, i_m_blocking) - i_m_start) % 2 == 0) && (i_m_start == 0) ) {
         unsigned int l_k = 0;
+        unsigned int l_vnni_08lo_reg = 28;
+        unsigned int l_vnni_16lo_reg = 30;
+        unsigned int l_vnni_16hi_reg = 31;
 
         for ( l_k = 0; l_k < 4; l_k++ ) {
           long long l_a_off = i_micro_kernel_config->datatype_size_in * (i_xgemm_desc->lda * l_k);
@@ -2818,10 +2821,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
               'y',
               i_a_start + (l_k/2) + (l_k%2)*2, i_micro_kernel_config->use_masking_a_c ? 3 : 0, 1, 0 );
         }
-
-        unsigned int l_vnni_08lo_reg = 28;
-        unsigned int l_vnni_16lo_reg = 30;
-        unsigned int l_vnni_16hi_reg = 31;
 
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
                                                   i_a_start + 2, l_vnni_08lo_reg, i_a_start );
@@ -2860,6 +2859,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         unsigned int l_m = 0;
         unsigned int l_k = 0;
         for ( l_m = i_m_start; l_m < LIBXSMM_MIN(i_m_end, i_m_blocking); l_m++ ) {
+          unsigned int l_vnni_08lo_reg = 28;
+          unsigned int l_vnni_16lo_reg = 30;
+
           for ( l_k = 0; l_k < 4; l_k++ ) {
             long long l_a_off = i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -2871,9 +2873,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
                 'x',
                 (l_k == 0) ? i_a_start + l_m : i_tmp_start + l_k, (( l_m == (i_m_blocking - 1) ) && i_micro_kernel_config->use_masking_a_c ) ? 3 : 0, 1, 0 );
           }
-
-          unsigned int l_vnni_08lo_reg = 28;
-          unsigned int l_vnni_16lo_reg = 30;
 
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
                                                     i_tmp_start + 1, l_vnni_08lo_reg, i_a_start + l_m );
@@ -3303,6 +3302,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         }
       } else if ( ((LIBXSMM_MIN(i_n_end, i_n_blocking) - i_n_start) % 2 == 0) && (i_n_start == 0) ) {
         unsigned int l_k = 0;
+        unsigned int l_vnni_08lo_reg = 28;
+        unsigned int l_vnni_16lo_reg = 30;
+        unsigned int l_vnni_16hi_reg = 31;
 
         for ( l_k = 0; l_k < 4; l_k++ ) {
           long long l_b_off = i_micro_kernel_config->datatype_size_in2 * (i_xgemm_desc->ldb * l_k);
@@ -3315,10 +3317,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
               'y',
               i_b_start + (l_k/2) + (l_k%2)*2, (i_use_n_masking != 0) ? 2 : 0, 1, 0 );
         }
-
-        unsigned int l_vnni_08lo_reg = 28;
-        unsigned int l_vnni_16lo_reg = 30;
-        unsigned int l_vnni_16hi_reg = 31;
 
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
                                                   i_b_start + 2, l_vnni_08lo_reg, i_b_start );
@@ -3357,6 +3355,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         unsigned int l_n = 0;
         unsigned int l_k = 0;
         for ( l_n = i_n_start; l_n < LIBXSMM_MIN(i_n_end, i_n_blocking); l_n++ ) {
+          unsigned int l_vnni_08lo_reg = 28;
+          unsigned int l_vnni_16lo_reg = 30;
+
           for ( l_k = 0; l_k < 4; l_k++ ) {
             long long l_b_off = i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3368,9 +3369,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
                 'x',
                 (l_k == 0) ? i_b_start + l_n : i_tmp_start + l_k, (( l_n == (i_n_blocking - 1) ) && i_use_n_masking ) ? 2 : 0, 1, 0 );
           }
-
-          unsigned int l_vnni_08lo_reg = 28;
-          unsigned int l_vnni_16lo_reg = 30;
 
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2B, i_micro_kernel_config->vector_name,
                                                     i_tmp_start + 1, l_vnni_08lo_reg, i_b_start + l_n );
@@ -3749,7 +3747,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp3
 
       if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
         unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-        unsigned int l_m_i = 0, l_m_o = 0, l_m_flat = 0;
         unsigned int l_m_i_start = (i_micro_kernel_config->ace_a_prefetch_ctrl == 1) ? 0 : 2;
         unsigned int l_m_i_end   = (i_micro_kernel_config->ace_a_prefetch_ctrl == 1) ? 2 : 4;
         for ( l_m_i = l_m_i_start; l_m_i < l_m_i_end; l_m_i++ ) {
@@ -3854,7 +3851,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace_fp3
 
       if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
         unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-        unsigned int l_n_i = 0, l_n_o = 0, l_n_flat = 0;
         unsigned int l_n_i_start = (i_micro_kernel_config->ace_b_prefetch_ctrl == 1) ? 0 : 2;
         unsigned int l_n_i_end   = (i_micro_kernel_config->ace_b_prefetch_ctrl == 1) ? 2 : 4;
         for ( l_n_i = l_n_i_start; l_n_i < l_n_i_end; l_n_i++ ) {

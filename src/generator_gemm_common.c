@@ -651,7 +651,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack( libxsm
   unsigned int tmp_reg2       = LIBXSMM_X86_GP_REG_RDX;
   unsigned short gp_save_bitmask = 0x2 | 0x4 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000;
   libxsmm_meltw_unary_type l_trans_unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT;
-  libxsmm_datatype l_trans_dt = ( (libxsmm_cpuid_dot_pack_factor(i_in_dtype) == 4) && (i_in_dtype == LIBXSMM_DATATYPE_BF16) ) ? LIBXSMM_DATATYPE_F64 : LIBXSMM_DATATYPE_F32;;
+  libxsmm_datatype l_trans_dt = ( (libxsmm_cpuid_dot_pack_factor(i_in_dtype) == 4) && (i_in_dtype == LIBXSMM_DATATYPE_BF16) ) ? LIBXSMM_DATATYPE_F64 : LIBXSMM_DATATYPE_F32;
   unsigned int l_trans_m = i_xgemm_desc_orig->k/libxsmm_cpuid_dot_pack_factor(i_in_dtype);
   unsigned int l_trans_n = i_xgemm_desc_orig->n;
   unsigned int l_trans_ldi = i_xgemm_desc_orig->ldb/libxsmm_cpuid_dot_pack_factor(i_in_dtype);
@@ -3713,13 +3713,13 @@ void libxsmm_generator_gemm_footer_kloop( libxsmm_generated_code*             io
     const unsigned int                 i_m_blocking,
     const unsigned int                 i_max_blocked_k,
     const unsigned int                 i_kloop_complete ) {
-  LIBXSMM_UNUSED(i_m_blocking);
 #if 0
   unsigned int l_is_Amxfp8_Bmxfp8_gemm = libxsmm_x86_is_Amxfp8_Bmxfp8_gemm(i_xgemm_desc);
 #endif
   unsigned int l_is_Amxfp4_Bmxfp4_gemm = libxsmm_x86_is_Amxfp4_Bmxfp4_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp6_Bmxfp6_gemm = libxsmm_x86_is_Amxfp6_Bmxfp6_gemm(i_xgemm_desc);
   unsigned int l_scale_k = (l_is_Amxfp4_Bmxfp4_gemm > 0) ? 2 : 1;
+  LIBXSMM_UNUSED(i_m_blocking);
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_kloop, i_max_blocked_k );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
@@ -4935,6 +4935,9 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
     ? i_micro_kernel_config->c_vmove_nts_instruction : i_micro_kernel_config->c_vmove_instruction;
   /* register blocking counter in n- and m-direction */
   unsigned int l_n = 0, l_m = 0;
+  libxsmm_micro_kernel_config l_micro_kernel_config_mod;
+  libxsmm_micro_kernel_config *const i_micro_kernel_config_mod = (libxsmm_micro_kernel_config*)&l_micro_kernel_config_mod;
+  memcpy(i_micro_kernel_config_mod, i_micro_kernel_config, sizeof(libxsmm_micro_kernel_config));
 
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
        ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
@@ -4950,10 +4953,6 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                           i_xgemm_desc, i_m_blocking, i_n_blocking );
     return;
   }
-
-  libxsmm_micro_kernel_config l_micro_kernel_config_mod;
-  libxsmm_micro_kernel_config *const i_micro_kernel_config_mod = (libxsmm_micro_kernel_config*)&l_micro_kernel_config_mod;
-  memcpy(i_micro_kernel_config_mod, i_micro_kernel_config, sizeof(libxsmm_micro_kernel_config));
 
   /* shuffle accum;ator in case of delayed VNNI transform */
   if ( (l_is_Ai16_Bi16_flat_gemm != 0) || (l_is_ABF16_BBF16_flat_cpx_gemm != 0) ) {

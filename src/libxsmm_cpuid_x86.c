@@ -153,7 +153,6 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_inline_transform(void)
 {
 #if defined(LIBXSMM_PLATFORM_X86)
   const char *l_env_x86_ace = getenv("LIBXSMM_X86_USE_ACE_DISABLE_INLINE_TRANSFORM");
-  if (0 == l_env_x86_ace) l_env_x86_ace = getenv("LIBXSMM_X86_USE_AMX10_DISABLE_INLINE_TRANSFORM");
   int result = 0;
   /*LIBXSMM_INIT*/
   if ( 0 == l_env_x86_ace ) {
@@ -178,7 +177,6 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_a(void)
 {
 #if defined(LIBXSMM_PLATFORM_X86)
   const char *l_env_x86_ace = getenv("LIBXSMM_X86_USE_ACE_DISABLE_SWPF_A");
-  if (0 == l_env_x86_ace) l_env_x86_ace = getenv("LIBXSMM_X86_USE_AMX10_DISABLE_SWPF_A");
   int result = 0;
   /*LIBXSMM_INIT*/
   if ( 0 == l_env_x86_ace ) {
@@ -203,7 +201,6 @@ LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_b(void)
 {
 #if defined(LIBXSMM_PLATFORM_X86)
   const char *l_env_x86_ace = getenv("LIBXSMM_X86_USE_ACE_DISABLE_SWPF_B");
-  if (0 == l_env_x86_ace) l_env_x86_ace = getenv("LIBXSMM_X86_USE_AMX10_DISABLE_SWPF_B");
   int result = 0;
   /*LIBXSMM_INIT*/
   if ( 0 == l_env_x86_ace ) {
