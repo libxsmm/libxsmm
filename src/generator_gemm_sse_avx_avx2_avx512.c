@@ -276,6 +276,17 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     l_b_to_bvnniT_gemm_stack_alloc_tensors = 0;
   }
 
+  /* BF8/HF8 pre-SPR x86 targets must use the corresponding stack conversion path */
+  if ( ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+         (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) &&
+       ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, l_xgemm_desc) == 0 ) ) {
+    l_avnni_gemm_stack_alloc_tensors = 0;
+    l_atvnni_gemm_stack_alloc_tensors = 0;
+    l_avnni_btrans_gemm_stack_alloc_tensors = 0;
+    l_atvnni_btrans_gemm_stack_alloc_tensors = 0;
+    l_b_to_bvnniT_gemm_stack_alloc_tensors = 0;
+  }
+
   /* TODO we need to find a better place for this*/
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
        ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
