@@ -3989,7 +3989,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
 
   for ( l_n = i_n_start ; l_n < LIBXSMM_MIN(i_n_end, i_n_blocking); l_n++ ) {
     for ( l_m = i_m_start; l_m < LIBXSMM_MIN(i_m_end, i_m_blocking); l_m++ ) {
-      if ( (l_compute_instr_reggroup == LIBXSMM_X86_INSTR_TOP2BF16PS) ) {
+      if ( l_compute_instr_reggroup == LIBXSMM_X86_INSTR_TOP2BF16PS ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, l_compute_instr_reggroup, 'z',
                                                   i_b_start + l_n, i_a_start + (l_m*i_a_mult), l_m + (l_n * i_m_blocking) );
       } else {
