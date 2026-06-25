@@ -56,7 +56,7 @@ static void gold_fp32_to_mxfp4_block(
 
   /* 1. Max absolute value (propagates NaN like the MX reference) */
   for (i = 0; i < 32; i++) {
-    float a = fabsf(in[i]);
+    float a = LIBXSMM_FABSF(in[i]);
     if (a > amax || a != a) amax = a;
   }
 
@@ -90,8 +90,8 @@ static void gold_fp32_to_mxfp4_block(
     unsigned char s0, s1;
     u0.f = in[2*i];     s0 = (u0.u >> 31) ? 0x8u : 0u;
     u1.f = in[2*i + 1]; s1 = (u1.u >> 31) ? 0x8u : 0u;
-    lo = s0 | gold_encode_e2m1_abs(fabsf(v0));
-    hi = s1 | gold_encode_e2m1_abs(fabsf(v1));
+    lo = s0 | gold_encode_e2m1_abs(LIBXSMM_FABSF(v0));
+    hi = s1 | gold_encode_e2m1_abs(LIBXSMM_FABSF(v1));
     out_data[i] = (unsigned char)((hi << 4) | lo);
   }
 }

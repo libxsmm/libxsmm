@@ -32,7 +32,7 @@ static void gold_fp32_to_mxbf8_block(
 
   /* 1. Max absolute value (propagates NaN like the MX reference) */
   for (i = 0; i < 32; i++) {
-    float a = fabsf(in[i]);
+    float a = LIBXSMM_FABSF(in[i]);
     if (a > amax || a != a) amax = a;
   }
 

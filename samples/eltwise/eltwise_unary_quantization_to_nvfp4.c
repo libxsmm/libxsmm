@@ -96,7 +96,7 @@ static unsigned char gold_float_to_hf8(float val)
     return (unsigned char)((sign << 7) | 0x7F);  /* E4M3 NaN */
   }
   /* Inf or too large -> clamp to max normal (448) */
-  if (f_exp == 0xFF || fabsf(val) > 448.0f) {
+  if (f_exp == 0xFF || LIBXSMM_FABSF(val) > 448.0f) {
     return (unsigned char)((sign << 7) | 0x78);  /* exp=0xF, mant=0 => 448 */
   }
   /* Zero */
@@ -189,7 +189,7 @@ static void gold_fp32_to_nvfp4_block(
 
   /* 1. Max absolute value */
   for (i = 0; i < 16; i++) {
-    float a = fabsf(in[i]);
+    float a = LIBXSMM_FABSF(in[i]);
     if (a > amax || a != a) amax = a;
   }
 
@@ -256,8 +256,8 @@ static void gold_fp32_to_nvfp4_block(
       }
       u0.f = in[2*i];     s0 = (u0.u >> 31) ? 0x8u : 0u;
       u1.f = in[2*i + 1]; s1 = (u1.u >> 31) ? 0x8u : 0u;
-      lo = s0 | gold_encode_e2m1_abs(fabsf(v0));
-      hi = s1 | gold_encode_e2m1_abs(fabsf(v1));
+      lo = s0 | gold_encode_e2m1_abs(LIBXSMM_FABSF(v0));
+      hi = s1 | gold_encode_e2m1_abs(LIBXSMM_FABSF(v1));
       out_data[i] = (unsigned char)((hi << 4) | lo);
     }
   }
