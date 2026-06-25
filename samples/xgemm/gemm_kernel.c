@@ -1244,10 +1244,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     const float* f_b = (const float*)b;
     float* f_c = (float*)c;
     int l_use_bf16 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_BF32) ? 1 : 0;
-    int l_use_bf16_ace = (libxsmm_get_target_archid() >= LIBXSMM_X86_AVX512_ACE1 && (l_use_bf16 != 0) && (k % 4 == 0) &&
-                          !(16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n))) ? 1 : 0;
+    int l_use_bf16_ace = ((k % 4 == 0) && !(16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n))) ? 1 : 0;
 
-    if ( (l_use_bf16 != 0) && (libxsmm_get_target_archid() >= LIBXSMM_X86_AVX512_ACE1) && (l_use_bf16_ace == 0) ) {
+    if ( (l_use_bf16 != 0) && (l_use_bf16_ace == 0) && ((libxsmm_get_target_archid() >= LIBXSMM_X86_AVX512_ACE1) && (libxsmm_get_target_archid() < LIBXSMM_X86_ALLFEAT)) ) {
       fprintf(stderr, "Warning: The current problem size is not suitable for using BF16 emulation on AVX-512 ACE. Falling back to regular FP32 computation.\n");
       l_use_bf16 = 0;
     }

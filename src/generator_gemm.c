@@ -534,13 +534,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;
   }
-
   /* If we have BF32 (f32 via bf16) and we are not >= SPR and x86 we use reference code */
-  if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC(l_xgemm_desc_mod.datatype)) &&
-      (LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(l_xgemm_desc_mod.datatype)) &&
-      (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc_mod.datatype)) &&
-      (l_is_bf32_gemm > 0) &&
-      !((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT))) {
+  if ( (l_is_bf32_gemm > 0) &&
+       !((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT))) {
     LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_ARCH_PREC);
     return;
   }
