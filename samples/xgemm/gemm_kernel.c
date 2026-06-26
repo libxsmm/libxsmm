@@ -1368,11 +1368,10 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat8* bf8_a = (libxsmm_bfloat8*)a;
     libxsmm_bfloat8* bf8_b = (libxsmm_bfloat8*)b;
     float*  i_c_f = (float*)c;
-    int l_is_mxfp4_via_mxfp8 = 1;
     int l_k_block = 32;
     float tmp_val = 0.0;
     unsigned int l_k3 = 0;
-    unsigned int k_scale_freq = ((l_is_mxfp4_via_mxfp8 > 0) ? 4 : 8);
+    unsigned int k_scale_freq = 8;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -4575,8 +4574,6 @@ int main(int argc, char* argv []) {
             unsigned char *l_a_new = NULL;
             unsigned char *l_b_mxfp4  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * ((size_t)l_k/2) * (size_t)l_br, 64);
             unsigned char *l_b_new = NULL;
-            int l_is_mxfp4_via_mxfp8 = 1;
-            int l_use_intlv_format = (l_is_mxfp4_via_mxfp8 > 0) ? 1 : 0;
             libxsmm_free(l_a);
             libxsmm_free(l_b);
             l_a  = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(char), 64);
@@ -4593,22 +4590,14 @@ int main(int argc, char* argv []) {
                     unsigned char odd = (rand()%16);
                     unsigned char result;
                     libxsmm_blasint g_k = l_ak * 8 + l_akk;
-                    libxsmm_blasint l_k0 = l_ak * 8 + l_akk/2 + 0;
-                    libxsmm_blasint l_k1 = l_ak * 8 + l_akk/2 + 4;
                     unsigned char evench = convert_mxfp4_to_bf8(even);
                     unsigned char oddch = convert_mxfp4_to_bf8(odd);
                     even = even & 0x0f;
                     odd = (odd & 0x0f) << 4;
                     result = even | odd;
-                    if (l_use_intlv_format > 0) {
-                      l_a_mxfp4[(l_ar * l_lda * (l_k/2)) + ((l_k0/8) * l_lda * 4) + l_am * 4 + (l_k0%4)] = result;
-                      l_a_new[(l_ar * l_lda * l_k) + ((l_k0/32) * l_lda * 32) + l_am * 32 + (l_k0%32)] = evench;
-                      l_a_new[(l_ar * l_lda * l_k) + ((l_k1/32) * l_lda * 32) + l_am * 32 + (l_k1%32)] = oddch;
-                    } else {
-                      l_a_mxfp4[(l_ar * l_lda * (l_k/2)) + (l_ak * l_lda * 4) + l_am * 4 + l_akk/2] = result;
-                      l_a_new[(l_ar * l_lda * l_k) + (g_k/l_divider * l_lda * l_divider) + l_am * l_divider + g_k % l_divider + 0] = evench;
-                      l_a_new[(l_ar * l_lda * l_k) + (g_k/l_divider * l_lda * l_divider) + l_am * l_divider + g_k % l_divider + 1] = oddch;
-                    }
+                    l_a_mxfp4[(l_ar * l_lda * (l_k/2)) + (l_ak * l_lda * 4) + l_am * 4 + l_akk/2] = result;
+                    l_a_new[(l_ar * l_lda * l_k) + (g_k/l_divider * l_lda * l_divider) + l_am * l_divider + g_k % l_divider + 0] = evench;
+                    l_a_new[(l_ar * l_lda * l_k) + (g_k/l_divider * l_lda * l_divider) + l_am * l_divider + g_k % l_divider + 1] = oddch;
                   }
                 }
               }
@@ -4623,22 +4612,14 @@ int main(int argc, char* argv []) {
                     unsigned char odd = (rand()%16);
                     unsigned char result;
                     libxsmm_blasint g_k = l_ak * 8 + l_akk;
-                    libxsmm_blasint l_k0 = l_ak * 8 + l_akk/2 + 0;
-                    libxsmm_blasint l_k1 = l_ak * 8 + l_akk/2 + 4;
                     unsigned char evench = convert_mxfp4_to_bf8(even);
                     unsigned char oddch = convert_mxfp4_to_bf8(odd);
                     even = even & 0x0f;
                     odd = (odd & 0x0f) << 4;
                     result = even | odd;
-                    if (l_use_intlv_format > 0) {
-                      l_b_mxfp4[(l_ar * l_ldb * (l_k/2)) + ((l_k0/8) * l_ldb * 4) + l_am * 4 + (l_k0%4)] = result;
-                      l_b_new[(l_ar * l_ldb * l_k) + ((l_k0/32) * l_ldb * 32) + l_am * 32 + (l_k0%32)] = evench;
-                      l_b_new[(l_ar * l_ldb * l_k) + ((l_k1/32) * l_ldb * 32) + l_am * 32 + (l_k1%32)] = oddch;
-                    } else {
-                      l_b_mxfp4[(l_ar * l_ldb * (l_k/2)) + (l_ak * l_ldb * 4) + l_am * 4 + l_akk/2] = result;
-                      l_b_new[(l_ar * l_ldb * l_k) + ((g_k/l_divider) * l_ldb * l_divider) + l_am * l_divider + g_k % l_divider + 0] = evench;
-                      l_b_new[(l_ar * l_ldb * l_k) + ((g_k/l_divider) * l_ldb * l_divider) + l_am * l_divider + g_k % l_divider + 1] = oddch;
-                    }
+                    l_b_mxfp4[(l_ar * l_ldb * (l_k/2)) + (l_ak * l_ldb * 4) + l_am * 4 + l_akk/2] = result;
+                    l_b_new[(l_ar * l_ldb * l_k) + ((g_k/l_divider) * l_ldb * l_divider) + l_am * l_divider + g_k % l_divider + 0] = evench;
+                    l_b_new[(l_ar * l_ldb * l_k) + ((g_k/l_divider) * l_ldb * l_divider) + l_am * l_divider + g_k % l_divider + 1] = oddch;
                   }
                 }
               }
