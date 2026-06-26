@@ -2620,7 +2620,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
 
         for ( l_m = i_m_start; l_m < LIBXSMM_MIN(i_m_end, i_m_blocking); l_m+=2 ) {
           for ( l_k = 0; l_k < 2; l_k++ ) {
-            long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k);
+            long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -2652,7 +2652,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
           if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
             for ( l_k = 0; l_k < 2; l_k++ ) {
               unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-              long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
+              long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
               if ( l_is_strd_brgemm != 0 ) {
                 libxsmm_x86_instruction_prefetch(io_generated_code,
                     LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -2676,7 +2676,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         unsigned int l_k = 0;
         for ( l_m = i_m_start; l_m < LIBXSMM_MIN(i_m_end, i_m_blocking); l_m++ ) {
           for ( l_k = 0; l_k < 2; l_k++ ) {
-            long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k);
+            long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -2695,7 +2695,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
           if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
             for ( l_k = 0; l_k < 2; l_k++ ) {
               unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-              long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
+              long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
               if ( l_is_strd_brgemm != 0 ) {
                 libxsmm_x86_instruction_prefetch(io_generated_code,
                     LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -2720,7 +2720,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         unsigned int l_k = 0;
 
         for ( l_k = 0; l_k < 4; l_k++ ) {
-          long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (i_xgemm_desc->lda * l_k);
+          long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * ((long long)i_xgemm_desc->lda * l_k);
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -2786,7 +2786,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
           for ( l_k = 0; l_k < 4; l_k++ ) {
             unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-            long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
+            long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * ((long long)i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
             if ( l_is_strd_brgemm != 0 ) {
               libxsmm_x86_instruction_prefetch(io_generated_code,
                   LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -2811,7 +2811,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         unsigned int l_vnni_16hi_reg = 31;
 
         for ( l_k = 0; l_k < 4; l_k++ ) {
-          long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (i_xgemm_desc->lda * l_k);
+          long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * ((long long)i_xgemm_desc->lda * l_k);
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -2837,7 +2837,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
         if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
           for ( l_k = 0; l_k < 4; l_k++ ) {
             unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-            long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
+            long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * ((long long)i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
             if ( l_is_strd_brgemm != 0 ) {
               libxsmm_x86_instruction_prefetch(io_generated_code,
                   LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -2863,7 +2863,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
           unsigned int l_vnni_16lo_reg = 30;
 
           for ( l_k = 0; l_k < 4; l_k++ ) {
-            long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k);
+            long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -2884,7 +2884,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
           if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
             for ( l_k = 0; l_k < 4; l_k++ ) {
               unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-              long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
+              long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
               if ( l_is_strd_brgemm != 0 ) {
                 libxsmm_x86_instruction_prefetch(io_generated_code,
                     LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3116,7 +3116,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
 
         for ( l_n = i_n_start; l_n < LIBXSMM_MIN(i_n_end, i_n_blocking); l_n+=2 ) {
           for ( l_k = 0; l_k < 2; l_k++ ) {
-            long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k);
+            long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -3148,7 +3148,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
           if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
             for ( l_k = 0; l_k < 2; l_k++ ) {
               unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-              long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
+              long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
               if ( l_is_strd_brgemm != 0 ) {
                 libxsmm_x86_instruction_prefetch(io_generated_code,
                     LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3172,7 +3172,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         unsigned int l_k = 0;
         for ( l_n = i_n_start; l_n < LIBXSMM_MIN(i_n_end, i_n_blocking); l_n++ ) {
           for ( l_k = 0; l_k < 2; l_k++ ) {
-            long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k);
+            long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -3191,7 +3191,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
           if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
             for ( l_k = 0; l_k < 2; l_k++ ) {
               unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-              long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
+              long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
               if ( l_is_strd_brgemm != 0 ) {
                 libxsmm_x86_instruction_prefetch(io_generated_code,
                     LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3216,7 +3216,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         unsigned int l_k = 0;
 
         for ( l_k = 0; l_k < 4; l_k++ ) {
-          long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in2 * (i_xgemm_desc->ldb * l_k);
+          long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in2 * ((long long)i_xgemm_desc->ldb * l_k);
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -3282,7 +3282,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
           for ( l_k = 0; l_k < 4; l_k++ ) {
             unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-            long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
+            long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * ((long long)i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
             if ( l_is_strd_brgemm != 0 ) {
               libxsmm_x86_instruction_prefetch(io_generated_code,
                   LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3307,7 +3307,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         unsigned int l_vnni_16hi_reg = 31;
 
         for ( l_k = 0; l_k < 4; l_k++ ) {
-          long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (i_xgemm_desc->ldb * l_k);
+          long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * ((long long)i_xgemm_desc->ldb * l_k);
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -3333,7 +3333,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
         if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
           for ( l_k = 0; l_k < 4; l_k++ ) {
             unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-            long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
+            long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * ((long long)i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
             if ( l_is_strd_brgemm != 0 ) {
               libxsmm_x86_instruction_prefetch(io_generated_code,
                   LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3359,7 +3359,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
           unsigned int l_vnni_16lo_reg = 30;
 
           for ( l_k = 0; l_k < 4; l_k++ ) {
-            long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k);
+            long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k);
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VMOVDQU64,
@@ -3380,7 +3380,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
           if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
             for ( l_k = 0; l_k < 4; l_k++ ) {
               unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-              long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
+              long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
               if ( l_is_strd_brgemm != 0 ) {
                 libxsmm_x86_instruction_prefetch(io_generated_code,
                     LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3652,7 +3652,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp3
     unsigned int l_k = 0;
     for ( l_m = i_m_start; l_m < LIBXSMM_MIN(i_m_end, i_m_blocking); l_m++ ) {
       for ( l_k = 0; l_k < 2; l_k++ ) {
-        long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k);
+        long long l_a_off = (long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k);
         unsigned int l_dest_reg = (l_k == 0) ? i_a_start + l_m : i_tmp_start + l_m;
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3676,7 +3676,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp3
       if ( i_micro_kernel_config->ace_a_prefetch_ctrl != 0 ) {
         for ( l_k = 0; l_k < 2; l_k++ ) {
           unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-          long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
+          long long l_a_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in * (16 * l_m + (long long)i_xgemm_desc->lda * l_k)) + (int)i_xgemm_desc->c1;
           if ( l_is_strd_brgemm != 0 ) {
             libxsmm_x86_instruction_prefetch(io_generated_code,
                 LIBXSMM_X86_INSTR_PREFETCHT0,
@@ -3888,7 +3888,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace_fp3
     unsigned int l_k = 0;
     for ( l_n = i_n_start; l_n < LIBXSMM_MIN(i_n_end, i_n_blocking); l_n++ ) {
       for ( l_k = 0; l_k < 2; l_k++ ) {
-        long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k);
+        long long l_b_off = (long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k);
         unsigned int l_dest_reg = (l_k == 0) ? i_b_start + l_n : i_tmp_start + l_n;
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3912,7 +3912,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace_fp3
       if ( i_micro_kernel_config->ace_b_prefetch_ctrl != 0 ) {
         for ( l_k = 0; l_k < 2; l_k++ ) {
           unsigned int l_is_strd_brgemm = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE);
-          long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
+          long long l_b_off_prefetch = ((long long)i_micro_kernel_config->datatype_size_in2 * (16 * l_n + (long long)i_xgemm_desc->ldb * l_k)) + (int)i_xgemm_desc->c2;
           if ( l_is_strd_brgemm != 0 ) {
             libxsmm_x86_instruction_prefetch(io_generated_code,
                 LIBXSMM_X86_INSTR_PREFETCHT0,
