@@ -1002,6 +1002,26 @@ int main(int argc, char* argv []) {
     }
   } while ( l_keep_going );
 
-  return 0;
+  if ( l_file_input != 0 ) {
+    fclose( l_file_handle );
+  }
+
+  /* Print total max error and derive exit code so the CI can detect failures */
+  printf("\n\n Total Max Error %f\n\n", l_total_max_error );
+
+  if ( l_run_check == 1 ) {
+    double l_error_bound;
+    if ( l_spmm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
+      l_error_bound = 0.005;
+    } else {
+      /* F32 and I32 outputs are expected to match the reference (close to) exactly */
+      l_error_bound = 0.0001;
+    }
+    if ( l_total_max_error >= l_error_bound ) {
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
 }
 
