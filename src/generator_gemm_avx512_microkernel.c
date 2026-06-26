@@ -2935,7 +2935,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
               }
             } else if ( l_m_flat < 4 ) {
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
-                                                        i_a_start + 4*l_m + l_m_o, i_a_start + 4*l_m + l_m_o, i_m_start + 4*l_m + l_m_o );
+                                                        i_a_start + 4*l_m + l_m_o, i_a_start + 4*l_m + l_m_o, i_a_start + 4*l_m + l_m_o );
             }
           }
         }
@@ -3724,7 +3724,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp3
             }
           } else if ( l_m_flat < 4 ) {
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
-                                                      i_a_start + 4*l_m + l_m_o, i_a_start + 4*l_m + l_m_o, i_m_start + 4*l_m + l_m_o );
+                                                      i_a_start + 4*l_m + l_m_o, i_a_start + 4*l_m + l_m_o, i_a_start + 4*l_m + l_m_o );
           }
         }
       }
