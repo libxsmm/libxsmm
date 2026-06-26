@@ -725,7 +725,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
       for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
           unsigned int l_reg0 = (l_n*i_packed_blocking) + l_p;
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, l_reg0, l_reg0, 0, l_reg0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+          /* clear the full SVE vector (all segments) so VL>128 upper lanes are zeroed */
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, l_reg0, l_reg0, 0, l_reg0, LIBXSMM_AARCH64_SVE_REG_UNDEF, LIBXSMM_AARCH64_SVE_TYPE_D );
         }
       }
     } else {
@@ -1172,7 +1173,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
       for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
           unsigned int l_reg0 = (l_n*i_packed_blocking) + l_p;
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, l_reg0, l_reg0, 0, l_reg0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+          /* clear the full SVE vector (all segments) so VL>128 upper lanes are zeroed */
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, l_reg0, l_reg0, 0, l_reg0, LIBXSMM_AARCH64_SVE_REG_UNDEF, LIBXSMM_AARCH64_SVE_TYPE_D );
         }
       }
     } else {
