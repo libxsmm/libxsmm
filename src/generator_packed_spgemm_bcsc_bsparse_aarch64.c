@@ -183,7 +183,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
               LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
               return;
             }
-            l_simd_packed_width = 4;
+            /* SVE128 (128-bit vectors): one MMLA tile (2m x 2n) fits a single register */
+            l_simd_packed_width = 2;
             l_is_mmla_kernel = 1;
             if (i_bk % 4 != 0) {
               LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
@@ -288,7 +289,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
           return;
         }
-        l_simd_packed_width = 4;
+        /* SVE128 (128-bit vectors): one MMLA tile (2m x 2n) fits a single register */
+        l_simd_packed_width = 2;
         l_is_mmla_kernel = 1;
         if (i_bk % 8 != 0) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
@@ -445,13 +447,13 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
       int l_nnz_bits2 = 16;
       if (l_is_mmla_kernel > 0) {
-        int l_nnz_4m_bits = 4 * l_micro_kernel_config.datatype_size_out;
+        int l_nnz_4m_bits = (int)l_simd_packed_width * l_micro_kernel_config.datatype_size_out;
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                       LIBXSMM_AARCH64_SVE_REG_P1,
                                                       l_nnz_4m_bits,
                                                       l_gp_reg_mapping.gp_reg_help_0 );
         if (l_simd_packed_remainder != 0) {
-          l_nnz_4m_bits = (l_simd_packed_remainder % 4) * l_micro_kernel_config.datatype_size_out;
+          l_nnz_4m_bits = (l_simd_packed_remainder % l_simd_packed_width) * l_micro_kernel_config.datatype_size_out;
           libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                         LIBXSMM_AARCH64_SVE_REG_P2,
                                                         l_nnz_4m_bits,
