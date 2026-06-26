@@ -109,7 +109,7 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_gp_
         if (i_loop_type == LOOP_TYPE_M) {
           libxsmm_x86_instruction_alu_imm(io_generated_code, i_adjust_instr, i_gp_reg, (long long)m_microkernel / l_mx_block);
         } else {
-          libxsmm_x86_instruction_alu_imm(io_generated_code, i_adjust_instr, i_gp_reg, (long long)(i_mateltwise_desc->ldo * n_microkernel) / l_mx_block);
+          libxsmm_x86_instruction_alu_imm(io_generated_code, i_adjust_instr, i_gp_reg, (long long)i_mateltwise_desc->ldo * n_microkernel / l_mx_block);
         }
       }
       if ( ((libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_RELU) || (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU) )
@@ -209,23 +209,23 @@ void libxsmm_generator_mateltwise_unary_binary_adjust_in_microkernel_addr_gp_reg
         if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TERNARY_BITMASK_2BYTEMULT) > 0) {
           ld = LIBXSMM_UPDIV(ld, 16)*16;
         }
-        m_adjust = (long long)(vlen * i_adjust_param * tsize)/8;
-        n_adjust = (long long)(ld * i_adjust_param * tsize)/8;
+        m_adjust = (long long)vlen * i_adjust_param * tsize / 8;
+        n_adjust = (long long)ld * i_adjust_param * tsize / 8;
       }
     }
 
     if ((is_out_gp_reg > 0) && (i_micro_kernel_config->is_mxfp4_quant > 0 || i_micro_kernel_config->is_nvfp4_quant > 0)) {
       tsize = i_micro_kernel_config->datatype_size_out;
       ld = i_mateltwise_desc->ldo;
-      m_adjust = (long long)(vlen * i_adjust_param * tsize)/2;
-      n_adjust = (long long)(ld * i_adjust_param * tsize)/2;
+      m_adjust = (long long)vlen * i_adjust_param * tsize / 2;
+      n_adjust = (long long)ld * i_adjust_param * tsize / 2;
     }
 
     if ((libxsmm_generator_mateltwise_is_binary_cmp_op(i_mateltwise_desc) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT) > 0) && (is_out_gp_reg > 0)) {
       tsize = 1;
       ld = i_micro_kernel_config->ldo_mask;
-      m_adjust = (long long)(vlen * i_adjust_param * tsize)/8;
-      n_adjust = (long long)(ld * i_adjust_param * tsize)/8;
+      m_adjust = (long long)vlen * i_adjust_param * tsize / 8;
+      n_adjust = (long long)ld * i_adjust_param * tsize / 8;
     }
 
     if (bcast_input == 0) {
