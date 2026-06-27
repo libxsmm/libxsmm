@@ -33,13 +33,7 @@
     <ClInclude Include="..\src\libxsmm_trace.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_gemm.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_main.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_xcopy.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_malloc.h">
@@ -327,6 +321,33 @@
     <ClInclude Include="..\src\generator_matequation_reference_impl.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_intrinsics_rv64.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_common_rv64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_common_rv64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_rv64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_rv64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_transform_rv64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_unary_binary_rv64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_rv64_instructions.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_rv64_reference.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\generator_x86_reference.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -338,16 +359,13 @@
     <ClCompile Include="..\src\libxsmm_timer.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_gemm.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_trace.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_xcopy.c">
+    <ClCompile Include="..\src\libxsmm_cpuid_rv64.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_main.c">
@@ -638,6 +656,30 @@
     <ClCompile Include="..\src\generator_matequation_reference_impl.c">
       <Filter>src\generator</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_common_rv64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_common_rv64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_rv64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_rv64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_transform_rv64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_unary_binary_rv64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_rv64_instructions.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_rv64_reference.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\generator_x86_reference.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -691,6 +733,7 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\.test-cnn.yml" />
+    <None Include="_sln_cleanup.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

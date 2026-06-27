@@ -1201,7 +1201,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing samples..."
 	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(SPLDIR)
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) \
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_xsmm benchmark.plt benchmark.set *.sh) \
 						$(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 endif
 
