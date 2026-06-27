@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(LIBXSMM_VERSION "1.17")
+set(LIBXSMM_VERSION "1.17.0")
 
 project(libxsmm
   VERSION ${LIBXSMM_VERSION}
@@ -203,7 +203,34 @@ endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(xsmm PUBLIC Threads::Threads)
+
+# Do not expose Threads::Threads in the installed export. FindThreads requires
+# C or CXX to be enabled, which prevents a Fortran-only consumer from loading
+# the package configuration. Propagate the resolved usage requirements instead.
+function(libxsmm_propagate_usage_requirements target dependency)
+  foreach(property IN ITEMS
+      INTERFACE_LINK_LIBRARIES
+      INTERFACE_LINK_OPTIONS
+      INTERFACE_COMPILE_OPTIONS
+      INTERFACE_COMPILE_DEFINITIONS)
+    get_target_property(requirements ${dependency} ${property})
+    if(requirements MATCHES "-NOTFOUND$")
+      continue()
+    endif()
+
+    if(property STREQUAL "INTERFACE_LINK_LIBRARIES")
+      target_link_libraries(${target} PUBLIC ${requirements})
+    elseif(property STREQUAL "INTERFACE_LINK_OPTIONS")
+      target_link_options(${target} PUBLIC ${requirements})
+    elseif(property STREQUAL "INTERFACE_COMPILE_OPTIONS")
+      target_compile_options(${target} PUBLIC ${requirements})
+    else()
+      target_compile_definitions(${target} PUBLIC ${requirements})
+    endif()
+  endforeach()
+endfunction()
+
+libxsmm_propagate_usage_requirements(xsmm Threads::Threads)
 target_link_libraries(xsmm PUBLIC ${CMAKE_DL_LIBS})
 
 include(CheckLibraryExists)
