@@ -536,7 +536,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_meqn_rpn_print( my_eqn0 );
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, out_dt );
   func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
-  libxsmm_get_kernel_info((const void*) func0, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) func0, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");

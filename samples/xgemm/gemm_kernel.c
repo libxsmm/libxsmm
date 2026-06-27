@@ -3017,10 +3017,10 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
   l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
-  libxsmm_get_kernel_info((const void*) l_test_jit.gemm_ext, &info);
+  libxsmm_get_kernel_info(l_test_jit.ptr_const, &info);
 #else
   l_test_jit.gemm = libxsmm_dispatch_brgemm( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-  libxsmm_get_kernel_info((const void*) l_test_jit.gemm, &info);
+  libxsmm_get_kernel_info(l_test_jit.ptr_const, &info);
 #endif
   is_reference_kernel = info.is_reference_kernel;
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -4126,16 +4126,18 @@ int main(int argc, char* argv []) {
         }
         l_gemm_def.scf_u8 = tmp_scf_u8;
         if (l_gemm_def.is_Amxfp4Bi8_gemm > 0 ) {
+          float *tmp_scf_b_f32;
           n_scf = (size_t)l_n * (l_ldb/32) * l_br;
-          float *tmp_scf_b_f32 = (float*)libxsmm_aligned_malloc(n_scf * sizeof(float), 64);
+          tmp_scf_b_f32 = (float*)libxsmm_aligned_malloc(n_scf * sizeof(float), 64);
           for (scf_i = 0; scf_i < (libxsmm_blasint)n_scf; scf_i++) {
             tmp_scf_b_f32[scf_i] = (float)get_random_posneg_p5_num();
           }
           l_gemm_def.scf_b_f32 = tmp_scf_b_f32;
         }
         if (l_gemm_def.is_Amxfp4Bmxfp4_gemm > 0 || l_gemm_def.is_Amxhf6Bmxhf6_gemm > 0 || l_gemm_def.is_Amxbf6Bmxbf6_gemm > 0 || l_gemm_def.is_Amxbf8Bmxbf8_gemm > 0 || l_gemm_def.is_Amxhf8Bmxhf8_gemm > 0) {
+          unsigned char *tmp_scf_b_u8;
           n_scf = (size_t)l_ldb * (l_gemm_def.k/l_divider) * l_br;
-          unsigned char *tmp_scf_b_u8 = (unsigned char*)libxsmm_aligned_malloc(n_scf * sizeof(unsigned char), 64);
+          tmp_scf_b_u8 = (unsigned char*)libxsmm_aligned_malloc(n_scf * sizeof(unsigned char), 64);
           for (scf_i = 0; scf_i < (libxsmm_blasint)n_scf; scf_i++) {
             tmp_scf_b_u8[scf_i] = (unsigned char) (126+rand()%10);
           }

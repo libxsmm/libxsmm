@@ -286,10 +286,10 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
 
   /* first TPP implementation we just run a reduce muladd */
   l_mul = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
-  libxsmm_get_kernel_info((const void*) l_mul, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_mul, &info);
   is_reference_kernel = info.is_reference_kernel;
   l_addreduce = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
-  libxsmm_get_kernel_info((const void*) l_addreduce, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_addreduce, &info);
   is_reference_kernel = info.is_reference_kernel;
   /* second TPP implementation equation for reduce muladd */
   l_eqn_0_idx = libxsmm_meqn_create();
@@ -308,27 +308,27 @@ int eqn_gather_dot_one_f32(const libxsmm_blasint cols, const libxsmm_blasint M, 
   libxsmm_meqn_rpn_print( l_eqn_0_idx );
   l_eqn_0_shape_out = libxsmm_create_meqn_arg_shape( M, 1, M, LIBXSMM_DATATYPE_F32 );
   l_eqn_0 = libxsmm_dispatch_meqn( l_eqn_0_idx, l_eqn_0_shape_out );
-  libxsmm_get_kernel_info((const void*) l_eqn_0, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_eqn_0, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   /* third TPP implementation we run gather and than matmul */
   l_gather = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  libxsmm_get_kernel_info((const void*) l_gather, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_gather, &info);
   is_reference_kernel = info.is_reference_kernel;
   l_gather_gemm.gemm = libxsmm_dispatch_gemm( l_gather_gemm_shape, l_gather_gemm_flags, l_gather_gemm_prefetch_flags );
-  libxsmm_get_kernel_info((const void*) l_gather_gemm.gemm, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_gather_gemm.gemm, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   /* forth TPP implementation we run gather and reduce muladd */
   l_gather_2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gahter_2_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  libxsmm_get_kernel_info((const void*) l_gather_2, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_gather_2, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   l_mul_2 = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_2_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 );
-  libxsmm_get_kernel_info((const void*) l_mul_2, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_mul_2, &info);
   is_reference_kernel = info.is_reference_kernel;
   l_addreduce_2 = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_2_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS );
-  libxsmm_get_kernel_info((const void*) l_addreduce_2, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_addreduce_2, &info);
   is_reference_kernel = info.is_reference_kernel;
 
 

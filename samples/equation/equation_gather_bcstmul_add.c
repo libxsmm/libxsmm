@@ -209,7 +209,7 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
 
   /* first TPP implementation we just run a binary muladd in a loop */
   l_muladd = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MULADD, l_muladd_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
-  libxsmm_get_kernel_info((const void*) l_muladd, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_muladd, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   if ( l_muladd == NULL ) {
@@ -219,19 +219,19 @@ int eqn_gather_bcstmul_add_f32(const libxsmm_blasint cols, const libxsmm_blasint
 
   /* second TPP implementation we run gather + binary mul + addreduce + add */
   l_gather = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_GATHER, l_gather_shape, LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-  libxsmm_get_kernel_info((const void*) l_gather, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_gather, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   l_mul = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_MUL, l_mul_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1 );
-  libxsmm_get_kernel_info((const void*) l_mul, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_mul, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   l_addreduce = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, l_addreduce_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS );
-  libxsmm_get_kernel_info((const void*) l_addreduce, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_addreduce, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   l_add = libxsmm_dispatch_meltw_binary( LIBXSMM_MELTW_TYPE_BINARY_ADD, l_add_shape, LIBXSMM_MELTW_FLAG_BINARY_NONE );
-  libxsmm_get_kernel_info((const void*) l_add, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) l_add, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   if ( (l_gather == NULL) || (l_mul == NULL) || (l_addreduce == NULL) || (l_add == NULL) ) {
