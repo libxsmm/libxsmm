@@ -1075,7 +1075,7 @@ LIBXSMM_PRAGMA_DIAG_POP()
 #elif (defined(__STDC_VERSION__) && 199901L <= __STDC_VERSION__) || defined(__cplusplus)
 # define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
-# define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
+# define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #endif
 
 #if defined(_WIN32)
