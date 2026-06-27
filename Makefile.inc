@@ -689,6 +689,18 @@ ifneq (0,$(WCHECK))
   endif
 endif
 
+# Build samples and tests with -Werror by default. These consumers include
+# $(DEPDIR)/Makefile.inc, so DEPDIR is non-empty here; it is empty when the main
+# library is built (root Makefile), whose own compile rule already manages -Werror.
+# Pass WERROR=0 to opt out.
+ifneq (,$(strip $(DEPDIR)))
+ifneq (0,$(WERROR))
+  CFLAGS += $(WERROR_CFLAG)
+  CXXFLAGS += $(WERROR_CFLAG)
+  FCFLAGS += $(WERROR_FCFLAG)
+endif
+endif
+
 ifeq (0,$(ICX))
 ifneq (0,$(INTEL))
   NOLIMITS_CFLAG := $(call ctest,$(CC),-qoverride-limits $(WERROR_CFLAG))
