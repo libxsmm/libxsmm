@@ -733,6 +733,7 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\.test-cnn.yml" />
+    <None Include="_sln_cleanup.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

@@ -284,6 +284,7 @@
     <None Include="..\scripts\tool_inspector.sh" />
     <None Include="..\scripts\tool_test.sh" />
     <None Include="..\src\template\libxsmm.f" />
+    <None Include="_sln_cleanup.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />
