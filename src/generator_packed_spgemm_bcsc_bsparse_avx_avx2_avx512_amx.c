@@ -890,6 +890,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
     } else if (l_simd_packed_remainder == i_simd_packed_width/4) {
       l_use_short_vec = 1;
       l_AT_CT_vname = (l_AT_CT_vname == 'z') ? 'x' : ((l_AT_CT_vname == 'y' ? 'x' : 'x'));
+      l_AT_CT_ab_vmove_instr = (l_simd_packed_remainder == 1) ? LIBXSMM_X86_INSTR_VMOVSS :
+                               ((l_simd_packed_remainder == 2) ? LIBXSMM_X86_INSTR_VMOVSD : LIBXSMM_X86_INSTR_VMOVUPS);
     } else if (l_simd_packed_remainder == i_simd_packed_width/8) {
       l_use_short_vec = 1;
       l_AT_CT_vname = (l_AT_CT_vname == 'z') ? 'x' : ((l_AT_CT_vname == 'y' ? 'x' : 'x'));

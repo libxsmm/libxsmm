@@ -39,7 +39,10 @@ XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter 
           $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_ternary_simple \
           $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform \
           $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu \
-          $(OUTDIR)/eltwise_unary_quantization
+          $(OUTDIR)/eltwise_unary_quantization \
+          $(OUTDIR)/eltwise_unary_quantization_to_mxfp4 \
+          $(OUTDIR)/eltwise_unary_quantization_to_mxbf8 \
+          $(OUTDIR)/eltwise_unary_quantization_to_nvfp4
 
 .PHONY: all
 all: $(XFILES) scripts
@@ -48,7 +51,7 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_quant_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts  $(TSTDIR)/.generate_ternary_test_scripts
+scripts: $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_quant_test_scripts $(TSTDIR)/.generate_unary_quant_fp_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts  $(TSTDIR)/.generate_ternary_test_scripts
 
 $(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_test_scripts.sh Makefile
 	$(info Creating unary simple test scripts...)
@@ -78,6 +81,11 @@ $(TSTDIR)/.generate_unary_dropout_test_scripts: $(TSTDIR)/generate_unary_dropout
 $(TSTDIR)/.generate_unary_quant_test_scripts: $(TSTDIR)/generate_unary_quant_test_scripts.sh Makefile
 	$(info Creating unary quant test scripts...)
 	@cd $(TSTDIR) && ./generate_unary_quant_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_quant_fp_test_scripts: $(TSTDIR)/generate_unary_quant_fp_test_scripts.sh Makefile
+	$(info Creating unary fp quant (mxfp4/mxbf8/nvfp4) test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_quant_fp_test_scripts.sh >/dev/null
 	@-touch $@
 
 $(TSTDIR)/.generate_unary_gather_scatter_test_scripts: $(TSTDIR)/generate_unary_gather_scatter_test_scripts.sh Makefile
@@ -122,6 +130,15 @@ $(OUTDIR)/eltwise_unary_transform: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_trans
 $(OUTDIR)/eltwise_unary_quantization: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_quantization-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_quantization-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
+$(OUTDIR)/eltwise_unary_quantization_to_mxfp4: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_quantization_to_mxfp4-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_quantization_to_mxfp4-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_quantization_to_mxbf8: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_quantization_to_mxbf8-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_quantization_to_mxbf8-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_quantization_to_nvfp4: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_quantization_to_nvfp4-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_quantization_to_nvfp4-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
@@ -157,6 +174,7 @@ endif
 	@-rm -f $(TSTDIR)/.generate_unary_relu_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_dropout_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_quant_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_quant_fp_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_gather_scatter_test_scripts
 	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
 	@-rm -f $(TSTDIR)/.generate_ternary_test_scripts

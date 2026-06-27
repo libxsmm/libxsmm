@@ -70,6 +70,26 @@ char libxsmm_convert_mxfp4_to_char(unsigned char x) {
   return result;
 }
 
+LIBXSMM_API_INTERN
+unsigned char libxsmm_convert_fp6_e2m3_to_hf8( unsigned char in ) {
+  unsigned char lut_f6_e2m3_to_hf8[64] =
+  { 0x00, 0x20, 0x28, 0x2c, 0x30, 0x32, 0x34, 0x36, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+    0x80, 0xa0, 0xa8, 0xac, 0xb0, 0xb2, 0xb4, 0xb6, 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
+    0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf };
+  return lut_f6_e2m3_to_hf8[ (unsigned char)(in & 0x3f) ];
+}
+
+LIBXSMM_API_INTERN
+unsigned char libxsmm_convert_fp6_e3m2_to_hf8( unsigned char in ) {
+  unsigned char lut_f6_e3m2_to_hf8[64] =
+  { 0x00, 0x18, 0x20, 0x24, 0x28, 0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3a, 0x3c, 0x3e,
+    0x40, 0x42, 0x44, 0x46, 0x48, 0x4a, 0x4c, 0x4e, 0x50, 0x52, 0x54, 0x56, 0x58, 0x5a, 0x5c, 0x5e,
+    0x80, 0x98, 0xa0, 0xa4, 0xa8, 0xaa, 0xac, 0xae, 0xb0, 0xb2, 0xb4, 0xb6, 0xb8, 0xba, 0xbc, 0xbe,
+    0xc0, 0xc2, 0xc4, 0xc6, 0xc8, 0xca, 0xcc, 0xce, 0xd0, 0xd2, 0xd4, 0xd6, 0xd8, 0xda, 0xdc, 0xde };
+  return lut_f6_e3m2_to_hf8[ (unsigned char)(in & 0x3f) ];
+}
+
 typedef struct libxsmm_gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -110,6 +130,8 @@ typedef struct libxsmm_gemm_def {
   unsigned char *zpt_u8;
   unsigned char **scf_u8_braddr;
   unsigned char *scf_u8;
+  unsigned char *scf_b_u8;
+  unsigned char *scf_c_u8;
   libxsmm_float16 *scf_f16;
   int binary_postop;
   int unary_postop;
@@ -421,6 +443,8 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   l_gemm_def.unsigned_a = 0;
   l_gemm_def.unsigned_b = 0;
   l_gemm_def.is_spmm = 0;
+  l_gemm_def.scf_b_u8 = NULL;
+  l_gemm_def.scf_c_u8 = NULL;
 
   if (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype)) {
     l_gemm_def.unsigned_a = 1;
@@ -550,6 +574,16 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
           }
         }
       }
+      if ( ((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8) ||
+            (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ||
+            (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) && (l_dtype_a == l_dtype_b) &&
+           ((l_dtype_c == LIBXSMM_DATATYPE_F32) || (l_dtype_c == l_dtype_a)) ) {
+        l_gemm_def.scf_u8   = (unsigned char*)gemm_param->a.tertiary;
+        l_gemm_def.scf_b_u8 = (unsigned char*)gemm_param->b.tertiary;
+        if (l_dtype_c == l_dtype_a) {
+          l_gemm_def.scf_c_u8 = (unsigned char*)gemm_param->c.tertiary;
+        }
+      }
       if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_BF16) &&
              (l_dtype_c == LIBXSMM_DATATYPE_BF16 || l_dtype_c == LIBXSMM_DATATYPE_F32) ) {
           l_gemm_def.scf_f32 =  (float*)gemm_param->a.tertiary;
@@ -574,6 +608,16 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
         if (l_br_type == 1) {
           l_gemm_def.scf_b_f32_braddr = (float**)gemm_param_ext->b.tertiary;
         }
+      }
+    }
+    if ( ((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8) ||
+          (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ||
+          (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) && (l_dtype_a == l_dtype_b) &&
+         ((l_dtype_c == LIBXSMM_DATATYPE_F32) || (l_dtype_c == l_dtype_a)) ) {
+      l_gemm_def.scf_u8   = (unsigned char*)gemm_param_ext->a.tertiary;
+      l_gemm_def.scf_b_u8 = (unsigned char*)gemm_param_ext->b.tertiary;
+      if (l_dtype_c == l_dtype_a) {
+        l_gemm_def.scf_c_u8 = (unsigned char*)gemm_param_ext->c.tertiary;
       }
     }
     if ( (l_dtype_a    == LIBXSMM_DATATYPE_I8)  && (l_dtype_b == LIBXSMM_DATATYPE_BF16) &&
@@ -616,6 +660,163 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   return;
 }
 
+/* Quantise |x| to a 3-bit unsigned E2M1 code */
+LIBXSMM_API_INTERN
+unsigned char libxsmm_gemm_ref_encode_e2m1_abs(float absval);
+LIBXSMM_API_INTERN
+unsigned char libxsmm_gemm_ref_encode_e2m1_abs(float absval) {
+  if (absval != absval) return 0x7;
+  if (absval >  5.0f)   return 0x7;
+  if (absval >= 3.5f)   return 0x6;
+  if (absval >  2.5f)   return 0x5;
+  if (absval >= 1.75f)  return 0x4;
+  if (absval >  1.25f)  return 0x3;
+  if (absval >= 0.75f)  return 0x2;
+  if (absval >  0.25f)  return 0x1;
+  return 0x0;
+}
+
+/* Convert a block of 32 FP32 values to MXFP4 (E2M1) with shared E8M0 scale.
+   out_data[16] = packed nibbles, *out_scale = E8M0 biased exponent byte. */
+LIBXSMM_API_INTERN
+void libxsmm_gemm_ref_fp32_to_mxfp4_block(const float* in, unsigned char* out_data, unsigned char* out_scale);
+LIBXSMM_API_INTERN
+void libxsmm_gemm_ref_fp32_to_mxfp4_block(const float* in, unsigned char* out_data, unsigned char* out_scale) {
+  union { float f; unsigned int u; } mx;
+  float amax = 0.0f;
+  int shared_exp, scale_mant, i;
+  float scale;
+  float bf16_in[32];
+
+  /* 0. Convert F32 -> BF16 -> F32 to match JIT precision */
+  for (i = 0; i < 32; i++) {
+    libxsmm_bfloat16 tmp_bf16;
+    libxsmm_bfloat16_f32 tmp_u;
+    float tmp_f32 = in[i];
+    libxsmm_rne_convert_fp32_bf16(&tmp_f32, &tmp_bf16, 1);
+    tmp_u.i[0] = 0; tmp_u.i[1] = tmp_bf16;
+    bf16_in[i] = tmp_u.f;
+  }
+
+  /* 1. Max absolute value */
+  for (i = 0; i < 32; i++) {
+    float a = LIBXSMM_FABSF(bf16_in[i]);
+    if (a > amax || a != a) amax = a;
+  }
+
+  /* 2. Shared biased exponent, offset by elem_emax = 2 */
+  mx.f = amax;
+  shared_exp = (amax == 0.0f) ? 0 : (int)((mx.u >> 23) & 0xFFu);
+  shared_exp -= 2;
+  if (shared_exp < 0)   shared_exp = 0;
+  if (shared_exp > 254) shared_exp = 254;
+  *out_scale = (unsigned char)shared_exp;
+
+  /* 3. Construct scale, round to BF16, compute BF16 reciprocal */
+  scale_mant = (shared_exp == 0) ? (1 << 22) : 0;
+  mx.u = ((unsigned int)shared_exp << 23) | (unsigned int)scale_mant;
+  scale = mx.f;
+
+  {
+    libxsmm_bfloat16 bf16_scale;
+    float scale_f32, rcp_f32;
+    libxsmm_bfloat16 bf16_rcp;
+    libxsmm_rne_convert_fp32_bf16(&scale, &bf16_scale, 1);
+    { libxsmm_bfloat16_f32 ts; ts.i[0] = 0; ts.i[1] = bf16_scale; scale_f32 = ts.f; }
+    rcp_f32 = 1.0f / scale_f32;
+    libxsmm_rne_convert_fp32_bf16(&rcp_f32, &bf16_rcp, 1);
+    { libxsmm_bfloat16_f32 tr; tr.i[0] = 0; tr.i[1] = bf16_rcp; rcp_f32 = tr.f; }
+
+    /* 4. Multiply each element by BF16 reciprocal, round to BF16, encode E2M1 */
+    for (i = 0; i < 16; i++) {
+      float v0 = bf16_in[2*i]     * rcp_f32;
+      float v1 = bf16_in[2*i + 1] * rcp_f32;
+      libxsmm_bfloat16 bf16_v0, bf16_v1;
+      union { float f; unsigned int u; } u0, u1;
+      unsigned char s0, s1, lo, hi;
+      libxsmm_rne_convert_fp32_bf16(&v0, &bf16_v0, 1);
+      libxsmm_rne_convert_fp32_bf16(&v1, &bf16_v1, 1);
+      { libxsmm_bfloat16_f32 t0, t1;
+        t0.i[0] = 0; t0.i[1] = bf16_v0; v0 = t0.f;
+        t1.i[0] = 0; t1.i[1] = bf16_v1; v1 = t1.f;
+      }
+      u0.f = bf16_in[2*i];     s0 = (u0.u >> 31) ? 0x8u : 0u;
+      u1.f = bf16_in[2*i + 1]; s1 = (u1.u >> 31) ? 0x8u : 0u;
+      lo = (unsigned char)(s0 | libxsmm_gemm_ref_encode_e2m1_abs(LIBXSMM_FABSF(v0)));
+      hi = (unsigned char)(s1 | libxsmm_gemm_ref_encode_e2m1_abs(LIBXSMM_FABSF(v1)));
+      out_data[i] = (unsigned char)((hi << 4) | lo);
+    }
+  }
+}
+
+/* Convert a block of 32 FP32 values to mxbf8 (E5M2) with shared E8M0 scale.
+   out_data[32] = BF8 (E5M2) bytes, *out_scale = E8M0 biased exponent byte. */
+LIBXSMM_API_INTERN
+void libxsmm_gemm_ref_fp32_to_mxbf8_block(const float* in, unsigned char* out_data, unsigned char* out_scale);
+LIBXSMM_API_INTERN
+void libxsmm_gemm_ref_fp32_to_mxbf8_block(const float* in, unsigned char* out_data, unsigned char* out_scale) {
+  union { float f; unsigned int u; } mx;
+  float amax = 0.0f;
+  int shared_exp, scale_mant, i;
+  float scale;
+  float bf16_in[32];
+
+  /* 0. Convert F32 -> BF16 -> F32 to match JIT precision */
+  for (i = 0; i < 32; i++) {
+    libxsmm_bfloat16 tmp_bf16;
+    libxsmm_bfloat16_f32 tmp_u;
+    float tmp_f32 = in[i];
+    libxsmm_rne_convert_fp32_bf16(&tmp_f32, &tmp_bf16, 1);
+    tmp_u.i[0] = 0; tmp_u.i[1] = tmp_bf16;
+    bf16_in[i] = tmp_u.f;
+  }
+
+  /* 1. Max absolute value */
+  for (i = 0; i < 32; i++) {
+    float a = LIBXSMM_FABSF(bf16_in[i]);
+    if (a > amax || a != a) amax = a;
+  }
+
+  /* 2. Shared biased exponent, offset by elem_emax = 15 (for E5M2) */
+  mx.f = amax;
+  shared_exp = (amax == 0.0f) ? 0 : (int)((mx.u >> 23) & 0xFFu);
+  shared_exp -= 15;
+  if (shared_exp < 0)   shared_exp = 0;
+  if (shared_exp > 254) shared_exp = 254;
+  *out_scale = (unsigned char)shared_exp;
+
+  /* 3. Construct scale, round to BF16, compute BF16 reciprocal */
+  scale_mant = (shared_exp == 0) ? (1 << 22) : 0;
+  mx.u = ((unsigned int)shared_exp << 23) | (unsigned int)scale_mant;
+  scale = mx.f;
+
+  {
+    libxsmm_bfloat16 bf16_scale;
+    float scale_f32, rcp_f32;
+    libxsmm_bfloat16 bf16_rcp;
+    libxsmm_rne_convert_fp32_bf16(&scale, &bf16_scale, 1);
+    { libxsmm_bfloat16_f32 ts; ts.i[0] = 0; ts.i[1] = bf16_scale; scale_f32 = ts.f; }
+    rcp_f32 = 1.0f / scale_f32;
+    libxsmm_rne_convert_fp32_bf16(&rcp_f32, &bf16_rcp, 1);
+    { libxsmm_bfloat16_f32 tr; tr.i[0] = 0; tr.i[1] = bf16_rcp; rcp_f32 = tr.f; }
+
+    /* 4. Multiply each element by BF16 reciprocal, round to BF16, convert to BF8 (E5M2) */
+    for (i = 0; i < 32; i++) {
+      float v = bf16_in[i] * rcp_f32;
+      libxsmm_bfloat16 bf16_v;
+      libxsmm_bfloat8 bf8_v;
+      libxsmm_rne_convert_fp32_bf16(&v, &bf16_v, 1);
+      { libxsmm_bfloat16_f32 tv; tv.i[0] = 0; tv.i[1] = bf16_v; v = tv.f; }
+      libxsmm_rne_convert_fp32_bf8(&v, &bf8_v, 1);
+      /* Saturate: if the BF8 is inf or NaN, clamp to max normal */
+      if (((unsigned char)bf8_v & 0x7C) == 0x7C) {
+        bf8_v = (libxsmm_bfloat8)(((unsigned char)bf8_v & 0x80) | 0x7B);
+      }
+      out_data[i] = (unsigned char)bf8_v;
+    }
+  }
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, void* c ) {
   libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
@@ -631,6 +832,27 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
   unsigned char packed_char = 0;
   char even_use = 0;
   char odd_use = 0;
+
+  /* MX x MX reference path does not support the address (addrbr) or offset (offsbr) batch-reduce modes */
+  if ( ((i_gemm_def->br_type == 1) || (i_gemm_def->br_type == 2)) &&
+       ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ||
+        (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) ||
+        (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXFP4X2)) &&
+       (i_gemm_def->b_type == i_gemm_def->a_type) && ((i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == i_gemm_def->a_type)) ) {
+    fprintf(stderr, "LIBXSMM reference: MX x MX GEMM does not support the address (addrbr) or offset (offsbr) batch-reduce modes!\n");
+    return;
+  }
+
+  /* MX x MX reference path does not support elementwise (unary or binary) post-fusion */
+  if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ||
+        (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) ||
+        (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXFP4X2)) &&
+       (i_gemm_def->b_type == i_gemm_def->a_type) && ((i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == i_gemm_def->a_type)) &&
+       ((i_gemm_def->fuse_colbias_add > 0) || (i_gemm_def->fuse_relu > 0) ||
+        (i_gemm_def->fuse_relu_bitmask > 0) || (i_gemm_def->fuse_sigmoid > 0)) ) {
+    fprintf(stderr, "LIBXSMM reference: MX x MX GEMM does not support elementwise (unary or binary) post-fusion!\n");
+    return;
+  }
 
   if (i_gemm_def->is_spmm > 0) {
     float *a_f32 = (float*)a;
@@ -2394,6 +2616,185 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
         hf8_acc =  libxsmm_convert_f32_to_hf8_rne(acc);
         h_c[(l_j * ldc) + l_i] = hf8_acc;
       }
+    }
+  } else if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8)) &&
+              (i_gemm_def->b_type    == i_gemm_def->a_type)     &&
+              ((i_gemm_def->c_type   == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == LIBXSMM_DATATYPE_MXBF8)) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
+    /* MX-scaled FP8 (E8M0 shared scales): A in VNNI, B in VNNI and transposed, C in F32 or MXBF8 */
+    unsigned char* fp8_a = (unsigned char*)a;
+    unsigned char* fp8_b = (unsigned char*)b;
+    int l_is_hf8 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ? 1 : 0;
+    int l_c_is_mxbf8 = ((i_gemm_def->c_type == LIBXSMM_DATATYPE_MXBF8) && (l_is_hf8 == 0)) ? 1 : 0;
+    float* l_c_tmp = NULL;
+    float* f_c = (float*)c;
+    int l_k_block = 4;
+    if ( !((i_gemm_def->vnni_a != 0) && (i_gemm_def->vnni_b != 0) && (i_gemm_def->trans_b != 0)) ) {
+      fprintf(stderr, "LIBXSMM reference: MXFP8 GEMM requires A in VNNI and B in VNNI-and-transposed format!\n");
+      return;
+    }
+    if ( l_c_is_mxbf8 != 0 ) {
+      l_c_tmp = (float*)malloc((size_t)ldc * (size_t)n * sizeof(float));
+      f_c = l_c_tmp;
+    }
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        float f32_accum = 0.0f;
+        if ( i_gemm_def->beta == 0 ) {
+          f_c[(l_j * ldc) + l_i] = 0.0f;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            float tmp_val = 0.0f;
+            float scale_a, scale_b;
+            unsigned int scale_u32; float *scalef_ptr = (float*)&scale_u32;
+            unsigned char sa = i_gemm_def->scf_u8[(l_r * lda * (k/(l_k_block*8))) + (l_s/8) * lda + l_i];
+            unsigned char sb = i_gemm_def->scf_b_u8[(l_r * ldb * (k/(l_k_block*8))) + (l_s/8) * ldb + l_j];
+            for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
+              unsigned char a_byte = fp8_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              unsigned char b_byte = fp8_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+              float a_f = (l_is_hf8 != 0) ? libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)a_byte) : libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)a_byte);
+              float b_f = (l_is_hf8 != 0) ? libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)b_byte) : libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)b_byte);
+              tmp_val += a_f * b_f;
+            }
+            scale_u32 = ((unsigned int)sa) << 23; scale_a = *scalef_ptr;
+            scale_u32 = ((unsigned int)sb) << 23; scale_b = *scalef_ptr;
+            f32_accum += tmp_val * scale_a * scale_b;
+          }
+        }
+        f_c[(l_j * ldc) + l_i] += f32_accum;
+      }
+    }
+    if ( l_c_is_mxbf8 != 0 ) {
+      unsigned char* l_c_data = (unsigned char*)c;
+      unsigned char* l_c_scf  = i_gemm_def->scf_c_u8;
+      for (l_j = 0; l_j < n; l_j++) {
+        for (l_i = 0; l_i < m; l_i += 32) {
+          libxsmm_gemm_ref_fp32_to_mxbf8_block(&l_c_tmp[(l_j * ldc) + l_i],
+                                               &l_c_data[(l_j * ldc) + l_i],
+                                               &l_c_scf[(l_j * (ldc/32)) + (l_i/32)]);
+        }
+      }
+      free(l_c_tmp);
+    }
+  } else if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6)) &&
+              (i_gemm_def->b_type    == i_gemm_def->a_type)     &&
+              (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32)    &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
+    /* MX-scaled FP6 (E8M0 shared scales): 6-bit packed, A in VNNI, B in VNNI and transposed, C in F32 */
+    unsigned char* fp6_a = (unsigned char*)a;
+    unsigned char* fp6_b = (unsigned char*)b;
+    float* f_c = (float*)c;
+    int l_is_bf6 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) ? 1 : 0;
+    int l_k_block = 4;
+    long long l_a_slab = (((long long)lda * 6) / 8) * (long long)k;
+    long long l_b_slab = (((long long)ldb * 6) / 8) * (long long)k;
+    if ( !((i_gemm_def->vnni_a != 0) && (i_gemm_def->vnni_b != 0) && (i_gemm_def->trans_b != 0)) ) {
+      fprintf(stderr, "LIBXSMM reference: MXFP6 GEMM requires A in VNNI and B in VNNI-and-transposed format!\n");
+      return;
+    }
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        float f32_accum = 0.0f;
+        if ( i_gemm_def->beta == 0 ) {
+          f_c[(l_j * ldc) + l_i] = 0.0f;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            float tmp_val = 0.0f;
+            float scale_a, scale_b;
+            unsigned int scale_u32; float *scalef_ptr = (float*)&scale_u32;
+            unsigned char sa = i_gemm_def->scf_u8[(l_r * lda * (k/(l_k_block*8))) + (l_s/8) * lda + l_i];
+            unsigned char sb = i_gemm_def->scf_b_u8[(l_r * ldb * (k/(l_k_block*8))) + (l_s/8) * ldb + l_j];
+            unsigned char* pa = &fp6_a[(l_r * l_a_slab) + ((long long)l_s * lda * 3) + ((long long)l_i * 3)];
+            unsigned char* pb = &fp6_b[(l_r * l_b_slab) + ((long long)l_s * ldb * 3) + ((long long)l_j * 3)];
+            unsigned int va = (unsigned int)pa[0] | ((unsigned int)pa[1] << 8) | ((unsigned int)pa[2] << 16);
+            unsigned int vb = (unsigned int)pb[0] | ((unsigned int)pb[1] << 8) | ((unsigned int)pb[2] << 16);
+            for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
+              unsigned char v6a = (unsigned char)((va >> (6*l_k2)) & 0x3f);
+              unsigned char v6b = (unsigned char)((vb >> (6*l_k2)) & 0x3f);
+              unsigned char ha = (l_is_bf6 != 0) ? libxsmm_convert_fp6_e3m2_to_hf8(v6a) : libxsmm_convert_fp6_e2m3_to_hf8(v6a);
+              unsigned char hb = (l_is_bf6 != 0) ? libxsmm_convert_fp6_e3m2_to_hf8(v6b) : libxsmm_convert_fp6_e2m3_to_hf8(v6b);
+              float a_f = libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)ha);
+              float b_f = libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)hb);
+              tmp_val += a_f * b_f;
+            }
+            scale_u32 = ((unsigned int)sa) << 23; scale_a = *scalef_ptr;
+            scale_u32 = ((unsigned int)sb) << 23; scale_b = *scalef_ptr;
+            f32_accum += tmp_val * scale_a * scale_b;
+          }
+        }
+        f_c[(l_j * ldc) + l_i] += f32_accum;
+      }
+    }
+  } else if ( (i_gemm_def->a_type    == LIBXSMM_DATATYPE_MXFP4X2) &&
+              (i_gemm_def->b_type    == LIBXSMM_DATATYPE_MXFP4X2) &&
+              ((i_gemm_def->c_type   == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == LIBXSMM_DATATYPE_MXFP4X2)) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)   ) {
+    /* MX-scaled FP4 (E8M0 shared scales): 4-bit packed, A in VNNI, B in VNNI and transposed, C in F32 or MXFP4 */
+    unsigned char* fp4_a = (unsigned char*)a;
+    unsigned char* fp4_b = (unsigned char*)b;
+    int l_c_is_mxfp4 = (i_gemm_def->c_type == LIBXSMM_DATATYPE_MXFP4X2) ? 1 : 0;
+    float* l_c_tmp = NULL;
+    float* f_c = (float*)c;
+    int l_k_block = 32;
+    unsigned int k_scale_freq = 8;
+    if ( !((i_gemm_def->vnni_a != 0) && (i_gemm_def->vnni_b != 0) && (i_gemm_def->trans_b != 0)) ) {
+      fprintf(stderr, "LIBXSMM reference: MXFP4 GEMM requires A in VNNI and B in VNNI-and-transposed format!\n");
+      return;
+    }
+    if ( l_c_is_mxfp4 != 0 ) {
+      l_c_tmp = (float*)malloc((size_t)ldc * (size_t)n * sizeof(float));
+      f_c = l_c_tmp;
+    }
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        float f32_accum = 0.0f;
+        if ( i_gemm_def->beta == 0 ) {
+          f_c[(l_j * ldc) + l_i] = 0.0f;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            unsigned int l_k3;
+            float scale_a, scale_b;
+            unsigned int scale_u32; float *scalef_ptr = (float*)&scale_u32;
+            unsigned char sa = i_gemm_def->scf_u8[(l_r * lda * (k/l_k_block)) + l_s * lda + l_i];
+            unsigned char sb = i_gemm_def->scf_b_u8[(l_r * ldb * (k/l_k_block)) + l_s * ldb + l_j];
+            scale_u32 = ((unsigned int)sa) << 23; scale_a = *scalef_ptr;
+            scale_u32 = ((unsigned int)sb) << 23; scale_b = *scalef_ptr;
+            for (l_k3 = 0; l_k3 < (unsigned int)l_k_block/k_scale_freq; l_k3++) {
+              float tmp_val = 0.0f;
+              for (l_k2 = 0; l_k2 < (int)k_scale_freq; l_k2++) {
+                int kpos = l_s*l_k_block + (int)(k_scale_freq*l_k3) + l_k2;
+                int kk = kpos % 8;
+                int kblk = kpos / 8;
+                unsigned char a4, b4, byte_a, byte_b;
+                int byte_idx;
+                byte_idx = kk / 2;
+                byte_a = fp4_a[(l_r * lda * (k/2)) + (kblk*lda*4) + l_i*4 + byte_idx];
+                byte_b = fp4_b[(l_r * ldb * (k/2)) + (kblk*ldb*4) + l_j*4 + byte_idx];
+                a4 = ((kk % 2) == 0) ? (byte_a & 0x0f) : ((byte_a >> 4) & 0x0f);
+                b4 = ((kk % 2) == 0) ? (byte_b & 0x0f) : ((byte_b >> 4) & 0x0f);
+                tmp_val += libxsmm_convert_mxfp4_to_float(a4) * libxsmm_convert_mxfp4_to_float(b4);
+              }
+              f32_accum += tmp_val * scale_a * scale_b;
+            }
+          }
+        }
+        f_c[(l_j * ldc) + l_i] += f32_accum;
+      }
+    }
+    if ( l_c_is_mxfp4 != 0 ) {
+      unsigned char* l_c_data = (unsigned char*)c;
+      unsigned char* l_c_scf  = i_gemm_def->scf_c_u8;
+      for (l_j = 0; l_j < n; l_j++) {
+        for (l_i = 0; l_i < m; l_i += 32) {
+          libxsmm_gemm_ref_fp32_to_mxfp4_block(&l_c_tmp[(l_j * ldc) + l_i],
+                                               &l_c_data[(l_j * (ldc/2)) + (l_i/2)],
+                                               &l_c_scf[(l_j * (ldc/32)) + (l_i/32)]);
+        }
+      }
+      free(l_c_tmp);
     }
   }
 }

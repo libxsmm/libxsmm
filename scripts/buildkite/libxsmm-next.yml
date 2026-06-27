@@ -10,3 +10,21 @@ steps:
     env:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -dmr --"
     label: "SMMs DMR Prec. (DMR)"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_ace_f32.sh"
+    env:
+      LIBXSMM_TARGET: "ace1"
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -future --"
+    label: "SMMs BF32 Prec. (ACEv1)"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_ace.sh"
+    env:
+      LIBXSMM_TARGET: "ace1"
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -future --"
+    label: "SMMs BF16/FP16/BF8/HF8 Prec. (ACEv1)"
+
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_ace_mx.sh"
+    env:
+      LIBXSMM_TARGET: "ace1"
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -future --"
+    label: "SMMs MXBF8/MXHF8/MXBF6/MXHF6/MXFP4 Prec. (ACEv1)"
