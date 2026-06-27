@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
   do {
     if ( l_file_input != 0 ) {
       char l_line[512];
-      if ( fgets( l_line, 512, l_file_handle) == NULL ) {
+      if ( fgets( l_line, sizeof(l_line), l_file_handle) == NULL ) {
         l_keep_going = 0;
         break;
       } else {
