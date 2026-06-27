@@ -39,6 +39,7 @@
 #define LIBXSMM_X86_AVX512_SPR        1104
 #define LIBXSMM_X86_AVX512_GNR        1105
 #define LIBXSMM_X86_AVX512_DMR        1106
+#define LIBXSMM_X86_AVX512_ACE1       1107
 #define LIBXSMM_X86_ALLFEAT           1999
 #define LIBXSMM_AARCH64_V81           2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
@@ -69,6 +70,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
 /** Returns the target architecture and instruction set extensions. */
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+
+LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_inline_transform(void);
+LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_a(void);
+LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_b(void);
 
 /**
  * TODO: limited lifetime API until we have a fully-fledged ARM CPU flags test.

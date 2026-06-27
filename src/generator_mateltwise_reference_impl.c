@@ -1784,6 +1784,292 @@ void libxsmm_elementwise_gather_scatter_kernel(libxsmm_meltw_unary_param *param,
   return;
 }
 
+/* ========================================================================== */
+/* Golden-reference helpers for the MX/NV low-precision quantization TPPs.    */
+/* ========================================================================== */
+
+typedef union { float f; unsigned int u; } libxsmm_ref_f32u;
+
+/* Quantize |x| to a 3-bit unsigned E2M1 code (0x0..0x7) using RNE. */
+LIBXSMM_API_INTERN
+unsigned char libxsmm_ref_encode_e2m1_abs(float absval);
+LIBXSMM_API_INTERN
+unsigned char libxsmm_ref_encode_e2m1_abs(float absval) {
+  if (absval != absval) return 0x7;       /* NaN  -> saturate              */
+  if (absval >  5.0f)   return 0x7;       /* (5.0, inf] -> sat to 6.0      */
+  if (absval >= 3.5f)   return 0x6;       /* [3.5, 5.0] -> 4.0  (RNE tie)  */
+  if (absval >  2.5f)   return 0x5;       /* (2.5, 3.5) -> 3.0             */
+  if (absval >= 1.75f)  return 0x4;       /* [1.75, 2.5] -> 2.0 (RNE tie)  */
+  if (absval >  1.25f)  return 0x3;       /* (1.25, 1.75) -> 1.5           */
+  if (absval >= 0.75f)  return 0x2;       /* [0.75, 1.25] -> 1.0 (RNE tie) */
+  if (absval >  0.25f)  return 0x1;       /* (0.25, 0.75) -> 0.5           */
+  return 0x0;                             /* [0.0, 0.25]  -> 0.0 (RNE tie) */
+}
+
+/* Convert float to E4M3 (HF8) byte using RNE (bias 7, no Inf, 0xF/0 == 448). */
+LIBXSMM_API_INTERN
+unsigned char libxsmm_ref_float_to_hf8(float val);
+LIBXSMM_API_INTERN
+unsigned char libxsmm_ref_float_to_hf8(float val) {
+  libxsmm_ref_f32u u;
+  unsigned int sign, f_exp, f_mant;
+  int unbiased;
+  unsigned int e4m3_exp, e4m3_mant;
+
+  u.f = val;
+  sign = (u.u >> 31) & 1u;
+  f_exp  = (u.u >> 23) & 0xFFu;
+  f_mant = u.u & 0x7FFFFFu;
+
+  /* NaN */
+  if (f_exp == 0xFF && f_mant != 0) {
+    return (unsigned char)((sign << 7) | 0x7F);  /* E4M3 NaN */
+  }
+  /* Inf or too large -> clamp to max normal (448) */
+  if (f_exp == 0xFF || LIBXSMM_FABSF(val) > 448.0f) {
+    return (unsigned char)((sign << 7) | 0x78);  /* exp=0xF, mant=0 => 448 */
+  }
+  /* Zero */
+  if (f_exp == 0 && f_mant == 0) {
+    return (unsigned char)(sign << 7);
+  }
+  /* FP32 subnormal - very tiny, flush to zero for E4M3 */
+  if (f_exp == 0) {
+    return (unsigned char)(sign << 7);
+  }
+  unbiased = (int)f_exp - 127;
+
+  /* E4M3 range: exp 0x1..0xE => unbiased -6..+7, exp 0xF mant=0 => +8 (special max) */
+  if (unbiased > 8) {
+    return (unsigned char)((sign << 7) | 0x78); /* clamp to 448 */
+  }
+  if (unbiased < -9) {
+    return (unsigned char)(sign << 7); /* too small, flush to zero */
+  }
+
+  /* Normal E4M3 encoding with RNE */
+  if (unbiased >= -6) {
+    unsigned int round_bit = (f_mant >> 19) & 1u;
+    unsigned int sticky = (f_mant & 0x7FFFFu) ? 1u : 0u;
+    unsigned int trunc_mant = f_mant >> 20;
+    e4m3_exp = (unsigned int)(unbiased + 7);
+    if (round_bit && (sticky || (trunc_mant & 1u))) {
+      trunc_mant++;
+    }
+    if (trunc_mant >= 8) {
+      trunc_mant = 0;
+      e4m3_exp++;
+    }
+    e4m3_mant = trunc_mant;
+    /* Check for overflow into special max */
+    if (e4m3_exp >= 0xF) {
+      return (unsigned char)((sign << 7) | 0x78); /* clamp to 448 */
+    }
+    return (unsigned char)((sign << 7) | (e4m3_exp << 3) | e4m3_mant);
+  } else {
+    /* Subnormal E4M3: unbiased < -6, so e4m3_exp = 0, value = 2^(-6) * mant/8 */
+    int shift = -6 - unbiased; /* how many extra right-shifts */
+    unsigned int full_mant = (1u << 3) | ((f_mant >> 20) & 0x7u); /* 1.mmm in 4 bits */
+    unsigned int round_bit, sticky, trunc_mant;
+    if (shift >= 4) {
+      return (unsigned char)(sign << 7); /* too small */
+    }
+    /* Shift right by 'shift' with RNE */
+    trunc_mant = full_mant >> shift;
+    round_bit = (full_mant >> (shift - 1)) & 1u;
+    sticky = (full_mant & ((1u << (shift - 1)) - 1u)) ? 1u : 0u;
+    /* Also include original sticky bits from fp32 mantissa */
+    if (f_mant & 0xFFFFFu) sticky = 1u;
+    if (round_bit && (sticky || (trunc_mant & 1u))) {
+      trunc_mant++;
+    }
+    if (trunc_mant >= 8) {
+      /* Promoted to normal */
+      return (unsigned char)((sign << 7) | (1u << 3) | 0u);
+    }
+    return (unsigned char)((sign << 7) | (trunc_mant & 0x7u));
+  }
+}
+
+/* Convert a block of 32 FP32 values to MXFP4 (E2M1, blocksize=32, E8M0 scale). */
+LIBXSMM_API_INTERN
+void libxsmm_ref_fp32_to_mxfp4_block(const float *in, unsigned char *out_data, unsigned char *out_scale);
+LIBXSMM_API_INTERN
+void libxsmm_ref_fp32_to_mxfp4_block(const float *in, unsigned char *out_data, unsigned char *out_scale) {
+  libxsmm_ref_f32u mx;
+  float amax = 0.0f;
+  int   shared_exp, scale_mant, i;
+  float scale;
+  unsigned int is_inf_or_nan = 0;
+  unsigned char lo, hi;
+
+  /* 1. Max absolute value (propagates NaN like the MX reference) */
+  for (i = 0; i < 32; i++) {
+    float a = LIBXSMM_FABSF(in[i]);
+    if (a > amax || a != a) amax = a;
+  }
+
+  /* 2. Shared biased exponent, offset by elem_emax = 2 */
+  mx.f = amax;
+  shared_exp = (int)((mx.u >> 23) & 0xFFu);
+  is_inf_or_nan = (shared_exp == 0xFF);
+  shared_exp -= 2;
+  if (is_inf_or_nan) shared_exp = 0xFF;
+  if (shared_exp < 0) shared_exp = 0;
+
+  *out_scale = (unsigned char)shared_exp;
+
+  /* 3. Construct the shared scale as a float from the E8M0 exponent */
+  scale_mant = (shared_exp == 0 || is_inf_or_nan > 0) ? (1 << 22) : 0;
+  mx.u = ((unsigned int)shared_exp << 23) | (unsigned int)scale_mant;
+  scale = mx.f;
+
+  /* Implementation dependent when shared exp is Inf/NaN: all entries Max Normal FP4 */
+  if (is_inf_or_nan) {
+    for (i = 0; i < 16; i++) out_data[i] = 0x77;
+    return;
+  }
+
+  /* 4. Scale each element, encode E2M1 */
+  for (i = 0; i < 16; i++) {
+    float v0 = in[2*i]     / scale;
+    float v1 = in[2*i + 1] / scale;
+    libxsmm_ref_f32u u0, u1;
+    unsigned char s0, s1;
+    u0.f = in[2*i];     s0 = (u0.u >> 31) ? 0x8u : 0u;
+    u1.f = in[2*i + 1]; s1 = (u1.u >> 31) ? 0x8u : 0u;
+    lo = (unsigned char)(s0 | libxsmm_ref_encode_e2m1_abs(LIBXSMM_FABSF(v0)));
+    hi = (unsigned char)(s1 | libxsmm_ref_encode_e2m1_abs(LIBXSMM_FABSF(v1)));
+    out_data[i] = (unsigned char)((hi << 4) | lo);
+  }
+}
+
+/* Convert a block of 16 FP32 values to NVFP4 (E2M1, blocksize=16, E4M3 scale). */
+LIBXSMM_API_INTERN
+void libxsmm_ref_fp32_to_nvfp4_block(const float *in, unsigned char *out_data, unsigned char *out_scale);
+LIBXSMM_API_INTERN
+void libxsmm_ref_fp32_to_nvfp4_block(const float *in, unsigned char *out_data, unsigned char *out_scale) {
+  float amax = 0.0f;
+  int i;
+  float scale_f;
+  unsigned char scale_hf8;
+
+  /* 1. Max absolute value */
+  for (i = 0; i < 16; i++) {
+    float a = LIBXSMM_FABSF(in[i]);
+    if (a > amax || a != a) amax = a;
+  }
+
+  /* 2. Compute E4M3 scale: scale = amax / 6.0, in BF16 precision */
+  if (amax == 0.0f) {
+    scale_hf8 = 0;
+    scale_f = 0.0f;
+  } else {
+    libxsmm_bfloat16_f32 rcp6;
+    libxsmm_bfloat16 amax_bf16;
+    float raw_scale;
+    rcp6.i[0] = 0;
+    rcp6.i[1] = 0x3E2A; /* 1/6 in BF16 */
+    libxsmm_rne_convert_fp32_bf16(&amax, &amax_bf16, 1);
+    { libxsmm_bfloat16_f32 t; t.i[0] = 0; t.i[1] = amax_bf16; amax = t.f; }
+    raw_scale = amax * rcp6.f;
+    {
+      libxsmm_bfloat16 raw_scale_bf16;
+      libxsmm_rne_convert_fp32_bf16(&raw_scale, &raw_scale_bf16, 1);
+      { libxsmm_bfloat16_f32 t; t.i[0] = 0; t.i[1] = raw_scale_bf16; raw_scale = t.f; }
+    }
+    scale_hf8 = libxsmm_ref_float_to_hf8(raw_scale);
+    scale_f = libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)scale_hf8);
+  }
+
+  *out_scale = scale_hf8;
+
+  /* 3. If scale is zero, all outputs are zero */
+  if (scale_f == 0.0f) {
+    for (i = 0; i < 8; i++) out_data[i] = 0;
+    return;
+  }
+
+  /* 4. Compute BF16 reciprocal of scale, multiply each element, encode E2M1 */
+  {
+    libxsmm_bfloat16 scale_bf16;
+    float scale_bf16_f, rcp_f;
+    libxsmm_bfloat16 rcp_bf16;
+
+    libxsmm_rne_convert_fp32_bf16(&scale_f, &scale_bf16, 1);
+    { libxsmm_bfloat16_f32 t; t.i[0] = 0; t.i[1] = scale_bf16; scale_bf16_f = t.f; }
+    rcp_f = 1.0f / scale_bf16_f;
+    libxsmm_rne_convert_fp32_bf16(&rcp_f, &rcp_bf16, 1);
+    { libxsmm_bfloat16_f32 t; t.i[0] = 0; t.i[1] = rcp_bf16; rcp_f = t.f; }
+
+    for (i = 0; i < 8; i++) {
+      float v0 = in[2*i]     * rcp_f;
+      float v1 = in[2*i + 1] * rcp_f;
+      libxsmm_bfloat16 bf16_v0, bf16_v1;
+      libxsmm_ref_f32u u0, u1;
+      unsigned char s0, s1, lo, hi;
+      libxsmm_rne_convert_fp32_bf16(&v0, &bf16_v0, 1);
+      libxsmm_rne_convert_fp32_bf16(&v1, &bf16_v1, 1);
+      { libxsmm_bfloat16_f32 t0, t1;
+        t0.i[0] = 0; t0.i[1] = bf16_v0; v0 = t0.f;
+        t1.i[0] = 0; t1.i[1] = bf16_v1; v1 = t1.f;
+      }
+      u0.f = in[2*i];     s0 = (u0.u >> 31) ? 0x8u : 0u;
+      u1.f = in[2*i + 1]; s1 = (u1.u >> 31) ? 0x8u : 0u;
+      lo = (unsigned char)(s0 | libxsmm_ref_encode_e2m1_abs(LIBXSMM_FABSF(v0)));
+      hi = (unsigned char)(s1 | libxsmm_ref_encode_e2m1_abs(LIBXSMM_FABSF(v1)));
+      out_data[i] = (unsigned char)((hi << 4) | lo);
+    }
+  }
+}
+
+/* Convert a block of 32 FP32 values to MXFP8 (E5M2 / BF8, blocksize=32). */
+LIBXSMM_API_INTERN
+void libxsmm_ref_fp32_to_mxfp8_block(const float *in, unsigned char *out_data, unsigned char *out_scale);
+LIBXSMM_API_INTERN
+void libxsmm_ref_fp32_to_mxfp8_block(const float *in, unsigned char *out_data, unsigned char *out_scale) {
+  libxsmm_ref_f32u mx;
+  float amax = 0.0f;
+  int   shared_exp, scale_mant, i;
+  float scale;
+  unsigned int is_inf_or_nan = 0;
+
+  /* 1. Max absolute value (propagates NaN like the MX reference) */
+  for (i = 0; i < 32; i++) {
+    float a = LIBXSMM_FABSF(in[i]);
+    if (a > amax || a != a) amax = a;
+  }
+
+  /* 2. Shared biased exponent, offset by elem_emax = 15 (for E5M2) */
+  mx.f = amax;
+  shared_exp = (int)((mx.u >> 23) & 0xFFu);
+  is_inf_or_nan = (shared_exp == 0xFF);
+  shared_exp -= 15;
+  if (is_inf_or_nan) shared_exp = 0xFF;
+  if (shared_exp < 0) shared_exp = 0;
+
+  *out_scale = (unsigned char)shared_exp;
+
+  /* 3. Construct the shared scale as a float from the E8M0 exponent */
+  scale_mant = (shared_exp == 0 || is_inf_or_nan > 0) ? (1 << 22) : 0;
+  mx.u = ((unsigned int)shared_exp << 23) | (unsigned int)scale_mant;
+  scale = mx.f;
+
+  /* Implementation dependent when shared exp is Inf/NaN: all entries Max Normal BF8 */
+  if (is_inf_or_nan) {
+    for (i = 0; i < 32; i++) out_data[i] = 0x7B;
+    return;
+  }
+
+  /* 4. Scale each element, convert to BF8 (E5M2) */
+  for (i = 0; i < 32; i++) {
+    float v = in[i] / scale;
+    libxsmm_bfloat8 bf8_v;
+    libxsmm_rne_convert_fp32_bf8(&v, &bf8_v, 1);
+    out_data[i] = (unsigned char)bf8_v;
+  }
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const libxsmm_meltw_descriptor *i_mateltwise_desc) {
   if (libxsmm_is_reduce_op(i_mateltwise_desc) > 0) {
@@ -1909,8 +2195,9 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
     } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_QUANT ) {
       unsigned int skip_scf_cvt = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT) > 0 ) ? 1 : 0;
       unsigned int signed_sat = ( (flags & LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT) > 0 ) ? 1 : 0;
+      unsigned int is_mx_nv_quant = ( (dtype_out == LIBXSMM_DATATYPE_MXFP4X2) || (dtype_out == LIBXSMM_DATATYPE_NVFP4X2) || (dtype_out == LIBXSMM_DATATYPE_MXBF8) ) ? 1 : 0;
       float *in_ptr = (float*)in;
-      float scf_quant = (skip_scf_cvt > 0) ? 1.0f : *((float*)(param->in.secondary));
+      float scf_quant = ( (skip_scf_cvt > 0) || (is_mx_nv_quant > 0) ) ? 1.0f : *((float*)(param->in.secondary));
       if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I8) ) {
         char *char_data = (char*)out;
         for ( j = 0; j < N; ++j ) {
@@ -1955,6 +2242,86 @@ void libxsmm_reference_unary_elementwise(libxsmm_meltw_unary_param *param, const
           for ( i = 0; i < M; ++i ) {
             float in_f = in_ptr[libxsmm_elementwise_get_index(i, j, ldi, i_mateltwise_desc, 0)];
             int_data[(j*ldo)+i] = libxsmm_nearbyintf( in_f * scf_quant );
+          }
+        }
+      } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_MXFP4X2) ) {
+        /* BF16 -> MXFP4 (E2M1, blocksize=32, E8M0 scale) */
+        const libxsmm_bfloat16 *in_bf16 = (const libxsmm_bfloat16*)in;
+        unsigned char *out_data = (unsigned char*)out;
+        unsigned char *scale_data = (unsigned char*)out_dump;
+        libxsmm_blasint ldo_bytes = ldo / 2;   /* MXFP4X2: 2 values per output byte */
+        libxsmm_blasint ldo_scales = ldo / 32;  /* one E8M0 scale per 32-element block */
+        libxsmm_blasint num_blocks_m = M / 32;
+        libxsmm_blasint b, k;
+        for ( j = 0; j < N; ++j ) {
+          for ( b = 0; b < num_blocks_m; ++b ) {
+            float block_f32[32];
+            unsigned char block_out[16];
+            unsigned char block_scale;
+            for ( k = 0; k < 32; ++k ) {
+              libxsmm_bfloat16_f32 tmp;
+              tmp.i[0] = 0;
+              tmp.i[1] = in_bf16[(j*ldi) + b*32 + k];
+              block_f32[k] = tmp.f;
+            }
+            libxsmm_ref_fp32_to_mxfp4_block( block_f32, block_out, &block_scale );
+            for ( k = 0; k < 16; ++k ) {
+              out_data[(j*ldo_bytes) + b*16 + k] = block_out[k];
+            }
+            scale_data[(j*ldo_scales) + b] = block_scale;
+          }
+        }
+      } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_NVFP4X2) ) {
+        /* BF16 -> NVFP4 (E2M1, blocksize=16, E4M3 scale) */
+        const libxsmm_bfloat16 *in_bf16 = (const libxsmm_bfloat16*)in;
+        unsigned char *out_data = (unsigned char*)out;
+        unsigned char *scale_data = (unsigned char*)out_dump;
+        libxsmm_blasint ldo_bytes = ldo / 2;   /* NVFP4X2: 2 values per output byte */
+        libxsmm_blasint ldo_scales = ldo / 16;  /* one E4M3 scale per 16-element block */
+        libxsmm_blasint num_blocks_m = M / 16;
+        libxsmm_blasint b, k;
+        for ( j = 0; j < N; ++j ) {
+          for ( b = 0; b < num_blocks_m; ++b ) {
+            float block_f32[16];
+            unsigned char block_out[8];
+            unsigned char block_scale;
+            for ( k = 0; k < 16; ++k ) {
+              libxsmm_bfloat16_f32 tmp;
+              tmp.i[0] = 0;
+              tmp.i[1] = in_bf16[(j*ldi) + b*16 + k];
+              block_f32[k] = tmp.f;
+            }
+            libxsmm_ref_fp32_to_nvfp4_block( block_f32, block_out, &block_scale );
+            for ( k = 0; k < 8; ++k ) {
+              out_data[(j*ldo_bytes) + b*8 + k] = block_out[k];
+            }
+            scale_data[(j*ldo_scales) + b] = block_scale;
+          }
+        }
+      } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_MXBF8) ) {
+        /* BF16 -> MXFP8 (E5M2 / BF8, blocksize=32, E8M0 scale) */
+        const libxsmm_bfloat16 *in_bf16 = (const libxsmm_bfloat16*)in;
+        unsigned char *out_data = (unsigned char*)out;
+        unsigned char *scale_data = (unsigned char*)out_dump;
+        libxsmm_blasint ldo_scales = ldo / 32;  /* one E8M0 scale per 32-element block */
+        libxsmm_blasint num_blocks_m = M / 32;
+        libxsmm_blasint b, k;
+        for ( j = 0; j < N; ++j ) {
+          for ( b = 0; b < num_blocks_m; ++b ) {
+            float block_f32[32];
+            unsigned char block_out[32];
+            unsigned char block_scale;
+            for ( k = 0; k < 32; ++k ) {
+              libxsmm_bfloat16_f32 tmp;
+              tmp.i[0] = 0;
+              tmp.i[1] = in_bf16[(j*ldi) + b*32 + k];
+              block_f32[k] = tmp.f;
+            }
+            libxsmm_ref_fp32_to_mxfp8_block( block_f32, block_out, &block_scale );
+            for ( k = 0; k < 32; ++k ) {
+              out_data[(j*ldo) + b*32 + k] = block_out[k];
+            }
+            scale_data[(j*ldo_scales) + b] = block_scale;
           }
         }
       } else {
