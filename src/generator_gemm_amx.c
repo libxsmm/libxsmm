@@ -2178,7 +2178,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm
           i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
           im * l_vlen * 4 * i_micro_kernel_config->datatype_size_in + (ik/8) * i_ldi * 4 * i_micro_kernel_config->datatype_size_in,
           i_micro_kernel_config->vector_name,
-          l_vreg_lo, (im == i_m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          l_vreg_lo, (im == i_m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, i_micro_kernel_config->mask_m_fp32, 0 );
 
       libxsmm_generator_gemm_decompress_i4_vreg ( io_generated_code, i_micro_kernel_config, i_xgemm_desc, l_zpt_vreg, l_vreg_lo, l_vreg_hi );
 
@@ -2214,7 +2214,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm
           gp_reg_zpt, LIBXSMM_X86_GP_REG_UNDEF, 0,
           i_m_offset * i_micro_kernel_config->datatype_size_in,
           'x',
-          l_vreg, (im == i_m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          l_vreg, (im == i_m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, i_micro_kernel_config->mask_m_fp32, 0 );
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_vreg, i_micro_kernel_config->perm_table_zpt_bcast, l_vreg);
       i_m_offset += m_blocking_info->sizes[im];
     }
@@ -2230,7 +2230,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_decompress_KxM_i4_tensor( libxsmm
         i_gp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
         im * l_vlen * 4 * i_micro_kernel_config->datatype_size_in,
         i_micro_kernel_config->vector_name,
-        l_vreg_lo, (im == i_m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+        l_vreg_lo, (im == i_m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, i_micro_kernel_config->mask_m_fp32, 0 );
 
     if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) {
       libxsmm_x86_instruction_prefetch(io_generated_code,
@@ -3142,7 +3142,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
           gp_reg_zpt, LIBXSMM_X86_GP_REG_UNDEF, 0,
           i_m_offset * i_micro_kernel_config->datatype_size_in,
           'x',
-          l_vreg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          l_vreg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, i_micro_kernel_config->mask_m_fp32, 0 );
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_vreg, i_micro_kernel_config->perm_table_zpt_bcast, l_vreg);
       i_m_offset += m_blocking_info->sizes[im];
     }
