@@ -316,7 +316,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     tile_config.palette_id = 2;
     libxsmm_x86_instruction_tile_control( io_generated_code,
         0,
-        l_micro_kernel_config.instruction_set,
+        io_generated_code->arch,
         LIBXSMM_X86_INSTR_LDTILECFG,
         LIBXSMM_X86_GP_REG_UNDEF,
         0,
