@@ -42,6 +42,7 @@
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
+    <ClInclude Include="..\include\libxsmm_intrinsics_rv64.h" />
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
@@ -114,6 +115,14 @@
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.h" />
+    <ClInclude Include="..\src\generator_common_rv64.h" />
+    <ClInclude Include="..\src\generator_gemm_common_rv64.h" />
+    <ClInclude Include="..\src\generator_gemm_rv64.h" />
+    <ClInclude Include="..\src\generator_mateltwise_rv64.h" />
+    <ClInclude Include="..\src\generator_mateltwise_transform_rv64.h" />
+    <ClInclude Include="..\src\generator_mateltwise_unary_binary_rv64.h" />
+    <ClInclude Include="..\src\generator_rv64_instructions.h" />
+    <ClInclude Include="..\src\generator_rv64_reference.h" />
     <ClInclude Include="..\src\generator_x86_reference.h" />
     <ClInclude Include="..\src\libxsmm_diff.h" />
     <ClInclude Include="..\src\generator_common.h" />
@@ -130,13 +139,11 @@
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
-    <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_matdiff.h" />
     <ClInclude Include="..\src\libxsmm_matrixeqn.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
-    <ClInclude Include="..\src\libxsmm_xcopy.h" />
     <ClInclude Include="..\src\perf_jitdump.h" />
     <ClInclude Include="..\src\template\libxsmm.h" />
     <ClInclude Include="..\src\template\libxsmm_config.h" />
@@ -222,6 +229,14 @@
     <ClCompile Include="..\src\generator_spgemm_csr_asparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
+    <ClCompile Include="..\src\generator_common_rv64.c" />
+    <ClCompile Include="..\src\generator_gemm_common_rv64.c" />
+    <ClCompile Include="..\src\generator_gemm_rv64.c" />
+    <ClCompile Include="..\src\generator_mateltwise_rv64.c" />
+    <ClCompile Include="..\src\generator_mateltwise_transform_rv64.c" />
+    <ClCompile Include="..\src\generator_mateltwise_unary_binary_rv64.c" />
+    <ClCompile Include="..\src\generator_rv64_instructions.c" />
+    <ClCompile Include="..\src\generator_rv64_reference.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\generator_x86_reference.c" />
     <ClCompile Include="..\src\libxsmm_barrier.c" />
@@ -230,7 +245,7 @@
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_generator.c" />
     <ClCompile Include="..\src\libxsmm_hash.c" />
-    <ClCompile Include="..\src\libxsmm_gemm.c" />
+    <ClCompile Include="..\src\libxsmm_cpuid_rv64.c" />
     <ClCompile Include="..\src\libxsmm_lpflt_quant.c" />
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
@@ -243,7 +258,6 @@
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
     <ClCompile Include="..\src\libxsmm_utils.c" />
-    <ClCompile Include="..\src\libxsmm_xcopy.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.codefile" />
