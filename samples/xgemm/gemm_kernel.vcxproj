@@ -225,6 +225,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -266,6 +267,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -309,6 +311,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -348,6 +351,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -390,6 +394,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -431,6 +436,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -464,6 +470,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -501,6 +508,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
@@ -535,6 +543,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
