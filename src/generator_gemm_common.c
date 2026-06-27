@@ -4346,8 +4346,8 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
     l_a_offset = ((long long)(i_xgemm_desc->k/l_k_scale) * (i_micro_kernel_config->datatype_size_in)) -
                  ((long long)(i_m_blocking * i_micro_kernel_config->datatype_size_in* i_xgemm_desc->lda));
   } else {
-    l_a_offset = ((long long)((long long)i_xgemm_desc->k * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda))/l_k_scale ) -
-                 ((long long)((long long)i_m_blocking * (i_micro_kernel_config->datatype_size_in*l_k_pack_factor))/l_a_adjust);
+    l_a_offset = (((long long)i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda)/l_k_scale) -
+                 ((long long)i_m_blocking * (i_micro_kernel_config->datatype_size_in*l_k_pack_factor)/l_a_adjust);
   }
 
   if ( l_is_Amxfp6_Bmxfp6_gemm > 0 ) {
@@ -6196,35 +6196,35 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
       if ( l_n == 16 ) {
         l_offset = 0;
       } else if ( l_n == 15 ) {
-        l_offset = 1 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)1 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 14 ) {
-        l_offset = 2 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)2 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 13 ) {
-        l_offset = 3 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)3 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 12 ) {
-        l_offset = 16 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)16 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 11 ) {
-        l_offset = 17 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)17 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 10 ) {
-        l_offset = 18 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)18 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 9 ) {
-        l_offset = 19 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)19 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 8 ) {
-        l_offset = 32 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)32 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 7 ) {
-        l_offset = 33 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)33 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 6 ) {
-        l_offset = 34 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)34 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 5 ) {
-        l_offset = 35 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)35 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 4 ) {
-        l_offset = 48 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)48 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 3 ) {
-        l_offset = 49 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)49 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 2 ) {
-        l_offset = 50 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)50 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 1 ) {
-        l_offset = 51 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)51 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 0 ) {
         l_offset = 0;
       }
@@ -6242,35 +6242,35 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
       if ( l_n == 16 ) {
         l_offset = 0;
       } else if ( l_n == 15 ) {
-        l_offset = 1 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)1 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 14 ) {
-        l_offset = 2 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)2 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 13 ) {
-        l_offset = 3 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)3 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 12 ) {
-        l_offset = 8 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)8 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 11 ) {
-        l_offset = 9 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)9 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 10 ) {
-        l_offset = 10 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)10 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 9 ) {
-        l_offset = 11 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)11 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 8 ) {
-        l_offset = 16 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)16 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 7 ) {
-        l_offset = 17 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)17 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 6 ) {
-        l_offset = 18 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)18 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 5 ) {
-        l_offset = 19 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)19 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 4 ) {
-        l_offset = 24 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)24 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 3 ) {
-        l_offset = 25 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)25 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 2 ) {
-        l_offset = 26 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)26 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 1 ) {
-        l_offset = 27 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
+        l_offset = (long long)27 * i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out;
       } else if ( l_n == 0 ) {
         l_offset = 0;
       }
@@ -6575,10 +6575,10 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
         libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction,
           i_gp_reg_mapping->gp_reg_help_2, (i_xgemm_desc->ldc/32));
         libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction,
-          i_gp_reg_mapping->gp_reg_help_1, (i_xgemm_desc->ldc/l_dtype_adjust) * i_micro_kernel_config->datatype_size_out);
+          i_gp_reg_mapping->gp_reg_help_1, (long long)(i_xgemm_desc->ldc/l_dtype_adjust) * i_micro_kernel_config->datatype_size_out);
       }
       else {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, (long long)i_xgemm_desc->ldc*i_micro_kernel_config->datatype_size_out );
       }
     }
 
