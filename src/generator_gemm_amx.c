@@ -5254,8 +5254,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int ldb_adjustment = (kernel_with_abvnniloads > 0) ? 2 : 1;
 
   /* AMX specific blocking info */
-  libxsmm_blocking_info_t m_blocking_info[2] = { 0 };
-  libxsmm_blocking_info_t n_blocking_info[2] = { 0 };
+  libxsmm_blocking_info_t m_blocking_info[2];
+  libxsmm_blocking_info_t n_blocking_info[2];
   unsigned int n_gemm_code_blocks = 0;
 
   /* Emulating BF8 gemm on AMX */
@@ -5278,6 +5278,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   unsigned int l_fp32_via_bf16_k_pad = 0;
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
+  LIBXSMM_MEMZERO127(&m_blocking_info);
+  LIBXSMM_MEMZERO127(&n_blocking_info);
 
   /* SW piepline A transform to vnni */
   if ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 && (l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) )) {

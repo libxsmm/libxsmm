@@ -20,6 +20,12 @@ include $(DEPDIR)/Makefile.inc
 IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(DEPDIR)/include)
 
+# dispatch.f / dispatch_udt.f intentionally demonstrate FORTRAN 77 compatibility
+# (no module USE), so implicit interfaces are by design. Keep -Werror in effect
+# but do not promote these intentional diagnostics to build errors here.
+FCFLAGS += $(call ftest,$(FC),-Wno-error=implicit-interface)
+FCFLAGS += $(call ftest,$(FC),-Wno-error=implicit-procedure)
+
 OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
