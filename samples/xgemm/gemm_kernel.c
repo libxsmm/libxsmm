@@ -114,10 +114,10 @@ void compress_sparse_A_with_bitmap(const gemm_def*    i_gemm_def,
   char *l_compressed_weights = NULL;
   unsigned int l_i, l_c = 0, l_bm = 0;
   unsigned long long l_nnz = 0;
-  libxsmm_bfloat16 *l_a_bf16 = (libxsmm_bfloat16*) i_a;
-  libxsmm_float16 *l_a_f16 = (libxsmm_float16*) i_a;
+  const libxsmm_bfloat16 *l_a_bf16 = (const libxsmm_bfloat16*) i_a;
+  const libxsmm_float16 *l_a_f16 = (const libxsmm_float16*) i_a;
 
-  float  *l_a_fp32 = (float*) i_a;
+  const float  *l_a_fp32 = (const float*) i_a;
   /* First pass to count number of non-zeros */
   for (l_i = 0; l_i < (unsigned int)i_gemm_def->m * i_gemm_def->k; l_i++) {
     if (i_gemm_def->is_Abf8Bbf16_gemm > 0) {
@@ -1314,8 +1314,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if (i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
-    char* c_a = (char*)a;
-    char* c_b = (char*)b;
+    const char* c_a = (const char*)a;
+    const char* c_b = (const char*)b;
     float*  i_c_f = (float*)c;
     libxsmm_bfloat16* i_c_bf16 = (libxsmm_bfloat16*)c;
     int l_k_block = 32;
@@ -1365,8 +1365,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if (i_gemm_def->is_Amxfp4Bmxfp4_gemm > 0) {
-    libxsmm_bfloat8* bf8_a = (libxsmm_bfloat8*)a;
-    libxsmm_bfloat8* bf8_b = (libxsmm_bfloat8*)b;
+    const libxsmm_bfloat8* bf8_a = (const libxsmm_bfloat8*)a;
+    const libxsmm_bfloat8* bf8_b = (const libxsmm_bfloat8*)b;
     float*  i_c_f = (float*)c;
     int l_k_block = 32;
     float tmp_val = 0.0;
@@ -1392,7 +1392,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
 
             for (l_k3 = 0; l_k3 < l_k_block/k_scale_freq; l_k3++) {
               tmp_val = 0.0;
-              for (l_k2 = 0; l_k2 < k_scale_freq; l_k2++) {
+              for (l_k2 = 0; l_k2 < (libxsmm_blasint)k_scale_freq; l_k2++) {
                 libxsmm_bfloat8 l_bf8_a = bf8_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2 + k_scale_freq * l_k3];
                 libxsmm_bfloat8 l_bf8_b = bf8_b[(l_r * ldb * k) + (l_s * (ldb*l_k_block)) + (l_j*l_k_block) + l_k2 + k_scale_freq * l_k3];
                 union libxsmm_bfloat8_f16 tmp_a_hf;
@@ -1427,8 +1427,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if (i_gemm_def->is_Amxbf8Bmxbf8_gemm > 0) {
-    libxsmm_bfloat8* bf8_a = (libxsmm_bfloat8*)a;
-    libxsmm_bfloat8* bf8_b = (libxsmm_bfloat8*)b;
+    const libxsmm_bfloat8* bf8_a = (const libxsmm_bfloat8*)a;
+    const libxsmm_bfloat8* bf8_b = (const libxsmm_bfloat8*)b;
     float*  i_c_f = (float*)c;
     int l_k_block = 4;
 
@@ -1486,8 +1486,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if (i_gemm_def->is_Amxhf8Bmxhf8_gemm > 0) {
-    libxsmm_hfloat8* hf8_a = (libxsmm_hfloat8*)a;
-    libxsmm_hfloat8* hf8_b = (libxsmm_hfloat8*)b;
+    const libxsmm_hfloat8* hf8_a = (const libxsmm_hfloat8*)a;
+    const libxsmm_hfloat8* hf8_b = (const libxsmm_hfloat8*)b;
     float*  i_c_f = (float*)c;
     int l_k_block = 4;
 
@@ -1539,8 +1539,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if (i_gemm_def->is_Amxhf6Bmxhf6_gemm > 0 || i_gemm_def->is_Amxbf6Bmxbf6_gemm > 0) {
-    libxsmm_hfloat8* hf8_a = (libxsmm_hfloat8*)a;
-    libxsmm_hfloat8* hf8_b = (libxsmm_hfloat8*)b;
+    const libxsmm_hfloat8* hf8_a = (const libxsmm_hfloat8*)a;
+    const libxsmm_hfloat8* hf8_b = (const libxsmm_hfloat8*)b;
     float*  i_c_f = (float*)c;
     int l_k_block = 4;
 
@@ -1596,8 +1596,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 1) ) {
-    unsigned char* c_a = (unsigned char*)a;
-    unsigned char* c_b = (unsigned char*)b;
+    const unsigned char* c_a = (const unsigned char*)a;
+    const unsigned char* c_b = (const unsigned char*)b;
     int*           i_c = (int*)c;
     int l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
@@ -1624,8 +1624,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
-    char* c_a = (char*)a;
-    char* c_b = (char*)b;
+    const char* c_a = (const char*)a;
+    const char* c_b = (const char*)b;
     int*           i_c = (int*)c;
     int l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
@@ -1708,8 +1708,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 1) ) {
-    unsigned char* c_a = (unsigned char*)a;
-    unsigned char* c_b = (unsigned char*)b;
+    const unsigned char* c_a = (const unsigned char*)a;
+    const unsigned char* c_b = (const unsigned char*)b;
     float*         c_c = (float*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -1739,8 +1739,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
-    char*          c_a = (char*)a;
-    char*          c_b = (char*)b;
+    const char*          c_a = (const char*)a;
+    const char*          c_b = (const char*)b;
     float*         c_c = (float*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -1801,8 +1801,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
-    char*          c_a = (char*)a;
-    unsigned char* c_b = (unsigned char*)b;
+    const char*          c_a = (const char*)a;
+    const unsigned char* c_b = (const unsigned char*)b;
     float*         c_c = (float*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -2343,8 +2343,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
-              float tmp_a_f;
-              float tmp_b_f;
+              float tmp_a_f = 0.0f;
+              float tmp_b_f = 0.0f;
               if ( (i_gemm_def->trans_a == 0) && (i_gemm_def->vnni_a == 0) ) {
                 libxsmm_convert_hf8_f32(&h_a[(l_r * lda * k) + (((l_s * l_k_block) + l_k2) * lda) + l_i], &tmp_a_f, 1);
               } else if ( (i_gemm_def->trans_a == 0) && (i_gemm_def->vnni_a > 0) ) {
@@ -2450,8 +2450,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
-              float tmp_a_f;
-              float tmp_b_f;
+              float tmp_a_f = 0.0f;
+              float tmp_b_f = 0.0f;
               if ( (i_gemm_def->trans_a == 0) && (i_gemm_def->vnni_a == 0) ) {
                 libxsmm_convert_hf8_f32(&h_a[(l_r * lda * k) + (((l_s * l_k_block) + l_k2) * lda) + l_i], &tmp_a_f, 1);
               } else if ( (i_gemm_def->trans_a == 0) && (i_gemm_def->vnni_a > 0) ) {
@@ -3054,7 +3054,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   gemm_param.op.tertiary = &l_br;
   gemm_param.c.primary = (void*)o_c;
-  gemm_param.c.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
+  gemm_param.c.tertiary = (void*)(uintptr_t)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->c_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
   gemm_param.a.tertiary = (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f16 :
       (void*)(( i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_BF16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) ) ? i_gemm_def->scf_f32 : NULL));
   gemm_param.a.quaternary = (void*)((i_gemm_def->is_Ai4Bf16_gemm > 0 && i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->b_type == LIBXSMM_DATATYPE_F16 && (i_gemm_def->c_type == LIBXSMM_DATATYPE_F16 || i_gemm_def->c_type == LIBXSMM_DATATYPE_F32)) ? i_gemm_def->zpt_f16 : NULL);
@@ -3086,11 +3086,11 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
-    gemm_param.a.primary = (void*)i_a;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.a.primary = (void*)(uintptr_t)i_a;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
-      gemm_param.a.senary = (void*)i_a;
-      gemm_param.b.senary = (void*)i_b;
+      gemm_param.a.senary = (void*)(uintptr_t)i_a;
+      gemm_param.b.senary = (void*)(uintptr_t)i_b;
       gemm_param.c.senary = (void*)o_c;
     }
 #if defined(USE_GEMM_EXT_FRONTEND)
@@ -3137,9 +3137,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_test_jit.gemm( &gemm_param );
 #endif
   } else if (i_gemm_def->br_type == 2) {
-    gemm_param.a.primary = (void*)i_a;
+    gemm_param.a.primary = (void*)(uintptr_t)i_a;
     gemm_param.a.secondary = l_a_offs;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
     gemm_param.b.secondary = l_b_offs;
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
@@ -3147,8 +3147,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_test_jit.gemm( &gemm_param );
 #endif
   } else if (i_gemm_def->br_type == 3) {
-    gemm_param.a.primary = (void*)i_a;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.a.primary = (void*)(uintptr_t)i_a;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
 #else
@@ -3157,7 +3157,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   } else if (i_gemm_def->br_type == 4) {
     gemm_param.a.primary = (void*)l_compressed_weights;
     gemm_param.a.secondary = (void*)l_decompress_bitmap;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
 #else
@@ -3168,11 +3168,11 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   gemm_param.c.primary = (void*)o_c_perf;
   l_start = libxsmm_timer_tick();
   if (i_gemm_def->br_type == 0) {
-    gemm_param.a.primary = (void*)i_a;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.a.primary = (void*)(uintptr_t)i_a;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
     if ( l_info.prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
-      gemm_param.a.senary = (void*)i_a;
-      gemm_param.b.senary = (void*)i_b;
+      gemm_param.a.senary = (void*)(uintptr_t)i_a;
+      gemm_param.b.senary = (void*)(uintptr_t)i_b;
       gemm_param.c.senary = (void*)o_c_perf;
     }
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
@@ -3224,9 +3224,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
     }
   } else if (i_gemm_def->br_type == 2) {
-    gemm_param.a.primary = (void*)i_a;
+    gemm_param.a.primary = (void*)(uintptr_t)i_a;
     gemm_param.a.secondary = l_a_offs;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
     gemm_param.b.secondary = l_b_offs;
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
@@ -3236,8 +3236,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
     }
   } else if (i_gemm_def->br_type == 3) {
-    gemm_param.a.primary = (void*)i_a;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.a.primary = (void*)(uintptr_t)i_a;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
       l_test_jit.gemm_ext( &gemm_param );
@@ -3248,7 +3248,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   } else if (i_gemm_def->br_type == 4) {
     gemm_param.a.primary = (void*)l_compressed_weights;
     gemm_param.a.secondary = (void*)l_decompress_bitmap;
-    gemm_param.b.primary = (void*)i_b;
+    gemm_param.b.primary = (void*)(uintptr_t)i_b;
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
       l_test_jit.gemm_ext( &gemm_param );
@@ -4121,14 +4121,14 @@ int main(int argc, char* argv []) {
         libxsmm_blasint scf_i = 0;
         unsigned int n_scf = (size_t)l_lda * (l_gemm_def.k/l_divider) * l_br;
         unsigned char *tmp_scf_u8 = (unsigned char*)libxsmm_aligned_malloc(n_scf * sizeof(unsigned char), 64);
-        for (scf_i = 0; scf_i < n_scf; scf_i++) {
+        for (scf_i = 0; scf_i < (libxsmm_blasint)n_scf; scf_i++) {
           tmp_scf_u8[scf_i] = (unsigned char) (126+rand()%10);
         }
         l_gemm_def.scf_u8 = tmp_scf_u8;
         if (l_gemm_def.is_Amxfp4Bi8_gemm > 0 ) {
           n_scf = (size_t)l_n * (l_ldb/32) * l_br;
           float *tmp_scf_b_f32 = (float*)libxsmm_aligned_malloc(n_scf * sizeof(float), 64);
-          for (scf_i = 0; scf_i < n_scf; scf_i++) {
+          for (scf_i = 0; scf_i < (libxsmm_blasint)n_scf; scf_i++) {
             tmp_scf_b_f32[scf_i] = (float)get_random_posneg_p5_num();
           }
           l_gemm_def.scf_b_f32 = tmp_scf_b_f32;
@@ -4136,7 +4136,7 @@ int main(int argc, char* argv []) {
         if (l_gemm_def.is_Amxfp4Bmxfp4_gemm > 0 || l_gemm_def.is_Amxhf6Bmxhf6_gemm > 0 || l_gemm_def.is_Amxbf6Bmxbf6_gemm > 0 || l_gemm_def.is_Amxbf8Bmxbf8_gemm > 0 || l_gemm_def.is_Amxhf8Bmxhf8_gemm > 0) {
           n_scf = (size_t)l_ldb * (l_gemm_def.k/l_divider) * l_br;
           unsigned char *tmp_scf_b_u8 = (unsigned char*)libxsmm_aligned_malloc(n_scf * sizeof(unsigned char), 64);
-          for (scf_i = 0; scf_i < n_scf; scf_i++) {
+          for (scf_i = 0; scf_i < (libxsmm_blasint)n_scf; scf_i++) {
             tmp_scf_b_u8[scf_i] = (unsigned char) (126+rand()%10);
           }
           l_gemm_def.scf_b_u8 = tmp_scf_b_u8;
