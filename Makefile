@@ -1323,6 +1323,7 @@ endif
 
 $(PCMKDIR)/libxsmmConfig.cmake: $(ROOTSCR)/libxsmmConfig.cmake $(ROOTSCR)/libxsmmConfigVersion.cmake.in $(PCMKDIR)/.make
 	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
+		-e 's|@THREADS@|$(THREADS)|g' \
 		"$(ROOTSCR)/libxsmmConfig.cmake" > "$@"
 	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
 		"$(ROOTSCR)/libxsmmConfigVersion.cmake.in" > "$(PCMKDIR)/libxsmmConfigVersion.cmake"

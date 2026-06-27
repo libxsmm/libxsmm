@@ -105,7 +105,9 @@ The main interface file is *generated*, and it is therefore **not** stored in th
 
 ### Classic Library (ABI)
 
-There are two ways to rely on prebuilt code for a given project: <span>(1)&#160;using</span> LIBXSMM's Makefile based build system, <span>(2)&#160;or</span> using another build system and writing own [rules for building LIBXSMM](#rules-for-building-libxsmm). The Makefile based build system relies on <span>GNU&#160;Make</span> (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using <span>key&#8209;value</span> pairs. <span>Key&#8209;value</span> pairs can be supplied in two ways: <span>(1)&#160;after</span> the "make" command, or <span>(2)&#160;prior</span> to the "make" command (`env`) which is effectively the same as exporting the <span>key&#8209;value</span> pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
+LIBXSMM provides native GNU Make and CMake build systems for the classic library ABI. GNU Make remains the reference build path and exposes the full set of build-time customization options and legacy sample targets. CMake supports the core library, optional Fortran module interface, generator executables, installation, and CMake package integration. Projects using another build system can also write their own [rules for building LIBXSMM](#rules-for-building-libxsmm).
+
+The Makefile based build system relies on <span>GNU&#160;Make</span> (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using <span>key&#8209;value</span> pairs. <span>Key&#8209;value</span> pairs can be supplied in two ways: <span>(1)&#160;after</span> the "make" command, or <span>(2)&#160;prior</span> to the "make" command (`env`) which is effectively the same as exporting the <span>key&#8209;value</span> pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
 
 <a name="zero-config-abi"></a>In contrast to [header-only](#zero-config) which does not require configuration by default, 3rd-party build systems can compile and link LIBXSMM's sources but still avoid configuring the library (per `libxsmm_config.py`). The prerequisite to omit configuration is to opt-in by defining LIBXSMM_DEFAULT_CONFIG (`-D`). The zero-config feature is not available for LIBXSMM's Fortran interface.
 
@@ -159,6 +161,35 @@ make realclean
 
 Using the Fortran module (or including the interface), requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
 
+#### CMake
+
+CMake 3.13 or newer can build the classic library ABI, the optional Fortran module interface, and the generator executables. GNU Make remains the reference build path, especially when the full set of build-time customization options or legacy sample targets is needed.
+
+Configure, build, and install LIBXSMM with:
+
+```bash
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/path/to/libxsmm-install
+cmake --build build --target install -j
+```
+
+The default CMake build produces static libraries. Add `-DBUILD_SHARED_LIBS=ON` to build shared libraries. When a Fortran compiler is detected, the Fortran module interface and `libxsmmf` are built automatically.
+
+The installed package should be consumed through its exported targets:
+
+```cmake
+find_package(libxsmm CONFIG REQUIRED)
+target_link_libraries(my_target PRIVATE libxsmm::libxsmm)
+```
+
+For the Fortran module interface:
+
+```cmake
+find_package(libxsmm CONFIG REQUIRED COMPONENTS Fortran)
+target_link_libraries(my_target PRIVATE libxsmm::libxsmmf)
+```
+
+For an in-tree dependency, `add_subdirectory()` can be used. An installed package and `find_package(libxsmm CONFIG REQUIRED)` are preferred for regular downstream integration.
+
 ### Header-Only
 
 <span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/libxsmm/libxsmm/tree/main/src) directory (with the implications as noted earlier).
@@ -169,31 +200,7 @@ Using the Fortran module (or including the interface), requires at least a <span
 
 ## Rules for building LIBXSMM
 
-LIBXSMM can be used as header-only library, i.e., no source code must be (pre-)built. However, it can be desirable to build LIBXSMM as an intermediate library using a custom setup or build system. The latter can still implement custom build rules to configure LIBXSMM's interface before building the code. More likely, building LIBXSMM from source in a custom fashion can still be omitting to configure the interface and rely on "(zero-config)[#zero-config-abi]", i.e., defining LIBXSMM_DEFAULT_CONFIG (`-DLIBXSMM_DEFAULT_CONFIG`). For example, a CMake module for LIBXSMM can look like:
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(
-  xsmm
-  URL https://github.com/chelini/libxsmm/archive/<your-preferred-revision>.tar.gz
-  URL_HASH SHA256=<sha256sum-corresponding-to-above-revision>
-)
-FetchContent_GetProperties(xsmm)
-if(NOT xsmm_POPULATED)
-  FetchContent_Populate(xsmm)
-endif()
-
-set(LIBXSMMROOT ${xsmm_SOURCE_DIR})
-file(GLOB _GLOB_XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${LIBXSMMROOT}/src/*.c)
-list(REMOVE_ITEM _GLOB_XSMM_SRCS ${LIBXSMMROOT}/src/libxsmm_generator_gemm_driver.c)
-set(XSMM_INCLUDE_DIRS ${LIBXSMMROOT}/include)
-
-add_library(xsmm STATIC ${_GLOB_XSMM_SRCS})
-target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
-target_compile_definitions(xsmm PUBLIC
-  LIBXSMM_DEFAULT_CONFIG
-)
-```
+Projects using CMake should use the native CMake build described above rather than maintaining a duplicate list of LIBXSMM source files. Other build systems can compile and link LIBXSMM directly. Such builds may generate the configured interfaces first, or opt into zero-config mode by defining `LIBXSMM_DEFAULT_CONFIG` (`-D`). Zero-config mode is not available for LIBXSMM's Fortran interface.
 
 ## Link Instructions
 
