@@ -214,7 +214,7 @@ void compress_sparse_A_with_bitmap(const gemm_def*    i_gemm_def,
 }
 
 LIBXSMM_INLINE
-unsigned char pack_2bit_encoding(char m0k0, char m1k0, char m2k0, char m3k0) {
+unsigned char pack_2bit_encoding(signed char m0k0, signed char m1k0, signed char m2k0, signed char m3k0) {
   unsigned char result = 0;
   if (m0k0 == 1) {
     result = result | 0x1;
@@ -4348,28 +4348,28 @@ int main(int argc, char* argv []) {
             /* We create a new tensor of i2 in vnni4-interleaved format from A... */
             unsigned char *l_a_i2  = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)((((l_k+3)/4)*4)/4) * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.a_type), 64);
             libxsmm_blasint l_ar = 0, l_am = 0, l_ak = 0;
-            char *c_a = (char*) l_a;
+            signed char *c_a = (signed char*) l_a;
             for (l_ar = 0; l_ar < l_br; l_ar++) {
               for (l_am = 0; l_am < l_m; l_am+=4) {
                 for (l_ak = 0; l_ak < l_k; l_ak+=4) {
                   if (l_m == 64) {
                     libxsmm_blasint l_am_load = (l_am/4)%16 + (l_am/4)/16*64;
-                    char m0k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 0];
-                    char m0k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 1];
-                    char m0k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 2];
-                    char m0k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 3];
-                    char m1k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 0];
-                    char m1k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 1];
-                    char m1k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 2];
-                    char m1k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 3];
-                    char m2k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 0];
-                    char m2k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 1];
-                    char m2k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 2];
-                    char m2k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 3];
-                    char m3k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 0];
-                    char m3k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 1];
-                    char m3k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 2];
-                    char m3k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 3];
+                    signed char m0k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 0];
+                    signed char m0k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 1];
+                    signed char m0k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 2];
+                    signed char m0k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 3];
+                    signed char m1k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 0];
+                    signed char m1k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 1];
+                    signed char m1k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 2];
+                    signed char m1k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 3];
+                    signed char m2k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 0];
+                    signed char m2k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 1];
+                    signed char m2k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 2];
+                    signed char m2k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+32) * 4 + 3];
+                    signed char m3k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 0];
+                    signed char m3k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 1];
+                    signed char m3k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 2];
+                    signed char m3k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+48) * 4 + 3];
                     unsigned char packed_k0 = pack_2bit_encoding(m0k0, m1k0, m2k0, m3k0);
                     unsigned char packed_k1 = pack_2bit_encoding(m0k1, m1k1, m2k1, m3k1);
                     unsigned char packed_k2 = pack_2bit_encoding(m0k2, m1k2, m2k2, m3k2);
@@ -4380,22 +4380,22 @@ int main(int argc, char* argv []) {
                     l_a_i2[(l_ar * l_lda * l_k/4) + (l_ak/4) * l_lda + (l_am/4) * 4 + 3] = packed_k3;
                   } else if (l_m == 32) {
                     libxsmm_blasint l_am_load = (l_am/4)%8 + (l_am/4)/8*32;
-                    char m0k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 0];
-                    char m0k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 1];
-                    char m0k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 2];
-                    char m0k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 3];
-                    char m1k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 0];
-                    char m1k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 1];
-                    char m1k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 2];
-                    char m1k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 3];
-                    char m2k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 0];
-                    char m2k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 1];
-                    char m2k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 2];
-                    char m2k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 3];
-                    char m3k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 0];
-                    char m3k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 1];
-                    char m3k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 2];
-                    char m3k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 3];
+                    signed char m0k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 0];
+                    signed char m0k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 1];
+                    signed char m0k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 2];
+                    signed char m0k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+0) * 4 + 3];
+                    signed char m1k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 0];
+                    signed char m1k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 1];
+                    signed char m1k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 2];
+                    signed char m1k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+8) * 4 + 3];
+                    signed char m2k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 0];
+                    signed char m2k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 1];
+                    signed char m2k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 2];
+                    signed char m2k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+16) * 4 + 3];
+                    signed char m3k0 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 0];
+                    signed char m3k1 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 1];
+                    signed char m3k2 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 2];
+                    signed char m3k3 = c_a[(l_ar * l_lda * l_k) + ((l_ak/4) * l_lda * 4) + (l_am_load+24) * 4 + 3];
                     unsigned char packed_k0 = pack_2bit_encoding(m0k0, m1k0, m2k0, m3k0);
                     unsigned char packed_k1 = pack_2bit_encoding(m0k1, m1k1, m2k1, m3k1);
                     unsigned char packed_k2 = pack_2bit_encoding(m0k2, m1k2, m2k2, m3k2);
