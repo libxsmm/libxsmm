@@ -407,6 +407,9 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     return EXIT_FAILURE;
   }
 
+  /* setting tileconfig state to 0 */
+  memset( &l_tilestate, 0, sizeof(libxsmm_tilecfg_state) );
+
   /* unsigned A/B operands are encoded directly via the (unsigned) datatype in the GEMM shape */
 
   l_flags |= (0 != i_spmm_def->trans_b ? LIBXSMM_GEMM_FLAG_TRANS_B : 0);

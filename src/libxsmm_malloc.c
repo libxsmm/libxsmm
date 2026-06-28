@@ -1128,6 +1128,8 @@ LIBXSMM_API_INLINE void* internal_xrealloc(void** ptr, internal_malloc_info_type
   libxsmm_realloc_fun realloc_fn, libxsmm_free_fun free_fn)
 {
   char *const base = (char*)(NULL != *info ? (*info)->pointer : *ptr), *result;
+  /* capture the interior offset before realloc may invalidate *ptr and base */
+  const size_t offset_src = (const char*)*ptr - base;
   LIBXSMM_ASSERT(NULL != *ptr && NULL != free_fn);
   /* reallocation may implicitly invalidate info */
   result = (char*)(NULL != realloc_fn ? realloc_fn(base, size) : __real_malloc(size));
@@ -1138,7 +1140,6 @@ LIBXSMM_API_INLINE void* internal_xrealloc(void** ptr, internal_malloc_info_type
   }
   else if (NULL != result) { /* copy */
     if (NULL != realloc_fn) {
-      const size_t offset_src = (const char*)*ptr - base;
       *ptr = result + offset_src; /* copy */
       *info = NULL; /* no delete */
     }
