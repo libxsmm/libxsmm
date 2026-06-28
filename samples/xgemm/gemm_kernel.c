@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#define _DEFAULT_SOURCE
+
 #include <libxsmm_utils.h>
 #include <libxsmm.h>
 #include <float.h>
@@ -2978,6 +2978,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   /* setting ext structs to 0 */
   memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
   memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
+  memset( &l_tilestate, 0, sizeof(libxsmm_tilecfg_state) );
 
   /* Setup fusion postops */
   if (i_gemm_def->binary_postop != OP_NONE ) {

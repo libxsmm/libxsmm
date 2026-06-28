@@ -25,6 +25,9 @@ IFLAGS += -I$(call quote,$(DEPDIR)/include)
 # but do not promote these intentional diagnostics to build errors here.
 FCFLAGS += $(call ftest,$(FC),-Wno-error=implicit-interface)
 FCFLAGS += $(call ftest,$(FC),-Wno-error=implicit-procedure)
+# Intel Fortran (ifort/ifx) reports the same intentional implicit-interface case
+# as diagnostic #8889; silence it for this F77-compatibility demo.
+FCFLAGS += $(call ftest,$(FC),-diag-disable 8889)
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \

@@ -1159,7 +1159,7 @@ ifneq (0,$(INTEL))
     ifneq (ld,$(call qndir,$(LD)))
       LDFLAGS += -diag-disable 1879,3415,10006,10010,10411,10441
     endif
-    FCFLAGS += -diag-disable 10006,10010,10411,13003
+    FCFLAGS += -diag-disable 5472,10006,10010,10411,13003
     ifneq (0,$(THREADS))
       FCMTFLAGS += -threads
     endif
@@ -1227,6 +1227,13 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(NOLIMITS_FCFLAG)
     CXXFLAGS += $(NOLIMITS_CFLAG)
     CFLAGS += $(NOLIMITS_CFLAG)
+    # icx recommends -qopenmp over -fopenmp; the latter is selected based on the
+    # Fortran compiler's preference but also flows into C/C++ flags. Keep that
+    # recommendation as a warning rather than letting -Werror make it fatal.
+    ifneq (0,$(ICX))
+      CXXFLAGS += $(call ctest,$(CC),-Wno-error=recommended-option)
+      CFLAGS += $(call ctest,$(CC),-Wno-error=recommended-option)
+    endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
