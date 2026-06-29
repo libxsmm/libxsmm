@@ -539,7 +539,7 @@ int main( int argc, char* argv[] ) {
     /*libxsmm_meqn_tree_print( my_eqn0 );*/
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
-    libxsmm_get_kernel_info((const void*) func0, &info);
+    libxsmm_get_kernel_info((const void*)(uintptr_t) func0, &info);
     is_reference_kernel = info.is_reference_kernel;
     if ( func0 == NULL ) {
       fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
@@ -664,7 +664,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata2, arg_shape2, arg_singular_attr2);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_meqn( my_eqn2, arg_shape_out );
-    libxsmm_get_kernel_info((const void*) func2, &info);
+    libxsmm_get_kernel_info((const void*)(uintptr_t) func2, &info);
     is_reference_kernel = info.is_reference_kernel;
     if ( func2 == NULL ) {
       fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
@@ -688,7 +688,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_push_back_arg(arg_metadata3, arg_shape3, arg_singular_attr3);
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_meqn( my_eqn3, arg_shape_out );
-    libxsmm_get_kernel_info((const void*) func3, &info);
+    libxsmm_get_kernel_info((const void*)(uintptr_t) func3, &info);
     is_reference_kernel = info.is_reference_kernel;
     if ( func3 == NULL ) {
       fprintf( stderr, "JIT for func3 failed. Bailing...!\n");

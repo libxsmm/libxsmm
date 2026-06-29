@@ -112,6 +112,7 @@ int test_bf16_to_mxfp4( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
   int ret = EXIT_SUCCESS;
   libxsmm_blasint num_blocks_m = M / 32; /* number of 32-element blocks per row */
   libxsmm_blasint ldo_scales = ldo / 32;  /* scales row stride matches kernel layout (ldo/block); only the first num_blocks_m blocks per row are valid */
+  libxsmm_blasint ldo_bytes = ldo / 2;  /* MXFP4X2: 2 values per byte, ldo is in elements */
   libxsmm_meltwfunction_unary unary_kernel_quant;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_shape unary_shape;
@@ -150,8 +151,6 @@ int test_bf16_to_mxfp4( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
       in_f32[(i * ldi) + j] = tmp.f;
     }
   }
-
-  libxsmm_blasint ldo_bytes = ldo / 2;  /* MXFP4X2: 2 values per byte, ldo is in elements */
 
   /* Zero outputs */
   memset( mxfp4_data,      0, sizeof(unsigned char) * N * ldo_bytes );
@@ -194,7 +193,7 @@ int test_bf16_to_mxfp4( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
     fprintf( stderr, "JIT for BF16->MXFP4 QUANT TPP failed. Bailing...!\n" );
     exit(-1);
   }
-  libxsmm_get_kernel_info( (const void*)unary_kernel_quant, &info );
+  libxsmm_get_kernel_info( (const void*)(uintptr_t)unary_kernel_quant, &info );
   is_reference_kernel = info.is_reference_kernel;
 
   unary_param.in.primary    = (void*)in_bf16;

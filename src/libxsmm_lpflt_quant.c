@@ -168,7 +168,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
-#     pragma omp parallel for private(i)
+#     pragma omp parallel for
 #endif
       for (i = 0; i < length; i+=16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i]), LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( &(in_buffer[i]), vscfq ) );
@@ -176,7 +176,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
     } else {
 #endif
 #ifdef _OPENMP
-#     pragma omp parallel for private(i)
+#     pragma omp parallel for
 #endif
       for (i = 0; i < length; ++i ) {
         const float f = LIBXSMM_ROUNDF(in_buffer[i] * scfq);
@@ -202,7 +202,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
     }
 
 #ifdef _OPENMP
-#   pragma omp parallel for private(i)
+#   pragma omp parallel for
 #endif
     for (i = 0; i < length; ++i ) {
       out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
@@ -218,7 +218,7 @@ LIBXSMM_API void libxsmm_dequantize_i16( short* in_buffer, float* out_buffer, in
   int i = 0;
 
 #ifdef _OPENMP
-# pragma omp parallel for private(i)
+# pragma omp parallel for
 #endif
   for ( i = 0; i < length; ++i ) {
     out_buffer[i] = ((float)in_buffer[i])*val_exp;

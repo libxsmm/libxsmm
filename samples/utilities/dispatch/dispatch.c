@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
       for (n = 0; n < nrepeat; ++n) {
 #       pragma omp parallel num_threads(nthreads) private(i)
         {
-#         pragma omp master
+          LIBXSMM_OMP_MASKED
           start = libxsmm_timer_tick();
 #         pragma omp for
           for (i = 0; i < size_total; ++i) {
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
             libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
           }
-#         pragma omp master
+          LIBXSMM_OMP_MASKED
           tdsp1 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
     if (1 < nthreads) {
 #     pragma omp parallel num_threads(nthreads) private(i)
       {
-#       pragma omp master
+        LIBXSMM_OMP_MASKED
         start = libxsmm_timer_tick();
 #       pragma omp for
         for (i = size_local; i < size_total; ++i) {
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
           libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
         }
-#       pragma omp master
+        LIBXSMM_OMP_MASKED
         tcgen += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       }
     }
@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
       for (n = 0; n < nrepeat; ++n) {
 #       pragma omp parallel num_threads(nthreads) private(i)
         {
-#         pragma omp master
+          LIBXSMM_OMP_MASKED
           start = libxsmm_timer_tick();
 #         pragma omp for
           for (i = 0; i < size_total; ++i) {
@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
             libxsmm_dispatch_gemm(gemm_shape, flags, prefetch);
 #endif
           }
-#         pragma omp master
+          LIBXSMM_OMP_MASKED
           tdsp0 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }

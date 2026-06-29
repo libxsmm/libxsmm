@@ -240,7 +240,8 @@ ifeq (,$(PYTHON))
   $(error No Python interpreter found)
 endif
 
-# Version numbers according to interface (version.txt)
+# Release version from VERSION; development metadata from version.txt, if present.
+VERSION_METADATA := $(wildcard $(ROOTDIR)/version.txt)
 VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 3)
@@ -536,7 +537,7 @@ endif
 # auto-clean
 $(ROOTSRC)/template/libxsmm_config.h: $(ROOTSCR)/libxsmm_config.py $(ROOTSCR)/libxsmm_utilities.py \
                                                 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
-                                                $(ROOTDIR)/version.txt
+                                                $(ROOTDIR)/VERSION $(VERSION_METADATA)
 	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-touch $@
 
@@ -913,15 +914,15 @@ $(DOCDIR)/libxsmm_scripts.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTSCR)/REA
 		-e 'N;/^\n$$/d;P;D' \
 		>$@
 
-$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Compatibility.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Validation.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Q&A.md"
 	@echo >>$@
 
@@ -1165,7 +1166,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
 	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v  $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v  $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@if [ -f $(ROOTDIR)/version.txt ]; then $(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR); fi
 	@$(SED) "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state >$(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
 	@$(MKDIR) -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
