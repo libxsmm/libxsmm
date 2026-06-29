@@ -85,6 +85,7 @@ int main(int argc, char* argv[])
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i, j)
 #endif
   for (i = 0; i < size; ++i) {

@@ -636,7 +636,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     binary_flags |= LIBXSMM_MELTW_FLAG_BINARY_BITMASK_2BYTEMULT;
   }
   binary_kernel = libxsmm_dispatch_meltw_binary( binary_type, binary_shape, binary_flags );
-  libxsmm_get_kernel_info((const void*) binary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) binary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");

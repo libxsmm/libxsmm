@@ -689,6 +689,18 @@ ifneq (0,$(WCHECK))
   endif
 endif
 
+# Build samples and tests with -Werror by default. These consumers include
+# $(DEPDIR)/Makefile.inc, so DEPDIR is non-empty here; it is empty when the main
+# library is built (root Makefile), whose own compile rule already manages -Werror.
+# Pass WERROR=0 to opt out.
+ifneq (,$(strip $(DEPDIR)))
+ifneq (0,$(WERROR))
+  CFLAGS += $(WERROR_CFLAG)
+  CXXFLAGS += $(WERROR_CFLAG)
+  FCFLAGS += $(WERROR_FCFLAG)
+endif
+endif
+
 ifeq (0,$(ICX))
 ifneq (0,$(INTEL))
   NOLIMITS_CFLAG := $(call ctest,$(CC),-qoverride-limits $(WERROR_CFLAG))
@@ -971,6 +983,14 @@ else
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
+# RPATH relative to the loading binary so libraries keep resolving their
+# dependencies after being installed/relocated (independent of build dir).
+ifeq (Darwin,$(UNAME))
+  ORIGIN_RPATH := $(call linkopt,-rpath,@loader_path)
+else ifneq (Windows_NT,$(UNAME))
+  ORIGIN_RPATH := $(XLNKOPT)--rpath='$$ORIGIN'
+endif
+
 LIB_SOLD := $(LD) -shared $(PICFLAG)
 ifeq (0,$(STATIC))
   LIB_XLD := $(XLD) -shared $(PICFLAG)
@@ -1147,7 +1167,7 @@ ifneq (0,$(INTEL))
     ifneq (ld,$(call qndir,$(LD)))
       LDFLAGS += -diag-disable 1879,3415,10006,10010,10411,10441
     endif
-    FCFLAGS += -diag-disable 10006,10010,10411,13003
+    FCFLAGS += -diag-disable 5472,10006,10010,10411,13003
     ifneq (0,$(THREADS))
       FCMTFLAGS += -threads
     endif
@@ -1215,6 +1235,13 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(NOLIMITS_FCFLAG)
     CXXFLAGS += $(NOLIMITS_CFLAG)
     CFLAGS += $(NOLIMITS_CFLAG)
+    # icx recommends -qopenmp over -fopenmp; the latter is selected based on the
+    # Fortran compiler's preference but also flows into C/C++ flags. Keep that
+    # recommendation as a warning rather than letting -Werror make it fatal.
+    ifneq (0,$(ICX))
+      CXXFLAGS += $(call ctest,$(CC),-Wno-error=recommended-option)
+      CFLAGS += $(call ctest,$(CC),-Wno-error=recommended-option)
+    endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)

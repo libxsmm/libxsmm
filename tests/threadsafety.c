@@ -111,6 +111,9 @@ int main(void)
 #else
   const int nthreads = 1;
 #endif
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
+#endif
 
   /* generate set of random number for parallel region */
   for (i = 0; i < (3 * nkernels); i += 3) {

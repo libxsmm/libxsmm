@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint i = 0;
   unsigned long long l_libxsmmflops;
   libxsmm_kernel_info l_kinfo;
+  libxsmm_xmmfunction l_kernel;
   int result = EXIT_SUCCESS;
 
   if (NULL != a && NULL != b && NULL != c1 && NULL != c2) {
@@ -161,7 +162,8 @@ int main(int argc, char* argv[]) {
     }
     l_end = libxsmm_timer_tick();
     l_total_opt = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info( mykernel, &l_kinfo);
+    l_kernel.gemm = mykernel;
+    libxsmm_get_kernel_info( l_kernel.ptr_const, &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;
 
     gflops_ref = (flops / l_total_ref) / 1e9;
