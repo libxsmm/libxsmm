@@ -971,6 +971,14 @@ else
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
+# RPATH relative to the loading binary so libraries keep resolving their
+# dependencies after being installed/relocated (independent of build dir).
+ifeq (Darwin,$(UNAME))
+  ORIGIN_RPATH := $(call linkopt,-rpath,@loader_path)
+else ifneq (Windows_NT,$(UNAME))
+  ORIGIN_RPATH := $(XLNKOPT)--rpath='$$ORIGIN'
+endif
+
 LIB_SOLD := $(LD) -shared $(PICFLAG)
 ifeq (0,$(STATIC))
   LIB_XLD := $(XLD) -shared $(PICFLAG)
