@@ -557,7 +557,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   } else {
     unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
   }
-  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");

@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_gold, l_c_gold, N, N_CRUNS);
 
   libxsmm_kernel_info l_kinfo;
+  libxsmm_xmmfunction l_kernel;
   unsigned long long l_libxsmmflops;
   libxsmm_timer_tickint l_start, l_end;
   double l_total;
@@ -165,7 +166,8 @@ int main(int argc, char* argv[]) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    libxsmm_get_kernel_info( mykernel, &l_kinfo);
+    l_kernel.gemm = mykernel;
+    libxsmm_get_kernel_info( l_kernel.ptr_const, &l_kinfo);
     l_libxsmmflops = l_kinfo.nflops;
     printf("%fs for sparse (asm)\n", l_total);
     printf("%f GFLOPS for sparse (asm), caculated \n", ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));

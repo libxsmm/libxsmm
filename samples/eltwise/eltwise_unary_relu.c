@@ -268,7 +268,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   }
 
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
-  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   if ( unary_kernel == NULL ) {
@@ -415,7 +415,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 
   unary_kernel = libxsmm_dispatch_meltw_unary( unary_type, unary_shape, unary_flags );
-  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
 
   if ( unary_kernel == NULL ) {

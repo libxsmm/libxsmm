@@ -362,7 +362,7 @@ int test_bf16_to_nvfp4( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
     fprintf( stderr, "JIT for BF16->NVFP4 QUANT TPP failed. Bailing...!\n" );
     exit(-1);
   }
-  libxsmm_get_kernel_info( (const void*)unary_kernel_quant, &info );
+  libxsmm_get_kernel_info( (const void*)(uintptr_t)unary_kernel_quant, &info );
   is_reference_kernel = info.is_reference_kernel;
 
   unary_param.in.primary    = (void*)in_bf16;
