@@ -2,7 +2,7 @@
 
 [![BSD 3-Clause License](https://img.shields.io/badge/license-BSD3-blue.svg "BSD 3-Clause License")](LICENSE.md) [![GCC Build Status](https://badge.buildkite.com/2e962d4cfc7ddb10a6cd6c27b0d8033edf179a799e156cb363.svg?branch=main "GCC Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Clang Build Status](https://badge.buildkite.com/dafe7b363a2e66f7d5c9087f074f3eceb69b9aae4278202fd7.svg?branch=main "Clang Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Intel Build Status](https://badge.buildkite.com/63b5dc4095f460f1c011ae782f8e67ec0b8a6a9732d8abe3c7.svg?branch=main "Intel Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Mixed Build Status](https://badge.buildkite.com/fad67b2fcad79e07ddfe9141974f360e9eca6223cd89e3593f.svg?branch=main "Mixed Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Static Analysis Status](https://scan.coverity.com/projects/7405/badge.svg "Static Analysis Status")](https://scan.coverity.com/projects/hfp-libxsmm) [![Read the Docs](https://readthedocs.org/projects/libxsmm/badge/?version=latest "Read the Docs")](https://libxsmm.readthedocs.io/)
 
-LIBXSMM is the reference implementation of Tensor Processing Primitives ([TPP](https://arxiv.org/pdf/2104.05755)), a programming abstraction for efficient and portable deep learning and HPC workloads. With <span>version&#160;2.0</span>, LIBXSMM focuses on providing a complete and architecture-portable set of TPPs (small dense and sparse matrix operations as well as element-wise, GEMM, and BRGEMM primitives) from which higher-level operators such as convolutions, fully-connected layers, normalization, and pooling are composed. LIBXSMM targets <span>Intel&#160;Architecture</span> with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions), <span>AArch64</span> (NEON, SVE, and SME), and <span>RISC&#8209;V</span> (RVV). Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and tensor primitives). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `FP16`, `bfloat16`, `BF8`, `HF8`, `int16`, `int8`, and `int4`.
+LIBXSMM is high performance library for small dense and sparse linear algebra opertions incl. GEMM and elementwise primities often seen in deep learning applications. It also serves as reference implementation of Tensor Processing Primitives ([TPP](https://arxiv.org/pdf/2104.05755)), a programming abstraction for efficient and portable deep learning and HPC workloads. With <span>version&#160;2.0</span>, LIBXSMM focuses on providing a complete and architecture-portable set of TPPs (small dense and sparse matrix operations as well as element-wise, GEMM, and BRGEMM primitives) from which higher-level operators such as convolutions, fully-connected layers, normalization, and pooling are composed. LIBXSMM targets <span>Intel&#160;Architecture</span> with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions), <span>AArch64</span> (NEON, SVE, and SME), and <span>RISC&#8209;V</span> (RVV). Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and tensor primitives). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `FP16`, `bfloat16`, `BF8`, `HF8`, `MXBF8`, `MXHF8`, `int16`, `int8`, `MXFP4` and `int4`. Additionally, various non-standard low precision combinations are supported.
 
 **LIBXSMM 2.0**: This major release repositions LIBXSMM as the reference implementation of Tensor Processing Primitives. To keep the core library focused, several application-specific pieces that previously shipped here have moved to dedicated companion repositories: the deep-learning operators and convolution drivers ([LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn)), the PyTorch integration ([TPP PyTorch Extension](https://github.com/libxsmm/tpp-pytorch-extension)), and the spectral-element reproducers (e.g. NekBox). The core library, the JIT backend, and the TPP frontend remain here.
 
@@ -14,32 +14,51 @@ For a list questions and answers, please also have a look at [https://github.com
 * **PDF**: [main](https://github.com/libxsmm/libxsmm/raw/main/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/libxsmm/libxsmm/raw/main/documentation/libxsmm_samples.pdf) documentation.
 * **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/libxsmm/libxsmm/tree/main/samples/magazine) (full list of [Articles](#articles)).
 
-<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C++ code is focused on a specific functionality but may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
+<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C code may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). It walks through the Tensor Processing Primitives: dispatch a GEMM kernel and three element-wise (unary, binary, ternary) kernels, then invoke them. Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.c` (below) and compile with `gcc -I/path/to/libxsmm/include hello.c -L/path/to/libxsmm/lib -lxsmm -lm -o hello`, and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
-```cpp
+```c
 #include <libxsmm.h>
-#include <vector>
+#include <string.h>
+
 int main(int argc, char* argv[]) {
-  typedef double T;
-  int batchsize = 1000, m = 13, n = 5, k = 7;
-  std::vector<T> a(batchsize * m * k), b(batchsize * k * n), c(m * n, 0);
-  /* C/C++ and Fortran interfaces are available */
-  typedef libxsmm_mmfunction<T> kernel_type;
-  /* generates and dispatches a matrix multiplication kernel (C++ functor) */
-  kernel_type kernel(LIBXSMM_GEMM_FLAG_NONE, m, n, k, 1.0 /*alpha*/, 1.0 /*beta*/);
-  assert(kernel);
-  for (int i = 0; i < batchsize; ++i) { /* initialize input */
-    for (int ki = 0; ki < k; ++ki) {
-      for (int j = 0; j < m; ++j) a[i * j * ki] = static_cast<T>(1) / ((i + j + ki) % 25);
-      for (int j = 0; j < n; ++j) b[i * j * ki] = static_cast<T>(7) / ((i + j + ki) % 75);
-    }
-  }
-  /* kernel multiplies and accumulates matrices: C += Ai * Bi */
-  for (int i = 0; i < batchsize; ++i) kernel(&a[i * m * k], &b[i * k * n], &c[0]);
+  const libxsmm_blasint m = 13, n = 5, k = 7;
+  float a[13*7], b[7*5], c[13*5], bias[13*5], tmp[13*5], out[13*5];
+  libxsmm_blasint i;
+
+  /* GEMM TPP: C = A * B (column-major, all FP32) */
+  const libxsmm_gemm_shape gshape = libxsmm_create_gemm_shape(m, n, k, m, k, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_gemmfunction gemm = libxsmm_dispatch_gemm(gshape,
+    LIBXSMM_GEMM_FLAG_NONE, LIBXSMM_GEMM_PREFETCH_NONE);
+  /* unary TPP: ReLU; binary TPP: bias add; ternary TPP: fused multiply-add */
+  const libxsmm_meltw_unary_shape ushape = libxsmm_create_meltw_unary_shape(m, n, m, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_meltwfunction_unary relu = libxsmm_dispatch_meltw_unary(
+    LIBXSMM_MELTW_TYPE_UNARY_RELU, ushape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  const libxsmm_meltw_binary_shape bshape = libxsmm_create_meltw_binary_shape(m, n, m, m, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_meltwfunction_binary add = libxsmm_dispatch_meltw_binary(
+    LIBXSMM_MELTW_TYPE_BINARY_ADD, bshape, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+  const libxsmm_meltw_ternary_shape tshape = libxsmm_create_meltw_ternary_shape(m, n, m, m, m, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_meltwfunction_ternary fma = libxsmm_dispatch_meltw_ternary(
+    LIBXSMM_MELTW_TYPE_TERNARY_MULADD, tshape, LIBXSMM_MELTW_FLAG_TERNARY_NONE);
+
+  libxsmm_gemm_param gp; libxsmm_meltw_unary_param up;
+  libxsmm_meltw_binary_param bp; libxsmm_meltw_ternary_param tp;
+  for (i = 0; i < m*k; ++i) a[i] = 1.f / (i + 1);
+  for (i = 0; i < k*n; ++i) b[i] = 2.f / (i + 1);
+  for (i = 0; i < m*n; ++i) bias[i] = 0.5f;
+
+  memset(&gp, 0, sizeof(gp)); gp.a.primary = a; gp.b.primary = b; gp.c.primary = c; gemm(&gp);
+  memset(&up, 0, sizeof(up)); up.in.primary = c; up.out.primary = c; relu(&up);
+  memset(&bp, 0, sizeof(bp)); bp.in0.primary = c; bp.in1.primary = bias; bp.out.primary = tmp; add(&bp);
+  memset(&tp, 0, sizeof(tp)); tp.in0.primary = tmp; tp.in1.primary = c; tp.in2.primary = bias; tp.out.primary = out; fma(&tp);
+  return 0;
 }
 ```
 
-Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/main/samples/hello).
+Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). More complete drivers are available under [samples/xgemm](https://github.com/libxsmm/libxsmm/tree/main/samples/xgemm) and [samples/eltwise](https://github.com/libxsmm/libxsmm/tree/main/samples/eltwise).
 
 <a name="what-is-a-small-matrix-multiplication"></a>**What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within <i>(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64</i> (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library does not employ multiplevel K,M,N blocking. Using LIBXSMM for much larger sizes may generate excessive amounts of code (due to unrolling in M or K dimension), but also misses to implement a tiling scheme to effectively utilize the cache hierarchy. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
 
