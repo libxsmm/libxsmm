@@ -2,7 +2,9 @@
 
 [![BSD 3-Clause License](https://img.shields.io/badge/license-BSD3-blue.svg "BSD 3-Clause License")](LICENSE.md) [![GCC Build Status](https://badge.buildkite.com/2e962d4cfc7ddb10a6cd6c27b0d8033edf179a799e156cb363.svg?branch=main "GCC Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Clang Build Status](https://badge.buildkite.com/dafe7b363a2e66f7d5c9087f074f3eceb69b9aae4278202fd7.svg?branch=main "Clang Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Intel Build Status](https://badge.buildkite.com/63b5dc4095f460f1c011ae782f8e67ec0b8a6a9732d8abe3c7.svg?branch=main "Intel Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Mixed Build Status](https://badge.buildkite.com/fad67b2fcad79e07ddfe9141974f360e9eca6223cd89e3593f.svg?branch=main "Mixed Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Static Analysis Status](https://scan.coverity.com/projects/7405/badge.svg "Static Analysis Status")](https://scan.coverity.com/projects/hfp-libxsmm) [![Read the Docs](https://readthedocs.org/projects/libxsmm/badge/?version=latest "Read the Docs")](https://libxsmm.readthedocs.io/)
 
-LIBXSMM is a library for specialized dense and sparse matrix operations as well as for deep learning primitives such as small convolutions. The library is targeting Intel Architecture with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions) supported by future Intel processor code-named Sapphire Rapids. Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and deep learning). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `bfloat16`, `int16`, and `int8`.
+LIBXSMM is the reference implementation of Tensor Processing Primitives ([TPP](https://arxiv.org/pdf/2104.05755)), a programming abstraction for efficient and portable deep learning and HPC workloads. With <span>version&#160;2.0</span>, LIBXSMM focuses on providing a complete and architecture-portable set of TPPs (small dense and sparse matrix operations as well as element-wise, GEMM, and BRGEMM primitives) from which higher-level operators such as convolutions, fully-connected layers, normalization, and pooling are composed. LIBXSMM targets <span>Intel&#160;Architecture</span> with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions), <span>AArch64</span> (NEON, SVE, and SME), and <span>RISC&#8209;V</span> (RVV). Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and tensor primitives). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `FP16`, `bfloat16`, `BF8`, `HF8`, `int16`, `int8`, and `int4`.
+
+**LIBXSMM 2.0**: This major release repositions LIBXSMM as the reference implementation of Tensor Processing Primitives. To keep the core library focused, several application-specific pieces that previously shipped here have moved to dedicated companion repositories: the deep-learning operators and convolution drivers ([LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn)), the PyTorch integration ([TPP PyTorch Extension](https://github.com/libxsmm/tpp-pytorch-extension)), and the spectral-element reproducers (e.g. NekBox). The core library, the JIT backend, and the TPP frontend remain here.
 
 For a list questions and answers, please also have a look at [https://github.com/libxsmm/libxsmm/wiki/Q&A](https://github.com/libxsmm/libxsmm/wiki/Q&A).
 
@@ -47,9 +49,9 @@ Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.
 
 Please have a look at [https://github.com/libxsmm/libxsmm/tree/main/include](https://github.com/libxsmm/libxsmm/tree/main/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
-* MM: [Matrix Multiplication](#matrix-multiplication)
 * TPP: [Tensor Processing Primitives](https://github.com/libxsmm/libxsmm/blob/main/documentation/libxsmm_tpp.md)
-* DNN: [Deep Neural Networks](#deep-neural-networks)
+* MM: [Matrix Multiplication](#matrix-multiplication)
+* DL: [Deep Learning](#interface-for-dl)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)
 * BE: [Backend](#jit-backend)
@@ -74,7 +76,7 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided as part of [LIBXSMM_DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
+Common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitives provided by LIBXSMM. With LIBXSMM&#160;2.0 the deep-learning operators and their performance drivers live in the companion repository [LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests), which demonstrates how these primitives compose into full operators without any platform-specific code.
 
 ### Service Functions
 
@@ -339,7 +341,7 @@ Please note that comparing performance results depends on whether the operands o
 
 <b>[2]&#160;</b>[https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/): SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
 
-<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code. Please also note LIBXSMM's [NekBox reproducer](https://github.com/libxsmm/libxsmm/tree/main/samples/nek#nek-sample-collection).
+<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code.
 
 <b>[4]&#160;</b>[https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000): Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
 
