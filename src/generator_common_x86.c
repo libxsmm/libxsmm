@@ -573,29 +573,43 @@ void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*         
                                                 const unsigned int                             i_vec_tmp0,
                                                 const unsigned int                             i_vec_tmp1 ) {
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
-      LIBXSMM_X86_INSTR_VPERMD, 'y',
-      i_vec_c_lo,
-      i_vec_index,
-      i_vec_tmp0,
-      0, 0, 0, 0);
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX ) {
+    /* EVEX path: select the 16-way table with a single VPERMT2D, which can address
+       vector registers 0-31 (unlike the VEX-encoded VBLENDVPS below). */
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+        LIBXSMM_X86_INSTR_VMOVDQU64, 'y',
+        i_vec_c_lo, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_result );
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
-      LIBXSMM_X86_INSTR_VPERMD, 'y',
-      i_vec_c_hi,
-      i_vec_index,
-      i_vec_tmp1,
-      0, 0, 0, 0);
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+        LIBXSMM_X86_INSTR_VPERMT2D, 'y',
+        i_vec_c_hi,
+        i_vec_index,
+        i_vec_result );
+  } else {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+        LIBXSMM_X86_INSTR_VPERMD, 'y',
+        i_vec_c_lo,
+        i_vec_index,
+        i_vec_tmp0,
+        0, 0, 0, 0);
 
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'y', i_vec_index, i_vec_result, 28 );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+        LIBXSMM_X86_INSTR_VPERMD, 'y',
+        i_vec_c_hi,
+        i_vec_index,
+        i_vec_tmp1,
+        0, 0, 0, 0);
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-            LIBXSMM_X86_INSTR_VBLENDVPS,
-            'y',
-            i_vec_tmp1,
-            i_vec_tmp0,
-            i_vec_result,
-            0, 0, 0, (unsigned short)((i_vec_result) << 4));
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'y', i_vec_index, i_vec_result, 28 );
+
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
+              LIBXSMM_X86_INSTR_VBLENDVPS,
+              'y',
+              i_vec_tmp1,
+              i_vec_tmp0,
+              i_vec_result,
+              0, 0, 0, (unsigned short)((i_vec_result) << 4));
+  }
 }
 
 LIBXSMM_API_INTERN
