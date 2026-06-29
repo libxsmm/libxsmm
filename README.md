@@ -8,12 +8,6 @@ LIBXSMM is high performance library for small dense and sparse linear algebra op
 
 For a list questions and answers, please also have a look at [https://github.com/libxsmm/libxsmm/wiki/Q&A](https://github.com/libxsmm/libxsmm/wiki/Q&A).
 
-**Where to go for documentation?**
-
-* **ReadtheDocs**: [main](https://libxsmm.readthedocs.io/) and [sample](https://libxsmm.readthedocs.io/libxsmm_samples/) documentation with full text search.
-* **PDF**: [main](https://github.com/libxsmm/libxsmm/raw/main/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/libxsmm/libxsmm/raw/main/documentation/libxsmm_samples.pdf) documentation.
-* **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/libxsmm/libxsmm/tree/main/samples/magazine) (full list of [Articles](#articles)).
-
 <a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C code may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). It walks through the Tensor Processing Primitives: dispatch a GEMM kernel and three element-wise (unary, binary, ternary) kernels, then invoke them. Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.c` (below) and compile with `gcc -I/path/to/libxsmm/include hello.c -L/path/to/libxsmm/lib -lxsmm -lm -o hello`, and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
 ```c
