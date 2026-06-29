@@ -1,9 +1,19 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(LIBXSMM_VERSION "1.17.0")
+set(LIBXSMM_VERSION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+if(NOT EXISTS "${LIBXSMM_VERSION_FILE}")
+  message(FATAL_ERROR "Missing ${LIBXSMM_VERSION_FILE}")
+endif()
+
+file(READ "${LIBXSMM_VERSION_FILE}" LIBXSMM_VERSION)
+string(STRIP "${LIBXSMM_VERSION}" LIBXSMM_VERSION)
+if(NOT LIBXSMM_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+  message(FATAL_ERROR
+    "Invalid version '${LIBXSMM_VERSION}' in ${LIBXSMM_VERSION_FILE}; expected MAJOR.MINOR.UPDATE")
+endif()
 
 project(libxsmm
-  VERSION ${LIBXSMM_VERSION}
+  VERSION "${LIBXSMM_VERSION}"
   DESCRIPTION "Library for specialized dense and sparse matrix operations and deep learning primitives"
   LANGUAGES C CXX)
 
@@ -77,8 +87,6 @@ endif()
 set(XSMM_INCLUDE_DIRS ${XSMM_ROOT_DIR}/include)
 
 # Generate libxsmm_version.h
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
 set(XSMM_GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 file(MAKE_DIRECTORY ${XSMM_GENERATED_INCLUDE_DIR})
 
@@ -95,6 +103,7 @@ if(NOT LIBXSMM_VERSION_HEADER_RC EQUAL 0)
 endif()
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${LIBXSMM_VERSION_FILE}
   ${XSMM_ROOT_DIR}/version.txt
   ${XSMM_ROOT_DIR}/scripts/libxsmm_config.py
   ${XSMM_ROOT_DIR}/scripts/libxsmm_utilities.py
