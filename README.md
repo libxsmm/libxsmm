@@ -233,10 +233,6 @@ export PKG_CONFIG_PATH=/path/to/libxsmm/lib
 pkg-config libxsmm --libs
 ```
 
-Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. To use LIBXSMM without GEMM-related functionality, any BLAS-dependency can be removed in two ways: <span>(1)&#160;building</span> a special library with `make BLAS=0`, or <span>(2)&#160;linking</span> the application against the `libxsmmnoblas` library. If an application however uses BLAS already, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can be used to intercept existing BLAS calls (and to rely on LIBXSMM instead).
-
-**Note**: LIBXSMM does not support to dynamically link `libxsmm` or `libxsmmext` ("so") when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
-
 ### Installation
 
 There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): <span>(1)&#160;building</span> the library in an <span>out&#8209;of&#8209;tree</span> fashion, and <span>(2)&#160;installing</span> into a certain location. <a name="install-build"></a>Building in an <span>out&#8209;of&#8209;tree</span> fashion looks like:
@@ -335,16 +331,6 @@ The environment variable `LIBXSMM_MATDIFF` can carry optional space-separated ar
 
 * [Customizing performance](documentation/libxsmm_tune.md#tuning)
 * <a name="auto-dispatch"></a>[Tuning auto-dispatch](documentation/libxsmm_tune.md#auto-dispatch)
-
-<a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch called "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/libxsmm/libxsmm/tree/results#libxsmm-results](https://github.com/libxsmm/libxsmm/tree/results#libxsmm-results), or the results can be cloned as shown below.
-
-```bash
-git clone --branch results \
-  https://github.com/libxsmm/libxsmm.git \
-  libxsmm-results
-```
-
-Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, multiplying with all matrices covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all matrices from the main memory). Most of the [code samples](https://github.com/libxsmm/libxsmm/tree/main/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
 
 ## Applications
 
