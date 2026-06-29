@@ -1,38 +1,19 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(LIBXSMM_VERSION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/version.txt")
-set(LIBXSMM_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmm_utilities.py")
-foreach(file IN ITEMS ${LIBXSMM_VERSION_FILE} ${LIBXSMM_VERSION_SCRIPT})
-  if(NOT EXISTS "${file}")
-    message(FATAL_ERROR "Missing ${file}")
-  endif()
-endforeach()
+set(LIBXSMM_VERSION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+if(NOT EXISTS "${LIBXSMM_VERSION_FILE}")
+  message(FATAL_ERROR "Missing ${LIBXSMM_VERSION_FILE}")
+endif()
 
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
-set(LIBXSMM_VERSION_COMPONENTS)
-foreach(component IN ITEMS 1 2 3)
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${LIBXSMM_VERSION_SCRIPT} ${component}
-    OUTPUT_VARIABLE LIBXSMM_VERSION_COMPONENT
-    RESULT_VARIABLE LIBXSMM_VERSION_RC
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE LIBXSMM_VERSION_ERROR
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
-  if(NOT LIBXSMM_VERSION_RC EQUAL 0
-     OR NOT LIBXSMM_VERSION_COMPONENT MATCHES "^[0-9]+$")
-    message(FATAL_ERROR
-      "Failed to determine LIBXSMM version component ${component} from "
-      "${LIBXSMM_VERSION_FILE}: ${LIBXSMM_VERSION_ERROR}")
-  endif()
-
-  list(APPEND LIBXSMM_VERSION_COMPONENTS ${LIBXSMM_VERSION_COMPONENT})
-endforeach()
-list(JOIN LIBXSMM_VERSION_COMPONENTS "." LIBXSMM_VERSION)
+file(READ "${LIBXSMM_VERSION_FILE}" LIBXSMM_VERSION)
+string(STRIP "${LIBXSMM_VERSION}" LIBXSMM_VERSION)
+if(NOT LIBXSMM_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+  message(FATAL_ERROR
+    "Invalid version '${LIBXSMM_VERSION}' in ${LIBXSMM_VERSION_FILE}; expected MAJOR.MINOR.UPDATE")
+endif()
 
 project(libxsmm
-  VERSION ${LIBXSMM_VERSION}
+  VERSION "${LIBXSMM_VERSION}"
   DESCRIPTION "Library for specialized dense and sparse matrix operations and deep learning primitives"
   LANGUAGES C CXX)
 
@@ -122,6 +103,7 @@ if(NOT LIBXSMM_VERSION_HEADER_RC EQUAL 0)
 endif()
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${LIBXSMM_VERSION_FILE}
   ${XSMM_ROOT_DIR}/version.txt
   ${XSMM_ROOT_DIR}/scripts/libxsmm_config.py
   ${XSMM_ROOT_DIR}/scripts/libxsmm_utilities.py
