@@ -6110,8 +6110,8 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
   unsigned int l_mxfp4_cvt_mask_0 = 7;
   unsigned int l_mxfp4_cvt_mask_1 = 6;
   unsigned int l_mxfp4_cvt_mask_2 = 5;
-  libxsmm_pade78_reg_mapping l_pade78_reg_mapping = { 0 };
-  libxsmm_mxfp4_cvt_reg_mapping l_mxfp4_cvt_reg_mapping = { 0 };
+  libxsmm_pade78_reg_mapping l_pade78_reg_mapping;
+  libxsmm_mxfp4_cvt_reg_mapping l_mxfp4_cvt_reg_mapping;
   /* more helper */
   unsigned int l_m, l_n;
   unsigned int l_mask_reg_or_val = 1;
@@ -6128,6 +6128,8 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
 
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
+  LIBXSMM_MEMZERO127(&l_pade78_reg_mapping);
+  LIBXSMM_MEMZERO127(&l_mxfp4_cvt_reg_mapping);
 
   /* deriving register blocking from kernel config */
   l_m_blocking = ( i_m_blocking % l_m_per_reg == 0 ) ? i_m_blocking/l_m_per_reg : (i_m_blocking/l_m_per_reg)+1;

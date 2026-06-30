@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="debug|ARM64">
@@ -482,7 +482,7 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305;4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -522,7 +522,7 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305;4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
@@ -567,7 +567,7 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305;4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -607,7 +607,7 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305;4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -649,7 +649,7 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305;4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
@@ -691,7 +691,7 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305;4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
@@ -726,7 +726,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4101;4146;4244;4245;4305;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -764,7 +764,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4101;4146;4244;4245;4305;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -799,7 +799,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4100;4101;4146;4244;4245;4305;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
