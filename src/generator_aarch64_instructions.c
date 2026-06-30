@@ -54,8 +54,9 @@ void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generat
                                                LIBXSMM_AARCH64_GP_REG_X16, LIBXSMM_AARCH64_GP_REG_X17 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
-    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  96,
-                                               LIBXSMM_AARCH64_GP_REG_X18, LIBXSMM_AARCH64_GP_REG_X19 );
+    /* X18 is the platform register and is not preserved across interrupts on macOS; never use/save it, store X19 alone */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 96,
+                                          LIBXSMM_AARCH64_GP_REG_X19 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  80,
@@ -120,8 +121,9 @@ void libxsmm_aarch64_instruction_restore_regs( libxsmm_generated_code* io_genera
                                                LIBXSMM_AARCH64_GP_REG_X16, LIBXSMM_AARCH64_GP_REG_X17 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
-    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  96,
-                                               LIBXSMM_AARCH64_GP_REG_X18, LIBXSMM_AARCH64_GP_REG_X19 );
+    /* X18 is the platform register and is not preserved across interrupts on macOS; never use/save it, restore X19 alone */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 96,
+                                          LIBXSMM_AARCH64_GP_REG_X19 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  80,

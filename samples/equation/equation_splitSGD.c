@@ -193,7 +193,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_meqn_push_back_arg(arg_metadata, arg_shape_in, arg_singular_attr); /* This is the tensor with hi bits  */
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_U16 );
   func0 = libxsmm_dispatch_meqn( my_eqn0, arg_shape_out );
-  libxsmm_get_kernel_info((const void*) func0, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) func0, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");

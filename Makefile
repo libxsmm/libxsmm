@@ -240,7 +240,8 @@ ifeq (,$(PYTHON))
   $(error No Python interpreter found)
 endif
 
-# Version numbers according to interface (version.txt)
+# Release version from VERSION; development metadata from version.txt, if present.
+VERSION_METADATA := $(wildcard $(ROOTDIR)/version.txt)
 VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 3)
@@ -536,7 +537,7 @@ endif
 # auto-clean
 $(ROOTSRC)/template/libxsmm_config.h: $(ROOTSCR)/libxsmm_config.py $(ROOTSCR)/libxsmm_utilities.py \
                                                 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
-                                                $(ROOTDIR)/version.txt
+                                                $(ROOTDIR)/VERSION $(VERSION_METADATA)
 	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-touch $@
 
@@ -804,15 +805,15 @@ $(OUTDIR)/libxsmmf.$(DLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT
 ifneq (Darwin,$(UNAME))
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
-		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(ORIGIN_RPATH) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else ifneq (0,$(LNKSOFT)) # macOS
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
-		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(ORIGIN_RPATH) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else # macOS
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
-		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(ORIGIN_RPATH) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 endif
 else
 .PHONY: $(OUTDIR)/libxsmmf.$(DLIBEXT)
@@ -913,15 +914,15 @@ $(DOCDIR)/libxsmm_scripts.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTSCR)/REA
 		-e 'N;/^\n$$/d;P;D' \
 		>$@
 
-$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Compatibility.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Validation.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Q&A.md"
 	@echo >>$@
 
@@ -1103,6 +1104,27 @@ endif
 	@$(CP) -v  $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmm*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+ifeq (Darwin,$(UNAME))
+	@echo
+	@echo "LIBXSMM relocating install paths of installed libraries..."
+	@for lib in $(PREFIX)/$(POUTDIR)/libxsmm*.$(DLIBEXT)*; do \
+		if [ -f "$$lib" ] && [ ! -L "$$lib" ]; then \
+			install_name_tool -id "$$lib" "$$lib" 2>/dev/null || true; \
+			otool -L "$$lib" | grep -o "$(ABSDIR)/$(OUTDIR)/[^ ]*\.$(DLIBEXT)[^ ]*" | while read dep; do \
+				install_name_tool -change "$$dep" "$(PREFIX)/$(POUTDIR)/$$(basename $$dep)" "$$lib" 2>/dev/null || true; \
+			done; \
+		fi; \
+	done
+else ifneq (Windows_NT,$(UNAME))
+	@echo
+	@echo "LIBXSMM relocating install paths of installed libraries..."
+	@if command -v patchelf >/dev/null 2>&1; then RELOC="patchelf --set-rpath \$$ORIGIN"; \
+	elif command -v chrpath >/dev/null 2>&1; then RELOC="chrpath -r \$$ORIGIN"; \
+	else RELOC=""; echo "LIBXSMM: install patchelf or chrpath to relocate RPATH"; fi; \
+	if [ "$$RELOC" ]; then for lib in $(PREFIX)/$(POUTDIR)/libxsmm*.$(DLIBEXT)*; do \
+		if [ -f "$$lib" ] && [ ! -L "$$lib" ]; then $$RELOC "$$lib" 2>/dev/null || true; fi; \
+	done; fi
+endif
 	@echo
 	@echo "LIBXSMM installing pkg-config, CMake config, and module files..."
 	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
@@ -1144,7 +1166,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
 	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v  $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v  $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@if [ -f $(ROOTDIR)/version.txt ]; then $(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR); fi
 	@$(SED) "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state >$(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
 	@$(MKDIR) -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))

@@ -407,6 +407,9 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     return EXIT_FAILURE;
   }
 
+  /* setting tileconfig state to 0 */
+  memset( &l_tilestate, 0, sizeof(libxsmm_tilecfg_state) );
+
   /* unsigned A/B operands are encoded directly via the (unsigned) datatype in the GEMM shape */
 
   l_flags |= (0 != i_spmm_def->trans_b ? LIBXSMM_GEMM_FLAG_TRANS_B : 0);
@@ -445,8 +448,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   }
 
   /* run correctness */
-  gemm_param.a.primary = (void*)i_a;
-  gemm_param.b.primary = (void*)i_b;
+  gemm_param.a.primary = (void*)(uintptr_t)i_a;
+  gemm_param.b.primary = (void*)(uintptr_t)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
@@ -464,8 +467,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run performance */
   l_start = libxsmm_timer_tick();
-  gemm_param.a.primary = (void*)i_a;
-  gemm_param.b.primary = (void*)i_b;
+  gemm_param.a.primary = (void*)(uintptr_t)i_a;
+  gemm_param.b.primary = (void*)(uintptr_t)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
