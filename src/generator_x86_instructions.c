@@ -2087,6 +2087,15 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     } else if ( l_encoder == 1 ) {
       libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
 
+      /* VEX encoding can only address SIMD registers 0-15; using a higher one
+         (valid under AVX512 VL128/VL256) would silently truncate the operand */
+      if ( (l_reg_number_src0 > 15) || (l_reg_number_src1 > 15) || (l_reg_number_dst > 15) ||
+           ((((i_vec_instr >> 16) & 0x08) == 0x08) && (i_imm8 != LIBXSMM_X86_IMM_UNDEF) && (((i_imm8 >> 4) & 0x1f) > 15)) ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: VEX-encoded instruction (0x%08x) cannot use SIMD registers >= 16; use the corresponding EVEX instruction!\n", i_vec_instr);
+        LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
+      }
+
       /* set simd name */
       switch(i_vector_name) {
         case 'x':
