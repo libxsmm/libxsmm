@@ -29,4 +29,27 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_code*        io_generated_code,
                                                              const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_aarch64_sme_pack_one_a_tile( libxsmm_generated_code*            io_generated_code,
+                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                         const unsigned int                 i_m_blocking );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_aarch64_sme_transpose_a_to_stack( libxsmm_generated_code*            io_generated_code,
+                                                              libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                              const unsigned int                 i_m_blocking,
+                                                              const unsigned int                 i_b_scratch_ld );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_aarch64_sme_transpose_a_free( libxsmm_generated_code*       io_generated_code,
+                                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping );
+
 #endif /* GENERATOR_GEMM_SME_H */
