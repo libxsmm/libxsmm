@@ -61,11 +61,13 @@ void libxsmm_generator_gemm_aarch64_sme_pack_one_b_tile( libxsmm_generated_code*
                                                          const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_aarch64_sme_transpose_b_to_stack_br( libxsmm_generated_code*            io_generated_code,
-                                                                 libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                 const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                 const unsigned int                 i_n_blocking );
+void libxsmm_generator_gemm_aarch64_sme_transpose_b_to_stack( libxsmm_generated_code*            io_generated_code,
+                                                              libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                              const unsigned int                 i_n_blocking,
+                                                              const unsigned int                 i_is_br,
+                                                              const unsigned int                 i_save_tile_base );
 
 #endif /* GENERATOR_GEMM_SME_H */
