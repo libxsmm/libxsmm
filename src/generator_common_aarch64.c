@@ -4443,13 +4443,20 @@ void libxsmm_generator_load_32x32_aarch64_sme( libxsmm_generated_code* io_genera
                                                     const unsigned int      i_gp_reg_help,
                                                     const unsigned int      i_m_blocking,
                                                     const unsigned int      i_n_blocking,
-                                                    const unsigned int      i_ldc ){
+                                                    const unsigned int      i_ldc,
+                                                    const unsigned int      i_beta0 ){
   unsigned int l_n_count = i_n_blocking;
   unsigned int l_en = 0;
   unsigned int l_em = 0;
   unsigned int l_register_offset = 0;
   unsigned int l_i = 0;
   unsigned int l_n_block_count = (i_n_blocking <= 16) ? 1 : 2;
+
+  /* beta == 0: no C load, zero the ZA accumulator tiles instead */
+  if( i_beta0 != 0 ){
+    libxsmm_aarch64_instruction_sme_zero( io_generated_code, 0xff );
+    return;
+  }
 
   libxsmm_generator_set_w_reg_sme( io_generated_code, 4);
 
@@ -4521,10 +4528,18 @@ void libxsmm_generator_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_addr,
                                                const unsigned int      i_m_blocking,
                                                const unsigned int      i_n_blocking,
-                                               const unsigned int      i_ldc ){
+                                               const unsigned int      i_ldc,
+                                               const unsigned int      i_beta0 ){
   unsigned int l_block = 0;
   unsigned int l_en = 0;
   unsigned int l_i = 0;
+
+  /* beta == 0: no C load, zero the ZA accumulator tiles instead */
+  if( i_beta0 != 0 ){
+    libxsmm_aarch64_instruction_sme_zero( io_generated_code, 0xff );
+    return;
+  }
+
   libxsmm_generator_set_w_reg_sme( io_generated_code, 4);
   /* set predication register */
   libxsmm_generator_set_pn_register_aarch64_sve2( io_generated_code,
@@ -5359,10 +5374,18 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_addr,
                                                const unsigned int      i_m_blocking,
                                                const unsigned int      i_n_blocking,
-                                               const unsigned int      i_ldc ){
+                                               const unsigned int      i_ldc,
+                                               const unsigned int      i_beta0 ){
   unsigned int l_tile_count = i_n_blocking / 16;
   unsigned int l_en = 0;
   unsigned int l_i = 0;
+
+  /* beta == 0: no C load, zero the ZA accumulator tiles instead */
+  if( i_beta0 != 0 ){
+    libxsmm_aarch64_instruction_sme_zero( io_generated_code, 0xff );
+    return;
+  }
+
   if( i_n_blocking % 16 != 0 ){
     l_tile_count++;
   }
