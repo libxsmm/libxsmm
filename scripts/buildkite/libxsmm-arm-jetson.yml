@@ -115,3 +115,12 @@ steps:
       LIBXSMM_TARGET: "arm_v82"
       PARTITIONS: "orion"
       TEST_N: 48
+
+  - label: "GEMM (sme512)"
+    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
+    env:
+      SSIZE: 2
+      NP: 12
+      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=16 -msvl=64 --"
+      LIBXSMM_TARGET: "appl_m4"
+      PARTITIONS: "orion"
