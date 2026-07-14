@@ -966,7 +966,8 @@ void libxsmm_generator_load_32x32_aarch64_sme( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_help,
                                                const unsigned int      i_m_blocking,
                                                const unsigned int      i_n_blocking,
-                                               const unsigned int      i_ldc );
+                                               const unsigned int      i_ldc,
+                                               const unsigned int      i_beta0 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_store_32x32_aarch64_sme( libxsmm_generated_code* io_generated_code,
@@ -997,7 +998,8 @@ void libxsmm_generator_load_64x16_aarch64_sme( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_addr,
                                                const unsigned int      i_m_blocking,
                                                const unsigned int      i_n_blocking,
-                                               const unsigned int      i_ldc );
+                                               const unsigned int      i_ldc,
+                                               const unsigned int      i_beta0 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generated_store_64x16_aarch64_sme( libxsmm_generated_code* io_generated_code,
@@ -1019,7 +1021,8 @@ void libxsmm_generated_load_16x64_aarch64_sme( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_addr,
                                                const unsigned int      i_m_blocking,
                                                const unsigned int      i_n_blocking,
-                                               const unsigned int      i_ldc );
+                                               const unsigned int      i_ldc,
+                                               const unsigned int      i_beta0 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generated_store_16x64_aarch64_sme( libxsmm_generated_code* io_generated_code,
