@@ -31,6 +31,8 @@ void libxsmm_generator_gemm_aarch64_kloop_sme_het( libxsmm_generated_code*      
                                                    const unsigned int                 i_trans_size ){
   void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,
                                    const unsigned int, const unsigned int );
+  const unsigned int l_trans_size_a = (i_m_blocking > 32) ? 64 : ((i_m_blocking > 16) ? 32 : 16);
+
   if( i_blocking_scheme == 0){
     l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_sme;
   } else if( i_blocking_scheme == 1){
@@ -38,8 +40,6 @@ void libxsmm_generator_gemm_aarch64_kloop_sme_het( libxsmm_generated_code*      
   } else {
     l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_sme_16x64;
   }
-
-  const unsigned int l_trans_size_a = (i_m_blocking > 32) ? 64 : ((i_m_blocking > 16) ? 32 : 16);
 
   /* advance A and B */
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
@@ -353,7 +353,7 @@ void libxsmm_generator_gemm_aarch64_sme_transpose_a_to_stack( libxsmm_generated_
                                                  LIBXSMM_AARCH64_GP_REG_X28, 0 );
 
   if( l_is_br ){
-   
+
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                           i_gp_reg_mapping->gp_reg_help_6, LIBXSMM_AARCH64_GP_REG_XZR, 0, i_gp_reg_mapping->gp_reg_help_3 );
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, (long long)l_tile_alloc );
@@ -596,7 +596,7 @@ void libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( libxsmm_generated_c
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
-  
+
   /* need more registers here */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xecf );
 
