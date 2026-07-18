@@ -2030,6 +2030,13 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
         return;
       }
       l_reg_number_src0 = 0;
+    } else if ( ((i_vec_instr >> 28) & 3) == 0 ) {
+      if ( i_reg_number_dst != LIBXSMM_X86_VEC_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 0 operand instruction (0x%08x), i_reg_number_dst needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
+      }
+      l_reg_number_dst = 0;
     } else {
       l_reg_number_src1 = i_reg_number_src1;
     }
