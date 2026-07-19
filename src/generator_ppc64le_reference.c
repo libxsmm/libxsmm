@@ -178,7 +178,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
     if ( l_timestamp == l_last_timestamp ) {
       l_unfolded_exec_tree[5*l_timestamp + 0].reg_score = -1;
       l_unfolded_exec_tree[5*l_timestamp + 0].tmp.ld = i_mateqn_desc->ldo;
-      l_unfolded_exec_tree[5*l_timestamp + 0].tmp.dtype = (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype );
+      l_unfolded_exec_tree[5*l_timestamp + 0].tmp.dtype = (libxsmm_datatype)LIBXSMM_MEQN_GETENUM_OUT_PREC( i_mateqn_desc->datatype );
     }
   }
 

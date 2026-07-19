@@ -548,7 +548,7 @@ unsigned int libxsmm_ppc64le_instr_dx_form( unsigned int  i_instr,
   /* set d1 */
   l_instr |= (unsigned int)( (0x1f & l_d1) << (31 - 11 - 4) );
   /* set d0 */
-  l_instr |= (unsigned int)( (0x1f & l_d0) << (31 - 16 - 9) );
+  l_instr |= (unsigned int)( (0x3ff & l_d0) << (31 - 16 - 9) );
   /* set d2 */
   l_instr |= (unsigned int)( (0x1f & l_d2) << (31 - 31 - 0) );
 
@@ -2665,8 +2665,10 @@ void libxsmm_ppc64le_instr_cia_add_value( libxsmm_generated_code *io_generated_c
     if ( 0 == l_nia_low ) {
       libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDPCIS, i_reg, l_nia_high );
     } else {
-      unsigned int l_low = (unsigned int)( 0xffff & i_val );
-      unsigned int l_high = (unsigned int)( 0x03ffff & ( i_val >> 16 ) );
+      int l_paddi_val = i_val -
+        ( ( LIBXSMM_PPC64LE_INSTR_ALIGN - 4 == io_generated_code->code_size % LIBXSMM_PPC64LE_INSTR_ALIGN ) ? 4 : 0 );
+      unsigned int l_low = (unsigned int)( 0xffff & l_paddi_val );
+      unsigned int l_high = (unsigned int)( 0x03ffff & ( l_paddi_val >> 16 ) );
       libxsmm_ppc64le_instr_prefix_5( io_generated_code, LIBXSMM_PPC64LE_INSTR_PADDI, 1, l_high, i_reg, 0, l_low );
     }
   } else {

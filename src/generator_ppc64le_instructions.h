@@ -56,7 +56,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_ppc64le_blocking {
 #define LIBXSMM_PPC64LE_VSR_SCRATCH 8
 #define LIBXSMM_PPC64LE_STACK_SIZE 576
 
-#define LIBXSMM_PPC64lE_INSTR_ALIGN 64
+#define LIBXSMM_PPC64LE_INSTR_ALIGN 64
 
 /* number of volatile registers */
 /* From "64-Bit ELF V2 ABI Specification: Power Architecture"

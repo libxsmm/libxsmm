@@ -1532,7 +1532,14 @@ void libxsmm_generator_gemm_ppc64le_kernel( libxsmm_generated_code        *io_ge
     return;
   }
 
-  if ( LIBXSMM_MELTW_OPERATION_NONE != i_xgemm_desc->meltw_operation ||
+  if ( 128 < i_xgemm_desc->m ||
+       128 < i_xgemm_desc->n ||
+       128 < i_xgemm_desc->k ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
+  }
+
+  if ( LIBXSMM_MELTW_OPERATION_NONE != libxsmm_gemm_descriptor_get_meltw_operation( i_xgemm_desc ) ||
        LIBXSMM_MELTW_OPERATION_NONE != i_xgemm_desc->eltw_ap_op ||
        LIBXSMM_MELTW_OPERATION_NONE != i_xgemm_desc->eltw_bp_op ||
        LIBXSMM_MELTW_OPERATION_NONE != i_xgemm_desc->eltw_cp_op ) {
