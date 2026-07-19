@@ -2535,9 +2535,12 @@ void libxsmm_ppc64le_instr_set_imm64( libxsmm_generated_code *io_generated_code,
   } else if ( 0 != i_val ) {
     unsigned int l_dst = 0;
     unsigned int l_h3 = (unsigned int)( 0xffff & i_val );
-    unsigned int l_h2 = (unsigned int)( 0xffff & ( i_val >> 16 ) );
-    unsigned int l_h1 = (unsigned int)( 0xffff & ( i_val >> 32 ) );
-    unsigned int l_h0 = (unsigned int)( 0xffff & ( i_val >> 48 ) );
+    unsigned int l_t2 = (unsigned int)( 0xffff & ( i_val >> 16 ) ) + ( l_h3 >> 15 );
+    unsigned int l_h2 = l_t2 & 0xffff;
+    unsigned int l_t1 = (unsigned int)( 0xffff & ( i_val >> 32 ) ) + ( ( l_t2 + 0x8000 ) >> 16 );
+    unsigned int l_h1 = l_t1 & 0xffff;
+    unsigned int l_t0 = (unsigned int)( 0xffff & ( i_val >> 48 ) ) + ( ( l_t1 + 0x8000 ) >> 16 );
+    unsigned int l_h0 = l_t0 & 0xffff;
 
     if ( 0 != l_h0 ) {
       libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDIS, i_dst, l_dst, l_h0 );
