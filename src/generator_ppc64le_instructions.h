@@ -507,6 +507,7 @@ typedef struct libxsmm_ppc64le_reg {
 /* Special instructions */
 #define LIBXSMM_PPC64LE_INSTR_NOP 0x60000000 /* NOP */
 #define LIBXSMM_PPC64LE_INSTR_BLR 0x4e800020 /* Branch Unconditionally to LR */
+#define LIBXSMM_PPC64LE_INSTR_TRAP 0x7fe00008 /* Unconditional trap */
 
 
 #define LIBXSMM_PPC64LE_32FMASK 0xfc1f07ff/* 32-bit opcode form index mask */
@@ -1334,6 +1335,10 @@ void libxsmm_ppc64le_instr_nop( libxsmm_generated_code *io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_blr( libxsmm_generated_code *io_generated_code );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_trap( libxsmm_generated_code *io_generated_code );
 
 
 LIBXSMM_API_INTERN

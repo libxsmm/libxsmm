@@ -1390,6 +1390,13 @@ void libxsmm_ppc64le_instr_blr( libxsmm_generated_code *io_generated_code ) {
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_trap( libxsmm_generated_code *io_generated_code ) {
+  libxsmm_ppc64le_instr_append( io_generated_code,
+                                LIBXSMM_PPC64LE_INSTR_TRAP );
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_append( libxsmm_generated_code *io_generated_code,
                                    unsigned int            i_op ) {
   if ( io_generated_code->code_type > 1 ) {
@@ -2493,7 +2500,8 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
   } else if ( i_val <= 0x7fff && i_val >= -0x7fff ) {
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_ADDI, i_dst, i_src, i_val );
   } else {
-    if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
+    if (1) {
+      //if ( io_generated_code->arch == LIBXSMM_PPC64LE_VSX ) {
       unsigned int l_low = (unsigned int)( 0xffff & i_val );
       unsigned int l_high = (unsigned int)( (0xffff & ( i_val >> 16 )) + ( 0x01 & ( l_low >> 15 ) ) );
       unsigned int l_reg;
@@ -2949,7 +2957,6 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
                            ( 24 >> 2 ) );
 
   /* Save non-volatile general purpose registers */
-
   for( i_reg = LIBXSMM_PPC64LE_GPR_IVOL; i_reg < LIBXSMM_PPC64LE_GPR_NMAX; ++i_reg ) {
     unsigned int l_offset = gpr_offset - (i_reg - LIBXSMM_PPC64LE_GPR_IVOL)*8;
     libxsmm_ppc64le_instr_3( io_generated_code,
@@ -3013,45 +3020,109 @@ LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code        *io_generated_code,
                                           libxsmm_gemm_descriptor const *io_xgemm_desc,
                                           libxsmm_ppc64le_reg           *io_reg_tracker ) {
-  /* Set up input args */
+  /* Set input arg offsets */
   int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
   int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
 
-  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_ARG0, LIBXSMM_PPC64LE_GPR_R31 );
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_LD,
-                           LIBXSMM_PPC64LE_GPR_ARG0,
-                           LIBXSMM_PPC64LE_GPR_R31,
-                           l_offset_ptr_a >> 2 );
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_LD,
-                           LIBXSMM_PPC64LE_GPR_ARG1,
-                           LIBXSMM_PPC64LE_GPR_R31,
-                           l_offset_ptr_b >> 2 );
+  unsigned int l_input = libxsmm_ppc64le_get_reg( io_generated_code,
+                                                  io_reg_tracker,
+                                                  LIBXSMM_PPC64LE_GPR);
+  unsigned int l_tmp = libxsmm_ppc64le_get_reg( io_generated_code,
+                                                io_reg_tracker,
+                                                LIBXSMM_PPC64LE_GPR);
+
+  libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_ARG0, l_input );
+
+  /* Load *a */
+  if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ) {
+    /* Struct contains **a, subtract sizeof(*void) to allow use of ldu */
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LD,
+                             l_tmp,
+                             l_input,
+                             l_offset_ptr_a >> 2 );
+    libxsmm_ppc64le_instr_add_value( io_generated_code,
+                                     NULL,
+                                     l_tmp,
+                                     LIBXSMM_PPC64LE_GPR_ARG0,
+                                     -8 );
+  } else {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LD,
+                             LIBXSMM_PPC64LE_GPR_ARG0,
+                             l_input,
+                             l_offset_ptr_a >> 2 );
+  }
+
+  /* Load *b */
+  if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS ) ) {
+    /* Struct contains **b, subtract sizeof(*void) to allow use of ldu */
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LD,
+                             l_tmp,
+                             l_input,
+                             l_offset_ptr_b >> 2 );
+    libxsmm_ppc64le_instr_add_value( io_generated_code,
+                                     NULL,
+                                     l_tmp,
+                                     LIBXSMM_PPC64LE_GPR_ARG1,
+                                     -8 );
+  } else {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_LD,
+                             LIBXSMM_PPC64LE_GPR_ARG1,
+                             l_input,
+                             l_offset_ptr_b >> 2 );
+  }
+
+  /* Load *c */
   libxsmm_ppc64le_instr_3( io_generated_code,
                            LIBXSMM_PPC64LE_INSTR_LD,
                            LIBXSMM_PPC64LE_GPR_ARG2,
-                           LIBXSMM_PPC64LE_GPR_R31,
+                           l_input,
                            l_offset_ptr_c >> 2 );
+
+  /* Load BR Counter */
+  libxsmm_ppc64le_instr_3( io_generated_code,
+                           LIBXSMM_PPC64LE_INSTR_LD,
+                           l_tmp,
+                           l_input,
+                           16 >> 2 );
   libxsmm_ppc64le_instr_3( io_generated_code,
                            LIBXSMM_PPC64LE_INSTR_LD,
                            LIBXSMM_PPC64LE_GPR_ARG3,
-                           LIBXSMM_PPC64LE_GPR_R31,
-                           16 >> 2 );
+                           l_tmp,
+                           0 );
 
   if ( 0 < ( io_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) ) {
+    /* Load *a_offset and subtract sizeof(*void) to allow use of ldu */
     libxsmm_ppc64le_instr_3( io_generated_code,
                              LIBXSMM_PPC64LE_INSTR_LD,
-                             LIBXSMM_PPC64LE_GPR_ARG4,
-                             LIBXSMM_PPC64LE_GPR_R31,
+                             l_tmp,
+                             l_input,
                              ( l_offset_ptr_a + 8 ) >> 2 );
+    libxsmm_ppc64le_instr_add_value( io_generated_code,
+                                     NULL,
+                                     l_tmp,
+                                     LIBXSMM_PPC64LE_GPR_ARG4,
+                                     -8 );
+
+    /* Load *b_offset and subtract sizeof(*void) to allow use of ldu */
     libxsmm_ppc64le_instr_3( io_generated_code,
                              LIBXSMM_PPC64LE_INSTR_LD,
-                             LIBXSMM_PPC64LE_GPR_ARG5,
-                             LIBXSMM_PPC64LE_GPR_R31,
+                             l_tmp,
+                             l_input,
                              ( l_offset_ptr_b + 8 ) >> 2 );
+    libxsmm_ppc64le_instr_add_value( io_generated_code,
+                                     NULL,
+                                     l_tmp,
+                                     LIBXSMM_PPC64LE_GPR_ARG5,
+                                     -8 );
   }
+
+  libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_input );
+  libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_tmp );
 }
 
 

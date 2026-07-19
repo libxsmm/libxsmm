@@ -69,6 +69,24 @@ void libxsmm_generator_gemm_ppc64le_setup_blocking( libxsmm_generated_code      
 
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_br_local_pointer( libxsmm_generated_code *io_generated_code,
+                                                      unsigned int            i_flags,
+                                                      unsigned int            i_ptr,
+                                                      unsigned int            i_ptr_offset,
+                                                      unsigned int            i_loop_offset,
+                                                      unsigned int            o_brptr,
+                                                      unsigned int            o_ptr );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_ppc64le_br_ld_pointer( libxsmm_generated_code *io_generated_code,
+                                                   unsigned int            i_flags,
+                                                   unsigned int            i_ptr,
+                                                   unsigned int            i_brptr,
+                                                   unsigned int            i_offset,
+                                                   unsigned int            o_ptr );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code        *io_generated_code,
                                                    libxsmm_gemm_descriptor const *i_xgemm_desc,
                                                    libxsmm_ppc64le_blocking      *io_blocking,

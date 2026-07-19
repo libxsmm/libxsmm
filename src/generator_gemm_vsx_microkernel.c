@@ -250,7 +250,7 @@ void libxsmm_generator_vsx_alu( libxsmm_generated_code *io_generated_code,
   }
 
   if ( i_beta != 0 ) {
-    l_op += 0x40 * ( 1 - i_beta ) + 0x0200 * ( 1 - i_alpha );
+    l_op += 0x40 * ( 1 - i_alpha * i_beta ) + 0x0200 * ( 1 - i_alpha );
   } else {
     l_op += 0x78;
   }
