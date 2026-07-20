@@ -1201,8 +1201,8 @@ void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_sse_microkernel( li
                                               i_gp_reg_m_loop, i_mateltwise_desc->m );
 
   /* pad in M dimension during regular N loop */
-  if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2 ||
-        i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2) &&
+  if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2 ||
+        libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2) &&
        (i_mateltwise_desc->m % 2 == 1) ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      l_gp_temp, 0x0 );
@@ -1225,8 +1225,8 @@ void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_sse_microkernel( li
                                               i_gp_reg_n_loop, i_mateltwise_desc->n );
 
   /* pad in M dimension during regular N loop */
-  if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2 ||
-        i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2) &&
+  if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2 ||
+        libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2) &&
         (i_mateltwise_desc->n % 2 == 1) ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      l_gp_temp, 0x0 );
@@ -1249,7 +1249,7 @@ void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_sse_microkernel( li
                                                 i_gp_reg_m_loop, i_mateltwise_desc->m );
 
     /* pad in M dimension during regular N loop */
-    if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2) &&
+    if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2) &&
          (i_mateltwise_desc->m % 2 == 1) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                        l_gp_temp, 0x0 );
@@ -1337,8 +1337,8 @@ void libxsmm_generator_transform_norm_padnm_mod4_mbit_scalar_sse_microkernel( li
                                               i_gp_reg_m_loop, i_mateltwise_desc->m );
 
   /* pad in M dimension during regular N loop */
-  if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4 ||
-        i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4) &&
+  if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4 ||
+        libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4) &&
        (i_mateltwise_desc->m % 4 != 0) ) {
     unsigned int l_m = 0;
 
@@ -1373,8 +1373,8 @@ void libxsmm_generator_transform_norm_padnm_mod4_mbit_scalar_sse_microkernel( li
                                               i_gp_reg_n_loop, i_mateltwise_desc->n );
 
   /* pad in M dimension during regular N loop */
-  if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4 ||
-        i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4) &&
+  if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4 ||
+        libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4) &&
         (i_mateltwise_desc->n % 4 != 0) ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      l_gp_temp, 0x0 );
@@ -1402,7 +1402,7 @@ void libxsmm_generator_transform_norm_padnm_mod4_mbit_scalar_sse_microkernel( li
                                                 i_gp_reg_m_loop, i_mateltwise_desc->m );
 
     /* pad in M dimension during regular N loop */
-    if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4) &&
+    if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4) &&
          (i_mateltwise_desc->m % 4 != 0) ) {
       unsigned int l_m = 0;
 
@@ -1790,8 +1790,8 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
                                    l_gp_reg_out, 0 );
 
   /* check leading dimnesions and sizes */
-  if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) ||
-       (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T)    ) {
+  if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) ||
+       (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T)    ) {
     /* coverity[copy_paste_error] */
     if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
@@ -1801,21 +1801,21 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
-  } else if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2)     ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD) ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4)     ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8)     ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)         ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)         ||
-              (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)          ) {
+  } else if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2)     ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD) ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4)     ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8)     ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)         ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)         ||
+              (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)          ) {
     if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
-    if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)  ||
-         (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)    ) {
+    if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)  ||
+         (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)    ) {
       if ( (i_mateltwise_desc->m + i_mateltwise_desc->m%2) > i_mateltwise_desc->ldo ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
         return;
@@ -1834,7 +1834,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
          LIBXSMM_DATATYPE_I64 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ||
        ( LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
          LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ) {
-    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+    if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
       libxsmm_generator_transform_norm_to_normt_64bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc );
@@ -1846,7 +1846,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
                 LIBXSMM_DATATYPE_I32 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ||
               ( LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
                 LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ) {
-    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+    if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
       libxsmm_generator_transform_norm_to_normt_32bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc );
@@ -1860,11 +1860,11 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
                 LIBXSMM_DATATYPE_F16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ||
               ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
                 LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) )   ) {
-    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+    if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
       libxsmm_generator_transform_norm_to_normt_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc );
-    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T ) {
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T ) {
       /* Call 64bit normal transpose */
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -1876,7 +1876,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_128bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
-    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T ) {
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T ) {
       /* Call 64bit normal transpose */
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -1888,7 +1888,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_64bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
-    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T ) {
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T ) {
       /* Call 32bit normal transpose */
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -1900,7 +1900,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_32bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
-    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM ) {
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM ) {
       /* Call 64bit normal transpose */
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -1912,7 +1912,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_128bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
-    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM ) {
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM ) {
       /* Call 64bit normal transpose */
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -1924,7 +1924,7 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_64bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
-    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM ) {
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM ) {
       /* Call 32bit normal transpose */
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const mock_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -1936,45 +1936,45 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_norm_to_normt_32bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                  l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                  &l_trans_config, mock_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T) {
       libxsmm_generator_transform_vnni2_to_vnni2t_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T) {
       libxsmm_generator_transform_vnni4_to_vnni4t_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T) {
       libxsmm_generator_transform_vnni8_to_vnni8t_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) {
       libxsmm_generator_transform_norm_to_vnni2_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 0 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD) {
       libxsmm_generator_transform_norm_to_vnni2_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 1 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4) {
       libxsmm_generator_transform_norm_to_vnni4_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 0 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) {
       libxsmm_generator_transform_norm_to_vnni4_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 1 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8) {
       libxsmm_generator_transform_norm_to_vnni8_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 0 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) {
       libxsmm_generator_transform_norm_to_vnni8_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 1 );
-    } else if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)  ||
-                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)  ||
-                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)    ) {
+    } else if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)  ||
+                (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)  ||
+                (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)    ) {
       libxsmm_generator_transform_norm_padnm_mod2_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
@@ -1988,49 +1988,49 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
                 LIBXSMM_DATATYPE_BF8 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ||
               ( LIBXSMM_DATATYPE_HF8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
                 LIBXSMM_DATATYPE_HF8 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) ) ) {
-    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+    if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
       libxsmm_generator_transform_norm_to_normt_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T) {
       libxsmm_generator_transform_vnni4_to_vnni4t_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T) {
       libxsmm_generator_transform_vnni8_to_vnni8t_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM) {
       libxsmm_generator_transform_vnni4_to_norm_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc);
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2) {
       libxsmm_generator_transform_vnni4_to_vnni2_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc);
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4) {
       libxsmm_generator_transform_norm_to_vnni4_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 0 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) {
       libxsmm_generator_transform_norm_to_vnni4_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 1 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_NORM) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_NORM) {
       libxsmm_generator_transform_vnni8_to_norm_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc);
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8) {
       libxsmm_generator_transform_norm_to_vnni8_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 0 );
-    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) {
+    } else if (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) {
       libxsmm_generator_transform_norm_to_vnni8_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc, 1 );
-    } else if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4)  ||
-                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4)  ||
-                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4)    ) {
+    } else if ( (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4)  ||
+                (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4)  ||
+                (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4)    ) {
       libxsmm_generator_transform_norm_padnm_mod4_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );

@@ -11,19 +11,10 @@
 #include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
 
-#if !defined(CHECK_SETUP) && 1
-# define CHECK_SETUP
-#endif
 #if !defined(CHECK_REALLOC) && 1
 # if !defined(_WIN32)
 #   define CHECK_REALLOC
 # endif
-#endif
-#if !defined(CHECK_SCRATCH) && 1
-# define CHECK_SCRATCH
-#endif
-#if !defined(CHECK_PMALLOC) && 1
-# define CHECK_PMALLOC
 #endif
 
 #if defined(_DEBUG)
@@ -38,90 +29,7 @@ int main(void)
   const size_t size_malloc = 2507, alignment = (2U << 20);
   libxsmm_malloc_info malloc_info;
   int avalue, nerrors = 0;
-#if defined(CHECK_SCRATCH)
-  const size_t size_scratch = (24U << 20);
-  void *q, *r;
-#endif
   void* s;
-
-#if defined(CHECK_PMALLOC)
-  { /* check pooled malloc */
-    void* pool[128];
-    char storage[8*sizeof(pool)/sizeof(*pool)];
-    void* backup[sizeof(pool)];
-    const int npool = sizeof(pool) / sizeof(*pool), nrep = 1024;
-    size_t num = npool;
-    int i, j;
-
-    libxsmm_pmalloc_init(sizeof(storage) / num, &num, pool, storage);
-    memcpy(backup, pool, sizeof(pool));
-    for (i = 0; i < nrep; ++i) {
-# if defined(_OPENMP)
-#     pragma omp parallel for private(j) schedule(dynamic,1)
-# endif
-      for (j = 0; j < npool; ++j) {
-        void *const p = libxsmm_pmalloc(pool, &num);
-        LIBXSMM_EXPECT(NULL != p);
-      }
-# if defined(_OPENMP)
-#     pragma omp parallel for private(j) schedule(dynamic,1)
-# endif
-      for (j = 0; j < npool; ++j) {
-        const int k = npool - j - 1;
-        void *const p = backup[k];
-        libxsmm_pfree(p, pool, &num);
-      }
-      if (npool != (int)num) break;
-    }
-    if (npool == (int)num) {
-      for (i = 0, num = 0; i < npool; ++i) {
-        const void *const p = backup[i];
-        for (j = 0; j < npool; ++j) {
-          if (p == pool[j]) {
-            ++num; break;
-          }
-        }
-      }
-      nerrors += LIBXSMM_DELTA(npool, (int)num);
-    }
-    else ++nerrors;
-  }
-  if (0 != nerrors) FPRINTF(stderr, "Error: incorrect pmalloc!\n");
-#endif
-
-#if defined(CHECK_SETUP)
-  { /* check allocator setup */
-    libxsmm_malloc_function default_malloc_fn, malloc_fn;
-    libxsmm_free_function default_free_fn, free_fn;
-    const void *default_context, *context;
-
-    /* determine default allocation functions and context */
-    if (EXIT_SUCCESS != libxsmm_get_default_allocator(&default_context/*context*/, &default_malloc_fn, &default_free_fn)) {
-      ++nerrors;
-    }
-    /* set specific functions for default allocations and check adoption */
-    malloc_fn.function = malloc; free_fn.function = free;
-    if  (EXIT_SUCCESS != libxsmm_set_default_allocator(NULL/*context*/, malloc_fn/*malloc*/, free_fn/*free*/)
-      || EXIT_SUCCESS != libxsmm_get_default_allocator(&context, &malloc_fn, &free_fn)
-      || NULL != context || malloc != malloc_fn.function || free != free_fn.function)
-    {
-      ++nerrors;
-    }
-    /* check adoption/inheritance from the default allocator */
-    malloc_fn.function = NULL; free_fn.function = NULL;
-    if  (EXIT_SUCCESS != libxsmm_set_scratch_allocator(NULL/*context*/, malloc_fn/*NULL*/, free_fn/*NULL*/)
-      || EXIT_SUCCESS != libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn)
-      || NULL != context || malloc != malloc_fn.function || free != free_fn.function)
-    {
-      ++nerrors;
-    }
-    /* reset default allocator */
-    if (EXIT_SUCCESS != libxsmm_set_default_allocator(default_context, default_malloc_fn, default_free_fn)) {
-      ++nerrors;
-    }
-  }
-  if (0 != nerrors) FPRINTF(stderr, "Error: incorrect allocator setup!\n");
-#endif
 
   /* allocate some amount of memory */
   s = libxsmm_malloc(size_malloc);
@@ -131,18 +39,6 @@ int main(void)
     FPRINTF(stderr, "Error: buffer info (1/4) failed!\n");
     ++nerrors;
   }
-
-#if defined(CHECK_SCRATCH)
-  q = libxsmm_aligned_scratch(size_scratch, 0/*auto*/);
-  libxsmm_free(q);
-  q = libxsmm_aligned_scratch(size_scratch / 3, 0/*auto*/);
-  r = libxsmm_aligned_scratch(size_scratch / 3, 0/*auto*/);
-  /* confirm malloc succeeds for an in-scratch buffer */
-  if (NULL != q && NULL == r) {
-    FPRINTF(stderr, "Error: in-scratch buffer allocation failed!\n");
-    ++nerrors;
-  }
-#endif
 
 #if defined(CHECK_REALLOC)
   if (NULL != s) { /* reallocate larger amount of memory */
@@ -244,10 +140,6 @@ int main(void)
 
   /* release memory */
   libxsmm_free(s);
-#if defined(CHECK_SCRATCH)
-  libxsmm_free(q);
-  libxsmm_free(r);
-#endif
 
   /* check foreign memory */
   if (EXIT_SUCCESS == libxsmm_get_malloc_info(&size_malloc/*faulty pointer*/, &malloc_info)) {

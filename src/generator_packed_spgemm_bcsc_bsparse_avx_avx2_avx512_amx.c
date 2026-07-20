@@ -818,7 +818,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
   char l_c_vname = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 'y' : i_micro_kernel_config->vector_name;
   unsigned int l_c_move_instr = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? LIBXSMM_X86_INSTR_VMOVDQU16 : LIBXSMM_X86_INSTR_VMOVUPS;
   unsigned int l_i8i32_kernel = (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ? 1 : 0;
-  unsigned int l_is_s8u8s32_kernel = ((l_i8i32_kernel > 0) && ((LIBXSMM_GEMM_FLAG_A_UNSIGNED & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & i_xgemm_desc->flags) > 0) ) ? 1 : 0;
+  unsigned int l_is_s8u8s32_kernel = ((l_i8i32_kernel > 0) && (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) ? 1 : 0;
   unsigned int l_c_bcast_instr = 0;
   unsigned int l_output_bf16_mask = 1;
   unsigned int l_input_bf16_mask  = 2;
@@ -890,6 +890,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
     } else if (l_simd_packed_remainder == i_simd_packed_width/4) {
       l_use_short_vec = 1;
       l_AT_CT_vname = (l_AT_CT_vname == 'z') ? 'x' : ((l_AT_CT_vname == 'y' ? 'x' : 'x'));
+      l_AT_CT_ab_vmove_instr = (l_simd_packed_remainder == 1) ? LIBXSMM_X86_INSTR_VMOVSS :
+                               ((l_simd_packed_remainder == 2) ? LIBXSMM_X86_INSTR_VMOVSD : LIBXSMM_X86_INSTR_VMOVUPS);
     } else if (l_simd_packed_remainder == i_simd_packed_width/8) {
       l_use_short_vec = 1;
       l_AT_CT_vname = (l_AT_CT_vname == 'z') ? 'x' : ((l_AT_CT_vname == 'y' ? 'x' : 'x'));
@@ -1012,7 +1014,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
     }
     /* Prep reg_b with "k" offset */
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_cur_column_gpr, i_gp_reg_mapping->gp_reg_help_2);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_2, i_bk * i_bn  * i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_2, (long long)i_bk * i_bn  * i_micro_kernel_config->datatype_size_in);
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_2);
 
     if (l_is_AT_CT_kernel > 0) {
@@ -1435,11 +1437,11 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
     libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, l_row_idx_gpr, l_cur_column_gpr, 4, 0, i_gp_reg_mapping->gp_reg_kloop, 0 );
 
     /* Prep reg_a with "k" offset */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_kloop, i_bk * i_packed_width * i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_kloop, (long long)i_bk * i_packed_width * i_micro_kernel_config->datatype_size_in);
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_kloop);
     /* Prep reg_b with "k" offset */
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, l_cur_column_gpr, l_b_tmp_gpr);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, l_b_tmp_gpr, i_bk * i_bn  * i_micro_kernel_config->datatype_size_in);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, l_b_tmp_gpr, (long long)i_bk * i_bn  * i_micro_kernel_config->datatype_size_in);
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, l_b_tmp_gpr);
 
     for (l_k_iter = 0; l_k_iter < l_k_unroll_iters; l_k_iter++) {
@@ -1476,7 +1478,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
 
         for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
           unsigned int tile_comp_instr = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ? LIBXSMM_X86_INSTR_TDPBF16PS :
-            ( (((LIBXSMM_GEMM_FLAG_A_UNSIGNED & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_B_UNSIGNED & i_xgemm_desc->flags) > 0)) ? LIBXSMM_X86_INSTR_TDPBUSD : LIBXSMM_X86_INSTR_TDPBSUD);
+            ( ((LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0)) ? LIBXSMM_X86_INSTR_TDPBUSD : LIBXSMM_X86_INSTR_TDPBSUD);
           unsigned int tile_a = l_a_tile_offset + l_p;
           unsigned int tile_c = l_n * i_packed_blocking + l_p + l_c_tile_offset;
           libxsmm_x86_instruction_tile_compute( io_generated_code,
@@ -1613,4 +1615,3 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
   } else {
   }
 }
-

@@ -725,11 +725,11 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
     l_instr_mmla = LIBXSMM_AARCH64_INSTR_ASIMD_BFMMLA_V;
   } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
+    if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V;
-    } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V;
-    } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0) ) {
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) == 0) ) {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V;
       l_flip_mmla_src = 1;
     } else {
@@ -892,7 +892,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
     l_compute_type = LIBXSMM_AARCH64_SVE_TYPE_H;
     l_k_pack_factor = 2; /* BFDOT works on BF16 tuples */
   } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
+    if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) {
       l_compute_instr = LIBXSMM_AARCH64_INSTR_SVE_USDOT_V;
     }
     l_compute_is_pred = 0;
@@ -1284,11 +1284,11 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
     }
     l_k_blocks = l_k_blocking / 4;
   } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
+    if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V;
-    } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ) {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V;
-    } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0) ) {
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) == 0) ) {
       l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V;
       l_flip_mmla_src = 1;
     } else {
@@ -2002,7 +2002,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     /* check values for gemm_ext */
 #if 0
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-      if ( (l_xgemm_desc_opa->meltw_operation != LIBXSMM_MELTW_OPERATION_NONE) || (l_xgemm_desc_opa->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
+      if ( (libxsmm_gemm_descriptor_get_meltw_operation(l_xgemm_desc_opa) != LIBXSMM_MELTW_OPERATION_NONE) || (l_xgemm_desc_opa->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
            (l_xgemm_desc_opa->eltw_bp_op != LIBXSMM_MELTW_OPERATION_NONE) || (l_xgemm_desc_opa->eltw_cp_op != LIBXSMM_MELTW_OPERATION_NONE) ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_GEMM_CONFIG );
         return;
@@ -2113,7 +2113,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       else {
         l_m_blocking = 32; /* TODO (MMLA): only 256bit */
       }
-      if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0) ) {
+      if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) == 0) ) {
         l_mmla_zip_row_major = 1;
       }
     }

@@ -21,8 +21,6 @@ export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE
 OUT_BLAZE=benchmark-blaze.txt
 OUT_EIGEN=benchmark-eigen.txt
 OUT_XSMM=benchmark-xsmm.txt
-OUT_XBAT=benchmark-xbat.txt
-OUT_BLAS=benchmark-blas.txt
 
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 
@@ -66,8 +64,6 @@ fi
 ${CAT} /dev/null >"${OUT_BLAZE}"
 ${CAT} /dev/null >"${OUT_EIGEN}"
 ${CAT} /dev/null >"${OUT_XSMM}"
-${CAT} /dev/null >"${OUT_XBAT}"
-${CAT} /dev/null >"${OUT_BLAS}"
 
 NRUN=1
 NMAX=$(echo ${!RUNS} | wc -w | tr -d " ")
@@ -85,12 +81,6 @@ for RUN in ${!RUNS} ; do
   echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                                >>"${OUT_XSMM}"
   "${HERE}/magazine_xsmm"  "${SIZE}" "${MVALUE}" "${NVALUE}" "${KVALUE}" | ${TR} "\n" " " >>"${OUT_XSMM}"
   echo                                                                                    >>"${OUT_XSMM}"
-  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                                >>"${OUT_XBAT}"
-  "${HERE}/magazine_batch" "${SIZE}" "${MVALUE}" "${NVALUE}" "${KVALUE}" | ${TR} "\n" " " >>"${OUT_XBAT}"
-  echo                                                                                    >>"${OUT_XBAT}"
-  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                                >>"${OUT_BLAS}"
-  "${HERE}/magazine_blas"  "${SIZE}" "${MVALUE}" "${NVALUE}" "${KVALUE}" | ${TR} "\n" " " >>"${OUT_BLAS}"
-  echo                                                                                    >>"${OUT_BLAS}"
   NRUN=$((NRUN+1))
 done
 

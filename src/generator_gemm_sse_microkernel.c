@@ -27,8 +27,8 @@ void libxsmm_generator_gemm_sse_kloop_kernel( libxsmm_generated_code*           
   void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                                   const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int);
   unsigned int l_is_i8_uu_ss_gemm = (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
-                                    ( ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0) ) ||
-                                      ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) >  0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) >  0) ) );
+                                    ( ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) == 0) ) ||
+                                      ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) >  0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) >  0) ) );
 
   /* select correct micro kernel */
   if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
@@ -151,7 +151,7 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
         unsigned int l_u_reg = 0;
         unsigned int l_s_reg = 0;
 
-        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
+        if ( LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
           l_u_reg = l_n;
           l_s_reg = i_n_blocking+1;
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
@@ -159,7 +159,7 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
                                                     i_micro_kernel_config->vector_name,
                                                     i_n_blocking,
                                                     l_s_reg );
-        } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+        } else if ( LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
           l_u_reg = i_n_blocking;
           l_s_reg = l_n;
         } else {
@@ -252,10 +252,10 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
                                               i_micro_kernel_config->vector_name,
                                               i_n_blocking, (l_m == (l_m_blocking-1)) ? i_micro_kernel_config->use_masking_a_c : 0, i_m_blocking%i_micro_kernel_config->vector_length, 0 );
 
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
+          if ( LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
             l_u_reg = l_n;
             l_s_reg = i_n_blocking;
-          } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+          } else if ( LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
             l_u_reg = i_n_blocking;
             l_s_reg = i_n_blocking + 1;
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
@@ -419,7 +419,7 @@ void libxsmm_generator_gemm_sse_microkernel_int8_uu_ss_vnni_emu( libxsmm_generat
       libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_PACKUSDW,
                                                i_micro_kernel_config->vector_name, l_n, l_n);
 
-      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+      if ( LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
         libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_PMOVZXBW,
                                                  i_micro_kernel_config->vector_name, l_n, l_n);
       } else {
@@ -457,7 +457,7 @@ void libxsmm_generator_gemm_sse_microkernel_int8_uu_ss_vnni_emu( libxsmm_generat
         libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_PACKUSDW,
                                                  i_micro_kernel_config->vector_name, i_n_blocking, i_n_blocking);
 
-        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+        if ( LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
           libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_PMOVZXBW,
                                                    i_micro_kernel_config->vector_name, i_n_blocking, i_n_blocking);
         } else {

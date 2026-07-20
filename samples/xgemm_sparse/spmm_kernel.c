@@ -89,7 +89,11 @@ void dense_gemm_ref(spmm_def *i_spmm_def, char *l_a, char *l_b, char *l_c_gold) 
         LIBXSMM_PRAGMA_SIMD
         for ( l_i = 0; l_i < l_m; l_i++) {
           if ( l_spmm_def.beta == 0 ) {
-            C[l_j * l_m + l_i] = 0.0;
+            if (i_spmm_def->trans_a > 0) {
+              C[l_j + l_i * l_n] = 0.0;
+            } else {
+              C[l_j * l_m + l_i] = 0.0;
+            }
           }
           for ( l_jj = 0; l_jj < l_k; l_jj++) {
             if (i_spmm_def->trans_a > 0) {
@@ -403,13 +407,10 @@ double jit_matmul( const spmm_def*    i_spmm_def,
     return EXIT_FAILURE;
   }
 
-  /* set up the flags */
-  if ( i_spmm_def->unsigned_a != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED;
-  }
-  if ( i_spmm_def->unsigned_b != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED;
-  }
+  /* setting tileconfig state to 0 */
+  memset( &l_tilestate, 0, sizeof(libxsmm_tilecfg_state) );
+
+  /* unsigned A/B operands are encoded directly via the (unsigned) datatype in the GEMM shape */
 
   l_flags |= (0 != i_spmm_def->trans_b ? LIBXSMM_GEMM_FLAG_TRANS_B : 0);
   l_flags |= (0 != i_spmm_def->vnni_a ? LIBXSMM_GEMM_FLAG_VNNI_A : 0);
@@ -421,7 +422,7 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   /* setting update GEMM struct */
   l_shape = libxsmm_create_gemm_shape( i_spmm_def->m_blocks,  0, i_spmm_def->k,
       i_spmm_def->k, 0, i_spmm_def->n,
-      i_spmm_def->a_type, i_spmm_def->b_type, i_spmm_def->c_type, i_spmm_def->comp_type );
+      (i_spmm_def->unsigned_a ? LIBXSMM_DATATYPE_U8 : i_spmm_def->a_type), (i_spmm_def->unsigned_b ? LIBXSMM_DATATYPE_U8 : i_spmm_def->b_type), i_spmm_def->c_type, i_spmm_def->comp_type );
 
   /* setting prefetch flags */
   l_prefetch_flags = i_spmm_def->prefetch;
@@ -447,8 +448,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
   }
 
   /* run correctness */
-  gemm_param.a.primary = (void*)i_a;
-  gemm_param.b.primary = (void*)i_b;
+  gemm_param.a.primary = (void*)(uintptr_t)i_a;
+  gemm_param.b.primary = (void*)(uintptr_t)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
@@ -466,8 +467,8 @@ double jit_matmul( const spmm_def*    i_spmm_def,
 
   /* run performance */
   l_start = libxsmm_timer_tick();
-  gemm_param.a.primary = (void*)i_a;
-  gemm_param.b.primary = (void*)i_b;
+  gemm_param.a.primary = (void*)(uintptr_t)i_a;
+  gemm_param.b.primary = (void*)(uintptr_t)i_b;
   gemm_param.b.secondary = (void*)i_colptr;
   gemm_param.b.tertiary  = (void*)i_rowidx;
   gemm_param.b.quaternary = (void*)&N;
@@ -886,9 +887,23 @@ int main(int argc, char* argv []) {
   if ( l_file_input != 0 ) {
     l_file_handle = fopen( l_file_name, "r" );
   } else {
-    printf("------------------------------------------------\n");
-    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
-    printf("------------------------------------------------\n");
+    if ( l_trans_a == 0 && l_trans_b == 0 ) {
+      printf("------------------------------------------------\n");
+      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+      printf("------------------------------------------------\n");
+    } else if ( l_trans_a == 1 && l_trans_b == 0 ) {
+      printf("------------------------------------------------\n");
+      printf("RUNNING (%ix%i)^T X (%ix%i) = (%ix%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+      printf("------------------------------------------------\n");
+    } else if ( l_trans_a == 0 && l_trans_b == 1 ) {
+      printf("------------------------------------------------\n");
+      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+      printf("------------------------------------------------\n");
+    } else {
+      printf("------------------------------------------------\n");
+      printf("RUNNING (%ix%i)^T X (%ix%i)^T = (%ix%i)\na:%s, b:%s, comp:%s, c:%s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
+      printf("------------------------------------------------\n");
+    }
   }
 
   do {
@@ -994,6 +1009,26 @@ int main(int argc, char* argv []) {
     }
   } while ( l_keep_going );
 
-  return 0;
+  if ( l_file_input != 0 ) {
+    fclose( l_file_handle );
+  }
+
+  /* Print total max error and derive exit code so the CI can detect failures */
+  printf("\n\n Total Max Error %f\n\n", l_total_max_error );
+
+  if ( l_run_check == 1 ) {
+    double l_error_bound;
+    if ( l_spmm_def.c_type == LIBXSMM_DATATYPE_BF16 ) {
+      l_error_bound = 0.005;
+    } else {
+      /* F32 and I32 outputs are expected to match the reference (close to) exactly */
+      l_error_bound = 0.0001;
+    }
+    if ( l_total_max_error >= l_error_bound ) {
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
 }
 

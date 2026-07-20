@@ -88,37 +88,9 @@ The C interface ([libxsmm_malloc.h](https://github.com/libxsmm/libxsmm/blob/main
 ```C
 void* libxsmm_malloc(size_t size);
 void* libxsmm_aligned_malloc(size_t size, size_t alignment);
-void* libxsmm_aligned_scratch(size_t size, size_t alignment);
 void libxsmm_free(const volatile void* memory);
 int libxsmm_get_malloc_info(const void* m, libxsmm_malloc_info* i);
-int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 ```
-
-The library exposes two memory allocation domains: <span>(1)&#160;default</span> memory allocation, and <span>(2)&#160;scratch</span> memory allocation. There are similar service functions for both domains that allow to customize the allocation and deallocation function. The "context form" even supports a user-defined "object", which may represent an allocator or any other external facility. To set the allocator of the default domain is analogous to setting the allocator of the scratch memory domain (shown below).
-
-```C
-int libxsmm_set_scratch_allocator(void* context,
-  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
-int libxsmm_get_scratch_allocator(void** context,
-  libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
-```
-
-The scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocator, a watermark for repeatedly allocated and deallocated buffers is established. The scratch memory domain is (arbitrarily) limited to <span>4&#160;GB</span> of memory which can be adjusted to a different number of Bytes (available per [libxsmm_malloc.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_malloc.h), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", "g|G" units, unlimited per "-1").
-
-```C
-void libxsmm_set_scratch_limit(size_t nbytes);
-size_t libxsmm_get_scratch_limit(void);
-```
-
-By establishing a pool of "temporary" memory, the cost of repeated allocation and deallocation cycles is avoided when the watermark is reached. The scratch memory is scope-oriented with a limited number of pools for buffers of different lifetime or held for different threads. The [verbose mode](index.md#verbose-mode) with a verbosity level of at least two (LIBXSMM_VERBOSE=2) shows some statistics about the populated scratch memory.
-
-```bash
-Scratch: 173 MB (mallocs=5, pools=1)
-```
-
-To improve thread-scalability and to avoid frequent memory allocation/deallocation, the scratch memory allocator can be leveraged by [intercepting existing malloc/free calls](libxsmm_tune.md#intercepted-allocations).
-
-**Note**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
 
 ### Thread Synchronization

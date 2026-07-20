@@ -2,42 +2,57 @@
 
 [![BSD 3-Clause License](https://img.shields.io/badge/license-BSD3-blue.svg "BSD 3-Clause License")](LICENSE.md) [![GCC Build Status](https://badge.buildkite.com/2e962d4cfc7ddb10a6cd6c27b0d8033edf179a799e156cb363.svg?branch=main "GCC Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Clang Build Status](https://badge.buildkite.com/dafe7b363a2e66f7d5c9087f074f3eceb69b9aae4278202fd7.svg?branch=main "Clang Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Intel Build Status](https://badge.buildkite.com/63b5dc4095f460f1c011ae782f8e67ec0b8a6a9732d8abe3c7.svg?branch=main "Intel Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Mixed Build Status](https://badge.buildkite.com/fad67b2fcad79e07ddfe9141974f360e9eca6223cd89e3593f.svg?branch=main "Mixed Build Status")](https://github.com/libxsmm/libxsmm/wiki/Status) [![Static Analysis Status](https://scan.coverity.com/projects/7405/badge.svg "Static Analysis Status")](https://scan.coverity.com/projects/hfp-libxsmm) [![Read the Docs](https://readthedocs.org/projects/libxsmm/badge/?version=latest "Read the Docs")](https://libxsmm.readthedocs.io/)
 
-LIBXSMM is a library for specialized dense and sparse matrix operations as well as for deep learning primitives such as small convolutions. The library is targeting Intel Architecture with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions) supported by future Intel processor code-named Sapphire Rapids. Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and deep learning). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `bfloat16`, `int16`, and `int8`.
+LIBXSMM is high performance library for small dense and sparse linear algebra opertions incl. GEMM and elementwise primities often seen in deep learning applications. It also serves as reference implementation of Tensor Processing Primitives ([TPP](https://arxiv.org/pdf/2104.05755)), a programming abstraction for efficient and portable deep learning and HPC workloads. With <span>version&#160;2.0</span>, LIBXSMM focuses on providing a complete and architecture-portable set of TPPs (small dense and sparse matrix operations as well as element-wise, GEMM, and BRGEMM primitives) from which higher-level operators such as convolutions, fully-connected layers, normalization, and pooling are composed. LIBXSMM targets <span>Intel&#160;Architecture</span> with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions), <span>AArch64</span> (NEON, SVE, and SME), and <span>RISC&#8209;V</span> (RVV). Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and tensor primitives). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `FP16`, `bfloat16`, `BF8`, `HF8`, `MXBF8`, `MXHF8`, `int16`, `int8`, `MXBF6`, `MXHF6`, `MXFP4`, `int4`, `int2` and `int1`. Additionally, various non-standard low precision combinations are supported.
+
+**LIBXSMM 2.0**: This major release repositions LIBXSMM as the reference implementation of Tensor Processing Primitives. To keep the core library focused, several application-specific pieces that previously shipped here have moved to dedicated companion repositories: the deep-learning operators and convolution drivers ([LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn)), the PyTorch integration ([TPP PyTorch Extension](https://github.com/libxsmm/tpp-pytorch-extension)), and the spectral-element reproducers (e.g. NekBox). The core library, the JIT backend, and the TPP frontend remain here.
 
 For a list questions and answers, please also have a look at [https://github.com/libxsmm/libxsmm/wiki/Q&A](https://github.com/libxsmm/libxsmm/wiki/Q&A).
 
-**Where to go for documentation?**
+<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C code may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). It walks through the Tensor Processing Primitives: dispatch a GEMM kernel and three element-wise (unary, binary, ternary) kernels, then invoke them. Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.c` (below) and compile with `gcc -I/path/to/libxsmm/include hello.c -L/path/to/libxsmm/lib -lxsmm -lm -o hello`, and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
-* **ReadtheDocs**: [main](https://libxsmm.readthedocs.io/) and [sample](https://libxsmm.readthedocs.io/libxsmm_samples/) documentation with full text search.
-* **PDF**: [main](https://github.com/libxsmm/libxsmm/raw/main/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/libxsmm/libxsmm/raw/main/documentation/libxsmm_samples.pdf) documentation.
-* **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/libxsmm/libxsmm/tree/main/samples/magazine) (full list of [Articles](#articles)).
-
-<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C++ code is focused on a specific functionality but may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
-
-```cpp
+```c
 #include <libxsmm.h>
-#include <vector>
+#include <string.h>
+
 int main(int argc, char* argv[]) {
-  typedef double T;
-  int batchsize = 1000, m = 13, n = 5, k = 7;
-  std::vector<T> a(batchsize * m * k), b(batchsize * k * n), c(m * n, 0);
-  /* C/C++ and Fortran interfaces are available */
-  typedef libxsmm_mmfunction<T> kernel_type;
-  /* generates and dispatches a matrix multiplication kernel (C++ functor) */
-  kernel_type kernel(LIBXSMM_GEMM_FLAG_NONE, m, n, k, 1.0 /*alpha*/, 1.0 /*beta*/);
-  assert(kernel);
-  for (int i = 0; i < batchsize; ++i) { /* initialize input */
-    for (int ki = 0; ki < k; ++ki) {
-      for (int j = 0; j < m; ++j) a[i * j * ki] = static_cast<T>(1) / ((i + j + ki) % 25);
-      for (int j = 0; j < n; ++j) b[i * j * ki] = static_cast<T>(7) / ((i + j + ki) % 75);
-    }
-  }
-  /* kernel multiplies and accumulates matrices: C += Ai * Bi */
-  for (int i = 0; i < batchsize; ++i) kernel(&a[i * m * k], &b[i * k * n], &c[0]);
+  const libxsmm_blasint m = 13, n = 5, k = 7;
+  float a[13*7], b[7*5], c[13*5], bias[13*5], tmp[13*5], out[13*5];
+  libxsmm_blasint i;
+
+  /* GEMM TPP: C = A * B (column-major, all FP32) */
+  const libxsmm_gemm_shape gshape = libxsmm_create_gemm_shape(m, n, k, m, k, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_gemmfunction gemm = libxsmm_dispatch_gemm(gshape,
+    LIBXSMM_GEMM_FLAG_NONE, LIBXSMM_GEMM_PREFETCH_NONE);
+  /* unary TPP: ReLU; binary TPP: bias add; ternary TPP: fused multiply-add */
+  const libxsmm_meltw_unary_shape ushape = libxsmm_create_meltw_unary_shape(m, n, m, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_meltwfunction_unary relu = libxsmm_dispatch_meltw_unary(
+    LIBXSMM_MELTW_TYPE_UNARY_RELU, ushape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  const libxsmm_meltw_binary_shape bshape = libxsmm_create_meltw_binary_shape(m, n, m, m, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_meltwfunction_binary add = libxsmm_dispatch_meltw_binary(
+    LIBXSMM_MELTW_TYPE_BINARY_ADD, bshape, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+  const libxsmm_meltw_ternary_shape tshape = libxsmm_create_meltw_ternary_shape(m, n, m, m, m, m,
+    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  libxsmm_meltwfunction_ternary fma = libxsmm_dispatch_meltw_ternary(
+    LIBXSMM_MELTW_TYPE_TERNARY_MULADD, tshape, LIBXSMM_MELTW_FLAG_TERNARY_NONE);
+
+  libxsmm_gemm_param gp; libxsmm_meltw_unary_param up;
+  libxsmm_meltw_binary_param bp; libxsmm_meltw_ternary_param tp;
+  for (i = 0; i < m*k; ++i) a[i] = 1.f / (i + 1);
+  for (i = 0; i < k*n; ++i) b[i] = 2.f / (i + 1);
+  for (i = 0; i < m*n; ++i) bias[i] = 0.5f;
+
+  memset(&gp, 0, sizeof(gp)); gp.a.primary = a; gp.b.primary = b; gp.c.primary = c; gemm(&gp);
+  memset(&up, 0, sizeof(up)); up.in.primary = c; up.out.primary = c; relu(&up);
+  memset(&bp, 0, sizeof(bp)); bp.in0.primary = c; bp.in1.primary = bias; bp.out.primary = tmp; add(&bp);
+  memset(&tp, 0, sizeof(tp)); tp.in0.primary = tmp; tp.in1.primary = c; tp.in2.primary = bias; tp.out.primary = out; fma(&tp);
+  return 0;
 }
 ```
 
-Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/main/samples/hello).
+Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). More complete drivers are available under [samples/xgemm](https://github.com/libxsmm/libxsmm/tree/main/samples/xgemm) and [samples/eltwise](https://github.com/libxsmm/libxsmm/tree/main/samples/eltwise).
 
 <a name="what-is-a-small-matrix-multiplication"></a>**What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within <i>(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64</i> (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library does not employ multiplevel K,M,N blocking. Using LIBXSMM for much larger sizes may generate excessive amounts of code (due to unrolling in M or K dimension), but also misses to implement a tiling scheme to effectively utilize the cache hierarchy. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
 
@@ -47,9 +62,9 @@ Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.
 
 Please have a look at [https://github.com/libxsmm/libxsmm/tree/main/include](https://github.com/libxsmm/libxsmm/tree/main/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
-* MM: [Matrix Multiplication](#matrix-multiplication)
 * TPP: [Tensor Processing Primitives](https://github.com/libxsmm/libxsmm/blob/main/documentation/libxsmm_tpp.md)
-* DNN: [Deep Neural Networks](#deep-neural-networks)
+* MM: [Matrix Multiplication](#matrix-multiplication)
+* DL: [Deep Learning](#interface-for-dl)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)
 * BE: [Backend](#jit-backend)
@@ -74,7 +89,7 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided as part of [LIBXSMM_DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
+Common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitives provided by LIBXSMM. With LIBXSMM&#160;2.0 the deep-learning operators and their performance drivers live in the companion repository [LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests), which demonstrates how these primitives compose into full operators without any platform-specific code.
 
 ### Service Functions
 
@@ -105,7 +120,9 @@ The main interface file is *generated*, and it is therefore **not** stored in th
 
 ### Classic Library (ABI)
 
-There are two ways to rely on prebuilt code for a given project: <span>(1)&#160;using</span> LIBXSMM's Makefile based build system, <span>(2)&#160;or</span> using another build system and writing own [rules for building LIBXSMM](#rules-for-building-libxsmm). The Makefile based build system relies on <span>GNU&#160;Make</span> (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using <span>key&#8209;value</span> pairs. <span>Key&#8209;value</span> pairs can be supplied in two ways: <span>(1)&#160;after</span> the "make" command, or <span>(2)&#160;prior</span> to the "make" command (`env`) which is effectively the same as exporting the <span>key&#8209;value</span> pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
+LIBXSMM provides native GNU Make and CMake build systems for the classic library ABI. GNU Make remains the reference build path and exposes the full set of build-time customization options and legacy sample targets. CMake supports the core library, optional Fortran module interface, generator executables, installation, and CMake package integration. Projects using another build system can also write their own [rules for building LIBXSMM](#rules-for-building-libxsmm).
+
+The Makefile based build system relies on <span>GNU&#160;Make</span> (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using <span>key&#8209;value</span> pairs. <span>Key&#8209;value</span> pairs can be supplied in two ways: <span>(1)&#160;after</span> the "make" command, or <span>(2)&#160;prior</span> to the "make" command (`env`) which is effectively the same as exporting the <span>key&#8209;value</span> pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
 
 <a name="zero-config-abi"></a>In contrast to [header-only](#zero-config) which does not require configuration by default, 3rd-party build systems can compile and link LIBXSMM's sources but still avoid configuring the library (per `libxsmm_config.py`). The prerequisite to omit configuration is to opt-in by defining LIBXSMM_DEFAULT_CONFIG (`-D`). The zero-config feature is not available for LIBXSMM's Fortran interface.
 
@@ -159,6 +176,35 @@ make realclean
 
 Using the Fortran module (or including the interface), requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
 
+#### CMake
+
+CMake 3.13 or newer can build the classic library ABI, the optional Fortran module interface, and the generator executables. GNU Make remains the reference build path, especially when the full set of build-time customization options or legacy sample targets is needed.
+
+Configure, build, and install LIBXSMM with:
+
+```bash
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/path/to/libxsmm-install
+cmake --build build --target install -j
+```
+
+The default CMake build produces static libraries. Add `-DBUILD_SHARED_LIBS=ON` to build shared libraries. When a Fortran compiler is detected, the Fortran module interface and `libxsmmf` are built automatically.
+
+The installed package should be consumed through its exported targets:
+
+```cmake
+find_package(libxsmm CONFIG REQUIRED)
+target_link_libraries(my_target PRIVATE libxsmm::libxsmm)
+```
+
+For the Fortran module interface:
+
+```cmake
+find_package(libxsmm CONFIG REQUIRED COMPONENTS Fortran)
+target_link_libraries(my_target PRIVATE libxsmm::libxsmmf)
+```
+
+For an in-tree dependency, `add_subdirectory()` can be used. An installed package and `find_package(libxsmm CONFIG REQUIRED)` are preferred for regular downstream integration.
+
 ### Header-Only
 
 <span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/libxsmm/libxsmm/tree/main/src) directory (with the implications as noted earlier).
@@ -169,31 +215,7 @@ Using the Fortran module (or including the interface), requires at least a <span
 
 ## Rules for building LIBXSMM
 
-LIBXSMM can be used as header-only library, i.e., no source code must be (pre-)built. However, it can be desirable to build LIBXSMM as an intermediate library using a custom setup or build system. The latter can still implement custom build rules to configure LIBXSMM's interface before building the code. More likely, building LIBXSMM from source in a custom fashion can still be omitting to configure the interface and rely on "(zero-config)[#zero-config-abi]", i.e., defining LIBXSMM_DEFAULT_CONFIG (`-DLIBXSMM_DEFAULT_CONFIG`). For example, a CMake module for LIBXSMM can look like:
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(
-  xsmm
-  URL https://github.com/chelini/libxsmm/archive/<your-preferred-revision>.tar.gz
-  URL_HASH SHA256=<sha256sum-corresponding-to-above-revision>
-)
-FetchContent_GetProperties(xsmm)
-if(NOT xsmm_POPULATED)
-  FetchContent_Populate(xsmm)
-endif()
-
-set(LIBXSMMROOT ${xsmm_SOURCE_DIR})
-file(GLOB _GLOB_XSMM_SRCS LIST_DIRECTORIES false CONFIGURE_DEPENDS ${LIBXSMMROOT}/src/*.c)
-list(REMOVE_ITEM _GLOB_XSMM_SRCS ${LIBXSMMROOT}/src/libxsmm_generator_gemm_driver.c)
-set(XSMM_INCLUDE_DIRS ${LIBXSMMROOT}/include)
-
-add_library(xsmm STATIC ${_GLOB_XSMM_SRCS})
-target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
-target_compile_definitions(xsmm PUBLIC
-  LIBXSMM_DEFAULT_CONFIG
-)
-```
+Projects using CMake should use the native CMake build described above rather than maintaining a duplicate list of LIBXSMM source files. Other build systems can compile and link LIBXSMM directly. Such builds may generate the configured interfaces first, or opt into zero-config mode by defining `LIBXSMM_DEFAULT_CONFIG` (`-D`). Zero-config mode is not available for LIBXSMM's Fortran interface.
 
 ## Link Instructions
 
@@ -210,10 +232,6 @@ libxsmmf      | Necessary when using the Fortran MODule but not when including `
 export PKG_CONFIG_PATH=/path/to/libxsmm/lib
 pkg-config libxsmm --libs
 ```
-
-Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. To use LIBXSMM without GEMM-related functionality, any BLAS-dependency can be removed in two ways: <span>(1)&#160;building</span> a special library with `make BLAS=0`, or <span>(2)&#160;linking</span> the application against the `libxsmmnoblas` library. If an application however uses BLAS already, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can be used to intercept existing BLAS calls (and to rely on LIBXSMM instead).
-
-**Note**: LIBXSMM does not support to dynamically link `libxsmm` or `libxsmmext` ("so") when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
 
 ### Installation
 
@@ -314,16 +332,6 @@ The environment variable `LIBXSMM_MATDIFF` can carry optional space-separated ar
 * [Customizing performance](documentation/libxsmm_tune.md#tuning)
 * <a name="auto-dispatch"></a>[Tuning auto-dispatch](documentation/libxsmm_tune.md#auto-dispatch)
 
-<a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch called "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/libxsmm/libxsmm/tree/results#libxsmm-results](https://github.com/libxsmm/libxsmm/tree/results#libxsmm-results), or the results can be cloned as shown below.
-
-```bash
-git clone --branch results \
-  https://github.com/libxsmm/libxsmm.git \
-  libxsmm-results
-```
-
-Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, multiplying with all matrices covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all matrices from the main memory). Most of the [code samples](https://github.com/libxsmm/libxsmm/tree/main/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
-
 ## Applications
 
 ### High Performance Computing (HPC)
@@ -332,7 +340,7 @@ Please note that comparing performance results depends on whether the operands o
 
 <b>[2]&#160;</b>[https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/): SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
 
-<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code. Please also note LIBXSMM's [NekBox reproducer](https://github.com/libxsmm/libxsmm/tree/main/samples/nek#nek-sample-collection).
+<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code.
 
 <b>[4]&#160;</b>[https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000): Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
 

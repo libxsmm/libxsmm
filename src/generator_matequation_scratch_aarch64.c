@@ -163,7 +163,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_meqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(eqn->eqn_root, timestamp);
 #if 0
-    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
+    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
     libxsmm_datatype in_precision = cur_op->tmp.dtype;
 #else
     /* FIXME: This approach that avoids intermediate converts needs extra tmps, because when input is BF16 and output is FP32 we cannot reuse/overwrite the same tmp scratch... */
@@ -175,7 +175,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
 
     /* Find sibling if applicable. If it is an Arg, set output precision to  that precision... */
     if (timestamp == last_timestamp) {
-      out_precision = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
+      out_precision = (libxsmm_datatype) LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype);
       cur_op->tmp.ld = i_mateqn_desc->ldo;
     } else {
       out_precision = cur_op->tmp.dtype;
@@ -428,7 +428,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
       libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       /* Call proper JITer */
 #if 0
-      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
+      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
         if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
         } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
@@ -438,7 +438,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }
-      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
+      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_transform_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
         libxsmm_generator_transform_x86_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       } else {
 #endif
@@ -449,7 +449,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     }
 #endif
     /* Call proper JITer */
-    if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
+    if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
       if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
         libxsmm_generator_reduce_rows_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
@@ -459,9 +459,9 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
       }
-    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(meltw_desc->param) > 0)) {
+    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
         libxsmm_generator_reduce_cols_index_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
-    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
+    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_meqn_is_unary_opcode_transform_kernel(libxsmm_meltw_descriptor_get_param(meltw_desc)) > 0)) {
       libxsmm_generator_transform_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
     } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) )) {
       libxsmm_generator_gather_scatter_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );

@@ -509,10 +509,6 @@ The [Fortran example](https://github.com/libxsmm/libxsmm/blob/main/samples/utili
 
 Further, another [Fortran example](https://github.com/libxsmm/libxsmm/blob/main/samples/utilities/dispatch/dispatch_udt.f) about [user-data dispatch](https://libxsmm.readthedocs.io/libxsmm_aux/#user-data-dispatch) is not exactly a benchmark. Dispatching user-data containing multiple kernels can obviously save multiple singular dispatches. The C interface for dispatching user-data is designed to follow the same flow as the Fortran interface.
 
-## Scratch Memory Allocation (Microbenchmark)
-
-This code sample aims to benchmark the performance of the scratch memory allocation. This facility is a viable option to satisfy the need for temporary memory when using the DNN domain of LIBXSMM (small convolutions).  Although any kind of readable/writable buffer can be bound to a convolution handle, LIBXSMM's `libxsmm_aligned_scratch` features a thread-safe linear allocator mechanism which can help to lower allocation overhead.
-
 ## SMM Benchmark
 
 This collection of code samples exercises different memory streaming cases when performing the matrix multiplication *C~m&#8239;x&#8239;n~ = alpha &middot; A~m&#8239;x&#8239;k~ &middot; B~k&#8239;x&#8239;n~ + beta &middot; C~m&#8239;x&#8239;n~*: (1)&#160;streaming the matrices A, B, and C which is usually referred as batched matrix multiplication, (2)&#160;streaming the inputs A and B but accumulating C within cache, (3)&#160;streaming the A and C matrices while B is kept in cache, (4)&#160;streaming the B and C matrices while A is kept in cache, and (4)&#160;not streaming any of the operands but repeating the very same multiplication until the requested number of matrix multiplications has been completed.

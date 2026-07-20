@@ -16,6 +16,12 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bbf16_gemm ( const libxsmm
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp8_Bmxfp8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp6_Bmxfp6_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bfp32_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
@@ -25,6 +31,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai4_Bi8_gemm ( const libxsmm_gemm
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai2_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Ai1_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Abyte_Bi8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Abf8_Bbf16_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
@@ -95,6 +103,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
                                                                               const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
                                                                               libxsmm_datatype               i_in_dtype,
                                                                               libxsmm_datatype               i_target_dtype );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack( libxsmm_generated_code*       io_generated_code,
+                                                                          libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                          const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                          libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                                          libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                                          const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
+                                                                          libxsmm_datatype               i_in_dtype );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB( libxsmm_generated_code*        io_generated_code,
                                                               libxsmm_loop_label_tracker*    io_loop_label_tracker,
@@ -356,5 +372,66 @@ void libxsmm_generator_gemm_setval_stack_var( libxsmm_generated_code*           
                                               unsigned int                        i_gp_reg );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned int i_range, unsigned int i_max_block, unsigned int i_nomask_block, unsigned int *io_block, unsigned int *o_use_mask );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512_new( libxsmm_generated_code*            io_generated_code,
+                                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                  libxsmm_pade78_reg_mapping*        i_pade78_reg_mapping,
+                                                                                  const unsigned int                 i_avail_vreg_start_desc,
+                                                                                  const unsigned int                 i_mask_reg_0,
+                                                                                  const unsigned int                 i_mask_reg_1,
+                                                                                  const unsigned int                 i_aux_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_mxfp4_dcvt(libxsmm_generated_code* io_generated_code,
+  const libxsmm_micro_kernel_config* i_micro_kernel_config, libxsmm_mxfp4_cvt_reg_mapping* i_mxfp4_cvt_reg_mapping,
+  const unsigned int i_avail_vreg_start_desc, const unsigned int i_mask_reg_0, const unsigned int i_mask_reg_1, const unsigned int i_mask_reg_2,
+  const unsigned int i_aux_reg, unsigned int i_is_mxfp4);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_sigmoid_to_scratch(libxsmm_generated_code* io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config, const libxsmm_pade78_reg_mapping* i_pade78_reg_mapping,
+    const unsigned int i_scratch_gpr, const unsigned int i_scratch_offset, const unsigned int i_m_blocking,
+    const unsigned int i_n_blocking, const unsigned int i_temp_vreg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_C_ace( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+    const unsigned int                 i_m_blocking,
+    const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+    const unsigned int                 i_m_blocking,
+    const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_avx512_use_ace( libxsmm_generated_code*            io_generated_code,
+                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_inline_transform_ace(
+    libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_ace_fp32_via_bf16( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_A_bf16( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_A_fp8( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_B_bf16( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_B_fp8( const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
 #endif /* GENERATOR_GEMM_COMMON_H */

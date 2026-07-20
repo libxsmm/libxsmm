@@ -149,6 +149,77 @@ LIBXSMM_API_INTERN void libxsmm_cpuid_model(char model[], size_t* model_size)
   }
 }
 
+LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_inline_transform(void)
+{
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *l_env_x86_ace = getenv("LIBXSMM_X86_USE_ACE_DISABLE_INLINE_TRANSFORM");
+  int result = 0;
+  /*LIBXSMM_INIT*/
+  if ( 0 == l_env_x86_ace ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_x86_ace) != 0 ) {
+      result = 1;
+    } else {
+      result = 0;
+    }
+  }
+  if ( libxsmm_target_archid != LIBXSMM_X86_AVX512_ACE1 ) {
+    result = 0;
+  }
+  return result;
+#else
+  return 0;
+#endif
+}
+
+LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_a(void)
+{
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *l_env_x86_ace = getenv("LIBXSMM_X86_USE_ACE_DISABLE_SWPF_A");
+  int result = 0;
+  /*LIBXSMM_INIT*/
+  if ( 0 == l_env_x86_ace ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_x86_ace) != 0 ) {
+      result = 1;
+    } else {
+      result = 0;
+    }
+  }
+  if ( libxsmm_target_archid != LIBXSMM_X86_AVX512_ACE1 ) {
+    result = 0;
+  }
+  return result;
+#else
+  return 0;
+#endif
+}
+
+LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_b(void)
+{
+#if defined(LIBXSMM_PLATFORM_X86)
+  const char *l_env_x86_ace = getenv("LIBXSMM_X86_USE_ACE_DISABLE_SWPF_B");
+  int result = 0;
+  /*LIBXSMM_INIT*/
+  if ( 0 == l_env_x86_ace ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_x86_ace) != 0 ) {
+      result = 1;
+    } else {
+      result = 0;
+    }
+  }
+  if ( libxsmm_target_archid != LIBXSMM_X86_AVX512_ACE1 ) {
+    result = 0;
+  }
+  return result;
+#else
+  return 0;
+#endif
+}
 
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
@@ -200,6 +271,19 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                           LIBXSMM_CPUID_X86(0x1e, 1/*ecx*/, eax, ebx, ecx2, edx2);
                           if (LIBXSMM_CPUID_CHECK(eax, 0x000001f4)) { /* AMX-FP8, AMX-Transpose, AMX-AVX512, AMX-TF32, AMX-MOVRS */
                             feature_cpu = LIBXSMM_X86_AVX512_DMR;
+                            /* ACE detection: check CPUID.(EAX=07H,ECX=1):ECX[11] */
+                            LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx2, edx2);
+                            if (LIBXSMM_CPUID_CHECK(ecx2, 0x00000800)) { /* ACE supported */
+                              /* check CPUID.(EAX=1DH,ECX=0):EAX (MAX_PALETTE >= 2) */
+                              LIBXSMM_CPUID_X86(0x1d, 0/*ecx*/, eax, ebx, ecx2, edx2);
+                              if (eax >= 2) {
+                                /* check CPUID.(EAX=1DH,ECX=2):EAX[7:0] (ACE_VSN >= 1) */
+                                LIBXSMM_CPUID_X86(0x1d, 2/*ecx*/, eax, ebx, ecx2, edx2);
+                                if ((eax & 0xFF) >= 1) {
+                                  feature_cpu = LIBXSMM_X86_AVX512_ACE1;
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -362,6 +446,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 {
   const char* target_arch = NULL;
   switch (id) {
+    case LIBXSMM_X86_AVX512_ACE1: {
+      target_arch = "ace1";
+    } break;
     case LIBXSMM_X86_AVX512_DMR: {
       target_arch = "dmr";
     } break;
@@ -485,6 +572,9 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "avx512_vl256") == 0) {
     target_archid = LIBXSMM_X86_AVX512_VL256_SKX;
+  }
+  else if (strcmp(arch, "ace1") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_ACE1;
   }
   else if (strcmp(arch, "dmr") == 0) {
     target_archid = LIBXSMM_X86_AVX512_DMR;
@@ -701,7 +791,7 @@ LIBXSMM_API unsigned int libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking(void) {
 LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
 {
   /* handle signed and unsigned types */
-  const int type = LIBXSMM_GETENUM_INP(datatype);
+  const int type = LIBXSMM_GETENUM_SIGNED_DATATYPE(datatype);
   int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
   if ( (type == LIBXSMM_DATATYPE_BF16) ||
@@ -710,8 +800,14 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
     result = 2;
   } else if ( (type == LIBXSMM_DATATYPE_BF8) ||
               (type == LIBXSMM_DATATYPE_HF8) ||
+              (type == LIBXSMM_DATATYPE_MXBF8) ||
+              (type == LIBXSMM_DATATYPE_MXHF8) ||
+              (type == LIBXSMM_DATATYPE_MXBF6) ||
+              (type == LIBXSMM_DATATYPE_MXHF6) ||
               (type == LIBXSMM_DATATYPE_I8)     ) {
     result = 4;
+  } else if ( (type == LIBXSMM_DATATYPE_MXFP4X2) ) {
+    result = 8;
   } else {
     result = 1;
   }

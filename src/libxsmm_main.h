@@ -46,12 +46,6 @@
 #if !defined(LIBXSMM_NTHREADS_USE) && 0
 # define LIBXSMM_NTHREADS_USE
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
-# define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_NTHREADS_MAX
-#endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
-# define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
-#endif
 #if !defined(LIBXSMM_MALLOC_LIMIT)
 # define LIBXSMM_MALLOC_LIMIT (2U << 20) /* 2 MB */
 #endif
@@ -273,12 +267,10 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
   unsigned char c3;
   /** LDx, LDy, LDz,  additional meltw LDs */
   unsigned int meltw_ldx, meltw_ldy, meltw_ldz;
-  /** optional param field */
-  unsigned short meltw_param;
+  /** combined param/operation field (bits[2:0]=operation, bits[15:3]=param) */
+  unsigned short meltw_param_operation;
   /** Set of flags */
   unsigned short meltw_flags;
-  /** operation specifier */
-  unsigned char meltw_operation;
   /* Ap, Bp, Cp */
   unsigned char eltw_ap_op;
   unsigned char eltw_bp_op;
@@ -300,17 +292,53 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo, ldi2, ldi3;
-  /** Size of data element. */
-  unsigned char datatype;
-  unsigned char datatype1;
-  unsigned char datatype2;
+  /** Combined datatype field, six bits per sub-field:
+   *  IN0=datatypes[5:0], IN1=datatypes[11:6], IN2=datatypes[17:12], OUT=datatypes[23:18], COMP=datatypes[29:24] */
+  unsigned int datatypes;
   /** Set of flags */
   unsigned short flags;
-  /** optional param field */
-  unsigned short param;
-  /** operation specifier */
-  unsigned char operation;
+  /** combined param/operation field (bits[2:0]=operation, bits[15:3]=param) */
+  unsigned short param_operation;
 };
+
+/**
+* Accessors for the combined param/operation field of libxsmm_meltw_descriptor and
+* libxsmm_gemm_descriptor. The combined field stores 'operation' in the lowest 3 bits
+* and 'param' in the upper 13 bits, allowing the rest of the code to interact with the
+* descriptors as if both fields still existed separately.
+*/
+#define LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS 3
+#define LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK 0x7
+
+LIBXSMM_API_INLINE unsigned short libxsmm_meltw_descriptor_get_param(const libxsmm_meltw_descriptor* desc) {
+  return (unsigned short)(desc->param_operation >> LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS);
+}
+LIBXSMM_API_INLINE unsigned char libxsmm_meltw_descriptor_get_operation(const libxsmm_meltw_descriptor* desc) {
+  return (unsigned char)(desc->param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK);
+}
+LIBXSMM_API_INLINE void libxsmm_meltw_descriptor_set_param(libxsmm_meltw_descriptor* desc, unsigned short param) {
+  desc->param_operation = (unsigned short)((desc->param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)((unsigned int)param << LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS));
+}
+LIBXSMM_API_INLINE void libxsmm_meltw_descriptor_set_operation(libxsmm_meltw_descriptor* desc, unsigned char operation) {
+  desc->param_operation = (unsigned short)((desc->param_operation & (unsigned short)~LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)(operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK));
+}
+
+LIBXSMM_API_INLINE unsigned short libxsmm_gemm_descriptor_get_meltw_param(const libxsmm_gemm_descriptor* desc) {
+  return (unsigned short)(desc->meltw_param_operation >> LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS);
+}
+LIBXSMM_API_INLINE unsigned char libxsmm_gemm_descriptor_get_meltw_operation(const libxsmm_gemm_descriptor* desc) {
+  return (unsigned char)(desc->meltw_param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK);
+}
+LIBXSMM_API_INLINE void libxsmm_gemm_descriptor_set_meltw_param(libxsmm_gemm_descriptor* desc, unsigned short param) {
+  desc->meltw_param_operation = (unsigned short)((desc->meltw_param_operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)((unsigned int)param << LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_BITS));
+}
+LIBXSMM_API_INLINE void libxsmm_gemm_descriptor_set_meltw_operation(libxsmm_gemm_descriptor* desc, unsigned char operation) {
+  desc->meltw_param_operation = (unsigned short)((desc->meltw_param_operation & (unsigned short)~LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK)
+    | (unsigned short)(operation & LIBXSMM_MELTW_PARAM_OPERATION_OPERATION_MASK));
+}
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csr_descriptor {
   const libxsmm_gemm_descriptor* gemm;
@@ -462,6 +490,22 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
+/** Function types accepted for memory allocation (library-internal allocator). */
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_malloc_ctx)(size_t /*size*/, const void* /*context*/);
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_malloc_fun)(size_t /*size*/);
+LIBXSMM_EXTERN_C typedef union libxsmm_malloc_function {
+  libxsmm_malloc_ctx ctx_form;
+  libxsmm_malloc_fun function;
+} libxsmm_malloc_function;
+
+/** Function types accepted for releasing memory (library-internal allocator). */
+LIBXSMM_EXTERN_C typedef void (*libxsmm_free_ctx)(void* /*buffer*/, const void* /*context*/);
+LIBXSMM_EXTERN_C typedef void (*libxsmm_free_fun)(void* /*buffer*/);
+LIBXSMM_EXTERN_C typedef union libxsmm_free_function {
+  libxsmm_free_ctx ctx_form;
+  libxsmm_free_fun function;
+} libxsmm_free_function;
+
 LIBXSMM_EXTERN_C typedef void* (*libxsmm_realloc_fun)(void* /*ptr*/, size_t /*size*/);
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
@@ -516,18 +560,11 @@ LIBXSMM_API_INTERN void libxsmm_malloc_finalize(void);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
-/** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
+/** Set the default memory allocator (library-internal), taking a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
-/** Same as libxsmm_get_default_allocator, but takes a lock (can be NULL). */
+/** Get the default memory allocator (library-internal), taking a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
-
-/** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
-/** Same as libxsmm_get_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /**
@@ -546,9 +583,6 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   const char* name,
   /** If data_size if given, amount of memory-attribution is lowered by data_size. */
   const size_t* data_size);
-
-/** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
 LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
@@ -618,20 +652,10 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_nosync);
 
 /** Function used to allocate default memory. */
 LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_default_malloc_fn);
-/** Function used to allocate scratch memory. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
 /** Function used to release default memory. */
 LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_default_free_fn);
-/** Function used to release scratch memory. */
-LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
 LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_default_allocator_context);
-/** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_scratch_allocator_context);
-/** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_scratch_pools);
-/** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_APIVAR_PRIVATE(double libxsmm_scratch_scale);
 /** Number of seconds per RDTSC-cycle (zero or negative if RDTSC invalid). */
 LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 /** Counts the number of attempts to create an SPMDM-handle. */

@@ -213,6 +213,17 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
+/* The 'masked' construct was introduced in OpenMP 5.1 (_OPENMP == 202011),
+ * deprecating the 'master' construct. Use 'masked' when available and fall
+ * back to 'master' for compilers supporting only earlier OpenMP standards. */
+#if defined(_OPENMP)
+# if _OPENMP >= 202011
+#   define LIBXSMM_OMP_MASKED _Pragma("omp masked")
+# else
+#   define LIBXSMM_OMP_MASKED _Pragma("omp master")
+# endif
+#endif
+
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
 #define LIBXSMM_IS_INTEGER(TYPE, VALUE, LO, HI) ( \
   ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && LIBXSMM_MIN(1ULL*(VALUE),HI) <= (HI) && \
