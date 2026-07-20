@@ -43,19 +43,6 @@ void libxsmm_generator_gemm_vsx_block_store_vsr( libxsmm_generated_code *io_gene
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_vsx_micro_load_vsr_splat( libxsmm_generated_code *io_generated_code,
-                                                      libxsmm_ppc64le_reg    *io_reg_tracker,
-                                                      libxsmm_datatype const  i_datatype,
-                                                      libxsmm_datatype const  i_comptype, /* currently unsuded */
-                                                      unsigned int            i_a,
-                                                      unsigned int            i_m,
-                                                      unsigned int            i_n,
-                                                      unsigned int            i_lda,
-                                                      unsigned int           *io_t,
-                                                      unsigned int            i_ldt );
-
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_vsx_block_load_vsr_splat( libxsmm_generated_code *io_generated_code,
                                                       libxsmm_ppc64le_reg    *io_reg_tracker,
                                                       libxsmm_datatype const  i_datatype,
