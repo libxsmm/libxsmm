@@ -56,6 +56,12 @@ if(LIBXSMM_FORTRAN)
   enable_language(Fortran)
 endif()
 
+# Pass "-march=armv8.1-a" for Aarch64 build
+# to be consistent with GNU Makefile
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+  add_compile_options(-march=armv8.1-a)
+endif()
+
 # display config
 message(STATUS "******** Build Summary ********")
 message(STATUS "General:")
