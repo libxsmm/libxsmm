@@ -18,10 +18,16 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES "${_libxsmm_suffixes_save}")
 unset(_libxsmm_suffixes_save)
 
 find_path(LIBXSMM_INCLUDE_DIR NAMES libxsmm.h
-  HINTS "${_libxsmm_prefix}/include" "${_libxsmm_prefix}" NO_DEFAULT_PATH)
+  HINTS "${_libxsmm_prefix}/include/libxsmm"
+        "${_libxsmm_prefix}/include"
+        "${_libxsmm_prefix}"
+  NO_DEFAULT_PATH)
 
 find_path(LIBXSMM_FORTRAN_MODULE_DIR NAMES libxsmm.mod LIBXSMM.mod
-  HINTS "${_libxsmm_prefix}/include" "${_libxsmm_prefix}" NO_DEFAULT_PATH)
+  HINTS "${_libxsmm_prefix}/include/libxsmm"
+        "${_libxsmm_prefix}/include"
+        "${_libxsmm_prefix}"
+  NO_DEFAULT_PATH)
 
 set(_libxsmm_suffixes_save "${CMAKE_FIND_LIBRARY_SUFFIXES}")
 if(DEFINED BUILD_SHARED_LIBS AND NOT BUILD_SHARED_LIBS)

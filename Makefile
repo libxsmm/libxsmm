@@ -17,7 +17,7 @@ UTLDIR := $(SPLDIR)/utilities
 DOCDIR := documentation
 
 # subdirectories (relative) to PREFIX (install targets)
-PINCDIR ?= $(INCDIR)
+PINCDIR ?= $(INCDIR)/libxsmm
 PSRCDIR ?= libxsmm
 POUTDIR ?= $(OUTDIR)
 PPKGDIR ?= $(OUTDIR)/pkgconfig
@@ -1361,7 +1361,7 @@ $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo >>$@
 	@echo "prepend-path PKG_CONFIG_PATH \"\$$PREFIX/$(PPKGDIR)\"" >>$@
 	@echo "prepend-path LIBRARY_PATH \"\$$PREFIX/lib\"" >>$@
-	@echo "prepend-path CPATH \"\$$PREFIX/include\"" >>$@
+	@echo "prepend-path CPATH \"\$$PREFIX/$(PINCDIR)\"" >>$@
 
 .PHONY: deb
 deb:
