@@ -4096,9 +4096,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_load_bsr( 
   /* inter leave A scales */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, 'z',
                                             1, 6, 1 );
-  /* Load BSR */
+  /* Load BSR: reg0 holds A-scales (M-indexed, from gp_reg_scf), reg1 holds B-scales
+     (N-indexed, from gp_reg_zpt). Per the ACE spec the A_SCALE field (imm8[1:0]) reads
+     the upper BSR half and is applied to Operand 2 (ModRM.R/M), while B_SCALE (imm8[4:3])
+     reads the lower half and is applied to Operand 3 (VVVV). In compute_ace the B-data
+     register sits in Operand 2 and the A-data register in Operand 3, so the B-scales must
+     go to the upper half and the A-scales to the lower half. BSRMOVF routes the dst arg to
+     the upper 512-bit half and src0 to the lower half, hence src0=reg0 (A) and dst=reg1 (B). */
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, LIBXSMM_X86_INSTR_BSRMOVF_LD, 'z',
-                                                           1, LIBXSMM_X86_VEC_REG_UNDEF, 0, 0, 0, 0, 0 );
+                                                           0, LIBXSMM_X86_VEC_REG_UNDEF, 1, 0, 0, 0, 0 );
 }
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace( libxsmm_generated_code*            io_generated_code,
