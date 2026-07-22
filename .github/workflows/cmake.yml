@@ -37,6 +37,7 @@ jobs:
       run: |
         cmake -B build -GNinja \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
           -DCMAKE_INSTALL_PREFIX=$HOME/libxsmm-install \
           -DBUILD_TESTING=ON \
           -DBUILD_SHARED_LIBS=${{ matrix.shared == 'shared' && 'ON' || 'OFF' }}
