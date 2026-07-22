@@ -61,10 +61,13 @@ void libxsmm_generator_x86_reference_kernel( libxsmm_generated_code*         io_
   /* Store the descriptor in stack  */
   for (i = 0; i < l_padded_desc_size/32; i++) {
     if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+      /* generic/SSE baseline: full_vec_load_of_constants emits a legacy (non-VEX) movups
+         for arch < AVX, so use legacy MOVUPS here too - VEX VMOVUPS would require AVX and
+         break on a true generic target that only assumes an SSE2 host. */
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_padded_desc + 32*i + 0, "l_desc", 'x', 0);
-      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0 + 32*i, 'x', 0, 0, 0, 1 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0 + 32*i, 'x', 0, 0, 0, 1 );
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_padded_desc + 32*i + 16, "l_desc", 'x', 0);
-      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16 + 32*i, 'x', 0, 0, 0, 1 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16 + 32*i, 'x', 0, 0, 0, 1 );
     } else {
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_padded_desc + 32*i, "l_desc", 'y', 0);
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  32*i, 'y', 0, 0, 0, 1 );
@@ -164,10 +167,11 @@ void libxsmm_generator_matequation_x86_reference_kernel( libxsmm_generated_code*
   /* Store the unfolded descriptor in stack and set RSI  */
   for (i = 0; i < padded_size/32; i++) {
     if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+      /* generic/SSE baseline: use legacy MOVUPS (VEX VMOVUPS would require AVX). */
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)unfolded_exec_tree + 0  + 32*i, "l_unfolded_exec_tree", 'x', 0);
-      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0  + 32*i, 'x', 0, 0, 0, 1 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0  + 32*i, 'x', 0, 0, 0, 1 );
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)unfolded_exec_tree + 16 + 32*i, "l_unfolded_exec_tree", 'x', 0);
-      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  16 + 32*i, 'x', 0, 0, 0, 1 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_MOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  16 + 32*i, 'x', 0, 0, 0, 1 );
     } else {
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)unfolded_exec_tree + 32*i, "l_unfolded_exec_tree", 'y', 0);
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  32*i, 'y', 0, 0, 0, 1 );

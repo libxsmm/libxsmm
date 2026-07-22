@@ -13,11 +13,18 @@ on:
 
 jobs:
   Test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.arch }} / ${{ matrix.shared }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
+        arch: [x86_64, aarch64]
         shared: [static, shared]
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@v5
 
@@ -30,6 +37,7 @@ jobs:
       run: |
         cmake -B build -GNinja \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
           -DCMAKE_INSTALL_PREFIX=$HOME/libxsmm-install \
           -DBUILD_TESTING=ON \
           -DBUILD_SHARED_LIBS=${{ matrix.shared == 'shared' && 'ON' || 'OFF' }}
@@ -45,11 +53,11 @@ jobs:
 
     - name: Verify install
       run: |
-        test -f $HOME/libxsmm-install/include/libxsmm.h
-        test -f $HOME/libxsmm-install/include/libxsmm_config.h
-        test -f $HOME/libxsmm-install/include/libxsmm_source.h
-        test -f $HOME/libxsmm-install/include/libxsmm_version.h
-        test -d $HOME/libxsmm-install/include/utils
+        test -f $HOME/libxsmm-install/include/libxsmm/libxsmm.h
+        test -f $HOME/libxsmm-install/include/libxsmm/libxsmm_config.h
+        test -f $HOME/libxsmm-install/include/libxsmm/libxsmm_source.h
+        test -f $HOME/libxsmm-install/include/libxsmm/libxsmm_version.h
+        test -d $HOME/libxsmm-install/include/libxsmm/utils
         ls $HOME/libxsmm-install/lib/libxsmm* >/dev/null
         ls $HOME/libxsmm-install/lib/pkgconfig/libxsmm.pc >/dev/null
         test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmmConfig.cmake
