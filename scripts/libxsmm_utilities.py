@@ -337,26 +337,30 @@ def version_branch(max_strlen=-1):
 
 
 def libxsmm_target_arch():
-    libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
+    libroot = os.path.realpath(
+        os.path.join(os.path.dirname(__file__), "..")
+    )
     uname = os.uname()
     oname = uname.sysname if not isinstance(uname, tuple) else uname[0]
     if "Darwin" == oname:
-        os.environ["DYLD_LIBRARY_PATH"] = libpath
         libext = ".dylib"
     else:
-        os.environ["LD_LIBRARY_PATH"] = libpath
         libext = ".so"
     os.environ["LIBXSMM_VERBOSE"] = "0"
-    xsmm = (
-        "libxsmm" + libext
-        if os.path.exists(os.path.join(libpath, "libxsmm" + libext))
-        else ctypes.util.find_library("xsmm")
-    )
+    libname = "libxsmm" + libext
+    xsmm = None
+    for libpath in (os.path.join(libroot, "lib"), libroot):
+        candidate = os.path.join(libpath, libname)
+        if os.path.isfile(candidate):
+            xsmm = candidate
+            break
+    if xsmm is None:
+        xsmm = ctypes.util.find_library("xsmm")
     target = "generic"
     try:
-        libxsmm = ctypes.CDLL(
-            os.path.join(libpath, xsmm), mode=ctypes.RTLD_GLOBAL
-        )
+        if xsmm is None:
+            raise OSError("LIBXSMM shared library not found")
+        libxsmm = ctypes.CDLL(xsmm, mode=ctypes.RTLD_GLOBAL)
         libxsmm_get_target_arch = libxsmm.libxsmm_get_target_arch
         libxsmm_get_target_arch.restype = ctypes.c_char_p
         target = libxsmm_get_target_arch().decode("ascii")
