@@ -210,9 +210,18 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
   } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
   } else {
-    /* TODO fix this error and support for more architectures */
+    /* generic/unknown target: the reference kernel is just a trampoline to a C
+       function, so emit it for the actual host platform LIBXSMM was built for. */
+#if defined(LIBXSMM_PLATFORM_X86)
+    libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+    libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
+#elif defined(LIBXSMM_PLATFORM_RV64)
+    libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
+#else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
+#endif
   }
 }
 
@@ -227,9 +236,18 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
   } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
   } else {
-    /* TODO fix this error and support for more architectures */
+    /* generic/unknown target: the reference kernel is just a trampoline to a C
+       function, so emit it for the actual host platform LIBXSMM was built for. */
+#if defined(LIBXSMM_PLATFORM_X86)
+    libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+    libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
+#elif defined(LIBXSMM_PLATFORM_RV64)
+    libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
+#else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
+#endif
   }
 }
 
@@ -244,9 +262,18 @@ void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*    
   } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
   } else {
-    /* TODO fix this error and support for more architectures */
+    /* generic/unknown target: the reference kernel is just a trampoline to a C
+       function, so emit it for the actual host platform LIBXSMM was built for. */
+#if defined(LIBXSMM_PLATFORM_X86)
+    libxsmm_generator_matequation_x86_reference_kernel( io_generated_code, i_mateqn_desc );
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+    libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
+#elif defined(LIBXSMM_PLATFORM_RV64)
+    libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
+#else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
+#endif
   }
 }
 
