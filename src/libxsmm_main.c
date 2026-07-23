@@ -222,6 +222,8 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
     libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
 #elif defined(LIBXSMM_PLATFORM_RV64)
     libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+    libxsmm_generator_gemm_ppc64le_reference_kernel( io_generated_code, i_xgemm_desc );
 #else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -251,6 +253,8 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
     libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
 #elif defined(LIBXSMM_PLATFORM_RV64)
     libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+    libxsmm_generator_mateltwise_ppc64le_reference_kernel( io_generated_code, i_mateltw_desc );
 #else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -279,6 +283,8 @@ void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*    
     libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
 #elif defined(LIBXSMM_PLATFORM_RV64)
     libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+    libxsmm_generator_matequation_ppc64le_reference_kernel( io_generated_code, i_mateqn_desc );
 #else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
