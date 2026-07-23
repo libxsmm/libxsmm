@@ -24,7 +24,7 @@ jobs:
 
   ELTWISE:
       runs-on: self-hosted
-      needs: Pull_Branch
+      needs: GEMM
       steps:
       - name: ELTWISE
         run: |
@@ -32,7 +32,7 @@ jobs:
 
   Test_4:
       runs-on: self-hosted
-      needs: Pull_Branch
+      needs: ELTWISE
       steps:
       - name: Test 4
         run: |
@@ -40,7 +40,7 @@ jobs:
 
   Fortran:
       runs-on: self-hosted
-      needs: Pull_Branch
+      needs: Test_4
       steps:
       - name: Fortran
         run: |
