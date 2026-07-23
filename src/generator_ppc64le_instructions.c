@@ -116,7 +116,7 @@ void libxsmm_ppc64le_alloc_mat( libxsmm_generated_code    *io_generated_code,
     case LIBXSMM_PPC64LE_ALLOC_COL_PAIR: {
       for ( j = 0; j < i_n_rows; ++j ) {
         for ( i = 0; i < i_n_cols / 2 ; ++i ) {
-          unsigned int l_rpair[2];
+          unsigned int l_rpair[2] = { 0 };
           libxsmm_ppc64le_get_sequential_reg( io_generated_code, io_reg_tracker, i_reg_type, 2, l_rpair );
           /* Order is reversed for GER */
           o_reg[j + (2*i + 0)*i_ld] = l_rpair[1];
@@ -130,7 +130,7 @@ void libxsmm_ppc64le_alloc_mat( libxsmm_generated_code    *io_generated_code,
     case LIBXSMM_PPC64LE_ALLOC_ROW_PAIR: {
       for ( i = 0; i < i_n_cols ; ++i ) {
         for ( j = 0; j < i_n_rows / 2 ; ++j ) {
-          unsigned int l_rpair[2];
+          unsigned int l_rpair[2] = { 0 };
           libxsmm_ppc64le_get_sequential_reg( io_generated_code, io_reg_tracker, i_reg_type, 2, l_rpair );
           /* Order is reversed for pair load */
           o_reg[2*j + 0 + i*i_ld] = l_rpair[1];

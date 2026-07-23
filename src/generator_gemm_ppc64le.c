@@ -656,7 +656,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_vsx( libxsmm_generated_code       
   libxsmm_loop_label_tracker l_loop_labels;
   unsigned int l_a, l_b, l_c;
   unsigned int l_br, l_a_offset = 0, l_b_offset = 0;
-  unsigned int l_n_iters, l_n_loop, l_packed;
+  unsigned int l_n_iters, l_n_loop = 0, l_packed;
   unsigned int l_b_n_offset = 0;
 
   /* loop labels reset */
@@ -1188,7 +1188,7 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                                 unsigned int                    i_c ) {
   unsigned int l_a, l_c;
   unsigned int l_m_iters = i_xgemm_desc->m / io_blocking->block_m;
-  unsigned int l_m_loop;
+  unsigned int l_m_loop = 0;
   unsigned int l_packed = ( 0 == i_xgemm_desc->m % io_blocking->block_m ) ? 1 : 0;
 
   /* Create local pointer for a */
@@ -1271,7 +1271,7 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
                                                    libxsmm_ppc64le_blocking      *io_blocking,
                                                    libxsmm_ppc64le_reg           *io_reg_tracker ) {
   libxsmm_loop_label_tracker l_loop_labels;
-  unsigned int l_n_iters, l_n_loop, l_packed;
+  unsigned int l_n_iters, l_n_loop = 0, l_packed;
   unsigned int l_a, l_b, l_c;
   unsigned int l_br, l_a_offset = 0, l_b_offset = 0;
   unsigned int l_acc_vec_len = LIBXSMM_PPC64LE_ACC_WIDTH / LIBXSMM_PPC64LE_VSR_WIDTH;
