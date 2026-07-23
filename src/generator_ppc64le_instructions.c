@@ -3693,8 +3693,16 @@ void libxsmm_ppc64le_instr_jump_ctr_imm( libxsmm_generated_code *io_generated_co
 LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_jump_ctr( libxsmm_generated_code *io_generated_code,
                                      unsigned int            i_reg ) {
+  /* ELFv2 ABI: for an indirect call the callee's entry address must be held in
+     r12 so that the callee's global-entry prologue can compute the correct TOC
+     pointer (r2). Failing to do so corrupts r2 and any TOC-relative access
+     (globals, PLT stubs) inside the callee. */
+  if ( i_reg != LIBXSMM_PPC64LE_GPR_R12 ) {
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, i_reg, LIBXSMM_PPC64LE_GPR_R12 );
+  }
+
   /* Load the address into the count register */
-  libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_MTSPR, i_reg, LIBXSMM_PPC64LE_SPR_CTR );
+  libxsmm_ppc64le_instr_2( io_generated_code, LIBXSMM_PPC64LE_INSTR_MTSPR, LIBXSMM_PPC64LE_GPR_R12, LIBXSMM_PPC64LE_SPR_CTR );
 
   /* Unconditional count register jump with return */
   libxsmm_ppc64le_instr_4( io_generated_code, LIBXSMM_PPC64LE_INSTR_BCCTR, 0x14, 0, 0x00, 0x01 );
