@@ -1773,7 +1773,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
   unsigned int l_beta0 = ( i_xgemm_desc->flags & 0x0004 ) >> 2;
 
-  libxsmm_datatype l_datatype = LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype );
+  libxsmm_datatype l_datatype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = libxsmm_ppc64le_instr_bytes( io_generated_code, l_datatype );
   const unsigned int l_vbytes = LIBXSMM_PPC64LE_VSR_WIDTH / 8;
   const unsigned int l_vlen = l_vbytes / l_fbytes;
