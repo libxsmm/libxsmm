@@ -1372,8 +1372,8 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
 
   /* Partial N block */
   if ( !l_packed ) {
-    printf("Calling M loop partial\n");
     unsigned int l_block_n = io_blocking->block_n;
+    printf("Calling M loop partial\n");
     io_blocking->block_n = i_xgemm_desc->n % io_blocking->block_n;
     libxsmm_generator_gemm_ppc64le_br_mma_m_loop( io_generated_code,
                                                   i_xgemm_desc,

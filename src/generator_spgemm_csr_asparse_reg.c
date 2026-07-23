@@ -105,7 +105,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
                                    unsigned int i_max_ops,
                                    libxsmm_asparse_reg_op* o_ops,
                                    unsigned int* o_n_ops) {
-  unsigned int l_done = 0, l_op_idx = 0, l_r;
+  unsigned int l_done = 0, l_op_idx = 0, l_r, l_err = 0;
   unsigned int l_row_offs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned int l_acc_idxs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
@@ -116,7 +116,8 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
 
   /* Check the allocations were successful */
   if ( NULL == l_done_rows ) {
-    goto cleanup;
+    /* nothing was allocated, so nothing to free */
+    return;
   }
 
   /* Mark all-zero rows as done */
@@ -128,7 +129,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
   }
 
   /* Process the rows */
-  while ( l_done < i_m ) {
+  while ( l_done < i_m && 0 == l_err ) {
     int l_r_nnz = 0, l_avg_nnz = 0;
     unsigned int l_msz, l_mtot;
 
@@ -238,7 +239,8 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
           o_ops[l_op_idx].b_disp = i_column_idx[l_g_off];
 
           if ( ++l_op_idx == i_max_ops ) {
-            goto cleanup;
+            l_err = 1;
+            break;
           }
 
           /* March the row pointer forwards for this group */
@@ -249,17 +251,18 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
         }
       }
 
-      /* If no row groups in the bundle issued we're done */
-      if ( 0 == l_issued ) {
+      /* If no row groups in the bundle issued (or on error) we're done */
+      if ( 0 != l_err || 0 == l_issued ) {
         break;
       }
     }
   }
 
-  /* Save the number of sequenced ops */
-  *o_n_ops = l_op_idx;
+  /* Save the number of sequenced ops (kept at 0 on error) */
+  if ( 0 == l_err ) {
+    *o_n_ops = l_op_idx;
+  }
 
-cleanup:
   free( l_done_rows );
 }
 
@@ -292,6 +295,17 @@ unsigned int libxsmm_asparse_reg_pick_bcast_reg( const unsigned int* i_vals,
   }
 
   return l_arg_nuse;
+}
+
+LIBXSMM_API_INLINE
+void libxsmm_asparse_reg_free_data( void* i_unique_values,
+                                    void* i_unique_pos,
+                                    void* i_unique_sgn,
+                                    void* i_ops ) {
+  free( i_unique_values );
+  free( i_unique_pos );
+  free( i_unique_sgn );
+  free( i_ops );
 }
 
 LIBXSMM_API_INTERN
@@ -351,13 +365,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Check that the arch is supported */
   if ( io_generated_code->arch < LIBXSMM_X86_AVX2 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
@@ -379,7 +395,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     l_n_blocking = 4;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Init config */
@@ -412,7 +429,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   /* Check that there are not too many unique values */
   if ( l_unique > 1280 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* If needed cast from double to float */
@@ -589,7 +607,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   /* Ensure it worked */
   if ( 0 == l_n_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Start the n loop */
@@ -794,11 +813,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
   libxsmm_x86_instruction_close_data( io_generated_code, &l_const_data_tracker );
 
-cleanup:
-  free( l_unique_values );
-  free( l_unique_pos );
-  free( l_unique_sgn );
-  free( l_ops );
+  libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
 }
 
 LIBXSMM_API_INTERN
@@ -841,7 +856,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Inner chunk size */
@@ -853,7 +869,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
     l_n_blocking = 4;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Init config */
@@ -869,7 +886,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   /* Check that there are not too many unique values */
   if ( l_unique > 1280 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* If needed cast from double to float */
@@ -911,7 +929,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   /* Ensure it worked */
   if ( 0 == l_n_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Define gp register mapping */
@@ -1280,11 +1299,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xfff );
   libxsmm_aarch64_instruction_close_data( io_generated_code, &l_const_data_tracker );
 
-cleanup:
-  free( l_unique_values );
-  free( l_unique_pos );
-  free( l_unique_sgn );
-  free( l_ops );
+  libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
 }
 
 LIBXSMM_API_INTERN
@@ -1342,7 +1357,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   /* check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Define the micro kernel code gen properties */
@@ -1363,7 +1379,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
     l_n_blocking = 4;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Init config */
@@ -1389,7 +1406,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   /* Check that there are not too many unique values */
   if ( l_unique > 1280 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* If needed cast from double to float */
@@ -1534,7 +1552,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   /* Ensure it worked */
   if ( 0 == l_n_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Start the n loop */
@@ -1736,11 +1755,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xfff );
   libxsmm_aarch64_instruction_close_data( io_generated_code, &l_const_data_tracker );
 
-cleanup:
-  free( l_unique_values );
-  free( l_unique_pos );
-  free( l_unique_sgn );
-  free( l_ops );
+  libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
 }
 
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -1784,7 +1799,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Reset the constant data tracker */
@@ -1800,7 +1816,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
     l_n_blocking = 4;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Number of B registers */
@@ -1816,7 +1833,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   /* Check that there are not too many unique values */
   if ( l_unique > 1280 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Loop labels reset */
@@ -1920,7 +1938,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   /* Ensure it worked */
   if ( 0 == l_n_ops ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    goto cleanup;
+    libxsmm_asparse_reg_free_data( l_unique_values, l_unique_pos, l_unique_sgn, l_ops );
+    return;
   }
 
   /* Open the asm stream */
@@ -2161,7 +2180,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   libxsmm_ppc64le_instr_cond_jump_back_to_label( io_generated_code, &l_reg_tracker, l_n_loop, &l_loop_label_tracker );
   libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_n_loop );
 
-//close_stream:
+/*close_stream:*/
 
   /* Close stream */
   libxsmm_ppc64le_instr_colapse_stack( io_generated_code, &l_reg_tracker );
@@ -2169,7 +2188,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   /* Apply data fixup */
   libxsmm_ppc64le_instr_close_data( io_generated_code, &l_const_data_tracker );
 
-cleanup:
   /* Free all GPR */
   for ( l_i = 0; l_i < LIBXSMM_PPC64LE_GPR_NMAX; ++l_i ) {
     libxsmm_ppc64le_free_reg( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR, l_i );
