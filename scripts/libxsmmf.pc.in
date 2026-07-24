@@ -1,6 +1,7 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
 includedir=${prefix}/@LIBXSMM_INSTALL_INCLUDEDIR@
+moduledir=@LIBXSMM_PC_FORTRAN_MODULE_DIR@
 libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
 
 Name: libxsmm/f
@@ -9,5 +10,5 @@ URL: https://github.com/libxsmm/libxsmm/
 Version: @PROJECT_VERSION@
 
 Requires: libxsmm
-Cflags: -I${includedir}
+Cflags: -I${moduledir}
 Libs: -L${libdir} -lxsmmf
