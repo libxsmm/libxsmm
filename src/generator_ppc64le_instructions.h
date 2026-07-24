@@ -1749,6 +1749,12 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_stack_alloc( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_ppc64le_reg    *io_reg_tracker,
+                                        long                    i_bytes );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_adr_data( libxsmm_generated_code*     io_generated_code,
                                      unsigned int                i_reg,
                                      unsigned int                i_off,

@@ -61,11 +61,7 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
   libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy );
 
   /* Increament stack pointer to store description struct with back chain */
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_STDU,
-                           LIBXSMM_PPC64LE_GPR_SP,
-                           LIBXSMM_PPC64LE_GPR_SP,
-                           (-( l_padded_desc_size + 32 ) >> 2 ) );
+  libxsmm_ppc64le_instr_stack_alloc( io_generated_code, &l_reg_tracker, (long)( l_padded_desc_size + 32 ) );
 
   /* Store the descriptor in stack */
   for ( i = 0; i < l_padded_desc_size / 8 ; ++i ) {
@@ -193,11 +189,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_SP, l_sp_copy );
 
   /* Increament stack pointer to store description struct with back chain */
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_STDU,
-                           LIBXSMM_PPC64LE_GPR_SP,
-                           LIBXSMM_PPC64LE_GPR_SP,
-                           (-( l_padded_size + 32 ) >> 2 ) );
+  libxsmm_ppc64le_instr_stack_alloc( io_generated_code, &l_reg_tracker, (long)( l_padded_size + 32 ) );
 
   /* Store the unfold descriptor in stack */
   for ( i = 0; i < l_padded_size / 8; ++i ) {
@@ -217,11 +209,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   /* Get scratchpad pointer and set arg2 and arg3 */
   l_tmp_size = ( 0 == l_tmp_size % 64 ) ? l_tmp_size : ( ( l_tmp_size + 63 ) / 64 ) * 64;
   l_scratch_size = l_tmp_size * l_n_tmp;
-  libxsmm_ppc64le_instr_3( io_generated_code,
-                           LIBXSMM_PPC64LE_INSTR_STDU,
-                           LIBXSMM_PPC64LE_GPR_SP,
-                           LIBXSMM_PPC64LE_GPR_SP,
-                           (-( l_scratch_size + 32 ) >> 2 ) );
+  libxsmm_ppc64le_instr_stack_alloc( io_generated_code, &l_reg_tracker, (long)( l_scratch_size + 32 ) );
   libxsmm_ppc64le_instr_add_value( io_generated_code, &l_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_arg2, 32 );
   libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_arg3, (unsigned long)l_tmp_size );
 

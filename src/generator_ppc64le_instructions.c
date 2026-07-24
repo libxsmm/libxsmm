@@ -2616,6 +2616,31 @@ void libxsmm_ppc64le_instr_add_value( libxsmm_generated_code *io_generated_code,
 
 
 LIBXSMM_API_INTERN
+void libxsmm_ppc64le_instr_stack_alloc( libxsmm_generated_code *io_generated_code,
+                                        libxsmm_ppc64le_reg    *io_reg_tracker,
+                                        long                    i_bytes ) {
+  /* Grow the stack by i_bytes (rounded up to a quadword) and store the ELFv2 back
+     chain. STDU's DS immediate is only 14-bit (+/-32 KB), so for larger frames the
+     new stack pointer is computed in a register and the back chain stored via STD
+     to avoid the immediate overflowing (which would corrupt the stack pointer). */
+  long l_bytes = ( ( i_bytes + 15 ) / 16 ) * 16;
+  if ( l_bytes <= 32768 ) {
+    libxsmm_ppc64le_instr_3( io_generated_code,
+                             LIBXSMM_PPC64LE_INSTR_STDU,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             LIBXSMM_PPC64LE_GPR_SP,
+                             ( -l_bytes ) >> 2 );
+  } else {
+    unsigned int l_new_sp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
+    libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR_SP, l_new_sp, -l_bytes );
+    libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, LIBXSMM_PPC64LE_GPR_SP, l_new_sp, 0 );
+    libxsmm_ppc64le_instr_copy_reg( io_generated_code, l_new_sp, LIBXSMM_PPC64LE_GPR_SP );
+    libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_new_sp );
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_ppc64le_instr_adr_data( libxsmm_generated_code*     io_generated_code,
                                      unsigned int                i_reg,
                                      unsigned int                i_off,
