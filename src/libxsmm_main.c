@@ -2510,6 +2510,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         extra.nflops = 2 * request->descriptor.pgemm->packed_width * request->descriptor.pgemm->gemm->m * request->descriptor.pgemm->gemm->n * request->descriptor.pgemm->gemm->k;
         libxsmm_generator_packed_gemm(&generated_code, request->descriptor.pgemm->gemm, request->descriptor.pgemm->packed_width);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            libxsmm_gemm_descriptor l_ref_desc = *request->descriptor.pgemm->gemm;
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            l_ref_desc.internal_flags_2 |= LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE;
+            l_ref_desc.c1 = (long long)request->descriptor.pgemm->packed_width;
+            l_ref_desc.c2 = (long long)LIBXSMM_PACKED_GEMM_REFERENCE_SOA;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, &l_ref_desc);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2536,6 +2549,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         extra.nflops = 2 * request->descriptor.pgemmacrm->packed_width * request->descriptor.pgemmacrm->gemm->m * request->descriptor.pgemmacrm->gemm->n * request->descriptor.pgemmacrm->gemm->k;
         libxsmm_generator_packed_gemm_ac_rm(&generated_code, request->descriptor.pgemmacrm->gemm, request->descriptor.pgemmacrm->packed_width);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            libxsmm_gemm_descriptor l_ref_desc = *request->descriptor.pgemmacrm->gemm;
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            l_ref_desc.internal_flags_2 |= LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE;
+            l_ref_desc.c1 = (long long)request->descriptor.pgemmacrm->packed_width;
+            l_ref_desc.c2 = (long long)LIBXSMM_PACKED_GEMM_REFERENCE_AC_RM;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, &l_ref_desc);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2562,6 +2588,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         extra.nflops = 2 * request->descriptor.pgemmbcrm->packed_width * request->descriptor.pgemmbcrm->gemm->m * request->descriptor.pgemmbcrm->gemm->n * request->descriptor.pgemmbcrm->gemm->k;
         libxsmm_generator_packed_gemm_bc_rm(&generated_code, request->descriptor.pgemmbcrm->gemm, request->descriptor.pgemmbcrm->packed_width);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            libxsmm_gemm_descriptor l_ref_desc = *request->descriptor.pgemmbcrm->gemm;
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            l_ref_desc.internal_flags_2 |= LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE;
+            l_ref_desc.c1 = (long long)request->descriptor.pgemmbcrm->packed_width;
+            l_ref_desc.c2 = (long long)LIBXSMM_PACKED_GEMM_REFERENCE_BC_RM;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, &l_ref_desc);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif

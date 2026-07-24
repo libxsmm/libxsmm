@@ -290,6 +290,18 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
   unsigned char internal_flags_2;
 };
 
+/**
+ * Marker stored in libxsmm_gemm_descriptor.internal_flags_2 to request the
+ * packed-GEMM reference kernel. It is routed through the regular (arch-agnostic)
+ * libxsmm_reference_gemm trampoline; when the marker is set the multipurpose
+ * fields c1/c2 carry the packed-width and the packed layout, respectively.
+ */
+#define LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE 0x8
+/** Packed-GEMM reference layouts (value stored in libxsmm_gemm_descriptor.c2). */
+#define LIBXSMM_PACKED_GEMM_REFERENCE_AC_RM 0
+#define LIBXSMM_PACKED_GEMM_REFERENCE_BC_RM 1
+#define LIBXSMM_PACKED_GEMM_REFERENCE_SOA   2
+
 /** Packed structure storing the mateltw argument description. */
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
