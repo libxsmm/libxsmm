@@ -32,7 +32,8 @@ if [ ! "$*" ]; then
   if [ "Linux" = "${UNIX}" ]; then
     if [ "riscv64" = "${MACHINE}" ]; then
       TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
-        eltwise.sh equation.sh \
+        dispatch.sh eltwise.sh equation.sh \
+        memcmp.sh \
         packed.sh smm.sh"
     else
       TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
