@@ -31,6 +31,8 @@ option(LIBXSMM_FORTRAN "Build Fortran module interface (auto-detected if not set
 
 set(LIBXSMM_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/libxsmm" CACHE STRING
   "Installation directory for LIBXSMM headers")
+set(CMAKE_INSTALL_Fortran_MODULES "${LIBXSMM_INSTALL_INCLUDEDIR}" CACHE PATH
+  "Installation directory for Fortran module files")
 set(LIBXSMM_INSTALL_PKGCONFIGDIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE STRING
   "Installation directory for pkg-config files")
 
@@ -286,7 +288,7 @@ if(LIBXSMM_FORTRAN)
   target_include_directories(xsmmf
     PUBLIC
       $<BUILD_INTERFACE:${XSMM_Fortran_MODULE_DIR}>
-      $<INSTALL_INTERFACE:${LIBXSMM_INSTALL_INCLUDEDIR}>)
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_Fortran_MODULES}>)
 
   list(APPEND LIBXSMM_INSTALL_TARGETS xsmmf)
 endif()
@@ -327,7 +329,8 @@ install(DIRECTORY ${XSMM_ROOT_DIR}/include/
   FILES_MATCHING
     PATTERN "*.h"
     PATTERN "*.hpp"
-    PATTERN "*.f")
+    PATTERN "*.f"
+    PATTERN "libxsmm_source.h" EXCLUDE)
 install(FILES ${XSMM_GENERATED_INCLUDE_DIR}/libxsmm_version.h
   DESTINATION ${LIBXSMM_INSTALL_INCLUDEDIR})
 if(LIBXSMM_FORTRAN)
@@ -335,7 +338,7 @@ if(LIBXSMM_FORTRAN)
     DESTINATION ${LIBXSMM_INSTALL_INCLUDEDIR}
     RENAME libxsmm.f)
   install(DIRECTORY ${XSMM_Fortran_MODULE_DIR}/
-    DESTINATION ${LIBXSMM_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_Fortran_MODULES}
     FILES_MATCHING PATTERN "*.mod")
 endif()
 install(EXPORT libxsmmTargets
@@ -382,6 +385,13 @@ install(FILES
   DESTINATION ${LIBXSMM_INSTALL_PKGCONFIGDIR})
 
 if(LIBXSMM_FORTRAN)
+  if(IS_ABSOLUTE "${CMAKE_INSTALL_Fortran_MODULES}")
+    set(LIBXSMM_PC_FORTRAN_MODULE_DIR "${CMAKE_INSTALL_Fortran_MODULES}")
+  else()
+    set(LIBXSMM_PC_FORTRAN_MODULE_DIR
+      "\${prefix}/${CMAKE_INSTALL_Fortran_MODULES}")
+  endif()
+
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmmf.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/libxsmmf.pc
