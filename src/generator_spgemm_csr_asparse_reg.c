@@ -2160,7 +2160,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
           l_zeroed = 1;
         }
 
-        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+        for ( l_n = 0; l_n < l_n_blocking; l_n += l_n_b_reg ) {
           if ( 2 == l_n_b_reg ) {
             libxsmm_ppc64le_instr_store_pair( io_generated_code, l_gp_reg_c, l_c_disp + l_n*l_vbytes, l_z_reg);
           } else {
