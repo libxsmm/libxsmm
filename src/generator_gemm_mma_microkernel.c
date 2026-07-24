@@ -40,7 +40,7 @@ void libxsmm_generator_gemm_mma_block_load_pair( libxsmm_generated_code *io_gene
   if ( !l_packed ) {
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, ( i_m % l_vec_ele )*l_databytes );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, (long)( i_m % l_vec_ele )*l_databytes );
     libxsmm_ppc64le_instr_set_shift_left( io_generated_code, l_temp, l_m_part, 56 );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp );
   }
@@ -117,7 +117,7 @@ void libxsmm_generator_gemm_mma_block_load_trans( libxsmm_generated_code *io_gen
   if ( 0 == l_packed ) {
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, ( i_m % l_vec_ele )*l_databytes );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, (long)( i_m % l_vec_ele )*l_databytes );
     libxsmm_ppc64le_instr_set_shift_left( io_generated_code, l_temp, l_m_part, 56 );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp );
   }
@@ -222,7 +222,7 @@ void libxsmm_generator_gemm_mma_block_load_acc( libxsmm_generated_code *io_gener
   if ( !l_packed ) {
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, ( i_m % l_vec_ele )*l_databytes );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, (long)( i_m % l_vec_ele )*l_databytes );
     libxsmm_ppc64le_instr_set_shift_left( io_generated_code, l_temp, l_m_part, 56 );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp);
   }
@@ -302,7 +302,7 @@ void libxsmm_generator_gemm_mma_block_store_acc( libxsmm_generated_code *io_gene
   if ( !l_packed ) {
     unsigned int l_temp = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
     l_m_part = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
-    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, ( i_m % l_vec_ele )*l_databytes );
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp, (long)( i_m % l_vec_ele )*l_databytes );
     libxsmm_ppc64le_instr_set_shift_left( io_generated_code, l_temp, l_m_part, 56 );
     libxsmm_ppc64le_free_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR, l_temp );
   }
@@ -626,8 +626,8 @@ void libxsmm_generator_br_mma_microkernel( libxsmm_generated_code        *io_gen
       l_a = l_a_pipe[l_k_block % 2];
       l_b = l_b_pipe[l_k_block % 2];
 
-      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_a_last, l_a, i_blocking->block_k*i_xgemm_desc->lda*i_blocking->comp_bytes );
-      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_b_last, l_b, i_blocking->block_k*i_blocking->comp_bytes );
+      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_a_last, l_a, (long)i_blocking->block_k*i_xgemm_desc->lda*i_blocking->comp_bytes );
+      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_b_last, l_b, (long)i_blocking->block_k*i_blocking->comp_bytes );
     }
     l_a_last = l_a;
     l_b_last = l_b;
@@ -768,8 +768,8 @@ void libxsmm_generator_mma_microkernel( libxsmm_generated_code        *io_genera
       l_a = l_a_pipe[l_k_block % 2];
       l_b = l_b_pipe[l_k_block % 2];
 
-      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_a_last, l_a, i_blocking->block_k*i_xgemm_desc->lda*i_blocking->comp_bytes );
-      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_b_last, l_b, i_blocking->block_k*i_blocking->comp_bytes );
+      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_a_last, l_a, (long)i_blocking->block_k*i_xgemm_desc->lda*i_blocking->comp_bytes );
+      libxsmm_ppc64le_instr_add_value(io_generated_code, io_reg_tracker, l_b_last, l_b, (long)i_blocking->block_k*i_blocking->comp_bytes );
     }
     l_a_last = l_a;
     l_b_last = l_b;

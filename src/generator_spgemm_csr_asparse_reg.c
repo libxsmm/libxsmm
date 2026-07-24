@@ -1987,9 +1987,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
 
         /* Load l_vlen values at a time and broadcast them */
         if ( 2 == l_n_vec ) {
-          libxsmm_ppc64le_instr_load_pair( io_generated_code, l_a_data_ptr, l_fbytes*l_i, l_scratch );
+          libxsmm_ppc64le_instr_load_pair( io_generated_code, l_a_data_ptr, (long)l_fbytes*l_i, l_scratch );
         } else {
-          libxsmm_ppc64le_instr_load( io_generated_code, l_a_data_ptr, l_fbytes*l_i, l_scratch );
+          libxsmm_ppc64le_instr_load( io_generated_code, l_a_data_ptr, (long)l_fbytes*l_i, l_scratch );
         }
 
         /* Perform the broadcast */
@@ -2011,7 +2011,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
   /* Else if A can be pack entirely in registers, ther perform the load */
   } else if ( l_unique <= l_preg_unique ) {
     for ( l_i = 0; l_i < l_n_pack_reg; ++l_i ) {
-      libxsmm_ppc64le_instr_load( io_generated_code, l_a_data_ptr, l_i*l_vlen*l_fbytes, l_i + l_pack_base_reg );
+      libxsmm_ppc64le_instr_load( io_generated_code, l_a_data_ptr, (long)l_i*l_vlen*l_fbytes, l_i + l_pack_base_reg );
     }
   }
 
@@ -2118,7 +2118,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_cod
               libxsmm_ppc64le_instr_vec_splat( io_generated_code, l_datatype, l_vp, l_lane, l_rva );
             /* Broadcast from memory */
             } else {
-              libxsmm_ppc64le_instr_load_splat( io_generated_code, &l_reg_tracker, l_datatype, l_a_data_ptr, l_u*l_fbytes, l_rva );
+              libxsmm_ppc64le_instr_load_splat( io_generated_code, &l_reg_tracker, l_datatype, l_a_data_ptr, (long)l_u*l_fbytes, l_rva );
             }
           }
         }

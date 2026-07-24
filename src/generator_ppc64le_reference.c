@@ -147,7 +147,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
 
     l_tree_max_comp_tsize = l_eqn->eqn_root->tree_max_comp_tsize;
     l_n_tmp = l_eqn->eqn_root->reg_score;
-    l_tmp_size = l_eqn->eqn_root->max_tmp_size * l_tree_max_comp_tsize;
+    l_tmp_size = (unsigned long)l_eqn->eqn_root->max_tmp_size * l_tree_max_comp_tsize;
   }
 
   /* Initialise reg tracker */

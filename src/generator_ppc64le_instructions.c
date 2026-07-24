@@ -167,7 +167,7 @@ void libxsmm_ppc64le_ptr_reg_alloc( libxsmm_generated_code *io_generated_code,
     int l_new_required = 1;
 
     for ( j = 0; j < i ; ++j ) {
-      long l_rel_offset = o_offset[j] + (i - j)*i_ld;
+      long l_rel_offset = o_offset[j] + (long)(i - j)*i_ld;
       long l_max_offset = l_rel_offset + i_max_add;
 
       if ( ( ( l_rel_offset % 16 ) == 0 ) && ( l_max_offset < 0x7fff ) ) {
@@ -183,13 +183,13 @@ void libxsmm_ppc64le_ptr_reg_alloc( libxsmm_generated_code *io_generated_code,
       int l_shift;
 
       /* Try to make a shift that doesn't require extended addition */
-      l_shift = 0x7ff0 - (o_offset[0] + i*i_ld);
+      l_shift = 0x7ff0 - (o_offset[0] + (long)i*i_ld);
       l_shift -= l_shift % 16;
       if ( 0 > l_shift ) {
         l_shift = 0x7ff0;
       }
 
-      l_delta0 = o_offset[0] + i*i_ld + l_shift;
+      l_delta0 = o_offset[0] + (long)i*i_ld + l_shift;
       o_offset[i] = -l_shift ;
       o_ptr[i] = libxsmm_ppc64le_get_reg( io_generated_code, io_reg_tracker, LIBXSMM_PPC64LE_GPR );
       libxsmm_ppc64le_instr_add_value( io_generated_code, io_reg_tracker, o_ptr[0], o_ptr[i], l_delta0 );

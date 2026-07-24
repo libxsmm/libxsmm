@@ -421,12 +421,12 @@ void libxsmm_generator_gemm_ppc64le_br_vsx_m_loop( libxsmm_generated_code       
                                      io_reg_tracker,
                                      l_a_m_offset,
                                      l_a_m_offset,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_c,
                                      l_c,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
   }
 
   /* Decrement, compare, and jump if required for m-loop */
@@ -608,12 +608,12 @@ void libxsmm_generator_gemm_ppc64le_vsx_m_loop( libxsmm_generated_code        *i
                                      io_reg_tracker,
                                      l_a,
                                      l_a,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_c,
                                      l_c,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
   }
 
   /* Compare and jump if required */
@@ -731,12 +731,12 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_vsx( libxsmm_generated_code       
                                      io_reg_tracker,
                                      l_b_n_offset,
                                      l_b_n_offset,
-                                     i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_c,
                                      l_c,
-                                     i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
   }
 
   /* Compare and jump if required */
@@ -844,12 +844,12 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
                                      io_reg_tracker,
                                      i_b,
                                      i_b,
-                                     i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      i_c,
                                      i_c,
-                                     i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
   }
 
   /* Compare and jump if required */
@@ -1037,12 +1037,12 @@ void libxsmm_generator_gemm_ppc64le_br_mma_m_loop( libxsmm_generated_code       
                                      io_reg_tracker,
                                      l_a_m_offset,
                                      l_a_m_offset,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_c,
                                      l_c,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
   }
 
   /* Decrement, compare, and jump if required for m-loop */
@@ -1227,12 +1227,12 @@ void libxsmm_generator_gemm_ppc64le_mma_m_loop( libxsmm_generated_code         *
                                      io_reg_tracker,
                                      l_a,
                                      l_a,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_c,
                                      l_c,
-                                     io_blocking->comp_bytes*io_blocking->block_m );
+                                     (long)io_blocking->comp_bytes*io_blocking->block_m );
   }
 
   /* Compare and jump if required */
@@ -1355,12 +1355,12 @@ void libxsmm_generator_gemm_ppc64le_br_kernel_mma( libxsmm_generated_code       
                                      io_reg_tracker,
                                      l_b_n_offset,
                                      l_b_n_offset,
-                                     i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      l_c,
                                      l_c,
-                                     i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
   }
 
   /* Compare and jump if required */
@@ -1474,12 +1474,12 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
                                      io_reg_tracker,
                                      i_b,
                                      i_b,
-                                     i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldb*io_blocking->comp_bytes*io_blocking->block_n );
     libxsmm_ppc64le_instr_add_value( io_generated_code,
                                      io_reg_tracker,
                                      i_c,
                                      i_c,
-                                     i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
+                                     (long)i_xgemm_desc->ldc*io_blocking->comp_bytes*io_blocking->block_n );
   }
 
   /* Compare and jump if required */
