@@ -62,11 +62,17 @@ void libxsmm_generator_aarch64_reference_kernel( libxsmm_generated_code*        
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, l_temp_reg2, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
   /* Store the descriptor in stack and set argument in x1 */
   for (i = 0; i < l_padded_desc_size/32; i++) {
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[0] );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[1] );
+    /* Read the 32-byte chunk via memcpy: the buffer was populated through a
+       descriptor-typed store, so a direct 'unsigned long long' load would let
+       the compiler's type-based alias analysis drop that store (dead-store
+       elimination), yielding a zeroed descriptor. */
+    unsigned long long l_imm_vals[4];
+    memcpy( l_imm_vals, l_imm_array_ptr, sizeof(l_imm_vals) );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_vals[0] );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_vals[1] );
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 0, l_temp_reg, l_temp_reg2 );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[2] );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[3] );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_vals[2] );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_vals[3] );
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16, l_temp_reg, l_temp_reg2 );
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
     l_imm_array_ptr += 4;
@@ -171,11 +177,17 @@ void libxsmm_generator_matequation_aarch64_reference_kernel( libxsmm_generated_c
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, l_temp_reg5, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
   /* Store the unfolded descriptor in stack and set x1  */
   for (i = 0; i < padded_size/32; i++) {
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[0] );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[1] );
+    /* Read the 32-byte chunk via memcpy: the buffer was populated through
+       libxsmm_meqn_elem-typed stores, so a direct 'unsigned long long' load
+       would let the compiler's type-based alias analysis drop those stores
+       (dead-store elimination), yielding a zeroed execution tree. */
+    unsigned long long l_imm_vals[4];
+    memcpy( l_imm_vals, l_imm_array_ptr, sizeof(l_imm_vals) );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_vals[0] );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_vals[1] );
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 0, l_temp_reg, l_temp_reg2 );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[2] );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[3] );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_vals[2] );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_vals[3] );
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16, l_temp_reg, l_temp_reg2 );
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
     l_imm_array_ptr += 4;
