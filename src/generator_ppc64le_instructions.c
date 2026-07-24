@@ -3270,12 +3270,21 @@ void libxsmm_ppc64le_instr_open_stream( libxsmm_generated_code *io_generated_cod
 
 
 LIBXSMM_API_INTERN
-void libxsmm_ppc64le_instr_unpack_args( libxsmm_generated_code *io_generated_code,
-                                        libxsmm_ppc64le_reg    *io_reg_tracker ) {
+void libxsmm_ppc64le_instr_unpack_args( libxsmm_generated_code        *io_generated_code,
+                                        libxsmm_gemm_descriptor const *io_xgemm_desc,
+                                        libxsmm_ppc64le_reg           *io_reg_tracker ) {
   /* Set up input args */
   int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
   int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
+
+  /* Only the XGEMM (struct) ABI passes a single pointer to the parameter struct that
+     must be unpacked. The legacy (a,b,c) ABI passes the operand pointers directly in
+     ARG0/ARG1/ARG2 (as done by libxsmm_xmmcall_abc), so there is nothing to unpack. */
+  if ( ( ( LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & io_xgemm_desc->flags ) != LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI ) &&
+       ( ( LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & io_xgemm_desc->flags ) != LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI ) ) {
+    return;
+  }
 
   libxsmm_ppc64le_instr_copy_reg( io_generated_code, LIBXSMM_PPC64LE_GPR_ARG0, LIBXSMM_PPC64LE_GPR_R31 );
   libxsmm_ppc64le_instr_3( io_generated_code,
@@ -3305,10 +3314,24 @@ void libxsmm_ppc64le_instr_unpack_brargs( libxsmm_generated_code        *io_gene
   int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
   int l_offset_ptr_c = (int)(sizeof(libxsmm_matrix_op_arg) + 2*sizeof(libxsmm_matrix_arg));
 
-  unsigned int l_input = libxsmm_ppc64le_get_reg( io_generated_code,
+  unsigned int l_input;
+  unsigned int l_tmp;
+
+  /* Only the XGEMM (struct) ABI passes a single pointer to the parameter struct that
+     must be unpacked. The legacy (a,b,c) ABI passes the operand pointers directly in
+     ARG0/ARG1/ARG2 (as done by libxsmm_xmmcall_abc), so there is nothing to unpack;
+     it is always a plain GEMM, hence set the batch-reduce count in ARG3 to 1. This
+     mirrors the x86/aarch64/rv64 GEMM generators. */
+  if ( ( ( LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & io_xgemm_desc->flags ) != LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI ) &&
+       ( ( LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & io_xgemm_desc->flags ) != LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI ) ) {
+    libxsmm_ppc64le_instr_set_imm64( io_generated_code, LIBXSMM_PPC64LE_GPR_ARG3, 1 );
+    return;
+  }
+
+  l_input = libxsmm_ppc64le_get_reg( io_generated_code,
                                                   io_reg_tracker,
                                                   LIBXSMM_PPC64LE_GPR);
-  unsigned int l_tmp = libxsmm_ppc64le_get_reg( io_generated_code,
+  l_tmp = libxsmm_ppc64le_get_reg( io_generated_code,
                                                 io_reg_tracker,
                                                 LIBXSMM_PPC64LE_GPR);
 

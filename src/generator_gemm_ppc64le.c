@@ -801,7 +801,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_vsx( libxsmm_generated_code         *
   libxsmm_ppc64le_instr_open_stream( io_generated_code, io_reg_tracker );
 
   /* Unpack the matrix pointers */
-  libxsmm_ppc64le_instr_unpack_args( io_generated_code, io_reg_tracker );
+  libxsmm_ppc64le_instr_unpack_args( io_generated_code, i_xgemm_desc, io_reg_tracker );
 
   /* GPRs holding pointers to A, B, and C */
   i_a = LIBXSMM_PPC64LE_GPR_ARG0;
@@ -1429,7 +1429,7 @@ void libxsmm_generator_gemm_ppc64le_kernel_mma( libxsmm_generated_code         *
   libxsmm_ppc64le_instr_nop(io_generated_code);
 
   /* Unpack the matrix pointers */
-  libxsmm_ppc64le_instr_unpack_args( io_generated_code, io_reg_tracker );
+  libxsmm_ppc64le_instr_unpack_args( io_generated_code, i_xgemm_desc, io_reg_tracker );
 
   libxsmm_ppc64le_instr_nop(io_generated_code);
 
