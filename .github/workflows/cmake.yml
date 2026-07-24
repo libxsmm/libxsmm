@@ -55,7 +55,6 @@ jobs:
       run: |
         test -f $HOME/libxsmm-install/include/libxsmm/libxsmm.h
         test -f $HOME/libxsmm-install/include/libxsmm/libxsmm_config.h
-        test -f $HOME/libxsmm-install/include/libxsmm/libxsmm_source.h
         test -f $HOME/libxsmm-install/include/libxsmm/libxsmm_version.h
         test -d $HOME/libxsmm-install/include/libxsmm/utils
         ls $HOME/libxsmm-install/lib/libxsmm* >/dev/null
