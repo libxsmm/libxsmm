@@ -203,7 +203,6 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 LIBXSMM_API
 void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  printf("Gemm reference kernel\n");
   /* generate kernel */
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_gemm_x86_reference_kernel( io_generated_code, i_xgemm_desc );
@@ -234,7 +233,6 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
 LIBXSMM_API
 void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*          io_generated_code,
                                           const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
-  printf("Mateltwise reference kernel\n");
   /* generate kernel */
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
