@@ -146,8 +146,11 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
     tmp_size = eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
   }
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3000 );
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_X30, 0 );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3fff );
+  /* Save the original stack pointer in a CALLEE-saved register (X18/s2): it must
+     survive the call to libxsmm_reference_matequation. A caller-saved temporary
+     (e.g. X30/t5) would be clobbered by the call, corrupting the SP restore. */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_X18, 0 );
 
   /* Now align RSP to 64 byte boundary */
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, 0xFFFFFFFFFFFFFFC0 );
@@ -221,9 +224,9 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
   /* We call the function  */
   libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X1, l_temp_reg4, 0);
 
-  /* Recover stack pointer and caller-saved register  */
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X30, LIBXSMM_RV64_GP_REG_XSP, 0 );
+  /* Recover the stack pointer from the callee-saved register  */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X18, LIBXSMM_RV64_GP_REG_XSP, 0 );
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3000 );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
   free(unfolded_exec_tree);
 }
