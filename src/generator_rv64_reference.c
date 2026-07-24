@@ -109,12 +109,16 @@ void libxsmm_generator_gemm_rv64_reference_kernel( libxsmm_generated_code* io_ge
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code*        io_generated_code,
                                                           const libxsmm_meqn_descriptor* i_mateqn_desc ) {
-  int stack_offset = 0;
   unsigned int l_temp_reg = LIBXSMM_RV64_GP_REG_X5;
   unsigned int l_temp_reg2 = LIBXSMM_RV64_GP_REG_X6;
   unsigned int l_temp_reg3 = LIBXSMM_RV64_GP_REG_X7;
   unsigned int l_temp_reg4 = LIBXSMM_RV64_GP_REG_X28;
   unsigned int l_temp_reg5 = LIBXSMM_RV64_GP_REG_X29;
+  /* RISC-V argument registers a1/a2/a3 for libxsmm_reference_matequation
+     (a0 = param stays in X10 as received at kernel entry). */
+  unsigned int l_arg1 = LIBXSMM_RV64_GP_REG_X11;
+  unsigned int l_arg2 = LIBXSMM_RV64_GP_REG_X12;
+  unsigned int l_arg3 = LIBXSMM_RV64_GP_REG_X13;
   unsigned int eqn_idx = i_mateqn_desc->eqn_idx;
   libxsmm_matrix_eqn *eqn = libxsmm_meqn_get_equation( eqn_idx );
   unsigned int timestamp = 0;
@@ -142,8 +146,11 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
     tmp_size = eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
   }
   /* open asm */
-  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3000 );
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_X30, 0 );
+  libxsmm_rv64_instruction_open_stream( io_generated_code, 0x3fff );
+  /* Save the original stack pointer in a CALLEE-saved register (X18/s2): it must
+     survive the call to libxsmm_reference_matequation. A caller-saved temporary
+     (e.g. X30/t5) would be clobbered by the call, corrupting the SP restore. */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, LIBXSMM_RV64_GP_REG_X18, 0 );
 
   /* Now align RSP to 64 byte boundary */
   libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, 0xFFFFFFFFFFFFFFC0 );
@@ -171,24 +178,27 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
                                                  l_temp_reg5, l_temp_reg, l_temp_reg5, (long long) padded_size );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, l_temp_reg5, LIBXSMM_RV64_GP_REG_XSP, 0 );
 
-  stack_offset = 0;
-
-  /* Store the descriptor in stack and set argument in x1 */
+  /* Store the exec tree on the stack. A running base pointer (l_temp_reg3) is
+     advanced by 32 bytes per iteration so the SD immediate offsets stay within the
+     12-bit signed range; a fixed base with growing offsets would overflow for trees
+     larger than 2 KB (which happens for most equations). */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg3, 0 );
   for (i = 0; i < padded_size/32; i++) {
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[0] );
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[1] );
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg, stack_offset );
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg2, stack_offset + 8 );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_temp_reg3, l_temp_reg, 0 );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_temp_reg3, l_temp_reg2, 8 );
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg, l_imm_array_ptr[2] );
     libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg2, l_imm_array_ptr[3] );
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg, stack_offset + 16 );
-    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg2, stack_offset + 24 );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_temp_reg3, l_temp_reg, 16 );
+    libxsmm_rv64_instruction_alu_move( io_generated_code, LIBXSMM_RV64_INSTR_GP_SD, l_temp_reg3, l_temp_reg2, 24 );
+    libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, l_temp_reg3, l_temp_reg3, 32 );
 
     l_imm_array_ptr += 4;
-    stack_offset += 32;
   }
 
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg, 0 );
+  /* Tree base pointer -> a1 (execution_plan argument) */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_arg1, 0 );
 
   /* Get scratchpad pointer and set 3rd argument */
   tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
@@ -197,14 +207,15 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
   libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB, l_temp_reg5, l_temp_reg2, l_temp_reg5,
                                                  (long long) scratch_size );
   libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, l_temp_reg5, LIBXSMM_RV64_GP_REG_XSP, 0 );
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_temp_reg2, 0 );
+  /* Scratchpad base pointer -> a2 (scratchpad argument) */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_XSP, l_arg2, 0 );
 
   if (libxsmm_verbosity < 0) {
     fprintf( stderr, "JITing Matrix Equation with reference code (n_tmp = %lld , stack_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0 );
   }
 
-  /* Set size of temp in 4th argument */
-  libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_temp_reg3, (unsigned long long)tmp_size );
+  /* Set size of temp in 4th argument (a3) */
+  libxsmm_rv64_instruction_alu_set_imm64( io_generated_code, l_arg3, (unsigned long long)tmp_size );
 
   /* We set the address of the function */
   code_ptr.ptr_meqn_fn = libxsmm_reference_matequation;
@@ -213,9 +224,9 @@ void libxsmm_generator_matequation_rv64_reference_kernel( libxsmm_generated_code
   /* We call the function  */
   libxsmm_rv64_instruction_jump_and_link_reg(io_generated_code, LIBXSMM_RV64_INSTR_GP_JALR, LIBXSMM_RV64_GP_REG_X1, l_temp_reg4, 0);
 
-  /* Recover stack pointer and caller-saved register  */
-  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X30, LIBXSMM_RV64_GP_REG_XSP, 0 );
+  /* Recover the stack pointer from the callee-saved register  */
+  libxsmm_rv64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADDI, LIBXSMM_RV64_GP_REG_X18, LIBXSMM_RV64_GP_REG_XSP, 0 );
   /* close asm */
-  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3000 );
+  libxsmm_rv64_instruction_close_stream( io_generated_code, 0x3fff );
   free(unfolded_exec_tree);
 }
