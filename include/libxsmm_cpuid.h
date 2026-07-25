@@ -57,6 +57,10 @@
 #define LIBXSMM_RV64_MVL128_LMUL      3003 /* RISCV 128-bit RVV with non-unit LMUL */
 #define LIBXSMM_RV64_MVL256_LMUL      3004 /* RISCV 256-bit RVV witb non-unit LMUL */
 #define LIBXSMM_RV64_ALLFEAT          3999
+#define LIBXSMM_PPC64LE_FPF           4001 /* Generic floating-point facility */
+#define LIBXSMM_PPC64LE_VSX           4002 /* Vector scalar extension */
+#define LIBXSMM_PPC64LE_MMA           4003 /* Matrix-multiply assist */
+#define LIBXSMM_PPC64LE_ALLFEAT       4999
 
  /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
@@ -70,6 +74,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
 /** Returns the target architecture and instruction set extensions. */
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
+LIBXSMM_API int libxsmm_cpuid_ppc(libxsmm_cpuid_info* LIBXSMM_ARGDEF(info, NULL));
 
 LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_inline_transform(void);
 LIBXSMM_API int libxsmm_cpuid_x86_use_ace_disable_swpf_a(void);

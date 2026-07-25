@@ -34,5 +34,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                                            const unsigned int*             i_column_idx,
                                                            const double*                   i_values );
 
-#endif /* GENERATOR_SPGEMM_CSR_ASPARSE_REG_H */
+LIBXSMM_API_INTERN
+void libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( libxsmm_generated_code*         io_generated_code,
+                                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                           const unsigned int*             i_row_idx,
+                                                           const unsigned int*             i_column_idx,
+                                                           const double*                   i_values );
 
+#endif /* GENERATOR_SPGEMM_CSR_ASPARSE_REG_H */

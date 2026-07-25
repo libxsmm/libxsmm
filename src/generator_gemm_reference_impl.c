@@ -2814,9 +2814,77 @@ void libxsmm_ref_apply_c_vnni(libxsmm_gemm_def* i_gemm_def, void *c_ptr, const l
   }
 }
 
+/* Packed-GEMM reference compute for a given element type (R = packed width). */
+#define LIBXSMM_REFERENCE_PACKED_GEMM_DEFINE(NAME, TYPE) \
+LIBXSMM_INLINE void NAME(const TYPE* a, const TYPE* b, TYPE* c, \
+    libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, \
+    libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, \
+    libxsmm_blasint r, unsigned int layout, int beta0) { \
+  libxsmm_blasint mi, ni, ki, ri; \
+  if (0 != beta0) { /* beta == 0: clear C, otherwise (beta == 1) accumulate onto C */ \
+    for (mi = 0; mi < m; ++mi) { \
+      for (ni = 0; ni < n; ++ni) { \
+        for (ri = 0; ri < r; ++ri) { \
+          const libxsmm_blasint ci = (LIBXSMM_PACKED_GEMM_REFERENCE_SOA == layout) \
+            ? (ni*ldc*r + mi*r + ri) : (mi*ldc*r + ni*r + ri); \
+          c[ci] = (TYPE)0; \
+        } \
+      } \
+    } \
+  } \
+  for (ki = 0; ki < k; ++ki) { \
+    for (mi = 0; mi < m; ++mi) { \
+      for (ni = 0; ni < n; ++ni) { \
+        for (ri = 0; ri < r; ++ri) { \
+          libxsmm_blasint ai, bi, ci; \
+          if (LIBXSMM_PACKED_GEMM_REFERENCE_AC_RM == layout) { \
+            ai = mi*lda*r + ki*r + ri; bi = ki*ldb + ni;         ci = mi*ldc*r + ni*r + ri; \
+          } else if (LIBXSMM_PACKED_GEMM_REFERENCE_BC_RM == layout) { \
+            ai = mi*lda + ki;          bi = ki*ldb*r + ni*r + ri; ci = mi*ldc*r + ni*r + ri; \
+          } else { /* LIBXSMM_PACKED_GEMM_REFERENCE_SOA */ \
+            ai = ki*lda*r + mi*r + ri; bi = ni*ldb*r + ki*r + ri; ci = ni*ldc*r + mi*r + ri; \
+          } \
+          c[ci] += a[ai] * b[bi]; \
+        } \
+      } \
+    } \
+  } \
+}
+
+LIBXSMM_REFERENCE_PACKED_GEMM_DEFINE(internal_reference_packed_gemm_f32, float)
+LIBXSMM_REFERENCE_PACKED_GEMM_DEFINE(internal_reference_packed_gemm_f64, double)
+
+LIBXSMM_API_INTERN
+void libxsmm_reference_packed_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
+  libxsmm_gemm_param *gemm_param = (libxsmm_gemm_param*)param;
+  const libxsmm_datatype l_dtype = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
+  const libxsmm_blasint l_m = (libxsmm_blasint)i_xgemm_desc->m;
+  const libxsmm_blasint l_n = (libxsmm_blasint)i_xgemm_desc->n;
+  const libxsmm_blasint l_k = (libxsmm_blasint)i_xgemm_desc->k;
+  const libxsmm_blasint l_lda = (libxsmm_blasint)i_xgemm_desc->lda;
+  const libxsmm_blasint l_ldb = (libxsmm_blasint)i_xgemm_desc->ldb;
+  const libxsmm_blasint l_ldc = (libxsmm_blasint)i_xgemm_desc->ldc;
+  const libxsmm_blasint l_r = (libxsmm_blasint)i_xgemm_desc->c1;   /* packed width */
+  const unsigned int l_layout = (unsigned int)i_xgemm_desc->c2;    /* packed layout */
+  const int l_beta0 = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0) > 0) ? 1 : 0;
+  if (LIBXSMM_DATATYPE_F64 == l_dtype) {
+    internal_reference_packed_gemm_f64((const double*)gemm_param->a.primary, (const double*)gemm_param->b.primary,
+      (double*)gemm_param->c.primary, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_r, l_layout, l_beta0);
+  }
+  else if (LIBXSMM_DATATYPE_F32 == l_dtype) {
+    internal_reference_packed_gemm_f32((const float*)gemm_param->a.primary, (const float*)gemm_param->b.primary,
+      (float*)gemm_param->c.primary, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_r, l_layout, l_beta0);
+  }
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   libxsmm_gemm_def l_gemm_def;
+  /* Packed-GEMM reference is routed through this arch-agnostic trampoline. */
+  if ((i_xgemm_desc->internal_flags_2 & LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE) != 0) {
+    libxsmm_reference_packed_gemm(param, i_xgemm_desc);
+    return;
+  }
   /* Return if kernel is tileconfig/tilerelease  */
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG) == 0)) {
     return;

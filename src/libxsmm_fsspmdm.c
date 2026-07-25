@@ -59,6 +59,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   { /* Compute the vector/chunk sizes */
     const int vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
     const int vl = LIBXSMM_UPDIV(vlen, typesize);
+
     LIBXSMM_ASSERT(0 < vl);
     N_sparse1 = N_dense = vl;
     /* Dense NEON benefits from larger sizes */
@@ -72,6 +73,11 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       if (0 == (N % (4 * vl))) {
         N_dense = 4 * vl;
       }
+    }
+    /* PPC64LE benifits from larger sizes */
+    if (libxsmm_target_archid >= LIBXSMM_PPC64LE_FPF &&
+        libxsmm_target_archid <= LIBXSMM_PPC64LE_ALLFEAT ) {
+      N_dense = 4 * vl;
     }
   }
   N_sparse2 = 2 * N_sparse1;
@@ -285,6 +291,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     if (2 <= nkerns && NULL != timer_tick) {
       B = libxsmm_aligned_malloc((size_t)K * ldb * typesize, LIBXSMM_ALIGNMENT);
       C = libxsmm_aligned_malloc((size_t)M * ldc * typesize, LIBXSMM_ALIGNMENT);
+
       if (NULL != B && NULL != C) {
         switch ((int)datatype) {
           case LIBXSMM_DATATYPE_F64: {
@@ -467,7 +474,6 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     free(new_handle);
     new_handle = NULL;
   }
-
   return new_handle;
 }
 

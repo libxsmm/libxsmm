@@ -20,6 +20,7 @@
 #include "generator_aarch64_reference.h"
 #include "generator_rv64_reference.h"
 #include "generator_gemm_common.h"
+#include "generator_ppc64le_reference.h"
 
 #include <signal.h>
 #if !defined(NDEBUG)
@@ -209,6 +210,8 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
     libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_PPC64LE_FPF) && (io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT) ) {
+    libxsmm_generator_gemm_ppc64le_reference_kernel( io_generated_code, i_xgemm_desc );
   } else {
     /* generic/unknown target: the reference kernel is just a trampoline to a C
        function, so emit it for the actual host platform LIBXSMM was built for. */
@@ -218,6 +221,8 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
     libxsmm_generator_gemm_aarch64_reference_kernel( io_generated_code, i_xgemm_desc );
 #elif defined(LIBXSMM_PLATFORM_RV64)
     libxsmm_generator_gemm_rv64_reference_kernel( io_generated_code, i_xgemm_desc );
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+    libxsmm_generator_gemm_ppc64le_reference_kernel( io_generated_code, i_xgemm_desc );
 #else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -235,6 +240,8 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
     libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_PPC64LE_FPF) && (io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT) ) {
+    libxsmm_generator_mateltwise_ppc64le_reference_kernel( io_generated_code, i_mateltw_desc );
   } else {
     /* generic/unknown target: the reference kernel is just a trampoline to a C
        function, so emit it for the actual host platform LIBXSMM was built for. */
@@ -244,6 +251,8 @@ void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*     
     libxsmm_generator_mateltwise_aarch64_reference_kernel( io_generated_code, i_mateltw_desc );
 #elif defined(LIBXSMM_PLATFORM_RV64)
     libxsmm_generator_mateltwise_rv64_reference_kernel( io_generated_code, i_mateltw_desc );
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+    libxsmm_generator_mateltwise_ppc64le_reference_kernel( io_generated_code, i_mateltw_desc );
 #else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -261,6 +270,8 @@ void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*    
     libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_RV64_MVL128) && (io_generated_code->arch <= LIBXSMM_RV64_ALLFEAT) ) {
     libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
+  } else if ( (io_generated_code->arch >= LIBXSMM_PPC64LE_FPF) && (io_generated_code->arch <= LIBXSMM_PPC64LE_ALLFEAT) ) {
+    libxsmm_generator_matequation_ppc64le_reference_kernel( io_generated_code, i_mateqn_desc );
   } else {
     /* generic/unknown target: the reference kernel is just a trampoline to a C
        function, so emit it for the actual host platform LIBXSMM was built for. */
@@ -270,6 +281,8 @@ void libxsmm_generator_matequation_reference_kernel( libxsmm_generated_code*    
     libxsmm_generator_matequation_aarch64_reference_kernel( io_generated_code, i_mateqn_desc );
 #elif defined(LIBXSMM_PLATFORM_RV64)
     libxsmm_generator_matequation_rv64_reference_kernel( io_generated_code, i_mateqn_desc );
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+    libxsmm_generator_matequation_ppc64le_reference_kernel( io_generated_code, i_mateqn_desc );
 #else
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -1581,7 +1594,10 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_AARCH64_SVE512:
     case LIBXSMM_AARCH64_A64FX:
     case LIBXSMM_RV64_MVL256:
-    case LIBXSMM_RV64_MVL128: {
+    case LIBXSMM_RV64_MVL128:
+    case LIBXSMM_PPC64LE_FPF:
+    case LIBXSMM_PPC64LE_VSX:
+    case LIBXSMM_PPC64LE_MMA: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1631,6 +1647,7 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+
   if (NULL != arch && '\0' != *arch
     && arch != libxsmm_stristr(arch, "default")
     && arch != libxsmm_stristr(arch, "cpuid")
@@ -1683,6 +1700,23 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       }
     }
 #endif
+#if defined(LIBXSMM_PLATFORM_PPC64LE) || defined(LIBXSMM_PLATFORM_FORCE)
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_PPC64LE_VSX + jit;
+      }
+      else
+# endif
+      if (arch == libxsmm_stristr(arch, "power8") || arch == libxsmm_stristr(arch, "power9"))
+      {
+        target_archid = LIBXSMM_PPC64LE_VSX;
+      }
+      else if (arch == libxsmm_stristr(arch, "power10")) {
+        target_archid = LIBXSMM_PPC64LE_MMA;
+      }
+    }
+#endif
      if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
       if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
@@ -1691,6 +1725,8 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
         target_archid = LIBXSMM_AARCH64_V81;
 #elif defined(LIBXSMM_PLATFORM_RV64)
         target_archid = LIBXSMM_RV64_MVL128;
+#elif defined(LIBXSMM_PLATFORM_PPC64LE)
+        target_archid = LIBXSMM_PPC64LE_VSX;
 #else
         target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
@@ -2472,6 +2508,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         extra.nflops = 2 * request->descriptor.pgemm->packed_width * request->descriptor.pgemm->gemm->m * request->descriptor.pgemm->gemm->n * request->descriptor.pgemm->gemm->k;
         libxsmm_generator_packed_gemm(&generated_code, request->descriptor.pgemm->gemm, request->descriptor.pgemm->packed_width);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            libxsmm_gemm_descriptor l_ref_desc = *request->descriptor.pgemm->gemm;
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            l_ref_desc.internal_flags_2 |= LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE;
+            l_ref_desc.c1 = (long long)request->descriptor.pgemm->packed_width;
+            l_ref_desc.c2 = (long long)LIBXSMM_PACKED_GEMM_REFERENCE_SOA;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, &l_ref_desc);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2498,6 +2547,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         extra.nflops = 2 * request->descriptor.pgemmacrm->packed_width * request->descriptor.pgemmacrm->gemm->m * request->descriptor.pgemmacrm->gemm->n * request->descriptor.pgemmacrm->gemm->k;
         libxsmm_generator_packed_gemm_ac_rm(&generated_code, request->descriptor.pgemmacrm->gemm, request->descriptor.pgemmacrm->packed_width);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            libxsmm_gemm_descriptor l_ref_desc = *request->descriptor.pgemmacrm->gemm;
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            l_ref_desc.internal_flags_2 |= LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE;
+            l_ref_desc.c1 = (long long)request->descriptor.pgemmacrm->packed_width;
+            l_ref_desc.c2 = (long long)LIBXSMM_PACKED_GEMM_REFERENCE_AC_RM;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, &l_ref_desc);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2524,6 +2586,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         extra.nflops = 2 * request->descriptor.pgemmbcrm->packed_width * request->descriptor.pgemmbcrm->gemm->m * request->descriptor.pgemmbcrm->gemm->n * request->descriptor.pgemmbcrm->gemm->k;
         libxsmm_generator_packed_gemm_bc_rm(&generated_code, request->descriptor.pgemmbcrm->gemm, request->descriptor.pgemmbcrm->packed_width);
+        /* Try reference code JITer */
+        if (libxsmm_disable_reference_gemm_fallback == 0) {
+          if (0 != generated_code.last_error) {
+            libxsmm_gemm_descriptor l_ref_desc = *request->descriptor.pgemmbcrm->gemm;
+            generated_code.code_size = 0;
+            generated_code.last_error = 0;
+            l_ref_desc.internal_flags_2 |= LIBXSMM_GEMM_INTERNAL_FLAGS_2_PACKED_REFERENCE;
+            l_ref_desc.c1 = (long long)request->descriptor.pgemmbcrm->packed_width;
+            l_ref_desc.c2 = (long long)LIBXSMM_PACKED_GEMM_REFERENCE_BC_RM;
+            libxsmm_generator_gemm_reference_kernel(&generated_code, &l_ref_desc);
+            extra.is_reference_kernel = 1;
+          }
+        }
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -3407,7 +3482,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                           const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config ) {
+                                                          const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config ) {
   libxsmm_descriptor_blob blob;
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
