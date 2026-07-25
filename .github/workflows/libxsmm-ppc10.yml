@@ -10,7 +10,7 @@ jobs:
       steps:
       - name: Pull Branch ${{ github.ref_name }}
         run: |
-          ssh ppc10 "cd libxsmm && git fetch --all && git reset --hard origin/${{ github.ref_name }} && git clean -fdx"
+          ssh ppc10 "cd libxsmm && git fetch --all --tags --force && git reset --hard ${{ github.sha }} && git clean -fdx"
 
   GEMM:
       runs-on: self-hosted
