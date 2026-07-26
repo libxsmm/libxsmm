@@ -319,7 +319,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS ${LIBXSMM_INSTALL_TARGETS}
-  EXPORT libxsmmTargets
+  EXPORT libxsmm-targets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -341,24 +341,24 @@ if(LIBXSMM_FORTRAN)
     DESTINATION ${CMAKE_INSTALL_Fortran_MODULES}
     FILES_MATCHING PATTERN "*.mod")
 endif()
-install(EXPORT libxsmmTargets
+install(EXPORT libxsmm-targets
   NAMESPACE libxsmm::
-  FILE libxsmmTargets.cmake
+  FILE libxsmm-targets.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libxsmm)
 
 configure_package_config_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmmConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/libxsmmConfig.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmm-config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libxsmm-config.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libxsmm)
 
 write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/libxsmmConfigVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/libxsmm-config-version.cmake
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY SameMajorVersion)
 
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/libxsmmConfig.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/libxsmmConfigVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/libxsmm-config.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/libxsmm-config-version.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libxsmm)
 
 set(LIBXSMM_PC_PRIVATE_LIBS "")

@@ -776,7 +776,7 @@ $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 endif
 
 .PHONY: clib
-clib: $(PPKGDIR)/libxsmm-static.pc $(PPKGDIR)/libxsmm-shared.pc $(PCMKDIR)/libxsmmConfig.cmake
+clib: $(PPKGDIR)/libxsmm-static.pc $(PPKGDIR)/libxsmm-shared.pc $(PCMKDIR)/libxsmm-config.cmake
 ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmm.$(SLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
 	$(MAKE_AR) $(OUTDIR)/libxsmm.$(SLIBEXT) $(call tailwords,$^) $(JITPROFILINGOBJ)
@@ -1343,12 +1343,12 @@ else
 endif
 
 
-$(PCMKDIR)/libxsmmConfig.cmake: $(ROOTSCR)/libxsmmConfig.cmake $(ROOTSCR)/libxsmmConfigVersion.cmake.in $(PCMKDIR)/.make
+$(PCMKDIR)/libxsmm-config.cmake: $(ROOTSCR)/libxsmm-config.cmake $(ROOTSCR)/libxsmm-config-version.cmake.in $(PCMKDIR)/.make
 	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
 		-e 's|@THREADS@|$(THREADS)|g' \
-		"$(ROOTSCR)/libxsmmConfig.cmake" > "$@"
+		"$(ROOTSCR)/libxsmm-config.cmake" > "$@"
 	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
-		"$(ROOTSCR)/libxsmmConfigVersion.cmake.in" > "$(PCMKDIR)/libxsmmConfigVersion.cmake"
+		"$(ROOTSCR)/libxsmm-config-version.cmake.in" > "$(PCMKDIR)/libxsmm-config-version.cmake"
 
 $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" >$@

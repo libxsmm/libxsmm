@@ -59,8 +59,9 @@ jobs:
         test -d $HOME/libxsmm-install/include/libxsmm/utils
         ls $HOME/libxsmm-install/lib/libxsmm* >/dev/null
         ls $HOME/libxsmm-install/lib/pkgconfig/libxsmm.pc >/dev/null
-        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmmConfig.cmake
-        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmmTargets.cmake
+        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmm-config.cmake
+        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmm-config-version.cmake
+        test -f $HOME/libxsmm-install/lib/cmake/libxsmm/libxsmm-targets.cmake
 
     - name: Verify find_package
       run: |
