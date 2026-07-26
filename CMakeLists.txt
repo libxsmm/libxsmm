@@ -66,6 +66,14 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
   add_compile_options(-march=armv8.1-a)
 endif()
 
+# Set default build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE
+               PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo")
+endif()
+
 # display config
 message(STATUS "******** Build Summary ********")
 message(STATUS "General:")
@@ -73,6 +81,7 @@ message(STATUS "  CMake version         : ${CMAKE_VERSION}")
 message(STATUS "  CMake command         : ${CMAKE_COMMAND}")
 message(STATUS "  System                : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Options:")
+message(STATUS "  CMAKE_BUILD_TYPE      : ${CMAKE_BUILD_TYPE}")
 message(STATUS "  BUILD_SHARED_LIBS     : ${BUILD_SHARED_LIBS}")
 message(STATUS "  LIBXSMM_FORTRAN       : ${LIBXSMM_FORTRAN}")
 

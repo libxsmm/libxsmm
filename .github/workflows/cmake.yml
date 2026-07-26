@@ -31,7 +31,7 @@ jobs:
     - name: Install dependencies and tools
       run: |
         sudo apt update -y
-        sudo apt install -y gcc g++ gfortran libopenblas-openmp-dev ninja-build
+        sudo apt install -y gcc g++ gfortran ninja-build
 
     - name: Configure
       run: |
