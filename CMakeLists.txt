@@ -400,3 +400,17 @@ if(LIBXSMM_FORTRAN)
     ${CMAKE_CURRENT_BINARY_DIR}/libxsmmf.pc
     DESTINATION ${LIBXSMM_INSTALL_PKGCONFIGDIR})
 endif()
+
+# Install documentation.
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/documentation/"
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  FILES_MATCHING
+    PATTERN "*.md"
+    PATTERN "*.pdf"
+    PATTERN "*.css"
+    PATTERN "*.png"
+    # Exclude symlinks
+    PATTERN "CONTRIBUTING.md" EXCLUDE
+    PATTERN "LICENSE.md" EXCLUDE
+)
