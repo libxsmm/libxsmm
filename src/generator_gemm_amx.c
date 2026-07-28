@@ -4802,6 +4802,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
   unsigned int l_enforce_Mx1_amx_tile_blocking = i_micro_kernel_config->enforce_Mx1_amx_tile_blocking;
   int l_offset_ptr_a = (int)sizeof(libxsmm_matrix_op_arg);
   int l_offset_ptr_b = (int)(sizeof(libxsmm_matrix_op_arg) + sizeof(libxsmm_matrix_arg));
+  /* Per-operand FP8 input flavor (BF8=E5M2, HF8=E4M3). For mixed A/B FP8 the two differ;
+   * for pure FP8 both equal i_in_dtype. Non-FP8 inputs fall back to the common i_in_dtype. */
+  libxsmm_datatype l_in_dtype_a = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype );
+  libxsmm_datatype l_in_dtype_b = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc_orig->datatype );
+  if ((l_in_dtype_a != LIBXSMM_DATATYPE_BF8) && (l_in_dtype_a != LIBXSMM_DATATYPE_HF8)) {
+    l_in_dtype_a = i_in_dtype;
+  }
+  if ((l_in_dtype_b != LIBXSMM_DATATYPE_BF8) && (l_in_dtype_b != LIBXSMM_DATATYPE_HF8)) {
+    l_in_dtype_b = i_in_dtype;
+  }
 
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
@@ -4946,10 +4956,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc_orig->lda, i_xgemm_desc->lda, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-        i_in_dtype, i_in_dtype, i_in_dtype,
+        l_in_dtype_a, l_in_dtype_a, l_in_dtype_a,
         LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc->lda, i_xgemm_desc->lda,
-        i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+        l_in_dtype_a, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
   } else if (a_is_trans > 0) {
     /* A is BF8/HF8 stored transposed (K x M) with lda >= K.
      * Step 1: convert BF8/HF8 -> BF16 into the A-scratch buffer as a compact (K x M) BF16 tensor (ldo = K).
@@ -4958,7 +4968,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc_orig->lda, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-        i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
+        l_in_dtype_a, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
         LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->k/2, i_xgemm_desc->m, i_xgemm_desc->k/2, i_xgemm_desc->m,
         LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
@@ -4973,7 +4983,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
       libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
           gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
           LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc_orig->lda, i_xgemm_desc->lda, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-          i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
+          l_in_dtype_a, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
           LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
           LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc->lda, i_xgemm_desc->lda,
           LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
@@ -4992,7 +5002,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->n, i_xgemm_desc->k, i_xgemm_desc_orig->ldb, i_xgemm_desc->n, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
-        i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
+        l_in_dtype_b, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
         LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->n, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc->k,
         LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
@@ -5000,7 +5010,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc_orig->ldb, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
-        i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
+        l_in_dtype_b, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
         LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
   }
@@ -5265,6 +5275,18 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int bf8_output_gemm = ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch < LIBXSMM_X86_AVX512_DMR || ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0))) ? 1 : 0;
   int hf8_gemm_via_stack_alloc_tensors = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch < LIBXSMM_X86_AVX512_DMR || ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0))) ? 1 : 0;
   int hf8_output_gemm = ((LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) && (io_generated_code->arch < LIBXSMM_X86_AVX512_DMR || ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) )) ? 1 : 0;
+  /* Mixed A/B FP8 (A one flavor, B the other): AB_COMMON_PREC is UNSUPPORTED so the pure
+   * BF8/HF8 detectors above miss it. On pre-DMR AMX (SPR/GNR) there is no native FP8 tile
+   * op, so route mixed FP8 through the same FP8->BF16 stack-alloc emulation (TDPBF16PS).
+   * The stack conversion upconverts A and B with their own flavor (see setup_f8_ABC...). */
+  int l_is_mixed_fp8 = ( ((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                         ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                         (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc->datatype )) ) ? 1 : 0;
+  if ( l_is_mixed_fp8 > 0 ) {
+    /* No native mixed-flavor FP8 tile compute path is wired for the AMX tile layout, so always
+     * emulate mixed A/B FP8 via the FP8->BF16 stack conversion (TDPBF16PS) on every AMX arch. */
+    bf8_gemm_via_stack_alloc_tensors = 1;
+  }
   int l_defer_relu_bitmask_compute = 0;
   int l_defer_c_vnni_format = 0;
   int l_save_m = 0, l_save_k = 0, l_save_n = 0;
@@ -5389,7 +5411,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     }
     /* 8-bit AMX path: when TRANS_A or TRANS_B is requested we always emit BF16 intermediates on stack,
      * so disable the GNR F16 fast-path (which would not match the BF16 stack tensors). */
-    if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_GNR) && (bf8_gemm_via_stack_alloc_tensors > 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_GNR) && (bf8_gemm_via_stack_alloc_tensors > 0) && (l_is_mixed_fp8 == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)
         && ((l_xgemm_desc->flags & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) == 0)) {
       LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, l_xgemm_desc->datatype);
     } else {
@@ -5401,8 +5423,9 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     if ((bf8_output_gemm > 0) || (hf8_output_gemm > 0)) {
       l_xgemm_desc->ldc = l_xgemm_desc->m;
     }
-    /* The custom BF8->F16 preproc only knows about flat A/B layouts; do not use it for TRANS_A / TRANS_B. */
-    if ((bf8_gemm_via_stack_alloc_tensors > 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)
+    /* The custom BF8->F16 preproc only knows about flat A/B layouts; do not use it for TRANS_A / TRANS_B.
+     * It also hardcodes the BF8 (E5M2) LUT, so it must not be used for mixed A/B FP8. */
+    if ((bf8_gemm_via_stack_alloc_tensors > 0) && (l_is_mixed_fp8 == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)
         && ((l_xgemm_desc->flags & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) == 0)) {
       l_use_custom_bf8_preproc = 1;
     } else {
@@ -5638,7 +5661,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
       l_defer_c_vnni_format = 1;
       l_micro_kernel_config.vnni_format_C = 0;
     }
-    libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
+    libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) );
   }
 
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & l_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & l_xgemm_desc->flags) == 0)) ||

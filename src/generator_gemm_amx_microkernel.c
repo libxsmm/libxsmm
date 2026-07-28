@@ -1478,6 +1478,17 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPBF8PS;
   } else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPHF8PS;
+  } else if ( ((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) ||
+               (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+              ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) ||
+               (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) ) {
+    /* mixed A/B FP8 flavors (BF8=E5M2, HF8=E4M3) */
+    if ( (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) &&
+         (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8) ) {
+      tile_compute_instr = LIBXSMM_X86_INSTR_TDPBHF8PS;
+    } else {
+      tile_compute_instr = LIBXSMM_X86_INSTR_TDPHBF8PS;
+    }
   } else {
     /* Should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
