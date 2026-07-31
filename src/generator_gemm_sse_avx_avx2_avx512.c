@@ -338,6 +338,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int l_is_Ai8_Bi8_flat_gemm = libxsmm_x86_is_Ai8_Bi8_flat_gemm(i_xgemm_desc);
   unsigned int l_is_Ai16_Bi16_flat_gemm = libxsmm_x86_is_Ai16_Bi16_flat_gemm(i_xgemm_desc);
   unsigned int l_is_ABF16_BBF16_flat_cpx_gemm = libxsmm_x86_is_ABF16_BBF16_flat_cpx_gemm(io_generated_code, i_xgemm_desc);
+  /* Mixed A/B FP8 (A one flavor, B the other): AB_COMMON_PREC is UNSUPPORTED so the pure
+   * BF8/HF8 checks below miss it. It must still take the FP8->BF16/F32 on-stack upconvert
+   * path, otherwise the descriptor keeps mixed FP8 and init_micro_kernel_config leaves
+   * vector_length=0 (div-by-zero). The stack conversion upconverts A and B per-operand. */
+  unsigned int l_is_mixed_fp8 = ( ((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                                  ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                                  (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype )) ) ? 1 : 0;
 
   if ( (l_is_Amxfp4_Bmxfp4_gemm > 0) || (l_is_Amxfp6_Bmxfp6_gemm > 0) || (l_is_Amxfp8_Bmxfp8_gemm > 0) ) {
     l_avnni_gemm_stack_alloc_tensors = 0;
@@ -349,7 +356,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   /* BF8/HF8 pre-SPR x86 targets must use the corresponding stack conversion path */
   if ( ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
-         (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ) &&
+         (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+         (l_is_mixed_fp8 != 0) ) &&
        ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, l_xgemm_desc) == 0 ) ) {
     l_avnni_gemm_stack_alloc_tensors = 0;
     l_atvnni_gemm_stack_alloc_tensors = 0;
@@ -397,7 +405,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   /* in case of BF8/HFS we might need set different precisions */
   if ( ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
-        (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) ) {
+        (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+        (l_is_mixed_fp8 != 0) ) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) ) {
     /* Adjust descriptor to perform GEMM with bf16 or f32 inputs */
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) {
       LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc->datatype), LIBXSMM_DATATYPE_F32, (unsigned char *)l_xgemm_desc->datatype);
@@ -440,7 +449,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   libxsmm_generator_gemm_init_micro_kernel_config( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc, 0 );
 
   /* setup hf8 / bf8 conversion on stack before GEMM, we need to recheck as we now can update the field in ukernel config, need to use the original GEMM descriptor */
-  if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) ) {
+  /* Mixed A/B FP8 routes through the same stack up-convert; the flag is just a boolean marker
+   * here (the per-operand flavor is derived inside setup_f8_AB_tensors_to_stack). */
+  if ( ((LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) || (l_is_mixed_fp8 != 0)) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) ) {
     l_micro_kernel_config.bf8_gemm_via_stack_alloc_tensors = 1;
   }
 
