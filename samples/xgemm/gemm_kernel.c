@@ -3524,6 +3524,17 @@ int main(int argc, char* argv []) {
     } else {
       l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
     }
+    /* mixed MXFP6: A and B use different FP6 flavors (MXBF6=e3m2, MXHF6=e2m3). Flag one
+       MXFP6 harness path (flavor-agnostic for sizing/scales) and keep per-operand dtypes
+       so the JIT descriptor and the golden reference decode each operand correctly. */
+    if ( ((strcmp(argv[1], "MXBF6") == 0) || (strcmp(argv[1], "MXHF6") == 0)) &&
+         ((strcmp(argv[2], "MXBF6") == 0) || (strcmp(argv[2], "MXHF6") == 0)) &&
+         (strcmp(argv[1], argv[2]) != 0) ) {
+      l_dtype_a = (strcmp(argv[1], "MXBF6") == 0) ? LIBXSMM_DATATYPE_MXBF6 : LIBXSMM_DATATYPE_MXHF6;
+      l_dtype_b = (strcmp(argv[2], "MXBF6") == 0) ? LIBXSMM_DATATYPE_MXBF6 : LIBXSMM_DATATYPE_MXHF6;
+      l_gemm_def.is_Amxbf6Bmxbf6_gemm = (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) ? 1 : 0;
+      l_gemm_def.is_Amxhf6Bmxhf6_gemm = (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ? 1 : 0;
+    }
     l_dtype_b_size = (double)(LIBXSMM_TYPESIZE(l_dtype_b));
     l_dtype_c_size = (double)(LIBXSMM_TYPESIZE(l_dtype_c));
 
@@ -3720,6 +3731,17 @@ int main(int argc, char* argv []) {
     } else {
       l_dtype_c    = char_to_libxsmm_datatype( l_c_dt );
     }
+    /* mixed MXFP6: A and B use different FP6 flavors (MXBF6=e3m2, MXHF6=e2m3). Flag one
+       MXFP6 harness path (flavor-agnostic for sizing/scales) and keep per-operand dtypes
+       so the JIT descriptor and the golden reference decode each operand correctly. */
+    if ( ((strcmp(argv[1], "MXBF6") == 0) || (strcmp(argv[1], "MXHF6") == 0)) &&
+         ((strcmp(argv[2], "MXBF6") == 0) || (strcmp(argv[2], "MXHF6") == 0)) &&
+         (strcmp(argv[1], argv[2]) != 0) ) {
+      l_dtype_a = (strcmp(argv[1], "MXBF6") == 0) ? LIBXSMM_DATATYPE_MXBF6 : LIBXSMM_DATATYPE_MXHF6;
+      l_dtype_b = (strcmp(argv[2], "MXBF6") == 0) ? LIBXSMM_DATATYPE_MXBF6 : LIBXSMM_DATATYPE_MXHF6;
+      l_gemm_def.is_Amxbf6Bmxbf6_gemm = (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) ? 1 : 0;
+      l_gemm_def.is_Amxhf6Bmxhf6_gemm = (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ? 1 : 0;
+    }
 
     l_file_name = argv[5];
     l_alpha = atof(argv[6]);
@@ -3905,7 +3927,8 @@ int main(int argc, char* argv []) {
          ((l_dtype_a == LIBXSMM_DATATYPE_MXHF8)  && (l_dtype_b == LIBXSMM_DATATYPE_MXHF8)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))   ||
          ((l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)  && (l_dtype_b == LIBXSMM_DATATYPE_MXFP4X2)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))   ||
          ((l_dtype_a == LIBXSMM_DATATYPE_MXHF6)  && (l_dtype_b == LIBXSMM_DATATYPE_MXHF6)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))   ||
-         ((l_dtype_a == LIBXSMM_DATATYPE_MXBF6)  && (l_dtype_b == LIBXSMM_DATATYPE_MXBF6)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))
+         ((l_dtype_a == LIBXSMM_DATATYPE_MXBF6)  && (l_dtype_b == LIBXSMM_DATATYPE_MXBF6)  && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))   ||
+         (((l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6)) && ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6)) && (l_dtype_a != l_dtype_b) && (l_dtype_comp == LIBXSMM_DATATYPE_F32) && (l_dtype_c == LIBXSMM_DATATYPE_F32))
         ) ) {
     fprintf(stderr, "Unsupported precion combination: a: %s, b: %s, comp: %s, c: %s!\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt);
     exit(EXIT_FAILURE);
@@ -4810,10 +4833,10 @@ int main(int argc, char* argv []) {
                   l_a_mxfp6[(l_ar * ((l_lda*6)/8) * l_k) + (l_ak * l_lda * 3) + (l_am * 3) + 1] = valptr[1];
                   l_a_mxfp6[(l_ar * ((l_lda*6)/8) * l_k) + (l_ak * l_lda * 3) + (l_am * 3) + 2] = valptr[2];
 
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 0] = convert_fp6_e2m3_to_hf8( val0 );
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 1] = convert_fp6_e2m3_to_hf8( val1 );
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 2] = convert_fp6_e2m3_to_hf8( val2 );
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 3] = convert_fp6_e2m3_to_hf8( val3 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 0] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val0 ) : convert_fp6_e2m3_to_hf8( val0 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 1] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val1 ) : convert_fp6_e2m3_to_hf8( val1 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 2] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val2 ) : convert_fp6_e2m3_to_hf8( val2 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 3] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val3 ) : convert_fp6_e2m3_to_hf8( val3 );
                 }
               }
             }
@@ -4838,10 +4861,10 @@ int main(int argc, char* argv []) {
                   l_b_mxfp6[(l_ar * ((l_ldb*6)/8) * l_k) + (l_ak * l_ldb * 3) + (l_am * 3) + 1] = valptr[1];
                   l_b_mxfp6[(l_ar * ((l_ldb*6)/8) * l_k) + (l_ak * l_ldb * 3) + (l_am * 3) + 2] = valptr[2];
 
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 0] = convert_fp6_e2m3_to_hf8( val0 );
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 1] = convert_fp6_e2m3_to_hf8( val1 );
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 2] = convert_fp6_e2m3_to_hf8( val2 );
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 3] = convert_fp6_e2m3_to_hf8( val3 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 0] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val0 ) : convert_fp6_e2m3_to_hf8( val0 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 1] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val1 ) : convert_fp6_e2m3_to_hf8( val1 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 2] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val2 ) : convert_fp6_e2m3_to_hf8( val2 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 3] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXBF6) ? convert_f6_e3m2_to_hf8( val3 ) : convert_fp6_e2m3_to_hf8( val3 );
                 }
               }
             }
@@ -4889,10 +4912,10 @@ int main(int argc, char* argv []) {
                   l_a_mxfp6[(l_ar * ((l_lda*6)/8) * l_k) + (l_ak * l_lda * 3) + (l_am * 3) + 1] = valptr[1];
                   l_a_mxfp6[(l_ar * ((l_lda*6)/8) * l_k) + (l_ak * l_lda * 3) + (l_am * 3) + 2] = valptr[2];
 
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 0] = convert_f6_e3m2_to_hf8( val0 );
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 1] = convert_f6_e3m2_to_hf8( val1 );
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 2] = convert_f6_e3m2_to_hf8( val2 );
-                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 3] = convert_f6_e3m2_to_hf8( val3 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 0] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val0 ) : convert_f6_e3m2_to_hf8( val0 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 1] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val1 ) : convert_f6_e3m2_to_hf8( val1 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 2] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val2 ) : convert_f6_e3m2_to_hf8( val2 );
+                  l_a_new[(l_ar * l_lda * l_k) + (l_ak * l_lda * 4) + (l_am * 4) + 3] = (l_gemm_def.a_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val3 ) : convert_f6_e3m2_to_hf8( val3 );
                 }
               }
             }
@@ -4917,10 +4940,10 @@ int main(int argc, char* argv []) {
                   l_b_mxfp6[(l_ar * ((l_ldb*6)/8) * l_k) + (l_ak * l_ldb * 3) + (l_am * 3) + 1] = valptr[1];
                   l_b_mxfp6[(l_ar * ((l_ldb*6)/8) * l_k) + (l_ak * l_ldb * 3) + (l_am * 3) + 2] = valptr[2];
 
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 0] = convert_f6_e3m2_to_hf8( val0 );
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 1] = convert_f6_e3m2_to_hf8( val1 );
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 2] = convert_f6_e3m2_to_hf8( val2 );
-                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 3] = convert_f6_e3m2_to_hf8( val3 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 0] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val0 ) : convert_f6_e3m2_to_hf8( val0 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 1] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val1 ) : convert_f6_e3m2_to_hf8( val1 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 2] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val2 ) : convert_f6_e3m2_to_hf8( val2 );
+                  l_b_new[(l_ar * l_ldb * l_k) + (l_ak * l_ldb * 4) + (l_am * 4) + 3] = (l_gemm_def.b_type == LIBXSMM_DATATYPE_MXHF6) ? convert_fp6_e2m3_to_hf8( val3 ) : convert_f6_e3m2_to_hf8( val3 );
                 }
               }
             }

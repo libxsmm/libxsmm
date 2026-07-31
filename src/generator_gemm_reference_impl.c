@@ -591,7 +591,10 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
       }
       if ( ((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8) ||
             (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ||
-            (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) && (l_dtype_a == l_dtype_b) &&
+            (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) &&
+           ((l_dtype_a == l_dtype_b) ||
+            (((l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6)) &&
+             ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6)))) &&
            ((l_dtype_c == LIBXSMM_DATATYPE_F32) || (l_dtype_c == l_dtype_a)) ) {
         l_gemm_def.scf_u8   = (unsigned char*)gemm_param->a.tertiary;
         l_gemm_def.scf_b_u8 = (unsigned char*)gemm_param->b.tertiary;
@@ -627,7 +630,10 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
     }
     if ( ((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8) ||
           (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ||
-          (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) && (l_dtype_a == l_dtype_b) &&
+          (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) &&
+         ((l_dtype_a == l_dtype_b) ||
+          (((l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6)) &&
+           ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6)))) &&
          ((l_dtype_c == LIBXSMM_DATATYPE_F32) || (l_dtype_c == l_dtype_a)) ) {
       l_gemm_def.scf_u8   = (unsigned char*)gemm_param_ext->a.tertiary;
       l_gemm_def.scf_b_u8 = (unsigned char*)gemm_param_ext->b.tertiary;
@@ -2654,14 +2660,16 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
       free(l_c_tmp);
     }
   } else if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6)) &&
-              (i_gemm_def->b_type    == i_gemm_def->a_type)     &&
+              ((i_gemm_def->b_type == LIBXSMM_DATATYPE_MXHF6) || (i_gemm_def->b_type == LIBXSMM_DATATYPE_MXBF6)) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32)    &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
-    /* MX-scaled FP6 (E8M0 shared scales): 6-bit packed, A in VNNI, B in VNNI and transposed, C in F32 */
+    /* MX-scaled FP6 (E8M0 shared scales): 6-bit packed, A in VNNI, B in VNNI and transposed, C in F32.
+     * A and B carry their own FP6 flavor (MXBF6=e3m2, MXHF6=e2m3) so mixed A/B is supported. */
     unsigned char* fp6_a = (unsigned char*)a;
     unsigned char* fp6_b = (unsigned char*)b;
     float* f_c = (float*)c;
-    int l_is_bf6 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) ? 1 : 0;
+    int l_is_bf6_a = (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) ? 1 : 0;
+    int l_is_bf6_b = (i_gemm_def->b_type == LIBXSMM_DATATYPE_MXBF6) ? 1 : 0;
     int l_k_block = 4;
     long long l_a_slab = (((long long)lda * 6) / 8) * (long long)k;
     long long l_b_slab = (((long long)ldb * 6) / 8) * (long long)k;
@@ -2689,8 +2697,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
             for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
               unsigned char v6a = (unsigned char)((va >> (6*l_k2)) & 0x3f);
               unsigned char v6b = (unsigned char)((vb >> (6*l_k2)) & 0x3f);
-              unsigned char ha = (l_is_bf6 != 0) ? libxsmm_convert_fp6_e3m2_to_hf8(v6a) : libxsmm_convert_fp6_e2m3_to_hf8(v6a);
-              unsigned char hb = (l_is_bf6 != 0) ? libxsmm_convert_fp6_e3m2_to_hf8(v6b) : libxsmm_convert_fp6_e2m3_to_hf8(v6b);
+              unsigned char ha = (l_is_bf6_a != 0) ? libxsmm_convert_fp6_e3m2_to_hf8(v6a) : libxsmm_convert_fp6_e2m3_to_hf8(v6a);
+              unsigned char hb = (l_is_bf6_b != 0) ? libxsmm_convert_fp6_e3m2_to_hf8(v6b) : libxsmm_convert_fp6_e2m3_to_hf8(v6b);
               float a_f = libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)ha);
               float b_f = libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)hb);
               tmp_val += a_f * b_f;

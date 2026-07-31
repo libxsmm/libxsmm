@@ -189,6 +189,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrappe
          ( LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+         ( libxsmm_x86_is_Amxfp6_Bmxfp6_gemm( i_xgemm_desc ) != 0 ) ||
          ( LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( libxsmm_generator_gemm_use_ace_fp32_via_bf16( i_xgemm_desc ) != 0 ) ) ) {
     /* saving current tileconfig */
@@ -601,6 +602,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
          ( LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+         ( libxsmm_x86_is_Amxfp6_Bmxfp6_gemm( i_xgemm_desc ) != 0 ) ||
          ( LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
        ( libxsmm_generator_gemm_use_ace_fp32_via_bf16( i_xgemm_desc ) != 0 ) ) ) {
     const unsigned int init_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m_blocking( &l_micro_kernel_config, l_xgemm_desc, io_generated_code->arch, 0 );
@@ -970,18 +972,34 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                            "lut_multishift",
                                                            'z',
                                                            30 );
-    if ( LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ) ) {
+    /* Per-operand fp6->hf8 LUT: A's flavor into zmm29, B's flavor into zmm7 (a spare
+     * persistent MX register). For pure MXFP6 both tables are identical; for mixed
+     * MXBF6/MXHF6 each operand is decoded with its own format (e3m2 for BF6, e2m3 for HF6). */
+    if ( LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc->datatype ) ) {
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                            (const unsigned char *) lut_f6_e2m3_to_hf8,
-                                                           "vperm_lut_fp6fp8",
+                                                           "vperm_lut_fp6fp8_a",
                                                            'z',
                                                            29 );
     } else {
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                            (const unsigned char *) lut_f6_e3m2_to_hf8,
-                                                           "vperm_lut_fp6fp8",
+                                                           "vperm_lut_fp6fp8_a",
                                                            'z',
                                                            29 );
+    }
+    if ( LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc->datatype ) ) {
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) lut_f6_e2m3_to_hf8,
+                                                           "vperm_lut_fp6fp8_b",
+                                                           'z',
+                                                           7 );
+    } else {
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                           (const unsigned char *) lut_f6_e3m2_to_hf8,
+                                                           "vperm_lut_fp6fp8_b",
+                                                           'z',
+                                                           7 );
     }
   }
 

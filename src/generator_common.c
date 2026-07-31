@@ -919,8 +919,17 @@ int LIBXSMM_GEMM_GETENUM_C_UNSIGNED(const unsigned char *datatype) {
 LIBXSMM_API_INTERN
 int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype) {
   int result = 0;
-  if (LIBXSMM_GEMM_GETENUM_A_PREC(datatype) == LIBXSMM_GEMM_GETENUM_B_PREC(datatype)) {
-    result = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  const int l_a_prec = LIBXSMM_GEMM_GETENUM_A_PREC(datatype);
+  const int l_b_prec = LIBXSMM_GEMM_GETENUM_B_PREC(datatype);
+  if (l_a_prec == l_b_prec) {
+    result = l_a_prec;
+  } else if ( ((l_a_prec == LIBXSMM_DATATYPE_MXBF6) || (l_a_prec == LIBXSMM_DATATYPE_MXHF6)) &&
+              ((l_b_prec == LIBXSMM_DATATYPE_MXBF6) || (l_b_prec == LIBXSMM_DATATYPE_MXHF6)) ) {
+    /* Mixed MXBF6/MXHF6: the two FP6 flavors are structurally identical (same 6-bit size,
+     * VNNI packing, tile layout and E8M0 scaling); only the numeric decode LUT differs.
+     * Canonicalize to MXBF6 so all AB_COMMON-based sizing/blocking/dispatch works, while the
+     * per-operand decode is driven separately from A/B_PREC_RAW (ACE LUTs and references). */
+    result = LIBXSMM_DATATYPE_MXBF6;
   } else {
     result = LIBXSMM_DATATYPE_UNSUPPORTED;
   }

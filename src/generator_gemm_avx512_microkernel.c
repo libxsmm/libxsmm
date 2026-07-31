@@ -131,6 +131,7 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
                                                                                                    ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXHF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+                                                                                                   ( l_is_Amxfp6_Bmxfp6_gemm != 0 ) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXFP4X2  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) ) {
       if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
            ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) != 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) ) {
@@ -3523,8 +3524,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp6
                                                                                     const unsigned int                 i_tmp_start,
                                                                                     const unsigned int                 i_use_m_masking )
 {
-  /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
+  /* k packing factor for VNNI (A_PREC_RAW so mixed MXBF6/MXHF6 also yields 4) */
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) );;
 
   /* load columns of A */
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) ) {
@@ -3580,8 +3581,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace_fp6
                                                                                     const unsigned int                 i_tmp_start,
                                                                                     const unsigned int                 i_use_n_masking )
 {
-  /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+  /* k packing factor for VNNI (A_PREC_RAW so mixed MXBF6/MXHF6 also yields 4) */
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) );
 
   /* load column vectors of B upfront */
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ) {
@@ -4437,9 +4438,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_mxfp6_via_
   unsigned int l_a_start = 8;
   unsigned int l_a_mult = 1;
   unsigned int l_b_start = 16;
-  /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
-  unsigned int l_lut_fp6fp8_vreg = 29;
+  /* k packing factor for VNNI (A_PREC_RAW so mixed MXBF6/MXHF6 also yields 4, not the
+   * UNSUPPORTED->1 that AB_COMMON_PREC returns for mixed operands) */
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) );
+  /* Per-operand fp6->hf8 LUT: A uses zmm29, B uses zmm7. For pure MXFP6 both hold the
+   * same table; for mixed MXBF6/MXHF6 they hold the A- and B-operand tables respectively. */
+  unsigned int l_lut_fp6fp8_a_vreg = 29;
+  unsigned int l_lut_fp6fp8_b_vreg = 7;
   unsigned int l_lut_mshift_vreg = 30;
   unsigned int l_lut_unpack_vreg = 31;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -4458,7 +4463,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_mxfp6_via_
     for (l_m = 0; l_m < l_m_blocking; l_m++) {
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_a_start + l_k%8 + l_m, l_lut_unpack_vreg, l_a_start + l_k%8 + l_m);
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPMULTISHIFTQB, i_micro_kernel_config->vector_name, l_a_start + l_k%8 + l_m, l_lut_mshift_vreg, l_a_start + l_k%8 + l_m);
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_lut_fp6fp8_vreg, l_a_start + l_k%8 + l_m, l_a_start + l_k%8 + l_m);
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_lut_fp6fp8_a_vreg, l_a_start + l_k%8 + l_m, l_a_start + l_k%8 + l_m);
     }
 
     /* load B and compute in groups of 2 and 4 */
@@ -4468,7 +4473,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_mxfp6_via_
       /* Convert 64 fp6 values to 64 hf8 values for current and next K iteration*/
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_b_start + (l_k/2)%4 + l_n, l_lut_unpack_vreg, l_b_start + (l_k/2)%4 + l_n);
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPMULTISHIFTQB, i_micro_kernel_config->vector_name, l_b_start + (l_k/2)%4 + l_n, l_lut_mshift_vreg, l_b_start + (l_k/2)%4 + l_n);
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_lut_fp6fp8_vreg, l_b_start + (l_k/2)%4 + l_n, l_b_start + (l_k/2)%4 + l_n);
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_micro_kernel_config->vector_name, l_lut_fp6fp8_b_vreg, l_b_start + (l_k/2)%4 + l_n, l_b_start + (l_k/2)%4 + l_n);
 
       libxsmm_generator_gemm_avx512_microkernel_compute_ace( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc,
                                                                l_m_blocking, 0, l_m_blocking, l_n_blocking, l_n, l_n+1, l_a_start + l_k%8, l_b_start + (l_k/2)%4, l_a_mult );
