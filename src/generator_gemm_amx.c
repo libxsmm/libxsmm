@@ -4847,6 +4847,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
   }
 
   if ((i_micro_kernel_config->fused_b8colbias > 0) || (i_micro_kernel_config->fused_h8colbias > 0) ) {
+    /* The colbias input carries its own FP8 flavor (from the original C precision /
+     * meltw_datatype_aux), which for mixed A/B FP8 differs from the A-operand flavor
+     * (i_in_dtype). Use the colbias flavor for its BF8/HF8 -> F32 upconvert, otherwise a
+     * BF8 bias would be decoded as HF8 (or vice versa) on mixed FP8 GEMMs. */
+    libxsmm_datatype l_colbias_in_dtype = (i_micro_kernel_config->fused_h8colbias > 0) ? LIBXSMM_DATATYPE_HF8 : LIBXSMM_DATATYPE_BF8;
     /* Convert BF8 colbias to F32 for later use */
     i_micro_kernel_config->fused_b8colbias = 0;
     i_micro_kernel_config->fused_h8colbias = 0;
@@ -4867,7 +4872,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
             l_offset_ptr_b,
             tmp_reg,
             1 );
-    l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, i_in_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+    l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, l_colbias_in_dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
       LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc_orig->m, 1, i_xgemm_desc_orig->m, i_xgemm_desc_orig->m, 0, 0,
       0, LIBXSMM_CAST_USHORT(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY), LIBXSMM_MELTW_OPERATION_UNARY);
     libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
