@@ -177,14 +177,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrappe
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
-  /* Mixed A/B FP8 on ACE is incorrect when the C accumulator tiles are register-resident and
-   * overlap the B-data register: the mixed top4mx compute then reads/writes an aliased register.
-   * This happens for ceil(m/16)*ceil(min(n,32)/16) <= 2, i.e. m<=16, or m<=32 with n<=16. Fall
-   * back to the reference kernel for those shapes (the larger, scratch-accumulated shapes are
-   * validated on ACE). */
+  /* Mixed A/B FP8 (BF8xHF8) is not supported by the ACE tile compute (top4mx mixed opcodes do
+   * not produce correct results here), so fall back to the reference kernel. This is done before
+   * emitting any code to avoid the transpose/stack-setup datatype asserts on the mixed path. */
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
-       ( libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0 ) &&
-       ( ( i_xgemm_desc->m <= 16 ) || ( ( i_xgemm_desc->m <= 32 ) && ( i_xgemm_desc->n <= 16 ) ) ) ) {
+       ( libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0 ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
