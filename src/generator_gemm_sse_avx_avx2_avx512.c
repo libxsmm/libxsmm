@@ -177,15 +177,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrappe
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
-  /* Mixed A/B FP8 (BF8xHF8) is not supported by the ACE tile compute (top4mx mixed opcodes do
-   * not produce correct results here), so fall back to the reference kernel. This is done before
-   * emitting any code to avoid the transpose/stack-setup datatype asserts on the mixed path. */
-  if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
-       ( libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0 ) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-    return;
-  }
-
   /* open asm */
   libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 
@@ -1793,8 +1784,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
 #endif
     }
   }
-  if ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
-       (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) {
+  if ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) {
     if ( libxsmm_generator_gemm_use_inline_transform_ace(io_generated_code, i_xgemm_desc) != 0 ) {
 #if 0
       l_k_blocking = ( l_is_at || l_is_bnorm ) ? 64 : 16;

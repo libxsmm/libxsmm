@@ -2575,7 +2575,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( li
   int l_a_offset = 0;
   /* k packing factor for VNNI */
   /* @TODO: datatype size should be 0.5 */
-  unsigned int l_k_pack_factor = (LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) == LIBXSMM_DATATYPE_MXFP4X2) ? 4 : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+  unsigned int l_k_pack_factor = (libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) ) : ((LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) == LIBXSMM_DATATYPE_MXFP4X2) ? 4 : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) ));
 
   /* load columns of A */
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) ) {
@@ -2995,7 +2995,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( li
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
   /* @TODO: datatype size should be 0.5 */
-  unsigned int l_k_pack_factor = (LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) == LIBXSMM_DATATYPE_MXFP4X2) ? 4 : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+  unsigned int l_k_pack_factor = (libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) ) : ((LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) == LIBXSMM_DATATYPE_MXFP4X2) ? 4 : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) ));
 
   /* load column vectors of B upfront */
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ) {
@@ -3417,7 +3417,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_k16_ace
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
   /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
 
   /* load column vectors of B upfront */
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ) {
@@ -3966,12 +3966,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
                (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
               ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) ||
                (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) ) {
-    /* mixed A/B FP8 flavors (BF8=E5M2, HF8=E4M3) */
+    /* mixed A/B FP8 flavors (BF8=E5M2, HF8=E4M3). In the tile compute the first source
+     * operand (EVEX.vvvv) holds the B-matrix data and the second source (ModRM.rm) holds the
+     * A-matrix data, so the opcode flavor order is (B-flavor, A-flavor). */
     if ( (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) &&
          (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8) ) {
-      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXBHF8PS;
-    } else {
+      /* B=HF8 (src1), A=BF8 (src2) */
       l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXHBF8PS;
+    } else {
+      /* B=BF8 (src1), A=HF8 (src2) */
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXBHF8PS;
     }
   } else if (  LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
     l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP2BF16PS;
@@ -4505,7 +4509,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_unrollk4( 
   unsigned int l_a_mult = 1;
   unsigned int l_b_start = ( (l_n_blocking > 2) && (l_m_blocking <= 2) ) ? 8 : 16;
   /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
 
 #if 1
   LIBXSMM_UNUSED( l_m );
@@ -4577,7 +4581,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_unrollk4_i
   unsigned int l_a_mult = (l_a_trans != 0) ? 4 : 1;
   unsigned int l_b_start = ( (l_n_blocking > 2) && (l_m_blocking <= 2) ) ? 8 : 16;
   /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
 
   /* compute m sub blockings */
   if ( l_a_trans != 0 ) {
@@ -4711,7 +4715,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_unrollk8_i
   unsigned int l_a_mult = 1;
   unsigned int l_b_start = 16;
   /* k packing factor for VNNI */
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );;
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
 
   {
     /* load B and compute in groups of 2 and 4 */
