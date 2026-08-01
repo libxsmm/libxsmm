@@ -771,9 +771,12 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
+  /* Mixed A/B FP8: AB_COMMON_PREC is UNSUPPORTED so the pure-flavor F32 store gate below misses it;
+   * treat it like the pure BF8/HF8 case so C=F32 uses a direct TILESTORED (not the fp8 downconvert). */
+  unsigned int l_is_mixed_fp8 = libxsmm_x86_is_mixed_fp8_gemm(i_xgemm_desc);
 
   if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) &&
-      (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||  LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
+      (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||  LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || l_is_mixed_fp8 > 0) &&
       (fused_eltwise == 0)) ||
       (LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || ((l_is_Abf8_Bbf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))) {
     libxsmm_x86_instruction_tile_move( io_generated_code,
@@ -1482,12 +1485,14 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
                (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
               ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) ||
                (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) ) {
-    /* mixed A/B FP8 flavors (BF8=E5M2, HF8=E4M3) */
+    /* mixed A/B FP8 flavors (BF8=E5M2, HF8=E4M3). The tile-compute encoder maps tsrc1(VEX.vvvv)=A
+     * and tsrc2(ModRM.rm)=B; the DMR opcode's two flavor letters are ordered (tsrc2, tsrc1), i.e.
+     * TDPBHF8PS = tsrc1(A)=HF8, tsrc2(B)=BF8. So A=BF8,B=HF8 -> TDPHBF8PS and A=HF8,B=BF8 -> TDPBHF8PS. */
     if ( (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) &&
          (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8) ) {
-      tile_compute_instr = LIBXSMM_X86_INSTR_TDPBHF8PS;
-    } else {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPHBF8PS;
+    } else {
+      tile_compute_instr = LIBXSMM_X86_INSTR_TDPBHF8PS;
     }
   } else {
     /* Should not happen */
@@ -1923,7 +1928,10 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bbf16_gemm = libxsmm_x86_is_Amxfp4_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Abyte_Bi8_gemm = libxsmm_x86_is_Abyte_Bi8_gemm(i_xgemm_desc);
-  unsigned int l_k_pack_factor = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ? 2 : ((l_is_Abyte_Bi8_gemm > 0) ? libxsmm_cpuid_dot_pack_factor( LIBXSMM_DATATYPE_I8 ) : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) ));
+  /* Mixed A/B FP8 (native DMR): AB_COMMON_PREC is UNSUPPORTED; use the A flavor for the pack
+   * factor and treat it as FP8 for K-blocking (both flavors are byte-sized, VNNI4). */
+  unsigned int l_is_mixed_fp8 = libxsmm_x86_is_mixed_fp8_gemm(i_xgemm_desc);
+  unsigned int l_k_pack_factor = (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0) ? 2 : ((l_is_Abyte_Bi8_gemm > 0) ? libxsmm_cpuid_dot_pack_factor( LIBXSMM_DATATYPE_I8 ) : libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((l_is_mixed_fp8 > 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) ));
   unsigned int k;
   long long offset_A = 0;
   long long offset_B = 0;
@@ -1941,7 +1949,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||
              LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||
              LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ||
-             l_is_Abyte_Bi8_gemm > 0) {
+             l_is_Abyte_Bi8_gemm > 0 || l_is_mixed_fp8 > 0) {
     l_k_blocking = 64;
   }
 
