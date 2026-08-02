@@ -1,0 +1,48 @@
+specfile_path: scripts/fedora/libxsmm.spec
+files_to_sync:
+  - src: scripts/fedora/
+    dest: ./
+    delete: true
+    filters:
+      - "protect .git*"
+      - "protect sources"
+      - "protect changelog"
+  - .packit.yaml
+upstream_package_name: libxsmm
+downstream_package_name: libxsmm
+
+targets:
+  - fedora-development-x86_64
+  - fedora-development-aarch64
+  - fedora-development-ppc64le
+  - fedora-latest-x86_64
+  - fedora-latest-aarch64
+  - fedora-latest-ppc64le
+
+jobs:
+  - &copr_build
+    job: copr_build
+    trigger: release
+    owner: growl
+    project: release
+  - <<: *copr_build
+    trigger: commit
+    branch: main
+    project: devpkgs
+  - job: copr_build
+    trigger: pull_request
+
+#  - job: propose_downstream
+#    trigger: release
+#    dist_git_branches:
+#      - fedora-rawhide
+
+#  - job: koji_build
+#    trigger: commit
+#    dist_git_branches:
+#      - fedora-all
+
+#  - job: bodhi_update
+#    trigger: commit
+#    dist_git_branches:
+#      - fedora-branched
