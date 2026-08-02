@@ -303,6 +303,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
           (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)     )  ||
          ((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXHF8)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXHF8)  &&
           (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)     )  ||
+         (((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXBF8) || (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXHF8)) &&
+           ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXBF8) || (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXHF8)) &&
+           (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc_mod.datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( l_xgemm_desc_mod.datatype )) &&
+           (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)     )  ||
          ((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXHF6)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXHF6)  &&
           (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)     )  ||
          ((LIBXSMM_GEMM_GETENUM_A_PREC(    l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXBF6)  && (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_MXBF6)  &&

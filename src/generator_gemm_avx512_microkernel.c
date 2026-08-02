@@ -3990,7 +3990,18 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
     l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXHF8PS;
   }
   if (l_is_Amxfp8_Bmxfp8_gemm > 0) {
-    if ( LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
+    if ( LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) ) {
+      /* mixed MXBF8/MXHF8 flavors. As for plain mixed FP8, the first tile source (EVEX.vvvv)
+       * holds the B-matrix data and the second source (ModRM.rm) holds the A-matrix data, so
+       * the opcode flavor order is (B-flavor, A-flavor). */
+      if ( LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_MXBF8 ) {
+        /* A=MXBF8 (src2), B=MXHF8 (src1) */
+        l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXHBF8PS;
+      } else {
+        /* A=MXHF8 (src2), B=MXBF8 (src1) */
+        l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXBHF8PS;
+      }
+    } else if ( LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
       l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXHF8PS;
     } else {
       l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXBF8PS;

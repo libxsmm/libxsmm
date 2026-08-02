@@ -2600,14 +2600,16 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
       }
     }
   } else if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8)) &&
-              (i_gemm_def->b_type    == i_gemm_def->a_type)     &&
+              ((i_gemm_def->b_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->b_type == LIBXSMM_DATATYPE_MXHF8)) &&
               ((i_gemm_def->c_type   == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == LIBXSMM_DATATYPE_MXBF8)) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
-    /* MX-scaled FP8 (E8M0 shared scales): A in VNNI, B in VNNI and transposed, C in F32 or MXBF8 */
+    /* MX-scaled FP8 (E8M0 shared scales): A in VNNI, B in VNNI and transposed, C in F32 or MXBF8.
+     * A and B carry their own FP8 flavor (MXBF8=E5M2, MXHF8=E4M3) so mixed A/B is supported. */
     unsigned char* fp8_a = (unsigned char*)a;
     unsigned char* fp8_b = (unsigned char*)b;
-    int l_is_hf8 = (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ? 1 : 0;
-    int l_c_is_mxbf8 = ((i_gemm_def->c_type == LIBXSMM_DATATYPE_MXBF8) && (l_is_hf8 == 0)) ? 1 : 0;
+    int l_is_hf8_a = (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ? 1 : 0;
+    int l_is_hf8_b = (i_gemm_def->b_type == LIBXSMM_DATATYPE_MXHF8) ? 1 : 0;
+    int l_c_is_mxbf8 = ((i_gemm_def->c_type == LIBXSMM_DATATYPE_MXBF8) && (l_is_hf8_a == 0) && (l_is_hf8_b == 0)) ? 1 : 0;
     float* l_c_tmp = NULL;
     float* f_c = (float*)c;
     int l_k_block = 4;
@@ -2635,8 +2637,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
             for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
               unsigned char a_byte = fp8_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               unsigned char b_byte = fp8_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
-              float a_f = (l_is_hf8 != 0) ? libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)a_byte) : libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)a_byte);
-              float b_f = (l_is_hf8 != 0) ? libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)b_byte) : libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)b_byte);
+              float a_f = (l_is_hf8_a != 0) ? libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)a_byte) : libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)a_byte);
+              float b_f = (l_is_hf8_b != 0) ? libxsmm_convert_hf8_to_f32((libxsmm_hfloat8)b_byte) : libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)b_byte);
               tmp_val += a_f * b_f;
             }
             scale_u32 = ((unsigned int)sa) << 23; scale_a = *scalef_ptr;

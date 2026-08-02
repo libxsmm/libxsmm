@@ -1912,6 +1912,19 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
   {
     return "mxhf8mxhf8f32";
   }
+  /* mixed A/B MXFP8 (A != B): AB_COMMON is canonicalized to MXBF8, so name from raw A/B/C precisions */
+  if (LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxbf8mxhf8f32";
+  }
+  if (LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxhf8mxbf8f32";
+  }
   if (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
       LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
       LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))

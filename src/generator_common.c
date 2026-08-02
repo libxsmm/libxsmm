@@ -930,6 +930,13 @@ int LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(const unsigned char *datatype) {
      * Canonicalize to MXBF6 so all AB_COMMON-based sizing/blocking/dispatch works, while the
      * per-operand decode is driven separately from A/B_PREC_RAW (ACE LUTs and references). */
     result = LIBXSMM_DATATYPE_MXBF6;
+  } else if ( ((l_a_prec == LIBXSMM_DATATYPE_MXBF8) || (l_a_prec == LIBXSMM_DATATYPE_MXHF8)) &&
+              ((l_b_prec == LIBXSMM_DATATYPE_MXBF8) || (l_b_prec == LIBXSMM_DATATYPE_MXHF8)) ) {
+    /* Mixed MXBF8/MXHF8: the two MX-scaled FP8 flavors are structurally identical (same 8-bit
+     * size, VNNI packing, tile layout and E8M0 scaling); only the compute tile-opcode flavor
+     * differs. Canonicalize to MXBF8 so all AB_COMMON-based sizing/blocking/dispatch works,
+     * while the per-operand compute opcode is selected separately from A/B_PREC_RAW. */
+    result = LIBXSMM_DATATYPE_MXBF8;
   } else {
     result = LIBXSMM_DATATYPE_UNSUPPORTED;
   }
