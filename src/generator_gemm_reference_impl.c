@@ -594,7 +594,9 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
             (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) &&
            ((l_dtype_a == l_dtype_b) ||
             (((l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6)) &&
-             ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6)))) &&
+             ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6))) ||
+            (((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8)) &&
+             ((l_dtype_b == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF8)))) &&
            ((l_dtype_c == LIBXSMM_DATATYPE_F32) || (l_dtype_c == l_dtype_a)) ) {
         l_gemm_def.scf_u8   = (unsigned char*)gemm_param->a.tertiary;
         l_gemm_def.scf_b_u8 = (unsigned char*)gemm_param->b.tertiary;
@@ -633,7 +635,9 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
           (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) &&
          ((l_dtype_a == l_dtype_b) ||
           (((l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6)) &&
-           ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6)))) &&
+           ((l_dtype_b == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF6))) ||
+          (((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8)) &&
+           ((l_dtype_b == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_b == LIBXSMM_DATATYPE_MXHF8)))) &&
          ((l_dtype_c == LIBXSMM_DATATYPE_F32) || (l_dtype_c == l_dtype_a)) ) {
       l_gemm_def.scf_u8   = (unsigned char*)gemm_param_ext->a.tertiary;
       l_gemm_def.scf_b_u8 = (unsigned char*)gemm_param_ext->b.tertiary;
