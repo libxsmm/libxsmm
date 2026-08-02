@@ -3821,7 +3821,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   }
 
   if (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0) {
-    if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+    if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
       unsigned int __i =0;
       char perm_table_vnni_lo_8bit[64];
       char perm_table_vnni_hi_8bit[64];
@@ -5309,10 +5309,26 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   LIBXSMM_MEMZERO127(&n_blocking_info);
 
   if ( l_is_mixed_fp8 > 0 ) {
-    /* DMR has native mixed-flavor FP8 tile compute (TDPBHF8PS/TDPHBF8PS); use it natively when A is
-     * VNNI-formatted (mirrors the pure BF8/HF8 native gate below). Only pre-DMR AMX (SPR/GNR), which
-     * has no native FP8 tile op, falls back to the FP8->BF16 stack conversion (TDPBF16PS). */
-    bf8_gemm_via_stack_alloc_tensors = ((io_generated_code->arch < LIBXSMM_X86_AVX512_DMR) || ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)) ? 1 : 0;
+    /* DMR has native mixed-flavor FP8 tile compute (TDPBHF8PS/TDPHBF8PS); use it natively. For
+     * VNNI-formatted A the tile op applies directly; otherwise mirror the pure BF8/HF8 DMR
+     * SW-pipeline transforms (A->VNNI for nn, A-trans for tn, B-trans for nt, A-trans+B-trans for
+     * tt) so the native tile op still applies. Only pre-DMR AMX (SPR/GNR), which has no native FP8
+     * tile op, falls back to the FP8->BF16 stack conversion (TDPBF16PS). */
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_DMR) {
+      bf8_gemm_via_stack_alloc_tensors = 1;
+    } else {
+      bf8_gemm_via_stack_alloc_tensors = 0;
+      if ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) {
+        if ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) {
+          l_avnni_gemm_sw_pipeline = 1;
+        } else {
+          l_atrans_gemm_sw_pipeline = 1;
+        }
+        if (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0)) {
+          l_btrans_gemm_sw_pipeline = 1;
+        }
+      }
+    }
   }
 
   /* SW piepline A transform to vnni */
@@ -5680,7 +5696,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
     if (l_is_Abf8_Bbf16_gemm > 0 || l_is_Abf8_Bf16_gemm > 0 || l_is_Ahf8_Bbf16_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0 ) {
       if (l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0) {
-        libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ));
+        libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( l_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc->datatype ) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )));
       } else {
         libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_DATATYPE_BF16);
       }
@@ -5746,7 +5762,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
           recycled_masks = 1;
         }
         if (l_micro_kernel_config.avnni_gemm_sw_pipeline > 0 || l_micro_kernel_config.btrans_gemm_sw_pipeline > 0) {
-          libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt(io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype ));
+          libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt(io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( l_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( l_xgemm_desc->datatype ) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )));
         } else {
           libxsmm_generator_gemm_amx_setup_masking_infra_lp_cvt( io_generated_code, &l_micro_kernel_config, m_blocking_info[0].blocking, LIBXSMM_DATATYPE_BF16);
         }
@@ -6126,7 +6142,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                       m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                       i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_scf, l_gp_reg_scratch );
               } else if (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0) {
-                if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+                if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
                   libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                         m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                         i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch );
@@ -6144,7 +6160,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                   libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                         l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_micro_kernel_config->fp32_via_bf16_original_lda, l_m_blocking * l_expand_a_ld_preproc,
                         i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, 1 );
-                } else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+                } else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || (libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
                   libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                         l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                         i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, 0 );
@@ -6181,7 +6197,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                   libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                        i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch);
                 } else {
-                  if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+                  if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
                     libxsmm_generator_gemm_trans_KxN_8bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                          i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch);
                   }
@@ -6347,7 +6363,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                           m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                           i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_scf, l_gp_reg_scratch );
                   } else if (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 ) {
-                    if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+                    if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
                       libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                             m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                             i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch );
@@ -6365,7 +6381,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                       libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                             l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_micro_kernel_config->fp32_via_bf16_original_lda, l_m_blocking * l_expand_a_ld_preproc,
                             i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch, 1 );
-                    } else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )){
+                    } else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || (libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)){
                       libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                             l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                           i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch, 0 );
@@ -6408,7 +6424,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                       libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                            i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch);
                     } else {
-                      if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+                      if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
                         libxsmm_generator_gemm_trans_KxN_8bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                              i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch);
                       }
@@ -6687,7 +6703,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
                 m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                 i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_scf,  l_gp_reg_scratch );
         } else if (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 ) {
-          if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+          if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
             libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                   m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                   i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch  );
@@ -6705,7 +6721,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
             libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                           l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_micro_kernel_config->fp32_via_bf16_original_lda, l_m_blocking * l_expand_a_ld_preproc,
                           i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch, 1 );
-          } else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+          } else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || (libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
             libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                           l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                           i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch, 0 );
@@ -6756,7 +6772,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
             libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                  i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch);
           } else {
-            if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+            if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
               libxsmm_generator_gemm_trans_KxN_8bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                    i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch);
             }
@@ -6829,7 +6845,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
           libxsmm_generator_gemm_decompress_KxM_mxfp4_tensor( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                 m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc, l_gp_reg_a, i_gp_reg_mapping->gp_reg_scf, l_gp_reg_scratch );
         } else if (i_micro_kernel_config->avnni_gemm_sw_pipeline > 0 ) {
-          if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+          if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
             libxsmm_generator_gemm_convert_KxM_bf8_to_vnni4( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                   m_blocking_info[l_m_count].tiles * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc, l_gp_reg_a, l_gp_reg_scratch   );
           } else if (i_micro_kernel_config->fp32_via_bf16_sw_pipeline > 0) {
@@ -6844,7 +6860,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
             libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                           l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_micro_kernel_config->fp32_via_bf16_original_lda, l_m_blocking * l_expand_a_ld_preproc,
                           i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch, 1 );
-          } else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+          } else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || (libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
             libxsmm_generator_gemm_trans_MxK_32bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                           l_m_blocking * l_expand_a_m_preproc, i_xgemm_desc->k, i_xgemm_desc->lda, l_m_blocking * l_expand_a_ld_preproc,
                           i_gp_reg_mapping->gp_reg_a,  l_gp_reg_scratch, 0 );
@@ -6872,7 +6888,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
             libxsmm_generator_gemm_convert_trans_KxN_f32_to_bf16( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                  i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, l_gp_reg_b, l_gp_reg_scratch);
           } else {
-            if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+            if ((libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0)) {
               libxsmm_generator_gemm_trans_KxN_8bit( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
                    i_micro_kernel_config->n_blocking, i_xgemm_desc->k, i_xgemm_desc->ldb, i_xgemm_desc->k, l_gp_reg_b, l_gp_reg_scratch);
             }

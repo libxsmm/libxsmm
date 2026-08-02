@@ -1039,9 +1039,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         (LIBXSMM_DATATYPE_BF32 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
         if (( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&  io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR) {
           /* We are good */
-        } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
+        } else if (( libxsmm_x86_is_fp8_gemm( &l_xgemm_desc_mod ) != 0 ) ) {
           /* 8-bit path via upfront stack reformatting to BF16/F32: AMX (SPR+) handles via setup_f8_ABC_tensors_to_stack_for_amx,
-           * non-AMX archs (pre-SPR) handle via setup_f8_AB_tensors_to_stack in the AVX wrapper */
+           * non-AMX archs (pre-SPR) handle via setup_f8_AB_tensors_to_stack in the AVX wrapper. Mixed A/B FP8
+           * (AB_COMMON UNSUPPORTED) also lands here; DMR resolves it to the native atrans SW-pipeline tile op. */
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
           return;
@@ -1087,8 +1088,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
          (LIBXSMM_DATATYPE_BF32 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
       if (( LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) && io_generated_code->arch >= LIBXSMM_X86_AVX512_DMR) {
         /* We are good */
-      } else if (( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
-        /* 8-bit path: upfront stack reformatting to BF16/F32 handles TRANS_A on AMX (SPR+) and non-AMX (pre-SPR) archs */
+      } else if (( libxsmm_x86_is_fp8_gemm( &l_xgemm_desc_mod ) != 0 ) ) {
+        /* 8-bit path: upfront stack reformatting to BF16/F32 handles TRANS_A on AMX (SPR+) and non-AMX (pre-SPR) archs.
+         * Mixed A/B FP8 (AB_COMMON UNSUPPORTED) also lands here; DMR resolves it to the native atrans SW-pipeline. */
       } else {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
         return;
