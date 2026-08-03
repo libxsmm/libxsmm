@@ -813,6 +813,39 @@ for BINARY_POSTOP in 0 1; do
                     fi
                   fi
 
+                  # ACE for int8 (all sign combinations), k=4, B in VNNIT (AVNNI=1, BVNNI=1, BTRANS=1)
+                  if [[ ( "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' ) && ("$UNARY_POSTOP" == '0') && ("$BINARY_POSTOP" == '0') ]] ; then
+                    if [[ ("$AVNNI" == '1') && ( "$TRA" == '1' ) ]] ; then
+                      continue
+                    fi
+                    cp ${HERE}/${OUTNAME} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumk = rnd.sample(range([0-9]*,101,[0-9]*), .*)/randnumk = rnd.sample(range(4,101,4), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(2,101,2), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    if [ "$CVNNI" == '1' ] ; then
+                      sed 's/randnumn = rnd.sample(range(4,101,4), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k4_${OUTNAME} >${TMPFILE}
+                      cp ${TMPFILE} ${HERE}/ace_k4_${OUTNAME}
+                    fi
+                    chmod 755 ${HERE}/ace_k4_${OUTNAME}
+
+                    # create ACE scripts with B in VNNIT
+                    if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
+                      NEWNAME=ace_k4_bvnni_${OUTNAME}
+                      NEWNAME="${NEWNAME/_nn_/_nt_}"
+                      sed \
+                        -e "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" \
+                        -e "s/BVNNI=0/BVNNI=1/g" \
+                        -e 's/TRB=0/TRB=1/g' \
+                        ${HERE}/ace_k4_${OUTNAME} >${HERE}/${NEWNAME}
+                      chmod 755 ${HERE}/${NEWNAME}
+                    fi
+                  fi
+
                   # ACE for BF8 and HF8, k=16
                   if [[ ( "$PREC" == 'BF8_BF8_F32_F32' || "$PREC" == 'BF8_BF8_F32_BF8' || "$PREC" == 'HF8_HF8_F32_F32' || "$PREC" == 'HF8_HF8_F32_HF8' || "$PREC" == 'BF8_HF8_F32_F32' || "$PREC" == 'HF8_BF8_F32_F32' || "$PREC" == 'BF8_HF8_F32_BF8' || "$PREC" == 'HF8_BF8_F32_HF8' || "$PREC" == 'BF8_HF8_F32_HF8' || "$PREC" == 'HF8_BF8_F32_BF8' ) && ("$UNARY_POSTOP" != '2') ]] ; then
                     if [[ ("$AVNNI" == '1') && ( "$TRA" == '1' ) ]] ; then

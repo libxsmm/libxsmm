@@ -22,6 +22,12 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_mixed_fp8_gemm ( const libxsmm_ge
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_fp8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_mixed_int8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_ace_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp6_Bmxfp6_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );

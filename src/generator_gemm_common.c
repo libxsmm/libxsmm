@@ -41,6 +41,40 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_fp8_gemm ( const libxsmm_gemm_des
   return result;
 }
 
+/* Both A and B are int8 (signed I8 or unsigned U8), any signedness combination. The signed/
+ * unsigned enums both map to I8 via GETENUM_*_PREC, so AB_COMMON_PREC is always I8. */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
+                          (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
+  return result;
+}
+
+/* int8 GEMM where A and B differ in signedness (one signed, one unsigned). */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_mixed_int8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( (libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0) &&
+                          (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype )) ) ? 1 : 0;
+  return result;
+}
+
+/* int8 GEMM whose layout+K is served by the ACE tile microkernel:
+ *  a) A in VNNI, B normal (AVNNI=1,BTRANS=0,BVNNI=0): B is inline VNNI-transposed -> needs k%16==0
+ *  b) A in VNNI, B in VNNI-transposed (AVNNI=1,BTRANS=1,BVNNI=1): needs k%4==0
+ * Any other int8 layout/K is handled by the AVX512 (vpdpbusd) generator instead. */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_ace_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = 0;
+  if ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) {
+    const unsigned int l_avnni  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ? 1 : 0;
+    const unsigned int l_btrans = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) ? 1 : 0;
+    const unsigned int l_bvnni  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) != 0) ? 1 : 0;
+    if ( (l_avnni != 0) && (l_btrans == 0) && (l_bvnni == 0) && ((i_xgemm_desc->k % 16) == 0) ) {
+      result = 1;
+    } else if ( (l_avnni != 0) && (l_btrans != 0) && (l_bvnni != 0) && ((i_xgemm_desc->k % 4) == 0) ) {
+      result = 1;
+    }
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int result =  ( (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                            (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
@@ -4551,6 +4585,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
         ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
           ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+          ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ||
           ( LIBXSMM_DATATYPE_MXBF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
           ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
           ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
@@ -4966,6 +5001,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
        ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+         ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ||
          ( LIBXSMM_DATATYPE_MXBF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
@@ -6402,6 +6438,16 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
 
     /* Add C */
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      /* int8 tile accumulator is int32: for F32 output convert to f32 and apply the output
+         scale so the (float) beta C-add and store below operate on scaled f32 values. */
+      if ( ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) && ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) {
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, i_micro_kernel_config->vector_name,
+                                                  l_vec_reg_c + l_m, l_vec_reg_c + l_m );
+        libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VBROADCASTSS,
+                                          i_gp_reg_mapping->gp_reg_scf, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_micro_kernel_config->vector_name, 30, 0, 1, 0 );
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name,
+                                                  l_vec_reg_c + l_m, 30, l_vec_reg_c + l_m );
+      }
       if ( 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags) ) {
         libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_ld_st_instr,
                                                   i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_1, 1,
@@ -6424,7 +6470,8 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
                                                     l_vec_reg_tmp + l_m, l_vec_reg_tmp + l_m );
         }
 
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                  ( ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) && ( LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) ? LIBXSMM_X86_INSTR_VPADDD : LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
                                                   l_vec_reg_tmp + l_m, l_vec_reg_c + l_m, l_vec_reg_c + l_m );
       }
 
@@ -6637,6 +6684,7 @@ unsigned int libxsmm_generator_gemm_avx512_use_ace( libxsmm_generated_code*     
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE1 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     if ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
          ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+         ( libxsmm_x86_is_int8_ace_gemm( i_xgemm_desc ) != 0 ) ||
          ( libxsmm_x86_is_Amxfp8_Bmxfp8_gemm( i_xgemm_desc ) != 0 ) ||
          ( libxsmm_x86_is_Amxfp6_Bmxfp6_gemm( i_xgemm_desc ) != 0 ) ||
          ( libxsmm_x86_is_Amxfp4_Bmxfp4_gemm( i_xgemm_desc ) != 0 ) ||
@@ -6664,7 +6712,8 @@ unsigned int libxsmm_generator_gemm_use_inline_transform_ace( libxsmm_generated_
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   if (  (libxsmm_cpuid_x86_use_ace_disable_inline_transform() != 0) ||
        ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 8 != 0) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )) ||
-       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 )) ) {
+       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 )) ||
+       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 )) ) {
     return 0;
   } else {
     if ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) {

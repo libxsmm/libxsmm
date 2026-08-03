@@ -126,6 +126,7 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
       l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_ace_fp32_via_bf16;
     } else if ( (libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0) && ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+                                                                                                   ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXBF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
@@ -156,6 +157,8 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
         }
       } else if ( libxsmm_generator_gemm_use_inline_transform_ace( io_generated_code, i_xgemm_desc ) != 0 ) {
         if ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) {
+          l_k_pack_factor = 16;
+        } else if ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) {
           l_k_pack_factor = 16;
         } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
           l_k_pack_factor = 8;
@@ -3962,6 +3965,17 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
     l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXBF8PS;
   } else if (  LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
     l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXHF8PS;
+  } else if (  LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) {
+    /* int8: select opcode by per-operand signedness (opcode letters are B-sign, A-sign). */
+    if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) > 0) ) {
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BUUD;
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) > 0) ) {
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BUSD;
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) == 0) ) {
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BSUD;
+    } else {
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BSSD;
+    }
   } else if ( ((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) ||
                (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
               ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) ||
@@ -4010,7 +4024,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
 
   for ( l_n = i_n_start ; l_n < LIBXSMM_MIN(i_n_end, i_n_blocking); l_n++ ) {
     for ( l_m = i_m_start; l_m < LIBXSMM_MIN(i_m_end, i_m_blocking); l_m++ ) {
-      if ( l_compute_instr_reggroup == LIBXSMM_X86_INSTR_TOP2BF16PS ) {
+      if ( ( l_compute_instr_reggroup == LIBXSMM_X86_INSTR_TOP2BF16PS ) ||
+           ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ) {
+        /* int8 tile dot (TOP4B*D) carries no MX scale, so emit as a plain 3-tile op */
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, l_compute_instr_reggroup, 'z',
                                                   i_b_start + l_n, i_a_start + (l_m*i_a_mult), l_m + (l_n * i_m_blocking) );
       } else {
