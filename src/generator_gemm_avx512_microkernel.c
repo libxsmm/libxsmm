@@ -3970,9 +3970,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
     if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) > 0) ) {
       l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BUUD;
     } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) == 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) > 0) ) {
-      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BSUD;
-    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) == 0) ) {
       l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BUSD;
+    } else if ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) > 0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype ) == 0) ) {
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BSUD;
     } else {
       l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4BSSD;
     }
