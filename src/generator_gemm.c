@@ -694,7 +694,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
                 ( l_is_Abyte_Bi8_gemm > 0 ) ) ) {
     l_vector_length = 16;
     /* some checks as we cannot mask everything */
-    /* some checks as we cannot mask everything */
     if ( (l_xgemm_desc_mod.k % 4 != 0) ) {
       if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (l_xgemm_desc_mod.k % 2 == 0) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)) {
         /* We are good... */
