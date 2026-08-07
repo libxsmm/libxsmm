@@ -57,8 +57,16 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   LIBXSMM_INIT
   typesize = libxsmm_typesize(datatype);
   { /* Compute the vector/chunk sizes */
-    const int vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
-    const int vl = LIBXSMM_UPDIV(vlen, typesize);
+    int vlen, vl;
+
+    /* Special case Apple M4 chips with SME */
+    if (LIBXSMM_AARCH64_APPL_M4 == libxsmm_target_archid) {
+      vlen = 16;
+    } else {
+      vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
+    }
+
+    vl = LIBXSMM_UPDIV(vlen, typesize);
 
     LIBXSMM_ASSERT(0 < vl);
     N_sparse1 = N_dense = vl;
