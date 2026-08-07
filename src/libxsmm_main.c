@@ -1912,6 +1912,19 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
   {
     return "mxhf8mxhf8f32";
   }
+  /* mixed A/B MXFP8 (A != B): AB_COMMON is canonicalized to MXBF8, so name from raw A/B/C precisions */
+  if (LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxbf8mxhf8f32";
+  }
+  if (LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxhf8mxbf8f32";
+  }
   if (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
       LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
       LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
@@ -1923,6 +1936,19 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
       LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
   {
     return "mxhf6mxhf6f32";
+  }
+  /* mixed A/B MXFP6 (A != B): AB_COMMON is UNSUPPORTED, so name from raw A/B/C precisions */
+  if (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxbf6mxhf6f32";
+  }
+  if (LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxhf6mxbf6f32";
   }
   if (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
       LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
@@ -2063,6 +2089,43 @@ LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* da
                LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
       {
         return "hf8f32";
+      }
+      /* mixed A/B FP8 (A != B): AB_COMMON is UNSUPPORTED, so name from raw A/B/C precisions */
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf8hf8f32";
+      }
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf8hf8bf8";
+      }
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "bf8hf8hf8";
+      }
+      else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "hf8bf8f32";
+      }
+      else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "hf8bf8bf8";
+      }
+      else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+               LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+               LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+      {
+        return "hf8bf8hf8";
       }
       else {
         return "void";

@@ -27,6 +27,54 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp8_Bmxfp8_gemm ( const libxsm
   return result;
 }
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_mixed_fp8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( ((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                          ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                          (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype )) ) ? 1 : 0;
+  return result;
+}
+
+/* Both A and B are FP8 (BF8=E5M2 or HF8=E4M3), pure or mixed flavor. */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_fp8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( ((LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) &&
+                          ((LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_BF8) || (LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_HF8)) ) ? 1 : 0;
+  return result;
+}
+
+/* Both A and B are int8 (signed I8 or unsigned U8), any signedness combination. The signed/
+ * unsigned enums both map to I8 via GETENUM_*_PREC, so AB_COMMON_PREC is always I8. */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
+                          (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
+  return result;
+}
+
+/* int8 GEMM where A and B differ in signedness (one signed, one unsigned). */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_mixed_int8_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = ( (libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0) &&
+                          (LIBXSMM_GEMM_GETENUM_A_UNSIGNED( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_UNSIGNED( i_xgemm_desc->datatype )) ) ? 1 : 0;
+  return result;
+}
+
+/* int8 GEMM whose layout+K is served by the ACE tile microkernel:
+ *  a) A in VNNI, B normal (AVNNI=1,BTRANS=0,BVNNI=0): B is inline VNNI-transposed -> needs k%16==0
+ *  b) A in VNNI, B in VNNI-transposed (AVNNI=1,BTRANS=1,BVNNI=1): needs k%4==0
+ * Any other int8 layout/K is handled by the AVX512 (vpdpbusd) generator instead. */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_ace_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int result = 0;
+  if ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) {
+    const unsigned int l_avnni  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ? 1 : 0;
+    const unsigned int l_btrans = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) ? 1 : 0;
+    const unsigned int l_bvnni  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) != 0) ? 1 : 0;
+    if ( (l_avnni != 0) && (l_btrans == 0) && (l_bvnni == 0) && ((i_xgemm_desc->k % 16) == 0) ) {
+      result = 1;
+    } else if ( (l_avnni != 0) && (l_btrans != 0) && (l_bvnni != 0) && ((i_xgemm_desc->k % 4) == 0) ) {
+      result = 1;
+    }
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int result =  ( (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                            (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
@@ -537,6 +585,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
   unsigned int bound_reg      = LIBXSMM_X86_GP_REG_R12;
   unsigned int tmp_reg2       = LIBXSMM_X86_GP_REG_RDX;
   unsigned short gp_save_bitmask = 0x2 | 0x4 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000;
+  /* Per-operand FP8 input flavor (BF8=E5M2, HF8=E4M3). For mixed A/B FP8 the two differ;
+   * for pure FP8 both equal i_in_dtype. Non-FP8 inputs fall back to the common i_in_dtype. */
+  libxsmm_datatype l_in_dtype_a = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype );
+  libxsmm_datatype l_in_dtype_b = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc_orig->datatype );
+  if ((l_in_dtype_a != LIBXSMM_DATATYPE_BF8) && (l_in_dtype_a != LIBXSMM_DATATYPE_HF8)) {
+    l_in_dtype_a = i_in_dtype;
+  }
+  if ((l_in_dtype_b != LIBXSMM_DATATYPE_BF8) && (l_in_dtype_b != LIBXSMM_DATATYPE_HF8)) {
+    l_in_dtype_b = i_in_dtype;
+  }
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
   /* When target dtype is FP32 */
@@ -557,7 +615,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
       libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
           i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
           LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc_orig->lda, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-          i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
+          l_in_dtype_a, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16,
           LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
           LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->k/2, i_xgemm_desc->m, i_xgemm_desc->k/2, i_xgemm_desc->m,
           LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
@@ -565,7 +623,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
       libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
           i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
           LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc_orig->lda, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-          i_in_dtype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+          l_in_dtype_a, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
           LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
           LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->k, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc->m,
           LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
@@ -574,15 +632,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         (i_target_dtype == LIBXSMM_DATATYPE_F32) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc_orig->lda, i_xgemm_desc->lda, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-        i_in_dtype, i_in_dtype, i_in_dtype,
+        l_in_dtype_a, l_in_dtype_a, l_in_dtype_a,
         LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc->lda, i_xgemm_desc->lda,
-        i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype);
+        l_in_dtype_a, LIBXSMM_DATATYPE_F32, i_target_dtype);
   } else {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc_orig->lda, i_xgemm_desc->lda, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
-        i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype,
+        l_in_dtype_a, LIBXSMM_DATATYPE_F32, i_target_dtype,
         LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
         (i_target_dtype == LIBXSMM_DATATYPE_F32) ? LIBXSMM_MELTW_TYPE_UNARY_NONE : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc->lda, i_xgemm_desc->lda,
         i_target_dtype, i_target_dtype, i_target_dtype);
@@ -596,7 +654,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->n, i_xgemm_desc->k, i_xgemm_desc_orig->ldb, i_xgemm_desc->n, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
-        i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype,
+        l_in_dtype_b, LIBXSMM_DATATYPE_F32, i_target_dtype,
         LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc->n, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc->k,
         i_target_dtype, i_target_dtype, i_target_dtype);
@@ -604,7 +662,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc_orig->ldb, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
-        i_in_dtype, LIBXSMM_DATATYPE_F32, i_target_dtype,
+        l_in_dtype_b, LIBXSMM_DATATYPE_F32, i_target_dtype,
         LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
   }
@@ -717,22 +775,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB( libxsmm_generated_
        !( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc_orig) != 0 ) &&
           (libxsmm_generator_gemm_use_ace_fp32_via_bf16( i_xgemm_desc_orig ) != 0) ) ) {
     /* if A needs to be transposed, use scratch in stack */
-    libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ), 0);
+    libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) ((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc_orig ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype ) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype )), 0);
   } else if ( (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors !=0) || (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors !=0) || (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors !=0) || (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors !=0) ) {
     /* if B is in vnni2T, use scratch in stack */
-    libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ), 0);
+    libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) ((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc_orig ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype ) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype )), 0);
   } else if ( (((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0)) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc_orig) == 0 ) ) {
     /* if B is in vnni2T, use scratch in stack */
     libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ));
   } else if (( i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0)) {
     /* Now setup A and B tensors in stack as FP32 flat tensors */
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) {
-      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_BF16);
+      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_BF16);
     } else {
-      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_F32);
+      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_F32);
     }
   } else if ( i_micro_kernel_config->b_to_bvnniT_gemm_stack_alloc_tensors > 0 ) {
-    libxsmm_generator_gemm_setup_B_in_vnniT_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ));
+    libxsmm_generator_gemm_setup_B_in_vnniT_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) ((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc_orig ) != 0) ? LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc_orig->datatype ) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype )));
   }
 }
 
@@ -1868,7 +1926,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
     int is_address_brgemm = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
     int is_brgemm         = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
-    unsigned int inp_dtype_size = ( (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->b_to_bvnniT_gemm_stack_alloc_tensors > 0) ) ?  LIBXSMM_TYPESIZE(LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype)) : 4;
+    unsigned int inp_dtype_size = ( (i_micro_kernel_config->atrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors > 0 ) || (i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors > 0) || (i_micro_kernel_config->b_to_bvnniT_gemm_stack_alloc_tensors > 0) ) ?  LIBXSMM_TYPESIZE( (libxsmm_x86_is_mixed_fp8_gemm(i_xgemm_desc) != 0) ? (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC_RAW(i_xgemm_desc->datatype) : (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype)) : 4;
     unsigned int a_size  = (i_xgemm_desc->m * i_xgemm_desc->k) * inp_dtype_size;
     unsigned int b_size  = (i_xgemm_desc->k * i_xgemm_desc->n) * inp_dtype_size;
     unsigned int c_size  = (i_xgemm_desc->m * i_xgemm_desc->n) * 4;
@@ -3561,7 +3619,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
-    } else if ( ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )  || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) ) {
+    } else if ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) {
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 1;
@@ -3601,6 +3659,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
                   (LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
                   (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
                   (LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
+                  (libxsmm_x86_is_Amxfp6_Bmxfp6_gemm( i_xgemm_desc ) != 0) ||
                   (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )
                 ) ) {
       /* C is 32bit, so we treat all 3 matrices as 32bit element arrays */
@@ -3934,10 +3993,10 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-      l_k_pack_factor_a = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+      l_k_pack_factor_a = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
     }
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == LIBXSMM_GEMM_FLAG_VNNI_B ) {
-      l_k_pack_factor_b = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+      l_k_pack_factor_b = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
     }
 
     /* @TODO for MXFP4 we need to divide by 2 */
@@ -4097,10 +4156,10 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-      l_k_pack_factor_a = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+      l_k_pack_factor_a = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
     }
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == LIBXSMM_GEMM_FLAG_VNNI_B ) {
-      l_k_pack_factor_b = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+      l_k_pack_factor_b = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
     }
 
     /* @TODO for MXFP4 we need to divide by 2 */
@@ -4220,7 +4279,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
 
   /* for VNNI we are stepping through to pack ks */
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A) ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype)) );
   }
   /* @TODO for MXFP4 we need to divide by 2 */
   if ( l_is_Amxfp4_Bmxfp4_gemm != 0 ) {
@@ -4525,8 +4584,8 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
 
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
         ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
-          ( LIBXSMM_DATATYPE_BF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
-          ( LIBXSMM_DATATYPE_HF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+          ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+          ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ||
           ( LIBXSMM_DATATYPE_MXBF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
           ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
           ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
@@ -4941,8 +5000,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
   if ( ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) != 0 ) &&
        ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
-         ( LIBXSMM_DATATYPE_BF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
-         ( LIBXSMM_DATATYPE_HF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+         ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+         ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ||
          ( LIBXSMM_DATATYPE_MXBF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
          ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
@@ -6379,6 +6438,16 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
 
     /* Add C */
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      /* int8 tile accumulator is int32: for F32 output convert to f32 and apply the output
+         scale so the (float) beta C-add and store below operate on scaled f32 values. */
+      if ( ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) && ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) {
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, i_micro_kernel_config->vector_name,
+                                                  l_vec_reg_c + l_m, l_vec_reg_c + l_m );
+        libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VBROADCASTSS,
+                                          i_gp_reg_mapping->gp_reg_scf, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_micro_kernel_config->vector_name, 30, 0, 1, 0 );
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name,
+                                                  l_vec_reg_c + l_m, 30, l_vec_reg_c + l_m );
+      }
       if ( 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags) ) {
         libxsmm_x86_instruction_unified_vec_move( io_generated_code, l_ld_st_instr,
                                                   i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_1, 1,
@@ -6401,7 +6470,8 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
                                                     l_vec_reg_tmp + l_m, l_vec_reg_tmp + l_m );
         }
 
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                  ( ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) && ( LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) ? LIBXSMM_X86_INSTR_VPADDD : LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
                                                   l_vec_reg_tmp + l_m, l_vec_reg_c + l_m, l_vec_reg_c + l_m );
       }
 
@@ -6613,8 +6683,8 @@ unsigned int libxsmm_generator_gemm_avx512_use_ace( libxsmm_generated_code*     
                                                     const libxsmm_gemm_descriptor*     i_xgemm_desc ) {
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE1 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     if ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
-         ( LIBXSMM_DATATYPE_BF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
-         ( LIBXSMM_DATATYPE_HF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ||
+         ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 ) ||
+         ( libxsmm_x86_is_int8_ace_gemm( i_xgemm_desc ) != 0 ) ||
          ( libxsmm_x86_is_Amxfp8_Bmxfp8_gemm( i_xgemm_desc ) != 0 ) ||
          ( libxsmm_x86_is_Amxfp6_Bmxfp6_gemm( i_xgemm_desc ) != 0 ) ||
          ( libxsmm_x86_is_Amxfp4_Bmxfp4_gemm( i_xgemm_desc ) != 0 ) ||
@@ -6642,8 +6712,8 @@ unsigned int libxsmm_generator_gemm_use_inline_transform_ace( libxsmm_generated_
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   if (  (libxsmm_cpuid_x86_use_ace_disable_inline_transform() != 0) ||
        ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 8 != 0) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )) ||
-       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )) ||
-       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) )) ) {
+       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( libxsmm_x86_is_fp8_gemm( i_xgemm_desc ) != 0 )) ||
+       ((libxsmm_cpuid_x86_use_ace_disable_inline_transform() == 0) && (i_xgemm_desc->k % 16 != 0) && ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 )) ) {
     return 0;
   } else {
     if ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) {
