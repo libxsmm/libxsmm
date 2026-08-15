@@ -1925,6 +1925,12 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
   {
     return "mxhf8mxbf8f32";
   }
+  if (LIBXSMM_DATATYPE_MXINT8 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_MXINT8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "mxint8mxint8f32";
+  }
   if (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
       LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
       LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
@@ -2154,6 +2160,7 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_MXFP4X2: return "mxfp4x2";
     case LIBXSMM_DATATYPE_NVFP4X2: return "nvfp4x2";
     case LIBXSMM_DATATYPE_MXBF8:   return "mxbf8";
+    case LIBXSMM_DATATYPE_MXINT8:  return "mxint8";
     case LIBXSMM_DATATYPE_IMPLICIT:   return "implicit";
     default: return "void";
   }
@@ -2322,6 +2329,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
                                       ((LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXBF8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXHF8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXINT8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_mxfpgemm_typename(request->descriptor.gemm->datatype) :
