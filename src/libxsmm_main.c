@@ -3157,8 +3157,8 @@ LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info*
   code.ptr_const = kernel;
   LIBXSMM_MEMZERO127(&result_info);
   xinfo = libxsmm_get_kernel_xinfo(code, &desc, &result_info.code_size);
-  result_info.is_reference_kernel = xinfo->is_reference_kernel;
   if (NULL != xinfo) {
+    result_info.is_reference_kernel = xinfo->is_reference_kernel;
     if (NULL != desc) {
       const libxsmm_kernel_kind kind = (libxsmm_kernel_kind)LIBXSMM_DESCRIPTOR_KIND(desc->kind);
       result_info.kind = kind;

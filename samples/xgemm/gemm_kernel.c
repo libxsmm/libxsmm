@@ -37,6 +37,10 @@ int libxsmm_return_success_code(unsigned int i_used_reference_kernel) {
 unsigned int is_reference_kernel = 0;
 unsigned long long tests_executed = 0;
 
+/* verbatim command line, used to report the offending case when JIT fails */
+int g_argc = 0;
+char** g_argv = NULL;
+
 typedef struct gemm_def {
   libxsmm_datatype a_type;
   libxsmm_datatype b_type;
@@ -105,6 +109,37 @@ typedef struct fusion_args {
   char *colbias;
   char *relu_bitmask;
 } fusion_args;
+
+LIBXSMM_INLINE
+void print_offending_cmdline( const gemm_def* i_gemm_def ) {
+  int l_i;
+
+  if ( NULL == g_argv || 0 == g_argc ) {
+    return;
+  }
+
+  fprintf(stderr, "Offending command line:\n  ");
+  if ( g_argc < 20 || g_argc > 23 || NULL == i_gemm_def ) {
+    /* sizes are already given explicitly on the command line */
+    for ( l_i = 0; l_i < g_argc; ++l_i ) {
+      fprintf(stderr, "%s%s", (0 < l_i) ? " " : "", g_argv[l_i]);
+    }
+  } else {
+    /* file-input mode: emit the equivalent command line with explicit sizes */
+    fprintf(stderr, "%s %s %s %s %s %i %i %i %i %i %i %s %s %s %s %s %s %s %s %s nopf %s %s %s %s",
+      g_argv[0], g_argv[1], g_argv[2], g_argv[3], g_argv[4],
+      (int)i_gemm_def->m, (int)i_gemm_def->n, (int)i_gemm_def->k,
+      (int)i_gemm_def->lda, (int)i_gemm_def->ldb, (int)i_gemm_def->ldc,
+      g_argv[6], g_argv[7], g_argv[8], g_argv[9], g_argv[10], g_argv[11],
+      g_argv[12], g_argv[13], g_argv[14],
+      g_argv[15], g_argv[16], g_argv[17], g_argv[18]);
+    /* optional trailing flags: tile config, binary postop, unary postop */
+    for ( l_i = 20; l_i < g_argc; ++l_i ) {
+      fprintf(stderr, " %s", g_argv[l_i]);
+    }
+  }
+  fprintf(stderr, "\n");
+}
 
 LIBXSMM_INLINE
 void compress_sparse_A_with_bitmap(const gemm_def*    i_gemm_def,
@@ -2970,17 +3005,19 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
   l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
-  libxsmm_get_kernel_info(l_test_jit.ptr_const, &info);
 #else
   l_test_jit.gemm = libxsmm_dispatch_brgemm( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-  libxsmm_get_kernel_info(l_test_jit.ptr_const, &info);
 #endif
-  is_reference_kernel = info.is_reference_kernel;
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == NULL) {
-    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
-    exit(-1);
+    fprintf(stderr, "\nERROR: LIBXSMM could not create a kernel for this GEMM configuration:\n");
+    fprintf(stderr, "       neither a JIT-ed kernel nor a reference (fallback) implementation is available.\n");
+    fprintf(stderr, "       Please run with LIBXSMM_VERBOSE=-1 and/or with a debug mode LIBXSMM library for details.\n");
+    print_offending_cmdline( i_gemm_def );
+    exit(EXIT_FAILURE);
   }
+  libxsmm_get_kernel_info(l_test_jit.ptr_const, &info);
+  is_reference_kernel = info.is_reference_kernel;
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
@@ -3357,6 +3394,9 @@ int main(int argc, char* argv []) {
 #  endif
 # endif
   l_divider = 32;
+
+  g_argc = argc;
+  g_argv = argv;
 
   l_gemm_def.is_Ai4Bf16_gemm = 0;
   l_gemm_def.is_Ai4Bi8_gemm = 0;
