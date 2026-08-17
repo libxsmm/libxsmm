@@ -658,7 +658,8 @@ ifneq (0,$(ANALYZE))
     ifeq (,$(ANALYZE_FLAG))
       ECFLAGS += $(call ctest,$(CC),-fanalyzer)
     else
-      EFLAGS += $(ANALYZE_FLAG)
+      # --analyze performs no codegen, hence the build rules' "-c" is unused
+      EFLAGS += $(ANALYZE_FLAG) $(call ctest,$(CC),-Wno-unused-command-line-argument)
       FORCE_CXX := 1
     endif
   else
