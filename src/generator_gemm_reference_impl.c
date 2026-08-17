@@ -612,6 +612,7 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
         }
       }
       if ( ((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8) ||
+            (l_dtype_a == LIBXSMM_DATATYPE_MXINT8) ||
             (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ||
             (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) &&
            ((l_dtype_a == l_dtype_b) ||
@@ -653,6 +654,7 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
       }
     }
     if ( ((l_dtype_a == LIBXSMM_DATATYPE_MXBF8) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF8) ||
+          (l_dtype_a == LIBXSMM_DATATYPE_MXINT8) ||
           (l_dtype_a == LIBXSMM_DATATYPE_MXBF6) || (l_dtype_a == LIBXSMM_DATATYPE_MXHF6) ||
           (l_dtype_a == LIBXSMM_DATATYPE_MXFP4X2)) &&
          ((l_dtype_a == l_dtype_b) ||
@@ -883,6 +885,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
   /* MX x MX reference path does not support the address (addrbr) or offset (offsbr) batch-reduce modes */
   if ( ((i_gemm_def->br_type == 1) || (i_gemm_def->br_type == 2)) &&
        ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ||
+        (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXINT8) ||
         (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) ||
         (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXFP4X2)) &&
        (i_gemm_def->b_type == i_gemm_def->a_type) && ((i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == i_gemm_def->a_type)) ) {
@@ -892,6 +895,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
 
   /* MX x MX reference path does not support elementwise (unary or binary) post-fusion */
   if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF8) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF8) ||
+        (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXINT8) ||
         (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) ||
         (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXFP4X2)) &&
        (i_gemm_def->b_type == i_gemm_def->a_type) && ((i_gemm_def->c_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->c_type == i_gemm_def->a_type)) &&
@@ -2590,6 +2594,49 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
         }
       }
       free(l_c_tmp);
+    }
+  } else if ( (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXINT8) &&
+              (i_gemm_def->b_type == LIBXSMM_DATATYPE_MXINT8) &&
+              (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
+    /* MX-scaled signed int8 (E8M0 shared scales): A in VNNI, B in VNNI and transposed, C in F32.
+     * Every MXINT8 element carries an implicit exponent bias of -6, so a product of two terms
+     * accumulates -12 regardless of rank. Together with the two E8M0 block scales (each 2^(s-127))
+     * the sum of integer products is scaled by 2^(-12 + sa + sb - 254). */
+    const signed char* i8_a = (const signed char*)a;
+    const signed char* i8_b = (const signed char*)b;
+    float* f_c = (float*)c;
+    int l_k_block = 4;
+    if ( !((i_gemm_def->vnni_a != 0) && (i_gemm_def->vnni_b != 0) && (i_gemm_def->trans_b != 0)) ) {
+      fprintf(stderr, "LIBXSMM reference: MXINT8 GEMM requires A in VNNI and B in VNNI-and-transposed format!\n");
+      return;
+    }
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        float f32_accum = 0.0f;
+        if ( i_gemm_def->beta == 0 ) {
+          f_c[(l_j * ldc) + l_i] = 0.0f;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            int l_int_acc = 0;
+            float scale_a, scale_b;
+            unsigned int scale_u32; float *scalef_ptr = (float*)&scale_u32;
+            unsigned char sa = i_gemm_def->scf_u8[(l_r * lda * (k/(l_k_block*8))) + (l_s/8) * lda + l_i];
+            unsigned char sb = i_gemm_def->scf_b_u8[(l_r * ldb * (k/(l_k_block*8))) + (l_s/8) * ldb + l_j];
+            for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
+              int a_i = (int)i8_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              int b_i = (int)i8_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+              l_int_acc += a_i * b_i;
+            }
+            scale_u32 = ((unsigned int)sa) << 23; scale_a = *scalef_ptr;
+            scale_u32 = ((unsigned int)sb) << 23; scale_b = *scalef_ptr;
+            /* 1/4096 = 2^-12 is the combined implicit per-element exponent bias of the two operands */
+            f32_accum += ((float)l_int_acc) * scale_a * scale_b * (1.0f / 4096.0f);
+          }
+        }
+        f_c[(l_j * ldc) + l_i] += f32_accum;
+      }
     }
   } else if ( ((i_gemm_def->a_type == LIBXSMM_DATATYPE_MXHF6) || (i_gemm_def->a_type == LIBXSMM_DATATYPE_MXBF6)) &&
               ((i_gemm_def->b_type == LIBXSMM_DATATYPE_MXHF6) || (i_gemm_def->b_type == LIBXSMM_DATATYPE_MXBF6)) &&

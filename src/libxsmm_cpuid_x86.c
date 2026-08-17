@@ -802,6 +802,7 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
               (type == LIBXSMM_DATATYPE_HF8) ||
               (type == LIBXSMM_DATATYPE_MXBF8) ||
               (type == LIBXSMM_DATATYPE_MXHF8) ||
+              (type == LIBXSMM_DATATYPE_MXINT8) ||
               (type == LIBXSMM_DATATYPE_MXBF6) ||
               (type == LIBXSMM_DATATYPE_MXHF6) ||
               (type == LIBXSMM_DATATYPE_I8)     ) {

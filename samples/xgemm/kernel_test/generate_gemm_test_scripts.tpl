@@ -103,7 +103,7 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # loading A in VNNI layout is mandatory for select precision
-                  if [[ ( "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$AVNNI" == '0' ) ]]; then
+                  if [[ ( "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXINT8_MXINT8_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$AVNNI" == '0' ) ]]; then
                     continue
                   fi
 
@@ -114,7 +114,7 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # low precision has no transpose support
-                  if [[ ( (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I2_U8_I32_I32' || "$PREC" == 'I2_I8_I32_I32' || "$PREC" == 'I1_U8_I32_I32' || "$PREC" == 'I1_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
+                  if [[ ( (("$PREC" == 'F16_F16_F32_F32' || "$PREC" == 'F16_F16_F32_F16') && ("$AVNNI" == '1' )) || "$PREC" == 'I16_I16_I32_I32' || "$PREC" == 'U8_I8_I32_I32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_I32' || "$PREC" == 'U4_U8_I32_I32' || "$PREC" == 'I2_U8_I32_I32' || "$PREC" == 'I2_I8_I32_I32' || "$PREC" == 'I1_U8_I32_I32' || "$PREC" == 'I1_I8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_BF16_F32_F32' || "$PREC" == 'I8_BF16_F32_BF16' || "$PREC" == 'U8_BF16_F32_F32' || "$PREC" == 'U8_BF16_F32_BF16' || "$PREC" == 'BF8_BF16_F32_F32' || "$PREC" == 'BF8_BF16_F32_BF16' || "$PREC" == 'HF8_BF16_F32_F32' || "$PREC" == 'HF8_BF16_F32_BF16' || "$PREC" == 'MXFP4_BF16_F32_F32' || "$PREC" == 'MXFP4_BF16_F32_BF16' || "$PREC" == 'MXFP4_I8_I32_F32' || "$PREC" == 'MXFP4_I8_I32_BF16' || "$PREC" == 'MXFP4_F32_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXINT8_MXINT8_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ( "$TRA" == '1'  ||  "$TRB" == '1') ]]; then
                     continue
                   fi
 
@@ -505,6 +505,10 @@ for BINARY_POSTOP in 0 1; do
                     OUTNAME="mxhf6mxbf6f32gemm_"
                     KSTART=4
                     KSTEP=4
+                  elif [[ ("$PREC" == 'MXINT8_MXINT8_F32_F32') && ("$AVNNI" == '1') ]] ; then
+                    OUTNAME="mxint8mxint8f32gemm_"
+                    KSTART=4
+                    KSTEP=4
                   elif [[ ("$PREC" == 'MXFP4_MXFP4_F32_F32') && ("$AVNNI" == '1') ]] ; then
                     OUTNAME="mxfp4mxfp4f32gemm_"
                     KSTART=8
@@ -879,8 +883,8 @@ for BINARY_POSTOP in 0 1; do
                     fi
                   fi
 
-                  # ACE for MXBF8, MXHF8, MXBF6, MXHF6 and MXFP4 (k multiple of 32, only A in VNNI and B in VNNI and transposed)
-                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ("$UNARY_POSTOP" == '0') && ("$BINARY_POSTOP" == '0') ]] ; then
+                  # ACE for MXBF8, MXHF8, MXINT8, MXBF6, MXHF6 and MXFP4 (k multiple of 32, only A in VNNI and B in VNNI and transposed)
+                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXINT8_MXINT8_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) && ("$UNARY_POSTOP" == '0') && ("$BINARY_POSTOP" == '0') ]] ; then
                     if [[ ( "$TRA" == '0' ) && ( "$TRB" == '0' ) && ( "$AVNNI" == '1' ) ]] ; then
                       # all MX types share a scaling block of 32 elements along k, so k must be a multiple of 32
                       ACEK="acemx_k32"
@@ -918,7 +922,7 @@ for BINARY_POSTOP in 0 1; do
 
                   # MX x MX only supports the A-VNNI / B-VNNI-and-transposed layout, so drop any
                   # remaining plain base script (e.g. UNARY_POSTOP=2 which has no ACE variant)
-                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) ]] ; then
+                  if [[ ( "$PREC" == 'MXBF8_MXBF8_F32_F32' || "$PREC" == 'MXHF8_MXHF8_F32_F32' || "$PREC" == 'MXBF8_MXHF8_F32_F32' || "$PREC" == 'MXHF8_MXBF8_F32_F32' || "$PREC" == 'MXBF6_MXBF6_F32_F32' || "$PREC" == 'MXHF6_MXHF6_F32_F32' || "$PREC" == 'MXBF6_MXHF6_F32_F32' || "$PREC" == 'MXHF6_MXBF6_F32_F32' || "$PREC" == 'MXINT8_MXINT8_F32_F32' || "$PREC" == 'MXFP4_MXFP4_F32_F32' || "$PREC" == 'MXBF8_MXBF8_F32_MXBF8' || "$PREC" == 'MXFP4_MXFP4_F32_MXFP4' ) ]] ; then
                     rm -f ${HERE}/${OUTNAME}
                     continue
                   fi

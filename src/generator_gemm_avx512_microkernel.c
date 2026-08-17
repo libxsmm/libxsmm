@@ -62,7 +62,7 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
                                     ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B)  != 0) );
   unsigned int l_ace_is_btrans = ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) &&
                                      ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B)  == 0) );
-  unsigned int l_is_Amxfp8_Bmxfp8_gemm = libxsmm_x86_is_Amxfp8_Bmxfp8_gemm(i_xgemm_desc);
+  unsigned int l_is_Amx8_Bmx8_gemm = libxsmm_x86_is_Amx8_Bmx8_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bmxfp4_gemm = libxsmm_x86_is_Amxfp4_Bmxfp4_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp6_Bmxfp6_gemm = libxsmm_x86_is_Amxfp6_Bmxfp6_gemm(i_xgemm_desc);
   unsigned int l_is_Af32_Bf32_ace_fp32_via_bf16_gemm = (libxsmm_generator_gemm_use_ace_fp32_via_bf16( i_xgemm_desc ) != 0) ? 1 : 0;
@@ -129,6 +129,7 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
                                                                                                    ( libxsmm_x86_is_int8_gemm( i_xgemm_desc ) != 0 ) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXBF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXHF8  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+                                                                                                   ( LIBXSMM_DATATYPE_MXINT8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXBF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( LIBXSMM_DATATYPE_MXHF6  == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
                                                                                                    ( l_is_Amxfp6_Bmxfp6_gemm != 0 ) ||
@@ -139,7 +140,7 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
           l_k_pack_factor = 32;
           l_ace_disable_pf = 1;
           l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_ace_mxfp4_via_mxfp8;
-        } else if (l_is_Amxfp8_Bmxfp8_gemm > 0) {
+        } else if (l_is_Amx8_Bmx8_gemm > 0) {
           l_k_pack_factor = 32;
           l_ace_disable_pf = 1;
           l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_ace_mxfp8;
@@ -3955,7 +3956,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
   unsigned int l_m;
   unsigned int l_n;
   unsigned int l_compute_instr_reggroup = LIBXSMM_X86_INSTR_UNDEF;
-  unsigned int l_is_Amxfp8_Bmxfp8_gemm = libxsmm_x86_is_Amxfp8_Bmxfp8_gemm(i_xgemm_desc);
+  unsigned int l_is_Amx8_Bmx8_gemm = libxsmm_x86_is_Amx8_Bmx8_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp4_Bmxfp4_gemm = libxsmm_x86_is_Amxfp4_Bmxfp4_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp6_Bmxfp6_gemm = libxsmm_x86_is_Amxfp6_Bmxfp6_gemm(i_xgemm_desc);
 
@@ -4003,8 +4004,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( l
   if (l_is_Amxfp6_Bmxfp6_gemm > 0) {
     l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXHF8PS;
   }
-  if (l_is_Amxfp8_Bmxfp8_gemm > 0) {
-    if ( LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) ) {
+  if (l_is_Amx8_Bmx8_gemm > 0) {
+    if ( LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) == LIBXSMM_DATATYPE_MXINT8 ) {
+      /* MX-scaled signed int8 x signed int8, FP32 accumulate */
+      l_compute_instr_reggroup = LIBXSMM_X86_INSTR_TOP4MXBSSPS;
+    } else if ( LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc->datatype ) != LIBXSMM_GEMM_GETENUM_B_PREC_RAW( i_xgemm_desc->datatype ) ) {
       /* mixed MXBF8/MXHF8 flavors. As for plain mixed FP8, the first tile source (EVEX.vvvv)
        * holds the B-matrix data and the second source (ModRM.rm) holds the A-matrix data, so
        * the opcode flavor order is (B-flavor, A-flavor). */
