@@ -1468,7 +1468,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
         *memory = NULL; /* signal no-copy */
       }
       if (
-#if !defined(_WIN32) && !defined(__clang_analyzer__)
+#if !defined(_WIN32)
         MAP_FAILED != buffer &&
 #endif
         NULL != buffer)
