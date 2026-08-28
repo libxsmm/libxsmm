@@ -247,6 +247,20 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( libxsmm_
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping );
 
 LIBXSMM_API_INTERN
+long long libxsmm_generator_gemm_stack_scratch_limit( void );
+
+LIBXSMM_API_INTERN
+long long libxsmm_generator_gemm_stack_scratch_size( const libxsmm_generated_code*       io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
+/** Returns non-zero (and raises LIBXSMM_ERR_UNSUP_SIZE) if the stack scratch exceeds the budget. */
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_stack_scratch_exceeded( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     libxsmm_micro_kernel_config*        i_micro_kernel_config );

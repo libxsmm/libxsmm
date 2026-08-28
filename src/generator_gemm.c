@@ -18,6 +18,23 @@
 #include "generator_gemm_noarch.h"
 #include "generator_gemm_ppc64le.h"
 
+/**
+ * Memory operands of the generated code carry a signed 32-bit displacement and large parts of the
+ * generators' offset arithmetic is 32-bit, hence every operand of a single GEMM must stay below
+ * 2 GiB. Returns 0 if the shape is out of range.
+ */
+LIBXSMM_API_INLINE int libxsmm_generator_gemm_shape_fits_int32( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  const long long l_m = (long long)i_xgemm_desc->m, l_n = (long long)i_xgemm_desc->n, l_k = (long long)i_xgemm_desc->k;
+  const long long l_lda = (long long)i_xgemm_desc->lda, l_ldb = (long long)i_xgemm_desc->ldb, l_ldc = (long long)i_xgemm_desc->ldc;
+  const long long l_size_a = l_lda * (0 != (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) ? l_m : l_k)
+    * LIBXSMM_TYPESIZE( LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
+  const long long l_size_b = l_ldb * (0 != (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) ? l_k : l_n)
+    * LIBXSMM_TYPESIZE( LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype ) );
+  const long long l_size_c = l_ldc * l_n * LIBXSMM_TYPESIZE( LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
+  const long long l_max = 0x7FFFFFFF;
+  return ((l_size_a <= l_max) && (l_size_b <= l_max) && (l_size_c <= l_max)) ? 1 : 0;
+}
+
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,
                                     const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -73,6 +90,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
      the corresponding F32 cases. */
   unsigned int l_is_bf32_gemm = ((LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(i_xgemm_desc->datatype)) &&
                                  (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(i_xgemm_desc->datatype))) ? 1 : 0;
+
+  if ( 0 == libxsmm_generator_gemm_shape_fits_int32( i_xgemm_desc ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_SIZE );
+    return;
+  }
 
   /* Support this precision only in avx2 for now  */
   if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {

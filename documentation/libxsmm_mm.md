@@ -31,6 +31,15 @@ CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
+### Problem Size Limits<a name="problem-size-limits"></a>
+
+LIBXSMM targets small matrices and it is the caller's responsibility to tile larger problems. Two hard limits exist for the JIT backend and both are enforced at dispatch-time:
+
+* **Operand extent**: each of the three operands must occupy less than 2 GiB (`lda`&middot;`k`, `ldb`&middot;`n`, and `ldc`&middot;`n` scaled by the respective element size, with `m` and `k` swapped in for a transposed A or B). Memory operands of the generated code carry a signed 32-bit displacement, hence larger operands cannot be expressed.
+* **Stack scratch**: some kernels reformat an operand (e.g. a flat A that is converted to VNNI layout) into a buffer carved out of the caller's stack. The required amount grows with `m`&middot;`k`, `k`&middot;`n`, or `m`&middot;`n` and is capped at 2 MB by default. Set `LIBXSMM_GEMM_STACK_SCRATCH_LIMIT` (Bytes, `0` disables the check) to raise the cap if the calling threads have a sufficiently large stack.
+
+A shape that violates either limit is not rejected: the dispatch transparently falls back to the (correct but non-optimized) reference kernel, and `libxsmm_get_kernel_info` reports `is_reference_kernel`. Running with `LIBXSMM_VERBOSE=2` prints the reason. Note that `LIBXSMM_MAX_MNK` only guides the auto-dispatch of the BLAS-style wrappers (`libxsmm_?gemm`) and has no effect on explicitly dispatched kernels such as `libxsmm_dispatch_gemm` or `libxsmm_dispatch_brgemm`.
+
 ### Manual Code Dispatch
 
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface.
