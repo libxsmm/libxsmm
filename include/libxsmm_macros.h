@@ -1168,4 +1168,14 @@ LIBXSMM_EXTERN double erf(double) LIBXSMM_NOTHROW;
 # define M_PI 3.14159265358979323846
 #endif
 
+/**
+ * Budget (Bytes) for the size-dependent scratch buffers a GEMM kernel carves out of the
+ * callers stack. Exceeding it aborts JIT so that the reference kernel is used instead of
+ * emitting a prologue that blows the stack. Override with LIBXSMM_GEMM_STACK_SCRATCH_LIMIT
+ * (0 restores the unchecked behavior).
+ */
+#if !defined(LIBXSMM_GEMM_STACK_SCRATCH_LIMIT)
+# define LIBXSMM_GEMM_STACK_SCRATCH_LIMIT (2 * 1024 * 1024)
+#endif
+
 #endif /*LIBXSMM_MACROS_H*/
