@@ -246,6 +246,30 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( libxsmm_
     libxsmm_micro_kernel_config*        i_micro_kernel_config,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping );
 
+/**
+ * Budget (Bytes) for the size-dependent scratch buffers a GEMM kernel carves out of the
+ * callers stack. Exceeding it aborts JIT so that the reference kernel is used instead of
+ * emitting a prologue that blows the stack. Override with LIBXSMM_GEMM_STACK_SCRATCH_LIMIT
+ * (0 restores the unchecked behavior).
+ */
+#if !defined(LIBXSMM_GEMM_STACK_SCRATCH_LIMIT)
+# define LIBXSMM_GEMM_STACK_SCRATCH_LIMIT (2 * 1024 * 1024)
+#endif
+
+LIBXSMM_API_INTERN
+long long libxsmm_generator_gemm_stack_scratch_limit( void );
+
+LIBXSMM_API_INTERN
+long long libxsmm_generator_gemm_stack_scratch_size( const libxsmm_generated_code*       io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
+/** Returns non-zero (and raises LIBXSMM_ERR_UNSUP_SIZE) if the stack scratch exceeds the budget. */
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_stack_scratch_exceeded( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,

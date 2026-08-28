@@ -120,6 +120,7 @@ endfunction()
 
 set(LIBXSMM_HEADER_ONLY_TESTS
   atomics
+  gemmbig
   gemmflags
   hash
   headeronly
@@ -128,6 +129,7 @@ set(LIBXSMM_HEADER_ONLY_TESTS
 
 set(LIBXSMM_TEST_ENTRIES
   atomics.c
+  gemmbig.c
   gemmflags.c
   hash.c
   headeronly.c
@@ -151,6 +153,7 @@ list(APPEND LIBXSMM_TEST_ENTRIES
 
 foreach(test_src IN ITEMS
     atomics
+    gemmbig
     gemmflags
     hash
     headeronly

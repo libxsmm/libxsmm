@@ -1804,6 +1804,82 @@ unsigned int l_is_Ai4_Bi8_gemm = libxsmm_x86_is_Ai4_Bi8_gemm(i_xgemm_desc);
 }
 
 LIBXSMM_API_INTERN
+long long libxsmm_generator_gemm_stack_scratch_limit( void ) {
+  const char *const l_env = getenv("LIBXSMM_GEMM_STACK_SCRATCH_LIMIT");
+  return ((NULL != l_env) && (0 != *l_env)) ? (long long)atoi(l_env) : (long long)(LIBXSMM_GEMM_STACK_SCRATCH_LIMIT);
+}
+
+LIBXSMM_API_INTERN
+long long libxsmm_generator_gemm_stack_scratch_size( const libxsmm_generated_code*       io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+  const long long l_m = (long long)i_xgemm_desc->m;
+  const long long l_n = (long long)i_xgemm_desc->n;
+  const long long l_k = (long long)i_xgemm_desc->k;
+  const long long l_dt = (long long)LIBXSMM_TYPESIZE( LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
+  const unsigned int l_reformat_a = i_micro_kernel_config->atrans_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->avnni_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->atvnni_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors;
+  const unsigned int l_reformat_b = i_micro_kernel_config->avnni_btrans_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->atvnni_btrans_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->bvnni_btrans_gemm_stack_alloc_tensors +
+                                    i_micro_kernel_config->b_to_bvnniT_gemm_stack_alloc_tensors;
+  const unsigned int l_fp8_stack = i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors +
+                                   i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors;
+  /* AArch64/RV64 key the on-stack A reformat off the descriptor flag rather than a config flag */
+  const unsigned int l_trans_a_on_stack = ((io_generated_code->arch > LIBXSMM_X86_ALLFEAT) &&
+    ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0)) ? 1 : 0;
+  long long l_size = 0;
+
+  if ( 0 != i_micro_kernel_config->vnni_format_C ) {
+    l_size += l_m * l_n * 4;
+  }
+  if ( (0 != l_reformat_a) || (0 != l_trans_a_on_stack) ) {
+    l_size += l_m * l_k * l_dt;
+  }
+  if ( 0 != l_reformat_b ) {
+    l_size += l_k * l_n * l_dt;
+  }
+  if ( 0 != l_fp8_stack ) {
+    l_size += LIBXSMM_MAX(l_m * l_k, l_k * l_n) * 4 + l_m * l_n * 4 + l_m * 4;
+  }
+  if ( (0 != i_micro_kernel_config->btrans_gemm_sw_pipeline) || (0 != i_micro_kernel_config->fp32_to_bf16_b_sw_pipeline) ) {
+    l_size += 4 * l_n * LIBXSMM_MAX((long long)i_xgemm_desc->ldb, l_k);
+  }
+  if ( ((0 != i_micro_kernel_config->avnni_gemm_sw_pipeline) || (0 != i_micro_kernel_config->atrans_gemm_sw_pipeline)) &&
+       (0 < libxsmm_cpuid_x86_amx_gemm_panel_sw_pipeline_granularity()) && (1 == i_micro_kernel_config->n_gemm_code_blocks) ) {
+    l_size += l_m * l_k * 2;
+  }
+
+  return l_size;
+}
+
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_stack_scratch_exceeded( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+  const long long l_limit = libxsmm_generator_gemm_stack_scratch_limit();
+  int l_result = 0;
+
+  if ( 0 < l_limit ) {
+    const long long l_size = libxsmm_generator_gemm_stack_scratch_size( io_generated_code, i_xgemm_desc, i_micro_kernel_config );
+    if ( l_limit < l_size ) {
+      if ( 1 < libxsmm_verbosity || 0 > libxsmm_verbosity ) {
+        fprintf( stderr, "LIBXSMM WARNING: GEMM (m=%u, n=%u, k=%u) needs %lli Byte of stack scratch (limit is %lli Byte), "
+                         "JIT is bypassed; adjust LIBXSMM_GEMM_STACK_SCRATCH_LIMIT to override!\n",
+          i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k, l_size, l_limit );
+      }
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_SIZE );
+      l_result = 1;
+    }
+  }
+
+  return l_result;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
@@ -1819,6 +1895,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   unsigned int l_is_Abf8_Bbf16_gemm = libxsmm_x86_is_Abf8_Bbf16_gemm(i_xgemm_desc);
   unsigned int l_is_Abf8_Bf16_gemm = libxsmm_x86_is_Abf8_Bf16_gemm(i_xgemm_desc);
   unsigned int l_is_Ahf8_Bbf16_gemm = libxsmm_x86_is_Ahf8_Bbf16_gemm(i_xgemm_desc);
+
+  if ( 0 != libxsmm_generator_gemm_stack_scratch_exceeded( io_generated_code, i_xgemm_desc, i_micro_kernel_config ) ) {
+    return;
+  }
 
   if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
     i_micro_kernel_config->gemm_scratch_ld = 16;

@@ -1453,6 +1453,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_aarch64( libxsmm_
   unsigned int temp_reg = i_gp_reg_mapping->gp_reg_help_1;
   unsigned int temp_reg2 = i_gp_reg_mapping->gp_reg_help_0;
 
+  if ( 0 != libxsmm_generator_gemm_stack_scratch_exceeded( io_generated_code, i_xgemm_desc, i_micro_kernel_config ) ) {
+    return;
+  }
+
   /* Allocate scratch for stashing 32 zmms */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     gemm_scratch_size = 32 * 64;
