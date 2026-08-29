@@ -197,6 +197,9 @@ typedef struct libxsmm_gemm_def {
 
   /* fusion aux variables */
   unsigned int fuse_colbias_add;
+  /* bias operand is a full MxN matrix (no column broadcast) */
+  unsigned int fuse_bias_add_nobcast;
+  libxsmm_blasint ldd;
   unsigned int fuse_relu;
   unsigned int fuse_relu_bitmask;
   unsigned int fuse_sigmoid;
@@ -331,10 +334,12 @@ LIBXSMM_API_INTERN
 void libxsmm_ref_apply_preop(libxsmm_gemm_def* i_gemm_def, void *param, const libxsmm_gemm_descriptor *i_xgemm_desc) {
   libxsmm_gemm_ext_param *gemm_param = (libxsmm_gemm_ext_param*)param;
   if (i_gemm_def->fuse_colbias_add > 0) {
+    const unsigned int l_nobcast = i_gemm_def->fuse_bias_add_nobcast;
+    const libxsmm_blasint l_ldd = (0 != l_nobcast) ? i_gemm_def->ldd : i_xgemm_desc->m;
     if ( i_gemm_def->beta == 0 ) {
       libxsmm_meltw_unary_param unary_param;
       libxsmm_descriptor_blob blob;
-      const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->m, i_xgemm_desc->ldc, 0, 0, (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_OPERATION_UNARY);
+      const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n, l_ldd, i_xgemm_desc->ldc, 0, 0, (unsigned short)((0 != l_nobcast) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL), (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_OPERATION_UNARY);
       unary_param.in.primary  = (void*)gemm_param->d.primary;
       unary_param.out.primary = (void*)i_gemm_def->c_scratch;
       libxsmm_reference_unary_elementwise(&unary_param, desc);
@@ -345,7 +350,7 @@ void libxsmm_ref_apply_preop(libxsmm_gemm_def* i_gemm_def, void *param, const li
       libxsmm_meltw_binary_param binary_param;
       libxsmm_descriptor_blob blob;
       const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob, i_gemm_def->c_type, i_gemm_def->c_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc->m, i_xgemm_desc->n,
-          i_xgemm_desc->m, i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, (unsigned short)LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, (unsigned short)LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_OPERATION_BINARY);
+          l_ldd, i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, (unsigned short)((0 != l_nobcast) ? LIBXSMM_MELTW_FLAG_BINARY_NONE : LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0), (unsigned short)LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_OPERATION_BINARY);
       binary_param.in0.primary = (void*)gemm_param->d.primary;
       binary_param.in1.primary = (void*)gemm_param->c.primary;
       binary_param.out.primary = (void*)i_gemm_def->c_scratch;
@@ -439,6 +444,8 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
   l_gemm_def.fuse_sigmoid = 0;
   l_gemm_def.fuse_vnni_c = 0;
   l_gemm_def.fuse_colbias_add = 0;
+  l_gemm_def.fuse_bias_add_nobcast = 0;
+  l_gemm_def.ldd = i_xgemm_desc->meltw_ldx;
 
   /* Check for fusions and set proper flags */
   if (i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
@@ -457,9 +464,10 @@ void libxsmm_setup_gemm_def(libxsmm_gemm_def* i_gemm_def, void *param, const lib
 
   if (libxsmm_gemm_descriptor_get_meltw_operation(i_xgemm_desc) == LIBXSMM_MELTW_OPERATION_BINARY) {
     if (libxsmm_gemm_descriptor_get_meltw_param(i_xgemm_desc) == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
-      if (((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0 ) ||
-          ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0 )) {
-        l_gemm_def.fuse_colbias_add = 1;
+      l_gemm_def.fuse_colbias_add = 1;
+      if (((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) == 0 ) &&
+          ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) == 0 )) {
+        l_gemm_def.fuse_bias_add_nobcast = 1;
       }
     }
   }
