@@ -11,7 +11,7 @@ steps:
       SSIZE: 4
       NP: 12
       LIBXSMM_TARGET: "arm_v82"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "GEMM (sve128)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
@@ -19,7 +19,7 @@ steps:
       SSIZE: 4
       NP: 12
       LIBXSMM_TARGET: "sve128"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
 #  - label: "GEMM (sve256)"
 #    command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
@@ -28,7 +28,7 @@ steps:
 #      NP: 12
 #      BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
 #      LIBXSMM_TARGET: "sve256"
-#      PARTITIONS: "orion"
+#      PARTITIONS: "gb300"
 
   - label: "GEMM (sve512)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
@@ -37,7 +37,7 @@ steps:
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
       LIBXSMM_TARGET: "sve512"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "GEMM (sme512)"
     command: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
@@ -46,7 +46,7 @@ steps:
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=16 -msvl=64 --"
       LIBXSMM_TARGET: "appl_m4"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "BCSC SPMM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
@@ -54,7 +54,7 @@ steps:
       SSIZE: 4
       NP: 12
       LIBXSMM_TARGET: "arm_v82"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "BCSC SPMM (sve128)"
     command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
@@ -62,7 +62,7 @@ steps:
       SSIZE: 4
       NP: 12
       LIBXSMM_TARGET: "sve128"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "BCSC SPMM (sve256)"
     command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
@@ -71,7 +71,7 @@ steps:
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
       LIBXSMM_TARGET: "sve256"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "BCSC SPMM (sve512)"
     command: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
@@ -80,7 +80,7 @@ steps:
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
       LIBXSMM_TARGET: "sve512"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "ELTWISE (Neon)"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
@@ -88,7 +88,7 @@ steps:
       SSIZE: 4
       NP: 12
       LIBXSMM_TARGET: "arm_v82"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "ELTWISE (sve128)"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
@@ -96,7 +96,7 @@ steps:
       SSIZE: 4
       NP: 12
       LIBXSMM_TARGET: "sve128"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "ELTWISE (sve256)"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
@@ -105,7 +105,7 @@ steps:
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=32 -msvl=32 --"
       LIBXSMM_TARGET: "sve256"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "ELTWISE (sve512)"
     command: "scripts/tool_test.sh samples/eltwise/run_test.sh"
@@ -114,7 +114,7 @@ steps:
       NP: 12
       BIN_INSTR_TOOL: "/swtools/armie/latest/bin64/armie -mvl=64 -msvl=64 --"
       LIBXSMM_TARGET: "sve512"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
 
   - label: "FSSPMDM (Neon)"
     command: "scripts/tool_test.sh samples/xgemm_sparse_Ainregs/test.sh"
@@ -122,5 +122,5 @@ steps:
       NP: 12
       ENVS: "LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3 REALTYPE=float"
       LIBXSMM_TARGET: "arm_v82"
-      PARTITIONS: "orion"
+      PARTITIONS: "gb300"
       TEST_N: 48
