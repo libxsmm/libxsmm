@@ -55,6 +55,15 @@ LIBXSMM_INLINE void spgemmbig_release(libxsmm_gemmfunction kernel)
 }
 
 
+/** Architectures dispatched by libxsmm_generator_spgemm_csr_reg_kernel (RV64 e.g. has no such backend). */
+LIBXSMM_INLINE int spgemmbig_supported(int archid)
+{
+  return ((LIBXSMM_X86_AVX2 <= archid && LIBXSMM_X86_ALLFEAT >= archid)
+       || (LIBXSMM_AARCH64_V81 <= archid && LIBXSMM_AARCH64_ALLFEAT >= archid)
+       || (LIBXSMM_PPC64LE_VSX <= archid && LIBXSMM_PPC64LE_ALLFEAT >= archid)) ? 1 : 0;
+}
+
+
 int main(void)
 {
   const libxsmm_blasint oversized_b = (libxsmm_blasint)(0x80000000ULL / (8 * SPGEMMBIG_K) + 1);
@@ -65,6 +74,7 @@ int main(void)
   libxsmm_gemmfunction kernel;
   libxsmm_blasint i, j, n;
 
+  if (0 == spgemmbig_supported(libxsmm_get_target_archid())) return EXIT_SUCCESS;
   spgemmbig_csr(rowptr, colidx, values);
   n = LIBXSMM_UPDIV(libxsmm_cpuid_vlen(libxsmm_get_target_archid()), 8);
 
@@ -105,7 +115,7 @@ int main(void)
     free(b); free(c);
   }
 
-  if (EXIT_SUCCESS == result) { /* C beyond 2 GiB */
+  { /* C beyond 2 GiB */
     kernel = spgemmbig_dispatch(n, n, oversized_c, rowptr, colidx, values);
     if (NULL != kernel) {
       fprintf(stderr, "ERROR: ldc=%i was not rejected!\n", (int)oversized_c);
@@ -114,7 +124,7 @@ int main(void)
     }
   }
 
-  if (EXIT_SUCCESS == result) { /* B beyond 2 GiB */
+  { /* B beyond 2 GiB */
     kernel = spgemmbig_dispatch(n, oversized_b, n, rowptr, colidx, values);
     if (NULL != kernel) {
       fprintf(stderr, "ERROR: ldb=%i was not rejected!\n", (int)oversized_b);

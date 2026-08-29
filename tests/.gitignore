@@ -12,6 +12,7 @@ memory
 mhd
 registry
 rng
+spgemmbig
 threadsafety
 timer
 trans
