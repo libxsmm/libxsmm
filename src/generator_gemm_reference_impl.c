@@ -335,7 +335,7 @@ void libxsmm_ref_apply_preop(libxsmm_gemm_def* i_gemm_def, void *param, const li
   libxsmm_gemm_ext_param *gemm_param = (libxsmm_gemm_ext_param*)param;
   if (i_gemm_def->fuse_colbias_add > 0) {
     const unsigned int l_nobcast = i_gemm_def->fuse_bias_add_nobcast;
-    const libxsmm_blasint l_ldd = (0 != l_nobcast) ? i_gemm_def->ldd : i_xgemm_desc->m;
+    const libxsmm_blasint l_ldd = (0 != l_nobcast) ? i_gemm_def->ldd : (libxsmm_blasint)i_xgemm_desc->m;
     if ( i_gemm_def->beta == 0 ) {
       libxsmm_meltw_unary_param unary_param;
       libxsmm_descriptor_blob blob;
