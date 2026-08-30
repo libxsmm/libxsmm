@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
 
+permissions: {}
+
 jobs:
   Pull_Branch:
       runs-on:
