@@ -6,14 +6,16 @@ on:
 
 jobs:
   Pull_Branch:
-      runs-on: self-hosted
+      runs-on:
+        group: pcl
       steps:
       - name: Pull Branch ${{ github.ref_name }}
         run: |
           ssh ppc10 "cd libxsmm && git fetch --all --tags --force && git reset --hard ${{ github.sha }} && git clean -fdx"
 
   GEMM:
-      runs-on: self-hosted
+      runs-on:
+        group: pcl
       needs: Pull_Branch
       steps:
       - name: GEMM
@@ -21,7 +23,8 @@ jobs:
           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/xgemm/kernel_test.sh"
 
   ELTWISE:
-      runs-on: self-hosted
+      runs-on:
+        group: pcl
       needs: GEMM
       steps:
       - name: ELTWISE
@@ -29,7 +32,8 @@ jobs:
           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh ./samples/eltwise/run_test.sh"
 
   Test_4:
-      runs-on: self-hosted
+      runs-on:
+        group: pcl
       needs: ELTWISE
       steps:
       - name: Test 4
@@ -37,7 +41,8 @@ jobs:
           ssh ppc10 "cd libxsmm && ./scripts/tool_test.sh 4"
 
   Fortran:
-      runs-on: self-hosted
+      runs-on:
+        group: pcl
       needs: Test_4
       steps:
       - name: Fortran
