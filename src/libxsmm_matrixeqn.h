@@ -148,6 +148,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn {
   libxsmm_meqn_elem*        eqn_cur;
   libxsmm_blasint                 is_constructed;
   libxsmm_blasint                 is_optimized;
+  libxsmm_blasint                 is_shape_inferable;
   libxsmm_blasint                 unary_only;
   libxsmm_blasint                 binary_only;
 } libxsmm_matrix_eqn;
@@ -166,8 +167,12 @@ LIBXSMM_API_INTERN void libxsmm_meqn_adjust_tmp_sizes( libxsmm_meqn_elem* cur_no
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_reduce_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_transform_kernel (unsigned int opcode);
+LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_pad_kernel (unsigned int opcode);
+LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_root_only (unsigned int opcode, libxsmm_bitfield flags);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_reduce_to_scalar (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_binary_opcode_reduce_to_scalar (unsigned int opcode);
+LIBXSMM_API_INTERN int libxsmm_meqn_infer_node_shape( libxsmm_meqn_elem* cur_node, libxsmm_blasint is_root, libxsmm_blasint* o_m, libxsmm_blasint* o_n );
+LIBXSMM_API_INTERN int libxsmm_meqn_is_shape_inference_possible( libxsmm_matrix_eqn* eqn );
 
 LIBXSMM_API_INTERN void libxsmm_meqn_tree_contains_opcode(libxsmm_meqn_elem *node, libxsmm_meltw_unary_type u_opcode, libxsmm_meltw_binary_type b_opcode, libxsmm_meltw_ternary_type t_opcode, unsigned int *result);
 
