@@ -342,7 +342,8 @@ int main( int argc, char* argv[] ) {
   bf16_arg[ref_id] = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*n_i[n_tensors-1]*ld_i[n_tensors-1]*blocks_i[n_tensors-1],   64);
 
   assert(4 <= n_tensors);
-  tmp = libxsmm_malloc(m_i[2] * m_i[3]);
+  /* the reference kernels use tmp as GEMM result of m_i[2] rows, indexed up to the number of output columns */
+  tmp = (float*) libxsmm_malloc( sizeof(float)*m_i[2]*LIBXSMM_MAX(n_i[3], n_i[n_tensors-1]) );
 
   for (k = 0; k < n_tensors; k++) {
     float *cur_arr = arg[k];
@@ -382,7 +383,7 @@ int main( int argc, char* argv[] ) {
   }
 
   /* Result = gelu(A+B) * tanh(C x D) */
-  arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
+  arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0 );
 
   my_eqn0 = libxsmm_meqn_create();
   arg_metadata[0].eqn_idx     = my_eqn0;
