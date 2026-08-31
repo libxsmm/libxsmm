@@ -125,7 +125,8 @@ set(LIBXSMM_HEADER_ONLY_TESTS
   hash
   headeronly
   matdiff
-  memory)
+  memory
+  spgemmbig)
 
 set(LIBXSMM_TEST_ENTRIES
   atomics.c
@@ -139,6 +140,7 @@ set(LIBXSMM_TEST_ENTRIES
   memory.c
   registry.c
   rng.c
+  spgemmbig.c
   threadsafety.c
   timer.c
   vla.c
@@ -163,6 +165,7 @@ foreach(test_src IN ITEMS
     memory
     registry
     rng
+    spgemmbig
     threadsafety
     timer
     vla)
