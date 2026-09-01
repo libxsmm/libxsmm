@@ -43,3 +43,13 @@ With LIBXSMM, there is both basic (`perf map`) and extended support (`jitdump`) 
 * The basic support can be enabled at compile-time with PERF=1 (implies SYM=1) using `make PERF=1`. At runtime of the application, a map-file ('jit-*pid*.map') is generated ('/tmp' directory). This file is automatically read by <span>Linux&#160;perf</span> and enriches the information about unknown code such as JIT'ted kernels.
 * The support for "jitdump" can be enabled by supplying JITDUMP=1 (implies PERF=1) or PERF=2 (implies JITDUMP=1) when making the library: `make JITDUMP=1` or `make PERF=2`. At runtime of the application, a dump-file ('jit-*pid*.dump') is generated (in perf's debug directory, usually `$HOME/.debug/jit/`) which includes information about JIT'ted kernels (such as addresses, symbol names, code size, and the code itself). The dump file can be injected into `perf.data` (using `perf inject -j`), and it enables an annotated view of the assembly in perf's report (requires a reasonably recent version of <span>Linux&#160;perf</span>).
 
+LIBXSMM timestamps the "jitdump" records with `CLOCK_MONOTONIC`, hence `perf record` must sample with the same clock (`-k mono`, equivalent to `-k 1`). Otherwise `perf inject` rejects the dump ("jitted code must be sampled with perf record -k 1"), or silently attributes the JIT'ted code to the wrong point in time which yields an incomplete profile:
+
+```bash
+LIBXSMM_VERBOSE=-1 perf record -k mono -g -- ./myapplication
+perf inject -j -i perf.data -o perf.jit.data
+perf report -i perf.jit.data
+```
+
+Note that `--call-graph dwarf` cannot unwind through LIBXSMM's JIT'ted kernels since the generated code carries no unwind information ('.eh_frame'). To capture call stacks that reach into the JIT'ted code, use frame pointers (`--call-graph fp` along with an application built using `-fno-omit-frame-pointer`) or last-branch records (`--call-graph lbr`).
+
