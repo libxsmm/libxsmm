@@ -1129,6 +1129,14 @@ endif
 	@echo "LIBXSMM installing pkg-config, CMake config, and module files..."
 	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -va $(PPKGDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
+	@for pc in $(PPKGDIR)/*-static.pc $(PPKGDIR)/*-shared.pc; do \
+		if [ -f "$$pc" ]; then \
+			$(SED) -e "s|^prefix=.*|prefix=$(ALIAS_PREFIX)|" \
+			       -e "s|^includedir=.*|includedir=$(ALIAS_INCDIR)|" \
+			       -e "s|^libdir=.*|libdir=$(ALIAS_LIBDIR)|" \
+			       "$$pc" >"$(PREFIX)/$(PPKGDIR)/$${pc##*/}"; \
+		fi; \
+	done
 	@$(MKDIR) -p $(PREFIX)/$(PCMKDIR)
 	@$(CP) -v $(PCMKDIR)/*.cmake $(PREFIX)/$(PCMKDIR) 2>/dev/null || true
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
@@ -1240,6 +1248,9 @@ ifneq (Darwin,$(UNAME))
   ALIAS_PRIVLIBS_EXT := -fopenmp
 endif
 
+BUILD_PREFIX := $(HEREDIR)
+BUILD_INCDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(INCDIR)),,\$${prefix}/),$(subst $$$$$(BUILD_PREFIX),\$${prefix},$$$$$(INCDIR)))
+BUILD_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(OUTDIR)),,\$${prefix}/),$(subst $$$$$(BUILD_PREFIX),\$${prefix},$$$$$(OUTDIR)))
 ALIAS_INCDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
 ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
@@ -1250,9 +1261,9 @@ $(PPKGDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT) $(PPKGDIR)/.make
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
   ifneq (,$(ALIAS_PRIVLIBS))
@@ -1278,9 +1289,9 @@ $(PPKGDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT) $(PPKGDIR)/.make
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmmext-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
@@ -1303,9 +1314,9 @@ $(PPKGDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT) $(PPKGDIR)/.make
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
   ifneq (,$(ALIAS_PRIVLIBS))
@@ -1328,9 +1339,9 @@ $(PPKGDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT) $(PPKGDIR)/.make
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmmext" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
