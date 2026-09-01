@@ -740,15 +740,21 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
           }
         } else {
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
-                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_micro_kernel_config->vec_tmp0,
-                                                     l_tupletype );
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V,
-                                                     cur_vreg, i_micro_kernel_config->vec_tmp0, 0, cur_vreg,
-                                                     l_tupletype );
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                                     cur_vreg, i_micro_kernel_config->vec_tmp0, 0, cur_vreg,
-                                                     l_tupletype );
+          if (libxsmm_get_ulp_precision() != LIBXSMM_ULP_PRECISION_ESTIMATE) {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
+                                                       cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_micro_kernel_config->vec_tmp0,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V,
+                                                       cur_vreg, i_micro_kernel_config->vec_tmp0, 0, cur_vreg,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                       cur_vreg, i_micro_kernel_config->vec_tmp0, 0, cur_vreg,
+                                                       l_tupletype );
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
+                                                       cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                       l_tupletype );
+          }
         }
       } else if (i_op_type == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT) {
         const int niterations = (1 << (int)l_sve_type) - 1;
@@ -772,9 +778,26 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
                                                      tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
           }
         } else {
+          unsigned char tmp_guess = LIBXSMM_CAST_UCHAR(i_micro_kernel_config->tmp_vreg);
+          unsigned char tmp_guess_squared = LIBXSMM_CAST_UCHAR(i_micro_kernel_config->tmp_vreg2);
+          unsigned char i;
+          /* coverity[dead_error_line] */
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V,
-                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, num_iterations > 0 ? tmp_guess : cur_vreg,
                                                      l_tupletype );
+          /* Newton iteration: guess *= (3-guess*guess*x)/2 */
+          for ( i = 0; i < num_iterations; i++ ) {
+            unsigned char dst_reg = LIBXSMM_CAST_UCHAR(i == (num_iterations-1) ? cur_vreg : tmp_guess); /* improve the guess; then save it */
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                       tmp_guess, tmp_guess, 0, tmp_guess_squared,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
+                                                       cur_vreg, tmp_guess_squared, 0, tmp_guess_squared,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                       tmp_guess, tmp_guess_squared, 0, dst_reg,
+                                                       l_tupletype );
+          }
         }
       } else if (i_op_type == LIBXSMM_MELTW_TYPE_UNARY_SQRT) {
         if ( l_is_sve ) {
