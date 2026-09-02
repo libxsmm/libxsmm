@@ -1477,6 +1477,10 @@
 # define LIBXSMM_HANDLE_ERROR_OFF_END()
 #endif
 
+/* colbias fusion is requested and the bias operand has datatype DTYPE */
+#define LIBXSMM_GEMM_FUSED_COLBIAS(CONFIG, DTYPE) \
+  ((0 != (CONFIG)->fused_colbias) && ((libxsmm_datatype)(DTYPE) == (CONFIG)->colbias_dtype))
+
 /* tile config structure */
 typedef struct libxsmm_tile_config {
   unsigned char  palette_id;
@@ -1696,10 +1700,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int ace_a_prefetch_ctrl;
   unsigned int ace_b_prefetch_ctrl;
 } libxsmm_micro_kernel_config;
-
-/* colbias fusion is requested and the bias operand has datatype DTYPE */
-#define LIBXSMM_GEMM_FUSED_COLBIAS(CONFIG, DTYPE) \
-  ((0 != (CONFIG)->fused_colbias) && ((libxsmm_datatype)(DTYPE) == (CONFIG)->colbias_dtype))
 
 /* structure for storing the current gp reg mapping */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
