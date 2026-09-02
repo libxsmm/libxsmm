@@ -865,6 +865,193 @@ int libxsmm_meqn_is_binary_opcode_reduce_to_scalar (unsigned int opcode) {
   return result;
 }
 
+LIBXSMM_API_INTERN
+int libxsmm_meqn_is_unary_opcode_pad_kernel (unsigned int opcode) {
+  int result = 0;
+  if ( (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD) ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD) ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD) ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)         ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)         ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)        ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4)         ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4)         ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4)) {
+    result = 1;
+  }
+  return result;
+}
+
+/* Unary opcodes which write more than the primary output or which derive their extent from a runtime
+ * value; they are only supported as root of an equation where the output shape is given by the user. */
+LIBXSMM_API_INTERN
+int libxsmm_meqn_is_unary_opcode_root_only (unsigned int opcode, libxsmm_bitfield flags) {
+  int result = 0;
+  if ( (opcode == LIBXSMM_MELTW_TYPE_UNARY_UNZIP)              ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_SCATTER)            ||
+       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR)  ||
+       ((opcode == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0)) ) {
+    result = 1;
+  }
+  return result;
+}
+
+/* An operand is only usable if it covers the extent of the op's output in all non-broadcast dimensions. */
+LIBXSMM_API_INTERN int libxsmm_meqn_operand_shape_is_valid( libxsmm_meqn_bcast_type bcast_type,
+  libxsmm_blasint o_m, libxsmm_blasint o_n, libxsmm_blasint i_m, libxsmm_blasint i_n ) {
+  int result = 1;
+  if ( LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR != bcast_type ) {
+    if ( (LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW != bcast_type) && (i_m < o_m) ) {
+      result = 0;
+    }
+    if ( (LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL != bcast_type) && (i_n < o_n) ) {
+      result = 0;
+    }
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN int libxsmm_meqn_infer_node_shape( libxsmm_meqn_elem* cur_node, libxsmm_blasint is_root, libxsmm_blasint* o_m, libxsmm_blasint* o_n ) {
+  libxsmm_blasint le_m = 0, le_n = 0, ri_m = 0, ri_n = 0, r2_m = 0, r2_n = 0;
+
+  *o_m = 0;
+  *o_n = 0;
+
+  if ( NULL == cur_node ) {
+    fprintf( stderr, "LIBXSMM ERROR: the equation is incomplete, shape inference is not possible!\n" );
+    return 0;
+  }
+
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if ( (cur_node->info.arg.m <= 0) || (cur_node->info.arg.n <= 0) ) {
+      fprintf( stderr, "LIBXSMM ERROR: argument %i of the equation has an invalid shape (%i x %i)!\n",
+        (int)cur_node->info.arg.in_pos, (int)cur_node->info.arg.m, (int)cur_node->info.arg.n );
+      return 0;
+    }
+    *o_m = cur_node->info.arg.m;
+    *o_n = cur_node->info.arg.n;
+    return 1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    const unsigned int l_op = (unsigned int)cur_node->info.u_op.type;
+    if ( 0 == libxsmm_meqn_infer_node_shape( cur_node->le, 0, &le_m, &le_n ) ) {
+      return 0;
+    }
+    if ( (0 == is_root) && (0 != libxsmm_meqn_is_unary_opcode_root_only( l_op, cur_node->info.u_op.flags )) ) {
+      fprintf( stderr, "LIBXSMM ERROR: unary opcode %u is only supported as root of an equation, shape inference is not possible!\n", l_op );
+      return 0;
+    }
+    if ( 0 != libxsmm_meqn_is_unary_opcode_pad_kernel( l_op ) ) {
+      fprintf( stderr, "LIBXSMM ERROR: padding unary opcode %u is not supported in equations, shape inference is not possible!\n", l_op );
+      return 0;
+    }
+    if ( (LIBXSMM_MELTW_TYPE_UNARY_GATHER == cur_node->info.u_op.type) ||
+         (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel( l_op ) > 0) ) {
+      if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) || (cur_node->le->info.arg.in_pos < 0) ) {
+        fprintf( stderr, "LIBXSMM ERROR: unary opcode %u requires a user provided argument as input!\n", l_op );
+        return 0;
+      }
+    }
+    if ( libxsmm_meqn_is_unary_opcode_reduce_kernel( l_op ) > 0 ) {
+      if ( (cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0 ) {
+        *o_m = le_n;
+        *o_n = 1;
+      } else if ( (cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0 ) {
+        *o_m = le_m;
+        *o_n = 1;
+      } else {
+        fprintf( stderr, "LIBXSMM ERROR: reduce opcode %u requires either the REDUCE_ROWS or the REDUCE_COLS flag, shape inference is not possible!\n", l_op );
+        return 0;
+      }
+    } else if ( libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel( l_op ) > 0 ) {
+      *o_m = le_m;
+      *o_n = 1;
+    } else if ( libxsmm_meqn_is_unary_opcode_reduce_to_scalar( l_op ) > 0 ) {
+      *o_m = 1;
+      *o_n = 1;
+    } else if ( libxsmm_meqn_is_unary_opcode_transform_kernel( l_op ) > 0 ) {
+      *o_m = le_n;
+      *o_n = le_m;
+    } else {
+      *o_m = le_m;
+      *o_n = le_n;
+    }
+    return 1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if ( 0 == libxsmm_meqn_infer_node_shape( cur_node->le, 0, &le_m, &le_n ) ) {
+      return 0;
+    }
+    if ( 0 == libxsmm_meqn_infer_node_shape( cur_node->ri, 0, &ri_m, &ri_n ) ) {
+      return 0;
+    }
+    if ( (cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1) ) {
+      *o_m = le_m;
+      *o_n = ri_n;
+    } else {
+      const libxsmm_meqn_bcast_type le_bcast = libxsmm_meqn_get_bcast_type_binary( cur_node->info.b_op.flags, LEFT );
+      const libxsmm_meqn_bcast_type ri_bcast = libxsmm_meqn_get_bcast_type_binary( cur_node->info.b_op.flags, RIGHT );
+      const libxsmm_blasint l_m = LIBXSMM_MAX( le_m, ri_m );
+      const libxsmm_blasint l_n = LIBXSMM_MAX( le_n, ri_n );
+      if ( (0 == libxsmm_meqn_operand_shape_is_valid( le_bcast, l_m, l_n, le_m, le_n )) ||
+           (0 == libxsmm_meqn_operand_shape_is_valid( ri_bcast, l_m, l_n, ri_m, ri_n )) ) {
+        fprintf( stderr, "LIBXSMM ERROR: binary opcode %u has incompatible operand shapes (%i x %i) and (%i x %i), shape inference is not possible!\n",
+          (unsigned int)cur_node->info.b_op.type, (int)le_m, (int)le_n, (int)ri_m, (int)ri_n );
+        return 0;
+      }
+      if ( libxsmm_meqn_is_binary_opcode_reduce_to_scalar( (unsigned int)cur_node->info.b_op.type ) > 0 ) {
+        *o_m = 1;
+        *o_n = 1;
+      } else {
+        *o_m = l_m;
+        *o_n = l_n;
+      }
+    }
+    return 1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ( 0 == libxsmm_meqn_infer_node_shape( cur_node->le, 0, &le_m, &le_n ) ) {
+      return 0;
+    }
+    if ( 0 == libxsmm_meqn_infer_node_shape( cur_node->ri, 0, &ri_m, &ri_n ) ) {
+      return 0;
+    }
+    if ( 0 == libxsmm_meqn_infer_node_shape( cur_node->r2, 0, &r2_m, &r2_n ) ) {
+      return 0;
+    }
+    if ( (cur_node->info.t_op.is_matmul == 1) || (cur_node->info.t_op.is_brgemm == 1) ) {
+      *o_m = r2_m;
+      *o_n = r2_n;
+    } else {
+      const libxsmm_meqn_bcast_type le_bcast = libxsmm_meqn_get_bcast_type_ternary( cur_node->info.t_op.flags, LEFT );
+      const libxsmm_meqn_bcast_type ri_bcast = libxsmm_meqn_get_bcast_type_ternary( cur_node->info.t_op.flags, RIGHT );
+      const libxsmm_meqn_bcast_type r2_bcast = libxsmm_meqn_get_bcast_type_ternary( cur_node->info.t_op.flags, RIGHT2 );
+      const libxsmm_blasint l_m = LIBXSMM_MAX( r2_m, LIBXSMM_MAX( le_m, ri_m ) );
+      const libxsmm_blasint l_n = LIBXSMM_MAX( r2_n, LIBXSMM_MAX( le_n, ri_n ) );
+      /* the third operand of SELECT is an implicitly typed bitmask, hence its shape cannot be checked */
+      const int l_check_r2 = (LIBXSMM_MELTW_TYPE_TERNARY_SELECT == cur_node->info.t_op.type) ? 0 : 1;
+      if ( (0 == libxsmm_meqn_operand_shape_is_valid( le_bcast, l_m, l_n, le_m, le_n )) ||
+           (0 == libxsmm_meqn_operand_shape_is_valid( ri_bcast, l_m, l_n, ri_m, ri_n )) ||
+           ((0 != l_check_r2) && (0 == libxsmm_meqn_operand_shape_is_valid( r2_bcast, l_m, l_n, r2_m, r2_n ))) ) {
+        fprintf( stderr, "LIBXSMM ERROR: ternary opcode %u has incompatible operand shapes (%i x %i), (%i x %i) and (%i x %i), shape inference is not possible!\n",
+          (unsigned int)cur_node->info.t_op.type, (int)le_m, (int)le_n, (int)ri_m, (int)ri_n, (int)r2_m, (int)r2_n );
+        return 0;
+      }
+      *o_m = l_m;
+      *o_n = l_n;
+    }
+    return 1;
+  }
+
+  fprintf( stderr, "LIBXSMM ERROR: the equation contains an unknown node type, shape inference is not possible!\n" );
+  return 0;
+}
+
+LIBXSMM_API_INTERN int libxsmm_meqn_is_shape_inference_possible( libxsmm_matrix_eqn* eqn ) {
+  libxsmm_blasint l_m = 0, l_n = 0;
+  if ( (NULL == eqn) || (NULL == eqn->eqn_root) ) {
+    return 0;
+  }
+  return libxsmm_meqn_infer_node_shape( eqn->eqn_root, 1, &l_m, &l_n );
+}
+
 LIBXSMM_API_INTERN void libxsmm_meqn_adjust_tmp_sizes( libxsmm_meqn_elem* cur_node ) {
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     /* Do nothing */
@@ -951,6 +1138,10 @@ LIBXSMM_API_INTERN void libxsmm_meqn_opt_exec_plan( libxsmm_blasint idx ) {
   printf("Assigning register scores to find optimal traversal plan (i.e. that minimizes tmp storage)... \n");
 #endif
   assert(NULL != libxsmm_matrix_eqns[idx]);
+  if ( 0 == libxsmm_meqn_is_shape_inference_possible( libxsmm_matrix_eqns[idx] ) ) {
+    libxsmm_matrix_eqns[idx]->is_shape_inferable = 0;
+    return;
+  }
   libxsmm_meqn_propagate_tmp_info( libxsmm_matrix_eqns[idx]->eqn_root );
   libxsmm_meqn_assign_reg_scores( libxsmm_matrix_eqns[idx]->eqn_root );
   max_reg_score = libxsmm_matrix_eqns[idx]->eqn_root->reg_score;
@@ -1267,6 +1458,10 @@ LIBXSMM_API_INTERN int libxsmm_meqn_is_ready_for_jit( libxsmm_blasint eqn_idx ) 
     fprintf( stderr, "the requested equation is not finalized, yet!\n" );
     return 2;
   }
+  if ( libxsmm_matrix_eqns[eqn_idx]->is_shape_inferable == 0 ) {
+    fprintf( stderr, "shape inference is not possible for the requested equation, so it cannot be JITed!\n" );
+    return 3;
+  }
   if ( libxsmm_matrix_eqns[eqn_idx]->is_optimized == 0 ) {
     fprintf( stderr, "the requested equation is not optimized, yet!\n" );
     return 2;
@@ -1310,6 +1505,7 @@ LIBXSMM_API libxsmm_blasint libxsmm_meqn_create(void) {
   libxsmm_matrix_eqns[ret]->eqn_cur = node;
   libxsmm_matrix_eqns[ret]->is_constructed = 0;
   libxsmm_matrix_eqns[ret]->is_optimized = 0;
+  libxsmm_matrix_eqns[ret]->is_shape_inferable = 1;
   libxsmm_matrix_eqns[ret]->unary_only = 0;
   libxsmm_matrix_eqns[ret]->unary_only = 0;
 #if 0
