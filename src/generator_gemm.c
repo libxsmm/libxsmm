@@ -96,6 +96,17 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     return;
   }
 
+  /* The only C-side binary fusion the GEMM microkernels implement is a column-broadcast bias add;
+   * reject anything else instead of silently dropping the requested post-op */
+  if ( libxsmm_gemm_descriptor_get_meltw_operation( i_xgemm_desc ) == LIBXSMM_MELTW_OPERATION_BINARY ) {
+    if ( ( libxsmm_gemm_descriptor_get_meltw_param( i_xgemm_desc ) != LIBXSMM_MELTW_TYPE_BINARY_ADD ) ||
+         ( ( ( i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0 ) == 0 ) &&
+           ( ( i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1 ) == 0 ) ) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_GEMM_CONFIG );
+      return;
+    }
+  }
+
   /* Support this precision only in avx2 for now  */
   if ( l_is_Amxfp4_Bfp32_gemm > 0 ) {
     if (io_generated_code->arch >= LIBXSMM_X86_AVX2 && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) {
