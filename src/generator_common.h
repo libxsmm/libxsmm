@@ -1477,6 +1477,10 @@
 # define LIBXSMM_HANDLE_ERROR_OFF_END()
 #endif
 
+/* colbias fusion is requested and the bias operand has datatype DTYPE */
+#define LIBXSMM_GEMM_FUSED_COLBIAS(CONFIG, DTYPE) \
+  ((0 != (CONFIG)->fused_colbias) && ((libxsmm_datatype)(DTYPE) == (CONFIG)->colbias_dtype))
+
 /* tile config structure */
 typedef struct libxsmm_tile_config {
   unsigned char  palette_id;
@@ -1560,11 +1564,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fused_eltwise;
   unsigned int m_loop_exists;
   unsigned int n_loop_exists;
-  unsigned int fused_bcolbias;
-  unsigned int fused_hcolbias;
-  unsigned int fused_b8colbias;
-  unsigned int fused_h8colbias;
-  unsigned int fused_scolbias;
+  unsigned int fused_colbias;
+  libxsmm_datatype colbias_dtype; /* only meaningful when fused_colbias != 0 */
   unsigned int fused_relu;
   unsigned int fused_relu_nobitmask;
   unsigned int fused_relu_bwd;
