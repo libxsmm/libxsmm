@@ -169,6 +169,8 @@ LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_reduce_kernel (unsigned int 
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_transform_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_pad_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_root_only (unsigned int opcode, libxsmm_bitfield flags);
+LIBXSMM_API_INTERN int libxsmm_meqn_operand_shape_is_valid( libxsmm_meqn_bcast_type bcast_type,
+  libxsmm_blasint o_m, libxsmm_blasint o_n, libxsmm_blasint i_m, libxsmm_blasint i_n );
 LIBXSMM_API_INTERN int libxsmm_meqn_is_unary_opcode_reduce_to_scalar (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_is_binary_opcode_reduce_to_scalar (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_meqn_infer_node_shape( libxsmm_meqn_elem* cur_node, libxsmm_blasint is_root, libxsmm_blasint* o_m, libxsmm_blasint* o_n );

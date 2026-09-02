@@ -898,8 +898,6 @@ int libxsmm_meqn_is_unary_opcode_root_only (unsigned int opcode, libxsmm_bitfiel
 
 /* An operand is only usable if it covers the extent of the op's output in all non-broadcast dimensions. */
 LIBXSMM_API_INTERN int libxsmm_meqn_operand_shape_is_valid( libxsmm_meqn_bcast_type bcast_type,
-  libxsmm_blasint o_m, libxsmm_blasint o_n, libxsmm_blasint i_m, libxsmm_blasint i_n );
-LIBXSMM_API_INTERN int libxsmm_meqn_operand_shape_is_valid( libxsmm_meqn_bcast_type bcast_type,
   libxsmm_blasint o_m, libxsmm_blasint o_n, libxsmm_blasint i_m, libxsmm_blasint i_n ) {
   int result = 1;
   if ( LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR != bcast_type ) {
