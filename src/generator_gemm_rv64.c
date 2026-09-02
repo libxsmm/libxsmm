@@ -662,9 +662,9 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                l_gp_reg_mapping.gp_reg_mloop, l_m_done - l_m_done_old );
         /* load block of C */
         if ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 ) {
-          if ((l_micro_kernel_config.fused_scolbias == 1) || (l_micro_kernel_config.fused_bcolbias == 1)) {
+          if (LIBXSMM_GEMM_FUSED_COLBIAS(&l_micro_kernel_config, LIBXSMM_DATATYPE_F32) || LIBXSMM_GEMM_FUSED_COLBIAS(&l_micro_kernel_config, LIBXSMM_DATATYPE_BF16)) {
             libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64( io_generated_code, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
-                l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, (l_micro_kernel_config.fused_scolbias == 1) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, l_m_blocking, l_n_blocking, l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out );
+                l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_micro_kernel_config.colbias_dtype, l_m_blocking, l_n_blocking, l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out );
           }
           else {
             libxsmm_generator_load_2dregblock_rv64_rvv( io_generated_code, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
@@ -803,11 +803,11 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
                                                     (long long)l_m_blocking*l_micro_kernel_config.datatype_size_out );
 
         /* Adjust colbias ptr */
-        if ((l_micro_kernel_config.fused_scolbias == 1) || (l_micro_kernel_config.fused_bcolbias == 1)) {
+        if (LIBXSMM_GEMM_FUSED_COLBIAS(&l_micro_kernel_config, LIBXSMM_DATATYPE_F32) || LIBXSMM_GEMM_FUSED_COLBIAS(&l_micro_kernel_config, LIBXSMM_DATATYPE_BF16)) {
           libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_1);
           libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_ADD,
                                                       l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1,
-                                                      (l_micro_kernel_config.fused_scolbias == 1) ? (long long)l_m_blocking*4 : (long long)l_m_blocking*2 );
+                                                      (long long)l_m_blocking * LIBXSMM_TYPESIZE(l_micro_kernel_config.colbias_dtype) );
           libxsmm_generator_gemm_setval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1);
         }
 
@@ -878,11 +878,11 @@ void libxsmm_generator_gemm_rv64_kernel( libxsmm_generated_code*        io_gener
     }
 
     /* Adjust colbias ptr */
-    if ((l_micro_kernel_config.fused_scolbias == 1) || (l_micro_kernel_config.fused_bcolbias == 1)) {
+    if (LIBXSMM_GEMM_FUSED_COLBIAS(&l_micro_kernel_config, LIBXSMM_DATATYPE_F32) || LIBXSMM_GEMM_FUSED_COLBIAS(&l_micro_kernel_config, LIBXSMM_DATATYPE_BF16)) {
       libxsmm_generator_gemm_getval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_1);
       libxsmm_rv64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_RV64_INSTR_GP_SUB,
                                                      l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1,
-                                                     (l_micro_kernel_config.fused_scolbias == 1) ? (long long)l_xgemm_desc_opa->m*4 : (long long)l_xgemm_desc_opa->m *2 );
+                                                     (long long)l_xgemm_desc_opa->m * LIBXSMM_TYPESIZE(l_micro_kernel_config.colbias_dtype) );
       libxsmm_generator_gemm_setval_stack_var_rv64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1);
     }
 

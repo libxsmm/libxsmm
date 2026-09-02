@@ -40,6 +40,8 @@ LIBXSMM targets small matrices and it is the caller's responsibility to tile lar
 
 A shape that violates either limit is not rejected: the dispatch transparently falls back to the (correct but non-optimized) reference kernel, and `libxsmm_get_kernel_info` reports `is_reference_kernel`. Running with `LIBXSMM_VERBOSE=2` prints the reason. Note that `LIBXSMM_MAX_MNK` only guides the auto-dispatch of the BLAS-style wrappers (`libxsmm_?gemm`) and has no effect on explicitly dispatched kernels such as `libxsmm_dispatch_gemm` or `libxsmm_dispatch_brgemm`.
 
+The operand extent limit applies to the sparse kernels as well: `libxsmm_create_spgemm_csr_areg` (and hence `libxsmm_fsspmdm_create`, which builds on it) requires `ldb`&middot;`k` and `ldc`&middot;`m` to stay below 2 GiB. Oversized shapes no longer yield a kernel that reads and writes outside of the operands; `libxsmm_fsspmdm_create` falls back to its dense kernel instead.
+
 ### Manual Code Dispatch
 
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface.

@@ -152,11 +152,18 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(libxsmm_timer_tickint (*timer_tick)(vo
   LIBXSMM_MEMZERO127(&header);
   header.magic      = JITDUMP_MAGIC;
   header.version    = JITDUMP_VERSION;
+#if defined(LIBXSMM_PLATFORM_AARCH64)
+  header.elf_mach   = 183; /* EM_AARCH64 */
+#elif defined(LIBXSMM_PLATFORM_RV64)
+  header.elf_mach   = 243; /* EM_RISCV */
+#else
   header.elf_mach   = 62;  /* EM_X86_64 */
+#endif
   header.total_size = sizeof(header);
   header.pid        = pid;
   header.timestamp  = internal_perf_timer();
-  header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
+  /* timestamps are CLOCK_MONOTONIC (not architectural), hence perf must record with "-k mono" */
+  header.flags      = 0;
 
   res = fwrite(&header, sizeof(header), 1, internal_perf_fp);
   if (res != 1) {

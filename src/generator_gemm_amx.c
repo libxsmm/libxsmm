@@ -20,6 +20,22 @@
 #include "generator_mateltwise_transform_avx512.h"
 #include "generator_mateltwise_transform_common_x86.h"
 
+/* vector name and load instruction matching the width of the fused colbias operand */
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_colbias_load_props( const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                    char*                              o_vname,
+                                                    unsigned int*                      o_ld_instr ) {
+  switch ( i_micro_kernel_config->colbias_dtype ) {
+    case LIBXSMM_DATATYPE_F32:
+      *o_vname = 'z'; *o_ld_instr = LIBXSMM_X86_INSTR_VMOVUPS;   break;
+    case LIBXSMM_DATATYPE_BF16:
+    case LIBXSMM_DATATYPE_F16:
+      *o_vname = 'y'; *o_ld_instr = LIBXSMM_X86_INSTR_VMOVDQU16; break;
+    default: /* BF8, HF8 */
+      *o_vname = 'x'; *o_ld_instr = LIBXSMM_X86_INSTR_VMOVDQU8;  break;
+  }
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_brgemm_amx_set_gp_reg_scf( libxsmm_generated_code*             io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
@@ -2559,7 +2575,7 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
   }
 
   /* Also adjust eltwise pointers */
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_colbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -2594,25 +2610,13 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if (i_micro_kernel_config->fused_b8colbias == 1 || i_micro_kernel_config->fused_h8colbias == 1) {
+  if (i_micro_kernel_config->fused_colbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ((long long)i_xgemm_desc->m * i_m_loop_exists * 1/*(i_micro_kernel_config->datatype_size/2)*/) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ((long long)i_xgemm_desc->m * i_m_loop_exists * LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype)) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ((long long)i_xgemm_desc->m * i_m_loop_exists * 2/*(i_micro_kernel_config->datatype_size/2)*/) );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-  }
-
-  if (i_micro_kernel_config->fused_scolbias == 1) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ((long long)i_xgemm_desc->m * i_m_loop_exists * 4) );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-  }
-
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_colbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -2882,7 +2886,7 @@ void libxsmm_generator_gemm_footer_mloop_amx( libxsmm_generated_code*           
     libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_colbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -2910,25 +2914,13 @@ void libxsmm_generator_gemm_footer_mloop_amx( libxsmm_generated_code*           
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if (i_micro_kernel_config->fused_b8colbias == 1 || i_micro_kernel_config->fused_h8colbias == 1) {
+  if (i_micro_kernel_config->fused_colbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_blocking * 1/*(i_micro_kernel_config->datatype_size/2)*/ );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_blocking * LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_blocking * 2/*(i_micro_kernel_config->datatype_size/2)*/ );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-  }
-
-  if (i_micro_kernel_config->fused_scolbias == 1) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_blocking * 4  );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-  }
-
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_colbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -3152,7 +3144,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
   if ((0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) &&
       !((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) )) { /* Beta=1 */
     /* Check if we have to fuse colbias bcast */
-    if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+    if (i_micro_kernel_config->fused_colbias == 1) {
       gp_reg_bias = i_gp_reg_mapping->gp_reg_lda;
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, gp_reg_bias );
     }
@@ -3170,22 +3162,19 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         unsigned int vload_instr = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ? LIBXSMM_X86_INSTR_VMOVDQU16 : LIBXSMM_X86_INSTR_VMOVDQU8;
         char vload_name = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ? 'y' : 'x';
         i_n_offset = 0;
-        if (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1 || i_micro_kernel_config->fused_b8colbias == 1 || i_micro_kernel_config->fused_h8colbias == 1 || i_micro_kernel_config->fused_scolbias == 1) {
-          libxsmm_datatype l_colbias_prec = (i_micro_kernel_config->fused_bcolbias == 1) ? LIBXSMM_DATATYPE_BF16 :
-                                            ((i_micro_kernel_config->fused_hcolbias == 1) ? LIBXSMM_DATATYPE_F16 :
-                                            ((i_micro_kernel_config->fused_b8colbias == 1) ? LIBXSMM_DATATYPE_BF8 :
-                                            ((i_micro_kernel_config->fused_h8colbias == 1) ? LIBXSMM_DATATYPE_HF8 : LIBXSMM_DATATYPE_F32)));
-          char l_vname_ld = (i_micro_kernel_config->fused_scolbias == 1) ? 'z' : ((i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) ? 'y' : 'x');
-          unsigned int l_ld_instr = (i_micro_kernel_config->fused_scolbias == 1) ? LIBXSMM_X86_INSTR_VMOVUPS : ( (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) ? LIBXSMM_X86_INSTR_VMOVDQU16 :LIBXSMM_X86_INSTR_VMOVDQU8);
+        if (i_micro_kernel_config->fused_colbias == 1) {
+          char l_vname_ld;
+          unsigned int l_ld_instr;
+          libxsmm_generator_gemm_amx_colbias_load_props( i_micro_kernel_config, &l_vname_ld, &l_ld_instr );
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               l_ld_instr,
               gp_reg_bias,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              i_m_offset_bias * LIBXSMM_TYPESIZE(l_colbias_prec),
+              i_m_offset_bias * LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype),
               l_vname_ld,
               vbias_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
-          libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, l_colbias_prec, vbias_reg, vbias_reg);
+          libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->colbias_dtype, vbias_reg, vbias_reg);
           i_m_offset_bias += m_blocking_info->sizes[im];
         }
 
@@ -3204,7 +3193,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
 
             libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ), zmm_reg, zmm_reg);
-            if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+            if (i_micro_kernel_config->fused_colbias == 1) {
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, 'z', zmm_reg, vbias_reg, zmm_reg );
             }
             /* Store upconverted column to GEMM scratch */
@@ -3245,27 +3234,24 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
       i_m_offset_bias = 0;
       for (im = 0; im < m_tiles; im++) {
         i_n_offset = 0;
-        if (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1 || i_micro_kernel_config->fused_b8colbias == 1 || i_micro_kernel_config->fused_h8colbias == 1 || i_micro_kernel_config->fused_scolbias == 1) {
-          libxsmm_datatype l_colbias_prec = (i_micro_kernel_config->fused_bcolbias == 1) ? LIBXSMM_DATATYPE_BF16 :
-                                            ((i_micro_kernel_config->fused_hcolbias == 1) ? LIBXSMM_DATATYPE_F16 :
-                                            ((i_micro_kernel_config->fused_b8colbias == 1) ? LIBXSMM_DATATYPE_BF8 :
-                                            ((i_micro_kernel_config->fused_h8colbias == 1) ? LIBXSMM_DATATYPE_HF8 : LIBXSMM_DATATYPE_F32)));
-          char l_vname_ld = (i_micro_kernel_config->fused_scolbias == 1) ? 'z' : ((i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) ? 'y' : 'x');
-          unsigned int l_ld_instr = (i_micro_kernel_config->fused_scolbias == 1) ? LIBXSMM_X86_INSTR_VMOVUPS : ( (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) ? LIBXSMM_X86_INSTR_VMOVDQU16 :LIBXSMM_X86_INSTR_VMOVDQU8);
+        if (i_micro_kernel_config->fused_colbias == 1) {
+          char l_vname_ld;
+          unsigned int l_ld_instr;
+          libxsmm_generator_gemm_amx_colbias_load_props( i_micro_kernel_config, &l_vname_ld, &l_ld_instr );
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               l_ld_instr,
               gp_reg_bias,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              i_m_offset_bias * LIBXSMM_TYPESIZE(l_colbias_prec),
+              i_m_offset_bias * LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype),
               l_vname_ld,
               vbias_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
-          libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, l_colbias_prec, vbias_reg, vbias_reg);
+          libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->colbias_dtype, vbias_reg, vbias_reg);
           i_m_offset_bias += m_blocking_info->sizes[im];
         }
         for (in = 0; in < n_tiles; in++) {
-          if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+          if (i_micro_kernel_config->fused_colbias == 1) {
             for (col = 0; col < n_blocking_info->sizes[in]; col++) {
               zmm_reg = (col % (30-i_micro_kernel_config->reserved_zmms)) + i_micro_kernel_config->reserved_zmms;
               libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3305,15 +3291,15 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         i_m_offset += m_blocking_info->sizes[im];
       }
     }
-    if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+    if (i_micro_kernel_config->fused_colbias == 1) {
       libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, ((long long)i_xgemm_desc->lda * 4/*l_micro_kernel_config.datatype_size*/)/4);
     }
   } else { /* Beta=0 */
     /* Check if we have to fuse colbias bcast */
-    if (((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) &&
+    if ((i_micro_kernel_config->fused_colbias == 1) &&
         !((LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) )) {
 
-      if (i_micro_kernel_config->fused_scolbias == 1) {
+      if (LIBXSMM_GEMM_FUSED_COLBIAS(i_micro_kernel_config, LIBXSMM_DATATYPE_F32)) {
         if ( (gp_reg_bias == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
           libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_1 );
         }
@@ -3348,7 +3334,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         /* Restore gp_reg_ldc to proper value */
         libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_ldc, ((long long)i_xgemm_desc->ldc * 4)/4);
 
-      } else if (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1 || i_micro_kernel_config->fused_b8colbias == 1 || i_micro_kernel_config->fused_h8colbias == 1 ) {
+      } else if (i_micro_kernel_config->fused_colbias == 1) {
 
         unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
 
@@ -3371,12 +3357,9 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         /* Upconvert bf16 bias to GEMM scratch */
         i_m_offset = 0;
         for (im = 0; im < m_tiles; im++) {
-          libxsmm_datatype l_colbias_prec = (i_micro_kernel_config->fused_bcolbias == 1) ? LIBXSMM_DATATYPE_BF16 :
-                                            ((i_micro_kernel_config->fused_hcolbias == 1) ? LIBXSMM_DATATYPE_F16 :
-                                            ((i_micro_kernel_config->fused_b8colbias == 1) ? LIBXSMM_DATATYPE_BF8 :
-                                            ((i_micro_kernel_config->fused_h8colbias == 1) ? LIBXSMM_DATATYPE_HF8 : LIBXSMM_DATATYPE_F32)));
-          char l_vname_ld = (i_micro_kernel_config->fused_scolbias == 1) ? 'z' : ((i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) ? 'y' : 'x');
-          unsigned int l_ld_instr = (i_micro_kernel_config->fused_scolbias == 1) ? LIBXSMM_X86_INSTR_VMOVUPS : ( (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) ? LIBXSMM_X86_INSTR_VMOVDQU16 :LIBXSMM_X86_INSTR_VMOVDQU8);
+          char l_vname_ld;
+          unsigned int l_ld_instr;
+          libxsmm_generator_gemm_amx_colbias_load_props( i_micro_kernel_config, &l_vname_ld, &l_ld_instr );
           zmm_reg = (im % (30-i_micro_kernel_config->reserved_zmms)) + i_micro_kernel_config->reserved_zmms;
           /* load 16 bit values into ymm portion of the register */
           libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3384,10 +3367,10 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
               l_ld_instr,
               gp_reg_bias,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              i_m_offset * LIBXSMM_TYPESIZE(l_colbias_prec),
+              i_m_offset * LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype),
               l_vname_ld,
               zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
-          libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, l_colbias_prec, zmm_reg, zmm_reg);
+          libxsmm_generator_cvt_to_ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->colbias_dtype, zmm_reg, zmm_reg);
           /* Store upconverted column to GEMM scratch */
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
@@ -4306,7 +4289,7 @@ void libxsmm_generator_gemm_amx_adjust_m_advancement( libxsmm_generated_code* io
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ZPT_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_colbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -4334,25 +4317,13 @@ void libxsmm_generator_gemm_amx_adjust_m_advancement( libxsmm_generated_code* io
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if (i_micro_kernel_config->fused_b8colbias == 1 || i_micro_kernel_config->fused_h8colbias == 1) {
+  if (i_micro_kernel_config->fused_colbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_adjustment * 1 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_adjustment * LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
-  if (i_micro_kernel_config->fused_bcolbias == 1 || i_micro_kernel_config->fused_hcolbias == 1) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_adjustment * 2 );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-  }
-
-  if (i_micro_kernel_config->fused_scolbias == 1) {
-    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (long long)i_m_adjustment * 4 );
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-  }
-
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_b8colbias == 1) || (i_micro_kernel_config->fused_h8colbias == 1) || (i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_hcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) || (i_micro_kernel_config->fused_colbias == 1) || (i_micro_kernel_config->overwrite_C == 0)) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -4849,16 +4820,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for
     }
   }
 
-  if ((i_micro_kernel_config->fused_b8colbias > 0) || (i_micro_kernel_config->fused_h8colbias > 0) ) {
+  if ((i_micro_kernel_config->fused_colbias > 0) && (1 == LIBXSMM_TYPESIZE(i_micro_kernel_config->colbias_dtype))) {
     /* The colbias input carries its own FP8 flavor (from the original C precision /
      * meltw_datatype_aux), which for mixed A/B FP8 differs from the A-operand flavor
      * (i_in_dtype). Use the colbias flavor for its BF8/HF8 -> F32 upconvert, otherwise a
      * BF8 bias would be decoded as HF8 (or vice versa) on mixed FP8 GEMMs. */
-    libxsmm_datatype l_colbias_in_dtype = (i_micro_kernel_config->fused_h8colbias > 0) ? LIBXSMM_DATATYPE_HF8 : LIBXSMM_DATATYPE_BF8;
-    /* Convert BF8 colbias to F32 for later use */
-    i_micro_kernel_config->fused_b8colbias = 0;
-    i_micro_kernel_config->fused_h8colbias = 0;
-    i_micro_kernel_config->fused_scolbias = 1;
+    libxsmm_datatype l_colbias_in_dtype = i_micro_kernel_config->colbias_dtype;
+    /* Convert BF8/HF8 colbias to F32 for later use */
+    i_micro_kernel_config->colbias_dtype = LIBXSMM_DATATYPE_F32;
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, tmp_reg );
     libxsmm_x86_instruction_alu_mem( io_generated_code,
             LIBXSMM_X86_INSTR_MOVQ,
