@@ -3455,7 +3455,8 @@ int main(int argc, char* argv []) {
     } else if ((strcmp(argv[1], "MXFP4") == 0 || strcmp(argv[1], "MXFP4_VIA_MXFP8") == 0) && strcmp(argv[1], argv[2]) == 0) {
       l_dtype_a_size = 1;
       l_gemm_def.is_Amxfp4Bmxfp4_gemm = 1;
-      l_dtype_a    = LIBXSMM_DATATYPE_BF8;
+      l_dtype_a    = LIBXSMM_DATATYPE_MXFP4X2;
+      l_dtype_b    = LIBXSMM_DATATYPE_MXFP4X2;
     } else if (strcmp(argv[1], "MXFP4") == 0) {
       l_dtype_a_size = 0.53125;
       if (strcmp(argv[2], "BF16") == 0) {
@@ -3685,7 +3686,8 @@ int main(int argc, char* argv []) {
       }
     }  else if ((strcmp(argv[1], "MXFP4") == 0 || strcmp(argv[1], "MXFP4_VIA_MXFP8") == 0) && strcmp(argv[1], argv[2]) == 0) {
       l_gemm_def.is_Amxfp4Bmxfp4_gemm = 1;
-      l_dtype_a    = LIBXSMM_DATATYPE_BF8;
+      l_dtype_a    = LIBXSMM_DATATYPE_MXFP4X2;
+      l_dtype_b    = LIBXSMM_DATATYPE_MXFP4X2;
     } else if (strcmp(argv[1], "MXFP4") == 0) {
       if (strcmp(argv[2], "BF16") == 0) {
         l_gemm_def.is_Amxfp4Bbf16_gemm = 1;
