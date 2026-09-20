@@ -223,6 +223,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -238,7 +239,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -265,6 +266,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -280,7 +282,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -309,6 +311,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -323,7 +326,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -349,6 +352,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -363,7 +367,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -392,6 +396,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -406,7 +411,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -434,6 +439,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -448,7 +454,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -468,6 +474,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -483,7 +490,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
@@ -506,6 +513,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -520,7 +528,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
@@ -541,6 +549,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -555,7 +564,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />

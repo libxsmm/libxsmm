@@ -57,7 +57,7 @@ if __name__ == "__main__":
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[12:], 0))
 
         version, branch, realversion = libxsmm_utilities.version_branch()
-        major, minor, update, patch = libxsmm_utilities.version_numbers(
+        major, minor, update, patch = libxsmm_utilities.version_components(
             version
         )
 

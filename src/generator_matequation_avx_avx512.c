@@ -1019,11 +1019,11 @@ libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_
                                                                         const libxsmm_meqn_descriptor*    i_mateqn_desc) {
   libxsmm_blasint is_valid_arch_prec = 1;
   unsigned int has_inp_or_out_fp8 = ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_BF8) > 0) || (libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_HF8) > 0) ||
-                                     (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
-  unsigned int has_inp_or_out_fp64= ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64) > 0) || (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+                                     (LIBXSMM_DATATYPE_BF8 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype)) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype))) ? 1 : 0;
+  unsigned int has_inp_or_out_fp64= ((libxsmm_meqn_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64) > 0) || (LIBXSMM_DATATYPE_F64 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype))) ? 1 : 0;
   unsigned int all_nodes_fp64 = libxsmm_meqn_all_nodes_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
   unsigned int all_args_fp64 = libxsmm_meqn_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
-  unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+  unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_MEQN_GETENUM_OUT_PREC(i_mateqn_desc->datatype))) ? 1 : 0;
 
   /* Unary not supported for fp64 */
   libxsmm_meltw_unary_type non_fp64_unary[21] = { LIBXSMM_MELTW_TYPE_UNARY_RELU,
@@ -1184,7 +1184,11 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
             temp_reg,
             0 );
       }
-      copy_mateqn_desc.datatype = LIBXSMM_CAST_UCHAR(cur_eqn->eqn_root->tmp.dtype);
+      {
+        unsigned char l_datatype = 0;
+        LIBXSMM_MEQN_SET_DESC_DATATYPE((libxsmm_datatype)cur_eqn->eqn_root->tmp.dtype, &l_datatype);
+        copy_mateqn_desc.datatype = l_datatype;
+      }
     }
 
     libxsmm_x86_instruction_alu_mem( io_generated_code,

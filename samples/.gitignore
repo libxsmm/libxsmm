@@ -14,8 +14,6 @@ edge/dense_packedacrm_*
 edge/dense_packedbcrm_*
 edge/dense_packed_*
 edge/edge_vol_int
-eigen/eigen_smm
-eigen/eigen_tensor
 packed/trsm/gemm
 packed/trsm/getrf
 packed/trmm/trmm

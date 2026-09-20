@@ -36,8 +36,15 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
                                                                                            const unsigned int             i_current_m_blocking );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                                                                const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                                                                const unsigned int                  i_arch );
+                                                                                               const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                                                               const unsigned int                  i_arch );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_setup_ace_inline_trans( libxsmm_generated_code*            io_generated_code,
+                                                                                             const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                             const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                             const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                             const unsigned int                 i_m_blocking,
+                                                                                             const unsigned int                 i_n_blocking );
 
 #endif /* GENERATOR_GEMM_SSE_AVX_AVX2_AVX512_H */
 

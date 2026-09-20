@@ -6,8 +6,7 @@ opentuner.db
 bin/libxsmm_generator
 include/libxsmm_version.h
 include/libxsmm.f
-lib/libxsmm*
-lib/module
+lib
 ide/GPUCache
 ide/_vs*-*.bat
 ide/.vs

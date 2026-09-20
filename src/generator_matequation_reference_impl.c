@@ -113,6 +113,7 @@ void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *sc
     /* Here he discpatch the proper TPP by setting up the proper descriptor and the parameter */
     if (cur_tpp_node.type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
       libxsmm_meltw_unary_param unary_param;
+      memset(&unary_param, 0, sizeof(unary_param));
       if ((libxsmm_meqn_is_unary_opcode_reduce_kernel(cur_tpp_node.info.u_op.type) > 0) || (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(cur_tpp_node.info.u_op.type) > 0)) {
         meltw_desc = libxsmm_meltw_descriptor_init2(&blob, left_tpp_node.tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
           cur_tpp_node.info.u_op.dtype, cur_tpp_node.tmp.dtype, left_tpp_node.tmp.m, left_tpp_node.tmp.n, left_tpp_node.tmp.ld, cur_tpp_node.tmp.ld, 0, 0,
@@ -146,6 +147,7 @@ void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *sc
     } else if (cur_tpp_node.type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
       libxsmm_meqn_elem right_tpp_node = unfolded_exec_tree[5*i+2];
       libxsmm_meltw_binary_param binary_param;
+      memset(&binary_param, 0, sizeof(binary_param));
       if (libxsmm_meqn_is_binary_opcode_reduce_to_scalar(cur_tpp_node.info.b_op.type) > 0) {
         meltw_desc = libxsmm_meltw_descriptor_init2(&blob, left_tpp_node.tmp.dtype, right_tpp_node.tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED,
           cur_tpp_node.info.b_op.dtype, cur_tpp_node.tmp.dtype, LIBXSMM_MAX(left_tpp_node.tmp.m, right_tpp_node.tmp.m), LIBXSMM_MAX(left_tpp_node.tmp.n, right_tpp_node.tmp.n), left_tpp_node.tmp.ld, cur_tpp_node.tmp.ld, right_tpp_node.tmp.ld, 0,
@@ -183,6 +185,7 @@ void libxsmm_reference_matequation(void *param, void *i_execution_plan, void *sc
       libxsmm_datatype in2_dtype = (cur_tpp_node.info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_SELECT) ? LIBXSMM_DATATYPE_IMPLICIT : right2_tpp_node.tmp.dtype;
 
       libxsmm_meltw_ternary_param ternary_param;
+      memset(&ternary_param, 0, sizeof(ternary_param));
       meltw_desc = libxsmm_meltw_descriptor_init2(&blob, left_tpp_node.tmp.dtype, right_tpp_node.tmp.dtype, in2_dtype,
         cur_tpp_node.info.t_op.dtype, cur_tpp_node.tmp.dtype, cur_tpp_node.tmp.m, cur_tpp_node.tmp.n, left_tpp_node.tmp.ld, cur_tpp_node.tmp.ld, right_tpp_node.tmp.ld, right2_tpp_node.tmp.ld,
         LIBXSMM_CAST_USHORT(cur_tpp_node.info.t_op.flags), LIBXSMM_CAST_USHORT(cur_tpp_node.info.t_op.type), LIBXSMM_MELTW_OPERATION_TERNARY);

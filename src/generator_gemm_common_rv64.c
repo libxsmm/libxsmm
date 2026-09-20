@@ -284,6 +284,10 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_rv64(
   unsigned int temp_reg = i_gp_reg_mapping->gp_reg_help_1;
   unsigned int temp_reg2 = i_gp_reg_mapping->gp_reg_help_0;
 
+  if ( 0 != libxsmm_generator_gemm_stack_scratch_exceeded( io_generated_code, i_xgemm_desc, i_micro_kernel_config ) ) {
+    return;
+  }
+
   /* Allocate scratch for stashing 32 zmms */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     gemm_scratch_size = 32 * 64;
@@ -874,8 +878,8 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_rv64(  libxsmm_generated
   unsigned int l_gp_reg_bias = i_gp_reg_scratch0;
   unsigned int l_bias_tsize = LIBXSMM_TYPESIZE( colbias_precision );
   unsigned int l_matrix_tsize = LIBXSMM_TYPESIZE( (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) );
-  unsigned int l_matrix_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_matrix_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V);
-  unsigned int l_bias_load_instr = (LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : ((LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V);
+  unsigned int l_matrix_load_instr = ((unsigned int)LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_matrix_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : (((unsigned int)LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V);
+  unsigned int l_bias_load_instr = ((unsigned int)LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_BF16) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE16_V : (((unsigned int)LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32) == l_bias_tsize) ? LIBXSMM_RV64_INSTR_RVV_VLE32_V : LIBXSMM_RV64_INSTR_RVV_VLE64_V);
 
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_remainder_size = i_m_blocking % i_vec_length;

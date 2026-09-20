@@ -50,7 +50,7 @@
 
 /**
  * Permuting the data introduces a dependency to LIBXSMM
- * even for the Eigen/Blaze/Blas based sample code.
+ * even for the Eigen/Blaze based sample code.
  */
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE

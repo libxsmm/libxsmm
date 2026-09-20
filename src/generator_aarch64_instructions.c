@@ -54,8 +54,9 @@ void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generat
                                                LIBXSMM_AARCH64_GP_REG_X16, LIBXSMM_AARCH64_GP_REG_X17 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
-    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  96,
-                                               LIBXSMM_AARCH64_GP_REG_X18, LIBXSMM_AARCH64_GP_REG_X19 );
+    /* X18 is the platform register and is not preserved across interrupts on macOS; never use/save it, store X19 alone */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 96,
+                                          LIBXSMM_AARCH64_GP_REG_X19 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  80,
@@ -120,8 +121,9 @@ void libxsmm_aarch64_instruction_restore_regs( libxsmm_generated_code* io_genera
                                                LIBXSMM_AARCH64_GP_REG_X16, LIBXSMM_AARCH64_GP_REG_X17 );
   }
   if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
-    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  96,
-                                               LIBXSMM_AARCH64_GP_REG_X18, LIBXSMM_AARCH64_GP_REG_X19 );
+    /* X18 is the platform register and is not preserved across interrupts on macOS; never use/save it, restore X19 alone */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 96,
+                                          LIBXSMM_AARCH64_GP_REG_X19 );
   }
   if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
     libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  80,
@@ -2373,6 +2375,32 @@ void libxsmm_aarch64_instruction_sm( libxsmm_generated_code* io_generated_code,
 
   /* fix bits */
   code[code_head] = i_instr;
+
+  /* advance code head */
+  io_generated_code->code_size += 4;
+
+  return;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_zero( libxsmm_generated_code* io_generated_code,
+                                           unsigned int            i_mask ) {
+  unsigned int code_head = io_generated_code->code_size/4;
+  unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+  if ( io_generated_code->arch != LIBXSMM_AARCH64_APPL_M4 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sme_zero apple M4 is needed ( or SME )\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+  /* Ensure we have enough space */
+  if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
+  /* ZERO {ZA} : base opcode | 8-bit tile mask (0xff = all ZA tiles) */
+  code[code_head] = LIBXSMM_AARCH64_INSTR_SME_ZERO | (unsigned int)(0xff & i_mask);
 
   /* advance code head */
   io_generated_code->code_size += 4;

@@ -14,6 +14,9 @@
 LIBXSMM_API_INTERN
 void libxsmm_reference_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc);
 
+LIBXSMM_API_INTERN
+void libxsmm_reference_packed_gemm(void *param, const libxsmm_gemm_descriptor *i_xgemm_desc);
+
 #endif /* GENERATOR_GEMM_REFERENCE_IMPL_H */
 
 

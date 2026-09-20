@@ -13,6 +13,10 @@
 
 #include "../libxsmm_typedefs.h"
 
+#if defined(__powerpc64__)
+# include <sys/platform/ppc.h>
+#endif
+
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_timer_info {
   int tsc;

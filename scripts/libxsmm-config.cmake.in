@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+
+set(LIBXSMM_FORTRAN "@LIBXSMM_FORTRAN@")
+set_and_check(LIBXSMM_TARGETS_FILE
+  "${CMAKE_CURRENT_LIST_DIR}/libxsmm-targets.cmake")
+include("${LIBXSMM_TARGETS_FILE}")
+
+set(libxsmm_Fortran_FOUND FALSE)
+if(TARGET libxsmm::libxsmmf)
+  set(libxsmm_Fortran_FOUND TRUE)
+endif()
+
+check_required_components(libxsmm)

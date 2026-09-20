@@ -84,7 +84,7 @@ if __name__ == "__main__":
             if 0 == prefetch:
                 prefetch = -1
             version, branch, realversion = libxsmm_utilities.version_branch(16)
-            major, minor, update, patch = libxsmm_utilities.version_numbers(
+            major, minor, update, patch = libxsmm_utilities.version_components(
                 version
             )
             substitute = {

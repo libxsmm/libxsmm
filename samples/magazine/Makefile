@@ -49,8 +49,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_batch \
-          $(OUTDIR)/$(OUTNAME)_blas \
+XFILES := $(OUTDIR)/$(OUTNAME)_xsmm \
           $(OUTDIR)/$(OUTNAME)_blaze \
           $(OUTDIR)/$(OUTNAME)_eigen
 
@@ -112,14 +111,8 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(call cleanld,$(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/$(OUTNAME)_batch: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_batch-c.o $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(call cleanld,$(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/$(OUTNAME)_blas: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blas-c.o
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 ifneq (,$(BLAZEROOT))
 $(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o

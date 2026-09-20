@@ -100,6 +100,19 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
   }
 }
 
+/**
+ * The A-in-registers kernels address B and C through a base pointer plus a per-row/column
+ * offset which is computed and encoded in 32-bit (a signed displacement on x86), hence both
+ * operands must stay below 2 GiB. Returns 0 if the shape is out of range.
+ */
+LIBXSMM_API_INLINE int libxsmm_generator_spgemm_csr_reg_shape_fits_int32( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  const long long l_typesize = (long long)LIBXSMM_TYPESIZE( LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) );
+  const long long l_size_b = (long long)i_xgemm_desc->ldb * i_xgemm_desc->k * l_typesize;
+  const long long l_size_c = (long long)i_xgemm_desc->ldc * i_xgemm_desc->m * l_typesize;
+  const long long l_max = 0x7FFFFFFF;
+  return ((l_size_b <= l_max) && (l_size_c <= l_max)) ? 1 : 0;
+}
+
 LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -118,6 +131,11 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
+    /* check that B and C are addressable with 32-bit offsets */
+    if ( 0 == libxsmm_generator_spgemm_csr_reg_shape_fits_int32( i_xgemm_desc ) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_SIZE );
+      return;
+    }
 
     /* x86 */
     if ( io_generated_code->arch >= LIBXSMM_X86_GENERIC &&
@@ -134,6 +152,11 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
     }  else if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 &&
                  io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
       libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
+                                                            i_row_idx, i_column_idx, i_values );
+    /* ppc64le with VSX */
+    } else if ( LIBXSMM_PPC64LE_VSX <= io_generated_code->arch &&
+                LIBXSMM_PPC64LE_ALLFEAT >= io_generated_code->arch ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_ppc64le_vsx( io_generated_code, i_xgemm_desc,
                                                             i_row_idx, i_column_idx, i_values );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );

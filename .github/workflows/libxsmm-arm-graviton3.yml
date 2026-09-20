@@ -27,7 +27,7 @@ jobs:
       # Step 3: Start EC2 instance
       - name: Start EC2 instance
         run: |
-          aws ec2 start-instances --instance-ids i-0133c8f6344ff0d86
+          aws ec2 start-instances --instance-ids i-0149caa9e6f4e5ed7
 
   GEMM:
     runs-on: [ self-hosted, graviton ]

@@ -25,20 +25,16 @@ if [ ! "${GREP}" ] || [ ! "${SED}" ] || [ ! "${TR}" ] || [ ! "${WC}" ]; then
 fi
 
 UNIX=`uname`
-MACHINE=`uname -m`
 
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
   if [ "Linux" = "${UNIX}" ]; then
-    if [ "riscv64" = "${MACHINE}" ]; then
-      TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
-        smm.sh"
-    else
-      TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
-        dispatch.sh eltwise.sh equation.sh \
-        fsspmdm.sh memcmp.sh \
-        packed.sh smm.sh"
-    fi
+    # rv64 has no native sparse (SREG) kernel; libxsmm_fsspmdm transparently
+    # falls back to the dense kernel there, so fsspmdm.sh is valid on rv64 too.
+    TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
+      dispatch.sh eltwise.sh equation.sh \
+      fsspmdm.sh memcmp.sh \
+      packed.sh smm.sh"
   else
     TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" ./*.c 2>/dev/null) \
       dispatch.sh eltwise.sh equation.sh \

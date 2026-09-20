@@ -60,11 +60,19 @@
     (defined(__riscv) && 64 == (__riscv_xlen))
 # define LIBXSMM_PLATFORM_RV64
 #endif
+#if !defined(LIBXSMM_PLATFORM_PPC64LE) && ( \
+    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) || \
+    (defined(_LITTLE_ENDIAN) && 0 != (_LITTLE_ENDIAN))) && ( \
+    (defined(__PPC64__) && 0 != (__PPC64__)) || \
+    (defined(_ARCH_PPC64) && 0 != (_ARCH_PPC64)) || \
+    (defined(__powerpc64__) && 0 != (__powerpc64__)))
+# define LIBXSMM_PLATFORM_PPC64LE
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_RV64)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_RV64) || defined(LIBXSMM_PLATFORM_PPC64LE)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error LIBXSMM requires X86_64, AArch64, RV64 or compatible CPUs!
+#   error LIBXSMM requires X86_64, AArch64, RV64, ppc64le or compatible CPUs!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
@@ -75,7 +83,9 @@
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
       (defined(_WIN64) || defined(_M_ARM64)) || \
-      (defined(__powerpc64))
+      (defined(__PPC64__) && 0 != (__PPC64__)) || \
+      (defined(_ARCH_PPC64) && 0 != (_ARCH_PPC64)) || \
+      (defined(__powerpc64__) && 0 != (__powerpc64__))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)
@@ -200,6 +210,17 @@
 #else
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
+#endif
+
+/* The 'masked' construct was introduced in OpenMP 5.1 (_OPENMP == 202011),
+ * deprecating the 'master' construct. Use 'masked' when available and fall
+ * back to 'master' for compilers supporting only earlier OpenMP standards. */
+#if defined(_OPENMP)
+# if _OPENMP >= 202011
+#   define LIBXSMM_OMP_MASKED _Pragma("omp masked")
+# else
+#   define LIBXSMM_OMP_MASKED _Pragma("omp master")
+# endif
 #endif
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
@@ -1145,6 +1166,16 @@ LIBXSMM_EXTERN double erf(double) LIBXSMM_NOTHROW;
 #endif
 #if !defined(M_PI)
 # define M_PI 3.14159265358979323846
+#endif
+
+/**
+ * Budget (Bytes) for the size-dependent scratch buffers a GEMM kernel carves out of the
+ * callers stack. Exceeding it aborts JIT so that the reference kernel is used instead of
+ * emitting a prologue that blows the stack. Override with LIBXSMM_GEMM_STACK_SCRATCH_LIMIT
+ * (0 restores the unchecked behavior).
+ */
+#if !defined(LIBXSMM_GEMM_STACK_SCRATCH_LIMIT)
+# define LIBXSMM_GEMM_STACK_SCRATCH_LIMIT (2 * 1024 * 1024)
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/

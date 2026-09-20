@@ -507,6 +507,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE2_PTRUE_AS_COUNTER           0x25207810
 #define LIBXSMM_AARCH64_INSTR_SME_FMAX_2                      0xc1a0a100
 #define LIBXSMM_AARCH64_INSTR_SME_FMAX_4                      0xc1a0a900
+#define LIBXSMM_AARCH64_INSTR_SME_ZERO                        0xc0080000 /* zero ZA tiles (imm8 mask) */
 
 /**
  * shift mode */
@@ -1052,6 +1053,10 @@ void libxsmm_aarch64_instruction_sme_mova( libxsmm_generated_code* io_generated_
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sm( libxsmm_generated_code* io_generated_code,
                                      unsigned int            i_instr );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sme_zero( libxsmm_generated_code* io_generated_code,
+                                           unsigned int            i_mask );
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_set_ptrue_as_counter_sve2( libxsmm_generated_code* io_generated_code,

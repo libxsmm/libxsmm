@@ -122,7 +122,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   }
   unary_param.out.primary = (void*)char_data;
   unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, (skip_scf_cvt > 0) ? ( (signed_sat > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT | LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT) : ((signed_sat > 0) ? LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE) );
-  libxsmm_get_kernel_info((const void*) unary_kernel_quant, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel_quant, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
@@ -145,7 +145,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   }
   unary_param.out.primary = (void*)f32_char_data;
   unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  libxsmm_get_kernel_info((const void*) unary_kernel_dequant, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel_dequant, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
@@ -308,7 +308,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_param.out.primary = (void*)short_data;
   unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, (skip_scf_cvt > 0) ? ( (signed_sat > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT | LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT) : ((signed_sat > 0) ? LIBXSMM_MELTW_FLAG_UNARY_SIGN_SAT_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE) );
-  libxsmm_get_kernel_info((const void*) unary_kernel_quant, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel_quant, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
@@ -331,7 +331,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_param.out.primary = (void*)f32_short_data;
   unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape,  (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  libxsmm_get_kernel_info((const void*) unary_kernel_dequant, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel_dequant, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
@@ -484,7 +484,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_param.out.primary = (void*)int_data;
   unary_kernel_quant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE  );
-  libxsmm_get_kernel_info((const void*) unary_kernel_quant, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel_quant, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
@@ -507,7 +507,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_param.out.primary = (void*)f32_int_data;
   unary_kernel_dequant = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, (skip_scf_cvt > 0) ? LIBXSMM_MELTW_FLAG_UNARY_NO_SCF_QUANT : LIBXSMM_MELTW_FLAG_UNARY_NONE  );
-  libxsmm_get_kernel_info((const void*) unary_kernel_dequant, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel_dequant, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");

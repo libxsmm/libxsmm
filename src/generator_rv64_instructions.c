@@ -1248,7 +1248,7 @@ LIBXSMM_API_INTERN
 void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
                                              const unsigned int       i_gp_reg_dst,
                                              const unsigned long long i_imm64 ) {
-  unsigned long imm_mask = 0xffe0000000000000;
+  unsigned long long imm_mask = 0xffe0000000000000ULL;
   unsigned int imm_11;
   int i_11;
 
@@ -1275,7 +1275,7 @@ void libxsmm_rv64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generat
 #define BIT_LEFT  (9)
 #define BIT_SFT   (53)
 
-    imm_mask = 0xffe0000000000000;
+    imm_mask = 0xffe0000000000000ULL;
 
     for (i_11 = 0; i_11 < 5; i_11++) {
       /* Get next 11 bits of immediate to LSB */

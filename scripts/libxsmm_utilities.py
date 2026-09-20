@@ -212,6 +212,51 @@ def version_branch_from_file(version_filepath):
     return (version, branch)
 
 
+def version_release():
+    version_filename = "VERSION"
+    version_filepath = os.path.realpath(
+        os.path.join(
+            os.path.dirname(inspect.getfile(inspect.currentframe())),
+            "..",
+            version_filename,
+        )
+    )
+    version_file = open(version_filepath, "r")
+    try:
+        version = version_file.read().strip()
+    finally:
+        version_file.close()
+
+    version_list = version.split(".")
+    if 3 != len(version_list) or not all(item.isdigit() for item in version_list):
+        raise ValueError("invalid release version: {0}".format(version))
+    return tuple(int(item) for item in version_list)
+
+
+def version_patch(version):
+    version_list = version.split("-")
+    if 1 < len(version_list) and version_list[-1].isdigit():
+        return int(version_list[-1])
+    if version.isdigit():
+        return int(version)
+    return 0
+
+
+def version_components(version=None):
+    major, minor, update = version_release()
+    if version is None:
+        version, ignored, ignored = version_branch()
+    return major, minor, update, version_patch(version)
+
+
+def version_string(version=None):
+    major, minor, update, patch = version_components(version)
+    result = "{0}.{1}.{2}".format(major, minor, update)
+    if version:
+        result += "-{0}".format(patch)
+    return result
+
+
 def version_numbers(version, branch=None):
     version_list = version.split("-")
     if (
@@ -233,7 +278,8 @@ def version_numbers(version, branch=None):
                 if version_list != [vbranch]:
                     patch = int(patch_list)
                 else:
-                    major = int(patch_list)
+                    major, minor, update = version_release()
+                    patch = int(patch_list)
             else:
                 version_list = patch_list.split(".")
         else:
@@ -264,13 +310,18 @@ def version_branch(max_strlen=-1):
         )
     )
     filepath_local = os.path.realpath(version_filename)  # local version file
-    realversion, branch = version_branch_from_file(filepath_default)
-    version = realversion
+    metadata = branch = ""
+    if os.path.isfile(filepath_default):
+        metadata, branch = version_branch_from_file(filepath_default)
+    version = metadata
     out_of_tree = filepath_default != filepath_local
     if out_of_tree and os.path.isfile(filepath_local):
-        local, ignored = version_branch_from_file(filepath_local)
-        if version_numbers(realversion) < version_numbers(local):
+        local, local_branch = version_branch_from_file(filepath_local)
+        if not metadata or version_components(metadata) < version_components(local):
             version = local
+            if not metadata:
+                branch = local_branch
+    realversion = version_string(version)
     if 0 < max_strlen:
         start = int(max_strlen / 3)
         cut = max(
@@ -286,26 +337,30 @@ def version_branch(max_strlen=-1):
 
 
 def libxsmm_target_arch():
-    libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
+    libroot = os.path.realpath(
+        os.path.join(os.path.dirname(__file__), "..")
+    )
     uname = os.uname()
     oname = uname.sysname if not isinstance(uname, tuple) else uname[0]
     if "Darwin" == oname:
-        os.environ["DYLD_LIBRARY_PATH"] = libpath
         libext = ".dylib"
     else:
-        os.environ["LD_LIBRARY_PATH"] = libpath
         libext = ".so"
     os.environ["LIBXSMM_VERBOSE"] = "0"
-    xsmm = (
-        "libxsmm" + libext
-        if os.path.exists(os.path.join(libpath, "libxsmm" + libext))
-        else ctypes.util.find_library("xsmm")
-    )
+    libname = "libxsmm" + libext
+    xsmm = None
+    for libpath in (os.path.join(libroot, "lib"), libroot):
+        candidate = os.path.join(libpath, libname)
+        if os.path.isfile(candidate):
+            xsmm = candidate
+            break
+    if xsmm is None:
+        xsmm = ctypes.util.find_library("xsmm")
     target = "generic"
     try:
-        libxsmm = ctypes.CDLL(
-            os.path.join(libpath, xsmm), mode=ctypes.RTLD_GLOBAL
-        )
+        if xsmm is None:
+            raise OSError("LIBXSMM shared library not found")
+        libxsmm = ctypes.CDLL(xsmm, mode=ctypes.RTLD_GLOBAL)
         libxsmm_get_target_arch = libxsmm.libxsmm_get_target_arch
         libxsmm_get_target_arch.restype = ctypes.c_char_p
         target = libxsmm_get_target_arch().decode("ascii")
@@ -347,7 +402,7 @@ if __name__ == "__main__":
             print(libxsmm_target_arch())
         else:
             version, branch, realversion = version_branch()
-            major, minor, update, patch = version_numbers(version)
+            major, minor, update, patch = version_components(version)
             if 1 == arg1:
                 print(major)
             elif 2 == arg1:

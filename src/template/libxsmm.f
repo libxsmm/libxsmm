@@ -21,13 +21,13 @@
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
         !> Name of the branch of which the version is derived from.
         CHARACTER(*), PARAMETER :: LIBXSMM_BRANCH = "$BRANCH"
-        !> Major version based on the last reachable tag under RCS.
+        !> Major release version.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_MAJOR = $MAJOR
-        !> Minor version based on the last reachable tag of the RCS.
+        !> Minor release version.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_MINOR = $MINOR
-        !> Update number based on the last reachable tag under RCS.
+        !> Update release version.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_UPDATE = $UPDATE
-        !> Patch number counting commits since the last version stamp.
+        !> Revision number from version metadata.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_PATCH = $PATCH
 
         !> Parameters the library and static kernels were built for.

@@ -17,10 +17,11 @@ UTLDIR := $(SPLDIR)/utilities
 DOCDIR := documentation
 
 # subdirectories (relative) to PREFIX (install targets)
-PINCDIR ?= $(INCDIR)
+PINCDIR ?= $(INCDIR)/libxsmm
 PSRCDIR ?= libxsmm
 POUTDIR ?= $(OUTDIR)
-PPKGDIR ?= $(OUTDIR)
+PPKGDIR ?= $(OUTDIR)/pkgconfig
+PCMKDIR ?= $(OUTDIR)/cmake/libxsmm
 PMODDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
 PTSTDIR ?= $(TSTDIR)
@@ -172,7 +173,7 @@ TIMEOUT := 30
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE := \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
-  PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PSHRDIR PDOCDIR SCRDIR \
+  PBINDIR PINCDIR POUTDIR PPKGDIR PCMKDIR PMODDIR PSRCDIR PTSTDIR PSHRDIR PDOCDIR SCRDIR \
   SPLDIR UTLDIR SRCDIR TEST VERSION_STRING ALIAS_% %_TARGET %ROOT
 
 # fixed .state file directory (included by source)
@@ -239,7 +240,8 @@ ifeq (,$(PYTHON))
   $(error No Python interpreter found)
 endif
 
-# Version numbers according to interface (version.txt)
+# Release version from VERSION; development metadata from version.txt, if present.
+VERSION_METADATA := $(wildcard $(ROOTDIR)/version.txt)
 VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTSCR)/libxsmm_utilities.py 3)
@@ -322,9 +324,9 @@ SRCFILES_LIB := $(patsubst %,$(ROOTSRC)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_math.c libxsmm_fsspmdm.c \
           libxsmm_hash.c libxsmm_sync.c libxsmm_perf.c \
           libxsmm_utils.c libxsmm_lpflt_quant.c libxsmm_timer.c libxsmm_barrier.c \
-          libxsmm_rng.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_rv64_reference.c)
-SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(filter-out $(ROOTSRC)/generator_x86_reference.c $(ROOTSRC)/generator_aarch64_reference.c $(ROOTSRC)/generator_rv64_reference.c $(ROOTSRC)/generator_gemm_reference_impl.c $(ROOTSRC)/generator_mateltwise_reference_impl.c $(ROOTSRC)/generator_matequation_reference_impl.c, $(wildcard $(ROOTSRC)/generator_*.c))) \
-          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
+          libxsmm_rng.c generator_gemm_reference_impl.c generator_mateltwise_reference_impl.c generator_matequation_reference_impl.c generator_x86_reference.c generator_aarch64_reference.c generator_ppc64le_reference.c generator_rv64_reference.c)
+SRCFILES_GEN_LIB := $(patsubst %,$(ROOTSRC)/%,$(notdir $(filter-out $(ROOTSRC)/generator_x86_reference.c $(ROOTSRC)/generator_aarch64_reference.c $(ROOTSRC)/generator_ppc64le_reference.c $(ROOTSRC)/generator_rv64_reference.c $(ROOTSRC)/generator_gemm_reference_impl.c $(ROOTSRC)/generator_mateltwise_reference_impl.c $(ROOTSRC)/generator_matequation_reference_impl.c, $(wildcard $(ROOTSRC)/generator_*.c))) \
+          libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_cpuid_rv64.c libxsmm_cpuid_ppc.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 SRCFILES := $(SRCFILES_LIB) $(SRCFILES_GEN_LIB) $(SRCFILES_KERNELS)
 
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTSRC)/%,libxsmm_generator_gemm_driver.c)
@@ -535,7 +537,7 @@ endif
 # auto-clean
 $(ROOTSRC)/template/libxsmm_config.h: $(ROOTSCR)/libxsmm_config.py $(ROOTSCR)/libxsmm_utilities.py \
                                                 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
-                                                $(ROOTDIR)/version.txt
+                                                $(ROOTDIR)/VERSION $(VERSION_METADATA)
 	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-touch $@
 
@@ -668,7 +670,7 @@ endif
 
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
-# @-rm -f $(1)
+	@-rm -f $(1)
 	-$(CC) $(if $(filter 0,$(WERROR)),$(4),$(filter-out $(WERROR_CFLAG),$(4)) $(WERROR_CFLAG)) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		if [ "2" = "$(INTRINSICS)" ]; then \
@@ -774,7 +776,7 @@ $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 endif
 
 .PHONY: clib
-clib: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm-shared.pc
+clib: $(PPKGDIR)/libxsmm-static.pc $(PPKGDIR)/libxsmm-shared.pc $(PCMKDIR)/libxsmm-config.cmake
 ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmm.$(SLIBEXT): $(OUTDIR)/.make $(OBJFILES_LIB) $(OBJFILES_GEN_LIB) $(KRNOBJS) $(LIBJITPROFILING)
 	$(MAKE_AR) $(OUTDIR)/libxsmm.$(SLIBEXT) $(call tailwords,$^) $(JITPROFILINGOBJ)
@@ -791,7 +793,7 @@ endif
 
 .PHONY: flib
 ifneq (,$(strip $(FC)))
-flib: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf-shared.pc
+flib: $(PPKGDIR)/libxsmmf-static.pc $(PPKGDIR)/libxsmmf-shared.pc
 ifeq (,$(filter-out 0 2,$(BUILD)))
 $(OUTDIR)/libxsmmf.$(SLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT)
 	$(MAKE_AR) $(OUTDIR)/libxsmmf.$(SLIBEXT) $(BLDDIR)/intel64/libxsmm-mod.o
@@ -803,15 +805,15 @@ $(OUTDIR)/libxsmmf.$(DLIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(DLIBEXT
 ifneq (Darwin,$(UNAME))
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
-		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(ORIGIN_RPATH) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else ifneq (0,$(LNKSOFT)) # macOS
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
-		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(ORIGIN_RPATH) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else # macOS
 	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
-		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(ORIGIN_RPATH) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 endif
 else
 .PHONY: $(OUTDIR)/libxsmmf.$(DLIBEXT)
@@ -912,15 +914,15 @@ $(DOCDIR)/libxsmm_scripts.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTSCR)/REA
 		-e 'N;/^\n$$/d;P;D' \
 		>$@
 
-$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Compatibility.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Validation.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(VERSION_METADATA)
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Q&A.md"
 	@echo >>$@
 
@@ -1033,6 +1035,7 @@ endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-rm -f $(OUTDIR)/libxsmm*.pc
+	@-rm -rf $(PPKGDIR)
 endif
 ifneq ($(call qapath,$(BINDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BINDIR)),$(HEREDIR))
@@ -1101,10 +1104,41 @@ endif
 	@$(CP) -v  $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmm*.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+ifeq (Darwin,$(UNAME))
 	@echo
-	@echo "LIBXSMM installing pkg-config and module files..."
+	@echo "LIBXSMM relocating install paths of installed libraries..."
+	@for lib in $(PREFIX)/$(POUTDIR)/libxsmm*.$(DLIBEXT)*; do \
+		if [ -f "$$lib" ] && [ ! -L "$$lib" ]; then \
+			install_name_tool -id "$$lib" "$$lib" 2>/dev/null || true; \
+			otool -L "$$lib" | grep -o "$(ABSDIR)/$(OUTDIR)/[^ ]*\.$(DLIBEXT)[^ ]*" | while read dep; do \
+				install_name_tool -change "$$dep" "$(PREFIX)/$(POUTDIR)/$$(basename $$dep)" "$$lib" 2>/dev/null || true; \
+			done; \
+		fi; \
+	done
+else ifneq (Windows_NT,$(UNAME))
+	@echo
+	@echo "LIBXSMM relocating install paths of installed libraries..."
+	@if command -v patchelf >/dev/null 2>&1; then RELOC="patchelf --set-rpath \$$ORIGIN"; \
+	elif command -v chrpath >/dev/null 2>&1; then RELOC="chrpath -r \$$ORIGIN"; \
+	else RELOC=""; echo "LIBXSMM: install patchelf or chrpath to relocate RPATH"; fi; \
+	if [ "$$RELOC" ]; then for lib in $(PREFIX)/$(POUTDIR)/libxsmm*.$(DLIBEXT)*; do \
+		if [ -f "$$lib" ] && [ ! -L "$$lib" ]; then $$RELOC "$$lib" 2>/dev/null || true; fi; \
+	done; fi
+endif
+	@echo
+	@echo "LIBXSMM installing pkg-config, CMake config, and module files..."
 	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
-	@$(CP) -va $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
+	@$(CP) -va $(PPKGDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
+	@for pc in $(PPKGDIR)/*-static.pc $(PPKGDIR)/*-shared.pc; do \
+		if [ -f "$$pc" ]; then \
+			$(SED) -e "s|^prefix=.*|prefix=$(ALIAS_PREFIX)|" \
+			       -e "s|^includedir=.*|includedir=$(ALIAS_INCDIR)|" \
+			       -e "s|^libdir=.*|libdir=$(ALIAS_LIBDIR)|" \
+			       "$$pc" >"$(PREFIX)/$(PPKGDIR)/$${pc##*/}"; \
+		fi; \
+	done
+	@$(MKDIR) -p $(PREFIX)/$(PCMKDIR)
+	@$(CP) -v $(PCMKDIR)/*.cmake $(PREFIX)/$(PCMKDIR) 2>/dev/null || true
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
 		$(MKDIR) -p $(PREFIX)/$(PMODDIR); \
 		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
@@ -1140,7 +1174,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
 	@$(CP) -va $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v  $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
-	@$(CP) -v  $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@if [ -f $(ROOTDIR)/version.txt ]; then $(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR); fi
 	@$(SED) "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state >$(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
 	@$(MKDIR) -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
@@ -1197,7 +1231,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing samples..."
 	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(SPLDIR)
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) \
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_xsmm benchmark.plt benchmark.set *.sh) \
 						$(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 endif
 
@@ -1214,19 +1248,22 @@ ifneq (Darwin,$(UNAME))
   ALIAS_PRIVLIBS_EXT := -fopenmp
 endif
 
+BUILD_PREFIX := $(HEREDIR)
+BUILD_INCDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(INCDIR)),,\$${prefix}/),$(subst $$$$$(BUILD_PREFIX),\$${prefix},$$$$$(INCDIR)))
+BUILD_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(OUTDIR)),,\$${prefix}/),$(subst $$$$$(BUILD_PREFIX),\$${prefix},$$$$$(OUTDIR)))
 ALIAS_INCDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
 ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 ifeq (,$(filter-out 0 2,$(BUILD)))
-$(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT)
+$(PPKGDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
   ifneq (,$(ALIAS_PRIVLIBS))
@@ -1239,22 +1276,22 @@ $(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(SLIBEXT)
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
   endif
   ifeq (,$(filter-out 0 2,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmm.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmm.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmm-static.pc
+.PHONY: $(PPKGDIR)/libxsmm-static.pc
 endif
 
 ifeq (,$(filter-out 0 2,$(BUILD)))
-$(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT)
+$(PPKGDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm/f" >$@
 	@echo "Description: LIBXSMM for Fortran" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmmext-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
@@ -1264,22 +1301,22 @@ $(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(SLIBEXT)
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
   endif
   ifeq (,$(filter-out 0 2,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmf.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmmf.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmmf-static.pc
+.PHONY: $(PPKGDIR)/libxsmmf-static.pc
 endif
 
 ifeq (,$(filter-out 1 2,$(BUILD)))
-$(OUTDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT)
+$(PPKGDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
   ifneq (,$(ALIAS_PRIVLIBS))
@@ -1289,32 +1326,40 @@ $(OUTDIR)/libxsmm-shared.pc: $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
   endif
   ifeq (,$(filter-out 1,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmm.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmm.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmm-shared.pc
+.PHONY: $(PPKGDIR)/libxsmm-shared.pc
 endif
 
 ifeq (,$(filter-out 1 2,$(BUILD)))
-$(OUTDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT)
+$(PPKGDIR)/libxsmmf-shared.pc: $(OUTDIR)/libxsmmf.$(DLIBEXT) $(PPKGDIR)/.make
 	@echo "Name: libxsmm/f" >$@
 	@echo "Description: LIBXSMM for Fortran" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
-	@echo "prefix=$(ALIAS_PREFIX)" >>$@
-	@echo "includedir=$(ALIAS_INCDIR)" >>$@
-	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo "prefix=$(BUILD_PREFIX)" >>$@
+	@echo "includedir=$(BUILD_INCDIR)" >>$@
+	@echo "libdir=$(BUILD_LIBDIR)" >>$@
 	@echo >>$@
 	@echo "Requires: libxsmmext" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
   ifeq (,$(filter-out 1,$(BUILD)))
-	@ln -fs $(notdir $@) $(OUTDIR)/libxsmmf.pc
+	@ln -fs $(notdir $@) $(PPKGDIR)/libxsmmf.pc
   endif
 else
-.PHONY: $(OUTDIR)/libxsmmf-shared.pc
+.PHONY: $(PPKGDIR)/libxsmmf-shared.pc
 endif
+
+
+$(PCMKDIR)/libxsmm-config.cmake: $(ROOTSCR)/libxsmm-config.cmake $(ROOTSCR)/libxsmm-config-version.cmake.in $(PCMKDIR)/.make
+	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
+		-e 's|@THREADS@|$(THREADS)|g' \
+		"$(ROOTSCR)/libxsmm-config.cmake" > "$@"
+	@$(SED) -e 's|@VERSION@|$(VERSION_STRING)|g' \
+		"$(ROOTSCR)/libxsmm-config-version.cmake.in" > "$(PCMKDIR)/libxsmm-config-version.cmake"
 
 $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" >$@
@@ -1325,9 +1370,9 @@ $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "prepend-path PATH \"\$$PREFIX/bin\"" >>$@
 	@echo "prepend-path LD_LIBRARY_PATH \"\$$PREFIX/lib\"" >>$@
 	@echo >>$@
-	@echo "prepend-path PKG_CONFIG_PATH \"\$$PREFIX/lib\"" >>$@
+	@echo "prepend-path PKG_CONFIG_PATH \"\$$PREFIX/$(PPKGDIR)\"" >>$@
 	@echo "prepend-path LIBRARY_PATH \"\$$PREFIX/lib\"" >>$@
-	@echo "prepend-path CPATH \"\$$PREFIX/include\"" >>$@
+	@echo "prepend-path CPATH \"\$$PREFIX/$(PINCDIR)\"" >>$@
 
 .PHONY: deb
 deb:

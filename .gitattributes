@@ -17,6 +17,7 @@ documentation/*.py export-ignore
 documentation/*.pptx export-ignore
 documentation/*.pptm export-ignore
 documentation/*.docx export-ignore
+scripts/release.sh export-ignore
 scripts/tool_scan.sh export-ignore
 scripts/tool_analyze.py export-ignore
 scripts/tool_checkabi.sh export-ignore
@@ -34,4 +35,4 @@ samples/seissol/*.sides export-ignore
 samples/seissol/*.size export-ignore
 samples/edge/repro export-ignore
 samples/edge/mats export-ignore
-version.txt merge=ours
+version.txt export-ignore merge=ours

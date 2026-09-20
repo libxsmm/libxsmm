@@ -573,29 +573,43 @@ void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*         
                                                 const unsigned int                             i_vec_tmp0,
                                                 const unsigned int                             i_vec_tmp1 ) {
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
-      LIBXSMM_X86_INSTR_VPERMD, 'y',
-      i_vec_c_lo,
-      i_vec_index,
-      i_vec_tmp0,
-      0, 0, 0, 0);
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX ) {
+    /* EVEX path: select the 16-way table with a single VPERMT2D, which can address
+       vector registers 0-31 (unlike the VEX-encoded VBLENDVPS below). */
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+        LIBXSMM_X86_INSTR_VMOVDQU64, 'y',
+        i_vec_c_lo, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_result );
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
-      LIBXSMM_X86_INSTR_VPERMD, 'y',
-      i_vec_c_hi,
-      i_vec_index,
-      i_vec_tmp1,
-      0, 0, 0, 0);
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+        LIBXSMM_X86_INSTR_VPERMT2D, 'y',
+        i_vec_c_hi,
+        i_vec_index,
+        i_vec_result );
+  } else {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+        LIBXSMM_X86_INSTR_VPERMD, 'y',
+        i_vec_c_lo,
+        i_vec_index,
+        i_vec_tmp0,
+        0, 0, 0, 0);
 
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'y', i_vec_index, i_vec_result, 28 );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+        LIBXSMM_X86_INSTR_VPERMD, 'y',
+        i_vec_c_hi,
+        i_vec_index,
+        i_vec_tmp1,
+        0, 0, 0, 0);
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-            LIBXSMM_X86_INSTR_VBLENDVPS,
-            'y',
-            i_vec_tmp1,
-            i_vec_tmp0,
-            i_vec_result,
-            0, 0, 0, (unsigned short)((i_vec_result) << 4));
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'y', i_vec_index, i_vec_result, 28 );
+
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
+              LIBXSMM_X86_INSTR_VBLENDVPS,
+              'y',
+              i_vec_tmp1,
+              i_vec_tmp0,
+              i_vec_result,
+              0, 0, 0, (unsigned short)((i_vec_result) << 4));
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -1895,10 +1909,31 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
                                          i_vec_c0, i_vec_x2, i_vec_denom );
   }
 
+  /* Improve VRCPPS with one Newton-Raphson iteration. */
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VRCPPS,
                                        'y',
-                                       i_vec_denom, i_vec_denom );
+                                       i_vec_denom, i_vec_x2 );           /* x2    = r0 = rcp(d) */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMULPS,
+                                       'y',
+                                       i_vec_denom, i_vec_x2, i_vec_denom ); /* denom = d*r0 */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VSUBPS,
+                                       'y',
+                                       i_vec_ones, i_vec_denom, i_vec_denom ); /* denom = d*r0 - 1 */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMULPS,
+                                       'y',
+                                       i_vec_x2, i_vec_denom, i_vec_denom ); /* denom = r0*(d*r0 - 1) */
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VSUBPS,
+                                       'y',
+                                       i_vec_denom, i_vec_x2, i_vec_denom ); /* denom = r0 - r0*(d*r0-1) = r0*(2 - d*r0) */
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                         LIBXSMM_X86_INSTR_VMULPS,
@@ -2505,11 +2540,43 @@ void libxsmm_generator_hinstrpd_avx512( libxsmm_generated_code*                 
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_hinstrbf16_2par_avx512( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout0,
+    const unsigned int                             i_vec_inout1,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2,
+    const unsigned char                            i_imm8) {
+
+  char vname = 'z';
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,  LIBXSMM_X86_INSTR_VSHUFF64X2,  vname,  i_vec_inout0, i_vec_inout0, i_vec_tmp1, 0x4e );
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout0, i_vec_tmp1, i_vec_inout0, i_imm8);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,  LIBXSMM_X86_INSTR_VSHUFF64X2,  vname,  i_vec_inout1, i_vec_inout1, i_vec_tmp2, 0x4e );
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout1, i_vec_tmp2, i_vec_inout1, i_imm8);
+  /* Merge the 2 vectors */
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, vname, i_vec_inout1, i_vec_inout0, i_vec_inout0, 0x44);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, vname, i_vec_inout0, i_vec_inout0, i_vec_tmp1, 0x31);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout0, i_vec_tmp1, i_vec_tmp2, i_imm8);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, vname, i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x0e);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_tmp2, i_vec_tmp1, i_vec_tmp2, i_imm8);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, vname, i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x11);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_tmp2, i_vec_tmp1, i_vec_inout0, i_imm8);
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, vname, i_vec_inout0, i_vec_tmp1, 16);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout0, i_vec_tmp1, i_vec_inout0, i_imm8);
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrbf16_avx512( libxsmm_generated_code*                        io_generated_code,
     unsigned int                                   instr,
     const unsigned int                             i_vec_inout,
     const unsigned int                             i_vec_tmp1,
-    const unsigned int                             i_vec_tmp2) {
+    const unsigned int                             i_vec_tmp2,
+    const unsigned char                            i_imm8) {
 
   char vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) ? 'z' : 'y';
 
@@ -2519,10 +2586,7 @@ void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                 
                                              vname,
                                              i_vec_inout, i_vec_inout, i_vec_tmp1, 0x4e );
 
-    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                             instr,
-                                             vname,
-                                             i_vec_inout, i_vec_tmp1, i_vec_inout );
+    libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_inout, i_imm8);
   }
 
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
@@ -2530,31 +2594,83 @@ void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                 
                                            vname,
                                            i_vec_inout, i_vec_inout, i_vec_tmp1, 0xb1 );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           instr,
-                                           vname,
-                                           i_vec_inout, i_vec_tmp1, i_vec_tmp2 );
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_tmp2, i_imm8);
 
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            'y',
                                            i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x4e );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           instr,
-                                           'y',
-                                           i_vec_tmp2, i_vec_tmp1, i_vec_tmp2 );
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, 'y', i_vec_tmp2, i_vec_tmp1, i_vec_tmp2, i_imm8);
 
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            'y',
                                            i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x1 );
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           instr,
-                                           vname,
-                                           i_vec_tmp2, i_vec_tmp1, i_vec_inout );
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_tmp2, i_vec_tmp1, i_vec_inout, i_imm8);
+
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(
+  io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, vname, i_vec_inout, i_vec_tmp1, 16);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_inout, i_imm8);
 }
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrbf16_double_avx512(libxsmm_generated_code* io_generated_code, unsigned int instr,
+  const unsigned int i_vec_inout, const unsigned int i_vec_tmp1, const unsigned int i_vec_tmp2, const unsigned char i_imm8) {
+  char vname = 'z';
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, vname, i_vec_inout, i_vec_inout, i_vec_tmp1, 0x31);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_tmp2, i_imm8);
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, vname, i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x0e);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_tmp2, i_vec_tmp1, i_vec_tmp2, i_imm8);
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, vname, i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x11);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_tmp2, i_vec_tmp1, i_vec_inout, i_imm8);
+
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, vname, i_vec_inout, i_vec_tmp1, 16);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_inout, i_imm8);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrps_avx512(libxsmm_generated_code* io_generated_code, unsigned int instr,
+  const unsigned int i_vec_inout, const unsigned int i_vec_tmp1, const unsigned int i_vec_tmp2) {
+  char vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) ? 'z' : 'y';
+  unsigned int is_instr_16bit_dtype = (instr == LIBXSMM_X86_INSTR_VMAXBF16) ? 1 : 0;
+
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX) {
+    libxsmm_x86_instruction_vec_compute_3reg_imm8(
+      io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, vname, i_vec_inout, i_vec_inout, i_vec_tmp1, 0x4e);
+
+    libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_inout);
+  }
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, vname, i_vec_inout, i_vec_inout, i_vec_tmp1, 0xb1);
+
+  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_tmp2);
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x4e);
+
+  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, instr, 'y', i_vec_tmp2, i_vec_tmp1, i_vec_tmp2);
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(
+    io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x1);
+
+  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, instr, vname, i_vec_tmp2, i_vec_tmp1, i_vec_inout);
+
+  if (is_instr_16bit_dtype == 1) {
+    /* Shift left by 16 bites the result i_vec_inout, and perform one more max */
+    libxsmm_x86_instruction_vec_compute_2reg_imm8(
+      io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, vname, i_vec_inout, i_vec_tmp1, 16);
+    libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, instr, vname, i_vec_inout, i_vec_tmp1, i_vec_inout);
+  }
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_header( libxsmm_generated_code*             io_generated_code,
@@ -4049,7 +4165,7 @@ void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated
                                             const unsigned int      i_mask_reg,
                                             const unsigned int      i_mask_count,
                                             const libxsmm_datatype  i_datatype) {
-  const int datatype = LIBXSMM_GETENUM_INP(i_datatype); /* handle signed and unsigned types */
+  const int datatype = LIBXSMM_GETENUM_SIGNED_DATATYPE(i_datatype); /* handle signed and unsigned types */
   if ( datatype == LIBXSMM_DATATYPE_F64 || datatype == LIBXSMM_DATATYPE_I64 ) {
     unsigned long long mask_array[4] = {0, 0, 0, 0};
     unsigned int i;
@@ -4660,4 +4776,428 @@ void libxsmm_generator_maskedstore_64bit_sse( libxsmm_generated_code* io_generat
                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                       'x', i_vec_reg_in, 0, 0, 1 );
   }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtbf162bf4s_avx512_prepped_regs( libxsmm_generated_code* io_generated_code,
+                                                          const char              i_vname,
+                                                          const unsigned int      io_vec_reg,
+                                                          const unsigned int      i_vec_tmp0,
+                                                          const unsigned int      i_vec_tmp1,
+                                                          const unsigned int      i_vec_absmask,
+                                                          const unsigned int      i_vec_bound0,
+                                                          const unsigned int      i_vec_bound1,
+                                                          const unsigned int      i_vec_bound2,
+                                                          const unsigned int      i_vec_bound3,
+                                                          const unsigned int      i_vec_bound4,
+                                                          const unsigned int      i_vec_bound5,
+                                                          const unsigned int      i_vec_bound6,
+                                                          const unsigned int      i_vec_ones16,
+                                                          const unsigned int      i_vec_zero,
+                                                          const unsigned int      i_blend_mask ) {
+  /* Get absolute value */
+  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
+    io_vec_reg, i_vec_absmask, i_vec_tmp0);
+  /* Get the signs */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSRLW_I,
+    i_vname, io_vec_reg, i_vec_tmp1, 15);
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I,
+    i_vname, i_vec_tmp1, i_vec_tmp1, 3);
+  /* Start the cascading comparisons */
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound0, i_vec_tmp0, i_blend_mask, 6);
+  /* Blend zero or ones depending on the first mask */
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW,
+    i_vname, i_vec_ones16, i_vec_zero, io_vec_reg, i_blend_mask, 0);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound1, i_vec_tmp0, i_blend_mask, 5);
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPADDW,
+    i_vname, i_vec_ones16, io_vec_reg, io_vec_reg, i_blend_mask, 0);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound2, i_vec_tmp0, i_blend_mask, 6);
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPADDW,
+    i_vname, i_vec_ones16, io_vec_reg, io_vec_reg, i_blend_mask, 0);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound3, i_vec_tmp0, i_blend_mask, 5);
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPADDW,
+    i_vname, i_vec_ones16, io_vec_reg, io_vec_reg, i_blend_mask, 0);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound4, i_vec_tmp0, i_blend_mask, 6);
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPADDW,
+    i_vname, i_vec_ones16, io_vec_reg, io_vec_reg, i_blend_mask, 0);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound5, i_vec_tmp0, i_blend_mask, 5);
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPADDW,
+    i_vname, i_vec_ones16, io_vec_reg, io_vec_reg, i_blend_mask, 0);
+  libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPCMPUW,
+    i_vname, i_vec_bound6, i_vec_tmp0, i_blend_mask, 6);
+  libxsmm_x86_instruction_vec_compute_3reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VPADDW,
+    i_vname, i_vec_ones16, io_vec_reg, io_vec_reg, i_blend_mask, 0);
+  /* Merge sign */
+  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
+    io_vec_reg, i_vec_tmp1, io_vec_reg);
+  /* Get high 4 bits to correct positions */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I,
+    i_vname, io_vec_reg, i_vec_tmp1, 12);
+  /* Merge high-low 4 bits */
+  libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
+    io_vec_reg, i_vec_tmp1, io_vec_reg);
+  /* Pack to xmm (16 bytes = 32 4-bit values) */
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPMOVDB,
+    i_vname, io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt2bf162bf4s_avx512_prepped_regs ( libxsmm_generated_code* io_generated_code,
+                                                           const char              i_vname,
+                                                           const unsigned int      io_vec_reg0,
+                                                           const unsigned int      io_vec_reg1,
+                                                           const unsigned int      o_vec_reg,
+                                                           const unsigned int      i_vec_tmp0,
+                                                           const unsigned int      i_vec_tmp1,
+                                                           const unsigned int      i_vec_absmask,
+                                                           const unsigned int      i_vec_bound0,
+                                                           const unsigned int      i_vec_bound1,
+                                                           const unsigned int      i_vec_bound2,
+                                                           const unsigned int      i_vec_bound3,
+                                                           const unsigned int      i_vec_bound4,
+                                                           const unsigned int      i_vec_bound5,
+                                                           const unsigned int      i_vec_bound6,
+                                                           const unsigned int      i_vec_ones16,
+                                                           const unsigned int      i_vec_zero,
+                                                           const unsigned int      i_blend_mask ) {
+  /* Convert first 32 BF16 -> 16 packed BF4 bytes in low xmm of io_vec_reg0 */
+  libxsmm_generator_vcvtbf162bf4s_avx512_prepped_regs( io_generated_code, i_vname, io_vec_reg0,
+    i_vec_tmp0, i_vec_tmp1, i_vec_absmask, i_vec_bound0, i_vec_bound1, i_vec_bound2, i_vec_bound3,
+    i_vec_bound4, i_vec_bound5, i_vec_bound6, i_vec_ones16, i_vec_zero, i_blend_mask );
+  /* Convert second 32 BF16 -> 16 packed BF4 bytes in low xmm of io_vec_reg1 */
+  libxsmm_generator_vcvtbf162bf4s_avx512_prepped_regs( io_generated_code, i_vname, io_vec_reg1,
+    i_vec_tmp0, i_vec_tmp1, i_vec_absmask, i_vec_bound0, i_vec_bound1, i_vec_bound2, i_vec_bound3,
+    i_vec_bound4, i_vec_bound5, i_vec_bound6, i_vec_ones16, i_vec_zero, i_blend_mask );
+  /* Merge: io_vec_reg0[127:0] -> o_vec_reg[127:0], io_vec_reg1[127:0] -> o_vec_reg[255:128] */
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VINSERTI32X4,
+    'y', io_vec_reg1, io_vec_reg0, o_vec_reg, 0x1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtbf162bf8_avx512( libxsmm_generated_code* io_generated_code,
+                                            const char              i_vname,
+                                            const unsigned int      i_vec_reg,
+                                            const unsigned int      o_vec_reg ) {
+  /* Converts 32 BF16 values (held in zmm i_vec_reg) into 32 BF8 values (held in ymm o_vec_reg).
+   * The conversion is done in three steps per 16-wide half:
+   *   1) BF16 -> FP32
+   *   2) FP32 -> FP16
+   *   3) FP16 -> BF8
+   * A scratch vector register is needed to hold the converted upper half; since the public
+   * interface does not expose a temporary, it is allocated internally and saved/restored on the
+   * stack. */
+  unsigned int l_vec_tmp = 0;
+
+  /* pick a scratch vreg that does not collide with the in-/output registers */
+  while ( (l_vec_tmp == i_vec_reg) || (l_vec_tmp == o_vec_reg) ) {
+    l_vec_tmp++;
+  }
+
+  /* save scratch register on the stack */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 64 );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_vname, l_vec_tmp, 0, 0, 1 );
+
+  /* extract the upper 16 BF16 lanes into the low half of the scratch register */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI64X4, i_vname,
+                                                 i_vec_reg, l_vec_tmp, 0x1 );
+
+  /* upper half: BF16 -> FP32 */
+  libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_vname, l_vec_tmp, l_vec_tmp );
+  /* upper half: FP32 -> FP16 */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
+                                                 l_vec_tmp, l_vec_tmp, 0x00 );
+  /* upper half: FP16 -> BF8 (saturating, clamps to BF8 max instead of overflowing to inf) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPH2BF8S, 'y',
+                                            l_vec_tmp, l_vec_tmp );
+
+  /* lower half: BF16 -> FP32 */
+  libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_vname, i_vec_reg, o_vec_reg );
+  /* lower half: FP32 -> FP16 */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
+                                                 o_vec_reg, o_vec_reg, 0x00 );
+  /* lower half: FP16 -> BF8 (saturating, clamps to BF8 max instead of overflowing to inf) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPH2BF8S, 'y',
+                                            o_vec_reg, o_vec_reg );
+
+  /* merge: o_vec_reg[127:0] keeps the lower 16 BF8, scratch[127:0] -> o_vec_reg[255:128] */
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VINSERTI32X4,
+                                                 'y', l_vec_tmp, o_vec_reg, o_vec_reg, 0x1 );
+
+  /* restore scratch register from the stack */
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_vname, l_vec_tmp, 0, 0, 0 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 64 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt2bf162bf8_avx512( libxsmm_generated_code* io_generated_code,
+                                             const char              i_vname,
+                                             const unsigned int      io_vec_reg0,
+                                             const unsigned int      io_vec_reg1,
+                                             const unsigned int      o_vec_reg ) {
+  /* Converts two zmm registers holding 32 BF16 values each (64 BF16 in total) into 64 BF8 values
+   * held in zmm o_vec_reg, reusing libxsmm_generator_vcvtbf162bf8_avx512 as building block. */
+  /* first 32 BF16 -> 32 BF8 in the low ymm of io_vec_reg0 */
+  libxsmm_generator_vcvtbf162bf8_avx512( io_generated_code, i_vname, io_vec_reg0, io_vec_reg0 );
+  /* second 32 BF16 -> 32 BF8 in the low ymm of io_vec_reg1 */
+  libxsmm_generator_vcvtbf162bf8_avx512( io_generated_code, i_vname, io_vec_reg1, io_vec_reg1 );
+  /* merge: io_vec_reg0[255:0] -> o_vec_reg[255:0], io_vec_reg1[255:0] -> o_vec_reg[511:256] */
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VINSERTI64X4,
+                                                          'z', io_vec_reg1, io_vec_reg0, o_vec_reg, 0, 0, 0, 0x1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtbf162hf8_avx512( libxsmm_generated_code* io_generated_code,
+                                            const char              i_vname,
+                                            const unsigned int      i_vec_reg,
+                                            const unsigned int      o_vec_reg,
+                                            const unsigned int      i_vec_tmp ) {
+  /* Converts 32 BF16 values (held in zmm i_vec_reg) into 32 HF8 (E4M3) values (held in ymm o_vec_reg).
+   * The conversion is done in three steps per 16-wide half:
+   *   1) BF16 -> FP32
+   *   2) FP32 -> FP16 (PH)
+   *   3) FP16 -> HF8
+   * No auxiliary stack is used: a caller-provided scratch register i_vec_tmp holds the converted
+   * upper half. The input register i_vec_reg is preserved; i_vec_tmp is clobbered. */
+  /* bring the upper 16 BF16 lanes of i_vec_reg into the low half of the scratch register */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI64X4, i_vname,
+                                                 i_vec_reg, i_vec_tmp, 0x1 );
+  /* upper half: BF16 -> FP32 */
+  libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_vname, i_vec_tmp, i_vec_tmp );
+  /* upper half: FP32 -> FP16 */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
+                                                 i_vec_tmp, i_vec_tmp, 0x00 );
+  /* upper half: FP16 -> HF8 (saturating, clamps to HF8 max instead of overflowing to inf) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPH2HF8S, 'y',
+                                            i_vec_tmp, i_vec_tmp );
+
+  /* lower half: BF16 -> FP32 (i_vec_reg -> o_vec_reg) */
+  libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_vname, i_vec_reg, o_vec_reg );
+  /* lower half: FP32 -> FP16 */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
+                                                 o_vec_reg, o_vec_reg, 0x00 );
+  /* lower half: FP16 -> HF8 (saturating, clamps to HF8 max instead of overflowing to inf) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPH2HF8S, 'y',
+                                            o_vec_reg, o_vec_reg );
+
+  /* merge: i_vec_tmp[127:0] -> o_vec_reg[255:128] */
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VINSERTI32X4,
+                                                 'y', i_vec_tmp, o_vec_reg, o_vec_reg, 0x1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvthf82bf16_avx512( libxsmm_generated_code* io_generated_code,
+                                            const char              i_vname,
+                                            const unsigned int      i_vec_reg,
+                                            const unsigned int      o_vec_reg,
+                                            const unsigned int      i_vec_tmp ) {
+  /* Converts 32 HF8 (E4M3) values (held in ymm i_vec_reg) into 32 BF16 values (held in zmm o_vec_reg).
+   * The conversion is done as:
+   *   1) HF8 -> FP16 (PH) for all 32 values
+   *   2) FP16 -> FP32 per 16-wide half
+   *   3) FP32 -> BF16 per 16-wide half
+   * No auxiliary stack is used: a caller-provided scratch register i_vec_tmp holds the converted
+   * upper half. The input register i_vec_reg is preserved; i_vec_tmp is clobbered. */
+  /* HF8 -> FP16: 32 HF8 (ymm i_vec_reg) -> 32 FP16 (zmm o_vec_reg) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEHF82PH, i_vname,
+                                            i_vec_reg, o_vec_reg );
+
+  /* bring the upper 16 FP16 lanes of o_vec_reg into the low half of the scratch register */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI64X4, i_vname,
+                                                 o_vec_reg, i_vec_tmp, 0x1 );
+
+  /* lower half: FP16 -> FP32 */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, i_vname,
+                                            o_vec_reg, o_vec_reg );
+  /* lower half: FP32 -> BF16 (16 BF16 packed into o_vec_reg[255:0]) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_vname,
+                                            o_vec_reg, o_vec_reg );
+
+  /* upper half: FP16 -> FP32 */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, i_vname,
+                                            i_vec_tmp, i_vec_tmp );
+  /* upper half: FP32 -> BF16 (16 BF16 packed into i_vec_tmp[255:0]) */
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_vname,
+                                            i_vec_tmp, i_vec_tmp );
+
+  /* merge: i_vec_tmp[255:0] -> o_vec_reg[511:256] */
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VINSERTI64X4,
+                                                          'z', i_vec_tmp, o_vec_reg, o_vec_reg, 0, 0, 0, 0x1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mxfp_quant_apply_scale_avx512( libxsmm_generated_code* io_generated_code,
+                                                      const char              i_vname,
+                                                      const unsigned int      i_num_lanes,
+                                                      const unsigned int*     i_vec_exp,
+                                                      const unsigned int*     i_vec_data,
+                                                      const unsigned int*     i_blend_mask,
+                                                      const unsigned int      i_vec_zero,
+                                                      const unsigned int      i_vec_nan,
+                                                      const unsigned int      i_vec_expbias,
+                                                      const unsigned int      i_vec_infnan,
+                                                      const unsigned int      i_vec_recp_max,
+                                                      const unsigned int      i_sf_gp_reg,
+                                                      const unsigned int      i_sf_idx_reg,
+                                                      const unsigned int      i_sf_idx_scale,
+                                                      const int*              i_sf_displacement,
+                                                      const unsigned int      i_sf_mask_reg ) {
+  unsigned int l_lane;
+  /* Check if max is inf/nan */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname,
+      i_vec_infnan, i_vec_exp[l_lane], i_blend_mask[l_lane], 0 );
+  }
+  /* Subtract the exponent-bias constant (16 bit sub instruction signed) */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBW, i_vname,
+      i_vec_expbias, i_vec_exp[l_lane], i_vec_exp[l_lane] );
+  }
+  /* Clamp from down by maxing with the zero reg (16 bit max instruction signed) */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPMAXSW, i_vname,
+      i_vec_exp[l_lane], i_vec_zero, i_vec_exp[l_lane] );
+  }
+  /* Blend with proper exp if max was Inf/Nan */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW, i_vname,
+      i_vec_infnan, i_vec_exp[l_lane], i_vec_exp[l_lane], i_blend_mask[l_lane], 0 );
+  }
+  /* Also set all entries to NaN if max was Inf/Nan */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW, i_vname,
+      i_vec_nan, i_vec_data[l_lane], i_vec_data[l_lane], i_blend_mask[l_lane], 0 );
+  }
+  /* Store the result scale factor using masked 8-bit store */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_unified_vec_move( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU8,
+      i_sf_gp_reg, i_sf_idx_reg, i_sf_idx_scale, i_sf_displacement[l_lane], 'z', i_vec_exp[l_lane], 1, i_sf_mask_reg, 1 );
+  }
+  /* Shift left to bring exponent in proper spot and check if shared exp is zero */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_vname,
+      i_vec_exp[l_lane], i_vec_exp[l_lane], 7 );
+    libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname,
+      i_vec_zero, i_vec_exp[l_lane], i_blend_mask[l_lane], 0 );
+  }
+  /* Use the BF16 reciprocal to calculate the scales here... */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VRCPBF16, i_vname,
+      i_vec_exp[l_lane], LIBXSMM_X86_VEC_REG_UNDEF, i_vec_exp[l_lane], 0, 0, 0, 0 );
+  }
+  /* Set scales to 2^127 if the shared exponent was 2^-127 (it means that absmax shared scale was zero) */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW, i_vname,
+      i_vec_recp_max, i_vec_exp[l_lane], i_vec_exp[l_lane], i_blend_mask[l_lane], 0 );
+  }
+  /* Multiply reciprocal scale with original values */
+  for ( l_lane = 0; l_lane < i_num_lanes; ++l_lane ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULBF16, i_vname,
+      i_vec_exp[l_lane], i_vec_data[l_lane], i_vec_data[l_lane] );
+  }
+}
+
+void libxsmm_generator_mxfp_quant_scale_block_avx512( libxsmm_generated_code* io_generated_code,
+                                                      const char              i_vname,
+                                                      const unsigned int      io_vec_reg,
+                                                      const unsigned int      i_vec_tmp0,
+                                                      const unsigned int      i_vec_tmp1,
+                                                      const unsigned int      i_vec_tmp2,
+                                                      const unsigned int      i_vec_zero,
+                                                      const unsigned int      i_vec_nan,
+                                                      const unsigned int      i_vec_expbias,
+                                                      const unsigned int      i_vec_infnan,
+                                                      const unsigned int      i_vec_recp_max,
+                                                      const unsigned int      i_blend_mask,
+                                                      const unsigned int      i_sf_gp_reg,
+                                                      const unsigned int      i_sf_idx_reg,
+                                                      const unsigned int      i_sf_idx_scale,
+                                                      const int               i_sf_displacement,
+                                                      const unsigned int      i_sf_mask_reg ) {
+  unsigned int l_vec_exp[1];
+  unsigned int l_vec_data[1];
+  unsigned int l_blend_mask[1];
+  int          l_sf_displacement[1];
+  /* Combine the two halves so the horizontal reduction sees all values */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
+    io_vec_reg, io_vec_reg, i_vec_tmp0 );
+  /* Optimized horizontal reduction to get the 16-bit absmax */
+  libxsmm_generator_hinstrbf16_avx512( io_generated_code, LIBXSMM_X86_INSTR_VMINMAXBF16,
+    i_vec_tmp0, i_vec_tmp1, i_vec_tmp2, 0x0b );
+  /* Shift right tmp0 by 7 to capture exponent */
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname,
+    i_vec_tmp0, i_vec_tmp0, 7 );
+  /* Broadcast shared exponent (in the last 16bits) to all vector entries with vpermw */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMW, i_vname,
+    i_vec_tmp0, i_vec_zero, i_vec_tmp0 );
+  /* Apply the per-lane scale tail (single lane) */
+  l_vec_exp[0]          = i_vec_tmp0;
+  l_vec_data[0]         = io_vec_reg;
+  l_blend_mask[0]       = i_blend_mask;
+  l_sf_displacement[0]  = i_sf_displacement;
+  libxsmm_generator_mxfp_quant_apply_scale_avx512( io_generated_code, i_vname, 1,
+    l_vec_exp, l_vec_data, l_blend_mask,
+    i_vec_zero, i_vec_nan, i_vec_expbias, i_vec_infnan, i_vec_recp_max,
+    i_sf_gp_reg, i_sf_idx_reg, i_sf_idx_scale, l_sf_displacement, i_sf_mask_reg );
+}
+
+void libxsmm_generator_nvfp4_quant_scale_block_avx512( libxsmm_generated_code* io_generated_code,
+                                                       const char              i_vname,
+                                                       const unsigned int      io_vec_reg,
+                                                       const unsigned int      i_vec_tmp0,
+                                                       const unsigned int      i_vec_tmp1,
+                                                       const unsigned int      i_vec_tmp2,
+                                                       const unsigned int      i_vec_zero,
+                                                       const unsigned int      i_vec_recp6,
+                                                       const unsigned int      i_vec_perm_bcast,
+                                                       const unsigned int      i_vec_perm_pack,
+                                                       const unsigned int      i_vec_recp_max,
+                                                       const unsigned int      i_blend_mask,
+                                                       const unsigned int      i_sf_gp_reg,
+                                                       const unsigned int      i_sf_idx_reg,
+                                                       const unsigned int      i_sf_idx_scale,
+                                                       const int               i_sf_displacement,
+                                                       const unsigned int      i_sf_mask_reg ) {
+  /* Combine the two halves so the horizontal reduction sees all values */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
+    io_vec_reg, io_vec_reg, i_vec_tmp0 );
+  /* Optimized horizontal reduction to get the 16-bit absmax (per 256-bit lanes); position 0 holds the
+   * absmax of the first 16 BF16 values, position 16 the absmax of the second 16 BF16 values */
+  libxsmm_generator_hinstrbf16_double_avx512( io_generated_code, LIBXSMM_X86_INSTR_VMINMAXBF16,
+    i_vec_tmp0, i_vec_tmp1, i_vec_tmp2, 0x0b );
+  /* Multiply with 1/6 */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULBF16, i_vname,
+    i_vec_tmp0, i_vec_recp6, i_vec_tmp0 );
+  /* Broadcast scales to BF16 [0...15] and [16...31] */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMW, i_vname,
+    i_vec_tmp0, i_vec_perm_bcast, i_vec_tmp0 );
+  /* Convert BF16 to HF8 */
+  libxsmm_generator_vcvtbf162hf8_avx512( io_generated_code, i_vname, i_vec_tmp0, i_vec_tmp1, i_vec_tmp2 );
+  /* Convert HF8 to BF16 */
+  libxsmm_generator_vcvthf82bf16_avx512( io_generated_code, i_vname, i_vec_tmp1, i_vec_tmp0, i_vec_tmp2 );
+  /* Pack together the two scales to perform a single store for the scales */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPERMB, i_vname,
+    i_vec_tmp1, i_vec_perm_pack, i_vec_tmp1 );
+  /* Store the scales (using 16-bit store) */
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16,
+    i_sf_gp_reg, i_sf_idx_reg, i_sf_idx_scale, i_sf_displacement, 'z', i_vec_tmp1, 1, i_sf_mask_reg, 1 );
+  /* Check if shared exp is zero */
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname,
+    i_vec_zero, i_vec_tmp0, i_blend_mask, 0 );
+  /* Use the BF16 reciprocal to calculate the scales here... */
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VRCPBF16, i_vname,
+    i_vec_tmp0, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_tmp0, 0, 0, 0, 0 );
+  /* Set scales to 2^127 if the shared exponent was zero */
+  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPBLENDMW, i_vname,
+    i_vec_recp_max, i_vec_tmp0, i_vec_tmp0, i_blend_mask, 0 );
+  /* Multiply reciprocal scale with original values */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULBF16, i_vname,
+    i_vec_tmp0, io_vec_reg, io_vec_reg );
 }

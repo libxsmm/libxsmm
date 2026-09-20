@@ -217,7 +217,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS_VEX : LIBXSMM_X86_INSTR_VGATHERDPS_VEX;
   }
   scatter_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VSCATTERQPS : LIBXSMM_X86_INSTR_VSCATTERDPS;
-  is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
   vstore_instr  = (is_gather > 0) ? i_micro_kernel_config->vmove_instruction_out : scatter_instr;
   vload_instr   = (is_gather > 0) ? gather_instr :i_micro_kernel_config->vmove_instruction_in;
 
@@ -771,7 +771,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
   pf_instr      = (pf_type == 2) ? LIBXSMM_X86_INSTR_PREFETCHT1 : LIBXSMM_X86_INSTR_PREFETCHT0;
   vstore_instr  = (use_nts == 0) ? i_micro_kernel_config->vmove_instruction_out : LIBXSMM_X86_INSTR_VMOVNTPS;
   vload_instr   = i_micro_kernel_config->vmove_instruction_in;
-  is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
 
   i_gp_reg_mapping->gp_reg_n        = LIBXSMM_X86_GP_REG_R8;
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_X86_GP_REG_R9;
@@ -985,7 +985,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
   gp_idx_mat_reg        = LIBXSMM_X86_GP_REG_R10;
   gp_aux                = LIBXSMM_X86_GP_REG_RCX;
   gp_idx                = LIBXSMM_X86_GP_REG_R8;
-  is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
 
   if (is_gather == 1) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -1112,7 +1112,7 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
   gp_idx_mat_reg        = LIBXSMM_X86_GP_REG_R10;
   gp_aux                = LIBXSMM_X86_GP_REG_RCX;
   gp_idx                = LIBXSMM_X86_GP_REG_R8;
-  is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
 
   if (is_gather == 1) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -1257,7 +1257,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS_VEX : LIBXSMM_X86_INSTR_VGATHERDPS_VEX;
   }
   scatter_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VSCATTERQPS : LIBXSMM_X86_INSTR_VSCATTERDPS;
-  is_gather     = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
+  is_gather     = (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ? 1 : 0;
   vstore_instr  = (is_gather > 0) ? i_micro_kernel_config->vmove_instruction_out : scatter_instr;
   vload_instr   = (is_gather > 0) ? gather_instr :i_micro_kernel_config->vmove_instruction_in;
 
@@ -1509,14 +1509,14 @@ void libxsmm_generator_gather_scatter_avx_avx512_microkernel( libxsmm_generated_
     libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS ) > 0 ) {
     if ( (i_micro_kernel_config->datatype_size_in == 4) && (i_micro_kernel_config->datatype_size_out == 4) &&
-         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
+         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
       libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     }
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS ) > 0 ) {
     if ( (i_micro_kernel_config->datatype_size_in == 4) && (i_micro_kernel_config->datatype_size_out == 4) &&
-         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
+         ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) || ((io_generated_code->arch >= LIBXSMM_X86_AVX2) && (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_GATHER)))) {
       libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );

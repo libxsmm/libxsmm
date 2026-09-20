@@ -330,7 +330,7 @@ int test_ternary_op( const libxsmm_blasint M, const libxsmm_blasint N, const lib
   }
 
   ternary_kernel = libxsmm_dispatch_meltw_ternary( ternary_type, ternary_shape, ternary_flags );
-  libxsmm_get_kernel_info((const void*) ternary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) ternary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( ternary_kernel == NULL ) {
     fprintf( stderr, "JIT for TERNARY TPP. Bailing...!\n");

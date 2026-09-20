@@ -27,7 +27,7 @@ Although `libxsmm_utilities.py` command-line interface is private (can change wi
 * `libxsmm_utilities 3`: outputs LIBXSMM's 3rd component version number (`LIBXSMM_VERSION_UPDATE`).
 * `libxsmm_utilities 4`: outputs LIBXSMM's 4th component version number (`LIBXSMM_VERSION_PATCH`).
 
-The version information is based on [version.txt](https://github.com/libxsmm/libxsmm/blob/main/version.txt), which is part of LIBXSMM's source code archives (distribution).
+The release version (`MAJOR.MINOR.UPDATE`) is based on [`VERSION`](https://github.com/libxsmm/libxsmm/blob/main/VERSION). [`version.txt`](https://github.com/libxsmm/libxsmm/blob/main/version.txt), which is automatically refreshed for development commits, provides branch and revision metadata. Both files are part of LIBXSMM's source code archives (distribution).
 
 ## Development
 

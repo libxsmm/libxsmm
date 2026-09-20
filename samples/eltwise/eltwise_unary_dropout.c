@@ -257,7 +257,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
-  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
@@ -378,7 +378,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
 
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   unary_kernel = libxsmm_dispatch_meltw_unary( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
-  libxsmm_get_kernel_info((const void*) unary_kernel, &info);
+  libxsmm_get_kernel_info((const void*)(uintptr_t) unary_kernel, &info);
   is_reference_kernel = info.is_reference_kernel;
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");

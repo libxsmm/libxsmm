@@ -226,6 +226,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -240,7 +241,7 @@
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -268,6 +269,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -283,7 +285,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -312,6 +314,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -325,7 +328,7 @@
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -352,6 +355,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -365,7 +369,7 @@
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -395,6 +399,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -409,7 +414,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -437,6 +442,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -451,7 +457,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -471,6 +477,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -484,7 +491,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -507,6 +514,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -519,7 +527,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
@@ -540,6 +548,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4018;4100;4146;4244;4245;4305</DisableSpecificWarnings>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
@@ -552,7 +561,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\$(IntelPlatform);$(LIBXSMMROOT)\lib\$(IntelPlatform)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />

@@ -241,6 +241,7 @@ void libxsmm_generator_transform_norm_to_vnni4_08bit_aarch64_asimd_microkernel( 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                                   libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                  const unsigned int                      i_gp_reg_param_struct,
                                                                                   const unsigned int                      i_gp_reg_in,
                                                                                   const unsigned int                      i_gp_reg_out,
                                                                                   const unsigned int                      i_gp_reg_m_loop,

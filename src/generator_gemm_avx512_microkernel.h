@@ -101,5 +101,157 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_process_vreg_A
                                                                                   unsigned int                       i_m_blocking,
                                                                                   unsigned int                       io_A_vreg );
 
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace( libxsmm_generated_code*            io_generated_code,
+                                                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                const unsigned int                 i_m_blocking,
+                                                                                const unsigned int                 i_m_start,
+                                                                                const unsigned int                 i_m_end,
+                                                                                const unsigned int                 i_a_start,
+                                                                                const unsigned int                 i_tmp_start,
+                                                                                const unsigned int                 i_use_m_masking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace( libxsmm_generated_code*            io_generated_code,
+                                                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                const unsigned int                 i_n_blocking,
+                                                                                const unsigned int                 i_n_start,
+                                                                                const unsigned int                 i_n_end,
+                                                                                const unsigned int                 i_b_start,
+                                                                                const unsigned int                 i_tmp_start,
+                                                                                const unsigned int                 i_use_n_masking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_k16_ace( libxsmm_generated_code*            io_generated_code,
+                                                                                    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                    const unsigned int                 i_n_blocking,
+                                                                                    const unsigned int                 i_n_start,
+                                                                                    const unsigned int                 i_n_end,
+                                                                                    const unsigned int                 i_b_start );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp6( libxsmm_generated_code*            io_generated_code,
+                                                                                    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                    const unsigned int                 i_m_blocking,
+                                                                                    const unsigned int                 i_m_start,
+                                                                                    const unsigned int                 i_m_end,
+                                                                                    const unsigned int                 i_a_start,
+                                                                                    const unsigned int                 i_tmp_start,
+                                                                                    const unsigned int                 i_use_m_masking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace_fp6( libxsmm_generated_code*            io_generated_code,
+                                                                                    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                    const unsigned int                 i_n_blocking,
+                                                                                    const unsigned int                 i_n_start,
+                                                                                    const unsigned int                 i_n_end,
+                                                                                    const unsigned int                 i_b_start,
+                                                                                    const unsigned int                 i_tmp_start,
+                                                                                    const unsigned int                 i_use_n_masking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_A_ace_fp32( libxsmm_generated_code*            io_generated_code,
+                                                                                   const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                   const unsigned int                 i_m_blocking,
+                                                                                   const unsigned int                 i_m_start,
+                                                                                   const unsigned int                 i_m_end,
+                                                                                   const unsigned int                 i_a_start,
+                                                                                   const unsigned int                 i_tmp_start,
+                                                                                   const unsigned int                 i_use_m_masking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_load_B_ace_fp32( libxsmm_generated_code*            io_generated_code,
+                                                                                   const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                   const unsigned int                 i_n_blocking,
+                                                                                   const unsigned int                 i_n_start,
+                                                                                   const unsigned int                 i_n_end,
+                                                                                   const unsigned int                 i_b_start,
+                                                                                   const unsigned int                 i_tmp_start,
+                                                                                   const unsigned int                 i_use_n_masking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_compute_ace( libxsmm_generated_code*            io_generated_code,
+                                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                 const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                 const unsigned int                 i_m_blocking,
+                                                                                 const unsigned int                 i_m_start,
+                                                                                 const unsigned int                 i_m_end,
+                                                                                 const unsigned int                 i_n_blocking,
+                                                                                 const unsigned int                 i_n_start,
+                                                                                 const unsigned int                 i_n_end,
+                                                                                 const unsigned int                 i_a_start,
+                                                                                 const unsigned int                 i_b_start,
+                                                                                 const unsigned int                 i_a_mult );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_load_bsr( libxsmm_generated_code*            io_generated_code,
+                                                                                  const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                  const unsigned int                 i_m_blocking,
+                                                                                  const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace( libxsmm_generated_code*            io_generated_code,
+                                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                         const unsigned int                 i_m_blocking,
+                                                                         const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_unrollk4( libxsmm_generated_code*            io_generated_code,
+                                                                                  const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                  const unsigned int                 i_m_blocking,
+                                                                                  const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_mxfp8( libxsmm_generated_code*            io_generated_code,
+                                                                                     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                     const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                     const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                     const unsigned int                 i_m_blocking,
+                                                                                     const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_fp32_via_bf16( libxsmm_generated_code*            io_generated_code,
+                                                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                       const unsigned int                 i_m_blocking,
+                                                                                       const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_mxfp4_via_mxfp8( libxsmm_generated_code*            io_generated_code,
+                                                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                         const unsigned int                 i_m_blocking,
+                                                                                         const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_mxfp6_via_mxfp8( libxsmm_generated_code*            io_generated_code,
+                                                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                         const unsigned int                 i_m_blocking,
+                                                                                         const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_unrollk4_inline_trans( libxsmm_generated_code*            io_generated_code,
+                                                                                               const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                               const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                               const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                               const unsigned int                 i_m_blocking,
+                                                                                               const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_ace_unrollk8_inline_trans( libxsmm_generated_code*            io_generated_code,
+                                                                                               const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                               const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                               const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                               const unsigned int                 i_m_blocking,
+                                                                                               const unsigned int                 i_n_blocking );
+
 #endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_H */
 
