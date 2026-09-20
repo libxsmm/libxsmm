@@ -3414,6 +3414,8 @@ int main(int argc, char* argv []) {
   libxsmm_datatype l_dtype_c = LIBXSMM_DATATYPE_UNSUPPORTED;
   libxsmm_datatype l_dtype_comp = LIBXSMM_DATATYPE_UNSUPPORTED;
   libxsmm_blasint l_lda = 0, l_ldb = 0, l_ldc = 0;
+  /* LDs as given on the command line / test file (-1/-2 select dynld) */
+  libxsmm_blasint l_lda_in = 0, l_ldb_in = 0, l_ldc_in = 0;
   libxsmm_blasint l_m = 0, l_n = 0, l_k = 0;
   int l_aligned_a = 0;
   int l_aligned_c = 0;
@@ -4157,6 +4159,9 @@ int main(int argc, char* argv []) {
 
         if (l_keep_going == 0) break;
       }
+      l_lda_in = l_lda;
+      l_ldb_in = l_ldb;
+      l_ldc_in = l_ldc;
 #if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
     }
 #endif
@@ -4166,7 +4171,7 @@ int main(int argc, char* argv []) {
     l_gemm_def.k = l_k;
 
     /* handle dynld */
-    if ( (l_lda == -1) && (l_ldb == -1) && (l_ldc == -1) ) {
+    if ( (l_lda_in == -1) && (l_ldb_in == -1) && (l_ldc_in == -1) ) {
       l_gemm_def.is_dynld = 1;
       if ( l_gemm_def.trans_a == 0 ) {
         l_gemm_def.lda = l_m;
@@ -4179,7 +4184,7 @@ int main(int argc, char* argv []) {
         l_gemm_def.ldb = l_n;
       }
       l_gemm_def.ldc = l_m;
-    } else if ( (l_lda == -2) && (l_ldb == -2) && (l_ldc == -2) ) {
+    } else if ( (l_lda_in == -2) && (l_ldb_in == -2) && (l_ldc_in == -2) ) {
       l_gemm_def.is_dynld = 1;
       if ( l_gemm_def.trans_a == 0 ) {
         l_gemm_def.lda = 2*l_m;
@@ -4194,10 +4199,14 @@ int main(int argc, char* argv []) {
       l_gemm_def.ldc = 2*l_m;
     } else {
       l_gemm_def.is_dynld = 0;
-      l_gemm_def.lda = l_lda;
-      l_gemm_def.ldb = l_ldb;
-      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.lda = l_lda_in;
+      l_gemm_def.ldb = l_ldb_in;
+      l_gemm_def.ldc = l_ldc_in;
     }
+    /* the remainder of the iteration works with the resolved LDs */
+    l_lda = l_gemm_def.lda;
+    l_ldb = l_gemm_def.ldb;
+    l_ldc = l_gemm_def.ldc;
     /* restore datatype/vnni parameters which may be overwritten by the per-type
        run sections (e.g. MX kernels set a_type/b_type to BF8/HF8 for the gold
        reference); without this restore subsequent file-input iterations would
@@ -4212,11 +4221,11 @@ int main(int argc, char* argv []) {
     libxsmm_rng_set_seed( 555 );
 #if defined(USE_GEMM_EXT_FRONTEND)
     printf("\n\nCommand line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
+      l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
       libxsmm_prefetch_to_char(l_prefetch), br_type_to_char(l_br_type), l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop);
 #else
     printf("\n\nCommand line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
+      l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
       libxsmm_prefetch_to_char(l_prefetch), br_type_to_char(l_br_type), l_br, l_br_unroll, l_reps, l_tc_config);
 #endif
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
