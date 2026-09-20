@@ -328,8 +328,8 @@ libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
 }
 
 LIBXSMM_INLINE
-char* br_type_to_char( const int br_type ) {
-  char* br_string = NULL;
+const char* br_type_to_char( const int br_type ) {
+  const char* br_string = NULL;
 
   if ( br_type == 0 ) {
     br_string = "nobr";
@@ -347,8 +347,8 @@ char* br_type_to_char( const int br_type ) {
 }
 
 LIBXSMM_INLINE
-char* libxsmm_prefetch_to_char( const int prefetch ) {
-  char* pf_string = NULL;
+const char* libxsmm_prefetch_to_char( const int prefetch ) {
+  const char* pf_string = NULL;
 
   if ( prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     pf_string = "nopf";
@@ -3066,12 +3066,6 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   is_reference_kernel = info.is_reference_kernel;
 
   /* receive kernel information */
-#if defined(USE_GEMM_EXT_FRONTEND)
-  libxsmm_get_kernel_info((const void*) l_test_jit.gemm_ext, &info);
-#else
-  libxsmm_get_kernel_info((const void*) l_test_jit.gemm, &info);
-#endif
-  is_reference_kernel = info.is_reference_kernel;
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   /* reset GEMM parameter */
