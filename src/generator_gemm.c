@@ -277,7 +277,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
                 (LIBXSMM_GEMM_GETENUM_COMP_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_I32)  && (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_I32) && (l_is_Ai4_Bi8_gemm == 0) ) ) ) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
           return;
-        } else {
+        }
+        /* the ACE kernels and the AVX512 flat-A int8 kernel (inline VNNI shuffle) address A/B with static LDs */
+        if ( ( libxsmm_generator_gemm_avx512_use_ace( io_generated_code, &l_xgemm_desc_mod ) != 0 ) ||
+             ( libxsmm_x86_is_Ai8_Bi8_flat_gemm( &l_xgemm_desc_mod ) != 0 ) ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+          return;
         }
       } else {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
