@@ -2593,12 +2593,6 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -24;
     case LIBXSMM_GEMM_STACK_VAR_STRIDE_B_VAL:
       return -32;
-    case LIBXSMM_GEMM_STACK_VAR_LDA_PTR:
-      return -248;
-    case LIBXSMM_GEMM_STACK_VAR_LDB_PTR:
-      return -256;
-    case LIBXSMM_GEMM_STACK_VAR_LDC_PTR:
-      return -264;
   }
   return 0;
 }
