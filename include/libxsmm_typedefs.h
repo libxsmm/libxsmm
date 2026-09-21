@@ -154,6 +154,9 @@
 # endif
 #endif
 
+/** Passed as lda/ldb/ldc of a GEMM shape (any negative LD is equivalent), the LD becomes a kernel-call
+ *  argument: libxsmm_matrix_arg.quinary of A/B/C points to a long long holding the LD (in elements);
+ *  for LIBXSMM_GEMM_BATCH_REDUCE_STRIDE the byte strides are then given via a.secondary/b.secondary. */
 #define LIBXSMM_RUNTIME_SET_LD 0xffffffff
 
 /** Integer type used to represent tick of a high-resolution timer. */
