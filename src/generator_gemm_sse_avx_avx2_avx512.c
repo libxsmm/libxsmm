@@ -1912,7 +1912,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   if ( libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ) != 0 ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_LDA_VAL, i_gp_reg_mapping->gp_reg_help_0 );
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_0,
-                                     l_k_pack_advance*i_micro_kernel_config->datatype_size_in);
+                                     (long long)l_k_pack_advance*i_micro_kernel_config->datatype_size_in);
   }
   if ( libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0 ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_LDB_VAL, i_gp_reg_mapping->gp_reg_help_1 );
