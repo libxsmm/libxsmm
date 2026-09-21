@@ -2216,8 +2216,8 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Variable LDA VAL                          <-- RBP-176,
    *      Variable LDB VAL                          <-- RBP-184,
    *      Variable LDC VAL                          <-- RBP-192, RSP
-   *      Variable stride A VAL                     <-- RBP-24,
-   *      Variable stride B VAL                     <-- RBP-32
+   *      Variable stride A VAL                     <-- RBP-24 (aliases Offset A array ptr, BR modes are exclusive),
+   *      Variable stride B VAL                     <-- RBP-32 (aliases Offset B array ptr)
    *
    * */
 
@@ -2311,8 +2311,8 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Variable LDA VAL                      <-- RBP-176,
    *      Variable LDB VAL                      <-- RBP-184,
    *      Variable LDC VAL                      <-- RBP-192, RSP
-   *      Variable stride A VAL                 <-- RBP-24,
-   *      Variable stride B VAL                 <-- RBP-32, RSP
+   *      Variable stride A VAL                 <-- RBP-24 (aliases Offset A array ptr, BR modes are exclusive),
+   *      Variable stride B VAL                 <-- RBP-32 (aliases Offset B array ptr), RSP
    *
    *      [ Potential pad for 64b align ]
    *      AVX2 mask, 64b aligned                <-- (RBP-104) contains this address
@@ -2492,8 +2492,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      Variable LDA VAL                          <-- RBP-176
    *      Variable LDB VAL                          <-- RBP-184
    *      Variable LDC VAL                          <-- RBP-192
-   *      Variable stride A VAL                     <-- RBP-24
-   *      Variable stride B VAL                     <-- RBP-32
+   *      Variable stride A VAL                     <-- RBP-24 (aliases Offset A array ptr, BR modes are exclusive)
+   *      Variable stride B VAL                     <-- RBP-32 (aliases Offset B array ptr)
    */
 
   switch ( stack_var ) {
@@ -2589,6 +2589,7 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -184;
     case LIBXSMM_GEMM_STACK_VAR_LDC_VAL:
       return -192;
+    /* runtime BR strides alias the BR-offset array pointers: a kernel is either offset- or stride-based */
     case LIBXSMM_GEMM_STACK_VAR_STRIDE_A_VAL:
       return -24;
     case LIBXSMM_GEMM_STACK_VAR_STRIDE_B_VAL:
