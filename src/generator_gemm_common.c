@@ -6023,6 +6023,44 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned i
 }
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_dynld_is_supported( libxsmm_generated_code*            io_generated_code,
+                                                        const libxsmm_gemm_descriptor*     i_xgemm_desc ) {
+  const libxsmm_datatype l_a    = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype );
+  const libxsmm_datatype l_b    = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype );
+  const libxsmm_datatype l_comp = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype );
+  const libxsmm_datatype l_c    = (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype );
+  const unsigned int l_is_fp = ( (l_a == LIBXSMM_DATATYPE_F64) && (l_b == LIBXSMM_DATATYPE_F64) && (l_comp == LIBXSMM_DATATYPE_F64) && (l_c == LIBXSMM_DATATYPE_F64) ) ||
+                               ( (l_a == LIBXSMM_DATATYPE_F32) && (l_b == LIBXSMM_DATATYPE_F32) && (l_comp == LIBXSMM_DATATYPE_F32) && (l_c == LIBXSMM_DATATYPE_F32) );
+  const unsigned int l_is_amx_lp = ( (l_a == LIBXSMM_DATATYPE_BF16) && (l_b == LIBXSMM_DATATYPE_BF16) && (l_comp == LIBXSMM_DATATYPE_F32) && ((l_c == LIBXSMM_DATATYPE_BF16) || (l_c == LIBXSMM_DATATYPE_F32)) ) ||
+                                   ( (l_a == LIBXSMM_DATATYPE_I8) && (l_b == LIBXSMM_DATATYPE_I8) && (l_comp == LIBXSMM_DATATYPE_I32) && (l_c == LIBXSMM_DATATYPE_I32) && (libxsmm_x86_is_Ai4_Bi8_gemm( i_xgemm_desc ) == 0) );
+
+  if ( libxsmm_is_runtime_set_ld_gemm( i_xgemm_desc ) == 0 ) {
+    return 0;
+  }
+  /* fused GEMMs and trans-A are not implemented with runtime LDs */
+  if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) != 0) || ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) ) {
+    return LIBXSMM_ERR_INVALID_GEMM_CONFIG;
+  }
+  if ( (io_generated_code->arch < LIBXSMM_X86_SSE3) || (io_generated_code->arch >= LIBXSMM_X86_ALLFEAT) ) {
+    return LIBXSMM_ERR_ARCH;
+  }
+  /* F32/F64 run on every x86 microkernel */
+  if ( l_is_fp ) {
+    return 0;
+  }
+  /* BF16 and I8 need the AMX kernels: the ACE kernels and the AVX512 flat-A int8 kernel address A/B with static LDs */
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) || (l_is_amx_lp == 0) ||
+       (libxsmm_generator_gemm_avx512_use_ace( io_generated_code, i_xgemm_desc ) != 0) ||
+       (libxsmm_x86_is_Ai8_Bi8_flat_gemm( i_xgemm_desc ) != 0) ) {
+    return LIBXSMM_ERR_ARCH_PREC;
+  }
+  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0 ) {
+    return LIBXSMM_ERR_INVALID_GEMM_CONFIG;
+  }
+  return 0;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_x86_advance_ptr_by_ld( libxsmm_generated_code*            io_generated_code,
                                                    const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,

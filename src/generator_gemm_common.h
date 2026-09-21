@@ -478,6 +478,11 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_avx512_use_ace( libxsmm_generated_code*            io_generated_code,
                                                     const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
+/* Runtime-set LDs: returns 0 if a JIT kernel exists for this arch/precision/layout, else the LIBXSMM_ERR_* code to raise */
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_dynld_is_supported( libxsmm_generated_code*            io_generated_code,
+                                                        const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_use_inline_transform_ace(
     libxsmm_generated_code*             io_generated_code,
