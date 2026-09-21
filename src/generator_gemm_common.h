@@ -421,6 +421,22 @@ void libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( libxsmm_generated_code*  
                                                        const long long                    i_ld_scale,
                                                        const long long                    i_static_offset );
 
+/* SIB operands (index, scale, displacement) for the i_col-th ldb-strided column of B out of i_num_cols visited in order.
+ * Static ldb: displacement only. Runtime ldb: gp_reg_help_2 (= i_col*ldb, from gp_reg_help_1) is used as index and
+ * the bookkeeping for it is emitted here. */
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_x86_b_column_sib( libxsmm_generated_code*            io_generated_code,
+                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                              const unsigned int                 i_ldb_is_runtime,
+                                              const unsigned int                 i_col,
+                                              const unsigned int                 i_num_cols,
+                                              const int                          i_static_displacement,
+                                              const int                          i_runtime_displacement,
+                                              unsigned int*                      o_idx_reg,
+                                              unsigned int*                      o_scale,
+                                              int*                               o_displacement );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512_new( libxsmm_generated_code*            io_generated_code,
                                                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,

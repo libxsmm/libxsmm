@@ -6096,6 +6096,39 @@ void libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( libxsmm_generated_code*  
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_x86_b_column_sib( libxsmm_generated_code*            io_generated_code,
+                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                              const unsigned int                 i_ldb_is_runtime,
+                                              const unsigned int                 i_col,
+                                              const unsigned int                 i_num_cols,
+                                              const int                          i_static_displacement,
+                                              const int                          i_runtime_displacement,
+                                              unsigned int*                      o_idx_reg,
+                                              unsigned int*                      o_scale,
+                                              int*                               o_displacement ) {
+  if ( i_ldb_is_runtime == 0 ) {
+    *o_idx_reg = LIBXSMM_X86_GP_REG_UNDEF;
+    *o_scale = 0;
+    *o_displacement = i_static_displacement;
+  } else {
+    /* gp_reg_help_2 = i_col * ldb (elements); gp_reg_help_1 holds ldb */
+    if ( i_col == 0 ) {
+      if ( i_num_cols > 1 ) {
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_2, 0 );
+      }
+      *o_idx_reg = LIBXSMM_X86_GP_REG_UNDEF;
+      *o_scale = 0;
+    } else {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_2 );
+      *o_idx_reg = i_gp_reg_mapping->gp_reg_help_2;
+      *o_scale = i_micro_kernel_config->datatype_size_in2;
+    }
+    *o_displacement = i_runtime_displacement;
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_setup_mxfp4_dcvt(libxsmm_generated_code* io_generated_code,
   const libxsmm_micro_kernel_config* i_micro_kernel_config, libxsmm_mxfp4_cvt_reg_mapping* i_mxfp4_cvt_reg_mapping,
   const unsigned int i_avail_vreg_start_desc, const unsigned int i_mask_reg_0, const unsigned int i_mask_reg_1,
