@@ -103,15 +103,9 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* post increment of a pointer early */
       if ( l_n == 0 ) {
-        if ( libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ) != 0 ) {
-          libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction,
-                                           i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a );
-        } else {
-          libxsmm_x86_instruction_alu_imm( io_generated_code,
-                                           i_micro_kernel_config->alu_add_instruction,
-                                           i_gp_reg_mapping->gp_reg_a,
-                                           (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
-        }
+        libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( io_generated_code, i_micro_kernel_config, libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ),
+                                                          i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 1,
+                                                          (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
       }
 
       /* handle trans B */
@@ -173,37 +167,18 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
       }
 
       if ( l_n == (i_n_blocking -1) ) {
-        if ( libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0 ) {
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-             libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_1,
-                                              i_gp_reg_mapping->gp_reg_help_2 );
-
-             libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_2,
-                                              i_micro_kernel_config->datatype_size_in2);
-
-             libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_help_2,
-                                              i_gp_reg_mapping->gp_reg_b );
-          } else {
-            l_b_offset = i_micro_kernel_config->datatype_size_in2;
-
-            libxsmm_x86_instruction_alu_imm( io_generated_code,
-                i_micro_kernel_config->alu_add_instruction,
-                i_gp_reg_mapping->gp_reg_b,
-                l_b_offset );
-          }
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
         } else {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
-          } else {
-            l_b_offset = i_micro_kernel_config->datatype_size_in*l_k_pack_factor;
-          }
-
-          libxsmm_x86_instruction_alu_imm( io_generated_code,
-                                           i_micro_kernel_config->alu_add_instruction,
-                                           i_gp_reg_mapping->gp_reg_b,
-                                           l_b_offset );
+          l_b_offset = i_micro_kernel_config->datatype_size_in*l_k_pack_factor;
         }
+
+        /* only the trans-B advance depends on ldb */
+        libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( io_generated_code, i_micro_kernel_config,
+                                                          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) : 0,
+                                                          i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_2,
+                                                          i_micro_kernel_config->datatype_size_in2, l_b_offset );
       }
 
       if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
@@ -319,36 +294,17 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
       }
     }
     /* handle trans B */
-    if ( libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0 ) {
-      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-        libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_1,
-                                         i_gp_reg_mapping->gp_reg_help_2 );
-
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_2,
-                                         i_micro_kernel_config->datatype_size_in2);
-
-        libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_help_2,
-                                         i_gp_reg_mapping->gp_reg_b );
-      } else {
-        l_b_offset = i_micro_kernel_config->datatype_size_in2;
-
-        libxsmm_x86_instruction_alu_imm( io_generated_code,
-            i_micro_kernel_config->alu_add_instruction,
-            i_gp_reg_mapping->gp_reg_b,
-            l_b_offset );
-      }
+    if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+      l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
     } else {
-      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-        l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
-      } else {
-        l_b_offset = i_micro_kernel_config->datatype_size_in*l_k_pack_factor;
-      }
-
-      libxsmm_x86_instruction_alu_imm( io_generated_code,
-                                       i_micro_kernel_config->alu_add_instruction,
-                                       i_gp_reg_mapping->gp_reg_b,
-                                       l_b_offset );
+      l_b_offset = i_micro_kernel_config->datatype_size_in*l_k_pack_factor;
     }
+
+    /* only the trans-B advance depends on ldb */
+    libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( io_generated_code, i_micro_kernel_config,
+                                                      ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) : 0,
+                                                      i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_2,
+                                                      i_micro_kernel_config->datatype_size_in2, l_b_offset );
 
     /* load column vectors of A and multiply with all broadcasted row entries of B */
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
@@ -437,15 +393,9 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
       }
     }
     /* increae a pointer */
-    if ( libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ) != 0 ) {
-       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction,
-                                        i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a );
-    } else {
-      libxsmm_x86_instruction_alu_imm( io_generated_code,
-                                       i_micro_kernel_config->alu_add_instruction,
-                                       i_gp_reg_mapping->gp_reg_a,
-                                       (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
-    }
+    libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( io_generated_code, i_micro_kernel_config, libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ),
+                                                      i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 1,
+                                                      (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in*l_k_pack_factor );
   }
 }
 

@@ -1977,26 +1977,21 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     }
 
     /* reset B pointer */
-    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && (libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0) ) {
-      libxsmm_generator_gemm_x86_addsublea_scaled_stack_variable( io_generated_code, i_micro_kernel_config,
-                                                                  i_gp_reg_mapping->gp_reg_b, LIBXSMM_GEMM_STACK_VAR_LDB_VAL,
-                                                                  i_gp_reg_mapping->gp_reg_help_2, LIBXSMM_X86_INSTR_SUBQ,
-                                                                  (long long)i_xgemm_desc->k*i_micro_kernel_config->datatype_size_in2,
-                                                                  0, 0 );
+    if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+      l_b_offset = i_xgemm_desc->ldb * (i_xgemm_desc->k/l_scale_k) * i_micro_kernel_config->datatype_size_in2;
     } else {
-      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-        l_b_offset = i_xgemm_desc->ldb * (i_xgemm_desc->k/l_scale_k) * i_micro_kernel_config->datatype_size_in2;
-      } else {
-        l_b_offset = (i_xgemm_desc->k/l_scale_k) * i_micro_kernel_config->datatype_size_in2;
-      }
-
-      if ( l_is_Amxfp6_Bmxfp6_gemm > 0 ) {
-        l_b_offset = (l_b_offset*6)/8;
-      }
-
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-        i_gp_reg_mapping->gp_reg_b, l_b_offset );
+      l_b_offset = (i_xgemm_desc->k/l_scale_k) * i_micro_kernel_config->datatype_size_in2;
     }
+
+    if ( l_is_Amxfp6_Bmxfp6_gemm > 0 ) {
+      l_b_offset = (l_b_offset*6)/8;
+    }
+
+    /* only the trans-B reset depends on ldb */
+    libxsmm_generator_gemm_x86_advance_ptr_by_ld( io_generated_code, i_micro_kernel_config, i_xgemm_desc,
+                                                  i_gp_reg_mapping->gp_reg_b, LIBXSMM_GEMM_STACK_VAR_LDB_VAL, i_gp_reg_mapping->gp_reg_help_2,
+                                                  ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) ? -((long long)i_xgemm_desc->k*i_micro_kernel_config->datatype_size_in2) : 0,
+                                                  0, -(long long)l_b_offset );
   }
 
   if (l_is_Ai8_Bbf16_gemm > 0 && l_is_Ai8_Bbf16_gemm_bf16fma == 0) {

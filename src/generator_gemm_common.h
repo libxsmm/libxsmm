@@ -397,16 +397,29 @@ void libxsmm_generator_gemm_setval_stack_var( libxsmm_generated_code*           
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned int i_range, unsigned int i_max_block, unsigned int i_nomask_block, unsigned int *io_block, unsigned int *o_use_mask );
 
+/* i_gp_reg_ptr += (LD is runtime-set) ? LD * i_ld_scale + i_const_offset : i_static_offset; all in bytes, signed.
+ * i_ld_scale == 0 marks an offset without LD dependence, which is always emitted as immediate. */
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_x86_addsublea_scaled_stack_variable( libxsmm_generated_code*            io_generated_code,
-                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                 const unsigned int                 i_gp_reg,
-                                                                 const libxsmm_gemm_stack_var       i_gemm_stack_var_name,
-                                                                 const unsigned int                 i_gp_reg_tmp,
-                                                                 const unsigned int                 i_addsublea_instr,
-                                                                 const long long                    i_scale,
-                                                                 const long long                    i_leaoffset,
-                                                                 const unsigned int                 i_save_gp_reg_tmp );
+void libxsmm_generator_gemm_x86_advance_ptr_by_ld( libxsmm_generated_code*            io_generated_code,
+                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                   const unsigned int                 i_gp_reg_ptr,
+                                                   const libxsmm_gemm_stack_var       i_ld_stack_var,
+                                                   const unsigned int                 i_gp_reg_tmp,
+                                                   const long long                    i_ld_scale,
+                                                   const long long                    i_const_offset,
+                                                   const long long                    i_static_offset );
+
+/* same as above, but the runtime LD lives in i_gp_reg_ld (i_gp_reg_tmp is only clobbered if i_ld_scale != 1) */
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_x86_advance_ptr_by_ld_reg( libxsmm_generated_code*            io_generated_code,
+                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                       const unsigned int                 i_is_runtime_ld,
+                                                       const unsigned int                 i_gp_reg_ptr,
+                                                       const unsigned int                 i_gp_reg_ld,
+                                                       const unsigned int                 i_gp_reg_tmp,
+                                                       const long long                    i_ld_scale,
+                                                       const long long                    i_static_offset );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512_new( libxsmm_generated_code*            io_generated_code,
