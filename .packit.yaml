@@ -32,17 +32,17 @@ jobs:
   - job: copr_build
     trigger: pull_request
 
-#  - job: propose_downstream
-#    trigger: release
-#    dist_git_branches:
-#      - fedora-rawhide
+  - job: propose_downstream
+    trigger: release
+    dist_git_branches:
+      - fedora-rawhide
 
-#  - job: koji_build
-#    trigger: commit
-#    dist_git_branches:
-#      - fedora-all
+  - job: koji_build
+    trigger: commit
+    dist_git_branches:
+      - fedora-all
 
-#  - job: bodhi_update
-#    trigger: commit
-#    dist_git_branches:
-#      - fedora-branched
+  - job: bodhi_update
+    trigger: commit
+    dist_git_branches:
+      - fedora-branched
