@@ -13,7 +13,7 @@
 Name:		libxsmm
 Version:	0.0.0
 Release:	%autorelease
-Summary:	Small dense or sparse matrix multiplications and convolutions for x86_64
+Summary:	Library for specialized dense and sparse matrix operations, and deep learning primitives
 License:	BSD-3-Clause
 URL:		https://github.com/libxsmm/libxsmm
 Source0:	https://github.com/libxsmm/libxsmm/archive/%{version}/%{name}-%{version}.tar.gz
