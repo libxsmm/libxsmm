@@ -418,7 +418,7 @@ The environment variable `LIBXSMM_MATDIFF` can carry optional space-separated ar
 [conda-badge]: https://img.shields.io/conda/vn/conda-forge/libxsmm
 [conda-link]: https://anaconda.org/conda-forge/libxsmm
 [debian-badge]: https://img.shields.io/debian/v/libxsmm
-[debian-link]: https://packages.debian.org/search?keywords=libxsmm
+[debian-link]: https://tracker.debian.org/pkg/libxsmm
 [fedora-badge]: https://img.shields.io/fedora/v/libxsmm
 [fedora-link]: https://src.fedoraproject.org/rpms/libxsmm
 [release-badge]: https://img.shields.io/github/v/release/libxsmm/libxsmm
@@ -426,5 +426,5 @@ The environment variable `LIBXSMM_MATDIFF` can carry optional space-separated ar
 [spack-badge]: https://img.shields.io/spack/v/libxsmm
 [spack-link]: https://packages.spack.io/package.html?name=libxsmm
 [ubuntu-badge]: https://img.shields.io/ubuntu/v/libxsmm
-[ubuntu-link]: https://packages.ubuntu.com/search?keywords=libxsmm
+[ubuntu-link]: https://launchpad.net/ubuntu/+source/libxsmm
 
