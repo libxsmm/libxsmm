@@ -328,38 +328,6 @@ libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
 }
 
 LIBXSMM_INLINE
-const char* br_type_to_char( const int br_type ) {
-  const char* br_string = NULL;
-
-  if ( br_type == 0 ) {
-    br_string = "nobr";
-  } else if ( br_type == 1 ) {
-    br_string = "addrbr";
-  } else if ( br_type == 2 ) {
-    br_string = "offsbr";
-  } else if ( br_type == 3 ) {
-    br_string = "strdbr";
-  } else if ( br_type == 4 ) {
-    br_string = "spmm";
-  }
-
-  return br_string;
-}
-
-LIBXSMM_INLINE
-const char* libxsmm_prefetch_to_char( const int prefetch ) {
-  const char* pf_string = NULL;
-
-  if ( prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    pf_string = "nopf";
-  } else if ( prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ) {
-    pf_string = "AL2";
-  }
-
-  return pf_string;
-}
-
-LIBXSMM_INLINE
 float ftanh_rational_78(float x) {
   float x2, nom, denom, result;
   if (x > 4.97f) {
@@ -4181,6 +4149,13 @@ int main(int argc, char* argv []) {
     l_lda = l_gemm_def.lda;
     l_ldb = l_gemm_def.ldb;
     l_ldc = l_gemm_def.ldc;
+    if ( ( l_lda < ((l_gemm_def.trans_a == 0) ? l_m : l_k) ) ||
+         ( l_ldb < ((l_gemm_def.trans_b == 0) ? l_k : l_n) ) ||
+         ( l_ldc < l_m ) ) {
+      fprintf(stderr, "ERROR: invalid LDs lda=%i ldb=%i ldc=%i for m=%i n=%i k=%i (all LDs negative selects runtime-set LDs)\n",
+              l_lda_in, l_ldb_in, l_ldc_in, l_m, l_n, l_k);
+      exit(EXIT_FAILURE);
+    }
     /* restore datatype/vnni parameters which may be overwritten by the per-type
        run sections (e.g. MX kernels set a_type/b_type to BF8/HF8 for the gold
        reference); without this restore subsequent file-input iterations would
@@ -4193,15 +4168,6 @@ int main(int argc, char* argv []) {
 
     /* set rng seed */
     libxsmm_rng_set_seed( 555 );
-#if defined(USE_GEMM_EXT_FRONTEND)
-    printf("\n\nCommand line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-      l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
-      libxsmm_prefetch_to_char(l_prefetch), br_type_to_char(l_br_type), l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop);
-#else
-    printf("\n\nCommand line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-      l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
-      libxsmm_prefetch_to_char(l_prefetch), br_type_to_char(l_br_type), l_br, l_br_unroll, l_reps, l_tc_config);
-#endif
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
 #   pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
@@ -5431,7 +5397,34 @@ int main(int argc, char* argv []) {
       } else {
         printf("%s %s %s %s %i %i %i %i %i %i %i %i %i %f %f\n", l_a_dt, l_b_dt, l_comp_dt, l_c_dt, l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9) );
       }
-      l_runtime_libxsmm /= (double)l_n_threads;
+      {
+        const char *prefetch = NULL, *br_type = NULL;
+        switch (l_prefetch) {
+          case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
+          case LIBXSMM_GEMM_PREFETCH_AL2: prefetch = "AL2"; break;
+          default: prefetch = "unknown";
+        }
+        switch (l_br_type) {
+          case 0: br_type = "nobr"; break;
+          case 1: br_type = "addrbr"; break;
+          case 2: br_type = "offsbr"; break;
+          case 3: br_type = "strdbr"; break;
+          case 4: br_type = "spmm"; break;
+          default: br_type = "unknown";
+        }
+
+        assert(NULL != prefetch && NULL != br_type);
+        l_runtime_libxsmm /= (double)l_n_threads;
+#if defined(USE_GEMM_EXT_FRONTEND)
+        printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
+          l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
+          prefetch, br_type, l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop);
+#else
+        printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
+          l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
+          prefetch, br_type, l_br, l_br_unroll, l_reps, l_tc_config);
+#endif
+      }
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("%f GB/s\n", ((double)((double)l_reps * (((((double)l_m * (double)l_k * l_dtype_a_size) + ((double)l_k * (double)l_n * l_dtype_b_size)) * (double)l_br) + ((double)l_m * (double)l_n * l_dtype_c_size)) * (double)l_n_threads)) / (l_runtime_libxsmm * 1.0e9) );
