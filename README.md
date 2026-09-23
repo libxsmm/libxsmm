@@ -6,13 +6,15 @@
 [![Fedora Status][fedora-badge]][fedora-link] [![Ubuntu Status][ubuntu-badge]][ubuntu-link]
 [![Spack Status][spack-badge]][spack-link] [![Conda Status][conda-badge]][conda-link]
 
-LIBXSMM is high performance library for small dense and sparse linear algebra opertions incl. GEMM and elementwise primities often seen in deep learning applications. It also serves as reference implementation of Tensor Processing Primitives ([TPP](https://arxiv.org/pdf/2104.05755)), a programming abstraction for efficient and portable deep learning and HPC workloads. With <span>version&#160;2.0</span>, LIBXSMM focuses on providing a complete and architecture-portable set of TPPs (small dense and sparse matrix operations as well as element-wise, GEMM, and BRGEMM primitives) from which higher-level operators such as convolutions, fully-connected layers, normalization, and pooling are composed. LIBXSMM targets <span>Intel&#160;Architecture</span> with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions), <span>AArch64</span> (NEON, SVE, and SME), <span>RISC&#8209;V</span> (RVV), and <span>PowerPC&#160;64&#8209;bit&#160;little&#8209;endian</span> (POWER10 with VSX and MMA). Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and tensor primitives). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `FP16`, `bfloat16`, `BF8`, `HF8`, `MXBF8`, `MXHF8`, `MXINT8`, `int16`, `int8`, `MXBF6`, `MXHF6`, `MXFP4`, `int4`, `int2` and `int1`. Additionally, various non-standard low precision combinations are supported.
+LIBXSMM is high performance library for small dense and sparse linear algebra opertions incl. GEMM and elementwise primities often seen in deep learning applications. It also serves as reference implementation of Tensor Processing Primitives ([TPP](https://arxiv.org/pdf/2104.05755)), a programming abstraction for efficient and portable deep learning and HPC workloads. With version 2.0, LIBXSMM focuses on providing a complete and architecture-portable set of TPPs (small dense and sparse matrix operations as well as element-wise, GEMM, and BRGEMM primitives) from which higher-level operators such as convolutions, fully-connected layers, normalization, and pooling are composed. LIBXSMM targets Intel Architecture with Intel SSE, Intel AVX, Intel AVX2, Intel AVX-512 (with VNNI and Bfloat16), and Intel AMX (Advanced Matrix Extensions), AArch64 (NEON, SVE, and SME), RISC-V (RVV), and PowerPC 64-bit little-endian (POWER10 with VSX and MMA). Code generation is mainly based on Just-In-Time (JIT) code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and tensor primitives). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `FP16`, `bfloat16`, `BF8`, `HF8`, `MXBF8`, `MXHF8`, `MXINT8`, `int16`, `int8`, `MXBF6`, `MXHF6`, `MXFP4`, `int4`, `int2` and `int1`. Additionally, various non-standard low precision combinations are supported.
 
 **LIBXSMM 2.0**: This major release repositions LIBXSMM as the reference implementation of Tensor Processing Primitives. To keep the core library focused, several application-specific pieces that previously shipped here have moved to dedicated companion repositories: the deep-learning operators and convolution drivers ([LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn)), the PyTorch integration ([TPP PyTorch Extension](https://github.com/libxsmm/tpp-pytorch-extension)), and the spectral-element reproducers (e.g. NekBox). The core library, the JIT backend, and the TPP frontend remain here.
 
 For a list questions and answers, please also have a look at [https://github.com/libxsmm/libxsmm/wiki/Q&A](https://github.com/libxsmm/libxsmm/wiki/Q&A).
 
-<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C code may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). It walks through the Tensor Processing Primitives: dispatch a GEMM kernel and three element-wise (unary, binary, ternary) kernels, then invoke them. Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.c` (below) and compile with `gcc -I/path/to/libxsmm/include hello.c -L/path/to/libxsmm/lib -lxsmm -lm -o hello`, and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
+## Getting Started
+
+The following C code may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). It walks through the Tensor Processing Primitives: dispatch a GEMM kernel and three element-wise (unary, binary, ternary) kernels, then invoke them. Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.c` (below) and compile with `gcc -I/path/to/libxsmm/include hello.c -L/path/to/libxsmm/lib -lxsmm -lm -o hello`, and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
 ```c
 #include <libxsmm.h>
@@ -58,20 +60,22 @@ int main(int argc, char* argv[]) {
 
 Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/main/samples/hello). More complete drivers are available under [samples/xgemm](https://github.com/libxsmm/libxsmm/tree/main/samples/xgemm) and [samples/eltwise](https://github.com/libxsmm/libxsmm/tree/main/samples/eltwise).
 
-<a name="what-is-a-small-matrix-multiplication"></a>**What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within <i>(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64</i> (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library does not employ multiplevel K,M,N blocking. Using LIBXSMM for much larger sizes may generate excessive amounts of code (due to unrolling in M or K dimension), but also misses to implement a tiling scheme to effectively utilize the cache hierarchy. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
+## What is a small matrix multiplication?
 
-## Interfaces and Domains<a name="interfaces"></a>
+When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M N K)^(1/3) <= 64* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library does not employ multiplevel K,M,N blocking. Using LIBXSMM for much larger sizes may generate excessive amounts of code (due to unrolling in M or K dimension), but also misses to implement a tiling scheme to effectively utilize the cache hierarchy. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
 
-### Overview<a name="general-interface"></a>
+## Interfaces and Domains
+
+### Overview
 
 Please have a look at [https://github.com/libxsmm/libxsmm/tree/main/include](https://github.com/libxsmm/libxsmm/tree/main/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
 * TPP: [Tensor Processing Primitives](https://github.com/libxsmm/libxsmm/blob/main/documentation/libxsmm_tpp.md)
 * MM: [Matrix Multiplication](#matrix-multiplication)
-* DL: [Deep Learning](#interface-for-dl)
+* DL: [Deep Learning](#deep-learning)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)
-* BE: [Backend](#jit-backend)
+* BE: [Backend](#backend)
 
 To initialize library internal resources, an explicit initialization routine helps to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources at program exit, but also provides a companion of the afore mentioned initialization (finalize).
 
@@ -82,7 +86,7 @@ void libxsmm_init(void);
 void libxsmm_finalize(void);
 ```
 
-### Matrix Multiplication<a name="interface-for-matrix-multiplication"></a>
+### Matrix Multiplication
 
 This domain (MM) supports Small Matrix Multiplications (SMM), batches of multiple multiplications as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM).
 
@@ -91,13 +95,13 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 * [Small, tiled, and parallelized matrix multiplications](documentation/libxsmm_mm.md#overview)
 * [Manual code dispatch (customized matrix batches)](documentation/libxsmm_mm.md#manual-code-dispatch)
 
-### Deep Learning<a name="interface-for-dl"></a>
+### Deep Learning
 
-Common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitives provided by LIBXSMM. With LIBXSMM&#160;2.0 the deep-learning operators and their performance drivers live in the companion repository [LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests), which demonstrates how these primitives compose into full operators without any platform-specific code.
+Common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming operators, and pooling operators, etc.) can be implemented using the Tensor Processing Primitives provided by LIBXSMM. With LIBXSMM 2.0 the deep-learning operators and their performance drivers live in the companion repository [LIBXSMM-DNN](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests), which demonstrates how these primitives compose into full operators without any platform-specific code.
 
 ### Service Functions
 
-For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: <span>(1)&#160;routines</span> which are available for C and FORTRAN, and <span>(2)&#160;routines</span> that are only available per C interface.
+For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1) routines which are available for C and FORTRAN, and (2) routines that are only available per C interface.
 
 The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routines for:
 
@@ -107,9 +111,9 @@ The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routi
 * [Dispatching user-data and multiple kernels](documentation/libxsmm_aux.md#user-data-dispatch)
 * [Allocating memory](documentation/libxsmm_aux.md#memory-allocation)
 
-### Backend<a name="jit-backend"></a>
+### Backend
 
-More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md). The [encoder sample collection](https://github.com/libxsmm/libxsmm/tree/main/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) is considered legacy (deprecated).
+More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md). The [encoder sample collection](https://github.com/libxsmm/libxsmm/tree/main/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone [generator-driver](documentation/libxsmm_be.md#generator-driver) is considered legacy (deprecated).
 
 ## Build Instructions
 
@@ -126,9 +130,9 @@ The main interface file is *generated*, and it is therefore **not** stored in th
 
 LIBXSMM provides native GNU Make and CMake build systems for the classic library ABI. GNU Make remains the reference build path and exposes the full set of build-time customization options and legacy sample targets. CMake supports the core library, optional Fortran module interface, generator executables, installation, and CMake package integration. Projects using another build system can also write their own [rules for building LIBXSMM](#rules-for-building-libxsmm).
 
-The Makefile based build system relies on <span>GNU&#160;Make</span> (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using <span>key&#8209;value</span> pairs. <span>Key&#8209;value</span> pairs can be supplied in two ways: <span>(1)&#160;after</span> the "make" command, or <span>(2)&#160;prior</span> to the "make" command (`env`) which is effectively the same as exporting the <span>key&#8209;value</span> pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
+The Makefile based build system relies on GNU Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key-value pairs. Key-value pairs can be supplied in two ways: (1) after the "make" command, or (2) prior to the "make" command (`env`) which is effectively the same as exporting the key-value pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
 
-<a name="zero-config-abi"></a>In contrast to [header-only](#zero-config) which does not require configuration by default, 3rd-party build systems can compile and link LIBXSMM's sources but still avoid configuring the library (per `libxsmm_config.py`). The prerequisite to omit configuration is to opt-in by defining LIBXSMM_DEFAULT_CONFIG (`-D`). The zero-config feature is not available for LIBXSMM's Fortran interface.
+In contrast to [header-only](#header-only) which does not require configuration by default, 3rd-party build systems can compile and link LIBXSMM's sources but still avoid configuring the library (per `libxsmm_config.py`). The prerequisite to omit configuration is to opt-in by defining LIBXSMM_DEFAULT_CONFIG (`-D`). The zero-config feature is not available for LIBXSMM's Fortran interface.
 
 **Note**: By default, C/C++ and FORTRAN compilers are needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding `libxsmm.f` library (the interface `libxsmm.f` is still generated).
 
@@ -139,7 +143,7 @@ make STATIC=0
 make
 ```
 
-On CRAY systems, the CRAY Compiling Environment (CCE) should be used regardless of utilizing the CRAY compiler, the Intel Compiler, or the <span>GNU&#160;Compiler Collection (GCC)</span>. The CCE is eventually suppressing to build shared libraries (STATIC=0). In any case, <span>(1)&#160;switch</span> to the desired compiler (module load/switch), and <span>(2)&#160;rely</span> on:
+On CRAY systems, the CRAY Compiling Environment (CCE) should be used regardless of utilizing the CRAY compiler, the Intel Compiler, or the GNU Compiler Collection (GCC). The CCE is eventually suppressing to build shared libraries (STATIC=0). In any case, (1) switch to the desired compiler (module load/switch), and (2) rely on:
 
 ```bash
 make CXX=CC CC=cc FC=ftn
@@ -151,7 +155,7 @@ A variety of build environments is out-of-the-box compatible, see [https://githu
 make COMPATIBLE=1
 ```
 
-<a name="outdated-binutils"></a>In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). LIBXSMM implements some functionality using compiler-intrinsics and multiple code-paths which are scheduled according to CPUID. In contrast to `INTRINSICS=2` (default), `INTRINSICS=1` enables a fully static code path according to the desired target. If no target is given (e.g., `AVX=3`, or `AVX=2`), instruction set extensions cannot be leveraged for such code-paths. Try to fix failing compilation by building the latest GNU Binutils (and `export PATH=/path/to/binutils/bin:${PATH}`). Binutils are versioned independently of <span>GNU&#160;GCC</span> and other compilers. If one cannot update Binutils, work around with a CPUID-value as tabulated in [libxsmm_cpuid.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_cpuid.h): start at the upper end (less than 1999) and decrement until compilation passes (make INTRINSICS=_CPUID_, e.g., `make INTRINSICS=1021`). As a last resort, rely on a fully static code path:
+In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). LIBXSMM implements some functionality using compiler-intrinsics and multiple code-paths which are scheduled according to CPUID. In contrast to `INTRINSICS=2` (default), `INTRINSICS=1` enables a fully static code path according to the desired target. If no target is given (e.g., `AVX=3`, or `AVX=2`), instruction set extensions cannot be leveraged for such code-paths. Try to fix failing compilation by building the latest GNU Binutils (and `export PATH=/path/to/binutils/bin:${PATH}`). Binutils are versioned independently of GNU GCC and other compilers. If one cannot update Binutils, work around with a CPUID-value as tabulated in [libxsmm_cpuid.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_cpuid.h): start at the upper end (less than 1999) and decrement until compilation passes (make INTRINSICS=_CPUID_, e.g., `make INTRINSICS=1021`). As a last resort, rely on a fully static code path:
 
 ```bash
 make INTRINSICS=1
@@ -163,22 +167,24 @@ To test and validate a build, please consult [https://github.com/libxsmm/libxsmm
 make STATIC=0 tests
 ```
 
-To remove intermediate files, or to remove all generated files and folders (including the interface and the library archives), run one of the make-targets below. An additional distclean-target recursively cleans the entire tree (after <span>version&#160;1.9</span>).
+To remove intermediate files, or to remove all generated files and folders (including the interface and the library archives), run one of the make-targets below. An additional distclean-target recursively cleans the entire tree (after version 1.9).
 
 ```bash
 make clean
 make realclean
 ```
 
-<a name="fortran"></a>FORTRAN code can make use of LIBXSMM:
+#### Fortran
+
+FORTRAN code can make use of LIBXSMM:
 
 * By using the module and linking with `libxsmmf`, `libxsmm`, and `libxsmmext`,
-* <a name="header-only-fortran"></a>By including `libxsmm.f` and linking with `libxsmm`, and `libxsmmext`, or
+* By including `libxsmm.f` and linking with `libxsmm`, and `libxsmmext`, or
 * By (implicitly) calling a SUBROUTINE and linking with `libxsmm`, and `libxsmmext`.
 
-**Note**: `libxsmmf` requires `libxsmmext` (starting with LIBXSMM&#160;2.0), and thereby requires to link with the OpenMP runtime as well.
+**Note**: `libxsmmf` requires `libxsmmext` (starting with LIBXSMM 2.0), and thereby requires to link with the OpenMP runtime as well.
 
-Using the Fortran module (or including the interface), requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
+Using the Fortran module (or including the interface), requires at least a Fortran 2003 compiler (F2K3). FORTRAN 77 compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
 
 #### CMake
 
@@ -211,9 +217,9 @@ For an in-tree dependency, `add_subdirectory()` can be used. An installed packag
 
 ### Header-Only
 
-<span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/libxsmm/libxsmm/tree/main/src) directory (with the implications as noted earlier).
+Version 1.4.4 introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/libxsmm/libxsmm/tree/main/src) directory (with the implications as noted earlier).
 
-<a name="zero-config"></a>The header-only form depends on `libxsmm_source.h` which is *generated* according to the content of the source folder (`src`). <span>LIBXSMM&#160;1.16</span> (and later) provides header-only support without invoking a make-target (zero configuration) for any given checkout of LIBXSMM. To use configured header-only (non-default), LIBXSMM_CONFIGURED must be defined (`-D`). Previously, it was necessary to invoke `make header-only` (v1.6.2 or later), `make cheader` (prior to v1.6.2), or any target building the library (`make`). The zero-config feature allows 3rd-party build systems an easier integration of LIBXSMM, which also holds true if the system builds LIBXSMM from source (see [classic ABI](#zero-config-abi)). Fortran code may [include](#header-only-fortran) `libxsmm.f` but still requires that interface to be generated.
+The header-only form depends on `libxsmm_source.h` which is *generated* according to the content of the source folder (`src`). LIBXSMM 1.16 (and later) provides header-only support without invoking a make-target (zero configuration) for any given checkout of LIBXSMM. To use configured header-only (non-default), LIBXSMM_CONFIGURED must be defined (`-D`). Previously, it was necessary to invoke `make header-only` (v1.6.2 or later), `make cheader` (prior to v1.6.2), or any target building the library (`make`). The zero-config feature allows 3rd-party build systems an easier integration of LIBXSMM, which also holds true if the system builds LIBXSMM from source (see [classic ABI](#classic-library-abi)). Fortran code may include `libxsmm.f` as described in the [Fortran section](#fortran), but still requires that interface to be generated.
 
 **Note**: building an application applies the same build settings to LIBXSMM! For instance, to omit debug code inside of LIBXSMM `NDEBUG` must be defined (`-DNDEBUG`).
 
@@ -225,12 +231,14 @@ Projects using CMake should use the native CMake build described above rather th
 
 Using the [classic ABI](#classic-library-abi) (including [Fortran](#fortran) code), requires linking LIBXSMM against the application. The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Enabling OpenMP for LIBXSMM's main library is supported as well (OMP=1), and mostly affects the synchronization primitives used inside of the library. All the "omp" functionality (function postfix) is served by the `libxsmmext` library, which is automatically built with OpenMP enabled. When using this "omp" functionality, `libxsmmext` needs to be present at the link line.
 
-<a name="table-of-libraries"></a>Library | Purpose
+Library | Purpose
 :-------------|---------
 libxsmm       | Thread-safe core functions (same routine can be called concurrently). Contains routines that can take a thread-ID and the number of library-external threads.
 libxsmmf      | Necessary when using the Fortran MODule but not when including `libxsmm.f` or relying on implicit interfaces ([Fortran 77](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility)).
 
-<a name="pkg-config"></a>To ease linking with LIBXSMM, `pkg-config` can be used. For example:
+### pkg-config
+
+To ease linking with LIBXSMM, `pkg-config` can be used. For example:
 
 ```bash
 export PKG_CONFIG_PATH=/path/to/libxsmm/lib
@@ -239,20 +247,20 @@ pkg-config libxsmm --libs
 
 ### Installation
 
-There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): <span>(1)&#160;building</span> the library in an <span>out&#8209;of&#8209;tree</span> fashion, and <span>(2)&#160;installing</span> into a certain location. <a name="install-build"></a>Building in an <span>out&#8209;of&#8209;tree</span> fashion looks like:
+There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1) building the library in an out-of-tree fashion, and (2) installing into a certain location. Building in an out-of-tree fashion looks like:
 
 ```bash
 cd libxsmm-install
 make -f /path/to/libxsmm/Makefile
 ```
 
-<a name="install-prefix"></a>Installation into a specific location looks like (`PREFIX` or `DESTDIR`):
+Installation into a specific location looks like (`PREFIX` or `DESTDIR`):
 
 ```bash
 make MNK="1 2 3 4 5" PREFIX=/path/to/libxsmm-install install
 ```
 
-<a name="install-destdir"></a>Both `PREFIX` and `DESTDIR` are equivalent and can be relative or absolute paths. An installation can be repeated for different locations without triggering a rebuild. The prefix directory *inside* of each of the [package configuration files](#pkg-config) is set to where LIBXSMM is built (staging folder) unless `PREFIX` or `DESTDIR` is specified. The effect of `PREFIX` (or `DESTDIR`) with respect to the pkg-config files is independent of whether the install-target is invoked or not (make).
+Both `PREFIX` and `DESTDIR` are equivalent and can be relative or absolute paths. An installation can be repeated for different locations without triggering a rebuild. The prefix directory *inside* of each of the [package configuration files](#pkg-config) is set to where LIBXSMM is built (staging folder) unless `PREFIX` or `DESTDIR` is specified. The effect of `PREFIX` (or `DESTDIR`) with respect to the pkg-config files is independent of whether the install-target is invoked or not (make).
 
 Further, performing `make install-minimal` omits the documentation (default: `PREFIX/share/libxsmm`). Moreover, PINCDIR, POUTDIR, PBINDIR, and PDOCDIR allow to customize the locations underneath of the PREFIX location. To build a general package for an unpredictable audience (Linux distribution, or similar), it is advised to not over-specify or customize the build step, i.e., JIT, SSE, AVX, OMP, BLAS, etc. should not be used. The following is building and installing a complete set of libraries where the generated interface matches both the static and the shared libraries:
 
@@ -261,7 +269,7 @@ make PREFIX=/path/to/libxsmm-install STATIC=0 install
 make PREFIX=/path/to/libxsmm-install install
 ```
 
-## Runtime Control<a name="running"></a>
+## Runtime Control
 
 ### Handling Errors
 
@@ -291,9 +299,9 @@ HSW/SP      TRY    JIT    STA    COL
  24..128      3      3      0      0
 ```
 
-The tables are distinct between single-precision and double-precision, but either table is pruned if all counters are zero. If both tables are pruned, the library shows the code path which would have been used for JIT'ting the code: `LIBXSMM_TARGET=hsw` (otherwise the code path is shown in the table's header). The actual counters are collected for three buckets: small kernels (<span>MNK<sup>1/3</sup>&#160;&lt;=&#160;13</span>), medium-sized kernels (<span>13&#160;&lt;&#160;MNK<sup>1/3</sup>&#160;&lt;=&#160;23</span>), and larger kernels (<span>23&#160;&lt;&#160;MNK<sup>1/3</sup>&#160;&lt;=&#160;64</span>; the actual upper bound depends on LIBXSMM_MAX_MNK as selected at compile-time). Keep in mind, that "larger" is supposedly still small in terms of arithmetic intensity (which grows linearly with the kernel size). Unfortunately, the arithmetic intensity depends on the way a kernel is used (which operands are loaded/stored into main memory), and it is not performance-neutral to collect this information.
+The tables are distinct between single-precision and double-precision, but either table is pruned if all counters are zero. If both tables are pruned, the library shows the code path which would have been used for JIT'ting the code: `LIBXSMM_TARGET=hsw` (otherwise the code path is shown in the table's header). The actual counters are collected for three buckets: small kernels (`MNK^(1/3) <= 13`), medium-sized kernels (`13 < MNK^(1/3) <= 23`), and larger kernels (`23 < MNK^(1/3) <= 64`; the actual upper bound depends on LIBXSMM_MAX_MNK as selected at compile-time). Keep in mind, that "larger" is supposedly still small in terms of arithmetic intensity (which grows linearly with the kernel size). Unfortunately, the arithmetic intensity depends on the way a kernel is used (which operands are loaded/stored into main memory), and it is not performance-neutral to collect this information.
 
-The TRY counter represents all attempts to register statically generated kernels, and all attempts to dynamically generate and register kernels. The TRY counter includes rejected JIT requests due to unsupported GEMM arguments. The JIT and STA counters distinct the successful cases of the afore mentioned event (TRY) into dynamically (JIT) and statically (STA) generated code. In case the capacity (<span>O(*n*)&#160;=&#160;10<sup>5</sup></span>) of the code registry is exhausted, no more kernels can be registered although further attempts are not prevented. Registering many kernels (<span>O(*n*)&#160;=&#160;10<sup>3</sup></span>) may ramp the number of hash key collisions (COL), which can degrade performance. The latter is prevented if the small thread-local cache is utilized effectively.
+The TRY counter represents all attempts to register statically generated kernels, and all attempts to dynamically generate and register kernels. The TRY counter includes rejected JIT requests due to unsupported GEMM arguments. The JIT and STA counters distinct the successful cases of the afore mentioned event (TRY) into dynamically (JIT) and statically (STA) generated code. In case the capacity (`O(n) = 10^5`) of the code registry is exhausted, no more kernels can be registered although further attempts are not prevented. Registering many kernels (`O(n) = 10^3`) may ramp the number of hash key collisions (COL), which can degrade performance. The latter is prevented if the small thread-local cache is utilized effectively.
 
 
 ```bash
@@ -302,7 +310,7 @@ Registry: 20 MB (gemm=0 mcopy=14 tcopy=0)
 
 If the call-wrapper is used, an additional runtime statistic becomes available (see [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper)).
 
-<a name="objdump"></a>**Note**: Setting LIBXSMM_VERBOSE to a negative value dumps each generated JIT kernel to a file (binary) with each file being named like the function name shown in [Intel VTune](documentation/libxsmm_prof.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
+**Note**: Setting LIBXSMM_VERBOSE to a negative value dumps each generated JIT kernel to a file (binary) with each file being named like the function name shown in [Intel VTune](documentation/libxsmm_prof.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
 
 ```bash
 objdump -D -b binary -m i386 -M x86-64 [JIT-dump-file]
@@ -336,83 +344,83 @@ The environment variable `LIBXSMM_MATDIFF` can carry optional space-separated ar
 
 ## Performance
 
-<a name="profiling"></a>Profiling an application, which uses LIBXSMM's JIT-code is well-supported. The library supports <span>Intel&#160;VTune&#160;Amplifier</span> and <span>Linux&#160;perf</span>. Details are given on how to include profiler support, and how to run the application.
+Profiling an application, which uses LIBXSMM's JIT-code is well-supported. The library supports Intel VTune Amplifier and Linux perf. Details are given on how to include profiler support, and how to run the application.
 
 * [Profiling using Intel VTune Amplifier](documentation/libxsmm_prof.md#intelvtuneamplifier)
 * [Profiling using Linux perf](documentation/libxsmm_prof.md#linuxperf)
 
-<a name="tuning"></a>At build time, a variety of options exist to customize LIBXSMM. The library is setup for a broad range of use cases, which include sophisticated defaults for typical use.
+At build time, a variety of options exist to customize LIBXSMM. The library is setup for a broad range of use cases, which include sophisticated defaults for typical use.
 
 * [Customizing performance](documentation/libxsmm_tune.md#tuning)
-* <a name="auto-dispatch"></a>[Tuning auto-dispatch](documentation/libxsmm_tune.md#auto-dispatch)
+* [Tuning auto-dispatch](documentation/libxsmm_tune.md#auto-dispatch)
 
 ## Applications
 
 ### High Performance Computing (HPC)
 
-<b>[1]&#160;</b>[https://cp2k.org/](https://cp2k.org/): Open Source Molecular Dynamics and the [DBCSR library](https://github.com/cp2k/dbcsr), which processes batches of small matrix multiplications. The batches originate from a distributed block-sparse matrix with problem-specific small matrices. Starting with [CP2K&#160;3.0](https://www.cp2k.org/version_history), LIBXSMM can substitute CP2K's `libsmm` library.
+**[1]** [https://cp2k.org/](https://cp2k.org/): Open Source Molecular Dynamics and the [DBCSR library](https://github.com/cp2k/dbcsr), which processes batches of small matrix multiplications. The batches originate from a distributed block-sparse matrix with problem-specific small matrices. Starting with [CP2K 3.0](https://www.cp2k.org/version_history), LIBXSMM can substitute CP2K's `libsmm` library.
 
-<b>[2]&#160;</b>[https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/): SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
+**[2]** [https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/): SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
 
-<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code.
+**[3]** [https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN 77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code.
 
-<b>[4]&#160;</b>[https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000): Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
+**[4]** [https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000): Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
 
-<b>[5]&#160;</b>[https://www.pyfr.org/](https://www.pyfr.org/): PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR incorporates LIBXSMM as a matrix multiplication provider for the OpenMP backend.
+**[5]** [https://www.pyfr.org/](https://www.pyfr.org/): PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR incorporates LIBXSMM as a matrix multiplication provider for the OpenMP backend.
 
-<b>[6]&#160;</b>[http://dial3343.org/about/](http://dial3343.org/about/): The Extreme-scale Discontinuous Galerkin Environment (EDGE) is a solver for hyperbolic partial differential equations with emphasis on seismic simulations. The EDGE [source code](https://github.com/3343/edge) optionally relies on LIBXSMM, but for high performance LIBXSMM's kernels are highly recommended.
+**[6]** [http://dial3343.org/about/](http://dial3343.org/about/): The Extreme-scale Discontinuous Galerkin Environment (EDGE) is a solver for hyperbolic partial differential equations with emphasis on seismic simulations. The EDGE [source code](https://github.com/3343/edge) optionally relies on LIBXSMM, but for high performance LIBXSMM's kernels are highly recommended.
 
-<b>[7]&#160;</b>[https://sxs-collaboration.github.io/spectre/](https://sxs-collaboration.github.io/spectre/): SpECTRE is an open-source code for multi-scale, multi-physics problems in astrophysics and gravitational physics which runs at Petascale and is designed for Exascale computers. In the future, SpECTRE may be applied to problems across discipline boundaries in fluid dynamics, geoscience, plasma physics, nuclear physics, and engineering.
+**[7]** [https://sxs-collaboration.github.io/spectre/](https://sxs-collaboration.github.io/spectre/): SpECTRE is an open-source code for multi-scale, multi-physics problems in astrophysics and gravitational physics which runs at Petascale and is designed for Exascale computers. In the future, SpECTRE may be applied to problems across discipline boundaries in fluid dynamics, geoscience, plasma physics, nuclear physics, and engineering.
 
-<b>[8]&#160;</b>[https://ceed.exascaleproject.org/ceed-code/](https://ceed.exascaleproject.org/ceed-code/): The Center for Efficient Exascale Discretizations (CEED) is building on the efforts of the Nek5000, MFEM, MAGMA, OCCA and PETSc [10] projects to develop application program interfaces (APIs), both at high-level and at low-level to enable applications to take advantage of high-order methods. The CEED low-level API, [libCEED](https://ceed.exascaleproject.org/libceed/) uses LIBXSMM as a [backend](https://github.com/CEED/libCEED#backends) for high performance on CPUs.
+**[8]** [https://ceed.exascaleproject.org/ceed-code/](https://ceed.exascaleproject.org/ceed-code/): The Center for Efficient Exascale Discretizations (CEED) is building on the efforts of the Nek5000, MFEM, MAGMA, OCCA and PETSc [10] projects to develop application program interfaces (APIs), both at high-level and at low-level to enable applications to take advantage of high-order methods. The CEED low-level API, [libCEED](https://ceed.exascaleproject.org/libceed/) uses LIBXSMM as a [backend](https://github.com/CEED/libCEED#backends) for high performance on CPUs.
 
-<b>[9]&#160;</b>[https://github.com/romeric/Fastor](https://github.com/romeric/Fastor): Fastor is a lightweight high performance tensor algebra framework for modern C++ and can optionally use LIBXSMM as [JIT-backend](https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend).
+**[9]** [https://github.com/romeric/Fastor](https://github.com/romeric/Fastor): Fastor is a lightweight high performance tensor algebra framework for modern C++ and can optionally use LIBXSMM as [JIT-backend](https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend).
 
-<b>[10]&#160;</b>[https://petsc.org/](https://petsc.org/): The Portable, Extensible Toolkit for Scientific Computation (PETSc) can use LIBXSMM for sparse block matrix times dense matrix product kernels to deliver high intra-process performance, while PETSc handles MPI communications across processes.
+**[10]** [https://petsc.org/](https://petsc.org/): The Portable, Extensible Toolkit for Scientific Computation (PETSc) can use LIBXSMM for sparse block matrix times dense matrix product kernels to deliver high intra-process performance, while PETSc handles MPI communications across processes.
 
 ### Machine and Deep Learning (AI)
 
-<b>[11]&#160;</b>[https://github.com/plaidml/plaidml](https://github.com/plaidml/plaidml): PlaidML is an open source tensor compiler aiming for performance portability across a wide range of CPUs, GPUs and other accelerators. Combined with Intel’s nGraph compiler, PlaidML is targeting popular deep learning frameworks such as PyTorch, Keras (TensorFlow), and OpenVino. [PlaidML/v1](https://github.com/plaidml/plaidml/tree/plaidml-v1) (development branch) adopted [MLIR](https://mlir.llvm.org/), an extensible compiler infrastructure gaining industry-wide adoption. PlaidML/v1 started using LIBXSMM as backend for targeting CPUs.
+**[11]** [https://github.com/plaidml/plaidml](https://github.com/plaidml/plaidml): PlaidML is an open source tensor compiler aiming for performance portability across a wide range of CPUs, GPUs and other accelerators. Combined with Intel’s nGraph compiler, PlaidML is targeting popular deep learning frameworks such as PyTorch, Keras (TensorFlow), and OpenVino. [PlaidML/v1](https://github.com/plaidml/plaidml/tree/plaidml-v1) (development branch) adopted [MLIR](https://mlir.llvm.org/), an extensible compiler infrastructure gaining industry-wide adoption. PlaidML/v1 started using LIBXSMM as backend for targeting CPUs.
 
-<b>[12]&#160;</b>[https://github.com/intel/intel-extension-for-pytorch](https://github.com/intel/intel-extension-for-pytorch): Intel Extension for PyTorch aims for a smooth user experience of PyTorch on CPUs by the means of good performance. The extension pack started to rely on [LIBXSMM for achieving high performance on CPUs](https://arxiv.org/abs/2005.04680).
+**[12]** [https://github.com/intel/intel-extension-for-pytorch](https://github.com/intel/intel-extension-for-pytorch): Intel Extension for PyTorch aims for a smooth user experience of PyTorch on CPUs by the means of good performance. The extension pack started to rely on [LIBXSMM for achieving high performance on CPUs](https://arxiv.org/abs/2005.04680).
 
-<b>[13]&#160;</b>[https://github.com/libxsmm/tpp-pytorch-extension](https://github.com/libxsmm/tpp-pytorch-extension): Intel(R) Tensor Processing Primitive Extension for pytorch is an open source software library the integrates Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) into pytorch. It is aiming for a smooth user experience of PyTorch on CPUs by the means of good performance. Intel's MLPerf Training submission codes leverage this [project](https://github.com/mlcommons/training_results.1/tree/main/Intel/benchmarks/bert/implementations/pytorch-cpu).
+**[13]** [https://github.com/libxsmm/tpp-pytorch-extension](https://github.com/libxsmm/tpp-pytorch-extension): Intel(R) Tensor Processing Primitive Extension for pytorch is an open source software library the integrates Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) into pytorch. It is aiming for a smooth user experience of PyTorch on CPUs by the means of good performance. Intel's MLPerf Training submission codes leverage this [project](https://github.com/mlcommons/training_results.1/tree/main/Intel/benchmarks/bert/implementations/pytorch-cpu).
 
-<b>[14]&#160;</b>[https://github.com/libxsmm/libxsmm-dnn](https://github.com/libxsmm/libxsmm-dnn): LIBXSMM-DNN is an open source software library that demonstrates how Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) can be used to implement various deep learning primitives such as convolutions, linear layers or even pooling and norming. Due to the use of TPP not a single line of platform-specific code is needed. 
+**[14]** [https://github.com/libxsmm/libxsmm-dnn](https://github.com/libxsmm/libxsmm-dnn): LIBXSMM-DNN is an open source software library that demonstrates how Tensor Processing Primitives ([TPP](https://arxiv.org/abs/2104.05755)) can be used to implement various deep learning primitives such as convolutions, linear layers or even pooling and norming. Due to the use of TPP not a single line of platform-specific code is needed.
 
 ### Automated Driving (AD)
 
-<b>[16]&#160;</b>[https://software.seek.intel.com/accelerating-eigen-math-library](https://software.seek.intel.com/accelerating-eigen-math-library): Accelerating The Eigen Math Library for Automated Driving Workloads: The Need for Speed in Kalman Filtering. An article in [Issue&#160;31](https://software.intel.com/content/www/us/en/develop/download/parallel-universe-magazine-issue-31-january-2018.html) of The Parallel Universe magazine ([pdf](https://software.intel.com/content/dam/develop/public/us/en/documents/parallel-universe-issue-31.pdf)).
+**[16]** [https://software.seek.intel.com/accelerating-eigen-math-library](https://software.seek.intel.com/accelerating-eigen-math-library): Accelerating The Eigen Math Library for Automated Driving Workloads: The Need for Speed in Kalman Filtering. An article in [Issue 31](https://software.intel.com/content/www/us/en/develop/download/parallel-universe-magazine-issue-31-january-2018.html) of The Parallel Universe magazine ([pdf](https://software.intel.com/content/dam/develop/public/us/en/documents/parallel-universe-issue-31.pdf)).
 
 ## References
 
-<b>[1]&#160;</b>[https://sc19.supercomputing.org/proceedings/tech_poster/tech_poster_pages/rpost244.html](https://sc19.supercomputing.org/proceedings/tech_poster/tech_poster_pages/rpost244.html): High-Performance Deep Learning via a Single Building Block ([poster](https://sc19.supercomputing.org/proceedings/tech_poster/poster_files/rpost244s2-file2.pdf) and [abstract](https://sc19.supercomputing.org/proceedings/tech_poster/poster_files/rpost244s2-file3.pdf)), SC’19: The International Conference for High Performance Computing, Networking, Storage, and Analysis, Denver (Colorado).
+**[1]** [https://sc19.supercomputing.org/proceedings/tech_poster/tech_poster_pages/rpost244.html](https://sc19.supercomputing.org/proceedings/tech_poster/tech_poster_pages/rpost244.html): High-Performance Deep Learning via a Single Building Block ([poster](https://sc19.supercomputing.org/proceedings/tech_poster/poster_files/rpost244s2-file2.pdf) and [abstract](https://sc19.supercomputing.org/proceedings/tech_poster/poster_files/rpost244s2-file3.pdf)), SC’19: The International Conference for High Performance Computing, Networking, Storage, and Analysis, Denver (Colorado).
 
-<b>[2]&#160;</b>[https://dl.acm.org/doi/10.1109/SC.2018.00069](https://dl.acm.org/doi/10.1109/SC.2018.00069): Anatomy of High-Performance Deep Learning Convolutions on SIMD Architectures ([paper](https://arxiv.org/pdf/1808.05567.pdf)). SC'18: The International Conference for High Performance Computing, Networking, Storage, and Analysis, Dallas (Texas).
+**[2]** [https://dl.acm.org/doi/10.1109/SC.2018.00069](https://dl.acm.org/doi/10.1109/SC.2018.00069): Anatomy of High-Performance Deep Learning Convolutions on SIMD Architectures ([paper](https://arxiv.org/pdf/1808.05567.pdf)). SC'18: The International Conference for High Performance Computing, Networking, Storage, and Analysis, Dallas (Texas).
 
-<b>[3]&#160;</b>[https://pasc17.pasc-conference.org/fileadmin/user_upload/pasc17/program/post116s2.pdf](https://pasc17.pasc-conference.org/fileadmin/user_upload/pasc17/program/post116s2.pdf): DBCSR: A Sparse Matrix Multiplication Library for Electronic Structure Codes (poster), PASC’17: The PASC17 Conference, Lugano (Switzerland).
+**[3]** [https://pasc17.pasc-conference.org/fileadmin/user_upload/pasc17/program/post116s2.pdf](https://pasc17.pasc-conference.org/fileadmin/user_upload/pasc17/program/post116s2.pdf): DBCSR: A Sparse Matrix Multiplication Library for Electronic Structure Codes (poster), PASC’17: The PASC17 Conference, Lugano (Switzerland).
 
-<b>[4]&#160;</b>[https://sc17.supercomputing.org/SC17%20Archive/tech_poster/tech_poster_pages/post190.html](https://sc17.supercomputing.org/SC17%20Archive/tech_poster/tech_poster_pages/post190.html): Understanding the Performance of Small Convolution Operations for CNN on Intel Architecture ([poster](https://sc17.supercomputing.org/SC17%20Archive/tech_poster/poster_files/post190s2-file2.pdf) and [abstract](https://sc17.supercomputing.org/SC17%20Archive/tech_poster/poster_files/post190s2-file3.pdf)), SC’17: The International Conference for High Performance Computing, Networking, Storage, and Analysis, Denver (Colorado).
+**[4]** [https://sc17.supercomputing.org/SC17%20Archive/tech_poster/tech_poster_pages/post190.html](https://sc17.supercomputing.org/SC17%20Archive/tech_poster/tech_poster_pages/post190.html): Understanding the Performance of Small Convolution Operations for CNN on Intel Architecture ([poster](https://sc17.supercomputing.org/SC17%20Archive/tech_poster/poster_files/post190s2-file2.pdf) and [abstract](https://sc17.supercomputing.org/SC17%20Archive/tech_poster/poster_files/post190s2-file3.pdf)), SC’17: The International Conference for High Performance Computing, Networking, Storage, and Analysis, Denver (Colorado).
 
-<b>[5]&#160;</b>[https://www.computer.org/csdl/proceedings-article/sc/2016/8815a981/12OmNCeaQ1D](https://www.computer.org/csdl/proceedings-article/sc/2016/8815a981/12OmNCeaQ1D): LIBXSMM: Accelerating Small Matrix Multiplications by Runtime Code Generation. SC'16: The International Conference for High Performance Computing, Networking, Storage and Analysis, Salt Lake City (Utah).
+**[5]** [https://www.computer.org/csdl/proceedings-article/sc/2016/8815a981/12OmNCeaQ1D](https://www.computer.org/csdl/proceedings-article/sc/2016/8815a981/12OmNCeaQ1D): LIBXSMM: Accelerating Small Matrix Multiplications by Runtime Code Generation. SC'16: The International Conference for High Performance Computing, Networking, Storage and Analysis, Salt Lake City (Utah).
 
-<b>[6]&#160;</b>[http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html): LIBXSMM: A High Performance Library for Small Matrix Multiplications ([poster](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/poster_files/post137s2-file2.pdf) and [abstract](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/poster_files/post137s2-file3.pdf)). SC'15: The International Conference for High Performance Computing, Networking, Storage and Analysis, Austin (Texas).
+**[6]** [http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html): LIBXSMM: A High Performance Library for Small Matrix Multiplications ([poster](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/poster_files/post137s2-file2.pdf) and [abstract](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/poster_files/post137s2-file3.pdf)). SC'15: The International Conference for High Performance Computing, Networking, Storage and Analysis, Austin (Texas).
 
-<b>[7]&#160;</b>[Tensor Processing Primitives: A Programming Abstraction for Efficiency and Portability in Deep Learning & HPC Workloads](https://arxiv.org/abs/2104.05755) SC'21: The International Conference for High Performance Computing, Networking, Storage and Analysis, St Louis.
+**[7]** [Tensor Processing Primitives: A Programming Abstraction for Efficiency and Portability in Deep Learning & HPC Workloads](https://arxiv.org/abs/2104.05755) SC'21: The International Conference for High Performance Computing, Networking, Storage and Analysis, St Louis.
 
 ## Articles
 
-<b>[1]&#160;</b>[https://www.nextplatform.com/2019/10/09/cloudy-supercomputers-join-the-hpc-petascale-club/](https://www.nextplatform.com/2019/10/09/cloudy-supercomputers-join-the-hpc-petascale-club/): Cloudy Supercomputers Join the HPC Petascale Club. An article written by Rob Farber, 2019. The article covers LIBXSMM in a separate section.
+**[1]** [https://www.nextplatform.com/2019/10/09/cloudy-supercomputers-join-the-hpc-petascale-club/](https://www.nextplatform.com/2019/10/09/cloudy-supercomputers-join-the-hpc-petascale-club/): Cloudy Supercomputers Join the HPC Petascale Club. An article written by Rob Farber, 2019. The article covers LIBXSMM in a separate section.
 
-<b>[2]&#160;</b>[https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/): Counting The Cost Of Scaling HPC Applications. An article written by Timothy Prickett Morgan, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM. However, LIBXSMM was key for application performance.
+**[2]** [https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/): Counting The Cost Of Scaling HPC Applications. An article written by Timothy Prickett Morgan, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM. However, LIBXSMM was key for application performance.
 
-<b>[3]&#160;</b>[https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/): Azure Benchmarks HC-series Across Twenty-thousand Cores for HPC. An article written by John Russell, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM. However, LIBXSMM was key for application performance.
+**[3]** [https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/): Azure Benchmarks HC-series Across Twenty-thousand Cores for HPC. An article written by John Russell, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM. However, LIBXSMM was key for application performance.
 
-<b>[4]&#160;</b>[https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf](https://software.intel.com/content/www/us/en/develop/download/parallel-universe-magazine-issue-34-october-2018.html): LIBXSMM: An Open Source-Based Inspiration for Hardware and Software Development at Intel ([pdf](https://software.intel.com/content/dam/develop/public/us/en/documents/parallel-universe-issue-34.pdf)). An article written by Hans Pabst, Greg Henry, and Alexander Heinecke, 2018.
+**[4]** [https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf](https://software.intel.com/content/www/us/en/develop/download/parallel-universe-magazine-issue-34-october-2018.html): LIBXSMM: An Open Source-Based Inspiration for Hardware and Software Development at Intel ([pdf](https://software.intel.com/content/dam/develop/public/us/en/documents/parallel-universe-issue-34.pdf)). An article written by Hans Pabst, Greg Henry, and Alexander Heinecke, 2018.
 
-<b>[5]&#160;</b>[https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125](https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125): LIBXSMM Brings Deep-learning "Lessons Learned" to Many HPC Applications. An article written by Rob Farber, 2018.
+**[5]** [https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125](https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125): LIBXSMM Brings Deep-learning "Lessons Learned" to Many HPC Applications. An article written by Rob Farber, 2018.
 
-<b>[6]&#160;</b>[https://www.rdworldonline.com/largest-supercomputer-simulation-of-sumatra-andaman-earthquake/](https://www.rdworldonline.com/largest-supercomputer-simulation-of-sumatra-andaman-earthquake/): Largest Supercomputer Simulation of Sumatra-Andaman Earthquake. An article written by Linda Barney, 2018.
+**[6]** [https://www.rdworldonline.com/largest-supercomputer-simulation-of-sumatra-andaman-earthquake/](https://www.rdworldonline.com/largest-supercomputer-simulation-of-sumatra-andaman-earthquake/): Largest Supercomputer Simulation of Sumatra-Andaman Earthquake. An article written by Linda Barney, 2018.
 
 
 [conda-badge]: https://img.shields.io/conda/vn/conda-forge/libxsmm
