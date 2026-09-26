@@ -100,6 +100,7 @@ typedef struct gemm_def {
   unsigned int is_Ahf8Bbf16_gemm;
   unsigned int is_Abf32Bbf32_gemm;
   unsigned int fuse_zpt_sub;
+  unsigned int is_dynld;
   unsigned int is_Cmxfp4;
   unsigned int is_Cmxbf8;
   unsigned char *scf_c_u8;
@@ -325,7 +326,6 @@ libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
 
   return dtype;
 }
-
 
 LIBXSMM_INLINE
 float ftanh_rational_78(float x) {
@@ -2756,7 +2756,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     error = 100.0;
   }
 
-  printf("\nPrinting Norms:\n");
+  printf("Printing Norms:\n");
   printf("L1 reference  : %.25g\n", l_diff.l1_ref);
   printf("L1 test       : %.25g\n", l_diff.l1_tst);
   printf("L2 abs.error  : %.24f\n", l_diff.l2_abs);
@@ -2821,6 +2821,11 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   int l_asize_divide_factor = 1;
   int l_bsize_divide_factor = 1;
   int l_divider = 32;
+  long long l_lda = (long long)i_gemm_def->lda;
+  long long l_ldb = (long long)i_gemm_def->ldb;
+  long long l_ldc = (long long)i_gemm_def->ldc;
+  long long l_stride_a = 0;
+  long long l_stride_b = 0;
 
   if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
@@ -2913,24 +2918,21 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
 
   /* setting update GEMM struct */
-#if 1
   {
   libxsmm_datatype l_c_jit_type = (i_gemm_def->is_Cmxfp4 > 0) ? LIBXSMM_DATATYPE_MXFP4X2 : ((i_gemm_def->is_Cmxbf8 > 0) ? LIBXSMM_DATATYPE_MXBF8 : i_gemm_def->c_type);
-  l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
-      i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
-      (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 :
+  libxsmm_datatype l_a_jit_type = (i_gemm_def->is_Abf8Bbf16_gemm > 0 || i_gemm_def->is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 :
       ((i_gemm_def->is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 :
       ((i_gemm_def->is_Ai4Bf16_gemm > 0 || i_gemm_def->is_Ai4Bi8_gemm > 0) ? (i_gemm_def->unsigned_a ? LIBXSMM_DATATYPE_U4X2 : LIBXSMM_DATATYPE_I4X2) :
       ((i_gemm_def->is_Ai2Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I2X4 :
       ((i_gemm_def->is_Ai1Bi8_gemm > 0) ? LIBXSMM_DATATYPE_I1X8 :
       ((i_gemm_def->is_Amxfp4Bbf16_gemm > 0 || i_gemm_def->is_Amxfp4Bfp32_gemm > 0 || i_gemm_def->is_Amxfp4Bi8_gemm > 0) ? LIBXSMM_DATATYPE_MXFP4X2 :
-      (i_gemm_def->unsigned_a ? LIBXSMM_DATATYPE_U8 : i_gemm_def->a_type)))))), (i_gemm_def->unsigned_b ? LIBXSMM_DATATYPE_U8 : i_gemm_def->b_type), l_c_jit_type, i_gemm_def->comp_type );
-  }
-#else
+      (i_gemm_def->unsigned_a ? LIBXSMM_DATATYPE_U8 : i_gemm_def->a_type))))));
+  libxsmm_datatype l_b_jit_type = (i_gemm_def->unsigned_b ? LIBXSMM_DATATYPE_U8 : i_gemm_def->b_type);
+  /* a negative LD in the shape makes it a kernel-call argument (matrix_arg.quinary) */
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
-      i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
-      LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-#endif
+      (i_gemm_def->is_dynld != 0) ? -1 : i_gemm_def->lda, (i_gemm_def->is_dynld != 0) ? -1 : i_gemm_def->ldb, (i_gemm_def->is_dynld != 0) ? -1 : i_gemm_def->ldc,
+      l_a_jit_type, l_b_jit_type, l_c_jit_type, i_gemm_def->comp_type );
+  }
 
   /* setting BRGEMM config struct */
   if (i_gemm_def->br_type == 1) {
@@ -2945,6 +2947,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
     l_brconfig.br_stride_a_hint = (i_gemm_def->trans_a == 0) ? (i_gemm_def->lda*i_gemm_def->k)/l_asize_divide_factor*LIBXSMM_TYPESIZE(i_gemm_def->a_type) : i_gemm_def->lda*i_gemm_def->m*LIBXSMM_TYPESIZE(i_gemm_def->a_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->b_type) : i_gemm_def->ldb*(i_gemm_def->k/l_bsize_divide_factor)*LIBXSMM_TYPESIZE(i_gemm_def->b_type);
     if ( i_gemm_def->is_Amxhf6Bmxhf6_gemm > 0 || i_gemm_def->is_Amxbf6Bmxbf6_gemm > 0 ) {
@@ -2952,6 +2955,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
       l_brconfig.br_stride_b_hint = (l_brconfig.br_stride_b_hint*6)/8;
     }
     l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
+    if ( i_gemm_def->is_dynld != 0 ) {
+      l_stride_a = (long long)l_brconfig.br_stride_a_hint;
+      l_stride_b = (long long)l_brconfig.br_stride_b_hint;
+      l_brconfig.br_stride_a_hint = 0;
+      l_brconfig.br_stride_b_hint = 0;
+    }
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
     l_brconfig.br_stride_a_hint = 0;
@@ -3074,6 +3083,12 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   }
 
+  if ( i_gemm_def->is_dynld != 0 ) {
+    gemm_param.a.quinary = &l_lda;
+    gemm_param.b.quinary = &l_ldb;
+    gemm_param.c.quinary = &l_ldc;
+  }
+
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)(uintptr_t)i_a;
@@ -3138,7 +3153,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 #endif
   } else if (i_gemm_def->br_type == 3) {
     gemm_param.a.primary = (void*)(uintptr_t)i_a;
+    if ( i_gemm_def->is_dynld != 0 ) {
+      gemm_param.a.secondary = &l_stride_a;
+    }
     gemm_param.b.primary = (void*)(uintptr_t)i_b;
+    if ( i_gemm_def->is_dynld != 0 ) {
+      gemm_param.b.secondary = &l_stride_b;
+    }
 #if defined(USE_GEMM_EXT_FRONTEND)
     l_test_jit.gemm_ext( &gemm_param );
 #else
@@ -3227,7 +3248,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   } else if (i_gemm_def->br_type == 3) {
     gemm_param.a.primary = (void*)(uintptr_t)i_a;
+    if ( i_gemm_def->is_dynld != 0 ) {
+      gemm_param.a.secondary = &l_stride_a;
+    }
     gemm_param.b.primary = (void*)(uintptr_t)i_b;
+    if ( i_gemm_def->is_dynld != 0 ) {
+      gemm_param.b.secondary = &l_stride_b;
+    }
     for (l_t = 0; l_t < (size_t)i_reps; l_t++) {
 #if defined(USE_GEMM_EXT_FRONTEND)
       l_test_jit.gemm_ext( &gemm_param );
@@ -3350,6 +3377,8 @@ int main(int argc, char* argv []) {
   libxsmm_datatype l_dtype_c = LIBXSMM_DATATYPE_UNSUPPORTED;
   libxsmm_datatype l_dtype_comp = LIBXSMM_DATATYPE_UNSUPPORTED;
   libxsmm_blasint l_lda = 0, l_ldb = 0, l_ldc = 0;
+  /* LDs as given on the command line / test file (-1/-2 select dynld) */
+  libxsmm_blasint l_lda_in = 0, l_ldb_in = 0, l_ldc_in = 0;
   libxsmm_blasint l_m = 0, l_n = 0, l_k = 0;
   int l_aligned_a = 0;
   int l_aligned_c = 0;
@@ -3414,6 +3443,7 @@ int main(int argc, char* argv []) {
   l_gemm_def.is_Abf8Bbf16_gemm = 0;
   l_gemm_def.is_Abf8Bf16_gemm = 0;
   l_gemm_def.is_Ahf8Bbf16_gemm = 0;
+  l_gemm_def.is_dynld = 0;
   l_gemm_def.is_Cmxfp4 = 0;
   l_gemm_def.is_Cmxbf8 = 0;
   l_gemm_def.scf_c_u8 = NULL;
@@ -4092,6 +4122,9 @@ int main(int argc, char* argv []) {
 
         if (l_keep_going == 0) break;
       }
+      l_lda_in = l_lda;
+      l_ldb_in = l_ldb;
+      l_ldc_in = l_ldc;
 #if !defined(LIBXSMM_PARALLEL_KERNEL_TEST)
     }
 #endif
@@ -4099,9 +4132,30 @@ int main(int argc, char* argv []) {
     l_gemm_def.m = l_m;
     l_gemm_def.n = l_n;
     l_gemm_def.k = l_k;
-    l_gemm_def.lda = l_lda;
-    l_gemm_def.ldb = l_ldb;
-    l_gemm_def.ldc = l_ldc;
+
+    /* -1/-2 request runtime LDs; the buffers then use tight (-1) or 2x (-2) LDs which are passed at kernel call */
+    l_gemm_def.is_dynld = ( (l_lda_in < 0) && (l_ldb_in < 0) && (l_ldc_in < 0) ) ? 1 : 0;
+    if ( l_gemm_def.is_dynld != 0 ) {
+      const libxsmm_blasint l_ld_factor = -l_lda_in;
+      l_gemm_def.lda = l_ld_factor * ( (l_gemm_def.trans_a == 0) ? l_m : l_k );
+      l_gemm_def.ldb = l_ld_factor * ( (l_gemm_def.trans_b == 0) ? l_k : l_n );
+      l_gemm_def.ldc = l_ld_factor * l_m;
+    } else {
+      l_gemm_def.lda = l_lda_in;
+      l_gemm_def.ldb = l_ldb_in;
+      l_gemm_def.ldc = l_ldc_in;
+    }
+    /* the remainder of the iteration works with the resolved LDs */
+    l_lda = l_gemm_def.lda;
+    l_ldb = l_gemm_def.ldb;
+    l_ldc = l_gemm_def.ldc;
+    if ( ( l_lda < ((l_gemm_def.trans_a == 0) ? l_m : l_k) ) ||
+         ( l_ldb < ((l_gemm_def.trans_b == 0) ? l_k : l_n) ) ||
+         ( l_ldc < l_m ) ) {
+      fprintf(stderr, "ERROR: invalid LDs lda=%i ldb=%i ldc=%i for m=%i n=%i k=%i (all LDs negative selects runtime-set LDs)\n",
+              l_lda_in, l_ldb_in, l_ldc_in, l_m, l_n, l_k);
+      exit(EXIT_FAILURE);
+    }
     /* restore datatype/vnni parameters which may be overwritten by the per-type
        run sections (e.g. MX kernels set a_type/b_type to BF8/HF8 for the gold
        reference); without this restore subsequent file-input iterations would
@@ -4114,7 +4168,6 @@ int main(int argc, char* argv []) {
 
     /* set rng seed */
     libxsmm_rng_set_seed( 555 );
-
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
 #   pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
@@ -4322,15 +4375,9 @@ int main(int argc, char* argv []) {
         init_garbage_matrix( l_gemm_def.c_type, l_c_perf, 1, l_ldc, l_n );
         init_garbage_matrix( l_gemm_def.c_type, l_c_gold, 1, l_ldc, l_n );
       } else {
-#if 0
-        init_random_matrix( &l_gemm_def, l_gemm_def.c_type, l_c, 1, l_ldc, l_n, 1 );
-        memcpy( l_c_perf, l_c, (size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.c_type) );
-        memcpy( l_c_gold, l_c, (size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.c_type) );
-#else
         init_zero_matrix( l_gemm_def.c_type, l_c,      1, l_ldc, l_n );
         init_zero_matrix( l_gemm_def.c_type, l_c_perf, 1, l_ldc, l_n );
         init_zero_matrix( l_gemm_def.c_type, l_c_gold, 1, l_ldc, l_n );
-#endif
       }
 
       /* run gold solution */
@@ -5370,11 +5417,11 @@ int main(int argc, char* argv []) {
         l_runtime_libxsmm /= (double)l_n_threads;
 #if defined(USE_GEMM_EXT_FRONTEND)
         printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-          l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
+          l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
           prefetch, br_type, l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop);
 #else
         printf("Command line:\n%s %s %s %s %s %i %i %i %i %i %i %f %f %i %i %i %i %i %i %i %s %s %i %i %i %i\n\n", argv[0], l_a_dt, l_b_dt, l_comp_dt, l_c_dt,
-          l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
+          l_m, l_n, l_k, l_lda_in, l_ldb_in, l_ldc_in, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, l_vnni_a, l_vnni_b, l_vnni_c,
           prefetch, br_type, l_br, l_br_unroll, l_reps, l_tc_config);
 #endif
       }

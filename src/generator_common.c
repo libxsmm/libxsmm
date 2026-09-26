@@ -1533,3 +1533,47 @@ LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
   }
   return precision;
 }
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ld_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  int result = 0;
+
+  /* setting any LD to runtime set will trigger runtime set LD */
+  if ( (i_xgemm_desc->lda == LIBXSMM_RUNTIME_SET_LD) ||
+       (i_xgemm_desc->ldb == LIBXSMM_RUNTIME_SET_LD) ||
+       (i_xgemm_desc->ldc == LIBXSMM_RUNTIME_SET_LD) ) {
+    result = 1;
+  }
+
+  return result;
+}
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_lda_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  int result = 0;
+
+  if ( i_xgemm_desc->lda == LIBXSMM_RUNTIME_SET_LD ) {
+    result = 1;
+  }
+
+  return result;
+}
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ldb_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  int result = 0;
+
+  if ( i_xgemm_desc->ldb == LIBXSMM_RUNTIME_SET_LD ) {
+    result = 1;
+  }
+
+  return result;
+}
+
+LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ldc_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  int result = 0;
+
+  if ( i_xgemm_desc->ldc == LIBXSMM_RUNTIME_SET_LD ) {
+    result = 1;
+  }
+
+  return result;
+}
+

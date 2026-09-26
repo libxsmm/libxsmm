@@ -329,9 +329,10 @@ LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint 
   res.m = m;
   res.n = n;
   res.k = k;
-  res.lda = lda;
-  res.ldb = ldb;
-  res.ldc = ldc;
+  /* a negative LD is otherwise invalid and requests a runtime-set LD */
+  res.lda = (lda < 0) ? (libxsmm_blasint)LIBXSMM_RUNTIME_SET_LD : lda;
+  res.ldb = (ldb < 0) ? (libxsmm_blasint)LIBXSMM_RUNTIME_SET_LD : ldb;
+  res.ldc = (ldc < 0) ? (libxsmm_blasint)LIBXSMM_RUNTIME_SET_LD : ldc;
   res.a_in_type = a_in_type;
   res.b_in_type = b_in_type;
   res.out_type = out_type;

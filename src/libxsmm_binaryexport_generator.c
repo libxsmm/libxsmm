@@ -414,7 +414,7 @@ int export_gemm( int argc, char* argv [] ) {
   l_flags |= (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
   l_flags |= (0.0 == l_beta ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
 
-  /* setting update GEMM struct */
+  /* setting update GEMM struct (negative LDs request runtime-set LDs) */
   l_shape = libxsmm_create_gemm_shape( l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
       (l_is_Abf8Bbf16_gemm > 0 || l_is_Abf8Bf16_gemm > 0) ? LIBXSMM_DATATYPE_BF8 : ((l_is_Ahf8Bbf16_gemm > 0) ? LIBXSMM_DATATYPE_HF8 : l_dtype_a), l_dtype_b, l_dtype_c, l_dtype_comp );
 

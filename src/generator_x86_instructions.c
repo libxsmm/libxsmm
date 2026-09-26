@@ -2781,6 +2781,15 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_LEAW:
     case LIBXSMM_X86_INSTR_LEAD:
     case LIBXSMM_X86_INSTR_LEAQ:
+    case LIBXSMM_X86_INSTR_ADDW_R_RM:
+    case LIBXSMM_X86_INSTR_ADDD_R_RM:
+    case LIBXSMM_X86_INSTR_ADDQ_R_RM:
+    case LIBXSMM_X86_INSTR_SUBW_R_RM:
+    case LIBXSMM_X86_INSTR_SUBD_R_RM:
+    case LIBXSMM_X86_INSTR_SUBQ_R_RM:
+    case LIBXSMM_X86_INSTR_IMULW:
+    case LIBXSMM_X86_INSTR_IMULD:
+    case LIBXSMM_X86_INSTR_IMULQ:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: 0x%08x\n", i_alu_instr);
@@ -3249,6 +3258,9 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
         break;
       case LIBXSMM_X86_INSTR_ANDQ:
         l_alu_instr = LIBXSMM_X86_INSTR_ANDQ_R_RM;
+        break;
+      case LIBXSMM_X86_INSTR_IMUL:
+        l_alu_instr = LIBXSMM_X86_INSTR_IMULQ;
         break;
       case LIBXSMM_X86_INSTR_POPCNT:
         l_alu_instr = LIBXSMM_X86_INSTR_POPCNTQ;

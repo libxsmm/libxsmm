@@ -25,7 +25,10 @@
  */
 LIBXSMM_API_INLINE int libxsmm_generator_gemm_shape_fits_int32( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   const long long l_m = (long long)i_xgemm_desc->m, l_n = (long long)i_xgemm_desc->n, l_k = (long long)i_xgemm_desc->k;
-  const long long l_lda = (long long)i_xgemm_desc->lda, l_ldb = (long long)i_xgemm_desc->ldb, l_ldc = (long long)i_xgemm_desc->ldc;
+  /* runtime-set LDs are a sentinel value (not a size), so they cannot be checked here */
+  const long long l_lda = (libxsmm_is_runtime_set_lda_gemm( i_xgemm_desc ) != 0) ? 0 : (long long)i_xgemm_desc->lda;
+  const long long l_ldb = (libxsmm_is_runtime_set_ldb_gemm( i_xgemm_desc ) != 0) ? 0 : (long long)i_xgemm_desc->ldb;
+  const long long l_ldc = (libxsmm_is_runtime_set_ldc_gemm( i_xgemm_desc ) != 0) ? 0 : (long long)i_xgemm_desc->ldc;
   const long long l_size_a = l_lda * (0 != (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) ? l_m : l_k)
     * LIBXSMM_TYPESIZE( LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) );
   const long long l_size_b = l_ldb * (0 != (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) ? l_k : l_n)
@@ -83,7 +86,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
                                        (LIBXSMM_GEMM_GETENUM_B_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F16) &&
                                        ((LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F16) ||
                                         (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32)) ) ? 1 : 0;
-  unsigned int l_is_var_ld = ( (l_xgemm_desc_mod.lda == 0) && (l_xgemm_desc_mod.ldb == 0) && (l_xgemm_desc_mod.ldc == 0) );
   /* BF32 GEMM: A/B are BF32 (stored as F32), C is F32. The working descriptor
      keeps its BF32 marker so the AMX kernel selects the bf16-emulated f32
      pipeline; the generic processing below adds explicit BF32 handling next to
@@ -235,6 +237,14 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
   }
 
+  /* check for precisions and arch in case of dynld */
+  {
+    const unsigned int l_dynld_error = libxsmm_generator_gemm_dynld_is_supported( io_generated_code, &l_xgemm_desc_mod );
+    if ( l_dynld_error != 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, l_dynld_error );
+      return;
+    }
+  }
 
   /* check for generally supported precisions */
   if ( !(
@@ -1070,7 +1080,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDA */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) == LIBXSMM_GEMM_FLAG_TRANS_A ) {
-    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k) && (libxsmm_is_runtime_set_lda_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA_TRANS );
       return;
     }
@@ -1096,7 +1106,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     }
   } else {
-    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m) && (libxsmm_is_runtime_set_lda_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
@@ -1104,19 +1114,19 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDB */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.n) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.n) && (libxsmm_is_runtime_set_ldb_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB_TRANS );
       return;
     }
   } else {
-    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k) && (l_is_var_ld == 0) ) {
+    if ( (l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k) && (libxsmm_is_runtime_set_ldb_gemm(&l_xgemm_desc_mod) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
   }
 
   /* check LDC */
-  if ( (l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m) && (l_is_var_ld == 0) ) {
+  if ( (l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m) && (libxsmm_is_runtime_set_ldc_gemm(&l_xgemm_desc_mod) == 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
     return;
   }
