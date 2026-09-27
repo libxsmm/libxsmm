@@ -183,8 +183,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_rv64_valid_arch_precision( libxsmm_
                        LIBXSMM_DATATYPE_I64 == dtype_out && LIBXSMM_DATATYPE_I64 == dtype_comp) ? 1 : 0;
   }
 
-  printf("TPP in out type %d %d %d %d %d\n", is_fp32_inp_out, is_fp64_inp_out, is_u32_inp_out, is_i32_inp_out, is_i64_inp_out);
-
   is_valid_arch_prec = ((is_unary_simple_rv64_tpp || is_binary_simple_rv64_tpp || is_transform_tpp) && is_fp32_inp_out) || (is_transform_tpp && (is_fp64_inp_out || is_u32_inp_out || is_i32_inp_out || is_i64_inp_out));
 
   if ((is_transform_tpp == 0) && (is_gather_scatter_tpp == 0) &&                                                                                                                 !((libxsmm_meltw_descriptor_get_operation(i_mateltwise_desc) == LIBXSMM_MELTW_OPERATION_UNARY) && (libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_XOR)) &&
