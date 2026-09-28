@@ -13,7 +13,7 @@
 Name:		libxsmm
 Version:	0.0.0
 Release:	%autorelease
-Summary:	Small dense or sparse matrix multiplications and convolutions for x86_64
+Summary:	Small dense and sparse matrix operations and Tensor Processing Primitives
 License:	BSD-3-Clause
 URL:		https://github.com/libxsmm/libxsmm
 Source0:	https://github.com/libxsmm/libxsmm/archive/%{version}/%{name}-%{version}.tar.gz
@@ -107,7 +107,6 @@ find samples -name '*.vcxproj' -delete
 %{_libdir}/pkgconfig/
 
 %files doc
-%dir %{_docdir}/%{name}
 %doc %{_docdir}/%{name}/
 
 
