@@ -14,18 +14,19 @@
 
 
 int main(int argc, char* argv[]) {
-  libxsmm_blasint M = ( argc == 7 ) ? atoi(argv[1]) : 9;
-  libxsmm_blasint N = ( argc == 7 ) ? atoi(argv[2]) : 10;
-  libxsmm_blasint K = ( argc == 7 ) ? atoi(argv[3]) : 9;
-  libxsmm_blasint N_CRUNS = ( argc == 7 ) ? atoi(argv[4]) : 8;
-  libxsmm_blasint REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
-  const char* l_csr_file =  ( argc == 7 ) ?      argv[6]  : "file.csr";
+  libxsmm_blasint M = ( argc >= 7 ) ? atoi(argv[1]) : 9;
+  libxsmm_blasint N = ( argc >= 7 ) ? atoi(argv[2]) : 10;
+  libxsmm_blasint K = ( argc >= 7 ) ? atoi(argv[3]) : 9;
+  libxsmm_blasint N_CRUNS = ( argc >= 7 ) ? atoi(argv[4]) : 8;
+  libxsmm_blasint REPS =    ( argc >= 7 ) ? atoi(argv[5]) : 1;
+  const char* l_csr_file =  ( argc >= 7 ) ?      argv[6]  : "file.csr";
+  const int l_beta = ( argc == 8 ) ? atoi(argv[7]) : 1;
 
   libxsmm_gemmfunction mykernel = NULL;
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
     M, N, K, 0, N, N, LIBXSMM_DATATYPE(REALTYPE),
     LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
-  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
   const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_gemm_param gemm_param;
 
@@ -39,6 +40,7 @@ int main(int argc, char* argv[]) {
   REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * M * N * N_CRUNS, 64);
   REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * M * N * N_CRUNS, 64);
   REALTYPE l_max_error = 0.0;
+  libxsmm_matdiff_info l_diff;
   libxsmm_blasint l_k, l_n, l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_b, l_b, N, N_CRUNS);
@@ -52,8 +54,8 @@ int main(int argc, char* argv[]) {
   double l_total;
   int result = EXIT_SUCCESS;
 
-  if (argc != 7) {
-    fprintf( stderr, "arguments: M #iters CSR-file!\n" );
+  if ((argc != 7 && argc != 8) || (l_beta != 0 && l_beta != 1)) {
+    fprintf( stderr, "arguments: M N K packed-width #iters CSR-file [beta=0|1]!\n" );
     result = EXIT_FAILURE;
   }
 
@@ -77,7 +79,8 @@ int main(int argc, char* argv[]) {
       for ( l_j = 0; l_j < N; l_j++) {
         for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
           LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N, N_CRUNS) = (REALTYPE)0.0;
-          LIBXSMM_VLA_ACCESS(3, l_p_c_asm,  l_i, l_j, l_k, N, N_CRUNS) = (REALTYPE)0.0;
+          /* Nonzero C makes missing beta=0 stores visible. */
+          LIBXSMM_VLA_ACCESS(3, l_p_c_asm,  l_i, l_j, l_k, N, N_CRUNS) = (REALTYPE)(l_beta == 0 ? 19.0 : 0.0);
         }
       }
     }
@@ -116,6 +119,11 @@ int main(int argc, char* argv[]) {
     for ( l_n = 0; l_n < REPS; l_n++) {
       for ( l_i = 0; l_i < M; l_i++) {
         for ( l_j = 0; l_j < N; l_j++) {
+          if ( l_beta == 0 ) {
+            for (l_k = 0; l_k < N_CRUNS; l_k++) {
+              LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N, N_CRUNS) = (REALTYPE)0.0;
+            }
+          }
           for ( l_jj = 0; l_jj < K; l_jj++) {
             LIBXSMM_PRAGMA_SIMD
             for (l_k = 0; l_k < N_CRUNS; l_k++) {
@@ -135,6 +143,10 @@ int main(int argc, char* argv[]) {
 
     /* sparse routine */
     mykernel = libxsmm_create_packed_spgemm_csr( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_rowptr, l_colidx, (const void*)l_a_sp );
+    if (NULL == mykernel) {
+      result = EXIT_FAILURE;
+      break;
+    }
 
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     gemm_param.a.primary = (void*)l_a_sp;
@@ -167,6 +179,10 @@ int main(int argc, char* argv[]) {
       }
     }
     printf("max error: %f\n", l_max_error);
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE(REALTYPE), M * N * N_CRUNS, 1, l_c_gold, l_c_asm, NULL, NULL);
+    if (libxsmm_matdiff_epsilon(&l_diff) > 0.0001) {
+      result = EXIT_FAILURE;
+    }
     printf("PERFDUMP,%s,%u,%i,%i,%i,%u,%u,%f,%f,%f\n", l_csr_file,
       (unsigned int)REPS, M, N, K, l_elements, (unsigned int)N * l_elements * (unsigned int)N_CRUNS * 2u, l_max_error, l_total,
       ((double)((double)REPS * (double)N * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );

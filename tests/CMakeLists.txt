@@ -138,7 +138,6 @@ set(LIBXSMM_TEST_ENTRIES
   matdiff.c
   math.c
   memory.c
-  packedcsr.c
   registry.c
   rng.c
   spgemmbig.c
@@ -164,7 +163,6 @@ foreach(test_src IN ITEMS
     matdiff
     math
     memory
-    packedcsr
     registry
     rng
     spgemmbig
