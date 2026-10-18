@@ -1,0 +1,4 @@
+%%MatrixMarket matrix coordinate real general
+% Empty second row, A = [[3], [0]].
+2 1 1
+1 1 3
