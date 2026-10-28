@@ -28,10 +28,15 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(CheckLanguage)
 
+set(_libxsmm_fortran OFF)
+check_language(Fortran)
+if(CMAKE_Fortran_COMPILER)
+  set(_libxsmm_fortran ON)
+endif()
+
 option(BUILD_SHARED_LIBS "Build libxsmm as a shared library" OFF)
 option(BUILD_TESTING "Build unittests" OFF)
-option(LIBXSMM_FORTRAN
-       "Build Fortran module interface (auto-detected if not set)" OFF)
+option(LIBXSMM_FORTRAN "Build Fortran module interface" "${_libxsmm_fortran}")
 
 set(LIBXSMM_INSTALL_INCLUDEDIR
     "${CMAKE_INSTALL_INCLUDEDIR}/libxsmm"
@@ -54,15 +59,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(WINDOWS True)
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   set(MACOS True)
-endif()
-
-check_language(Fortran)
-if(CMAKE_Fortran_COMPILER)
-  set(LIBXSMM_FORTRAN
-      ON
-      CACHE BOOL "" FORCE)
-elseif(LIBXSMM_FORTRAN)
-  message(FATAL_ERROR "LIBXSMM_FORTRAN requested but no Fortran compiler found")
 endif()
 
 if(LIBXSMM_FORTRAN)
