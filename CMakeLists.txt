@@ -380,7 +380,7 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libxsmm)
 
 configure_package_config_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmm-config.cmake.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/libxsmm-config.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/libxsmm-config.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libxsmm)
 
@@ -408,7 +408,7 @@ if(XSMM_LIBRT)
 endif()
 list(JOIN LIBXSMM_PC_PRIVATE_LIBS " " LIBXSMM_PC_PRIVATE_LIBS)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmm.pc.in
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/libxsmm.pc.in
                ${CMAKE_CURRENT_BINARY_DIR}/libxsmm.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libxsmm.pc
         DESTINATION ${LIBXSMM_INSTALL_PKGCONFIGDIR})
@@ -421,7 +421,7 @@ if(LIBXSMM_FORTRAN)
         "\${prefix}/${CMAKE_INSTALL_Fortran_MODULES}")
   endif()
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libxsmmf.pc.in
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/libxsmmf.pc.in
                  ${CMAKE_CURRENT_BINARY_DIR}/libxsmmf.pc @ONLY)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libxsmmf.pc
           DESTINATION ${LIBXSMM_INSTALL_PKGCONFIGDIR})
