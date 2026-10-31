@@ -78,16 +78,7 @@ if(NOT CMAKE_BUILD_TYPE)
                                                "RelWithDebInfo")
 endif()
 
-# display config
-message(STATUS "******** Build Summary ********")
-message(STATUS "General:")
-message(STATUS "  CMake version         : ${CMAKE_VERSION}")
-message(STATUS "  CMake command         : ${CMAKE_COMMAND}")
-message(STATUS "  System                : ${CMAKE_SYSTEM_NAME}")
-message(STATUS "Options:")
-message(STATUS "  CMAKE_BUILD_TYPE      : ${CMAKE_BUILD_TYPE}")
-message(STATUS "  BUILD_SHARED_LIBS     : ${BUILD_SHARED_LIBS}")
-message(STATUS "  LIBXSMM_FORTRAN       : ${LIBXSMM_FORTRAN}")
+find_package(Python3 REQUIRED)
 
 # Setup current directory as project root directory.
 set(XSMM_ROOT_DIR ${PROJECT_SOURCE_DIR})
