@@ -454,7 +454,7 @@ void libxsmm_generator_mma_alu( libxsmm_generated_code *io_generated_code,
 
     libxsmm_ppc64le_instr_5( io_generated_code, l_op, i_c, i_a, i_b, (0x20 & i_a) >> 5, (0x20 & i_b) >> 5 );
   } else {
-    unsigned long l_op;
+    uint64_t l_op;
     switch ( i_datatype ) {
       case LIBXSMM_DATATYPE_F32: {
         l_op = LIBXSMM_PPC64LE_INSTR_PMXVF32GER;
