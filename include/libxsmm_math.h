@@ -189,6 +189,8 @@ LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* 
 LIBXSMM_API float libxsmm_convert_bf8_to_f32(libxsmm_bfloat8 in);
 /** Convert HF8 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in);
+/** Convert unsigned E5M3 (micro-scaling scale format) to FP32 (scalar). */
+LIBXSMM_API float libxsmm_convert_ue5m3_to_f32(libxsmm_ue5m3 in);
 /** Convert BF16 to FP32 (scalar). */
 LIBXSMM_API float libxsmm_convert_bf16_to_f32(libxsmm_bfloat16 in);
 /** Convert FP16 to FP32 (scalar). */
@@ -210,6 +212,8 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8_rne(float in);
 LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f16_to_hf8_rne(libxsmm_float16 in);
 /** Convert FP32 to HF8 (scalar). */
 LIBXSMM_API libxsmm_hfloat8 libxsmm_convert_f32_to_hf8_rne(float in);
+/** Convert FP32 to unsigned E5M3 (micro-scaling scale format), magnitude is encoded. */
+LIBXSMM_API libxsmm_ue5m3 libxsmm_convert_f32_to_ue5m3_rne(float in);
 /** Convert FP32 to FP16 (scalar). */
 LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16(float in);
 
