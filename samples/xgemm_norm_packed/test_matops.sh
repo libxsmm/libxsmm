@@ -136,3 +136,5 @@ ${SDE} ./asparse_packed_csr_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_sta
 ${SDE} ./asparse_packed_csr_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_fluxMatrix_csr_sp.mtx
 ${SDE} ./asparse_packed_csr_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_fluxMatrix_csr_de.mtx
 
+# beta=0 must overwrite the empty output row
+${SDE} ./asparse_packed_csr_${PREC} 2 1 1 ${CRUN} ${REPS} mats/empty_row_csr.mtx 0

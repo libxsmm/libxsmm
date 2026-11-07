@@ -346,7 +346,8 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
     }
 
     l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
-    if (l_row_elements > 0) {
+    /* Empty rows still need zero stores for beta=0. */
+    if ( (l_row_elements > 0) || (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) ) {
       /* load C accumulator */
       for ( l_n = 0; l_n < i_num_c_cols; l_n++ ) {
         if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */

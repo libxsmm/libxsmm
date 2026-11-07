@@ -20,7 +20,7 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
     ( ( ( sizeof(libxsmm_gemm_descriptor) + 15 ) / 16 ) * 16 ) : ( ( ( sizeof(libxsmm_meltw_descriptor) + 15 ) / 16 ) * 16 );
   unsigned long i = 0;
   unsigned char *l_padded_desc = NULL;
-  unsigned long *l_imm_array_ptr = NULL;
+  uint64_t *l_imm_array_ptr = NULL;
   unsigned int l_arg1, l_temp_reg, l_sp_copy;
   libxsmm_ref_code_pointer l_code_ptr;
   libxsmm_ppc64le_reg l_reg_tracker;
@@ -38,7 +38,7 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
     libxsmm_meltw_descriptor* l_desc_dst = (libxsmm_meltw_descriptor*)l_padded_desc;
     *l_desc_dst = *i_mateltwise_desc;
   }
-  l_imm_array_ptr = (unsigned long*)l_padded_desc;
+  l_imm_array_ptr = (uint64_t*)l_padded_desc;
 
   /* Initialise reg tracker */
   l_reg_tracker = libxsmm_ppc64le_reg_init();
@@ -66,10 +66,10 @@ void libxsmm_generator_ppc64le_reference_kernel( libxsmm_generated_code *io_gene
   /* Store the descriptor in stack */
   for ( i = 0; i < l_padded_desc_size / 8 ; ++i ) {
     /* Read the 8-byte chunk via memcpy: the buffer was populated through a
-       descriptor-typed store, so a direct 'unsigned long' load would let the
+       descriptor-typed store, so a direct 'uint64_t' load would let the
        compiler's type-based alias analysis drop that store (dead-store
        elimination), yielding a zeroed descriptor. */
-    unsigned long l_imm_val;
+    uint64_t l_imm_val;
     memcpy( &l_imm_val, &l_imm_array_ptr[i], sizeof(l_imm_val) );
     libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp_reg, l_imm_val );
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, l_temp_reg, LIBXSMM_PPC64LE_GPR_SP, ( i*8 + 32 ) >> 2 );
@@ -127,7 +127,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   libxsmm_meqn_elem *l_unfolded_exec_tree = NULL;
   unsigned long l_padded_size = 0, i = 0;
   unsigned long l_n_tmp = 0, l_tmp_size = 0, l_scratch_size = 0;
-  unsigned long *l_imm_array_ptr;
+  uint64_t *l_imm_array_ptr;
   libxsmm_ref_code_pointer l_code_ptr;
   libxsmm_ppc64le_reg l_reg_tracker;
 
@@ -142,7 +142,7 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
     l_last_timestamp = l_eqn->eqn_root->visit_timestamp;
     l_padded_size = ( ( ( ( l_last_timestamp + 1 )*5*sizeof(libxsmm_meqn_elem) ) + 15 ) / 16 )*16;
     l_unfolded_exec_tree = (libxsmm_meqn_elem*)malloc(l_padded_size);
-    l_imm_array_ptr = (unsigned long*)l_unfolded_exec_tree;
+    l_imm_array_ptr = (uint64_t*)l_unfolded_exec_tree;
     memset( l_unfolded_exec_tree, 0, l_padded_size );
 
     l_tree_max_comp_tsize = l_eqn->eqn_root->tree_max_comp_tsize;
@@ -194,10 +194,10 @@ void libxsmm_generator_matequation_ppc64le_reference_kernel( libxsmm_generated_c
   /* Store the unfold descriptor in stack */
   for ( i = 0; i < l_padded_size / 8; ++i ) {
     /* Read the 8-byte chunk via memcpy: the buffer was populated through
-       libxsmm_meqn_elem-typed stores, so a direct 'unsigned long' load would let
+       libxsmm_meqn_elem-typed stores, so a direct 'uint64_t' load would let
        the compiler's type-based alias analysis drop those stores (dead-store
        elimination), yielding a zeroed execution tree. */
-    unsigned long l_imm_val;
+    uint64_t l_imm_val;
     memcpy( &l_imm_val, &l_imm_array_ptr[i], sizeof(l_imm_val) );
     libxsmm_ppc64le_instr_set_imm64( io_generated_code, l_temp_reg, l_imm_val );
     libxsmm_ppc64le_instr_3( io_generated_code, LIBXSMM_PPC64LE_INSTR_STD, l_temp_reg, LIBXSMM_PPC64LE_GPR_SP, ( i*8 + 32 ) >> 2 );
