@@ -497,15 +497,19 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
     }
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch );
   } else {
+    libxsmm_aarch64_asimd_tupletype l_tupletype = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : (i_datatype_size == 2) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8H :
+                                                  (i_datatype_size == 1) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
+    libxsmm_aarch64_asimd_width l_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : (i_datatype_size == 2) ? LIBXSMM_AARCH64_ASIMD_WIDTH_H :
+                                          (i_datatype_size == 1) ? LIBXSMM_AARCH64_ASIMD_WIDTH_B : LIBXSMM_AARCH64_ASIMD_WIDTH_D;
     if ( i_masked_elems != 1 ) {
       if ( i_adv_gpr == 0 ) {
         libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
                                                          i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, i_vec_reg,
-                                                        (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+                                                         l_tupletype );
       } else {
         libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST,
                                                         i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_XZR, i_vec_reg,
-                                                        (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+                                                        l_tupletype );
       }
       if ( i_masked_elems != 0 ) {
         libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch, 0x0 );
@@ -524,7 +528,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
                                               i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
-                                              (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+                                              l_width );
     }
   }
 }

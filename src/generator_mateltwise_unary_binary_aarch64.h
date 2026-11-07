@@ -303,4 +303,25 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                                                          const unsigned char     i_gp_reg_scratch,
                                                                          unsigned int* const     io_mask_adv );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_16bit_sve( libxsmm_generated_code* io_generated_code,
+                                                                              const unsigned int      i_mask_bytes,
+                                                                              const unsigned char     i_tmp_vreg0,
+                                                                              const unsigned char     i_gp_reg_mask,
+                                                                              const unsigned char     i_blend_reg,
+                                                                              const unsigned char     i_gp_reg_scratch,
+                                                                              const unsigned char     i_tmp_pred_reg,
+                                                                              unsigned int* const     io_mask_adv );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_16bit_sve( libxsmm_generated_code* io_generated_code,
+                                                                               const unsigned int      i_mask_bytes,
+                                                                               const unsigned char     i_tmp_vreg0,
+                                                                               const unsigned char     i_gp_reg_mask,
+                                                                               const unsigned char     i_blend_reg,
+                                                                               const unsigned char     i_tmp_pred_reg0,
+                                                                               const unsigned char     i_tmp_pred_reg1,
+                                                                               const unsigned char     i_gp_reg_scratch,
+                                                                               unsigned int* const     io_mask_adv );
+
 #endif /* GENERATOR_MATELTWISE_UNARY_BINARY_AARCH64_H */
