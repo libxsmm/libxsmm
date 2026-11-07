@@ -876,6 +876,8 @@ LIBXSMM_API_INTERN
 int LIBXSMM_DATATYPE_IS_UNSIGNED(const int datatype) {
   return ((LIBXSMM_DATATYPE_U8  == datatype) || (LIBXSMM_DATATYPE_U16 == datatype) ||
           (LIBXSMM_DATATYPE_U32 == datatype) || (LIBXSMM_DATATYPE_U64 == datatype) ||
+          (LIBXSMM_DATATYPE_MXUINT4X2 == datatype) || (LIBXSMM_DATATYPE_FMXUINT4X2 == datatype) ||
+          (LIBXSMM_DATATYPE_MXUINT8 == datatype) ||
           (LIBXSMM_DATATYPE_U4X2 == datatype)) ? 1 : 0;
 }
 

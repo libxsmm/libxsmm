@@ -1936,7 +1936,15 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
       LIBXSMM_DATATYPE_MXINT8 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
       LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
   {
-    return "mxint8mxint8f32";
+    /* MXUINT8 normalizes to MXINT8, so the sign combination is taken from the raw precisions */
+    const int l_a_raw = LIBXSMM_GEMM_GETENUM_A_PREC_RAW(datatype);
+    const int l_b_raw = LIBXSMM_GEMM_GETENUM_B_PREC_RAW(datatype);
+    if (LIBXSMM_DATATYPE_MXINT8 == l_a_raw) {
+      return (LIBXSMM_DATATYPE_MXINT8 == l_b_raw) ? "mxint8mxint8f32" : "mxint8mxuint8f32";
+    }
+    else {
+      return (LIBXSMM_DATATYPE_MXINT8 == l_b_raw) ? "mxuint8mxint8f32" : "mxuint8mxuint8f32";
+    }
   }
   if (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
       LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
@@ -1975,6 +1983,41 @@ LIBXSMM_API_INLINE const char* libxsmm_get_mxfpgemm_typename(const unsigned char
   {
     return "mxfp4mxfp4mxfp4";
   }
+  /* FMXFP4 normalizes to NVFP4X2 under GETENUM_*_PREC, so it must be matched on the raw
+     precisions and before NVFP4 to keep the two apart in the JIT-dump name. */
+  if (LIBXSMM_DATATYPE_FMXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC_RAW(datatype) &&
+      LIBXSMM_DATATYPE_FMXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC_RAW(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "fmxfp4fmxfp4f32";
+  }
+  if (LIBXSMM_DATATYPE_NVFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) &&
+      LIBXSMM_DATATYPE_NVFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC(datatype) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    return "nvfp4nvfp4f32";
+  }
+  /* the block-scaled int4 types keep all four A/B sign combinations apart, so they are
+     named from the raw precisions */
+  if ((LIBXSMM_DATATYPE_MXINT4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype) ||
+       LIBXSMM_DATATYPE_FMXINT4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(datatype)) &&
+      LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC(datatype))
+  {
+    const int l_a_raw = LIBXSMM_GEMM_GETENUM_A_PREC_RAW(datatype);
+    const int l_b_raw = LIBXSMM_GEMM_GETENUM_B_PREC_RAW(datatype);
+    if (LIBXSMM_DATATYPE_MXINT4X2 == l_a_raw) {
+      return (LIBXSMM_DATATYPE_MXINT4X2 == l_b_raw) ? "mxint4mxint4f32" : "mxint4mxuint4f32";
+    }
+    else if (LIBXSMM_DATATYPE_MXUINT4X2 == l_a_raw) {
+      return (LIBXSMM_DATATYPE_MXINT4X2 == l_b_raw) ? "mxuint4mxint4f32" : "mxuint4mxuint4f32";
+    }
+    else if (LIBXSMM_DATATYPE_FMXINT4X2 == l_a_raw) {
+      return (LIBXSMM_DATATYPE_FMXINT4X2 == l_b_raw) ? "fmxint4fmxint4f32" : "fmxint4fmxuint4f32";
+    }
+    else {
+      return (LIBXSMM_DATATYPE_FMXINT4X2 == l_b_raw) ? "fmxuint4fmxint4f32" : "fmxuint4fmxuint4f32";
+    }
+  }
   else {
     return "void";
   }
@@ -1996,6 +2039,11 @@ LIBXSMM_API_INLINE const char* libxsmm_get_gemm_typename(const unsigned char* da
     case LIBXSMM_DATATYPE_I8:   return "i8";
     case LIBXSMM_DATATYPE_MXFP4X2: return "mxfp4x2";
     case LIBXSMM_DATATYPE_NVFP4X2: return "nvfp4x2";
+    case LIBXSMM_DATATYPE_FMXFP4X2: return "fmxfp4x2";
+    case LIBXSMM_DATATYPE_MXINT4X2: return "mxint4x2";
+    case LIBXSMM_DATATYPE_MXUINT4X2: return "mxuint4x2";
+    case LIBXSMM_DATATYPE_FMXINT4X2: return "fmxint4x2";
+    case LIBXSMM_DATATYPE_FMXUINT4X2: return "fmxuint4x2";
     case LIBXSMM_DATATYPE_MXBF8:   return "mxbf8";
     default: {
       if (LIBXSMM_DATATYPE_BF32 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(datatype) &&
@@ -2166,8 +2214,14 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_I8:   return "i8";
     case LIBXSMM_DATATYPE_MXFP4X2: return "mxfp4x2";
     case LIBXSMM_DATATYPE_NVFP4X2: return "nvfp4x2";
+    case LIBXSMM_DATATYPE_FMXFP4X2: return "fmxfp4x2";
+    case LIBXSMM_DATATYPE_MXINT4X2: return "mxint4x2";
+    case LIBXSMM_DATATYPE_MXUINT4X2: return "mxuint4x2";
+    case LIBXSMM_DATATYPE_FMXINT4X2: return "fmxint4x2";
+    case LIBXSMM_DATATYPE_FMXUINT4X2: return "fmxuint4x2";
     case LIBXSMM_DATATYPE_MXBF8:   return "mxbf8";
     case LIBXSMM_DATATYPE_MXINT8:  return "mxint8";
+    case LIBXSMM_DATATYPE_MXUINT8: return "mxuint8";
     case LIBXSMM_DATATYPE_IMPLICIT:   return "implicit";
     default: return "void";
   }
@@ -2339,7 +2393,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
                                        (LIBXSMM_DATATYPE_MXINT8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXBF6 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
                                        (LIBXSMM_DATATYPE_MXHF6 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
-                                       (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_mxfpgemm_typename(request->descriptor.gemm->datatype) :
+                                       (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_MXINT4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_FMXINT4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ||
+                                       (LIBXSMM_DATATYPE_NVFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_mxfpgemm_typename(request->descriptor.gemm->datatype) :
                                         ((LIBXSMM_DATATYPE_I2X4 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i2gemm_typename(request->descriptor.gemm->datatype) :
                                           ((LIBXSMM_DATATYPE_I1X8 == LIBXSMM_GEMM_GETENUM_A_PREC(request->descriptor.gemm->datatype)) ? libxsmm_get_i1gemm_typename(request->descriptor.gemm->datatype) :
                                              libxsmm_get_gemm_typename(request->descriptor.gemm->datatype))));

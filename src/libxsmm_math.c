@@ -220,6 +220,11 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
       } break;
       case LIBXSMM_DATATYPE_MXFP4X2:
       case LIBXSMM_DATATYPE_NVFP4X2:
+      case LIBXSMM_DATATYPE_FMXFP4X2:
+      case LIBXSMM_DATATYPE_MXINT4X2:
+      case LIBXSMM_DATATYPE_MXUINT4X2:
+      case LIBXSMM_DATATYPE_FMXINT4X2:
+      case LIBXSMM_DATATYPE_FMXUINT4X2:
       case LIBXSMM_DATATYPE_MXBF8: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE unsigned char
@@ -581,6 +586,99 @@ LIBXSMM_API float libxsmm_convert_hf8_to_f32(libxsmm_hfloat8 in)
   /* sign it */
   res.u |= s;
   return res.f;
+}
+
+
+LIBXSMM_API float libxsmm_convert_ue5m3_to_f32(libxsmm_ue5m3 in)
+{
+  const unsigned int f32_bias = 127, ue5m3_bias = 15;
+  const unsigned int e = (in & 0xf8) >> 3;
+  unsigned int m = (in & 0x07);
+  unsigned int e_norm = e + (f32_bias - ue5m3_bias);
+  libxsmm_float_uint res;
+  /* convert denormal ue5m3 number into a normal fp32 number */
+  if ( (e == 0) && (m != 0) ) {
+    unsigned int lz_cnt = 2;
+    lz_cnt = (m > 0x1 ? 1 : lz_cnt);
+    lz_cnt = (m > 0x3 ? 0 : lz_cnt);
+    LIBXSMM_ASSERT(e_norm >= lz_cnt);
+    e_norm -= lz_cnt;
+    m = (m << (lz_cnt+1)) & 0x07;
+  } else if (e == 0 && m == 0) {
+    e_norm = 0;
+  } else if (e == 0x1f && m == 0x7) {
+    /* UE5M3 has no infinities, 11111 111 is the only NaN */
+    e_norm = 0xff;
+    m = 0x4; /* making first mantissa bit 1 */
+  }
+  /* set result to 0 */
+  res.u = 0x0;
+  /* set exponent and mantissa, UE5M3 is unsigned so there is no sign bit */
+  res.u |= (e_norm << 23);
+  res.u |= (m << 20);
+  return res.f;
+}
+
+
+LIBXSMM_API libxsmm_ue5m3 libxsmm_convert_f32_to_ue5m3_rne(float in)
+{
+  const unsigned int f32_bias = 127, ue5m3_bias = 15;
+  libxsmm_float_uint hybrid_in = { 0 };
+  unsigned int e, m, e_f32, m_f32, fixup;
+  hybrid_in.f = in;
+
+  /* UE5M3 carries no sign bit, so the magnitude is encoded */
+  hybrid_in.u = hybrid_in.u & 0x7fffffff;
+  /* DAZ */
+  hybrid_in.u = ((hybrid_in.u & 0x7f800000) == 0x0 ? 0x0 : hybrid_in.u);
+  e_f32 = (hybrid_in.u & 0x7f800000) >> 23;
+  m_f32 = (hybrid_in.u & 0x007fffff);
+
+  /* NaN stays NaN, infinity saturates as UE5M3 cannot represent it */
+  if (e_f32 == 0xff) {
+    return (m_f32 == 0) ? (libxsmm_ue5m3)0xfe : (libxsmm_ue5m3)0xff;
+  }
+  /* larger than max normal (2^16 * 1.75) */
+  else if (e_f32 > (f32_bias + ue5m3_bias + 1)) {
+    return 0xfe;
+  }
+  /* smaller than half of the min subnormal (2^-17) */
+  else if (e_f32 < (f32_bias - ue5m3_bias - 3)) {
+    return 0x00;
+  }
+  /* subnormal */
+  else if (e_f32 <= (f32_bias - ue5m3_bias)) {
+    /* denormalized mantissa */
+    m = m_f32 | 0x00800000;
+    /* additionally subnormal shift */
+    m = m >> ((f32_bias - ue5m3_bias) + 1 - e_f32);
+    /* preserve sticky bit (some sticky bits are lost when denormalizing) */
+    m |= (((m_f32 & 0xfffff) + 0xfffff) >> 20);
+    /* RNE round */
+    fixup = (m >> 20) & 0x1;
+    m = m + 0x0007ffff + fixup;
+    m = m >> 20;
+    /* a mantissa carry lands on e=1,m=0 which is exactly the encoding below */
+    e = 0x0;
+  }
+  /* normal */
+  else {
+    /* RNE round, adding into the full f32 pattern carries into the exponent */
+    fixup = (m_f32 >> 20) & 0x1;
+    hybrid_in.u = hybrid_in.u + 0x0007ffff + fixup;
+    e = (hybrid_in.u & 0x7f800000) >> 23;
+    m = (hybrid_in.u & 0x007fffff);
+    LIBXSMM_ASSERT(e >= (f32_bias - ue5m3_bias));
+    e -= (f32_bias - ue5m3_bias);
+    m = m >> 20;
+    /* rounding up must not produce the NaN encoding or overflow the exponent */
+    if ( (e > 0x1f) || ((e == 0x1f) && (m == 0x7)) ) {
+      e = 0x1f;
+      m = 0x6;
+    }
+  }
+
+  return (libxsmm_ue5m3)((e << 3) | m);
 }
 
 
