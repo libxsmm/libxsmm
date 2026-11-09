@@ -762,7 +762,7 @@ for BINARY_POSTOP in 0 1; do
                     cp ${HERE}/${OUTNAME} ${HERE}/ace_k2_${OUTNAME}
                     sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
-                    sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(2,101,2), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
+                    sed 's/randnumk = rnd.sample(range([0-9]*,101,[0-9]*), .*)/randnumk = rnd.sample(range(2,101,2), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
                     sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k2_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/ace_k2_${OUTNAME}
@@ -795,7 +795,7 @@ for BINARY_POSTOP in 0 1; do
                     cp ${HERE}/${OUTNAME} ${HERE}/ace_k8_${OUTNAME}
                     sed 's/randnumm = rnd.sample(range(1,101,1), .*)/randnumm = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
-                    sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
+                    sed 's/randnumk = rnd.sample(range([0-9]*,101,[0-9]*), .*)/randnumk = rnd.sample(range(8,101,8), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}
                     sed 's/randnumn = rnd.sample(range(1,101,1), .*)/randnumn = rnd.sample(range(16,101,16), 4)/g' ${HERE}/ace_k8_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/ace_k8_${OUTNAME}

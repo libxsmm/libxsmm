@@ -281,13 +281,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int l_is_Amx8_Bmx8_gemm = libxsmm_x86_is_Amx8_Bmx8_gemm(i_xgemm_desc);
   unsigned int l_is_Amx4_Bmx4_gemm = libxsmm_x86_is_Amx4_Bmx4_gemm(i_xgemm_desc);
   unsigned int l_is_Amxfp6_Bmxfp6_gemm = libxsmm_x86_is_Amxfp6_Bmxfp6_gemm(i_xgemm_desc);
+  /* F16 on ACE v2 shares the BF16 tile layout, so it takes the same stack reformatting paths */
+  unsigned int l_is_16bit_stack_dt = ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+                                       (libxsmm_x86_is_16bit_ace_gemm( io_generated_code->arch, l_xgemm_desc ) != 0) ) ? 1 : 0;
   unsigned int l_avnni_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0) &&
                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                    (l_xgemm_desc->k % 2 == 0) &&
                                                    (libxsmm_generator_gemm_use_inline_transform_ace(io_generated_code, l_xgemm_desc) == 0) &&
-                                                   ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+                                                   ( (l_is_16bit_stack_dt != 0) ||
                                                      (libxsmm_x86_is_fp8_gemm( l_xgemm_desc ) != 0)) );
   unsigned int l_atvnni_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) &&
                                                     ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
@@ -295,7 +298,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                     ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                     (l_xgemm_desc->k % 2 == 0) &&
                                                     (libxsmm_generator_gemm_use_inline_transform_ace(io_generated_code, l_xgemm_desc) == 0) &&
-                                                    ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+                                                    ( (l_is_16bit_stack_dt != 0) ||
                                                       (libxsmm_x86_is_fp8_gemm( l_xgemm_desc ) != 0)) );
   unsigned int l_avnni_btrans_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
                                                           ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
@@ -303,7 +306,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                           ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                           (l_xgemm_desc->k % 2 == 0) &&
                                                           (libxsmm_generator_gemm_use_inline_transform_ace(io_generated_code, l_xgemm_desc) == 0) &&
-                                                          ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+                                                          ( (l_is_16bit_stack_dt != 0) ||
                                                             (libxsmm_x86_is_fp8_gemm( l_xgemm_desc ) != 0)) );
   unsigned int l_atvnni_btrans_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0) &&
                                                            ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
@@ -311,7 +314,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                            ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                            (l_xgemm_desc->k % 2 == 0) &&
                                                            (libxsmm_generator_gemm_use_inline_transform_ace(io_generated_code, l_xgemm_desc) == 0) &&
-                                                           ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+                                                           ( (l_is_16bit_stack_dt != 0) ||
                                                              (libxsmm_x86_is_fp8_gemm( l_xgemm_desc ) != 0)) );
   unsigned int l_b_to_bvnniT_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
                                                          ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0)  &&
@@ -319,7 +322,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                          ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0)  &&
                                                          (l_xgemm_desc->k % 2 == 0) &&
                                                          (libxsmm_generator_gemm_use_inline_transform_ace(io_generated_code, l_xgemm_desc) == 0) &&
-                                                         ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
+                                                         ( (l_is_16bit_stack_dt != 0) ||
                                                            (libxsmm_x86_is_fp8_gemm( l_xgemm_desc ) != 0)) );
    /* initialize n-blocking */
   unsigned int l_n_count = 0;          /* array counter for blocking arrays */

@@ -435,6 +435,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_t
   int is_brgemm               = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
   unsigned int l_use_ace_path = ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc_orig) != 0 ) &&
       ( (LIBXSMM_DATATYPE_BF16 == i_in_dtype) || (LIBXSMM_DATATYPE_BF8 == i_in_dtype) || (LIBXSMM_DATATYPE_HF8 == i_in_dtype) ||
+        ( (LIBXSMM_DATATYPE_F16 == i_in_dtype) && (libxsmm_x86_is_16bit_ace_gemm( io_generated_code->arch, i_xgemm_desc_orig ) != 0) ) ||
         (libxsmm_generator_gemm_use_ace_fp32_via_bf16( i_xgemm_desc_orig ) != 0) );
   unsigned int struct_gp_reg  = LIBXSMM_X86_GP_REG_R15;
   unsigned int tmp_reg        = LIBXSMM_X86_GP_REG_R14;
@@ -6529,9 +6530,7 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
   unsigned int l_is_mx = ( libxsmm_x86_is_Amx8_Bmx8_gemm( i_xgemm_desc ) ||
                            libxsmm_x86_is_Amxfp6_Bmxfp6_gemm( i_xgemm_desc ) ||
                            libxsmm_x86_is_Amx4_Bmx4_gemm( i_xgemm_desc ) ) ? 1 : 0;
-  /* F16 bias is not supported by this store path */
-  unsigned int l_fuse_colbias = ((i_micro_kernel_config->fused_colbias == 1) &&
-                                 (LIBXSMM_DATATYPE_F16 != i_micro_kernel_config->colbias_dtype)) ? 1 : 0;
+  unsigned int l_fuse_colbias = (i_micro_kernel_config->fused_colbias == 1) ? 1 : 0;
 
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -6718,6 +6717,11 @@ void libxsmm_generator_gemm_store_C_ace( libxsmm_generated_code*             io_
         if ( LIBXSMM_DATATYPE_BF16 == i_micro_kernel_config->colbias_dtype ) {
           libxsmm_generator_cvtbf16ps_sse_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                        l_vec_reg_bias + l_m, l_vec_reg_bias + l_m);
+        }
+        if ( LIBXSMM_DATATYPE_F16 == i_micro_kernel_config->colbias_dtype ) {
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS,
+                                                    i_micro_kernel_config->vector_name,
+                                                    l_vec_reg_bias + l_m, l_vec_reg_bias + l_m);
         }
         if ( LIBXSMM_DATATYPE_BF8 == i_micro_kernel_config->colbias_dtype ) {
           libxsmm_generator_cvtbf8ps_avx512( io_generated_code, i_micro_kernel_config->vector_name,
