@@ -2634,8 +2634,19 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
       return;
     }
     if ( l_c_is_mxbf8 != 0 ) {
-      l_c_tmp = (float*)malloc((size_t)ldc * (size_t)n * sizeof(float));
+      /* zero-filled so 32-element quantization blocks reaching past m read defined values */
+      l_c_tmp = (float*)calloc((size_t)ldc * (size_t)n, sizeof(float));
       f_c = l_c_tmp;
+      if ( i_gemm_def->beta != 0 ) {
+        const unsigned char* l_c_data = (const unsigned char*)c;
+        for (l_j = 0; l_j < n; l_j++) {
+          for (l_i = 0; l_i < m; l_i++) {
+            unsigned int scale_u32 = ((unsigned int)i_gemm_def->scf_c_u8[(l_j * (ldc/32)) + (l_i/32)]) << 23;
+            float *scalef_ptr = (float*)&scale_u32;
+            l_c_tmp[(l_j * ldc) + l_i] = libxsmm_convert_bf8_to_f32((libxsmm_bfloat8)l_c_data[(l_j * ldc) + l_i]) * (*scalef_ptr);
+          }
+        }
+      }
     }
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -2796,8 +2807,21 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
       return;
     }
     if ( l_c_is_mxfp4 != 0 ) {
-      l_c_tmp = (float*)malloc((size_t)ldc * (size_t)n * sizeof(float));
+      /* zero-filled so 32-element quantization blocks reaching past m read defined values */
+      l_c_tmp = (float*)calloc((size_t)ldc * (size_t)n, sizeof(float));
       f_c = l_c_tmp;
+      if ( i_gemm_def->beta != 0 ) {
+        const unsigned char* l_c_data = (const unsigned char*)c;
+        for (l_j = 0; l_j < n; l_j++) {
+          for (l_i = 0; l_i < m; l_i++) {
+            unsigned char l_byte = l_c_data[(l_j * (ldc/2)) + (l_i/2)];
+            unsigned char l_nib = ((l_i % 2) == 0) ? (unsigned char)(l_byte & 0x0f) : (unsigned char)((l_byte >> 4) & 0x0f);
+            unsigned int scale_u32 = ((unsigned int)i_gemm_def->scf_c_u8[(l_j * (ldc/32)) + (l_i/32)]) << 23;
+            float *scalef_ptr = (float*)&scale_u32;
+            l_c_tmp[(l_j * ldc) + l_i] = libxsmm_convert_mxfp4_to_float(l_nib) * (*scalef_ptr);
+          }
+        }
+      }
     }
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
