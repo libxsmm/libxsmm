@@ -4386,9 +4386,10 @@ int main(int argc, char* argv []) {
       if (l_gemm_def.is_Amxfp4Bbf16_gemm > 0 || l_gemm_def.is_Amxfp4Bfp32_gemm > 0 || l_gemm_def.is_Amxfp4Bi8_gemm > 0 || l_gemm_def.is_Amxfp4Bmxfp4_gemm > 0 || l_gemm_def.is_Anvfp4Bnvfp4_gemm > 0 || l_gemm_def.is_Afmxfp4Bfmxfp4_gemm > 0 || l_gemm_def.is_Amxint4Bmxint4_gemm > 0 || l_gemm_def.is_Afmxint4Bfmxint4_gemm > 0 || l_gemm_def.is_Amxhf6Bmxhf6_gemm > 0 || l_gemm_def.is_Amxbf6Bmxbf6_gemm > 0 || l_gemm_def.is_Amxbf8Bmxbf8_gemm > 0 || l_gemm_def.is_Amxhf8Bmxhf8_gemm > 0 || l_gemm_def.is_Amxint8Bmxint8_gemm > 0) {
         libxsmm_blasint scf_i = 0;
         unsigned int n_scf;
+        unsigned char *tmp_scf_u8;
         l_divider = ((l_gemm_def.is_Anvfp4Bnvfp4_gemm > 0) || (l_gemm_def.is_Afmxfp4Bfmxfp4_gemm > 0) || (l_gemm_def.is_Afmxint4Bfmxint4_gemm > 0)) ? 16 : 32;
         n_scf = (size_t)l_lda * (l_gemm_def.k/l_divider) * l_br;
-        unsigned char *tmp_scf_u8 = (unsigned char*)libxsmm_aligned_malloc(n_scf * sizeof(unsigned char), 64);
+        tmp_scf_u8 = (unsigned char*)libxsmm_aligned_malloc(n_scf * sizeof(unsigned char), 64);
         for (scf_i = 0; scf_i < (libxsmm_blasint)n_scf; scf_i++) {
           /* NVFP4 uses unsigned E4M3 block scales, FMXFP4/FMXINT4 unsigned E5M3, MX* E8M0 exponents */
           tmp_scf_u8[scf_i] = (unsigned char) (((l_gemm_def.is_Afmxfp4Bfmxfp4_gemm > 0) || (l_gemm_def.is_Afmxint4Bfmxint4_gemm > 0)) ? (104+rand()%40) : ((l_gemm_def.is_Anvfp4Bnvfp4_gemm > 0) ? (56+rand()%10) : (126+rand()%10)));

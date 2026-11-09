@@ -2185,12 +2185,18 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
           libxsmm_calculate_brgemm_offsets((void**)&f16_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              cur_a = f16_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
-              a_use = libxsmm_convert_f16_to_f32(cur_a);
-              if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              if (i_gemm_def->trans_a == 0) {
+                cur_a = f16_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               } else {
+                cur_a = f16_a[offs_a + (l_i * lda) + (l_s*l_k_block) + l_k2];
+              }
+              a_use = libxsmm_convert_f16_to_f32(cur_a);
+              if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
+                cur_b = f16_b[offs_b + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+              } else if (i_gemm_def->trans_b > 0) {
                 cur_b = f16_b[offs_b + ((long long)l_s*l_k_block+l_k2) * (long long)ldb + l_j];
+              } else {
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
@@ -2236,12 +2242,18 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
           libxsmm_calculate_brgemm_offsets((void**)&f16_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              cur_a = f16_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
-              a_use = libxsmm_convert_f16_to_f32(cur_a);
-              if (i_gemm_def->trans_b == 0) {
-                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              if (i_gemm_def->trans_a == 0) {
+                cur_a = f16_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               } else {
+                cur_a = f16_a[offs_a + (l_i * lda) + (l_s*l_k_block) + l_k2];
+              }
+              a_use = libxsmm_convert_f16_to_f32(cur_a);
+              if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
+                cur_b = f16_b[offs_b + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+              } else if (i_gemm_def->trans_b > 0) {
                 cur_b = f16_b[offs_b + ((long long)l_s*l_k_block+(long long)l_k2) * ldb + l_j];
+              } else {
+                cur_b = f16_b[offs_b + (l_j * ldb) + (l_s*l_k_block) + l_k2];
               }
               b_use = libxsmm_convert_f16_to_f32(cur_b);
               ftmp += a_use * b_use;
