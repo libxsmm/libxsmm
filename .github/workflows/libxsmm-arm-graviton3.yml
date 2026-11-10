@@ -18,7 +18,7 @@ jobs:
     steps:
       # Step 2: Set up AWS CLI
       - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -33,7 +33,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: GEMM
         run: "scripts/tool_test.sh samples/xgemm/kernel_test.sh"
 
@@ -41,7 +41,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: BCSC_SPMM
         run: "scripts/tool_test.sh samples/xgemm_sparse/kernel_test.sh"
 
@@ -49,7 +49,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: ELTWISE
         run: "scripts/tool_test.sh samples/eltwise/run_test.sh"
 
@@ -57,7 +57,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: EQUATION
         run: "scripts/tool_test.sh samples/equation/run_test.sh"
 
@@ -65,7 +65,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: FSSPMDM
         run: |-
           ENVS="LIBXSMM_FSSPMDM_HINT=1 LIBXSMM_FSSPMDM_HINT=2 LIBXSMM_FSSPMDM_HINT=3" \
@@ -75,7 +75,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: TEST_4
         run: "scripts/tool_test.sh 4"
 
@@ -83,7 +83,7 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: TEST_6
         run: "scripts/tool_test.sh 6"
 
@@ -91,6 +91,6 @@ jobs:
     runs-on: [ self-hosted, graviton ]
     needs: ec2-start
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: FORTRAN
         run: "scripts/tool_test.sh 5"
