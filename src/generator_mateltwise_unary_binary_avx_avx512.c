@@ -3717,21 +3717,24 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms+7;
       i_micro_kernel_config->reserved_zmms += 8;
 
-      i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->vec_c5 = i_micro_kernel_config->reserved_zmms + 1;
-      i_micro_kernel_config->vec_c6 = i_micro_kernel_config->reserved_zmms + 2;
-      i_micro_kernel_config->vec_c7 = i_micro_kernel_config->reserved_zmms + 3;
-      i_micro_kernel_config->vec_c8 = i_micro_kernel_config->reserved_zmms + 4;
-      i_micro_kernel_config->vec_c9 = i_micro_kernel_config->reserved_zmms + 5;
-      i_micro_kernel_config->vec_c10 = i_micro_kernel_config->reserved_zmms + 6;
-      i_micro_kernel_config->vec_c11 = i_micro_kernel_config->reserved_zmms + 7;
-      i_micro_kernel_config->reserved_zmms += 8;
+      /* Constants/scratch for the BF16 -> BF4S emulation; on targets newer than DMR the native
+       * VCVTBF162BF4S instruction is used, so these registers are not reserved */
+      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_ACE1) {
+        i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
+        i_micro_kernel_config->vec_c5 = i_micro_kernel_config->reserved_zmms + 1;
+        i_micro_kernel_config->vec_c6 = i_micro_kernel_config->reserved_zmms + 2;
+        i_micro_kernel_config->vec_c7 = i_micro_kernel_config->reserved_zmms + 3;
+        i_micro_kernel_config->vec_c8 = i_micro_kernel_config->reserved_zmms + 4;
+        i_micro_kernel_config->vec_c9 = i_micro_kernel_config->reserved_zmms + 5;
+        i_micro_kernel_config->vec_c10 = i_micro_kernel_config->reserved_zmms + 6;
+        i_micro_kernel_config->vec_c11 = i_micro_kernel_config->reserved_zmms + 7;
+        i_micro_kernel_config->reserved_zmms += 8;
+      }
 
       i_micro_kernel_config->blend_tmp_mask = i_micro_kernel_config->reserved_mask_regs;
       i_micro_kernel_config->dcvt_mask_aux0 = i_micro_kernel_config->reserved_mask_regs + 1;
       i_micro_kernel_config->reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs + 2;
 
-      /* For absmask load the 16-bit values 0x7fff in the relevant zmm */
       libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_mxfp4_quant_c1,
         "mxfp4_quant_c1", i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c1);
       libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_mxfp4_quant_c2,
@@ -3741,22 +3744,25 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_mxfp4_quant_c4,
         "mxfp4_quant_c4", i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c4);
 
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_16bit_ones, "l_vec_ones",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound0, "l_bound0",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c5);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound1, "l_bound1",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c6);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound2, "l_bound2",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c7);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound3, "l_bound3",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c8);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound4, "l_bound4",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c9);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound5, "l_bound5",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c10);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound6, "l_bound6",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c11);
+      /* BF16 -> BF4S emulation constants; skipped on targets newer than DMR (native instruction) */
+      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_ACE1) {
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_16bit_ones, "l_vec_ones",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound0, "l_bound0",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c5);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound1, "l_bound1",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c6);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound2, "l_bound2",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c7);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound3, "l_bound3",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c8);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound4, "l_bound4",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c9);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound5, "l_bound5",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c10);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound6, "l_bound6",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c11);
+      }
       libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
         i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg);
 
@@ -3805,19 +3811,23 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms+7;
       i_micro_kernel_config->reserved_zmms+=8;
 
-      i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->vec_c5 = i_micro_kernel_config->reserved_zmms + 1;
-      i_micro_kernel_config->vec_c6 = i_micro_kernel_config->reserved_zmms + 2;
-      i_micro_kernel_config->vec_c7 = i_micro_kernel_config->reserved_zmms + 3;
-      i_micro_kernel_config->vec_c8 = i_micro_kernel_config->reserved_zmms + 4;
-      i_micro_kernel_config->vec_c9 = i_micro_kernel_config->reserved_zmms + 5;
-      i_micro_kernel_config->vec_c10 = i_micro_kernel_config->reserved_zmms + 6;
-      i_micro_kernel_config->vec_c11 = i_micro_kernel_config->reserved_zmms + 7;
-      i_micro_kernel_config->reserved_zmms += 8;
+      /* Constants/scratch for the BF16 -> BF4S emulation; on targets newer than DMR the native
+       * VCVTBF162BF4S instruction is used, so these registers are not reserved */
+      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_ACE1) {
+        i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
+        i_micro_kernel_config->vec_c5 = i_micro_kernel_config->reserved_zmms + 1;
+        i_micro_kernel_config->vec_c6 = i_micro_kernel_config->reserved_zmms + 2;
+        i_micro_kernel_config->vec_c7 = i_micro_kernel_config->reserved_zmms + 3;
+        i_micro_kernel_config->vec_c8 = i_micro_kernel_config->reserved_zmms + 4;
+        i_micro_kernel_config->vec_c9 = i_micro_kernel_config->reserved_zmms + 5;
+        i_micro_kernel_config->vec_c10 = i_micro_kernel_config->reserved_zmms + 6;
+        i_micro_kernel_config->vec_c11 = i_micro_kernel_config->reserved_zmms + 7;
+        i_micro_kernel_config->reserved_zmms += 8;
 
-      /* Dedicated absmask zmm for the BF4 convert */
-      i_micro_kernel_config->vec_tmp3 = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->reserved_zmms += 1;
+        /* Dedicated absmask zmm for the BF4 convert */
+        i_micro_kernel_config->vec_tmp3 = i_micro_kernel_config->reserved_zmms;
+        i_micro_kernel_config->reserved_zmms += 1;
+      }
 
       i_micro_kernel_config->blend_tmp_mask = i_micro_kernel_config->reserved_mask_regs;
       i_micro_kernel_config->dcvt_mask_aux0 = i_micro_kernel_config->reserved_mask_regs + 1;
@@ -3830,24 +3840,27 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
         "nvfp4_quant_c3", i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c3);
       libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_nvfp4_quant_c4,
         "nvfp4_quant_c4", i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c4);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_16bit_ones, "l_vec_ones",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound0, "l_bound0",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c5);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound1, "l_bound1",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c6);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound2, "l_bound2",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c7);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound3, "l_bound3",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c8);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound4, "l_bound4",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c9);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound5, "l_bound5",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c10);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound6, "l_bound6",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c11);
-      libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_nvfp4_absmask, "nvfp4_absmask",
-        i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_tmp3);
+      /* BF16 -> BF4S emulation constants; skipped on targets newer than ACE1 (native instruction) */
+      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_ACE1) {
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_16bit_ones, "l_vec_ones",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound0, "l_bound0",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c5);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound1, "l_bound1",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c6);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound2, "l_bound2",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c7);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound3, "l_bound3",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c8);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound4, "l_bound4",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c9);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound5, "l_bound5",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c10);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_bound6, "l_bound6",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c11);
+        libxsmm_x86_instruction_full_vec_load_of_constants(io_generated_code, (const unsigned char*)l_nvfp4_absmask, "nvfp4_absmask",
+          i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_tmp3);
+      }
       /* Zero register */
       libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
         i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg);

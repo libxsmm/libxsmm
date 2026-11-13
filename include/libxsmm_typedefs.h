@@ -91,16 +91,22 @@
   (LIBXSMM_DATATYPE_MXBF8 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_MXHF8 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_MXINT8 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_MXUINT8 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_MXBF6 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_MXHF6 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I4X2 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_U4X2 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_MXFP4X2 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_NVFP4X2 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_FMXFP4X2 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_MXINT4X2 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_MXUINT4X2 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_FMXINT4X2 == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_FMXUINT4X2 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I2X4 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_DATATYPE_I1X8 == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))))))))))))))))))
+    0/*invalid*/))))))))))))))))))))))))))))))))))
 
 /* Get signed precision datatype regardless of signed or unsigned input */
 #  define LIBXSMM_GETENUM_SIGNED_DATATYPE(SRC) ( \
@@ -122,18 +128,24 @@
   (LIBXSMM_DATATYPE_MXBF8       == (SRC)) ? LIBXSMM_DATATYPE_MXBF8 : ( \
   (LIBXSMM_DATATYPE_MXHF8       == (SRC)) ? LIBXSMM_DATATYPE_MXHF8 : ( \
   (LIBXSMM_DATATYPE_MXINT8      == (SRC)) ? LIBXSMM_DATATYPE_MXINT8 : ( \
+  (LIBXSMM_DATATYPE_MXUINT8     == (SRC)) ? LIBXSMM_DATATYPE_MXINT8 : ( \
   (LIBXSMM_DATATYPE_MXBF6       == (SRC)) ? LIBXSMM_DATATYPE_MXBF6 : ( \
   (LIBXSMM_DATATYPE_MXHF6       == (SRC)) ? LIBXSMM_DATATYPE_MXHF6 : ( \
   (LIBXSMM_DATATYPE_I4X2        == (SRC)) ? LIBXSMM_DATATYPE_I4X2 : ( \
   (LIBXSMM_DATATYPE_U4X2        == (SRC)) ? LIBXSMM_DATATYPE_I4X2 : ( \
   (LIBXSMM_DATATYPE_MXFP4X2     == (SRC)) ? LIBXSMM_DATATYPE_MXFP4X2 : ( \
   (LIBXSMM_DATATYPE_NVFP4X2     == (SRC)) ? LIBXSMM_DATATYPE_NVFP4X2 : ( \
+  (LIBXSMM_DATATYPE_FMXFP4X2    == (SRC)) ? LIBXSMM_DATATYPE_NVFP4X2 : ( \
+  (LIBXSMM_DATATYPE_MXINT4X2    == (SRC)) ? LIBXSMM_DATATYPE_MXINT4X2 : ( \
+  (LIBXSMM_DATATYPE_MXUINT4X2   == (SRC)) ? LIBXSMM_DATATYPE_MXINT4X2 : ( \
+  (LIBXSMM_DATATYPE_FMXINT4X2   == (SRC)) ? LIBXSMM_DATATYPE_FMXINT4X2 : ( \
+  (LIBXSMM_DATATYPE_FMXUINT4X2  == (SRC)) ? LIBXSMM_DATATYPE_FMXINT4X2 : ( \
   (LIBXSMM_DATATYPE_I2X4        == (SRC)) ? LIBXSMM_DATATYPE_I2X4 : ( \
   (LIBXSMM_DATATYPE_I1X8        == (SRC)) ? LIBXSMM_DATATYPE_I1X8 : ( \
   (LIBXSMM_DATATYPE_IMPLICIT    == (SRC)) ? LIBXSMM_DATATYPE_IMPLICIT : ( \
   (LIBXSMM_DATATYPE_UNSUPPORTED == (SRC)) ? LIBXSMM_DATATYPE_UNSUPPORTED : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))))))))))))))))))))
+    0/*invalid*/))))))))))))))))))))))))))))))))))))
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
 #define LIBXSMM_DATATYPE(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_DATATYPE_, LIBXSMM_TYPESYMBOL(TYPE))
@@ -173,6 +185,8 @@ typedef unsigned int libxsmm_bitfield;
 typedef unsigned short libxsmm_bfloat16;
 typedef unsigned char  libxsmm_bfloat8;
 typedef unsigned char  libxsmm_hfloat8;
+/** Unsigned E5M3 (5-bit exponent, bias 15, 3-bit mantissa), used for micro-scaling only. */
+typedef unsigned char  libxsmm_ue5m3;
 typedef unsigned short libxsmm_float16;
 
 LIBXSMM_EXTERN_C typedef union libxsmm_float_uint {
@@ -240,12 +254,18 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_MXBF8,
   LIBXSMM_DATATYPE_MXHF8,
   LIBXSMM_DATATYPE_MXINT8,
+  LIBXSMM_DATATYPE_MXUINT8,
   LIBXSMM_DATATYPE_MXBF6,
   LIBXSMM_DATATYPE_MXHF6,
   LIBXSMM_DATATYPE_I4X2,
   LIBXSMM_DATATYPE_U4X2,
   LIBXSMM_DATATYPE_MXFP4X2,
   LIBXSMM_DATATYPE_NVFP4X2,
+  LIBXSMM_DATATYPE_FMXFP4X2,
+  LIBXSMM_DATATYPE_MXINT4X2,
+  LIBXSMM_DATATYPE_MXUINT4X2,
+  LIBXSMM_DATATYPE_FMXINT4X2,
+  LIBXSMM_DATATYPE_FMXUINT4X2,
   LIBXSMM_DATATYPE_I2X4,
   LIBXSMM_DATATYPE_I1X8,
   LIBXSMM_DATATYPE_BF32,

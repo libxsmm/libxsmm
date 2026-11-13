@@ -1311,6 +1311,23 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_TOP4MXHF8PS", &mycode, LIBXSMM_X86_INSTR_TOP4MXHF8PS, 0, 0x01, 8 );
   test_evex_compute_3reg_general( "evex_reg_TOP4MXBSSPS", &mycode, LIBXSMM_X86_INSTR_TOP4MXBSSPS, 0, 0x01, 8 );
 
+  /* ACEv1 helper */
+  test_evex_compute_3reg_general( "evex_reg_VPINTERLEAVELB", &mycode, LIBXSMM_X86_INSTR_VPINTERLEAVELB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPINTERLEAVEHB", &mycode, LIBXSMM_X86_INSTR_VPINTERLEAVEHB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPINTERLEAVELW", &mycode, LIBXSMM_X86_INSTR_VPINTERLEAVELW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPINTERLEAVEHW", &mycode, LIBXSMM_X86_INSTR_VPINTERLEAVEHW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+
+  /* ACEv2 */
+  test_evex_compute_3reg_general( "evex_reg_TOP2PHPS", &mycode, LIBXSMM_X86_INSTR_TOP2PHPS, 0, LIBXSMM_X86_IMM_UNDEF, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP4MXBSUPS", &mycode, LIBXSMM_X86_INSTR_TOP4MXBSUPS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP4MXBUSPS", &mycode, LIBXSMM_X86_INSTR_TOP4MXBUSPS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP4MXBUUPS", &mycode, LIBXSMM_X86_INSTR_TOP4MXBUUPS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP8MXBF4PS", &mycode, LIBXSMM_X86_INSTR_TOP8MXBF4PS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP8MXNSSPS", &mycode, LIBXSMM_X86_INSTR_TOP8MXNSSPS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP8MXNSUPS", &mycode, LIBXSMM_X86_INSTR_TOP8MXNSUPS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP8MXNUSPS", &mycode, LIBXSMM_X86_INSTR_TOP8MXNUSPS, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_TOP8MXNUUPS", &mycode, LIBXSMM_X86_INSTR_TOP8MXNUUPS, 0, 0x01, 8 );
+
   /* VEX only */
   mycode.arch = LIBXSMM_X86_AVX2_SRF;
   test_vex_compute_3reg_general( "vex_reg_VMOVD_LD", &mycode, LIBXSMM_X86_INSTR_VMOVD_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );

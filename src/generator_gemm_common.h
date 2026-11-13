@@ -28,7 +28,19 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_mixed_int8_gemm ( const libxsmm_g
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_ace_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_16bit_ace_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxint4_Bmxint4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxint8_Bmxint8_unsigned_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amx4_Bmx4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_mx_block_size ( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_use_e5m3_block_scales ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp6_Bmxfp6_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
@@ -492,15 +504,18 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_use_ace_fp32_via_bf16( const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_use_vnnild_unpck_A_bf16( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+unsigned int libxsmm_generator_gemm_use_nvfp4_e4m3_to_e5m3_cvt( const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_use_vnnild_unpck_A_fp8( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_A_bf16( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_use_vnnild_unpck_B_bf16( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_A_fp8( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_use_vnnild_unpck_B_fp8( const libxsmm_gemm_descriptor*     i_xgemm_desc );
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_B_bf16( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor*     i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_use_vnnild_unpck_B_fp8( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor*     i_xgemm_desc );
 
 #endif /* GENERATOR_GEMM_COMMON_H */

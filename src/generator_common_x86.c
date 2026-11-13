@@ -4795,6 +4795,11 @@ void libxsmm_generator_vcvtbf162bf4s_avx512_prepped_regs( libxsmm_generated_code
                                                           const unsigned int      i_vec_ones16,
                                                           const unsigned int      i_vec_zero,
                                                           const unsigned int      i_blend_mask ) {
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTBF162BF4S, i_vname,
+      io_vec_reg, io_vec_reg );
+    return;
+  }
   /* Get absolute value */
   libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
     io_vec_reg, i_vec_absmask, i_vec_tmp0);
@@ -4866,6 +4871,11 @@ void libxsmm_generator_vcvt2bf162bf4s_avx512_prepped_regs ( libxsmm_generated_co
                                                            const unsigned int      i_vec_ones16,
                                                            const unsigned int      i_vec_zero,
                                                            const unsigned int      i_blend_mask ) {
+  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVT2BF162BF4S, i_vname,
+      io_vec_reg0, io_vec_reg1, o_vec_reg );
+    return;
+  }
   /* Convert first 32 BF16 -> 16 packed BF4 bytes in low xmm of io_vec_reg0 */
   libxsmm_generator_vcvtbf162bf4s_avx512_prepped_regs( io_generated_code, i_vname, io_vec_reg0,
     i_vec_tmp0, i_vec_tmp1, i_vec_absmask, i_vec_bound0, i_vec_bound1, i_vec_bound2, i_vec_bound3,
@@ -4893,6 +4903,12 @@ void libxsmm_generator_vcvtbf162bf8_avx512( libxsmm_generated_code* io_generated
    * interface does not expose a temporary, it is allocated internally and saved/restored on the
    * stack. */
   unsigned int l_vec_tmp = 0;
+
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTBF162BF8S, i_vname,
+      i_vec_reg, o_vec_reg );
+    return;
+  }
 
   /* pick a scratch vreg that does not collide with the in-/output registers */
   while ( (l_vec_tmp == i_vec_reg) || (l_vec_tmp == o_vec_reg) ) {
@@ -4944,6 +4960,11 @@ void libxsmm_generator_vcvt2bf162bf8_avx512( libxsmm_generated_code* io_generate
                                              const unsigned int      o_vec_reg ) {
   /* Converts two zmm registers holding 32 BF16 values each (64 BF16 in total) into 64 BF8 values
    * held in zmm o_vec_reg, reusing libxsmm_generator_vcvtbf162bf8_avx512 as building block. */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVT2BF162BF8S, i_vname,
+      io_vec_reg0, io_vec_reg1, o_vec_reg );
+    return;
+  }
   /* first 32 BF16 -> 32 BF8 in the low ymm of io_vec_reg0 */
   libxsmm_generator_vcvtbf162bf8_avx512( io_generated_code, i_vname, io_vec_reg0, io_vec_reg0 );
   /* second 32 BF16 -> 32 BF8 in the low ymm of io_vec_reg1 */
@@ -4966,6 +4987,11 @@ void libxsmm_generator_vcvtbf162hf8_avx512( libxsmm_generated_code* io_generated
    *   3) FP16 -> HF8
    * No auxiliary stack is used: a caller-provided scratch register i_vec_tmp holds the converted
    * upper half. The input register i_vec_reg is preserved; i_vec_tmp is clobbered. */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTBF162HF8S, i_vname,
+      i_vec_reg, o_vec_reg );
+    return;
+  }
   /* bring the upper 16 BF16 lanes of i_vec_reg into the low half of the scratch register */
   libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI64X4, i_vname,
                                                  i_vec_reg, i_vec_tmp, 0x1 );
@@ -5005,6 +5031,11 @@ void libxsmm_generator_vcvthf82bf16_avx512( libxsmm_generated_code* io_generated
    *   3) FP32 -> BF16 per 16-wide half
    * No auxiliary stack is used: a caller-provided scratch register i_vec_tmp holds the converted
    * upper half. The input register i_vec_reg is preserved; i_vec_tmp is clobbered. */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_ACE2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTHF82BF16, i_vname,
+      i_vec_reg, o_vec_reg );
+    return;
+  }
   /* HF8 -> FP16: 32 HF8 (ymm i_vec_reg) -> 32 FP16 (zmm o_vec_reg) */
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEHF82PH, i_vname,
                                             i_vec_reg, o_vec_reg );
