@@ -2047,14 +2047,19 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
   else # macOS
-    SDKROOT := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr
-    ifneq (,$(wildcard $(SDKROOT)))
+    # SDKROOT (an SDK path or name) selects the SDK for xcrun and the Apple tools
+    # and must not be overwritten: xcrun resolves it, or reports the default SDK
+    MACSDK := $(shell xcrun --show-sdk-path 2>/dev/null)
+    ifneq (,$(if $(MACSDK),$(wildcard $(MACSDK)/usr)))
       ifeq (0,$(CLANG))
-        IFLAGS += -I$(SDKROOT)/include
-        LDFLAGS += -L$(SDKROOT)/lib
+        IFLAGS += -I$(MACSDK)/usr/include
+        LDFLAGS += -L$(MACSDK)/usr/lib
+      else # Clang outside of Xcode (e.g., Homebrew) may not find the SDK otherwise
+        IFLAGS += -isysroot $(MACSDK)
+        LDFLAGS += -isysroot $(MACSDK)
       endif
       ifneq (0,$(FORTRAN))
-        FLDFLAGS += -L$(SDKROOT)/lib
+        FLDFLAGS += -L$(MACSDK)/usr/lib
       endif
     else  # SDK path not found
       LIBSYSTEM := $(call libpath,$(LD),$(SLDFLAGS),System)
