@@ -26,6 +26,10 @@ void libxsmm_reference_ternary_elementwise(libxsmm_meltw_ternary_param *param, c
 LIBXSMM_API_INTERN
 void libxsmm_reference_elementwise(void *param,  const libxsmm_meltw_descriptor *i_mateltwise_desc);
 
+/** Non-zero if the reference implementation covers the operation and datatypes. */
+LIBXSMM_API_INTERN
+unsigned int libxsmm_reference_elementwise_supported(const libxsmm_meltw_descriptor *i_mateltwise_desc);
+
 #endif /* GENERATOR_MATELTWISE_REFERENCE_IMPL_H */
 
 

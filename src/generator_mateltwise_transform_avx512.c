@@ -4915,6 +4915,10 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                           l_gp_reg_mask, l_mask_reg_0,
                                                                           i_micro_kernel_config, i_mateltwise_desc);
+    } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_NORM ) {
+      libxsmm_generator_transform_vnni8_to_norm_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                             l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                             i_micro_kernel_config, i_mateltwise_desc);
     } else if ( libxsmm_meltw_descriptor_get_param(i_mateltwise_desc) == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 ) {
       libxsmm_generator_transform_norm_to_vnni4_08bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,

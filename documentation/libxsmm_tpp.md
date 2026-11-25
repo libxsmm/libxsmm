@@ -48,6 +48,8 @@ libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasin
 libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags );
 ```
 
+Pure data-movement TPPs (all `LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_*`, `GATHER`, `SCATTER`, and `IDENTITY`/`REPLICATE_COL_VAR` with `in0_type == out_type`) perform no computation: `comp_type` can be `LIBXSMM_DATATYPE_IMPLICIT`. Transforms, gather and scatter only depend on the element width, i.e., the same kernel is used for any signed, unsigned or floating-point type of equal width (`in0_type` and `out_type` must be the same type, signedness aside).
+
 ### Binary Operations
 
 ```

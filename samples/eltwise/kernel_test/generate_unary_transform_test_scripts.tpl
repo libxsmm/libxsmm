@@ -14,7 +14,7 @@ trap 'rm -f ${TMPFILE} ${TMPFILE2}' EXIT
 
 PREC=PRECDESC
 
-for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'F' 'G' 'H' 'I' 'N' 'M' 'X' 'Y' 'Z' 'B' 'C' 'D'; do
+for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'F' 'G' 'H' 'I' 'N' 'J' 'M' 'X' 'Y' 'Z' 'B' 'C' 'D'; do
   for LD in 'eqld' 'gtld'; do
     TPPNAME="none"
     OUTNAME="${HERE}/unary_transform_"
@@ -33,7 +33,7 @@ for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'F' 'G' 'H' 'I' 'N' 'M' 'X' 'Y' 'Z' 'B' 'C' 
     fi
 
     # some transforms work only for 8bit
-    if [[ (("$TYPE" == 'N') || ("$TYPE" == 'M')) && (("$PREC" == 'I16') || ("$PREC" == 'BF16') || ("$PREC" == 'F16')) ]]; then
+    if [[ (("$TYPE" == 'N') || ("$TYPE" == 'J') || ("$TYPE" == 'M')) && (("$PREC" == 'I16') || ("$PREC" == 'BF16') || ("$PREC" == 'F16')) ]]; then
       continue
     fi
 
@@ -92,6 +92,10 @@ for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'F' 'G' 'H' 'I' 'N' 'M' 'X' 'Y' 'Z' 'B' 'C' 
       TPPNAME="vnni4_to_norm"
       MSTART=4
       MSTEP=4
+    elif [ "$TYPE" == 'J' ] ; then
+      TPPNAME="vnni8_to_norm"
+      MSTART=8
+      MSTEP=8
     elif [ "$TYPE" == 'M' ] ; then
       TPPNAME="vnni4_to_vnni2"
       MSTART=4
@@ -171,6 +175,9 @@ for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'F' 'G' 'H' 'I' 'N' 'M' 'X' 'Y' 'Z' 'B' 'C' 
       sed "s/+ str(m) + '_' +/+ str(n) + '_' +/g" ${TMPFILE2} > ${TMPFILE}
       cp ${TMPFILE} ${OUTNAME}
     elif [ "$TYPE" == 'N' ] ; then
+      sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+      cp ${TMPFILE} ${OUTNAME}
+    elif [ "$TYPE" == 'J' ] ; then
       sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
       cp ${TMPFILE} ${OUTNAME}
     elif [ "$TYPE" == 'M' ] ; then
