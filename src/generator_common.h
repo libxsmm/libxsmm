@@ -1717,6 +1717,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fp32_to_bf16_b_sw_pipeline;
   unsigned int fp32_via_bf16_k_pad;
   unsigned int fp32_via_bf16_original_lda;
+  /* pre-DMR AMX FP8 GEMM: A and B are upconverted FP8 -> BF16 inline in the SW pipeline */
+  unsigned int fp8_via_bf16_sw_pipeline;
+  unsigned int fp8_via_bf16_a_vnni4;
+  unsigned int fp8_via_bf16_a_dtype;
+  unsigned int fp8_via_bf16_b_dtype;
+  unsigned int fp8_via_bf16_b_lut_reg;
   unsigned int atvnni_gemm_stack_alloc_tensors;
   unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
