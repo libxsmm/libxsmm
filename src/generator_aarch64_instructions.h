@@ -355,6 +355,13 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V     0x4e80ac13
 #define LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_E_V    0x0f40f00f
 #define LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_V      0x2e40fc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SHLL_V       0x2e213802 /* shift left long by element size (4H -> 4S, 8H -> 4S high) */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_RADDHN_V     0x2e204003 /* rounding add, narrow to high half (4H/8B/2S dest) */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SDOT_V       0x0e809413
+#define LIBXSMM_AARCH64_INSTR_ASIMD_UDOT_V       0x2e809413
+#define LIBXSMM_AARCH64_INSTR_ASIMD_USDOT_V      0x0e809c13 /* src0 unsigned, src1 signed */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SUB_V        0x2e208403
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SCVTF_V      0x0e21d80a
 
 /* define SVE LD/ST instriction */
 #define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006
@@ -475,6 +482,8 @@
 
 #define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V        0x64608003 /* BF16 dot-product */
 #define LIBXSMM_AARCH64_INSTR_SVE_USDOT_V        0x44807803
+#define LIBXSMM_AARCH64_INSTR_SVE_SDOT_V         0x44800003
+#define LIBXSMM_AARCH64_INSTR_SVE_UDOT_V         0x44800403
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */

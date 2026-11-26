@@ -1029,7 +1029,8 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
   libxsmm_hfloat8* hf8_data = (libxsmm_hfloat8*) data;
   int* i_data = (int*) data;
   short* s_data = (short*) data;
-  char* sc_data = (char*) data;
+  /* plain char is unsigned on aarch64 */
+  signed char* sc_data = (signed char*) data;
   unsigned char* uc_data = (unsigned char*) data;
   libxsmm_blasint l_r, l_i, l_j;
 
@@ -1066,7 +1067,7 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
                if ( pos_val_only != 0 ) {
                 uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%256;
               } else {
-                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%2;
+                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (signed char)(((signed char) (get_random_posneg_p5_num() * 10.0))%2);
               }
             } else if (i_gemm_def->is_Ai1Bi8_gemm > 0) {
                 unsigned char coin = ((unsigned char) (get_random_pos_p5_num() * 10.0))%2;
@@ -1075,14 +1076,14 @@ void init_random_matrix( const gemm_def *i_gemm_def, const libxsmm_datatype dtyp
               if ( pos_val_only != 0 ) {
                 uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((unsigned char) (get_random_pos_p5_num() * 10.0))%16;
               } else {
-                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = ((char) (get_random_posneg_p5_num() * 10.0))%8;
+                sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (signed char)(((signed char) (get_random_posneg_p5_num() * 10.0))%8);
               }
             }
           } else {
             if ( pos_val_only != 0 ) {
               uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (unsigned char) (get_random_pos_p5_num() * 20.0);
             } else {
-              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) (get_random_posneg_p5_num() * 40.0);
+              sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (signed char) (get_random_posneg_p5_num() * 40.0);
             }
           }
         } else {
@@ -1399,8 +1400,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if (i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
-    const char* c_a = (const char*)a;
-    const char* c_b = (const char*)b;
+    const signed char* c_a = (const signed char*)a;
+    const signed char* c_b = (const signed char*)b;
     float*  i_c_f = (float*)c;
     libxsmm_bfloat16* i_c_bf16 = (libxsmm_bfloat16*)c;
     int l_k_block = 32;
@@ -1834,8 +1835,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
-    const char* c_a = (const char*)a;
-    const char* c_b = (const char*)b;
+    const signed char* c_a = (const signed char*)a;
+    const signed char* c_b = (const signed char*)b;
     int*           i_c = (int*)c;
     int l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
@@ -1865,7 +1866,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     const unsigned char* c_a = (const unsigned char*)a;
-    const char*          c_b = (const char*)b;
+    const signed char*   c_b = (const signed char*)b;
     int*                 i_c = (int*)c;
     int l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
     if (i_gemm_def->is_Ai1Bi8_gemm > 0 || i_gemm_def->is_Ai2Bi8_gemm > 0) {
@@ -1894,7 +1895,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
-    const char*          c_a = (const char*)a;
+    const signed char*   c_a = (const signed char*)a;
     const unsigned char* c_b = (const unsigned char*)b;
     int*                 i_c = (int*)c;
     int l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
@@ -1957,8 +1958,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
-    const char*          c_a = (const char*)a;
-    const char*          c_b = (const char*)b;
+    const signed char*   c_a = (const signed char*)a;
+    const signed char*   c_b = (const signed char*)b;
     float*         c_c = (float*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -1991,7 +1992,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     const unsigned char* c_a = (const unsigned char*)a;
-    const char*          c_b = (const char*)b;
+    const signed char*   c_b = (const signed char*)b;
     float*               c_c = (float*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -2023,7 +2024,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
-    const char*          c_a = (const char*)a;
+    const signed char*   c_a = (const signed char*)a;
     const unsigned char* c_b = (const unsigned char*)b;
     float*         c_c = (float*)c;
     int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
@@ -2054,7 +2055,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
   } else if ( (i_gemm_def->a_type    == LIBXSMM_DATATYPE_I8)  &&
               (i_gemm_def->b_type    == LIBXSMM_DATATYPE_BF16) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) ) {
-    const char*                c_a = (const char*)a;
+    const signed char*         c_a = (const signed char*)a;
     const libxsmm_bfloat16* bf16_b = (const libxsmm_bfloat16*)b;
     libxsmm_bfloat16*       bf16_c = (libxsmm_bfloat16*)c;
     float*                   f32_c = (float*)c;
@@ -2162,7 +2163,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F16) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F16) &&
               ((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT))  ) {
-    const char*              c_a = (const char*)a;
+    const signed char*       c_a = (const signed char*)a;
     const libxsmm_float16* f16_b = (const libxsmm_float16*)b;
     libxsmm_float16*       f16_c = (libxsmm_float16*)c;
     libxsmm_float16 c_tmp, cur_a, cur_b;
@@ -2232,7 +2233,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F16) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               ((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT))  ) {
-    const char*              c_a = (const char*)a;
+    const signed char*       c_a = (const signed char*)a;
     const libxsmm_float16* f16_b = (const libxsmm_float16*)b;
     float*                 f32_c = (float*)c;
     float c_tmp_f32;

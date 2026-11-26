@@ -263,7 +263,13 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
     is_valid_arch_prec = 0;
   }
   /* all-BF16 in/out/compute needs no BF16 conversion instructions */
+  /* ASIMD unary/binary TPPs convert via SHLL / the RNE replacement sequence */
   if ((has_inp_or_out_bf16 > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV2) &&
+      !((io_generated_code->arch < LIBXSMM_AARCH64_SVE128) &&
+        ((libxsmm_meltw_descriptor_get_operation(i_mateltwise_desc) == LIBXSMM_MELTW_OPERATION_BINARY) ||
+         ((libxsmm_meltw_descriptor_get_operation(i_mateltwise_desc) == LIBXSMM_MELTW_OPERATION_UNARY) &&
+          (libxsmm_meqn_is_unary_opcode_reduce_kernel(libxsmm_meltw_descriptor_get_param(i_mateltwise_desc)) == 0) &&
+          (libxsmm_meqn_is_unary_opcode_reduce_cols_idx_kernel(libxsmm_meltw_descriptor_get_param(i_mateltwise_desc)) == 0)))) &&
       !((LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
         (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) &&
         (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)))) {

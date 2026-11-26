@@ -670,6 +670,9 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   else if (strcmp(arch, "appl_m1") == 0) {
     target_archid = LIBXSMM_AARCH64_APPL_M1;
   }
+  else if (strcmp(arch, "appl_m4") == 0) {
+    target_archid = LIBXSMM_AARCH64_APPL_M4;
+  }
   else if (strcmp(arch, "sve128") == 0) {
     target_archid = LIBXSMM_AARCH64_SVE128;
   }
@@ -890,6 +893,12 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype datatype)
       result = 8;
     } else {
       result = 1;
+    }
+    /* ASIMD targets (and M4) use the dot-product (VNNI4) layout for int8 */
+    if ( (type == LIBXSMM_DATATYPE_I8) &&
+         ( ((libxsmm_target_archid >= LIBXSMM_AARCH64_V81) && (libxsmm_target_archid < LIBXSMM_AARCH64_SVE128)) ||
+           (libxsmm_target_archid == LIBXSMM_AARCH64_APPL_M4) ) ) {
+      result = 4;
     }
   }
 #endif
