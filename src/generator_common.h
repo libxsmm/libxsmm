@@ -2485,12 +2485,6 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int* o_range_1, unsigned int* o_block_1,
   unsigned int* o_range_2, unsigned int* o_block_2 );
 
-typedef enum libxsmm_ulp_precision {
-  LIBXSMM_ULP_PRECISION_HALF_ULP, /* rounded correctly */
-  LIBXSMM_ULP_PRECISION_ONE_ULP, /* perfect except for last bit */
-  LIBXSMM_ULP_PRECISION_ESTIMATE /* can be pretty bad, but should have the correct order of magnitude */
-} libxsmm_ulp_precision;
-
 typedef union libxsmm_ref_code_pointer {
   void (*ptr_gemm_fn)(void*, const libxsmm_gemm_descriptor*);
   void (*ptr_eltw_fn)(void*, const libxsmm_meltw_descriptor *i_mateltwise_desc);
@@ -2500,10 +2494,11 @@ typedef union libxsmm_ref_code_pointer {
   intptr_t ival;
 } libxsmm_ref_code_pointer;
 
-/** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or estimate for just an estimate
- * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}
+/** Library-wide approximate-math control: returns 1 (default) if fast approximations
+ * (e.g. reciprocal/rsqrt estimates, low-order exp) may be used, 0 if LIBXSMM_FAST_MATH_OFF
+ * is set to a non-zero value (IEEE div/sqrt and the most accurate available exp).
  */
-LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void);
+LIBXSMM_API_INTERN int libxsmm_generator_fast_math(void);
 
 LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_A_PREC(const unsigned char *datatype);
 LIBXSMM_API_INTERN int LIBXSMM_GEMM_GETENUM_B_PREC(const unsigned char *datatype);
