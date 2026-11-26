@@ -664,7 +664,8 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # Export IDOT variable
-                  if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
+                  if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'U8_I8_I32_I32' || \
+                          "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_I8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
                     sed 's/LIBXSMM_ENV_VAR/LIBXSMM_AARCH64_USE_I8DOT/g' ${HERE}/${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/${OUTNAME}
                   fi
@@ -716,7 +717,8 @@ for BINARY_POSTOP in 0 1; do
                   fi
 
                   # MMLA for I8
-                  if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' ||  "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'I8_I8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
+                  if [[ ( "$PREC" == 'I8_U8_I32_F32' || "$PREC" == 'I8_U8_I32_I32' || "$PREC" == 'U8_I8_I32_F32' || "$PREC" == 'U8_I8_I32_I32' || \
+                          "$PREC" == 'U8_U8_I32_F32' || "$PREC" == 'U8_U8_I32_I32' || "$PREC" == 'I8_I8_I32_F32' || "$PREC" == 'I8_I8_I32_I32' ) && ("$AVNNI" == '1') ]] ; then
                     cp ${HERE}/${OUTNAME} ${HERE}/mmla_${OUTNAME}
                     sed 's/randnumk = rnd.sample(range(4,101,4)/randnumk = rnd.sample(range(8,201,8)/g' ${HERE}/mmla_${OUTNAME} >${TMPFILE}
                     cp ${TMPFILE} ${HERE}/mmla_${OUTNAME}

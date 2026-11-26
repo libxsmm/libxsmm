@@ -29,13 +29,29 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
-    const unsigned int i_vec_inout,
+    const unsigned int i_vec_in,
+    const unsigned int o_vec_out,
     const unsigned int i_pred_reg);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32bf16_aarch64_sve( libxsmm_generated_code* io_generated_code,
-    const unsigned int i_vec_inout,
+    const unsigned int i_vec_in,
+    const unsigned int o_vec_out,
     const unsigned int i_pred_reg);
+
+/* BF16 (low 4H) -> F32 (4S) */
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_in,
+    const unsigned int o_vec_out );
+
+/* F32 (4S) -> BF16 (low 4H), RNE replacement sequence; tmps must differ from i_vec_in and each other */
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32bf16_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_in,
+    const unsigned int o_vec_out,
+    const unsigned int i_vec_tmp0,
+    const unsigned int i_vec_tmp1 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32i8_aarch64( libxsmm_generated_code* io_generated_code,
@@ -58,14 +74,27 @@ void libxsmm_generator_vcvt_i8f32_aarch64( libxsmm_generated_code* io_generated_
  * @param io_generated_code will be updated with respective instructions.
  * @param i_pred_reg id of the predicate register which is set.
  **/
+/* int8 GEMM uses the dot-product path (instead of MMLA): requested via env, or ASIMD targets which only have the dot kernel */
 LIBXSMM_API_INTERN
-void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generated_code,
-    const unsigned int i_vec_inout,
-    const unsigned int i_pred_reg);
+int libxsmm_generator_aarch64_gemm_use_i8dot( const unsigned int i_arch );
+
+/* ASIMD targets: only APPL_M4 has I8MM (USDOT); V82/APPL_M1 are assumed to have DotProd only */
+LIBXSMM_API_INTERN
+int libxsmm_generator_aarch64_asimd_has_i8mm( const unsigned int i_arch );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_in,
+    const unsigned int o_vec_out,
+    const unsigned int i_pred_reg);
+
+/* the tmps are only needed on ASIMD targets (pass LIBXSMM_AARCH64_ASIMD_REG_UNDEF on SVE-only paths) */
+LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generated_code,
-    const unsigned int i_vec_inout,
+    const unsigned int i_vec_in,
+    const unsigned int o_vec_out,
+    const unsigned int i_vec_tmp0,
+    const unsigned int i_vec_tmp1,
     const unsigned int i_pred_reg);
 
 LIBXSMM_API_INTERN

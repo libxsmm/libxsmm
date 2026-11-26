@@ -1136,6 +1136,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
           if ( LIBXSMM_DATATYPE_BF16 == l_bias_tsize ) {
             libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code,
                                                         l_m,
+                                                        l_m,
                                                         LIBXSMM_AARCH64_SVE_REG_UNDEF );
           }
 
@@ -1157,6 +1158,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                               l_matrix_full_vector_mask );
         if ( LIBXSMM_DATATYPE_BF16 == l_matrix_tsize ) {
           libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code,
+                                                      l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                                       l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                                       LIBXSMM_AARCH64_SVE_REG_UNDEF );
         }
@@ -1189,6 +1191,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
           if ( LIBXSMM_DATATYPE_BF16 == l_bias_tsize ) {
             libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code,
                                                         l_m_blocks[0],
+                                                        l_m_blocks[0],
                                                         LIBXSMM_AARCH64_SVE_REG_UNDEF );
           }
         }
@@ -1203,6 +1206,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
 
         if ( LIBXSMM_DATATYPE_BF16 == l_matrix_tsize ) {
           libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code,
+                                                      l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
                                                       l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
                                                       LIBXSMM_AARCH64_SVE_REG_UNDEF );
         }
@@ -1249,6 +1253,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
           if ( LIBXSMM_DATATYPE_BF16 == l_bias_tsize ) {
             libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code,
                                                         l_m,
+                                                        l_m,
                                                         LIBXSMM_AARCH64_SVE_REG_UNDEF );
           }
 
@@ -1276,6 +1281,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                                 l_bias_partial_vector_mask );
           if ( LIBXSMM_DATATYPE_BF16 == l_bias_tsize ) {
             libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code,
+                                                        l_m_blocks[0],
                                                         l_m_blocks[0],
                                                         LIBXSMM_AARCH64_SVE_REG_UNDEF );
           }
@@ -1955,7 +1961,8 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
                                                                     const unsigned int              i_arch ) {
   unsigned int l_m_blocking = 0;
 
-  if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) {
+  if ( ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ) ||
+       ( ( i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 || i_arch == LIBXSMM_AARCH64_APPL_M4 ) && ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 16 ) {
@@ -2065,7 +2072,8 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
                                                                const unsigned int             i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;
 
-  if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && (( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )) ) {
+  if ( ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && (( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )) ) ||
+       ( ( i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 || i_arch == LIBXSMM_AARCH64_APPL_M4 ) && ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
     if (i_current_m_blocking == 16) {
       l_m_blocking = i_xgemm_desc->m % 16;
@@ -2223,7 +2231,10 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   /* register blocking counter in n */
   unsigned int l_n = 0;
   libxsmm_blasint l_aarch64_bfdot = (libxsmm_blasint)libxsmm_cpuid_arm_use_bfdot();
-  libxsmm_blasint l_aarch64_i8dot = (libxsmm_blasint)libxsmm_cpuid_arm_use_i8dot();
+  libxsmm_blasint l_aarch64_i8dot = (libxsmm_blasint)libxsmm_generator_aarch64_gemm_use_i8dot( io_generated_code->arch );
+  const unsigned int l_is_asimd = ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) ? 1 : 0;
+  /* the ASIMD int8 dot kernel walks the B columns with ldb in help_2 (help_2+n would clobber the scf register) */
+  const unsigned int l_is_asimd_i8dot = ( (l_is_asimd > 0) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) ? 1 : 0;
 
   /* preload offset of B */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
@@ -2287,7 +2298,10 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   }
 
   /* load b offsets */
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
+  if ( l_is_asimd_i8dot > 0 ) {
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,
+                                               (long long)i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in );
+  } else if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
     if ( i_n_blocking < 7 ) {
       for ( l_n = 1; l_n < i_n_blocking; l_n++ ) {
         /* handle trans B */

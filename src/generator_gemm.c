@@ -13,6 +13,7 @@
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
 #include "generator_gemm_aarch64.h"
+#include "generator_common_aarch64.h"
 #include "generator_gemm_sme.h"
 #include "generator_gemm_rv64.h"
 #include "generator_gemm_noarch.h"
@@ -45,7 +46,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
   int l_aarch64_bfdot = libxsmm_cpuid_arm_use_bfdot();
-  int l_aarch64_i8dot = libxsmm_cpuid_arm_use_i8dot();
+  int l_aarch64_i8dot = libxsmm_generator_aarch64_gemm_use_i8dot( io_generated_code->arch );
   unsigned int l_saved_arch = io_generated_code->arch;
   unsigned int l_is_Ai4_Bi8_gemm = libxsmm_x86_is_Ai4_Bi8_gemm(i_xgemm_desc);
   unsigned int l_is_Ai2_Bi8_gemm = libxsmm_x86_is_Ai2_Bi8_gemm(i_xgemm_desc);
@@ -993,13 +994,15 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     }
     /* ASIMD + BFDOT */
-    if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
-#if 0
-      l_vector_length = 4;
-#else
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-     return;
-#endif
+    if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M4 ) {
+      /* ASIMD int8 dot kernel: needs DotProd (not in the V81 baseline) and VNNI4 A */
+      if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) &&
+           (io_generated_code->arch != LIBXSMM_AARCH64_V81) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
+        l_vector_length = 4;
+      } else {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
     }
     /* SVE256 + BFDOT */
     else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
@@ -1037,10 +1040,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) ) {
       if (l_xgemm_desc_mod.k % 8 != 0)  {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-        return;
-      }
-      if (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(l_xgemm_desc_mod.datatype) > 0 && LIBXSMM_GEMM_GETENUM_B_UNSIGNED(l_xgemm_desc_mod.datatype) == 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
@@ -1327,7 +1326,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
          ) ){
       libxsmm_generator_gemm_aarch64_kernel_sme_het_blocking( io_generated_code, &l_xgemm_desc_mod );
     } else {
-      io_generated_code->arch = LIBXSMM_AARCH64_V81;
+      /* int8 runs on the ASIMD dot kernel; everything else falls back to the generic ASIMD kernel */
+      if ( LIBXSMM_DATATYPE_I8 != LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC(l_xgemm_desc_mod.datatype) ) {
+        io_generated_code->arch = LIBXSMM_AARCH64_V81;
+      }
       libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
     }
   } else if ( ( io_generated_code->arch >= LIBXSMM_RV64_MVL128 ) &&

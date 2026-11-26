@@ -64,10 +64,10 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
         i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_in,
         l_masked_elements, 1, 0, pred_reg_mask_use, is_sve);
     if (upconvert_input_bf16f32 > 0) {
-      libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, im, 0);
+      libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, im, im, 0);
     }
     if (downconvert_input_f32bf16 > 0) {
-      libxsmm_generator_vcvt_f32bf16_aarch64( io_generated_code, im, 0);
+      libxsmm_generator_vcvt_f32bf16_aarch64( io_generated_code, im, im, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0);
     }
   }
 
