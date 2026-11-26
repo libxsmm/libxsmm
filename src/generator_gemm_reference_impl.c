@@ -16,7 +16,7 @@
 #include <utils/libxsmm_lpflt_quant.h>
 
 LIBXSMM_API_INTERN
-void unpack2bit(char* m0, char* m1, char* m2, char* m3, char packed) {
+void unpack2bit(signed char* m0, signed char* m1, signed char* m2, signed char* m3, char packed) {
   if ((packed & 0x3) == 0) {
     *m0 = 0;
   } else if ((packed & 0x3) == 1) {
@@ -64,9 +64,9 @@ float libxsmm_convert_mxfp4_to_float(unsigned char x) {
 }
 
 LIBXSMM_API_INTERN
-char libxsmm_convert_mxfp4_to_char(unsigned char x) {
-  char fp4_e2m1_lut[16] = {0, 11, 21, 32, 42, 64, 85, 127, 0, (char)-11, (char)-21, (char)-32, (char)-42, (char)-64, (char)-85, (char)-127};
-  char result = fp4_e2m1_lut[x];
+signed char libxsmm_convert_mxfp4_to_char(unsigned char x) {
+  signed char fp4_e2m1_lut[16] = {0, 11, 21, 32, 42, 64, 85, 127, 0, -11, -21, -32, -42, -64, -85, -127};
+  signed char result = fp4_e2m1_lut[x];
   return result;
 }
 
@@ -949,8 +949,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
   long long offs_a = 0;
   long long offs_b = 0;
   unsigned char packed_char = 0;
-  char even_use = 0;
-  char odd_use = 0;
+  signed char even_use = 0;
+  signed char odd_use = 0;
 
   /* MX x MX reference path does not support the address (addrbr) or offset (offsbr) batch-reduce modes */
   if ( ((i_gemm_def->br_type == 1) || (i_gemm_def->br_type == 2)) &&
@@ -1129,7 +1129,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     }
   } else if (i_gemm_def->is_Amxfp4Bi8_gemm > 0) {
     unsigned char* c_a = (unsigned char*)a;
-    char* c_b = (char*)b;
+    signed char* c_b = (signed char*)b;
     float*  i_c_f = (float*)c;
     libxsmm_bfloat16* i_c_bf16 = (libxsmm_bfloat16*)c;
     libxsmm_blasint l_k_block = i_gemm_def->mxfp4_block_size;
@@ -1155,7 +1155,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
             for (l_k2 = 0; l_k2 < l_k_block; l_k2 += 8) {
               unsigned char even = 0, odd = 0;
               unsigned char packed_a = 0;
-              char even_a = 0, odd_a = 0, even_b = 0, odd_b = 0;
+              signed char even_a = 0, odd_a = 0, even_b = 0, odd_b = 0;
 
               packed_a = c_a[offs_a + (((long long)l_s*l_k_block+l_k2)/8)*lda*4+l_i*4+0];
               even = packed_a & 0x0f;
@@ -1209,7 +1209,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     }
   } else if ((i_gemm_def->is_Ai2Bi8_gemm > 0) && (i_gemm_def->unsigned_b == 0)) {
     char* c_a = (char*)a;
-    char* c_b = (char*)b;
+    signed char* c_b = (signed char*)b;
     int*  i_c = (int*)c;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m/4; l_i++) {
@@ -1230,7 +1230,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
             long long l_i_m1 = (long long)l_i + 1*(m/4);
             long long l_i_m2 = (long long)l_i + 2*(m/4);
             long long l_i_m3 = (long long)l_i + 3*(m/4);
-            char m0k0 = 0, m1k0 = 0, m2k0 = 0, m3k0 = 0;
+            signed char m0k0 = 0, m1k0 = 0, m2k0 = 0, m3k0 = 0;
             char spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 0];
             unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
             i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
@@ -1285,7 +1285,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
             long long l_i_m1 = (long long)l_i + 1*(m/4);
             long long l_i_m2 = (long long)l_i + 2*(m/4);
             long long l_i_m3 = (long long)l_i + 3*(m/4);
-            char m0k0 = 0, m1k0 = 0, m2k0 = 0, m3k0 = 0;
+            signed char m0k0 = 0, m1k0 = 0, m2k0 = 0, m3k0 = 0;
             char spacked_char = c_a[offs_a + (l_s * lda)+ l_i * 4 + 0];
             unpack2bit(&m0k0, &m1k0, &m2k0, &m3k0, spacked_char);
             i_c[(l_j * ldc) + l_i_m0] += m0k0 * c_b[offs_b + (l_j * ldb) + (l_s*4) + 0];
@@ -1319,7 +1319,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     }
   } else if ((i_gemm_def->is_Ai1Bi8_gemm > 0) && (i_gemm_def->unsigned_b == 0)) {
     char* c_a = (char*)a;
-    char* c_b = (char*)b;
+    signed char* c_b = (signed char*)b;
     int*  i_c = (int*)c;
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i+=2) {
@@ -1330,7 +1330,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / 4); l_s++) {
-            char m0k0 = 0, m0k1 = 0, m0k2 = 0, m0k3 = 0, m1k0 = 0, m1k1 = 0, m1k2 = 0, m1k3 = 0;
+            signed char m0k0 = 0, m0k1 = 0, m0k2 = 0, m0k3 = 0, m1k0 = 0, m1k1 = 0, m1k2 = 0, m1k3 = 0;
             char spacked_char = c_a[offs_a + (l_s * lda)/2 + l_i/2];
             m0k0 = ((spacked_char & 0x1) == 0) ? 1 : -1;
             m0k1 = ((spacked_char & 0x2) == 0) ? 1 : -1;
@@ -1367,7 +1367,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&c_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / 4); l_s++) {
-            char m0k0 = 0, m0k1 = 0, m0k2 = 0, m0k3 = 0, m1k0 = 0, m1k1 = 0, m1k2 = 0, m1k3 = 0;
+            signed char m0k0 = 0, m0k1 = 0, m0k2 = 0, m0k3 = 0, m1k0 = 0, m1k1 = 0, m1k2 = 0, m1k3 = 0;
             char spacked_char = c_a[offs_a + (l_s * lda)/2 + l_i/2];
             m0k0 = ((spacked_char & 0x1) == 0) ? 1 : -1;
             m0k1 = ((spacked_char & 0x2) == 0) ? 1 : -1;
@@ -1603,8 +1603,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
-    char* c_a = (char*)a;
-    char* c_b = (char*)b;
+    signed char* c_a = (signed char*)a;
+    signed char* c_b = (signed char*)b;
     int*           i_c = (int*)c;
     libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
@@ -1632,7 +1632,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     unsigned char* c_a = (unsigned char*)a;
-    char*          c_b = (char*)b;
+    signed char*   c_b = (signed char*)b;
     int*           i_c = (int*)c;
     libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
 
@@ -1659,7 +1659,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
-    char*          c_a = (char*)a;
+    signed char*   c_a = (signed char*)a;
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
     libxsmm_blasint l_k_block = (i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type) : 1;
@@ -1721,8 +1721,8 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
-    char*          c_a = (char*)a;
-    char*          c_b = (char*)b;
+    signed char*   c_a = (signed char*)a;
+    signed char*   c_b = (signed char*)b;
     float*         c_c = (float*)c;
     libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -1756,7 +1756,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     unsigned char* c_a = (unsigned char*)a;
-    char* c_b          = (char*)b;
+    signed char* c_b   = (signed char*)b;
     float*         c_c = (float*)c;
     libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
 
@@ -1789,7 +1789,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
-    char*          c_a = (char*)a;
+    signed char*   c_a = (signed char*)a;
     unsigned char* c_b = (unsigned char*)b;
     float*         c_c = (float*)c;
     libxsmm_blasint l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->a_type);
@@ -1821,7 +1821,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
   } else if ( (i_gemm_def->a_type    == LIBXSMM_DATATYPE_I8)  &&
               (i_gemm_def->b_type    == LIBXSMM_DATATYPE_BF16) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_BF16 || i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) ) {
-    char* c_a = (char*)a;
+    signed char* c_a = (signed char*)a;
     libxsmm_bfloat16* bf16_c = (libxsmm_bfloat16*)c;
     float* f32_c = (float*)c;
     libxsmm_bfloat16* bf16_b = (libxsmm_bfloat16*)b;
@@ -1837,7 +1837,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               float a_use, b_use;
-              char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              signed char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               int int_a = (int) char_a;
               a_use = (float) int_a;
               a_use = a_use * i_gemm_def->scf_f32[l_i];
@@ -1934,7 +1934,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
     libxsmm_float16 c_tmp;
     libxsmm_float16 cur_a, cur_b;
     float* f32_c = (float*)c;
-    char char_a;
+    signed char char_a;
     short short_a;
     int int_a;
     float up_c;
@@ -1956,7 +1956,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
               char _char_a = c_a[offs_a + (l_s * lda) + l_i];
               if ((i_gemm_def->a_type == LIBXSMM_DATATYPE_I8 || i_gemm_def->a_type == LIBXSMM_DATATYPE_I4X2) && i_gemm_def->unsigned_a == 0) {
-                char_a = (l_k2 == 0) ? ((char)((_char_a & 0x0f) << 4)) >> 4 : ((char)((_char_a & 0xf0)) >> 4);
+                char_a = (l_k2 == 0) ? ((signed char)((_char_a & 0x0f) << 4)) >> 4 : ((signed char)((_char_a & 0xf0)) >> 4);
               } else {
                 char_a = (l_k2 == 0) ? _char_a & 0x0f : ((_char_a & 0xf0) >> 4) & 0x0f;
               }
@@ -2019,7 +2019,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F16) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F16) &&
               ((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT))  ) {
-    char* c_a = (char*)a;
+    signed char* c_a = (signed char*)a;
     libxsmm_float16* f16_c = (libxsmm_float16*)c;
     libxsmm_float16* f16_b = (libxsmm_float16*)b;
     libxsmm_float16 c_tmp;
@@ -2041,7 +2041,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
           libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              signed char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
               int int_a = (int) char_a;
               if (l_use_replacement_fma > 0) {
@@ -2091,7 +2091,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
               (i_gemm_def->b_type    == LIBXSMM_DATATYPE_F16) &&
               (i_gemm_def->c_type    == LIBXSMM_DATATYPE_F32) &&
               ((i_gemm_def->comp_type == LIBXSMM_DATATYPE_F16) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32) || (i_gemm_def->comp_type == LIBXSMM_DATATYPE_IMPLICIT))  ) {
-    char* c_a = (char*)a;
+    signed char* c_a = (signed char*)a;
     float* f32_c = (float*)c;
     libxsmm_float16* f16_b = (libxsmm_float16*)b;
     libxsmm_float16 c_tmp;
@@ -2113,7 +2113,7 @@ void libxsmm_ref_matmul( const libxsmm_gemm_def* i_gemm_def, void* a, void* b, v
           libxsmm_calculate_brgemm_offsets((void**)&c_a, (void**)&f16_b, &offs_a, &offs_b, l_r, i_gemm_def);
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              signed char char_a = c_a[offs_a + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               short short_a = (short) char_a;
               int int_a = (int) char_a;
               if (l_use_replacement_fma > 0) {
