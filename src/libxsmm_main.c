@@ -21,6 +21,7 @@
 #include "generator_rv64_reference.h"
 #include "generator_gemm_common.h"
 #include "generator_ppc64le_reference.h"
+#include "generator_mateltwise_reference_impl.h"
 
 #include <signal.h>
 #if !defined(NDEBUG)
@@ -233,6 +234,10 @@ void libxsmm_generator_gemm_reference_kernel( libxsmm_generated_code*        io_
 LIBXSMM_API
 void libxsmm_generator_mateltwise_reference_kernel( libxsmm_generated_code*          io_generated_code,
                                           const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
+  if ( 0 == libxsmm_reference_elementwise_supported( i_mateltw_desc ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
+  }
   /* generate kernel */
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_x86_reference_kernel( io_generated_code, i_mateltw_desc );
@@ -3679,15 +3684,91 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 }
 
 
+/** Integer type of equal width for element types that can be moved bit-exactly, otherwise UNSUPPORTED. */
+LIBXSMM_API_INLINE libxsmm_datatype internal_meltw_bitmove_type(libxsmm_datatype dtype)
+{
+  switch ((int)dtype) {
+    case LIBXSMM_DATATYPE_F64: case LIBXSMM_DATATYPE_I64: case LIBXSMM_DATATYPE_U64:
+      return LIBXSMM_DATATYPE_I64;
+    case LIBXSMM_DATATYPE_F32: case LIBXSMM_DATATYPE_I32: case LIBXSMM_DATATYPE_U32:
+      return LIBXSMM_DATATYPE_I32;
+    case LIBXSMM_DATATYPE_BF16: case LIBXSMM_DATATYPE_F16: case LIBXSMM_DATATYPE_I16: case LIBXSMM_DATATYPE_U16:
+      return LIBXSMM_DATATYPE_I16;
+    case LIBXSMM_DATATYPE_BF8: case LIBXSMM_DATATYPE_HF8: case LIBXSMM_DATATYPE_I8: case LIBXSMM_DATATYPE_U8:
+      return LIBXSMM_DATATYPE_I8;
+    default:
+      return LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+}
+
+
+/** Pure data-movement TPPs have no compute: comp_type may be IMPLICIT (issue #823). */
+LIBXSMM_API_INLINE void internal_meltw_unary_normalize_types(libxsmm_meltw_unary_type unary_type, libxsmm_meltw_unary_shape* unary_shape)
+{
+  switch ((int)unary_type) {
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_VNNI8T:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8T:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI8_PAD:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8T_TO_NORM:
+    case LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI8_TO_NORM:
+    case LIBXSMM_MELTW_TYPE_UNARY_GATHER:
+    case LIBXSMM_MELTW_TYPE_UNARY_SCATTER: {
+      /* only the element width matters: one kernel per width, comp_type is ignored */
+      const libxsmm_datatype bitmove_type = internal_meltw_bitmove_type(unary_shape->in0_type);
+      if (LIBXSMM_DATATYPE_UNSUPPORTED != bitmove_type
+        && LIBXSMM_GETENUM_SIGNED_DATATYPE(unary_shape->in0_type) == LIBXSMM_GETENUM_SIGNED_DATATYPE(unary_shape->out_type))
+      {
+        unary_shape->in0_type = unary_shape->out_type = unary_shape->comp_type = bitmove_type;
+      }
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_IDENTITY:
+    case LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR: {
+      if (unary_shape->in0_type == unary_shape->out_type
+        && (LIBXSMM_DATATYPE_IMPLICIT == unary_shape->comp_type || unary_shape->in0_type == unary_shape->comp_type))
+      {
+        /* a copy is sign-agnostic: unsigned types use the signed kernel of equal width */
+        const libxsmm_datatype dtype = (libxsmm_datatype)LIBXSMM_GETENUM_SIGNED_DATATYPE(unary_shape->in0_type);
+        unary_shape->in0_type = unary_shape->out_type = unary_shape->comp_type = dtype;
+      }
+    } break;
+    default: ;
+  }
+}
+
+
 LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags )
 {
   libxsmm_descriptor_blob blob;
-  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
-    unary_shape.in0_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, unary_shape.comp_type, unary_shape.out_type, unary_shape.m, unary_shape.n,
-    unary_shape.ldi, unary_shape.ldo, 0, 0,
+  const libxsmm_meltw_descriptor* desc;
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_unary_shape shape = unary_shape;
+  internal_meltw_unary_normalize_types(unary_type, &shape);
+  desc = libxsmm_meltw_descriptor_init2(&blob,
+    shape.in0_type, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, shape.comp_type, shape.out_type, shape.m, shape.n,
+    shape.ldi, shape.ldo, 0, 0,
     (unsigned short)unary_flags, (unsigned short)unary_type, LIBXSMM_MELTW_OPERATION_UNARY);
 
-  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+  result = libxsmm_dispatch_meltw(desc);
 
   return result.meltw_unary;
 }

@@ -4487,6 +4487,10 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
     i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_out/2;
     available_vregs = 32;
   }
+  if ( (0 == i_micro_kernel_config->vlen_comp) || (0 == i_micro_kernel_config->vlen_in) || (0 == i_micro_kernel_config->vlen_out) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
+  }
 
   /* set mask lds */
   if ( (libxsmm_meltw_descriptor_get_operation(i_mateltwise_desc) == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ) {

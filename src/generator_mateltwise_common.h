@@ -23,4 +23,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_involves_prec(const libxsmm_meltw_d
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_mateltwise_is_binary_cmp_op( const libxsmm_meltw_descriptor*         i_mateltwise_desc);
 
+LIBXSMM_API_INTERN
+unsigned int libxsmm_is_transform_op(const libxsmm_meltw_descriptor *i_mateltwise_desc);
+
 #endif /* GENERATOR_MATELTWISE_COMMON_H */
