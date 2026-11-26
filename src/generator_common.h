@@ -1724,6 +1724,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fp8_via_bf16_b_dtype;
   unsigned int fp8_via_bf16_b_lut_reg;
   unsigned int fp8_via_bf16_b_blend_hi_reg;
+  /* GNR, BF8 x BF8: upconvert to F16 by zero-extension (exact for E5M2) and run TDPFP16PS */
+  unsigned int fp8_via_f16;
   unsigned int atvnni_gemm_stack_alloc_tensors;
   unsigned int avnni_btrans_gemm_stack_alloc_tensors;
   unsigned int atvnni_btrans_gemm_stack_alloc_tensors;
