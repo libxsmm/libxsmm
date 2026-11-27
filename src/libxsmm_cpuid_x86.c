@@ -518,6 +518,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_X86_AVX512_VL256_CPX: {
       target_arch = "avx512_vl256_cpx";
     } break;
+    case LIBXSMM_X86_AVX512_VL256_NVL: {
+      target_arch = "avx512_vl256_nvl";
+    } break;
     case LIBXSMM_X86_AVX2_SRF: {
       target_arch = "srf";
     } break;
@@ -606,7 +609,10 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
 
-  if (strcmp(arch, "avx512_vl256_cpx") == 0) {
+  if (strcmp(arch, "avx512_vl256_nvl") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_VL256_NVL;
+  }
+  else if (strcmp(arch, "avx512_vl256_cpx") == 0) {
     target_archid = LIBXSMM_X86_AVX512_VL256_CPX;
   }
   else if (strcmp(arch, "avx512_vl256_clx") == 0) {

@@ -109,6 +109,7 @@
      &    LIBXSMM_X86_AVX512_VL256_SKX  = 1051,                         &
      &    LIBXSMM_X86_AVX512_VL256_CLX  = 1052,                         &
      &    LIBXSMM_X86_AVX512_VL256_CPX  = 1053,                         &
+     &    LIBXSMM_X86_AVX512_VL256_NVL  = 1054,                         &
      &    LIBXSMM_X86_AVX512_SKX        = 1101,                         &
      &    LIBXSMM_X86_AVX512_CLX        = 1102,                         &
      &    LIBXSMM_X86_AVX512_CPX        = 1103,                         &

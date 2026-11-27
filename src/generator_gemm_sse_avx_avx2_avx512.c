@@ -412,7 +412,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
         (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
         (l_is_mixed_fp8 != 0) ) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) ) {
     /* Adjust descriptor to perform GEMM with bf16 or f32 inputs */
-    if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) {
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_NVL)) {
       LIBXSMM_GEMM_SET_DESC_DATATYPE(LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC(l_xgemm_desc->datatype), LIBXSMM_DATATYPE_F32, (unsigned char *)l_xgemm_desc->datatype);
       l_xgemm_desc->flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
     } else {
@@ -753,7 +753,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
          (io_generated_code->arch != LIBXSMM_X86_AVX512_NVL) &&
          (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) &&
          (libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0) &&
-         (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX) ) {
+         (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX) &&
+         (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_NVL) ) {
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code,  LIBXSMM_X86_INSTR_MOVQ,
                                          i_gp_reg_mapping->gp_reg_help_2, 0xaaaaaaaa );
@@ -768,7 +769,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_2, 3, 32 - (i_xgemm_desc->m % 32), LIBXSMM_DATATYPE_BF16 );
       libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
     }
-    if ( (i_xgemm_desc->m % 16 != 0) && (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ) {
+    if ( (i_xgemm_desc->m % 16 != 0) && ((io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_NVL)) ) {
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
       libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_2, 3, 16 - (i_xgemm_desc->m % 16), LIBXSMM_DATATYPE_BF16 );
       libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
@@ -801,6 +802,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
            ( (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(l_xgemm_desc->datatype) >  0) && (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(l_xgemm_desc->datatype) >  0) ) ) &&
          (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_SKX) &&
          (io_generated_code->arch != LIBXSMM_X86_AVX512_NVL) &&
+         (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_NVL) &&
          (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT)) {
     libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code,  LIBXSMM_X86_INSTR_MOVQ,
