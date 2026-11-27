@@ -180,7 +180,7 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
       }
     } else if ( (io_generated_code->arch != LIBXSMM_X86_AVX512_CPX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_NVL) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ) {
       l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsdbcst;
-    } else if ( l_is_i8_uu_ss_gemm != 0 ) {
+    } else if ( (l_is_i8_uu_ss_gemm != 0) && (io_generated_code->arch != LIBXSMM_X86_AVX512_NVL) ) {
       l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_i8_ss_uu_emu_nofsdbcst;
     } else {
       l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_nofsdbcst;
@@ -1220,22 +1220,30 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         }
         /* issue fma */
         if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) {
-          if ( LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) {
+          const int l_a_unsigned = (LIBXSMM_GEMM_GETENUM_A_UNSIGNED(i_xgemm_desc->datatype) > 0) ? 1 : 0;
+          const int l_b_unsigned = (LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0) ? 1 : 0;
+          if ( l_a_unsigned == l_b_unsigned ) {
+            /* uu/ss: AVX10.2 (NVL) only, the dispatcher routes older archs to the emulation kernel */
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                l_compute_instr,
+                (l_a_unsigned != 0) ? LIBXSMM_X86_INSTR_VPDPBUUD : LIBXSMM_X86_INSTR_VPDPBSSD,
                 i_micro_kernel_config->vector_name,
-                l_vreg_ab_offset,
                 1+l_m+l_vreg_ab_offset + l_k * l_m_blocking,
+                l_vreg_ab_offset,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          } else if ( LIBXSMM_GEMM_GETENUM_B_UNSIGNED(i_xgemm_desc->datatype) > 0 ) {
+          } else if ( l_a_unsigned != 0 ) {
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 l_compute_instr,
                 i_micro_kernel_config->vector_name,
-                1+l_m+l_vreg_ab_offset + l_k * l_m_blocking,
                 l_vreg_ab_offset,
+                1+l_m+l_vreg_ab_offset + l_k * l_m_blocking,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else {
-            /* should not happen */
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                l_compute_instr,
+                i_micro_kernel_config->vector_name,
+                1+l_m+l_vreg_ab_offset + l_k * l_m_blocking,
+                l_vreg_ab_offset,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           }
         } else if (l_use_f16_replacement_fma > 0) {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, vname_cvt, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
