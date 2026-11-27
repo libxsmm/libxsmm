@@ -99,6 +99,16 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_16bit_ace_gemm ( unsigned int i_a
            ((LIBXSMM_DATATYPE_F32 == l_comp) || (LIBXSMM_DATATYPE_IMPLICIT == l_comp)) ) ? 1 : 0;
 }
 
+/* Flat-A F16 x F16 with F32 compute on GNR: AMX (TDPFP16PS) with the BF16-SPR SW-pipeline A/B transforms */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_amx_flat_gemm ( const libxsmm_generated_code* i_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  return ( (i_generated_code->arch >= LIBXSMM_X86_AVX512_GNR) && (i_generated_code->arch < LIBXSMM_X86_AVX512_DMR) &&
+           (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
+           (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype )) &&
+           ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) &&
+           ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) == 0) &&
+           (i_xgemm_desc->k % 2 == 0) ) ? 1 : 0;
+}
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int result =  ( ( ( (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                                (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) ) ||
@@ -575,7 +585,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
                                                                                     libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                                     libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                                     const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                                    libxsmm_datatype               i_in_dtype ) {
+                                                                                    libxsmm_datatype               i_in_dtype,
+                                                                                    unsigned int                   i_is_amx ) {
   int is_stride_brgemm        = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
   int is_offset_brgemm        = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm       = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
@@ -585,13 +596,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
   unsigned int loop_reg       = LIBXSMM_X86_GP_REG_R13;
   unsigned int bound_reg      = LIBXSMM_X86_GP_REG_R12;
   unsigned int tmp_reg2       = LIBXSMM_X86_GP_REG_RDX;
+  unsigned int l_reg_a        = (i_is_amx != 0) ? LIBXSMM_X86_GP_REG_RDI : i_gp_reg_mapping->gp_reg_a;
+  unsigned int l_reg_b        = (i_is_amx != 0) ? LIBXSMM_X86_GP_REG_RSI : i_gp_reg_mapping->gp_reg_b;
   unsigned short gp_save_bitmask = 0x2 | 0x4 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000;
 
   libxsmm_generator_x86_save_gpr_regs( io_generated_code, gp_save_bitmask);
 
   /* Setup B in stack */
   libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
-      i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
+      l_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
       LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM, i_xgemm_desc_orig->n, i_xgemm_desc_orig->k, i_xgemm_desc_orig->ldb, i_xgemm_desc_orig->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
       i_in_dtype, i_in_dtype, i_in_dtype,
       LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
@@ -599,18 +612,18 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
 
   /* Adjust A/B gp_regs to point to the fp32 tensors in stack */
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg );
-  libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_b);
+  libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, tmp_reg, l_reg_b);
 
   /* In this case we have to copy over also A in strided BRGEMM format */
   if ( (is_offset_brgemm > 0) || (is_address_brgemm > 0) ) {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
-        i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
+        l_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
         LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->m*2, i_xgemm_desc->k/2, i_xgemm_desc_orig->lda*2, i_xgemm_desc->m*2, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
         i_in_dtype, i_in_dtype, i_in_dtype,
         LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR, tmp_reg );
-    libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_a);
+    libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, tmp_reg, l_reg_a);
   }
 
   /* Adjust descriptor for internal strided BRGEMM */
@@ -851,7 +864,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB( libxsmm_generated_
     libxsmm_generator_gemm_setup_A_vnni_or_trans_B_vnni_or_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) ((libxsmm_x86_is_mixed_fp8_gemm( i_xgemm_desc_orig ) != 0) ? LIBXSMM_GEMM_GETENUM_A_PREC_RAW( i_xgemm_desc_orig->datatype ) : LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype )), 0);
   } else if ( (((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0)) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc_orig) == 0 ) ) {
     /* if B is in vnni2T, use scratch in stack */
-    libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ));
+    libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc_orig->datatype ), 0);
   } else if (( i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0)) {
     /* Now setup A and B tensors in stack as FP32 flat tensors */
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) {

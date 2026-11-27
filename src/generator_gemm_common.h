@@ -30,6 +30,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_int8_ace_gemm ( const libxsmm_gem
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_16bit_ace_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_amx_flat_gemm ( const libxsmm_generated_code* i_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxint4_Bmxint4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
@@ -115,7 +117,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
                                                                                     libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                                     libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                                     const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
-                                                                                    libxsmm_datatype               i_in_dtype );
+                                                                                    libxsmm_datatype               i_in_dtype,
+                                                                                    unsigned int                   i_is_amx );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  libxsmm_generated_code*       io_generated_code,
                                                                               libxsmm_loop_label_tracker*    io_loop_label_tracker,
