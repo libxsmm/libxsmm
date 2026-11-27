@@ -1580,6 +1580,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_DMR:
     case LIBXSMM_X86_AVX512_GNR:
     case LIBXSMM_X86_AVX512_SPR:
+    case LIBXSMM_X86_AVX512_NVL:
     case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
     case LIBXSMM_X86_AVX512_SKX:

@@ -109,6 +109,16 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_amx_flat_gemm ( const libxsmm
            (i_xgemm_desc->k % 2 == 0) ) ? 1 : 0;
 }
 
+/* F16 x F16 GEMM with F32 accumulation via AVX10.2 VDPPHPS (NVL): A runs in VNNI2 (on stack if needed), B is broadcast in pairs */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_avx10_2_dp_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  return ( (LIBXSMM_X86_AVX512_NVL == i_arch) &&
+           (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
+           (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
+           ((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))) &&
+           ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_IMPLICIT == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ))) &&
+           (i_xgemm_desc->k % 2 == 0) ) ? 1 : 0;
+}
+
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int result =  ( ( ( (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
                                (LIBXSMM_DATATYPE_MXFP4X2 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) ) ||
@@ -3730,6 +3740,12 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
+      /* AVX10.2: A in VNNI2, pairs of B broadcast as 32bit, VDPPHPS accumulates into F32 */
+      if ( (libxsmm_x86_is_f16_avx10_2_dp_gemm( i_arch, i_xgemm_desc ) != 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
+        io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;
+        io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VDPPHPS;
+      }
     } else if (  (LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_BF8 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype ) || l_is_Ai4_Bf16_gemm > 0) && (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) &&
                 ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype ))) ) {
       io_micro_kernel_config->vector_length = 16;

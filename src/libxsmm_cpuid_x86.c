@@ -288,6 +288,14 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                     LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx2, edx2);
                     if (LIBXSMM_CPUID_CHECK(eax, 0x00000020)) { /* BF16 */
                       feature_cpu = LIBXSMM_X86_AVX512_CPX;
+                      /* AVX10(CPUID.(EAX=07H,ECX=1):EDX[19]), version: CPUID.(EAX=24H,ECX=0):EBX[7:0] */
+                      if (LIBXSMM_CPUID_CHECK(edx2, 0x00080000) && 0x24 <= maxleaf) {
+                        unsigned int eax3, ebx3, ecx3, edx3;
+                        LIBXSMM_CPUID_X86(0x24, 0/*ecx*/, eax3, ebx3, ecx3, edx3);
+                        if (2 <= (ebx3 & 0xFF)) { /* AVX10.2 */
+                          feature_cpu = LIBXSMM_X86_AVX512_NVL;
+                        }
+                      }
                       if (LIBXSMM_CPUID_CHECK(edx, 0x03400000)) { /* AMX-TILE, AMX-INT8, AMX-BF16 */
                         feature_cpu = LIBXSMM_X86_AVX512_SPR;
                         if (LIBXSMM_CPUID_CHECK(eax, 0x00200000)) { /* AMX-FP16 */
@@ -365,7 +373,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           if (LIBXSMM_CPUID_CHECK(eax, 0x00000006)) { /* OS XSAVE 256-bit */
             feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX2_SRF, feature_cpu);
             if (LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
-              feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX512_CPX, feature_cpu);
+              feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX512_NVL, feature_cpu);
               if (LIBXSMM_X86_AVX512_SPR <= feature_cpu && 7 <= maxleaf
                 && LIBXSMM_CPUID_CHECK(eax, 0x00060000)) /* OS XSAVE 512-bit */
               {
@@ -488,6 +496,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     } break;
     case LIBXSMM_X86_AVX512_SPR: {
       target_arch = "spr";
+    } break;
+    case LIBXSMM_X86_AVX512_NVL: {
+      target_arch = "nvl";
     } break;
     case LIBXSMM_X86_AVX512_CPX: {
       target_arch = "cpx";
@@ -618,6 +629,9 @@ LIBXSMM_API int libxsmm_cpuid_id(const char* arch)
   }
   else if (strcmp(arch, "spr") == 0) {
     target_archid = LIBXSMM_X86_AVX512_SPR;
+  }
+  else if (strcmp(arch, "nvl") == 0) {
+    target_archid = LIBXSMM_X86_AVX512_NVL;
   }
   else if (strcmp(arch, "cpx") == 0) {
     target_archid = LIBXSMM_X86_AVX512_CPX;

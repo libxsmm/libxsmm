@@ -552,9 +552,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
           }
         }
       } else if ( (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype )) ) {
-        /* VNNI-B'ed F16: native on ACE; on GNR+ AMX with VNNI-A, B is converted to normal layout on the stack */
+        /* VNNI-B'ed F16: native on ACE; on GNR+ AMX and on NVL (VDPPHPS) with VNNI-A, B is converted to normal layout on the stack */
         if ( (libxsmm_generator_gemm_avx512_use_ace(io_generated_code, &l_xgemm_desc_mod) == 0) &&
-             ((io_generated_code->arch < LIBXSMM_X86_AVX512_GNR) || ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)) ) {
+             (((io_generated_code->arch < LIBXSMM_X86_AVX512_GNR) && (libxsmm_x86_is_f16_avx10_2_dp_gemm( io_generated_code->arch, &l_xgemm_desc_mod ) == 0)) ||
+              ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)) ) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
           return;
         }
@@ -906,7 +907,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
               ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SKX ) &&
               (LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F16) &&
               (LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F16 || LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc_mod.datatype ) == LIBXSMM_DATATYPE_F32) ) {
-    if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) {
+    if ( ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) && (libxsmm_x86_is_f16_avx10_2_dp_gemm( io_generated_code->arch, &l_xgemm_desc_mod ) == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     } else {
@@ -1114,6 +1115,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
           /* We are good */
         } else if ( libxsmm_x86_is_f16_amx_flat_gemm( io_generated_code, &l_xgemm_desc_mod ) != 0 ) {
           /* F16 A transpose on GNR AMX via the SW pipeline, as BF16 on SPR */
+        } else if ( (libxsmm_x86_is_f16_avx10_2_dp_gemm( io_generated_code->arch, &l_xgemm_desc_mod ) != 0) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) ) {
+          /* F16 A transpose on NVL via the 16bit stack transform into VNNI2 */
         } else if (( libxsmm_x86_is_fp8_gemm( &l_xgemm_desc_mod ) != 0 ) ) {
           /* 8-bit path via upfront stack reformatting to BF16/F32: AMX (SPR+) handles via setup_f8_ABC_tensors_to_stack_for_amx,
            * non-AMX archs (pre-SPR) handle via setup_f8_AB_tensors_to_stack in the AVX wrapper. Mixed A/B FP8
@@ -1165,6 +1168,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         /* We are good */
       } else if ( libxsmm_x86_is_f16_amx_flat_gemm( io_generated_code, &l_xgemm_desc_mod ) != 0 ) {
         /* F16 A transpose on GNR AMX via the SW pipeline, as BF16 on SPR */
+      } else if ( (libxsmm_x86_is_f16_avx10_2_dp_gemm( io_generated_code->arch, &l_xgemm_desc_mod ) != 0) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0) ) {
+        /* F16 A transpose on NVL via the 16bit stack transform into VNNI2 */
       } else if (( libxsmm_x86_is_fp8_gemm( &l_xgemm_desc_mod ) != 0 ) ) {
         /* 8-bit path: upfront stack reformatting to BF16/F32 handles TRANS_A on AMX (SPR+) and non-AMX (pre-SPR) archs.
          * Mixed A/B FP8 (AB_COMMON UNSUPPORTED) also lands here; DMR resolves it to the native atrans SW-pipeline. */
@@ -1379,6 +1384,8 @@ void libxsmm_generator_gemm_inlineasm( const char*                    i_file_out
     l_generated_code.arch = LIBXSMM_X86_AVX512_CLX;
   } else if ( strcmp(i_arch, "cpx") == 0  ) {
     l_generated_code.arch = LIBXSMM_X86_AVX512_CPX;
+  } else if ( strcmp(i_arch, "nvl") == 0  ) {
+    l_generated_code.arch = LIBXSMM_X86_AVX512_NVL;
   } else if ( strcmp(i_arch, "spr") == 0  ) {
     l_generated_code.arch = LIBXSMM_X86_AVX512_SPR;
   } else if ( strcmp(i_arch, "gnr") == 0  ) {
@@ -1468,6 +1475,8 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
     l_generated_code.arch = LIBXSMM_X86_AVX512_CLX;
   } else if ( strcmp(i_arch, "cpx") == 0  ) {
     l_generated_code.arch = LIBXSMM_X86_AVX512_CPX;
+  } else if ( strcmp(i_arch, "nvl") == 0  ) {
+    l_generated_code.arch = LIBXSMM_X86_AVX512_NVL;
   } else if ( strcmp(i_arch, "spr") == 0  ) {
     l_generated_code.arch = LIBXSMM_X86_AVX512_SPR;
   } else if ( strcmp(i_arch, "gnr") == 0  ) {

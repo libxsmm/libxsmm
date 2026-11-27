@@ -11,6 +11,11 @@ steps:
       BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -dmr --"
     label: "SMMs DMR Prec. (DMR)"
 
+  - command: "scripts/tool_test.sh samples/xgemm/kernel_test_nvl.sh"
+    env:
+      BIN_INSTR_TOOL: "/swtools/sde/latest/sde64 -nvl --"
+    label: "SMMs FP16/BF16 Prec. (NVL)"
+
   - command: "scripts/tool_test.sh samples/xgemm/kernel_test_ace_f32.sh"
     env:
       LIBXSMM_TARGET: "ace2"

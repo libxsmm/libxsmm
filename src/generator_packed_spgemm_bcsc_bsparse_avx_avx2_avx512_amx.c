@@ -308,7 +308,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
       return;
     }
-    if (io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) {
+    if ((io_generated_code->arch == LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_NVL)) {
       l_simd_packed_width = 16;
       l_is_amx_kernel = 0;
       if (i_bk % 2 != 0) {
@@ -446,9 +446,9 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   }
 
   if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I8 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype ) ) &&
-      ((io_generated_code->arch <= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR))) {
+      ((io_generated_code->arch <= LIBXSMM_X86_AVX512_NVL) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR))) {
     unsigned int l_max_m_blocking, l_max_n_blocking;
-    if (io_generated_code->arch <= LIBXSMM_X86_AVX512_CPX || l_is_AT_CT_kernel > 0) {
+    if (io_generated_code->arch <= LIBXSMM_X86_AVX512_NVL || l_is_AT_CT_kernel > 0) {
       l_is_amx_kernel = 0;
       /* Set blocking factor decisions...  */
       libxsmm_spgemm_max_mn_blocking_factors_x86(io_generated_code, i_bn, &l_max_m_blocking, &l_max_n_blocking);
@@ -525,7 +525,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
     }
 
     if (l_emit_compute > 0) {
-      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_CPX || l_is_AT_CT_kernel > 0) {
+      if (io_generated_code->arch <= LIBXSMM_X86_AVX512_NVL || l_is_AT_CT_kernel > 0) {
         if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) {
           /* mask for M remainder  */
           if ( l_simd_packed_remainder != 0 ) {
