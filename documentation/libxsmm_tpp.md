@@ -48,6 +48,8 @@ libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasin
 libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags );
 ```
 
+**Approximate math**: by default, TPPs and matrix equations may use fast approximations, e.g., hardware reciprocal and reciprocal square-root estimates (with a Newton step where the estimate alone is too coarse) or a low-order polynomial for the exponential function. Setting the environment variable `LIBXSMM_FAST_MATH_OFF=1` disables these approximations on all platforms: reciprocal, (reciprocal) square-root use IEEE division and square-root instructions, and the most accurate available exponential is used. The setting is evaluated when a kernel is generated (JIT).
+
 ### Binary Operations
 
 ```

@@ -1520,20 +1520,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   return l_ret;
 }
 
-LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
-  static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
-  static int hasBeenInited = 0;
-  if (0 == hasBeenInited) {
-    const char *const env = getenv("LIBXSMM_ULP_PRECISION");
-    if (NULL != env) {
-      const double p = atof(env); /* alternatively to atof, we could use strcmp */
-      if (0.5 >= p) precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
-      else if (1.0 >= p) precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
-      else precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
-    }
-    hasBeenInited = 1;
-  }
-  return precision;
+LIBXSMM_API_INTERN int libxsmm_generator_fast_math(void) {
+  const char *const env = getenv("LIBXSMM_FAST_MATH_OFF");
+  return (NULL == env || 0 == atoi(env)) ? 1 : 0;
 }
 
 LIBXSMM_API_INTERN int libxsmm_is_runtime_set_ld_gemm( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
