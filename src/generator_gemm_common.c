@@ -109,9 +109,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_amx_flat_gemm ( const libxsmm
            (i_xgemm_desc->k % 2 == 0) ) ? 1 : 0;
 }
 
-/* F16 x F16 GEMM with F32 accumulation via AVX10.2 VDPPHPS (NVL): A runs in VNNI2 (on stack if needed), B is broadcast in pairs */
-LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_avx10_2_dp_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  return ( (LIBXSMM_X86_AVX512_NVL == i_arch) &&
+/* F16 x F16 GEMM with F32 accumulation on A in VNNI2 (on stack if needed): AVX10.2 VDPPHPS (NVL) or AVX-NE-CONVERT (SRF) */
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_vnni_f32acc_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  return ( ( (LIBXSMM_X86_AVX512_NVL == i_arch) || (LIBXSMM_X86_AVX2_SRF == i_arch) ) &&
            (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_A_PREC( i_xgemm_desc->datatype )) &&
            (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_B_PREC( i_xgemm_desc->datatype )) &&
            ((LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ))) &&
@@ -3042,12 +3042,14 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VPDPBSSD;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
-    } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) &&
+    } else if ( ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( i_xgemm_desc->datatype )) ||
+                  (libxsmm_x86_is_f16_vnni_f32acc_gemm( i_arch, i_xgemm_desc ) != 0) ) &&
                 ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
       io_micro_kernel_config->datatype_size_in2 = 2;
-      if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) {
+      if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ||
+           (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) ) {
         io_micro_kernel_config->datatype_size_out = 2;
       } else {
         io_micro_kernel_config->datatype_size_out = 4;
@@ -3741,7 +3743,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config( libxsmm_micro_kernel_confi
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
       /* AVX10.2: A in VNNI2, pairs of B broadcast as 32bit, VDPPHPS accumulates into F32 */
-      if ( (libxsmm_x86_is_f16_avx10_2_dp_gemm( i_arch, i_xgemm_desc ) != 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
+      if ( (libxsmm_x86_is_f16_vnni_f32acc_gemm( i_arch, i_xgemm_desc ) != 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
         io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;
         io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VDPPHPS;
@@ -5120,12 +5122,20 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype) && LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype) && io_generated_code->arch < LIBXSMM_X86_AVX512_SPR)) {
               vname_load = (vname_load == 'z') ? 'y' : 'x';
             }
-            /* we only mask the last m-blocked load */
-            libxsmm_x86_instruction_unified_vec_move( io_generated_code, i_micro_kernel_config->c_vmove_instruction,
-                                                      i_gp_reg_mapping->gp_reg_c, l_idx_register, l_scale,
-                                                      l_displacement,
-                                                      vname_load,
-                                                      l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, l_mask_reg_or_val, 0 );
+            /* we only mask the last m-blocked load; AVX/AVX2 have no 16-bit masked loads */
+            if ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX) && (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256_SKX) &&
+                 (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype)) &&
+                 (i_micro_kernel_config->use_masking_a_c != 0) && (l_m == (l_m_blocking - 1)) ) {
+              libxsmm_generator_maskedload_16bit_avx2( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                                       i_gp_reg_mapping->gp_reg_c, l_idx_register, l_scale, l_displacement,
+                                                       l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_m_blocking % i_micro_kernel_config->vector_length );
+            } else {
+              libxsmm_x86_instruction_unified_vec_move( io_generated_code, i_micro_kernel_config->c_vmove_instruction,
+                                                        i_gp_reg_mapping->gp_reg_c, l_idx_register, l_scale,
+                                                        l_displacement,
+                                                        vname_load,
+                                                        l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, l_mask_reg_or_val, 0 );
+            }
 
             if (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype) && LIBXSMM_DATATYPE_F32 == LIBXSMM_GEMM_GETENUM_COMP_PREC( i_xgemm_desc->datatype)) {
               libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
@@ -6024,6 +6034,20 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                                       i_gp_reg_mapping->gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                       ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
                                                       i_m_blocking % i_micro_kernel_config->vector_length );
+          } else if ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX) && (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256_SKX) &&
+                      (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype)) &&
+                      (i_micro_kernel_config->use_masking_a_c != 0) && (l_m == (l_m_blocking - 1)) ) {
+            /* AVX/AVX2 have no 16-bit masked stores; the mask register is not needed anymore */
+            libxsmm_generator_maskedstore_16bit_avx2( io_generated_code, mask_gpr, reg_X,
+                                                      i_gp_reg_mapping->gp_reg_c,
+                                                      ( libxsmm_is_runtime_set_ldc_gemm( i_xgemm_desc ) != 0 ) ? i_gp_reg_mapping->gp_reg_kloop : LIBXSMM_X86_GP_REG_UNDEF,
+                                                      ( libxsmm_is_runtime_set_ldc_gemm( i_xgemm_desc ) != 0 ) ? i_micro_kernel_config->datatype_size_out : 0,
+                                                      ( libxsmm_is_runtime_set_ldc_gemm( i_xgemm_desc ) != 0 ) ? l_m * i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_out :
+                                                        ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
+                                                      i_m_blocking % i_micro_kernel_config->vector_length );
+            if ( l_n < i_n_blocking - 1 ) {
+              libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, mask_gpr );
+            }
           } else {
             /* configure SIB depending on usage of runtime ldc */
             int l_displacement = ( libxsmm_is_runtime_set_ldc_gemm( i_xgemm_desc ) != 0 ) ?  l_m * i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_out : ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out);

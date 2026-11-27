@@ -32,7 +32,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_16bit_ace_gemm ( unsigned int i_a
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_amx_flat_gemm ( const libxsmm_generated_code* i_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc );
 
-LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_avx10_2_dp_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc );
+LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_f16_vnni_f32acc_gemm ( unsigned int i_arch, const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_x86_is_Amxfp4_Bmxfp4_gemm ( const libxsmm_gemm_descriptor* i_xgemm_desc );
 

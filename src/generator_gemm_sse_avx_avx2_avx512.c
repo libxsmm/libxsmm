@@ -283,7 +283,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int l_is_Amxfp6_Bmxfp6_gemm = libxsmm_x86_is_Amxfp6_Bmxfp6_gemm(i_xgemm_desc);
   /* F16 on ACE v2 shares the BF16 tile layout, so it takes the same stack reformatting paths; F16 on NVL (VDPPHPS) uses the BF16 VNNI2 layout */
   unsigned int l_is_16bit_stack_dt = ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
-                                       (libxsmm_x86_is_f16_avx10_2_dp_gemm( io_generated_code->arch, l_xgemm_desc ) != 0) ||
+                                       (libxsmm_x86_is_f16_vnni_f32acc_gemm( io_generated_code->arch, l_xgemm_desc ) != 0) ||
                                        (libxsmm_x86_is_16bit_ace_gemm( io_generated_code->arch, l_xgemm_desc ) != 0) ) ? 1 : 0;
   unsigned int l_avnni_gemm_stack_alloc_tensors = (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) &&
                                                    ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0)  &&
@@ -480,7 +480,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     }
   } else if (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ( libxsmm_generator_gemm_avx512_use_ace(io_generated_code, i_xgemm_desc) == 0 ) ) {
     if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_AB_COMMON_PREC( l_xgemm_desc->datatype )) ||
-         (libxsmm_x86_is_f16_avx10_2_dp_gemm( io_generated_code->arch, l_xgemm_desc ) != 0) ) {
+         (libxsmm_x86_is_f16_vnni_f32acc_gemm( io_generated_code->arch, l_xgemm_desc ) != 0) ) {
       unsigned int aux_flags = (unsigned int)((unsigned int)l_xgemm_desc->flags & (~LIBXSMM_GEMM_FLAG_TRANS_B));
       l_xgemm_desc->ldb = l_xgemm_desc->k;
       l_xgemm_desc->flags = (unsigned int)((unsigned int)aux_flags & (~LIBXSMM_GEMM_FLAG_VNNI_B));
@@ -1383,7 +1383,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                (LIBXSMM_DATATYPE_I32 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) ||
                (LIBXSMM_DATATYPE_F64 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ))    ) {
             libxsmm_generator_initialize_avx_mask( io_generated_code, (l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bi8_gemm > 0 ) ? 2 : 0, l_mask_count, (libxsmm_datatype)LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ) );
-          } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype ) ) {
+          } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) ||
+                      (LIBXSMM_DATATYPE_F16  == LIBXSMM_GEMM_GETENUM_C_PREC( l_xgemm_desc->datatype )) ) {
             libxsmm_generator_initialize_avx_mask( io_generated_code, (l_is_Amxfp4_Bfp32_gemm > 0 || l_is_Amxfp4_Bbf16_gemm > 0 || l_is_Amxfp4_Bi8_gemm > 0 ) ? 2 : 0, l_mask_count, LIBXSMM_DATATYPE_I32 );
           } else {
             /* should not happen */
@@ -2078,6 +2079,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
     }
   } else if ((i_arch == LIBXSMM_X86_AVX2_SRF) && ( ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
                                                                                     ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
+                                                                                    ( (LIBXSMM_DATATYPE_F16 == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype )) &&
+                                                                                      (libxsmm_x86_is_f16_vnni_f32acc_gemm( i_arch, i_xgemm_desc ) != 0) ) ||
                                                                                     ( LIBXSMM_DATATYPE_I32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) )    ) ) {
     libxsmm_generator_gemm_get_blocking_and_mask( i_xgemm_desc->m, (libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking() <= 3) ? 32 : ( (libxsmm_cpuid_x86_srf_gemm_set_n_max_blocking() <= 5) ? 16 : 8), 8, &l_m_blocking, &l_use_masking_a_c );
   } else if ( ( (i_arch >= LIBXSMM_X86_AVX2) && (i_arch < LIBXSMM_X86_AVX512_VL128_SKX) ) && ( ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GEMM_GETENUM_C_PREC( i_xgemm_desc->datatype ) ) ||
